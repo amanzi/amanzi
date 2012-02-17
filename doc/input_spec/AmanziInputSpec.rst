@@ -138,7 +138,7 @@ Each input set contains at the top level a string variable `"Amanzi Input Format
 current version of the Amanzi input is `"1.0.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
 evolving input specification version can be found *here*.
 
-* [U] "Amanzi Input Format Version" [string] Three part version string
+* [SU] "Amanzi Input Format Version" [string] Three part version string
 
 Example:
 
@@ -154,7 +154,7 @@ General Description
 The `"General Description`" parameter list can be used to provide a brief description of the problem specified in the file.  ANY number of string entries can be provided
 with ANY label that may be useful for the user own purposes.  This section is not parsed by Amanzi and thus optional.
 
-* LABEL [string] A descriptive string
+* [S] LABEL [string] A descriptive string
 
 Example:
 
@@ -179,23 +179,23 @@ Amanzi supports both single-phase saturated and variably saturated groundwater f
 
 Usage:
 
-* [U] `"Execution Control`"
+* [SU] `"Execution Control`"
 
- * [U] `"Flow Model`" [string]: flow process model
+ * [SU] `"Flow Model`" [string]: flow process model
 
-  * [U] `"Off`" [string]: No flow model
+  * [SU] `"Off`" [string]: No flow model
 
-  * [U] `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
+  * [SU] `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
 
-  * `"Single-phase`" [string]: Single phase, fully saturated flow
+  * [S]`"Single-phase`" [string]: Single phase, fully saturated flow
 
-  * `"Multi-phase`" [string]: Multiple phase, variably saturated flow
+  * [S]`"Multi-phase`" [string]: Multiple phase, variably saturated flow
 
- * [U] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
+ * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
- * [U] `"Chemistry Model`" [string]: Chemical reaction of constituents.  (Defaults to `"Off`", the only currently supported option)
+ * [SU] `"Chemistry Model`" [string]: Chemical reaction of constituents.  (Defaults to `"Off`", the only currently supported option)
 
- * [U] `"Time Integration Mode`" [list]: accepts one of three integration modes:
+ * [SU] `"Time Integration Mode`" [list]: accepts one of three integration modes:
 
   * [U] `"Steady`" [list] - Amanzi is run in steady mode.
 
@@ -205,13 +205,13 @@ Usage:
 
    * [U] `"Initial Time Step`" [double]: The intitial time step for the steady calculation.
 
-  * [U] `"Transient`" [list] - A time-accurate evolution is desired
+  * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
-   * [U] `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
+   * [SU] `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
 
-   * [U] `"End`" [double]: End of integration period
+   * [SU] `"End`" [double]: End of integration period
    
-   * [U] `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+   * [SU] `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
    * `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
@@ -227,22 +227,22 @@ Usage:
 
    * [U] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
-   * `"Transient Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
+   * [S] `"Transient Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
- * [U] `"Verbosity`" [string]: Defaults to `"Medium`"
+ * [SU] `"Verbosity`" [string]: Defaults to `"Medium`"
 
-  * [U] `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
+  * [SU] `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
 
-  * [U] `"Low`": Minimal logging output, includes information about time stepsizes attempted, and notification of I/O operations
+  * [SU] `"Low`": Minimal logging output, includes information about time stepsizes attempted, and notification of I/O operations
 
-  * [U] `"Medium`": Includes summary-level activity of each process kernel
+  * [SU] `"Medium`": Includes summary-level activity of each process kernel
 
-  * [U] `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
+  * [SU] `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
 
-  * [U] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
+  * [SU] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
 
 
- * [U] `"Numerical Control Parameters`" [list]
+ * [SU] `"Numerical Control Parameters`" [list]
 
   * [U] `"Unstructured Algorithm`" [list]
 
@@ -264,21 +264,21 @@ Usage:
 
    * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is allowed to be lagged at most this amount of iterations.
 
-  * `"Structured Algorithm`" [list]
+  * [S] `"Structured Algorithm`" [list]
 
-   * `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)
+   * [S] `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)
 
-   * `"Adaptive Mesh Refinement`" [list] accepts a list of input parameters that pertains to adaptive mesh refinement algorithm. Optional.
+   * [S] `"Adaptive Mesh Refinement`" [list] accepts a list of input parameters that pertains to adaptive mesh refinement algorithm. Optional.
 
-   * `"Diffusion Discretization Control`" [list] Algorithmic options for the parabolic diffusion solver. Optional.  Details to be added.
+   * [S] `"Diffusion Discretization Control`" [list] Algorithmic options for the parabolic diffusion solver. Optional.  Details to be added.
 
-   * `"Pressure Discretization Control`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
+   * [S] `"Pressure Discretization Control`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
 
-   * `"Iterative Linear Solver Control`" [list] Detailed controls for linear solvers. Details to be added.
+   * [S] `"Iterative Linear Solver Control`" [list] Detailed controls for linear solvers. Details to be added.
 
-    * `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
+    * [S] `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
 
-    * `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
+    * [S] `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
 
 Example:
 
@@ -317,7 +317,7 @@ This example specifies that a time-dependent evolution of Richards equation is d
 Domain
 ======
 
-The `"Domain`" parameter list contains the spatial dimension.
+[S] The `"Domain`" parameter list contains the spatial dimension.
 
 Example:
 
@@ -340,7 +340,7 @@ Amanzi supports both structured and unstructured numerical solution approaches. 
 
 Usage:
 
-* [U][S] `"Mesh`" [list] accepts either (1) `"Structured`", or (2) `"Unstructured`" to indicate the meshing option that Amanzi will use
+* [SU] `"Mesh`" [list] accepts either (1) `"Structured`", or (2) `"Unstructured`" to indicate the meshing option that Amanzi will use
 
  * [S] `"Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
@@ -441,16 +441,16 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 |  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
 +================================+=========================================+==============================+========================================================================+
-| `"Region: Point"`  [U][S]      | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
+| `"Region: Point"`  [SU]        | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"` [U][S]         | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
+| `"Region: Box"` [SU]           | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Plane"`  [U][S]      | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
+| `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region" Color Function"`     | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
+| `"Region: Color Function"` [S] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
@@ -578,25 +578,23 @@ may be defined over the `"All`" region (see above), or a set of materials can be
 If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain.  Each material requires (Section 2.6) a label and 
 the following set of physical properties using the supported models described below.
 
-* [U][S] "Material Properties" [list] can accept multiple lists for named material types (MATERIAL)
+* [SU] "Material Properties" [list] can accept multiple lists for named material types (MATERIAL)
 
- * [U][S] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
+ * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  * [U][S] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`", `"Porosity: Random`", `"Porosity: GSLib`", `"Porosity: File`" (see below)
+  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`", `"Porosity: Random`", `"Porosity: GSLib`", `"Porosity: File`" (see below)
 
-  * Mass Density [list] Parameterized model for mass density.  Choose exactly one of the following: `"Mass Density: Uniform`", `"Mass Density: File`" (see below)
+  * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`", `"Intrinsic Permeability: GSLib`", `"Intrinsic Permeability: File`" (see below)
 
-  * [U][S] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`", `"Intrinsic Permeability: GSLib`", `"Intrinsic Permeability: File`" (see below)
+  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" (see below)
 
-  * [U][S] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" (see below)
-
-  * [U][S] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown.
+  * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
 
-* [U][S] `"Porosity: Uniform`" [list] requires 
+* [SU] `"Porosity: Uniform`" [list] requires 
  
- * [U][S] `"Value`" [double] to specify the constant value of porosity.
+ * [SU] `"Value`" [double] to specify the constant value of porosity.
 
 * `"Porosity: Random`" [list] requires
  
@@ -617,28 +615,11 @@ The following models can be specified for porosity (only `"Porosity: Uniform`" i
  * `"Framework`" [string] (if the mesh framework with which the file was written is different from current) will indicate the format of the file; optional. (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
 
 
-The following models can be specified for mass density  (not needed at the moment):
-
-* `"Mass Density: Uniform`" [list] requires 
-
- * `"Value`" [double] to specify the constant value of mass density of the material.
-
-* `"Mass Density: File`" [list] requires 
- 
- * `"File`" [string] to specify name of a file;
- 
- * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
-
- * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
-
- * `"Format`" [string] to specify the format of the file.  (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
-
-
 The following models can be specified for the intrinsic permeability of the material (only `"Intrinsic Permeability: Uniform`" and `"Intrinsic Permeability: Anisotropic Uniform`" are supported at the moment):
 
-* [U][S] `"Intrinsic Permeability: Uniform`" [list] requires 
+* [SU] `"Intrinsic Permeability: Uniform`" [list] requires 
  
- * [U][S] `"Value`" [double] to specify the constant value of the intrinsic permeability
+ * [SU] `"Value`" [double] to specify the constant value of the intrinsic permeability
 
 * [S] `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires 
  
@@ -667,15 +648,15 @@ The following models are currently supported for capillary pressure (Section 3.3
 
 * `"Capillary Pressure: None`" [list] requires no parameters, pc = 0
 
-* [U][S] `"Capillary Pressure: van Genuchten`" [list] requires 
+* [SU] `"Capillary Pressure: van Genuchten`" [list] requires 
 
- * [U][S] `"alpha`" [double] to specify alpha in Equation 3.7.
+ * [SU] `"alpha`" [double] to specify alpha in Equation 3.7.
 
- * [U][S] `"Sr`" [double] to specify sr in Eq 3.5.
+ * [SU] `"Sr`" [double] to specify sr in Eq 3.5.
 
- * [U][S] `"m`" [double] to specify m in Equation 3.7.
+ * [SU] `"m`" [double] to specify m in Equation 3.7.
 
- * [U only Mualem][S only Mualem] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
+ * [SU only Mualem] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
 
 Example:
 
@@ -791,67 +772,67 @@ Volumetric source terms, used to model infiltration (Section 3.7) and a wide var
 
 In order to support the rather general specification requirements (involving combinations of phase pressures and component saturations), we must first define the composition of the "state" of the simulations by identifying all phases, components and solutes that will be present in the system.  We do this hierarchically, first by phase then by component:
 
-* [U][S] `"Phases`" [list] can accept lists named phases (PHASE).
+* [SU] `"Phases`" [list] can accept lists named phases (PHASE).
 
- * PHASE [list] can accept the following lists: `"Phase Properties`", `"Phase Components`"
+ * [S] PHASE [list] can accept the following lists: `"Phase Properties`", `"Phase Components`"
 
-  * [U][S] `"Phase Properties`" can accept models for viscosity and density
+  * [SU] `"Phase Properties`" can accept models for viscosity and density
 
-   * [U only uniform][S only uniform] Density [list] Parameterized model for phase mass density.  Choose exactly one of the following: `"Phase Mass Density: Uniform`", `"Phase Mass Density: File`" (see below)
+   * [SU only uniform] Density [list] Parameterized model for phase mass density.  Choose exactly one of the following: `"Phase Mass Density: Uniform`", `"Phase Mass Density: File`" (see below)
 
-   * [U only uniform][S only uniform] Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Phase Viscosity: Uniform`", `"Phase Viscosity: File`" (see below)
+   * [SU only uniform] Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Phase Viscosity: Uniform`", `"Phase Viscosity: File`" (see below)
 
-  * [U][S] `"Phase Components`" can accept COMP [list] named after a user-defined phase component.
+  * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component.
 
-   * COMP [list] can accept a list of solutes carried by the component.
+   * [S] COMP [list] can accept a list of solutes carried by the component.
 
-    * [U][S] `"Component Solutes`" [Array string] lists the solute names
+    * [SU] `"Component Solutes`" [Array string] lists the solute names
 
 Next, we specify the initial conditions.  Note that support is provided for specifying initial data on the phases and/or components simultaneously (the capillary pressure relationships are used to convert between the various options).  Thus, boundary conditions on the phases and components are specified together.  The solutes are specified afterward, organized first by phase then component.  If a solute exists in more than one phase/component, a thermodynamic relationship is required to partition the distribution - Amanzi does not currently support such a situation.
 
-* [U][S] `"Initial Conditions`" [list] accepts labels, IC, of named initial condition specifications 
+* [SU] `"Initial Conditions`" [list] accepts labels, IC, of named initial condition specifications 
 
- * [U][S] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
+ * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [U all except file][S see below] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+  * [SU all except file] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
 
-  * [U][S] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
+  * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
-  * [U][S] `"Solute IC`" can accept PHASE (labels of phases defined above)
+  * [SU] `"Solute IC`" can accept PHASE (labels of phases defined above)
 
-   * [U][S] PHASE [list] can accept COMPONENT (labels of components defined above)
+   * [SU] PHASE [list] can accept COMPONENT (labels of components defined above)
 
-    * [U][S] COMPONENT [list] can accept SOLUTE (label of solute defined above)
+    * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [U][S] Component IC [list] Parameterized model for initial component conditions.  Choose exactly one of the following: `"IC: Uniform Concentration`"
+     * [SU] Component IC [list] Parameterized model for initial component conditions.  Choose exactly one of the following: `"IC: Uniform Concentration`"
 
      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
 
 Finally, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
 
-* [U][S] `"Boundary Conditions`" [list] accepts labels, BC, of named boundary condition specifications 
+* [SU] `"Boundary Conditions`" [list] accepts labels, BC, of named boundary condition specifications 
 
- * [U][S] BC [list] label for a boundary condition, accepts boundary condition function names, and parameters to specify assigned regions and solute boundary conditions
+ * [SU] BC [list] label for a boundary condition, accepts boundary condition function names, and parameters to specify assigned regions and solute boundary conditions
 
-  * [U see below][S see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
+  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
 
-  * [U][S] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
+  * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
-  * [U][S] `"Solute BC`" can accept PHASE (labels of phases defined above)
+  * [SU] `"Solute BC`" can accept PHASE (labels of phases defined above)
 
-   * [U][S] PHASE [list] can accept COMPONENT (labels of components defined above)
+   * [SU] PHASE [list] can accept COMPONENT (labels of components defined above)
 
-    * [U][S] COMPONENT [list] can accept SOLUTE (label of solute defined above)
+    * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [U, only Uniform Concentration] BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
+     * [SU, only Uniform Concentration] BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
 
 The following initial condition parameterizations are supported:
 
-* [U][S] `"IC: Uniform Saturation`" requires `"Value`" [double]
+* [SU] `"IC: Uniform Saturation`" requires `"Value`" [double]
 
 * [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
@@ -859,34 +840,34 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
-* [U][S] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
+* [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
 * `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
 
 
 The following boundary condition parameterizations are supported:
 
-* [U][S] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Inward Volumetric Flux`" [double], `"Inward Mass Flux`" [double], `"Outward Volumetric Flux`" [double] or `"Outward Mass Flux`" [double]. Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward or outward refers to the flux being in the direction of the inward or outward normal to each face of the boundary region, respectively.
+* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Inward Volumetric Flux`" [double], `"Inward Mass Flux`" [double], `"Outward Volumetric Flux`" [double] or `"Outward Mass Flux`" [double]. Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward or outward refers to the flux being in the direction of the inward or outward normal to each face of the boundary region, respectively.
 
-* [U][S] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [U][S] `"BC: Linear Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
+* [SU] `"BC: Linear Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
-* `"BC: Uniform Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [S] `"BC: Uniform Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"BC: Uniform Concentration`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [S] `"BC: Uniform Concentration`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * `"BC: Linear Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
 * `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
 
-* [U] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
+* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
 
 * `"BC: Impermeable`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [U][S] `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"BC: Zero Gradient`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [S] `"BC: Zero Gradient`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 
 Time Functions
@@ -949,24 +930,24 @@ Note that MaterialID will be treated as a double that is unique to each defined 
 
 Time macros specify a rule to generate a list of time values.  They are defined in the parameter list `"Time Macros`":
 
-* [U][S] `"Time Macros`" [list] can accept multiple lists for user-named macros TMACRO
+* [SU] `"Time Macros`" [list] can accept multiple lists for user-named macros TMACRO
 
- * TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
+ * [S] TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
 
-  * [U][S] `"Values`" [Array double] values of time, or 
+  * [SU] `"Values`" [Array double] values of time, or 
 
-  * [U][S] `"Start_Period_Stop`" [Array double] values of start time (ts), period (dt) and (optionally) end time (te) to generate times, t=ts + dt*i, for any integer i. If stop time is less than start time, the time intervals have no ending.
+  * [SU] `"Start_Period_Stop`" [Array double] values of start time (ts), period (dt) and (optionally) end time (te) to generate times, t=ts + dt*i, for any integer i. If stop time is less than start time, the time intervals have no ending.
 
 
 Cycle macros specify a rule to generate or list cycle values.  They are defined in the parameter list `"Cycle Macros`":
 
-* [U][S] `"Cycle Macros`" [list] can accept multiple lists for user-named macros CMACRO
+* [SU] `"Cycle Macros`" [list] can accept multiple lists for user-named macros CMACRO
 
- * [U][S] CMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
+ * [SU] CMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
 
-  * [U][S] `"Values`" [Array int] values of cycle number, or 
+  * [SU] `"Values`" [Array int] values of cycle number, or 
 
-  * [U][S] `"Start_Period_Stop`" [Array int] values of start cycle (cs), period (dc) and (optionally) end cycle (ce) to generate cycle numbers, c=cs + dc*i, for any integer i. If stop cycle < 0, the cycle intervals will not end.
+  * [SU] `"Start_Period_Stop`" [Array int] values of start cycle (cs), period (dc) and (optionally) end cycle (ce) to generate cycle numbers, c=cs + dc*i, for any integer i. If stop cycle < 0, the cycle intervals will not end.
 
 
 
@@ -976,30 +957,30 @@ Observation Data
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-* [U][S] `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+* [SU] `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
-  * [U][S] `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+  * [SU] `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
 
-  * [U][S] OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
 
-    * [U][S] `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
+    * [SU] `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
 
-    * [U][S] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
+    * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
-    * [U][S] `"Region`" [string] the label of a user-defined region
+    * [SU] `"Region`" [string] the label of a user-defined region
 
-    * [U][S] `"Time Macro`" [string] one of the labeled time macros (see below)
+    * [SU] `"Time Macro`" [string] one of the labeled time macros (see below)
 
-    * [U]    `"Cycle Macro`" [string] one of the labeled time macros (see below)
+    * [SU] `"Cycle Macro`" [string] one of the labeled time macros (see below)
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
-* [U][S] `"Observation Data: Point`" returns the value of the field quantity at a point
+* [SU] `"Observation Data: Point`" returns the value of the field quantity at a point
 
 * `"Observation Data: Mean`" returns the mean value of the field quantities over the region specified
 
-* [U][S] `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
+* [SU] `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
 
 * `"Observation Data: Cummulative Integral`" returns the integral of the field quantity, accumulated over the intervals defined by the time macro
 
@@ -1097,11 +1078,11 @@ Checkpoint Data
 A user may request periodic dumps of Amanzi Checkpoint Data.  The user has no explicit control over the content of these files, but has the guarantee that the Amanzi run will be reproducible (with accuracies determined
 by machine round errors and randomness due to execution in a parallel computing environment).  Therefore, output controls for Checkpoint Data are limited to file name generation and writing frequency, by numerical cycle number.
 
-* [U][S] `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
+* [SU] `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
 
-  * [U][S] `"File Name Base`" [string]
+  * [SU] `"File Name Base`" [string]
 
-  * [U][S] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+  * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
 
 
 Example:
@@ -1129,13 +1110,13 @@ Visualization Data
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
 at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
 
-* [U][S] `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
+* [SU] `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
 
-  * [U][S] `"File Name Base`" [string]
+  * [SU] `"File Name Base`" [string]
   
-  * [U][S] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+  * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
 
-  * [U][S] `"Variables`" [string] can accept a list of field quantities to include in the file
+  * [SU] `"Variables`" [string] can accept a list of field quantities to include in the file
 
 
 Example:
