@@ -159,6 +159,9 @@ int Transient_Richards_PK::advance_transient(double h)
   time_stepper->commit_solution(h,*solution);  
 
   time_stepper->write_bdf2_stepping_statistics();
+
+  double l1_error;
+  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
 }
 
 
@@ -172,6 +175,9 @@ int Transient_Richards_PK::advance_steady(double h)
   steady_time_stepper->commit_solution(h,*solution);  
 
   steady_time_stepper->write_bdf1_stepping_statistics();
+
+  double l1_error;
+  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
 }
 
 

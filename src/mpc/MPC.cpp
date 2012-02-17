@@ -374,6 +374,10 @@ void MPC::cycle_driver () {
 	  } while (redo);
 	} else {
 	  FPK->advance_transient(mpc_dT);
+          S->update_darcy_flux(FPK->Flux());
+          S->update_pressure(FPK->Pressure());
+          FPK->commit_state(FS);
+          FPK->GetVelocity(*S->get_darcy_velocity());
 	}
       }
 
@@ -389,13 +393,11 @@ void MPC::cycle_driver () {
             Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
             Exceptions::amanzi_throw(message);
           }
+        } else { // if we're not advancing transport we still need to prepare for chemistry
+          *total_component_concentration_star = *S->get_total_component_concentration();
         }
-      } else { // if we're not advancing transport we still need to prepare for chemistry
-        *total_component_concentration_star = *S->get_total_component_concentration();
-      }
       
       // then advance chemistry
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (chemistry_enabled) {
           try {
             // now advance chemistry
@@ -408,10 +410,10 @@ void MPC::cycle_driver () {
             Errors::Message message(error_message.str());
             Exceptions::amanzi_throw(message);
           }
+        } else {
+          // commit total_component_concentration_star to the state and move on
+          S->update_total_component_concentration(*total_component_concentration_star);
         }
-      } else {
-        // commit total_component_concentration_star to the state and move on
-        S->update_total_component_concentration(*total_component_concentration_star);
       }
       
       // update the time in the state object
@@ -427,10 +429,6 @@ void MPC::cycle_driver () {
         if (transport_enabled) TPK->commit_state(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       }
-      if (flow_enabled) {
-        FPK->commit_state(FS);
-      }
-
 
       // advance the iteration count
       iter++;
