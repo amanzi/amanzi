@@ -159,8 +159,6 @@ Array<Real> PorousMedia::inflow_vel_lo;
 Array<Real> PorousMedia::inflow_vel_hi;
 Array<int>  PorousMedia::rinflow_bc_lo;
 Array<int>  PorousMedia::rinflow_bc_hi;
-Array<Real> PorousMedia::rinflow_vel_lo;
-Array<Real> PorousMedia::rinflow_vel_hi;
 //
 // Temperature.
 //
@@ -377,7 +375,6 @@ PorousMedia::setup_list()
   bc_list["hydrostatic"] = 2;
   bc_list["rockhold"] = 3;
   bc_list["zero_total_velocity"] = 4;
-  bc_list["richard"] = 5;
 #endif
 }
 
@@ -1446,18 +1443,10 @@ void  PorousMedia::read_comp()
           }
           else if (ic_type == "zero_total_velocity")
           {
-              BoxLib::Abort("comp ic zero_total_velocity not implemented yet");
+	      Array<Real> vals(1);
+	      ppr.get("inflow",vals[0]);
+	      ic_array.set(i,new RegionData(icname,ic_regions,ic_type,vals));
           }
-          else if (ic_type == "richard")
-          {
-              BoxLib::Abort("comp ic richard not implemented yet");
-#if 0
-              ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
-              ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
-              ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
-              ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
-#endif
-          }          
           else {
               BoxLib::Abort("Unsupported comp ic");
           }
@@ -1469,8 +1458,6 @@ void  PorousMedia::read_comp()
   {
       rinflow_bc_lo.resize(BL_SPACEDIM,0); 
       rinflow_bc_hi.resize(BL_SPACEDIM,0); 
-      rinflow_vel_lo.resize(BL_SPACEDIM,0); 
-      rinflow_vel_hi.resize(BL_SPACEDIM,0); 
       inflow_bc_lo.resize(BL_SPACEDIM,0); 
       inflow_bc_hi.resize(BL_SPACEDIM,0); 
       inflow_vel_lo.resize(BL_SPACEDIM,0); 
@@ -1528,8 +1515,8 @@ void  PorousMedia::read_comp()
           }
           else if (bc_type == "zero_total_velocity")
           {
-              std::string rocklabel=""; ppr.get("rock",rocklabel);
-              const Rock& rock = find_rock(rocklabel);
+	      //std::string rocklabel=""; ppr.get("rock",rocklabel);
+	      //const Rock& rock = find_rock(rocklabel);
 
               Array<Real> vals, times;
               Array<std::string> forms;
@@ -1579,10 +1566,10 @@ void  PorousMedia::read_comp()
               component_bc = 1;
               pressure_bc = 1;
 
-              FluxToRhoSat flux_to_sat(rock);
-              bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
-                                                        bc_type,ncomps,flux_to_sat));
-
+              //FluxToRhoSat flux_to_sat(rock);
+              //bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
+              //                                          bc_type,ncomps));
+	      bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
           else if (bc_type == "noflow")
           {
@@ -1802,8 +1789,6 @@ void  PorousMedia::read_pressure()
     {
       rinflow_bc_lo = inflow_bc_lo;
       rinflow_bc_hi = inflow_bc_hi;
-      rinflow_vel_lo = inflow_vel_lo;
-      rinflow_vel_hi = inflow_vel_hi;
     }
 #endif
 

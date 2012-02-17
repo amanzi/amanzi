@@ -18,11 +18,14 @@ TabularFunction::TabularFunction(const Array<double>&      x,
   if (form.size() != x.size()-1) {
     std::cerr << "incorrect number of form values specified" << std::endl;
     BoxLib::Abort();
+  }
+  else {
+    form_.resize(form.size());
     for (int j = 0; j < form.size(); ++j) {
-        if (form[j]=="LINEAR") {
+        if (form[j]=="Linear") {
             form_[j] = LINEAR;
         }
-        else if (form[j]=="CONSTANT") {
+        else if (form[j]=="Constant") {
             form_[j] = CONSTANT;
         }
         else {

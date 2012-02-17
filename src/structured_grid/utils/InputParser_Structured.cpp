@@ -734,7 +734,7 @@ namespace Amanzi {
             clear();
 
             Array<std::string> reqL, nullList;
-            reqL.push_back("Phases");
+            reqL.push_back("Phase Definitions");
             PLoptions opt(parameter_list,reqL,nullList,false,false);
             const ParameterList& plist = parameter_list.sublist(reqL[0]);
 
@@ -766,15 +766,15 @@ namespace Amanzi {
 
                     const ParameterList& ppolist = ppsublist.sublist(propLabel);
 
-                    if (propLabel == "Phase Mass Density: Uniform") {
+                    if (propLabel == "Density: Uniform") {
                         Array<std::string> reqP;
-                        reqP.push_back("Value");
+                        reqP.push_back("Density");
                         PLoptions optPD(ppolist,nullList,reqP,true,true); 
                         density = ppolist.get<double>(reqP[0]);
                     }
-                    else if (propLabel == "Phase Viscosity: Uniform") {
+                    else if (propLabel == "Viscosity: Uniform") {
                         Array<std::string> reqP;
-                        reqP.push_back("Value");
+                        reqP.push_back("Viscosity");
                         PLoptions optPD(ppolist,nullList,reqP,true,true); 
                         viscosity= ppolist.get<double>(reqP[0]);
                     }
@@ -897,20 +897,18 @@ namespace Amanzi {
 
                             // Get function name/list
                             const Array<std::string>& funcNames = soluteOPTf.OptLists();
-                            if (funcNames.size()!=1) {
+			    if (funcNames.size()!=1) {
                                 std::cout << "Each solute BC expects a single function" << std::endl;
                                 throw std::exception();
                             }
                             const std::string& Amanzi_solute_type = funcNames[0];
                             ParameterList solute_func_plist = solutePL.sublist(Amanzi_solute_type);
-
                             s[BClabel][phaseNames[icp]][compNames[icc]][soluteNames[ics]]
                                 = ICBCFunc(solute_func_plist,Amanzi_solute_type,units,BClabel);
                         }
                     }
                 }
               
-
                 // Confirm that embedded phase/comp and solute names are compatible with state
                 StateFunc::PhaseFuncMap& pfm = s[BClabel].getPhaseFuncMap();
                 for (StateFunc::PhaseFuncMap::iterator pit=pfm.begin(); pit!=pfm.end(); ++pit) {
@@ -956,6 +954,7 @@ namespace Amanzi {
                                 const std::string&   Amanzi_type,
                                 ParameterList&       fPLout)
         {
+	    const std::string phase_name="Phase";
             const std::string val_name="Reference Value";
             const std::string grad_name="Gradient Value";
             const std::string ref_name="Reference Coordinate";
@@ -963,6 +962,7 @@ namespace Amanzi {
             Array<std::string> reqP, nullList;
             reqP.push_back(val_name);
             if (Amanzi_type == "IC: Linear Pressure") {
+	        reqP.push_back(phase_name);
                 reqP.push_back(grad_name);
                 reqP.push_back(ref_name);
             }
@@ -970,7 +970,6 @@ namespace Amanzi {
     
             fPLout.set<std::string>("type","hydrostatic");
             fPLout.set<double>("val",fPLin.get<double>(val_name));
-    
             if (Amanzi_type == "IC: Linear Pressure") {
                 fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
                 const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
@@ -1008,18 +1007,18 @@ namespace Amanzi {
             if (solute_ic_units=="Molar Concentration" 
                 || solute_ic_units=="Molal Concentration")
             {
-                std::cerr << "IC label \"" << solute_ic_label
-                          << "\" function: \"" << solute_ic_Amanzi_type
-                          << "\" requests unsupported units: \"" << solute_ic_units
-                          << "\"" << std::endl;
-                throw std::exception();
+	      //std::cerr << "IC label \"" << solute_ic_label
+              //            << "\" function: \"" << solute_ic_Amanzi_type
+              //            << "\" requests unsupported units: \"" << solute_ic_units
+              //            << "\"" << std::endl;
+              //  throw std::exception();
             }
             else if (solute_ic_units=="Specific Concentration") {
                 // This is the units expected by the structured code
             }
             else {
-                std::cerr << "Unsupported Solute IC function: \"" << solute_ic_units << "\"" << std::endl;
-                throw std::exception();
+	        //std::cerr << "Unsupported Solute IC function: \"" << solute_ic_units << "\"" << std::endl;
+	        //throw std::exception();
             }
     
             fPLout.set<std::string>("type","concentration");
@@ -1109,7 +1108,7 @@ namespace Amanzi {
             fPLout.set<Array<double> >("vals",vals);
             if (vals.size()>1) {
                 fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
-                fPLout.set<Array<double> >("forms",fPLin.get<Array<double> >(form_name));
+                fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
             }
         }
 
@@ -1145,7 +1144,7 @@ namespace Amanzi {
                 fPLout.set<Array<double> >("vals",vals);
                 if (vals.size()>1) {
                     fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
-                    fPLout.set<Array<double> >("forms",fPLin.get<Array<double> >(form_name));
+                    fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
                 }
             }
         }
@@ -1186,7 +1185,7 @@ namespace Amanzi {
             const std::string time_name="Times"; reqP.push_back(time_name);
             const std::string form_name="Time Functions"; reqP.push_back(form_name);
             const std::string rock_name = "Material Type at Boundary";
-            bool require_rock = true;
+            bool require_rock = false;
             if (require_rock) {                
                 reqP.push_back(rock_name);
             }
@@ -1203,7 +1202,7 @@ namespace Amanzi {
     
             // Convert mass flux to volumetric flux
             if (is_mass) {
-                std::cerr << "Mass fluxes not yet supported" << std::endl;
+	        std::cerr << "Mass fluxes not yet supported" << std::endl;
                 throw std::exception();
             }
     
@@ -1271,18 +1270,18 @@ namespace Amanzi {
             if (solute_bc_units=="Molar Concentration" 
                 || solute_bc_units=="Molal Concentration")
             {
-                std::cerr << "BC label \"" << solute_bc_label
-                          << "\" function: \"" << solute_bc_Amanzi_type
-                          << "\" requests unsupported units: \"" << solute_bc_units
-                          << "\"" << std::endl;
-                throw std::exception();
+	      //std::cerr << "BC label \"" << solute_bc_label
+	      //           << "\" function: \"" << solute_bc_Amanzi_type
+	      //          << "\" requests unsupported units: \"" << solute_bc_units
+	      //          << "\"" << std::endl;
+	      //throw std::exception();
             }
             else if (solute_bc_units=="Specific Concentration") {
                 // This is the units expected by the structured code
             } 
             else {
-                std::cerr << "Solute BC - invalid units: \"" << solute_bc_units << "\"" << std::endl;
-                throw std::exception();
+	      //std::cerr << "Solute BC - invalid units: \"" << solute_bc_units << "\"" << std::endl;
+	      //throw std::exception();
             }
     
             fPLout.set<std::string>("type","concentration");
@@ -1385,7 +1384,7 @@ namespace Amanzi {
                 for (int j=0; j<bc_regions.size(); ++j) {
                     const std::string& regionName = bc_regions[j];
                     if (geom_list.isSublist(regionName)) {
-                        const std::string& purpose = geom_list.sublist(regionName).get<std::string>("purpose");
+		        const std::string& purpose = geom_list.sublist(regionName).get<std::string>("purpose");
                         orient_RT_map[purpose].push_back(Spair(regionName,bc_type));
                     }
                     else {
@@ -1409,55 +1408,59 @@ namespace Amanzi {
                 if (k < ndim) {
                     const std::string& Amanzi_purpose = AMR_to_Amanzi_label_map[PMAMR::RpurposeDEF[i]];
                     const Array<Spair>& orient_RTs = orient_RT_map[Amanzi_purpose];
-                    if (orient_RTs.size()==0) {
-                        std::cerr << "No boundary conditions found for " << Amanzi_purpose << std::endl;
-                        throw std::exception();
-                    }
 
-                    const std::string& orient_type = orient_RTs[0].second;
-                    for (int j=1; j<orient_RTs.size(); ++j) {
-                        if (orient_type != orient_RTs[j].second) {
-                            std::cerr << "Structured grid requires that all BCs on "
-                                      << Amanzi_purpose << " be of the same type" << std::endl;
-                            throw std::exception();
-                        }
-                    }
+		    int& sat_bc      = (i<3  ?        lo_bc[k] :  hi_bc[k]);
+		    int& pressure_bc = (i<3  ?       plo_bc[k] : phi_bc[k]);
+		    int& inflow_bc   = (i<3  ? inflow_lo_bc[k] : inflow_hi_bc[k]);
 
-                    int& sat_bc      = (i<3  ?        lo_bc[k] :  hi_bc[k]);
-                    int& pressure_bc = (i<3  ?       plo_bc[k] : phi_bc[k]);
-                    int& inflow_bc   = (i<3  ? inflow_lo_bc[k] : inflow_hi_bc[k]);
+                    if (orient_RTs.size()!=0) {
+  		        const std::string& orient_type = orient_RTs[0].second;
+			for (int j=1; j<orient_RTs.size(); ++j) {
+			    if (orient_type != orient_RTs[j].second) {
+			      std::cerr << "Structured grid requires that all BCs on "
+					<< Amanzi_purpose << " be of the same type" << std::endl;
+			      throw std::exception();
+			    }
+			}
 
-                    if (orient_type == "noflow") {
-                        sat_bc      = 4; // No flow for saturation
-                        pressure_bc = 4; // No flow for p
-                        inflow_bc   = 0; // Automatically set to zero
-                    }
-                    else if (orient_type == "pressure" || orient_type == "hydrostatic") {
-                        // Must set components by name, and phase press set by press_XX(scalar) or hydro 
-                        sat_bc      = 1; // Dirichlet for saturation,
-                        pressure_bc = 2; // Dirichlet for p
-                        inflow_bc   = 0; // Unused
-                    }
-                    else if (orient_type == "saturation") {
-                        // Must set components by name, and phase press set by press_XX(scalar) or hydro 
-                        sat_bc      = 1; // Dirichlet for saturation,
-                        pressure_bc = 2; // Dirichlet for p
-                        inflow_bc   = 0; // Unused
-                    }
-                    else if (orient_type == "zero_total_velocity") {
-                        sat_bc      = 1; // Dirichlet for saturation (but will compute values based on p)
-                        pressure_bc = 1; // Dirichlet for p
-                        inflow_bc   = 1; // Requires inflow_XX_vel velocity values for nphase-1 phases
-                    }
-                    else {
-                        std::cerr << "Structured grid inputs translator generated unrecognized BCs "
-                                  << orient_type << std::endl;
-                        throw std::exception();
-                    }
-                }
-            }
 
-            comp_list.set("lo_bc",lo_bc);
+			if (orient_type == "noflow") {
+			    sat_bc      = 4; // No flow for saturation
+			    pressure_bc = 4; // No flow for p
+			    inflow_bc   = 0; // Automatically set to zero
+			}
+			else if (orient_type == "pressure" || orient_type == "hydrostatic") {
+			    // Must set components by name, and phase press set by press_XX(scalar) or hydro 
+			    sat_bc      = 1; // Dirichlet for saturation,
+			    pressure_bc = 2; // Dirichlet for p
+			    inflow_bc   = 0; // Unused
+			}
+			else if (orient_type == "saturation") {
+                            // Must set components by name, and phase press set by press_XX(scalar) or hydro 
+			    sat_bc      = 1; // Dirichlet for saturation,
+			    pressure_bc = 2; // Dirichlet for p
+			    inflow_bc   = 0; // Unused
+			}
+			else if (orient_type == "zero_total_velocity") {
+                            sat_bc      = 1; // Dirichlet for saturation (but will compute values based on p)
+			    pressure_bc = 1; // Neumann for p
+			    inflow_bc   = 1; // Requires inflow_XX_vel velocity values for nphase-1 phases
+			}
+			else {
+			  std::cerr << "Structured grid inputs translator generated unrecognized BCs "
+				    << orient_type << std::endl;
+			  throw std::exception();
+			}
+		    }
+		    else {
+  		        sat_bc = 4;
+			pressure_bc = 4;
+			inflow_bc = 4;
+		    }
+		}
+	    }
+		
+	    comp_list.set("lo_bc",lo_bc);
             comp_list.set("hi_bc",hi_bc);
             press_list.set("lo_bc",plo_bc);
             press_list.set("hi_bc",phi_bc);
@@ -1878,63 +1881,52 @@ namespace Amanzi {
                 }
             }
             else {
-                std::cerr << "Must select variables to put into visualization files from the list: (\"";
-                for (int j=0; j<user_derive_list.size(); ++j) {
-                    std::cout << "\""<< AMR_to_Amanzi_label_map[user_derive_list[j]] << "\" ";
+	        visNames.resize(user_derive_list.size());
+		for (int j=0; j<user_derive_list.size(); ++j) {
+		  visNames.push_back(AMR_to_Amanzi_label_map[user_derive_list[j]]); 
                 }
-                std::cout << std::endl;
-                throw std::exception();
             }
             amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
 
             Array<std::string> vis_cMacroNames, vis_tMacroNames;
-            if (vlist.isParameter("Cycle Macros")) {
-                const Array<std::string>& vcMacros = vlist.get<Array<std::string> >("Cycle Macros");
-                vis_cMacroNames.resize(vcMacros.size());
-                for (int j=0; j<vcMacros.size(); ++j) {
-                    std::string label = underscore(vcMacros[j]);
-                    if (cycle_macros.find(label) != cycle_macros.end()) {
-                        vis_cMacroNames[j] = label;
-                    }
-                    else {
-                        std::cerr << "Unrecognized cycle macro in Visualization Data: \""
-                                  << vcMacros[j] << "\"" << std::endl;
-
-                        for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
-                            std::cout << *it << " " << std::endl;
-                        }
-
-                        throw std::exception();
-                    }
-                }
+            if (vlist.isParameter("Cycle Macro")) {
+                const std::string& vcMacros = vlist.get<std::string>("Cycle Macro");
+		std::string label = underscore(vcMacros);
+		if (cycle_macros.find(label) != cycle_macros.end()) {
+		  vis_cMacroNames.push_back(label);
+		}
+		else {
+		  std::cerr << "Unrecognized cycle macro in Visualization Data: \""
+			    << vcMacros << "\"" << std::endl;
+		  
+		  for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
+		    std::cout << *it << " " << std::endl;
+		  }
+		  throw std::exception();
+		}
+                
             }
             if (vlist.isParameter("Time Macros")) {
-                const Array<std::string>& vtMacros = vlist.get<Array<std::string> >("Time Macros");
-                vis_tMacroNames.resize(vtMacros.size());
-                for (int j=0; j<vtMacros.size(); ++j) {
-                    std::string label = underscore(vtMacros[j]);
-                    if (time_macros.find(label) != time_macros.end()) {
-                        vis_tMacroNames[j] = label;
-                    }
-                    else {
-                        std::cerr << "Unrecognized time macro in Visualization Data: \""
-                                  << vtMacros[j] << "\"" << std::endl;
-
-                        for (std::set<std::string>::const_iterator it=time_macros.begin(); it!=time_macros.end(); ++it) {
-                            std::cout << *it << " " << std::endl;
-                        }
-
-                        throw std::exception();
-                    }
-                }
-            }
+	      const std::string& vtMacros = vlist.get<std::string>("Time Macros");
+	      std::string label = underscore(vtMacros);
+	      if (time_macros.find(label) != time_macros.end()) {
+		vis_tMacroNames.push_back(label);
+	      }
+	      else {
+		std::cerr << "Unrecognized time macro in Visualization Data: \""
+			  << vtMacros << "\"" << std::endl;
+		
+		for (std::set<std::string>::const_iterator it=time_macros.begin(); it!=time_macros.end(); ++it) {
+		  std::cout << *it << " " << std::endl;
+		}
+		throw std::exception();
+	      }
+	    }
 
             amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
             amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
 
             //amr_list.set<std::string>("plot_vars",""); // Shut off, per spec
-
-
 
             // check point data
             const ParameterList& chlist = rlist.sublist("Checkpoint Data");
@@ -1942,23 +1934,21 @@ namespace Amanzi {
             Array<std::string> chkNames;
 
             Array<std::string> chk_cMacroNames;
-            if (chlist.isParameter("Cycle Macros")) {
-                const Array<std::string>& ccMacros = chlist.get<Array<std::string> >("Cycle Macros");
-                chk_cMacroNames.resize(ccMacros.size());
-                for (int j=0; j<ccMacros.size(); ++j) {
-                    std::string label = underscore(ccMacros[j]);
-                    if (cycle_macros.find(label) != cycle_macros.end()) {
-                        chk_cMacroNames[j] = label;
-                    }
-                    else {
-                        std::cerr << "Unrecognized cycle macro in Checkpoint Data: \""
-                                  << ccMacros[j] << "\"" << std::endl;
-                        throw std::exception();
-                    }
-                }
+            if (chlist.isParameter("Cycle Macro")) {
+                const std::string& ccMacros = chlist.get<std::string>("Cycle Macro");
+		std::string label = underscore(ccMacros);
+		if (cycle_macros.find(label) != cycle_macros.end()) {
+		  chk_cMacroNames.push_back(label);
+		}
+		else {
+		  std::cerr << "Unrecognized cycle macro in Checkpoint Data: \""
+			    << ccMacros << "\"" << std::endl;
+		  throw std::exception();
+		}
+                
             }
             else {
-                std::cerr << "Must provide \"Cycle Macros\" in Checkpoint Data" << std::endl;
+                std::cerr << "Must provide \"Cycle Macro\" in Checkpoint Data" << std::endl;
                 throw std::exception();
             }
             amr_list.set<Array<std::string> >("chk_cycle_macros",chk_cMacroNames);
