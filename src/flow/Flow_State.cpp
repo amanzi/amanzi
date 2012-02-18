@@ -31,7 +31,7 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   water_saturation_ = Teuchos::rcp(new Epetra_Vector(cmap));
   vertical_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
   horizontal_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  darcy_mass_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  darcy_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
 
   fluid_density_ = Teuchos::rcp(new double);
   fluid_viscosity_ = Teuchos::rcp(new double);
@@ -55,7 +55,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   water_saturation_ = S->get_water_saturation();
   vertical_permeability_ = S->get_vertical_permeability();
   horizontal_permeability_ = S->get_horizontal_permeability();
-  darcy_mass_flux_ = S->get_darcy_flux();
+  darcy_flux_ = S->get_darcy_flux();
 
   fluid_density_ = S->get_density();
   fluid_viscosity_ = S->get_viscosity();
@@ -76,7 +76,7 @@ Flow_State::Flow_State(State& S)
   water_saturation_ = S.get_water_saturation();
   vertical_permeability_ = S.get_vertical_permeability();
   horizontal_permeability_ = S.get_horizontal_permeability();
-  darcy_mass_flux_ = S.get_darcy_flux();
+  darcy_flux_ = S.get_darcy_flux();
 
   fluid_density_ = S.get_density();
   fluid_viscosity_ = S.get_viscosity();
@@ -103,7 +103,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     water_saturation_ = FS.water_saturation();
     vertical_permeability_ = FS.vertical_permeability();
     horizontal_permeability_ = FS.horizontal_permeability();
-    darcy_mass_flux_ = FS.darcy_mass_flux();
+    darcy_flux_ = FS.darcy_flux();
 
     fluid_density_ = FS.fluid_density();
     fluid_viscosity_ = FS.fluid_viscosity();
@@ -125,7 +125,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     // allocate memory for the next state
     pressure_ = Teuchos::rcp(new Epetra_Vector(FS.ref_pressure()));
     water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_water_saturation()));
-    darcy_mass_flux_ = Teuchos::rcp(new Epetra_Vector(FS.ref_darcy_mass_flux()));
+    darcy_flux_ = Teuchos::rcp(new Epetra_Vector(FS.ref_darcy_flux()));
   }
 
   S_ = FS.S_;

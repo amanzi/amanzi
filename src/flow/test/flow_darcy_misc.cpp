@@ -114,23 +114,22 @@ class DarcyProblem {
     return sqrt(error_L2);
   }
 
-  double calculateDarcyMassFluxError(AmanziGeometry::Point& velocity_exact)
+  double calculateDarcyFluxError(AmanziGeometry::Point& velocity_exact)
   {
-    Epetra_Vector& darcy_mass_flux = DPK->flow_state_next()->ref_darcy_mass_flux();
+    Epetra_Vector& darcy_flux = DPK->flow_state_next()->ref_darcy_flux();
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f=0; f<nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_mass_flux[f] << " exact=" << velocity_exact * normal << endl;
-      error_L2 += std::pow(darcy_mass_flux[f] - velocity_exact * normal, 2.0);
+//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
+      error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
   }
 
   double calculateDarcyVelocityError(AmanziGeometry::Point& velocity_exact)
   {
-    Epetra_Vector& darcy_mass_flux = DPK->flow_state_next()->ref_darcy_mass_flux();
     int dim = mesh->space_dimension();
 
     Epetra_MultiVector velocity(mesh->cell_map(false), dim);
@@ -158,7 +157,7 @@ SUITE(Darcy_PK) {
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
+    velocity = -(pressure_gradient - rho * DPK->gravity()) / mu;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -175,7 +174,7 @@ SUITE(Darcy_PK) {
     CHECK(error < 1.0e-8);
     error = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-    error = calculateDarcyMassFluxError(velocity);
+    error = calculateDarcyFluxError(velocity);
     CHECK(error < 1.0e-8);
   }
 
@@ -190,8 +189,8 @@ SUITE(Darcy_PK) {
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
-    double u0 = velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
+    velocity = -(pressure_gradient - rho * DPK->gravity()) / mu;
+    double u0 = rho * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -208,7 +207,7 @@ SUITE(Darcy_PK) {
     CHECK(error < 1.0e-8);
     error = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-    error = calculateDarcyMassFluxError(velocity);
+    error = calculateDarcyFluxError(velocity);
     CHECK(error < 1.0e-8);
   }
 
@@ -221,7 +220,7 @@ SUITE(Darcy_PK) {
     double p0 = 2.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
+    velocity = -(pressure_gradient - rho * DPK->gravity()) / mu;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -238,7 +237,7 @@ SUITE(Darcy_PK) {
     CHECK(error < 1.0e-8);
     error = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-    error = calculateDarcyMassFluxError(velocity);
+    error = calculateDarcyFluxError(velocity);
     CHECK(error < 1.0e-8);
   }
 }
@@ -254,7 +253,7 @@ SUITE(Darcy_Velocity) {
     double p0 = 2.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
+    velocity = -(pressure_gradient - rho * DPK->gravity()) / mu;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");

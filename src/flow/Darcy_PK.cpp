@@ -194,10 +194,11 @@ int Darcy_PK::advance_to_steady_state()
   FS_next->ref_pressure() = *solution_cells;
 
   // calculate darcy mass flux
-  Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
+  Epetra_Vector& darcy_flux = FS_next->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
+  matrix->deriveDarcyMassFlux(*solution, *face_importer_, darcy_flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
+  for (int c=0; c<nfaces_owned; c++) darcy_flux[c] /= rho_;
 
   return 0;
 }
@@ -229,7 +230,7 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 ****************************************************************** */
 void Darcy_PK::deriveDarcyVelocity(Epetra_MultiVector& velocity) 
 {
-  Epetra_Vector& flux = flow_state_next()->ref_darcy_mass_flux();
+  Epetra_Vector& flux = flow_state_next()->ref_darcy_flux();
   matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 

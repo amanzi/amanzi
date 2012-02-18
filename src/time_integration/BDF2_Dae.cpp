@@ -30,7 +30,6 @@ namespace BDF2 {
     
     // make sure that the line prefix is printed
     this->getOStream()->setShowLinePrefix(true);
-
   }
 
   Dae::~Dae() {
@@ -77,7 +76,6 @@ namespace BDF2 {
 
     // Read the sublist for verbosity settings.
     Teuchos::readVerboseObjectSublist(&*paramList_,this);
-
   }
 
 

@@ -495,9 +495,9 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 * once (using flag) and in exactly the same manner as in routine
 * Flow_PK::addGravityFluxes_DarcyFlux.
 ****************************************************************** */
-void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution, 
-                                 const Epetra_Import& face_importer, 
-                                 Epetra_Vector& darcy_mass_flux)
+void Matrix_MFD::deriveDarcyMassFlux(const Epetra_Vector& solution, 
+                                     const Epetra_Import& face_importer, 
+                                     Epetra_Vector& darcy_mass_flux)
 {
   Epetra_Vector* solution_faces = FS->createFaceView(solution);
 #ifdef HAVE_MPI
@@ -544,15 +544,15 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
 * Derive Darcy velocity in cells. 
 * WARNING: It cannot be consistent with the Darcy flux.                                                 
 ****************************************************************** */
-void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_mass_flux, 
+void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_flux, 
                                      const Epetra_Import& face_importer, 
                                      Epetra_MultiVector& darcy_velocity) const
 {
 #ifdef HAVE_MPI
-  Epetra_Vector darcy_mass_flux_wghost(mesh_->face_map(true));
-  darcy_mass_flux_wghost.Import(darcy_mass_flux, face_importer, Insert);
+  Epetra_Vector darcy_flux_wghost(mesh_->face_map(true));
+  darcy_flux_wghost.Import(darcy_flux, face_importer, Insert);
 #else
-  Epetra_Vector& darcy_mass_flux_wghost = darcy_mass_faces;
+  Epetra_Vector& darcy_flux_wghost = darcy_flux;
 #endif
 
   Teuchos::LAPACK<int, double> lapack;
@@ -577,7 +577,7 @@ void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_mass_flux,
       double area = mesh_->face_area(f);
 
       for (int i=0; i<dim; i++) {
-        rhs_cell[i] += normal[i] * darcy_mass_flux_wghost[f];
+        rhs_cell[i] += normal[i] * darcy_flux_wghost[f];
         matrix(i,i) += normal[i] * normal[i]; 
         for (int j=i+1; j<dim; j++) {
           matrix(j,i) = matrix(i,j) += normal[i] * normal[j];

@@ -134,7 +134,7 @@ void MPC::mpc_init() {
       throw std::exception();
     }
     FPK->InitPK();
-    FPK->InitSteadyState(0.0, 1e-8);
+    FPK->InitSteadyState(0.0, 1e-5);
   }
   // done creating auxilary state objects and  process models
 
@@ -398,7 +398,7 @@ void MPC::cycle_driver () {
 	    try {
 	      FPK->advance_to_steady_state();
               if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
-                FPK->InitTransient(Tswitch, 1e-8);
+                FPK->InitTransient(Tswitch, 1e-5);
                 break;
               }
 	    }
@@ -413,7 +413,7 @@ void MPC::cycle_driver () {
           Teuchos::RCP<AmanziFlow::Flow_State> FS_next = FPK->flow_state_next();
           FPK->commit_state(FS_next);
 
-          S->update_darcy_flux(FS_next->ref_darcy_mass_flux());
+          S->update_darcy_flux(FS_next->ref_darcy_flux());
           S->update_pressure(FS_next->ref_pressure());
           FPK->deriveDarcyVelocity(*S->get_darcy_velocity());
 	}

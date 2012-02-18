@@ -22,7 +22,6 @@ namespace BDF2 {
     SolutionHistory (int mvec, double t, const Epetra_Vector& x);
     SolutionHistory (int mvec, double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
     
-
     // Flushes the accumulated solution vectors from an existing history
     // structure, and records the solution vector X with time index T as
     // the initial solution vector of a new history.  If XDOT is specified
@@ -60,19 +59,16 @@ namespace BDF2 {
     void interpolate_solution(double t, Epetra_Vector& x, int order);
     
 
-
     // Function returns the most recent solution vector
     // maintained by the history.
 
     void most_recent_solution(Epetra_Vector& x);
 
 
-
     // Function returns the the time index T associated with the most
     // recent solution vector maintained by the history THIS.
 
     double most_recent_time();
-
 
 
     // Function returns an array H of time index differences.  The first
@@ -85,7 +81,6 @@ namespace BDF2 {
     void time_deltas(std::vector<double>& h);
 
 
-
     // Returns the number of solution vectors currently
     // maintained in the history structure THIS.  The number will be
     // between 0 and the value of MVEC used to create the structure.
@@ -93,13 +88,11 @@ namespace BDF2 {
     int history_size();
     
   private:
-
     void initialize(int mvec, const Epetra_BlockMap& map); 
 
     int nvec;
     std::vector<double> times;                   // times
     std::vector<Teuchos::RCP<Epetra_Vector> > d; // divided(?) differences
-
   };
 }
 

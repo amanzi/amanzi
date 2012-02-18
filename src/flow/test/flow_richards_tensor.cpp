@@ -102,7 +102,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
   // check accuracy
   Epetra_Vector& pressure = RPK->flow_state_next()->ref_pressure();
-  Epetra_Vector& darcy_mass_flux = RPK->flow_state_next()->ref_darcy_mass_flux();
+  Epetra_Vector& darcy_flux = RPK->flow_state_next()->ref_darcy_flux();
  
   double err_p = 0.0, err_u = 0.0;
   for (int c=0; c<(*ucells).MyLength(); c++) {
@@ -118,10 +118,9 @@ cout << "Test: Tensor Richards, a cube model" << endl;
     const Point normal = mesh->face_normal(f);
   
     double p_exact = v0 * xf;
-    double f_exact = u0 * normal;
-    err_u += pow(darcy_mass_flux[f] - f_exact, 2.0);
-    //cout << f << " " << xf 
-    //          << "  flux_num=" << darcy_mass_flux[f] << " f_ex=" << f_exact << endl;
+    double f_exact = u0 * normal / rho;
+    err_u += pow(darcy_flux[f] - f_exact, 2.0);
+    //cout << f << " " << xf << "  flux_num=" << darcy_flux[f] << " f_ex=" << f_exact << endl;
   }
   err_u = sqrt(err_u);
 

@@ -50,7 +50,7 @@ class Flow_State {
   // access methods
   Teuchos::RCP<Epetra_Vector> porosity() { return porosity_; }
   Teuchos::RCP<Epetra_Vector> pressure() { return pressure_; }
-  Teuchos::RCP<Epetra_Vector> darcy_mass_flux() { return darcy_mass_flux_; }
+  Teuchos::RCP<Epetra_Vector> darcy_flux() { return darcy_flux_; }
   Teuchos::RCP<Epetra_Vector> vertical_permeability() { return vertical_permeability_; }
   Teuchos::RCP<Epetra_Vector> horizontal_permeability() { return horizontal_permeability_; }
   Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
@@ -63,7 +63,7 @@ class Flow_State {
 
   Epetra_Vector& ref_porosity() { return *porosity_; }
   Epetra_Vector& ref_pressure() { return *pressure_; }
-  Epetra_Vector& ref_darcy_mass_flux() { return *darcy_mass_flux_; }
+  Epetra_Vector& ref_darcy_flux() { return *darcy_flux_; }
   Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability_; }
   Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability_; }
   Epetra_Vector& ref_water_saturation() { return *water_saturation_; }
@@ -95,7 +95,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> horizontal_permeability_;
   Teuchos::RCP<Epetra_Vector> pressure_;
   Teuchos::RCP<Epetra_Vector> porosity_;
-  Teuchos::RCP<Epetra_Vector> darcy_mass_flux_;
+  Teuchos::RCP<Epetra_Vector> darcy_flux_;
   Teuchos::RCP<Epetra_Vector> water_saturation_;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

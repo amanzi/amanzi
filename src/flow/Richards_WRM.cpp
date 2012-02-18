@@ -43,12 +43,7 @@ void Richards_PK::calculateRelativePermeabilityFace(const Epetra_Vector& p)
     calculateRelativePermeabilityUpwindGravity(p);
   } 
   else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    Epetra_Vector& flux = FS_next->ref_darcy_mass_flux();
-
-    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
-    matrix->deriveDarcyFlux(*solution, *face_importer_, flux);
-    addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
-
+    Epetra_Vector& flux = FS->ref_darcy_flux();
     calculateRelativePermeabilityUpwindFlux(p, flux);
   } 
   else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {

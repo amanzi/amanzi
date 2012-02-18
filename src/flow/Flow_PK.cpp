@@ -194,7 +194,7 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
     downwind_cell[f] = -1;
   }
 
-  Epetra_Vector& darcy_mass_flux = FS->ref_darcy_mass_flux();
+  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   AmanziMesh::Entity_ID_List faces; 
   std::vector<int> fdirs;
 
@@ -204,7 +204,7 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 
     for (int i=0; i<faces.size(); i++) {
       int f = faces[i];
-      if (darcy_mass_flux[f] * fdirs[i] >= 0) upwind_cell[f] = c; 
+      if (darcy_flux[f] * fdirs[i] >= 0) upwind_cell[f] = c; 
       else downwind_cell[f] = c; 
     }
   }

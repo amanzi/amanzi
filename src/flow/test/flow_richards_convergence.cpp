@@ -52,17 +52,17 @@ double calculatePressureCellError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& pressu
 /* ******************************************************************
 * Calculate l2 error (small l) in darcy flux.                                                    
 ****************************************************************** */
-double calculateDarcyMassFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_mass_flux)
+double calculateDarcyFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flux)
 {
   double cr = 1.02160895462971866;  // analytical data
   AmanziGeometry::Point velocity_exact(0.0, 0.0, -cr);
 
-  int nfaces = darcy_mass_flux.MyLength();
+  int nfaces = darcy_flux.MyLength();
   double error_l2 = 0.0;
   for (int f=0; f<nfaces; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_mass_flux[f] << " exact=" << velocity_exact * normal << endl;
-    error_l2 += std::pow(darcy_mass_flux[f] - velocity_exact * normal, 2.0);
+//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
+    error_l2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
   }
   return sqrt(error_l2 / nfaces);
 }
@@ -102,7 +102,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     double pressure_error, flux_error;  // error checks
     Flow_State& FS_next = RPK->ref_flow_state_next();
     pressure_error = calculatePressureCellError(mesh, FS_next.ref_pressure());
-    flux_error = calculateDarcyMassFluxError(mesh, FS_next.ref_darcy_mass_flux());
+    flux_error = calculateDarcyFluxError(mesh, FS_next.ref_darcy_flux());
 
     if (n==80) CHECK(pressure_error < 5.0e-2 && flux_error < 5.0e-2);
     printf("n=%3d nonlinear itrs=%4d  L2_pressure_error=%7.3e  l2_flux_error=%7.3e\n", 

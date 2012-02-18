@@ -80,7 +80,7 @@ class Dae : public Teuchos::VerboseObject<Dae>,
 
   State state;
   nka* fpa;
-    SolutionHistory* sh_;
+  SolutionHistory* sh_;
   fnBase& fn;
 
   const Epetra_BlockMap& map;

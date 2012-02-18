@@ -51,9 +51,9 @@ class Matrix_MFD : public Epetra_Operator {
   double computeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
   double computeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
 
-  void deriveDarcyFlux(const Epetra_Vector& solution, 
-                       const Epetra_Import& face_importer, 
-                       Epetra_Vector& darcy_mass_flux);
+  void deriveDarcyMassFlux(const Epetra_Vector& solution, 
+                           const Epetra_Import& face_importer, 
+                           Epetra_Vector& darcy_mass_flux);
   void deriveDarcyVelocity(const Epetra_Vector& darcy_mass_flux, 
                            const Epetra_Import& face_importer, 
                            Epetra_MultiVector& darcy_velocity) const;
