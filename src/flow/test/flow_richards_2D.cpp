@@ -63,7 +63,7 @@ TEST(FLOW_2D_RICHARDS) {
   Richards_PK* RPK = new Richards_PK(flow_list, FS);
   RPK->set_standalone_mode(true);
   RPK->InitPK();
-  RPK->InitSteadyState();
+  RPK->InitSteadyState(0.0, 1e-8);
 
   // create the initial pressure function
   Epetra_Vector& p = FS->ref_pressure();

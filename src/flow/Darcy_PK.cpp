@@ -137,6 +137,25 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
 
 /* ******************************************************************
+* Separate initialization of solver may be required for steady state
+* and transient runs.       
+****************************************************************** */
+void Darcy_PK::InitSteadyState(double T0, double dT0)
+{
+  set_time(T0, dT0);
+}
+
+
+/* ******************************************************************
+* Initialization analyzes status of matrix/preconditioner pair.      
+****************************************************************** */
+void Darcy_PK::InitTransient(double T0, double dT0)
+{
+  set_time(T0, dT0);
+}
+
+
+/* ******************************************************************
 * Calculates steady-state solution assuming that absolute permeability 
 * does not depend on time.                                                    
 ****************************************************************** */

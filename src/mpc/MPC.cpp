@@ -134,7 +134,7 @@ void MPC::mpc_init() {
       throw std::exception();
     }
     FPK->InitPK();
-    FPK->InitSteadyState();
+    FPK->InitSteadyState(0.0, 1e-8);
   }
   // done creating auxilary state objects and  process models
 
@@ -217,6 +217,8 @@ void MPC::read_parameter_list()  {
 
 void MPC::cycle_driver () {
 
+  enum time_step_limiter_type { FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS } ;
+  time_step_limiter_type tslimiter;
 
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -277,15 +279,14 @@ void MPC::cycle_driver () {
 
   if (flow_enabled) {
     if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY ) {
-      FPK->set_time(T0, dTsteady);
+      FPK->InitSteadyState(T0, dTsteady);
     } else if ( ti_mode == TRANSIENT ) {
-      FPK->set_time(T0, dTtransient);
+      FPK->InitTransient(T0, dTtransient);
     }
   }
 
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
-
     // make observations
     if (observations) observations->make_observations(*S);
 
@@ -296,16 +297,15 @@ void MPC::cycle_driver () {
 
     // then start time stepping 
     while ((S->get_time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
-
       // determine the time step we are now going to take
-      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
+      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99, limiter_dT=1e+99;
 
       if (flow_enabled && flow_model == "Richards") {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
 	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
 	  }
-	  FPK->set_time(S->get_time(), dTtransient);	
+	  FPK->InitTransient(S->get_time(), dTtransient);	
 	}
       }
 
@@ -313,11 +313,11 @@ void MPC::cycle_driver () {
 	flow_dT = FPK->calculate_flow_dT();
         // adjust the time step, so that we exactly hit the switchover time
         if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+2.0*flow_dT > Tswitch) {
-          flow_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
+          limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
         }
 	// adjust the time step, so that we exactly hit the final time in steady mode
 	if (ti_mode == STEADY  &&  S->get_time()+2*flow_dT > T1) { 
-	  flow_dT = time_step_limiter(S->get_time(), flow_dT, T1);
+	  limiter_dT = time_step_limiter(S->get_time(), flow_dT, T1);
 	}
       }
 
@@ -331,27 +331,59 @@ void MPC::cycle_driver () {
       }
       
       // take the mpc time step as the min of all suggested time steps 
-      mpc_dT = std::min( std::min(flow_dT, transport_dT), chemistry_dT );
+      mpc_dT = std::min( std::min( std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT );
+
+      // figure out who limits the time step
+      if (mpc_dT == flow_dT) {
+	tslimiter = FLOW_LIMITS;
+      } else if (mpc_dT == transport_dT) {
+	tslimiter = TRANSPORT_LIMITS;
+      } else if (mpc_dT == chemistry_dT) {
+	tslimiter = CHEMISTRY_LIMITS;
+      } else if (mpc_dT == limiter_dT) {
+	tslimiter = MPC_LIMITS;
+      }
 
       if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
 	mpc_dT = std::min( mpc_dT, dTtransient );
+	tslimiter = MPC_LIMITS; 
       }
 
 
       // make sure we will hit the final time exactly
       if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
         mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
+	tslimiter = MPC_LIMITS;
       }
       if (ti_mode == TRANSIENT && S->get_time()+2*mpc_dT > T1) { 
 	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
+	tslimiter = MPC_LIMITS;
       }
       
-
       // write some info about the time step we are about to take
+      
+      // first determine what we will write about the time step limiter
+      std::string limitstring("");
+      switch (tslimiter) {
+      case(MPC_LIMITS): 
+	limitstring = std::string("(mpc limits timestep)");
+	break;
+      case (TRANSPORT_LIMITS): 
+	limitstring = std::string("(transport limits timestep)");
+	break;
+      case (CHEMISTRY_LIMITS): 
+	limitstring = std::string("(chemistry limits timestep)");
+	break;
+      case (FLOW_LIMITS): 
+	limitstring = std::string("(flow limits timestep)");
+	break;
+      }
+
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << "Cycle = " << iter;
         *out << ",  Time(secs) = "<< S->get_time(); // / (60*60*24);
         *out << ",  dT(secs) = " << mpc_dT; // / (60*60*24)  << std::endl;
+	 *out << " " << limitstring;
         *out << std::endl;
       }
 
@@ -365,9 +397,9 @@ void MPC::cycle_driver () {
 	    redo = false;
 	    try {
 	      FPK->advance_to_steady_state();
-              if( FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
-                S->set_time(Tswitch);
-                FPK->InitTransient();
+              if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
+                FPK->InitTransient(Tswitch, 1e-8);
+                break;
               }
 	    }
 	    catch (int itr) {
@@ -376,11 +408,18 @@ void MPC::cycle_driver () {
 	    }
 	  } while (redo);
 	} else {
-	  FPK->advance(mpc_dT);
+          FPK->advance(mpc_dT);
+
+          Teuchos::RCP<AmanziFlow::Flow_State> FS_next = FPK->flow_state_next();
+          FPK->commit_state(FS_next);
+
+          S->update_darcy_flux(FS_next->ref_darcy_mass_flux());
+          S->update_pressure(FS_next->ref_pressure());
+          FPK->deriveDarcyVelocity(*S->get_darcy_velocity());
 	}
       }
 
-      // then advance transport
+      // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
           TPK->advance(mpc_dT);
@@ -392,16 +431,12 @@ void MPC::cycle_driver () {
             Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
             Exceptions::amanzi_throw(message);
           }
+        } else { // if we're not advancing transport we still need to prepare for chemistry
+          *total_component_concentration_star = *S->get_total_component_concentration();
         }
-      } else { // if we're not advancing transport we still need to prepare for chemistry
-        *total_component_concentration_star = *S->get_total_component_concentration();
-      }
       
-      // then advance chemistry
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (chemistry_enabled) {
           try {
-            // now advance chemistry
             CPK->advance(mpc_dT, total_component_concentration_star);
             S->update_total_component_concentration(CPK->get_total_component_concentration());
           } catch (const ChemistryException& chem_error) {
@@ -411,15 +446,15 @@ void MPC::cycle_driver () {
             Errors::Message message(error_message.str());
             Exceptions::amanzi_throw(message);
           }
+        } else {
+          // commit total_component_concentration_star to the state and move on
+          S->update_total_component_concentration(*total_component_concentration_star);
         }
-      } else {
-        // commit total_component_concentration_star to the state and move on
-        S->update_total_component_concentration(*total_component_concentration_star);
       }
       
       // update the time in the state object
       S->advance_time(mpc_dT);
-
+      if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
       // ===========================================================
 
@@ -430,10 +465,6 @@ void MPC::cycle_driver () {
         if (transport_enabled) TPK->commit_state(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       }
-      if (flow_enabled) {
-        FPK->commit_state(FS);
-      }
-
 
       // advance the iteration count
       iter++;

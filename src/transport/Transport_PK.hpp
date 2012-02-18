@@ -5,7 +5,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
   Transport_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Transport_State> TS);
   double time_step = TPK.calculate_transport_dT();
-  TPK.advance( time_step);
+  TPK.advance(time_step);
 */
 
 #ifndef __Transport_PK_hpp__

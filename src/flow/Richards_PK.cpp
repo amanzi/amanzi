@@ -161,7 +161,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 * Separate initialization of solver may be required for steady state
 * and transient runs.       
 ****************************************************************** */
-void Richards_PK::InitSteadyState()
+void Richards_PK::InitSteadyState(double T0, double dT0)
 {
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
@@ -187,13 +187,15 @@ void Richards_PK::InitSteadyState()
 
   absolute_tol = absolute_tol_sss;
   relative_tol = relative_tol_sss;
+
+  set_time(T0, dT0);  // overrides data in input file (lipnikov@lanl.gov)
 }
 
 
 /* ******************************************************************
 * Initialization analyzes status of matrix/preconditioner pair.      
 ****************************************************************** */
-void Richards_PK::InitTransient()
+void Richards_PK::InitTransient(double T0, double dT0)
 {
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
@@ -225,6 +227,8 @@ void Richards_PK::InitTransient()
 
   dT = dT0_trs;
   T_internal = T0_trs;
+
+  set_time(T0, dT0);
 }
 
 

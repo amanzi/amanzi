@@ -36,19 +36,20 @@ class Richards_PK : public Flow_PK {
 
   // main methods
   void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
-  void InitSteadyState();
-  void InitTransient();
+  void InitSteadyState(double T0, double dT0);
+  void InitTransient(double T0, double dT0);
 
   int advance(double dT_MPC); 
   int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State> FS) {};
+  void deriveDarcyVelocity(Epetra_MultiVector& velocity);
 
   int advanceSteadyState_Picard();
   int advanceSteadyState_BackwardEuler();
   int advanceSteadyState_ForwardEuler();
   int advanceSteadyState_BDF2();
  
-  // required BDF2 methods
+  // methods required for time integration
   void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
@@ -76,7 +77,6 @@ class Richards_PK : public Flow_PK {
   void derivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
 
   void deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
-  void deriveDarcyVelocity(Epetra_MultiVector& velocity);
 
   // control methods
   void resetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }

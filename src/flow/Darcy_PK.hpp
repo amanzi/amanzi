@@ -32,14 +32,15 @@ class Darcy_PK : public Flow_PK {
 
   // main methods
   void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
-  void InitSteadyState() {};  // (lipnikov@lanl.gov)
-  void InitTransient() {};
+  void InitSteadyState(double T0, double dT0);
+  void InitTransient(double T0, double dT0);
 
   int advance(double dT) { return 0; } 
   int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State> FS) {};
+  void deriveDarcyVelocity(Epetra_MultiVector& velocity);
 
-  // required methods
+  // methods required for time integration
   void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0) {};
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu) {};
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du) { return 0.0; }
@@ -48,7 +49,6 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void processParameterList();
   void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-  void deriveDarcyVelocity(Epetra_MultiVector& velocity);
 
   // control methods
   void print_statistics() const;

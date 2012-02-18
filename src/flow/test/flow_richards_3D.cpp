@@ -60,7 +60,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   RPK->set_standalone_mode(true);
   RPK->InitPK();
-  RPK->InitSteadyState();
+  RPK->InitSteadyState(0.0, 1e-8);
   RPK->print_statistics();
 
   // solve the problem
