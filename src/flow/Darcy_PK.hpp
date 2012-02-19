@@ -35,7 +35,7 @@ class Darcy_PK : public Flow_PK {
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
-  int advance(double dT) { return 0; } 
+  int advance(double dT); 
   int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State> FS) {};
   void deriveDarcyVelocity(Epetra_MultiVector& velocity);

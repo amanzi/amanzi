@@ -204,6 +204,24 @@ int Darcy_PK::advance_to_steady_state()
 }
 
 
+/* ******************************************************************* 
+* Performs one time step of size dT (under *development*). 
+******************************************************************* */
+int Darcy_PK::advance(double dT_MPC) 
+{
+  flow_status_ = FLOW_NEXT_STATE_BEGIN;
+
+  dT = dT_MPC;
+  T_physical = FS->get_time();
+  double time = (standalone_mode) ? T_internal : T_physical;
+
+  // missing code... (lipnikov@lanl.gov)
+
+  flow_status_ = FLOW_NEXT_STATE_COMPLETE;
+  return 0;
+}
+
+
 /* ******************************************************************
 *  Temporary convertion from double to tensor.                                               
 ****************************************************************** */

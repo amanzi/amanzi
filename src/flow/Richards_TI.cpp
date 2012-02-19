@@ -25,6 +25,26 @@ void Richards_PK::fun(
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
+#if 1
+  for (int mb=0; mb<WRM.size(); mb++) {
+    std::string region = WRM[mb]->region();
+    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    std::vector<unsigned int> block(ncells);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+      
+    double v, s1, s2, volume;
+    for (int i=0; i<block.size(); i++) {
+      int c = block[i];
+      v = u[c] - udot[c] * dTp; 
+      s1 = WRM[mb]->saturation(atm_pressure - u[c]);
+      s2 = WRM[mb]->saturation(atm_pressure - v);
+
+      volume = mesh_->cell_volume(c);
+      f[c] += rho * phi[c] * volume * (s1 - s2) / dTp;
+    }
+  }
+#else
   Epetra_Vector* u_cells = FS->createCellView(u);
   Epetra_Vector dSdP(mesh_->cell_map(false));
   derivedSdP(*u_cells, dSdP);
@@ -34,6 +54,7 @@ void Richards_PK::fun(
     double factor = rho * phi[c] * dSdP[c] * volume;
     f[c] += factor * udot[c]; 
   }
+#endif
 }
 
 
