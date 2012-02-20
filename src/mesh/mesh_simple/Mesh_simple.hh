@@ -103,6 +103,9 @@ public:
     
   // Get faces of a cell and directions in which the cell uses the face 
 
+  // The Amanzi coding guidelines regarding function arguments is purposely
+  // violated here to allow for a default input argument
+
   // On a distributed mesh, this will return all the faces of the
   // cell, OWNED or GHOST. If ordered = true, the faces will be
   // returned in a standard order according to Exodus II convention
@@ -116,9 +119,9 @@ public:
 
   virtual
   void cell_get_faces_and_dirs (const Entity_ID cellid,
-                                const bool ordered,
                                 Entity_ID_List *faceids,
-                                std::vector<int> *face_dirs) const;
+                                std::vector<int> *face_dirs,
+                                const bool ordered=false) const;
 
     
   // Get nodes of cell 

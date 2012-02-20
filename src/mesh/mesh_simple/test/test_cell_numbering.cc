@@ -64,7 +64,7 @@ TEST(NUMBERING) {
   Amanzi::AmanziMesh::Entity_ID_List cface;
   std::vector<int> fdir;
   std::cout << "Cell " << 0 << " faces (relative orientation)..." << std::endl;
-  mesh->cell_get_faces_and_dirs(0,true,&cface,&fdir);
+  mesh->cell_get_faces_and_dirs(0,&cface,&fdir);
   for (int j = 0; j < 6; ++j) std::cout << j << ": " << cface[j] << "(" << fdir[j] << ")" << std::endl;
   
 }

@@ -29,7 +29,7 @@ void Transport_PK::limiterTensorial(const int component,
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   for (int c=cmin; c<=cmax_owned; c++) {
     std::vector<int> fdirs;
-    mesh_->cell_get_faces_and_dirs(c, false, &faces, &fdirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -136,7 +136,7 @@ void Transport_PK::limiterTensorial(const int component,
   // Step 3: enforcing a priori time step estimate (division of dT by 2). 
   for (int c=cmin; c<=cmax_owned; c++) {
     std::vector<int> fdirs;
-    mesh_->cell_get_faces_and_dirs(c, false, &faces, &fdirs); 
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs); 
     int nfaces = faces.size();
 
     double a, b;
@@ -288,7 +288,7 @@ void Transport_PK::limiterBarthJespersen(const int component,
 
   for (int c=cmin; c<=cmax_owned; c++) {
     std::vector<int> fdirs;
-    mesh_->cell_get_faces_and_dirs(c, false, &faces, &fdirs); 
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs); 
     int nfaces = faces.size();
 
     double a, b;
@@ -449,7 +449,7 @@ void Transport_PK::limiterKuzmin(const int component,
 
   for (int c=cmin; c<=cmax_owned; c++) {
     std::vector<int> fdirs;
-    mesh_->cell_get_faces_and_dirs(c, false, &faces, &fdirs); 
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs); 
     int nfaces = faces.size();
 
     double a, b;

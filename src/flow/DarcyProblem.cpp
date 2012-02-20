@@ -280,7 +280,7 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   Fface.PutScalar(0.0);
   for (int j = 0; j < Pcell.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
-    mesh_->cell_get_faces_and_dirs((unsigned int) j, true, &cface, &cfdirs);
+    mesh_->cell_get_faces_and_dirs((unsigned int) j, &cface, &cfdirs, true);
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
@@ -372,7 +372,7 @@ void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVecto
 
   }
   for (int j = 0; j < Pcell.MyLength(); ++j) {
-    mesh_->cell_get_faces_and_dirs((unsigned int) j, true, &cface, &cfdirs);
+    mesh_->cell_get_faces_and_dirs((unsigned int) j, &cface, &cfdirs, true);
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     double K = (kv_[j] / mu_);
     MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2);
@@ -415,7 +415,7 @@ void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, dou
   // Process-local assembly of the face mass fluxes.
   for (unsigned int j = 0; j < Pcell_own.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
-    mesh_->cell_get_faces_and_dirs(j, true, &cface, &fdirs);
+    mesh_->cell_get_faces_and_dirs(j, &cface, &fdirs, true);
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.

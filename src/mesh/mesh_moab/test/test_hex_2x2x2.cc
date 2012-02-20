@@ -66,7 +66,7 @@ TEST(MOAB_HEX1)
   CHECK_EQUAL(NC,nc);
 
     
-  mesh.cell_get_faces_and_dirs(0,true,&faces,&facedirs);
+  mesh.cell_get_faces_and_dirs(0,&faces,&facedirs,true);
 
   for (j = 0; j < 6; j++) {
     mesh.face_to_nodes(faces[j],nodes,nodes+4);

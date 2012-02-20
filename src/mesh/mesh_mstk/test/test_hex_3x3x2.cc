@@ -80,7 +80,7 @@ TEST(MSTK_HEX_3x3x2)
   
   for (i = 0; i < nc; i++) {
     mesh.cell_get_nodes(i,&cnodes);
-    mesh.cell_get_faces_and_dirs(i,true,&faces,&facedirs);
+    mesh.cell_get_faces_and_dirs(i,&faces,&facedirs,true);
     
     for (j = 0; j < 6; j++) {
       

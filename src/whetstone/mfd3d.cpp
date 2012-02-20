@@ -30,7 +30,7 @@ int MFD3D::darcy_mass(int cell,
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, false, &faces, &fdirs); // FIXME: replace with cell_get_num_faces
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs); // FIXME: replace with cell_get_num_faces
   int nfaces = faces.size();
  
   Teuchos::SerialDenseMatrix<int, double> N(nfaces, d);
@@ -55,7 +55,7 @@ int MFD3D::darcy_mass_inverse(int cell,
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, false, &faces, &fdirs); // FIXME: replace with cell_get_num_faces
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs); // FIXME: replace with cell_get_num_faces
   int nfaces = faces.size();
  
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
@@ -182,7 +182,7 @@ int MFD3D::L2_consistency(int cell,
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, true, &faces, &fdirs); // FIXME: use 'false' if faces can be unordered
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs); // FIXME: use 'false' if faces can be unordered
  
   int num_faces = faces.size();
   if (num_faces != N.numRows()) return num_faces;  // matrix was not reshaped
@@ -237,8 +237,7 @@ int MFD3D::L2_consistency_inverse(int cell,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(cell, true, &faces, &dirs); // FIXME: do we need faces to be ordered?
-  mesh_->cell_get_face_dirs(cell, &dirs);                    // FIXME: if not set to false.
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs); 
 
   int num_faces = faces.size();
   if (num_faces != R.numRows()) return num_faces;  // matrix was not reshaped
@@ -292,8 +291,8 @@ int MFD3D::H1_consistency(int cell,
   int num_nodes = nodes.size();
   if (num_nodes != N.numRows()) return num_nodes;  // matrix was not reshaped
 
-  mesh_->cell_get_faces_and_dirs(cell, true, &faces, &dirs); // FIXME: do we need faces to be ordered?
-                                                             // FIXME: if not set to false
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs); 
+
   int num_faces = faces.size();
 
   int d = mesh_->space_dimension();

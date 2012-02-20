@@ -108,7 +108,7 @@ TEST(MOAB_HEX_3x3x2)
     
   for (i = 0; i < nc; i++) {
     mesh.cell_to_nodes(i,cnodes,cnodes+8);
-    mesh.cell_get_faces_and_dirs(i,true,&faces,&facedirs);
+    mesh.cell_get_faces_and_dirs(i,&faces,&facedirs,true);
 
     CHECK_ARRAY_EQUAL(cellfaces[i],faces,6);
     CHECK_ARRAY_EQUAL(cellfacedirs[i],facedirs,6);
@@ -180,7 +180,7 @@ TEST(MOAB_HEX_3x3x2)
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
-      mesh.cell_get_faces_and_dirs( c, true, &c2f, &c2fdirs );
+      mesh.cell_get_faces_and_dirs( c, &c2f, &c2fdirs, true );
       for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));

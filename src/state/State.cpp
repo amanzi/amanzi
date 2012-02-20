@@ -421,7 +421,7 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
 
     std::vector<unsigned int> cface(6);
     std::vector<int> cfdirs;
-    mesh_maps->cell_get_faces_and_dirs(*c, true, &cface, &cfdirs);
+    mesh_maps->cell_get_faces_and_dirs(*c, &cface, &cfdirs, true);
 
     for (std::vector<unsigned int>::iterator f = cface.begin();
          f != cface.end(); f++) {
@@ -465,7 +465,7 @@ void State::set_darcy_flux( const double* u, const std::string region )
 
     std::vector<unsigned int> cface(6);
     std::vector<int> cfdirs;
-    mesh_maps->cell_get_faces_and_dirs(*c, true, &cface, &cfdirs);
+    mesh_maps->cell_get_faces_and_dirs(*c, &cface, &cfdirs);
 
     for (std::vector<unsigned int>::iterator f = cface.begin();
          f != cface.end(); f++) {

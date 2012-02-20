@@ -261,6 +261,9 @@ Mesh_STK::cell_get_face_dirs (const Entity_ID cellid,
 
 // Get faces of a cell and directions in which the cell uses the face 
 
+// The Amanzi coding guidelines regarding function arguments is purposely
+// violated here to allow for a default input argument
+
 // On a distributed mesh, this will return all the faces of the
 // cell, OWNED or GHOST. Since STK cell-face relations are stored/created
 // according to Exodus II convention for standard cells, the output of
@@ -274,9 +277,9 @@ Mesh_STK::cell_get_face_dirs (const Entity_ID cellid,
 
 void 
 Mesh_STK::cell_get_faces_and_dirs (const Entity_ID cellid,
-                                   const bool ordered,
                                    Entity_ID_List *outfaceids,
-                                   std::vector<int> *face_dirs) const
+                                   std::vector<int> *face_dirs,
+				   const bool ordered) const
 {
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;                  // need 1-based for stk::mesh

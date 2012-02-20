@@ -53,7 +53,7 @@ TEST(MAPS) {
       }
 
       cout << "cell_get_faces" << endl;
-      Mm.cell_get_faces_and_dirs(i, true, &faces, &face_dirs);
+      Mm.cell_get_faces_and_dirs(i, &faces, &face_dirs, true);
       double xx[4][3];
       for (int j=0; j<6; j++) {
 	Mm.face_to_coordinates(faces[j],x.begin(), x.begin()+12);

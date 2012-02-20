@@ -44,7 +44,7 @@ TEST(MOAB_HEX_4x4x4)
   Epetra_Map face_map(mesh.face_epetra_map(false));
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
-      mesh.cell_get_faces_and_dirs( c, true, &c2f, &c2fdirs);
+      mesh.cell_get_faces_and_dirs( c, &c2f, &c2fdirs, true);
       for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(c2f[j]);

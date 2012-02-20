@@ -32,7 +32,7 @@ void Transport_PK::check_divergence_property()
   std::vector<int> fdirs;
 
   for (int c=cmin; c<=cmax_owned; c++) {
-    mesh->cell_get_faces_and_dirs(c, false, &faces, &fdirs);
+    mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
     div = umax = 0;

@@ -125,9 +125,9 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
   {}
   
   void cell_get_faces_and_dirs (const Amanzi::AmanziMesh::Entity_ID cellid,
-                                const bool ordered,
                                 Amanzi::AmanziMesh::Entity_ID_List *faceids,
-                                std::vector<int> *face_dirs) const
+                                std::vector<int> *face_dirs,
+                                const bool ordered=false) const
   {}
 
 

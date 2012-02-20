@@ -438,10 +438,10 @@ void Mesh_simple::cell_get_faces (AmanziMesh::Entity_ID cell,
 }
 
 
-  void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
-                                             const bool ordered,
-                                             AmanziMesh::Entity_ID_List *faceids,
-                                             std::vector<int> *cfacedirs) const
+void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
+                                           AmanziMesh::Entity_ID_List *faceids,
+                                           std::vector<int> *cfacedirs,
+                                           const bool ordered) const
 {
   unsigned int offset = 6*cellid;
 

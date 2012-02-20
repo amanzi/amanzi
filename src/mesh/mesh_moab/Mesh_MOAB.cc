@@ -1178,10 +1178,11 @@ void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
+ 
 void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
-                                         const bool ordered,
                                          Entity_ID_List *faceids,
-                                         std::vector<int> *face_dirs) const
+                                         std::vector<int> *face_dirs,
+					 const bool ordered) const
 {
   
   MBEntityHandle cell;

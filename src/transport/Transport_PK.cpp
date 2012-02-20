@@ -570,7 +570,7 @@ void Transport_PK::identify_upwind_cells()
   Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
   for (int c=cmin; c<=cmax; c++) {
-    mesh->cell_get_faces_and_dirs(c, false, &faces, &fdirs); 
+    mesh->cell_get_faces_and_dirs(c, &faces, &fdirs); 
 
     for (int i=0; i<faces.size(); i++) {
       int f = faces[i];
