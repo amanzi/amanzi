@@ -61,8 +61,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
   std::vector<int> dirs;
 
   for (int c=0; c<ncells_owned; c++) {
-    mesh_->cell_get_face_dirs(c, &dirs);
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     AmanziGeometry::Point Kgravity = K[c] * gravity_;
@@ -87,8 +86,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
   std::vector<int> dirs;
 
   for (int c=0; c<ncells_owned; c++) {
-    mesh_->cell_get_face_dirs(c, &dirs);
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n=0; n<nfaces; n++) {

@@ -132,8 +132,7 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
   std::vector<int> dirs;
 
   for (int c=0; c<ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
-    mesh_->cell_get_face_dirs(c, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
@@ -163,10 +162,11 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
 
   AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c=0; c<ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n=0; n<nfaces; n++) {
@@ -199,8 +199,7 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
   std::vector<int> fdirs;
 
   for (int c=0; c<ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
-    mesh_->cell_get_face_dirs(c, &fdirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
     for (int i=0; i<faces.size(); i++) {
       int f = faces[i];

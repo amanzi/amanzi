@@ -29,7 +29,8 @@ int MFD3D::darcy_mass(int cell,
   int d = mesh_->space_dimension();
 
   AmanziMesh::Entity_ID_List faces;
-  mesh_->cell_get_faces(cell, &faces);
+  std::vector<int> fdirs; 
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
   int nfaces = faces.size();
  
   Teuchos::SerialDenseMatrix<int, double> N(nfaces, d);
@@ -56,7 +57,8 @@ int MFD3D::darcy_mass_inverse(int cell,
   int d = mesh_->space_dimension();
 
   AmanziMesh::Entity_ID_List faces;
-  mesh_->cell_get_faces(cell, &faces);
+  std::vector<int> fdirs; 
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
   int nfaces = faces.size();
  
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
@@ -80,7 +82,8 @@ int MFD3D::darcy_mass_inverse_hex(int cell,
   int d = mesh_->space_dimension();
 
   AmanziMesh::Entity_ID_List faces;
-  mesh_->cell_get_faces(cell, &faces);
+  std::vector<int> fdirs; 
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
   int nfaces = faces.size();
  
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
@@ -107,7 +110,8 @@ int MFD3D::darcy_mass_inverse_diagonal(int cell,
   double volume = mesh_->cell_volume(cell);
 
   AmanziMesh::Entity_ID_List faces;
-  mesh_->cell_get_faces(cell, &faces);
+  std::vector<int> dirs; 
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
   int nfaces = faces.size();
 
   W.putScalar(0.0);
@@ -233,7 +237,8 @@ int MFD3D::L2_consistency(int cell,
                           Teuchos::SerialDenseMatrix<int, double>& Mc)
 {
   AmanziMesh::Entity_ID_List faces;
-  mesh_->cell_get_faces(cell, &faces);
+  std::vector<int> fdirs; 
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
  
   int num_faces = faces.size();
   if (num_faces != N.numRows()) return num_faces;  // matrix was not reshaped
@@ -285,8 +290,7 @@ int MFD3D::L2_consistency_inverse(int cell,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  mesh_->cell_get_faces(cell, &faces);
-  mesh_->cell_get_face_dirs(cell, &dirs);
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
   int num_faces = faces.size();
   if (num_faces != R.numRows()) return num_faces;  // matrix was not reshaped
@@ -329,16 +333,14 @@ int MFD3D::H1_consistency(int cell,
                           Teuchos::SerialDenseMatrix<int, double>& Ac)
 {
   AmanziMesh::Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
 
   mesh_->cell_get_nodes(cell, &nodes);
   int num_nodes = nodes.size();
   if (num_nodes != N.numRows()) return num_nodes;  // matrix was not reshaped
 
-  mesh_->cell_get_faces(cell, &faces);
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
   int num_faces = faces.size();
-
-  std::vector<int> dirs;
-  mesh_->cell_get_face_dirs(cell, &dirs);
 
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
@@ -469,10 +471,9 @@ int MFD3D::stability_monotone_hex(int cell,
   int map[nrows];
   for (int i=0; i<nrows; i++) map[i] = i;
 
-  std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces; 
-  mesh_->cell_get_face_dirs(cell, &dirs);
-  mesh_->cell_get_faces(cell, &faces);
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
   int i1, i2, k, l;
   double s1, s2, area1, area2;
