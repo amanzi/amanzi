@@ -662,7 +662,8 @@ protected:
 			  const MultiFab* lbd,
 			  const MultiFab* u_mac,
 			  const int  nc = 0,
-			  const int do_upwind = 0);
+			  const int do_upwind = 0,
+			  double time = 0.);
   //
   // Calculate the diffusive term in the jacobian of richard's equation
   //
@@ -741,6 +742,10 @@ protected:
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            Real               time);
+  void get_inflow_density(const Orientation& face,
+			  const RegionData&  face_bc,
+			  FArrayBox&         ccBndFab,
+			  Real               time);
   //
   // Called in grid_places after other tagging routines to modify
   //   the list of tagged points
@@ -882,12 +887,10 @@ protected:
 #endif
   static Array<int>  rinflow_bc_lo;
   static Array<int>  rinflow_bc_hi;
-  static Array<Real> rinflow_vel_lo;
-  static Array<Real> rinflow_vel_hi;
 
   typedef std::pair<Box,Array<int> > BCDesc;
   std::map<Orientation,BCDesc> bc_descriptor_map;
-    Array<std::map<Orientation,BCDesc> > tbc_descriptor_map;
+  Array<std::map<Orientation,BCDesc> > tbc_descriptor_map;
 
   // temperature
   static Real temperature;

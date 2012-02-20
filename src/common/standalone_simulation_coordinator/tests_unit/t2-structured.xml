@@ -2,7 +2,8 @@
   <Parameter name="Native Structured Input" type="bool" value="true"/>
   <Parameter name="echo_inputs" type="int" value="2"/>
   <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="Structured"/>
+    <ParameterList name="Structured">
+    </ParameterList>
   </ParameterList>
   <ParameterList name="amr">
     <Parameter name="check_file" type="string" value="test_2/dump-"/>
@@ -62,7 +63,7 @@
     <Parameter name="ic_labels" type="Array string" value="{IC_For_Domain}"/>
     <ParameterList name="ics">
       <ParameterList name="IC_For_Domain">
-        <Parameter name="regions" type="Array string" value="{ALL}"/>
+        <Parameter name="regions" type="Array string" value="{All}"/>
         <Parameter name="type" type="string" value="hydrostatic"/>
         <Parameter name="water_table_height" type="double" value="0"/>
       </ParameterList>
@@ -108,7 +109,7 @@
     <ParameterList name="output01">
       <Parameter name="field" type="string" value="Volumetric_Water_Content"/>
       <Parameter name="obs_type" type="string" value="integral"/>
-      <Parameter name="region" type="string" value="ALL"/>
+      <Parameter name="region" type="string" value="All"/>
       <Parameter name="time_macro" type="string" value="Long"/>
     </ParameterList>
   </ParameterList>
@@ -185,7 +186,7 @@
         <Parameter name="type" type="string" value="outflow"/>
       </ParameterList>
       <ParameterList name="IC_For_Domain">
-        <Parameter name="regions" type="Array string" value="{ALL}"/>
+        <Parameter name="regions" type="Array string" value="{All}"/>
         <Parameter name="type" type="string" value="concentration"/>
         <Parameter name="val" type="double" value="0"/>
       </ParameterList>

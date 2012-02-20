@@ -1240,8 +1240,7 @@ c ::: ---------------------------------------------------------------
       subroutine FORT_RICHARD_COEF(lbd, DIMS(lbd), 
      &     dfx, DIMS(dfx), dfy, DIMS(dfy), dfz, DIMS(dfz),
      &     umac, DIMS(umac), vmac, DIMS(vmac), wmac, DIMS(wmac),
-     &     lo, hi, domlo, domhi, bc,
-     &     inflow_bc_lo, inflow_bc_hi, nc, do_upwind)
+     &     lo, hi, domlo, domhi, bc, nc, do_upwind)
 
       implicit none
 
@@ -1285,14 +1284,10 @@ c ::: diffusion coefficient in x-dir
                if (i .eq. domlo(1)) then
                   if (bc(1,1) .eq. EXT_DIR) then
                      H_coef = lbd(i-1,j,k,nc)
-                  elseif (bc(1,1) .eq. FOEXTRAP .and. inflow_bc_lo(1) .eq. 1) then
-                     H_coef = zero
                   end if
                elseif (i .eq. domhi(1)+1) then
                   if (bc(1,2) .eq. EXT_DIR) then
                      H_coef = lbd(i,j,k,nc)
-                  elseif (bc(1,2) .eq. FOEXTRAP .and. inflow_bc_hi(1) .eq. 1) then
-                     H_coef = zero
                   end if    
                endif
                dfx(i,j,k) = H_coef
@@ -1314,14 +1309,10 @@ c ::: diffusion coefficient in y-dir
                if (j .eq. domlo(2)) then
                   if (bc(2,1) .eq. EXT_DIR) then
                      H_coef = lbd(i,j-1,k,nc) 
-                  elseif (bc(2,1) .eq. FOEXTRAP .and. inflow_bc_lo(2) .eq. 1) then
-                     H_coef = zero
                   end if    
                elseif (j .eq. domhi(2)+1) then
                   if (bc(2,2) .eq. EXT_DIR) then
                      H_coef = lbd(i,j,k,nc) 
-                  elseif (bc(2,2) .eq. FOEXTRAP .and. inflow_bc_hi(2) .eq. 1) then
-                     H_coef = zero
                   end if    
                endif
                dfy(i,j,k) = H_coef
@@ -1344,14 +1335,10 @@ c ::: diffusion coefficient in z-dir
                if (k .eq. domlo(3)) then
                   if (bc(3,1) .eq. EXT_DIR) then
                      H_coef = lbd(i,j,k-1,nc) 
-                  elseif (bc(3,1) .eq. FOEXTRAP .and. inflow_bc_lo(3) .eq. 1) then
-                     H_coef = zero
                   end if    
                elseif (k .eq. domhi(3)+1) then
                   if (bc(3,2) .eq. EXT_DIR) then
                      H_coef = lbd(i,j,k,nc) 
-                  elseif (bc(3,2) .eq. FOEXTRAP .and. inflow_bc_hi(3) .eq. 1) then
-                     H_coef = zero
                   end if    
                endif
                dfz(i,j,k) = H_coef
@@ -2569,9 +2556,7 @@ c
 c :: ------------------------------------------------------------    
       subroutine FORT_UPHASE_P(ux,DIMS(ux),uy,DIMS(uy),uz,DIMS(uz),
      &     lbd,DIMS(lbd),p,DIMS(p),
-     &     lo,hi,domlo,domhi,dx,bc, 
-     &     inflow_bc_lo,inflow_bc_hi,
-     &     inflow_vel_lo,inflow_vel_hi)
+     &     lo,hi,domlo,domhi,dx,bc)
 
       implicit none
 
@@ -2585,14 +2570,12 @@ c :: ------------------------------------------------------------
       integer lo(SDIM),hi(SDIM)
       integer domlo(SDIM), domhi(SDIM)
       integer bc(SDIM,2)
-      integer inflow_bc_lo(SDIM),inflow_bc_hi(SDIM)
       REAL_T  dx(SDIM)
       REAL_T  ux(DIMV(ux))
       REAL_T  uy(DIMV(uy))
       REAL_T  uz(DIMV(uz))
       REAL_T  p(DIMV(p))
       REAL_T  lbd(DIMV(lbd),ncomps)
-      REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
 
       logical do_upwind
       integer i, j, k
@@ -2621,10 +2604,6 @@ c
                      ld   = lbd(i-1,j,k,1)
                   elseif (bc(1,1) .eq. FOEXTRAP) then
                      mult = zero
-                     if (inflow_bc_lo(1) .eq. 1) then
-                        ld = zero
-                        ux(i,j,k) = inflow_vel_lo(1)
-                     end if
                   end if
                end if
                if (i .eq. domhi(1)+1) then
@@ -2633,10 +2612,6 @@ c
                      ld   = lbd(i,j,k,1)
                   elseif (bc(1,2) .eq. FOEXTRAP) then
                      mult = zero
-                     if (inflow_bc_hi(1) .eq. 1) then
-                        ld = zero
-                        ux(i,j,k) = inflow_vel_hi(1)
-                     end if
                   end if
                end if
                ux(i,j,k) = ux(i,j,k) + ld*mult*dp
@@ -2660,10 +2635,6 @@ c
                      ld = lbd(i,j-1,k,1)
                   elseif (bc(2,1) .eq. FOEXTRAP) then
                      mult = zero
-                     if (inflow_bc_lo(2) .eq. 1) then
-                        ld = zero
-                        uy(i,j,k) = inflow_vel_lo(2)
-                     end if
                   end if
                end if
                if (j .eq. domhi(2)+1) then
@@ -2672,10 +2643,6 @@ c
                      ld = lbd(i,j,k,1)
                   elseif (bc(2,2) .eq. FOEXTRAP) then
                      mult = zero
-                     if (inflow_bc_hi(2) .eq. 1) then
-                        ld = zero
-                        uy(i,j,k) = inflow_vel_hi(2)
-                     end if
                   end if
                end if
                uy(i,j,k) = uy(i,j,k) + ld*mult*dp
@@ -2699,10 +2666,6 @@ c
                      ld = lbd(i,j,k-1,1)
                   elseif (bc(3,1) .eq. FOEXTRAP) then
                      mult = zero
-                     if (inflow_bc_lo(3) .eq. 1) then
-                        ld = zero
-                        uz(i,j,k) = inflow_vel_lo(3)
-                     end if
                   end if
                end if
                if (k .eq. domhi(3)+1) then
@@ -2711,10 +2674,6 @@ c
                      ld = lbd(i,j,k,1)
                   elseif (bc(3,2) .eq. FOEXTRAP) then
                      mult = zero
-                     if (inflow_bc_hi(3) .eq. 1) then
-                        ld = zero
-                        uz(i,j,k) = inflow_vel_hi(3)
-                     end if
                   end if
                end if
                uz(i,j,k) = uz(i,j,k) - ld*(mult*(p(i,j,k)-p(i,j,k-1))/dx(3) - grav) 
@@ -2957,7 +2916,6 @@ c ::: ------------------------------------------------------------------
       integer i,j,k,l_kr_type
       REAL_T  l_kr_coef, l_sat_res
       REAL_T  vtot, gstar, sol
-      REAL_T  rtmp(2)
 
       vtot  = zero
       do k = ARG_L3(rho), ARG_H3(rho)
@@ -2967,9 +2925,11 @@ c ::: ------------------------------------------------------------------
                l_kr_coef = krcoef(i,j,k,2)
                l_sat_res = krcoef(i,j,k,3)
 
-               rtmp = 1.2
-               rtmp(1:ncomps) = rhoval(1:ncomps)
-               gstar = -kappa(i,j,k)*(rtmp(1)-rtmp(2))*grav
+               if (ncomps == 1) then
+                  gstar = -kappa(i,j,k)*rhoval(1)*grav
+               else
+                  gstar = -kappa(i,j,k)*(rhoval(1)-rhoval(2))*grav
+               end if
                
                call FORT_FIND_INV_FLUX(sol,inflow_vel,nc,vtot,gstar,muval,
      &              ncomps,l_kr_type,l_kr_coef)

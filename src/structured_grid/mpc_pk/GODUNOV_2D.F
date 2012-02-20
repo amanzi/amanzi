@@ -3265,7 +3265,7 @@ c ::: arguments
       REAL_T kpedge(DIMV(kp))
       REAL_T tum(2),tup(2),tulft(2),turgt(2),teigr(2),teigl(2),tflx(2)
       REAL_T rhoval(nphases),muval(nphases),grav,athick
-      REAL_T dx, dt
+      REAL_T dx(SDIM), dt, dx_local
 
 c ::: internal variables
       integer i,j,nc    
@@ -3275,11 +3275,13 @@ c ::: internal variables
          imax = hi(1) + 1
          jmin = lo(2) - 1
          jmax = hi(2) + 1
+         dx_local = dx(1)
       elseif (iy .eq. 1) then
          imin = lo(1) - 1
          imax = hi(1) + 1
          jmin = lo(2) 
          jmax = hi(2) + 1
+         dx_local = dx(2)
       end if
 
       do j = jmin,jmax
@@ -3294,7 +3296,7 @@ c ::: internal variables
             end do
             call cmpflx_polymer(tum,tup,tulft,turgt,teigl,teigr,tflx,vel(i,j),
      &           grav, muval(1), muval(2), athick, rhoval(1),rhoval(2),
-     &           kpedge(i,j),dx, dt)
+     &           kpedge(i,j),dx_local, dt)
             flux(i,j,1) = tflx(1)
             flux(i,j,2) = tflx(2)   
          end do

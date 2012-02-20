@@ -150,14 +150,14 @@ Rock::build_finest_data(int         max_level,
 void Rock::build_kmap(MultiFab&             mfdata, 
 		      const std::string&    gsfile) const
 {
-    if (porosity_dist_type == rock_dist_map["uniform"]) {
+    if (permeability_dist_type == rock_dist_map["uniform"]) {
 
         for (int i = 0; i<regions.size(); i++)
         {
             set_constant_kval(mfdata,regions[i]);
         }
     }
-    else if (porosity_dist_type == rock_dist_map["random"])
+    else if (permeability_dist_type == rock_dist_map["random"])
     {
         for (int i = 0; i<regions.size(); i++)
         {
@@ -168,7 +168,7 @@ void Rock::build_kmap(MultiFab&             mfdata,
                             mfdata);
 	}
     }
-    else if (porosity_dist_type == rock_dist_map["geostatistic"])
+    else if (permeability_dist_type == rock_dist_map["geostatistic"])
     {
         BL_ASSERT(gsfile!="");
         PGslib::rdpGaussianSim(permeability,
@@ -181,7 +181,7 @@ void Rock::build_kmap(MultiFab&             mfdata,
                                gsfile); 
     }
     else {
-        BoxLib::Abort("Unsupported porosity option");
+        BoxLib::Abort("Unsupported permeability option");
     }
 }
 
@@ -222,6 +222,8 @@ void Rock::build_pmap(MultiFab&          mfdata,
     }
 }
 
+
+
 void Rock::set_constant_kval(MultiFab&     mfdata, 
 			     const Region& region_local) const
 {
@@ -236,6 +238,22 @@ void Rock::set_constant_pval(MultiFab&     mfdata,
   set_constant_val(mfdata,region_local,porosity_array);
 }
 
+void Rock::set_constant_kval(FArrayBox&  fab, 
+			     const Real* dx) const
+{
+  for (int ir=0; ir<regions.size(); ir++)
+    regions[ir].setVal(fab,permeability,dx,0,0,permeability.size());
+}
+
+void Rock::set_constant_pval(FArrayBox&  fab, 
+			     const Real* dx) const
+{
+  Array<Real> porosity_array(1);
+  porosity_array[0] = porosity;
+  for (int ir=0; ir<regions.size(); ir++)
+    regions[ir].setVal(fab,porosity_array,dx,0,0,1);
+}
+
 void Rock::set_constant_krval(FArrayBox&  fab, 
 			      const Real* dx) const
 {
@@ -248,6 +266,7 @@ void Rock::set_constant_krval(FArrayBox&  fab,
   for (int ir=0; ir<regions.size();ir++)
     regions[ir].setVal(fab,param_tmp,dx,0,0,nval);
 }
+
 void Rock::set_constant_cplval(FArrayBox&  fab, 
 			       const Real* dx) const
 {
@@ -272,4 +291,16 @@ void Rock::set_constant_val(MultiFab&          mfdata,
   
     for (MFIter mfi(mfdata); mfi.isValid(); ++mfi)
         region_local.setVal(mfdata[mfi],val,dx.dataPtr(),ng_twoexp,0,val.size());
+}
+
+void Rock::set_constant_val(FArrayBox&         fab, 
+			    const Region&      region_local,
+			    const Array<Real>& val) const
+{
+    Array<Real> dx(BL_SPACEDIM);
+    int ng_twoexp = 3*twoexp;
+    for (int i=0;i<BL_SPACEDIM; i++)  
+        dx[i] = (probhi[i]-problo[i])/(n_cell[i]*twoexp);
+
+    region_local.setVal(fab,val,dx.dataPtr(),ng_twoexp,0,val.size());
 }
