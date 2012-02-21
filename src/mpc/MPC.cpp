@@ -63,9 +63,6 @@ void MPC::mpc_init() {
   
   read_parameter_list();
 
-  *out << "Period Start Times... " << reset_times_ << std::endl;
-  *out << "Initial Time Step... " << reset_times_dt_ << std::endl;
-
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
   transport_enabled =
@@ -401,15 +398,19 @@ void MPC::cycle_driver () {
       if (! ti_mode == STEADY) {
 	if (reset_times_.size() > 0) {
 	  // first we find the next reset time
-	  int next_time_index(0);
+	  int next_time_index(-1);
 	  for (int ii=0; ii<reset_times_.size(); ii++) {
-	    next_time_index = ii;
-	    if (reset_times_[ii]>S->get_time()) break;
+	    if (S->get_time() < reset_times_[ii]) {
+	      next_time_index = ii;
+	      break;
+	    }
 	  }
-	  // now we are trying to hit the next reset time exactly
-	  if (S->get_time()+2*mpc_dT > reset_times_[next_time_index]) {
-	    mpc_dT = time_step_limiter(S->get_time(), mpc_dT, reset_times_[next_time_index]);
-	    tslimiter = MPC_LIMITS;
+	  if (next_time_index >= 0) {
+	    // now we are trying to hit the next reset time exactly
+	    if (S->get_time()+2*mpc_dT > reset_times_[next_time_index]) {
+	      mpc_dT = time_step_limiter(S->get_time(), mpc_dT, reset_times_[next_time_index]);
+	      tslimiter = MPC_LIMITS;
+	    }
 	  }
 	}
       }
@@ -592,6 +593,12 @@ void MPC::cycle_driver () {
 double MPC::time_step_limiter (double T, double dT, double T_end) {
 
   double time_remaining = T_end - T;
+
+  if (time_remaining < 0.0) {
+    Errors::Message message("MPC: time step limiter logic error, T_end must be greater than T.");
+    Exceptions::amanzi_throw(message);    
+  }
+
   
   if (dT >= time_remaining) {
     return time_remaining;
