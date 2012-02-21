@@ -22,7 +22,7 @@
               <ParameterList name="Time Integration Mode">
                  <ParameterList name="Initialize To Steady">
 	           <Parameter name="Start" type="double" value="0.0"/>
-	           <Parameter name="Switch" type="double" value="6.1684e+7"/> 
+	           <Parameter name="Switch" type="double" value="3.1536e8"/> 
 	           <Parameter name="End" type="double" value="3.1536e9"/>                                                <!-- 100 years -->
    	           <Parameter name="Steady Initial Time Step" type="double" value="1000"/>
 	           <Parameter name="Transient Initial Time Step" type="double" value="60"/>
@@ -255,7 +255,7 @@
              <ParameterList name="Solute IC">
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
-                   <ParameterList name="Tc-99">
+                   <ParameterList name="3H">
                      <ParameterList name="IC: Uniform Concentration">
                        <Parameter name="Value" type="double" value="0.0"/>
                      </ParameterList>
@@ -280,9 +280,9 @@
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
-                   <ParameterList name="Tc-99">
+                   <ParameterList name="3H">
                      <ParameterList name="BC: Uniform Concentration">
-                       <Parameter name="Times" type="Array double" value="{0., 1.e+12}"/>
+                       <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
                        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
                        <Parameter name="Values" type="Array double" value="{0.1, 0.1}"/>
                      </ParameterList>
@@ -297,14 +297,14 @@
            <ParameterList name="BC for F-3 basin">
              <Parameter name="Assigned Regions" type="Array string" value="{Seepage basin}"/>
              <ParameterList name="BC: Uniform Pressure">
-               <Parameter name="Times" type="Array double" value="{0., 1.e+12}"/>
+               <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
                <Parameter name="Values" type="Array double" value="{101325., 101325.}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
-                   <ParameterList name="Tc-99">
+                   <ParameterList name="3H">
                      <ParameterList name="BC: Outflow">
                        <Parameter name="Times" type="Array double" value="{0., 0.}"/>
                        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
@@ -366,8 +366,8 @@
              <Parameter name="Cycle Macro" type="string" value="Every-100-steps"/>
            </ParameterList>
 
-         </ParameterList> <!-- End of Output -->
+         </ParameterList>
        
-       </ParameterList> <!-- End of Main -->
+       </ParameterList> 
        
 
