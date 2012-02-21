@@ -58,7 +58,13 @@ void MPC::mpc_init() {
 
   mpc_parameter_list =  parameter_list.sublist("MPC");
 
+  reset_times_.resize(0);
+  reset_times_dt_.resize(0);
+  
   read_parameter_list();
+
+  *out << "Period Start Times... " << reset_times_ << std::endl;
+  *out << "Initial Time Step... " << reset_times_dt_ << std::endl;
 
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
@@ -188,26 +194,63 @@ void MPC::read_parameter_list()  {
   Teuchos::ParameterList& ti_list =  mpc_parameter_list.sublist("Time Integration Mode");
   if (ti_list.isSublist("Initialize To Steady")) {
     ti_mode = INIT_TO_STEADY;
+    
+    Teuchos::ParameterList& init_to_steady_list = ti_list.sublist("Initialize To Steady");
 
-    T0 = ti_list.sublist("Initialize To Steady").get<double>("Start");
-    Tswitch = ti_list.sublist("Initialize To Steady").get<double>("Switch");
-    T1 = ti_list.sublist("Initialize To Steady").get<double>("End");
+    T0 = init_to_steady_list.get<double>("Start");
+    Tswitch = init_to_steady_list.get<double>("Switch");
+    T1 = init_to_steady_list.get<double>("End");
 
-    dTsteady = ti_list.sublist("Initialize To Steady").get<double>("Steady Initial Time Step");
-    dTtransient = ti_list.sublist("Initialize To Steady").get<double>("Transient Initial Time Step");
+    dTsteady = init_to_steady_list.get<double>("Steady Initial Time Step");
+    dTtransient = init_to_steady_list.get<double>("Transient Initial Time Step");
+
+    if (init_to_steady_list.isSublist("Time Period Control")) {
+      Teuchos::ParameterList& tpc_list = init_to_steady_list.sublist("Time Period Control");
+      
+      reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
+      reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
+
+      if (reset_times_.size() != reset_times_dt_.size()) {
+	Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
+	Exceptions::amanzi_throw(message);
+      }    
+    }
+
+
+
   } else if ( ti_list.isSublist("Steady")) {
     ti_mode = STEADY;
+    
+    Teuchos::ParameterList& steady_list = ti_list.sublist("Steady");
 
-    T0 = ti_list.sublist("Steady").get<double>("Start");
-    T1 = ti_list.sublist("Steady").get<double>("End");
-    dTsteady = ti_list.sublist("Steady").get<double>("Initial Time Step");
+    T0 = steady_list.get<double>("Start");
+    T1 = steady_list.get<double>("End");
+    dTsteady = steady_list.get<double>("Initial Time Step");
+
+    
 
   } else if ( ti_list.isSublist("Transient") ) {
     ti_mode = TRANSIENT;
 
-    T0 = ti_list.sublist("Transient").get<double>("Start");
-    T1 = ti_list.sublist("Transient").get<double>("End");
-    dTtransient =  ti_list.sublist("Transient").get<double>("Initial Time Step");
+    Teuchos::ParameterList& transient_list = ti_list.sublist("Transient");
+
+    T0 = transient_list.get<double>("Start");
+    T1 = transient_list.get<double>("End");
+    dTtransient =  transient_list.get<double>("Initial Time Step");
+
+    if (transient_list.isSublist("Time Period Control")) {
+      Teuchos::ParameterList& tpc_list = transient_list.sublist("Time Period Control");
+      
+      reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
+      reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
+
+      if (reset_times_.size() != reset_times_dt_.size()) {
+	Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
+	Exceptions::amanzi_throw(message);	
+      }
+    }
+
+
 
   } else {
     Errors::Message message("MPC: no valid Time Integration Mode was specified, you must specify exactly one of Initialize To Steady, Steady, or Transient.");
@@ -354,6 +397,23 @@ void MPC::cycle_driver () {
       }
 
 
+      // make sure we hit any of the reset times exactly (not in steady mode)
+      if (! ti_mode == STEADY) {
+	if (reset_times_.size() > 0) {
+	  // first we find the next reset time
+	  int next_time_index(0);
+	  for (int ii=0; ii<reset_times_.size(); ii++) {
+	    next_time_index = ii;
+	    if (reset_times_[ii]>S->get_time()) break;
+	  }
+	  // now we are trying to hit the next reset time exactly
+	  if (S->get_time()+2*mpc_dT > reset_times_[next_time_index]) {
+	    mpc_dT = time_step_limiter(S->get_time(), mpc_dT, reset_times_[next_time_index]);
+	    tslimiter = MPC_LIMITS;
+	  }
+	}
+      }
+	
       // make sure we will hit the final time exactly
       if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
         mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
@@ -364,6 +424,20 @@ void MPC::cycle_driver () {
 	tslimiter = MPC_LIMITS;
       }
       
+      // make sure that if we are currently on a reset time, to reset the time step
+      if (! ti_mode == STEADY) {
+	for (int ii=0; ii<reset_times_.size(); ++ii) {
+	  // this is probably iffy...
+	  if (S->get_time() == reset_times_[ii]) {
+	    mpc_dT = reset_times_dt_[ii];
+	    tslimiter = MPC_LIMITS;
+	    // now reset the BDF2 integrator..
+	    FPK->init_transient(S->get_time(), mpc_dT);   
+	    break;	    
+	  }
+	}
+      }
+
       // write some info about the time step we are about to take
       
       // first determine what we will write about the time step limiter

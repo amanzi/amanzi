@@ -90,7 +90,12 @@ namespace Amanzi
     
     // checkpoint/restart 
     Amanzi::Restart *restart;
-    
+ 
+    // time period control
+    Teuchos::Array<double> reset_times_;
+    Teuchos::Array<double> reset_times_dt_;
+
+   
   };
   
   
