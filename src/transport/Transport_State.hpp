@@ -39,6 +39,7 @@ class Transport_State {
   Teuchos::RCP<Epetra_Vector> get_porosity() { return porosity; }
   Teuchos::RCP<Epetra_Vector> get_water_saturation() { return water_saturation; }
   Teuchos::RCP<Epetra_Vector> get_darcy_flux() { return darcy_flux; }
+  Teuchos::RCP<Epetra_Vector> get_previous_darcy_flux() { return previous_darcy_flux; }
   Teuchos::RCP<Epetra_Vector> get_water_density() { return water_density; }
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh_maps() { return mesh_maps; }
 
@@ -47,6 +48,7 @@ class Transport_State {
   Epetra_Vector& ref_porosity() { return *porosity; }
   Epetra_Vector& ref_water_saturation() { return *water_saturation; }
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
+  Epetra_Vector& ref_previous_darcy_flux() { return *previous_darcy_flux; }
   Epetra_Vector& ref_water_density() { return *water_density; }
 
   // miscaleneous
@@ -69,6 +71,7 @@ class Transport_State {
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
   Teuchos::RCP<Epetra_Vector> water_saturation;
   Teuchos::RCP<Epetra_Vector> darcy_flux;
+  Teuchos::RCP<Epetra_Vector> previous_darcy_flux;
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_Vector> water_density;
 
