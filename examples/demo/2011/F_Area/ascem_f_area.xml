@@ -106,7 +106,28 @@
                </ParameterList>
             </ParameterList>
 
-            <ParameterList name="Natural recharge">
+<!-- This face is corresponding to natural recharge (left side) -->
+            <ParameterList name="Natural recharge (left)">
+               <ParameterList name="Region: Labeled Set">
+                 <Parameter name="Label"  type="string" value="1"/>
+                 <Parameter name="File"   type="string" value="ascem_f_area_mesh.exo"/>
+                 <Parameter name="Format" type="string" value="Exodus II"/>
+                 <Parameter name="Entity" type="string" value="Face"/>
+               </ParameterList>
+            </ParameterList>
+
+<!-- This face is corresponding to natural recharge (right side) -->
+            <ParameterList name="Natural recharge (right)">
+               <ParameterList name="Region: Labeled Set">
+                 <Parameter name="Label"  type="string" value="3"/>
+                 <Parameter name="File"   type="string" value="ascem_f_area_mesh.exo"/>
+                 <Parameter name="Format" type="string" value="Exodus II"/>
+                 <Parameter name="Entity" type="string" value="Face"/>
+               </ParameterList>
+            </ParameterList>
+
+<!-- This face is corresponding to Seepage basin -->
+            <ParameterList name="Seepage basin">
                <ParameterList name="Region: Labeled Set">
                  <Parameter name="Label"  type="string" value="2"/>
                  <Parameter name="File"   type="string" value="ascem_f_area_mesh.exo"/>
@@ -115,9 +136,10 @@
                </ParameterList>
             </ParameterList>
 
-            <ParameterList name="Seepage basin">
+<!-- This face is corresponding to seepage face -->
+            <ParameterList name="Seepage face">
                <ParameterList name="Region: Labeled Set">
-                 <Parameter name="Label"  type="string" value="3"/>
+                 <Parameter name="Label"  type="string" value="4"/>
                  <Parameter name="File"   type="string" value="ascem_f_area_mesh.exo"/>
                  <Parameter name="Format" type="string" value="Exodus II"/>
                  <Parameter name="Entity" type="string" value="Face"/>
@@ -267,15 +289,17 @@
            </ParameterList>
          </ParameterList>
 
+<!-- Boundary conditions -->
+
          <ParameterList name="Boundary Conditions">
 
-           <!-- Boundary corresponding to the Natural recharge -->
-           <ParameterList name="BC for natural  recharge">
-             <Parameter name="Assigned Regions" type="Array string" value="{Natural recharge}"/>
+<!-- Boundary corresponding to the Natural recharge (left side) -->
+           <ParameterList name="BC for natural  recharge (left)">
+             <Parameter name="Assigned Regions" type="Array string" value="{Natural recharge (left)}"/>
              <ParameterList name="BC: Flux">
-               <Parameter name="Times" type="Array double" value="{0., 1.e+12}"/>
+               <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Inward Mass Flux" type="Array double" value="{1.1091e-07, 1.1091e-07}"/>
+               <Parameter name="Inward Mass Flux" type="Array double" value="{4.743e-6, 4.743e-6}"/> <!-- 0.15 [m3 m-2 yr-1] => [kg m-2 s-1] -->
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
@@ -284,7 +308,31 @@
                      <ParameterList name="BC: Uniform Concentration">
                        <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
                        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                       <Parameter name="Values" type="Array double" value="{0.1, 0.1}"/>
+                       <Parameter name="Values" type="Array double" value="{1.0e-9, 1.0e-9}"/>
+                     </ParameterList>
+                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+ <!-- Boundary corresponding to the Natural recharge (right side) -->
+           <ParameterList name="BC for natural  recharge (right)">
+             <Parameter name="Assigned Regions" type="Array string" value="{Natural recharge (right)}"/>
+             <ParameterList name="BC: Flux">
+               <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Inward Mass Flux" type="Array double" value="{4.743e-6, 4.743e-6}"/>   <!-- 0.15 [m3 m-2 yr-1] => [kg m-2 s-1] -->
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="3H">
+                     <ParameterList name="BC: Uniform Concentration">
+                       <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
+                       <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{1.0e-9, 1.0e-9}"/>
                      </ParameterList>
                      <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
                    </ParameterList>
@@ -293,13 +341,36 @@
              </ParameterList>
            </ParameterList>
        
-           <!-- Boundary corresponding to the seepage basin -->
+<!-- Boundary corresponding to the seepage basin -->
            <ParameterList name="BC for F-3 basin">
              <Parameter name="Assigned Regions" type="Array string" value="{Seepage basin}"/>
+             <ParameterList name="BC: Flux">
+               <Parameter name="Times" type="Array double" value="{0., 1.0407e9}"/>                <!-- Seepage only in the firts 33 years -->
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Inward Mass Flux" type="Array double" value="{1.2648e-4, 0.0e0}"/>   <!-- After 33 years, the seepage rate below the F-3 basin is zero --> 
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="3H">
+                     <ParameterList name="BC: Uniform Concentration">
+                       <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
+                       <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{1.0e-9, 1.0e-9}"/>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+<!-- Boundary corresponding to the seepage face -->
+           <ParameterList name="BC for seepage face">
+             <Parameter name="Assigned Regions" type="Array string" value="{Seepage face}"/>
              <ParameterList name="BC: Uniform Pressure">
                <Parameter name="Times" type="Array double" value="{0., 3.1536e9}"/>
                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Values" type="Array double" value="{101325., 101325.}"/>
+               <Parameter name="Values" type="Array double" value="{101325., 101325.}"/>                    <!-- Atmospheric pressure -->
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
