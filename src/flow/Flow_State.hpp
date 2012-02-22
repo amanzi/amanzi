@@ -19,7 +19,10 @@ class Flow_State {
       horizontal_permeability_(S->get_horizontal_permeability()),
       pressure_(S->get_pressure()),
       porosity_(S->get_porosity()),
-      water_saturation_(S->get_water_saturation()) {};
+      water_saturation_(S->get_water_saturation()),
+      prev_water_saturation_(S->get_prev_water_saturation()) 
+  {};
+  
   ~Flow_State() {};
 
   // access methods
@@ -31,6 +34,7 @@ class Flow_State {
   const Epetra_Vector& get_horizontal_permeability() const { return *horizontal_permeability_; }
   const Epetra_Vector& get_porosity() const { return *porosity_; }
   Epetra_Vector& get_water_saturation() { return *water_saturation_; }
+  Epetra_Vector& get_prev_water_saturation() { return *prev_water_saturation_; }
   Epetra_Vector& get_pressure() { return *pressure_; }
 
  private:
@@ -44,6 +48,7 @@ class Flow_State {
   const Teuchos::RCP<Epetra_Vector> pressure_;  // current cell pressure solution
   const Teuchos::RCP<Epetra_Vector> porosity_;
   const Teuchos::RCP<Epetra_Vector> water_saturation_;
+  const Teuchos::RCP<Epetra_Vector> prev_water_saturation_;  
 };
 
 } // close namespace Amanzi

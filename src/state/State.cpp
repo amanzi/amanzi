@@ -252,9 +252,9 @@ void State::create_storage ()
   water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
-  previous_darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  prev_water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   vertical_permeability       = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   horizontal_permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   total_component_concentration
@@ -303,7 +303,6 @@ void State::update_total_component_concentration(const Epetra_MultiVector& new_t
 
 void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
 {
-  *previous_darcy_flux = *darcy_flux;
   *darcy_flux = new_darcy_flux;
 }
 

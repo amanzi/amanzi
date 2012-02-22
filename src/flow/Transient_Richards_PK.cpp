@@ -160,6 +160,11 @@ int Transient_Richards_PK::advance_transient(double h)
 
   time_stepper->write_bdf2_stepping_statistics();
 
+  
+  FS->get_pressure() = *pressure_cells;
+  FS->get_prev_water_saturation() = FS->get_water_saturation();
+  GetSaturation( FS->get_water_saturation() );
+
   double l1_error;
   problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
 }
@@ -176,6 +181,10 @@ int Transient_Richards_PK::advance_steady(double h)
 
   steady_time_stepper->write_bdf1_stepping_statistics();
 
+  FS->get_pressure() = *pressure_cells;
+  FS->get_prev_water_saturation() = FS->get_water_saturation();
+  GetSaturation( FS->get_water_saturation() );  
+
   double l1_error;
   problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
 }
@@ -190,9 +199,7 @@ void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
   
 void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS) 
 {
-  FS->get_pressure() = *pressure_cells;
-  
-  GetSaturation( FS->get_water_saturation() );
+
 }
 
 

@@ -31,9 +31,9 @@ public:
 
   Teuchos::RCP<Epetra_Vector>       get_pressure ()         { return pressure; }; 
   Teuchos::RCP<Epetra_Vector>       get_darcy_flux ()       { return darcy_flux; };
-  Teuchos::RCP<Epetra_Vector>       get_previous_darcy_flux ()       { return previous_darcy_flux; };
   Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
   Teuchos::RCP<Epetra_Vector>       get_water_saturation () { return water_saturation; };
+  Teuchos::RCP<Epetra_Vector>       get_prev_water_saturation () { return prev_water_saturation; };
   Teuchos::RCP<Epetra_Vector>       get_water_density ()    { return water_density; };
   Teuchos::RCP<Epetra_Vector>       get_vertical_permeability ()     { return vertical_permeability; };
   Teuchos::RCP<Epetra_Vector>       get_horizontal_permeability ()   { return horizontal_permeability; };
@@ -142,10 +142,10 @@ private:
   Teuchos::RCP<Epetra_Vector> water_density;  
   Teuchos::RCP<Epetra_Vector> pressure;
   Teuchos::RCP<Epetra_Vector> darcy_flux;
-  Teuchos::RCP<Epetra_Vector> previous_darcy_flux;
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration; 
   Teuchos::RCP<Epetra_Vector> water_saturation;
+  Teuchos::RCP<Epetra_Vector> prev_water_saturation;
   Teuchos::RCP<Epetra_Vector> horizontal_permeability;
   Teuchos::RCP<Epetra_Vector> vertical_permeability;  
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
