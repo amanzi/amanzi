@@ -1,3 +1,5 @@
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
 #include "Mesh.hh"
 #include "Transient_Richards_PK.hpp"
 #include "RichardsProblem.hpp"
@@ -7,6 +9,19 @@ namespace Amanzi {
 Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_, 
                                              const Teuchos::RCP<Flow_State> FS_) : FS(FS_), plist(plist_)
 {
+  // set the line prefix for output
+  this->setLinePrefix("Amanzi::Transient_Richards_PK ");
+  // make sure that the line prefix is printed
+  this->getOStream()->setShowLinePrefix(true);
+
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&plist,this);
+
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+
   // Add some parameters to the Richards problem constructor parameter list.
   Teuchos::ParameterList &rp_list = plist.sublist("Richards Problem");
   rp_list.set("fluid density", FS->get_fluid_density());
@@ -151,6 +166,11 @@ int Transient_Richards_PK::init_steady(double t0, double h_)
 
 int Transient_Richards_PK::advance_transient(double h) 
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+
   // Set problem parameters
   problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
   problem->set_flow_state(FS);
@@ -167,11 +187,19 @@ int Transient_Richards_PK::advance_transient(double h)
 
   double l1_error;
   problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
+    *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
+  }
 }
 
 
 int Transient_Richards_PK::advance_steady(double h) 
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+
   // Set problem parameters
   problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
   problem->set_flow_state(FS);
@@ -187,6 +215,9 @@ int Transient_Richards_PK::advance_steady(double h)
 
   double l1_error;
   problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
+    *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
+  }
 }
 
 
