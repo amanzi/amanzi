@@ -355,16 +355,45 @@ void MPC::cycle_driver () {
 
       if (flow_enabled && flow_model == "Richards")  {
 	flow_dT = FPK->get_flow_dT();
+
         // adjust the time step, so that we exactly hit the switchover time
         if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+2.0*flow_dT > Tswitch) {
           limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
+	  tslimiter = MPC_LIMITS;
         }
-	// adjust the time step, so that we exactly hit the final time in steady mode
-	if (ti_mode == STEADY  &&  S->get_time()+2*flow_dT > T1) { 
-	  limiter_dT = time_step_limiter(S->get_time(), flow_dT, T1);
-	}
-      }
+      
 
+        // make sure we hit any of the reset times exactly (not in steady mode)
+        if (! ti_mode == STEADY) {
+          if (reset_times_.size() > 0) {
+	    // first we find the next reset time
+	    int next_time_index(-1);
+	    for (int ii=0; ii<reset_times_.size(); ii++) {
+	      if (S->get_time() < reset_times_[ii]) {
+	        next_time_index = ii;
+	        break;
+	      }
+	    }
+	    if (next_time_index >= 0) {
+	      // now we are trying to hit the next reset time exactly
+              if (ti_mode == INIT_TO_STEADY) {
+                if (reset_times_[next_time_index] != Tswitch) {
+	          if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
+	            limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
+	            tslimiter = MPC_LIMITS;
+	          }
+                }
+              } else {
+                if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
+                  limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
+                  tslimiter = MPC_LIMITS;
+                }
+              }
+	    }
+	  }
+        }
+      }
+	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
           transport_dT = TPK->calculate_transport_dT();
@@ -373,6 +402,7 @@ void MPC::cycle_driver () {
           chemistry_dT = CPK->max_time_step();
         }
       }
+
       
       // take the mpc time step as the min of all suggested time steps 
       mpc_dT = std::min( std::min( std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT );
@@ -393,34 +423,16 @@ void MPC::cycle_driver () {
 	tslimiter = MPC_LIMITS; 
       }
 
-
-      // make sure we hit any of the reset times exactly (not in steady mode)
-      if (! ti_mode == STEADY) {
-	if (reset_times_.size() > 0) {
-	  // first we find the next reset time
-	  int next_time_index(-1);
-	  for (int ii=0; ii<reset_times_.size(); ii++) {
-	    if (S->get_time() < reset_times_[ii]) {
-	      next_time_index = ii;
-	      break;
-	    }
-	  }
-	  if (next_time_index >= 0) {
-	    // now we are trying to hit the next reset time exactly
-	    if (S->get_time()+2*mpc_dT > reset_times_[next_time_index]) {
-	      mpc_dT = time_step_limiter(S->get_time(), mpc_dT, reset_times_[next_time_index]);
-	      tslimiter = MPC_LIMITS;
-	    }
-	  }
-	}
-      }
-	
       // make sure we will hit the final time exactly
       if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
         mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
 	tslimiter = MPC_LIMITS;
-      }
+      } 
       if (ti_mode == TRANSIENT && S->get_time()+2*mpc_dT > T1) { 
+	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
+	tslimiter = MPC_LIMITS;
+      }
+      if (ti_mode == STEADY  &&  S->get_time()+2*mpc_dT > T1) { 
 	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
 	tslimiter = MPC_LIMITS;
       }
@@ -602,8 +614,8 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
   
   if (dT >= time_remaining) {
     return time_remaining;
-  } else if ( dT > 0.75*time_remaining ) {
-    return 0.5*time_remaining;
+  } else if ( dT > 0.85*time_remaining ) {
+    return 0.6*time_remaining;
   } else {
     return dT;
   }
