@@ -276,10 +276,11 @@ void Transport_State::analytic_porosity(double phi)
  ***************************************************************** */
 void Transport_State::analytic_water_saturation(double ws)
 {
-  const Epetra_BlockMap &  cmap = (*water_saturation).Map();
+  const Epetra_BlockMap& cmap = (*water_saturation).Map();
 
   for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
     (*water_saturation)[c] = ws;  // default is 1.0 
+    (*prev_water_saturation)[c] = ws;
   }
 }
 
@@ -289,7 +290,7 @@ void Transport_State::analytic_water_saturation(double ws)
  **************************************************************** */
 void Transport_State::analytic_water_density(double wd)
 {
-  const Epetra_BlockMap &  cmap = (*water_density).Map();
+  const Epetra_BlockMap& cmap = (*water_density).Map();
 
   for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
     (*water_density)[c] = wd;  // default is 1000.0
