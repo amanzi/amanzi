@@ -28,8 +28,7 @@ RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem,
   Teuchos::readVerboseObjectSublist(&plist_,this);
 
   atol = plist.get<double>("Absolute error tolerance",1.0);
-  rtol = plist.get<double>("Relative error tolerance",1e-5);
-  
+  rtol = plist.get<double>("Relative error tolerance",0.0);
 }
 
 void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
@@ -47,7 +46,7 @@ void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_p
 // Overridden from BDF2::fnBase
 
 void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u, 
-				 const Epetra_Vector& udot, Epetra_Vector& f)
+				 const Epetra_Vector& udot, Epetra_Vector& f, const double dT)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -61,24 +60,35 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   Epetra_Vector *udotc  = problem_->CreateCellView(udot);
   Epetra_Vector *fc     = problem_->CreateCellView(f);
 
+  // back out uold
+  Epetra_Vector u0c(problem_->CellMap());
+  u0c = *uc;
+  u0c.Update(-dT, *udotc, 1.0);
 
-  // compute S'(p)
-  Epetra_Vector dS (problem_->CellMap());
-  problem_->dSofP(*uc, dS);
-
-  const Epetra_Vector& phi = FS_->get_porosity();
-  double rho;
-
-  problem_->GetFluidDensity(rho);
-
-  // assume that porosity is piecewise constant
-  dS.Multiply(rho,dS,phi,0.0);
+  // now compute (s(uoldc)-s(uc))/dT
+  Epetra_Vector S_u0c(problem_->CellMap());
+  problem_->SofP(u0c, S_u0c);
   
+  Epetra_Vector S_uc(problem_->CellMap());
+  problem_->SofP(*uc, S_uc);
+  
+  Epetra_Vector dS(problem_->CellMap());
+  dS = S_uc;
+  dS.Update(-1.0/dT, S_u0c, 1.0/dT);
+
+  // scale by rho and multiply by porosity
+  double rho; 
+  problem_->GetFluidDensity(rho);
+  const Epetra_Vector& phi = FS_->get_porosity();
+  dS.Multiply(rho, dS, phi, 0.0); 
+
   // scale by the cell volumes
   dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
 
-  // on the cell unknowns compute f=f+dS*udotc*rho*phi
-  fc->Multiply(1.0,dS,*udotc,1.0);
+
+  // on the cell unknowns compute f=f+dS
+  fc->Update(1.0,dS,1.0);
+
 
   if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
     *out << "fun o.k." <<  std::endl;
@@ -146,6 +156,12 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
 
   return  en;
 
+}
+
+
+void RichardsModelEvaluator::update_norm(double rtolnew, double atolnew) {
+  atol = atolnew;
+  rtol = rtolnew;
 }
 
 

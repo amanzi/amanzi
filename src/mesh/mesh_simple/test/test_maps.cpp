@@ -23,7 +23,7 @@ TEST(MAPS) {
   Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
 
   double xc[] = { 2.0, 2.0, 2.0 };
-  Mm.set_coordinate(7,xc,xc+3);
+  Mm.node_set_coordinates(7,xc);
 
   cout << "number of cells = " << Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED) << endl;
   cout << "number of faces = " << Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED) << endl;
@@ -52,8 +52,8 @@ TEST(MAPS) {
 	cout << endl << endl;
       }
 
-      cout << "cell_to_faces" << endl;
-      Mm.cell_to_faces(i, faces.begin(), faces.end());
+      cout << "cell_get_faces" << endl;
+      Mm.cell_get_faces_and_dirs(i, &faces, &face_dirs, true);
       double xx[4][3];
       for (int j=0; j<6; j++) {
 	Mm.face_to_coordinates(faces[j],x.begin(), x.begin()+12);
@@ -85,8 +85,7 @@ TEST(MAPS) {
       }
 
 
-      cout << "cell_to_face_dirs" << endl;
-      Mm.cell_to_face_dirs(i, face_dirs.begin(), face_dirs.end());
+      cout << "cell_get_face_dirs" << endl;
       for (int j=0; j<6; j++) {
 
 	cout << face_dirs[j] << " ";

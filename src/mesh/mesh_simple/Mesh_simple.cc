@@ -2,9 +2,11 @@
 
 #include <algorithm>
 
+#include <Teuchos_RCP.hpp>
+
 #include "Mesh_simple.hh"
 #include "GenerationSpec.hh"
-#include <Teuchos_RCP.hpp>
+#include "dbc.hh"
 
 namespace Amanzi
 {
@@ -436,6 +438,24 @@ void Mesh_simple::cell_get_faces (AmanziMesh::Entity_ID cell,
 }
 
 
+void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
+                                           AmanziMesh::Entity_ID_List *faceids,
+                                           std::vector<int> *cfacedirs,
+                                           const bool ordered) const
+{
+  unsigned int offset = 6*cellid;
+
+  faceids->clear();
+  cfacedirs->clear();
+
+  for (int i = 0; i < 6; i++) {
+    faceids->push_back(*(cell_to_face_.begin()+offset));
+    cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
+    offset++;
+  }
+}
+
+
 
 void Mesh_simple::cell_get_nodes (AmanziMesh::Entity_ID cell, 
 				  AmanziMesh::Entity_ID_List *nodeids) const
@@ -530,15 +550,15 @@ void Mesh_simple::cell_get_face_dirs (AmanziMesh::Entity_ID cell,
 }
 
 
-void Mesh_simple::set_coordinate(AmanziMesh::Entity_ID local_node_id, 
-				 double *source_begin, 
-				 double *source_end)
+void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
+                                      const double *ncoord)
 {
   unsigned int offset = 3*local_node_id;
+
+  ASSERT(ncoord != NULL);
   
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
-  std::copy(source_begin, source_end, destination_begin);
-
+  std::copy(&(ncoord[0]),&(ncoord[2]),destination_begin);
 }
 
 

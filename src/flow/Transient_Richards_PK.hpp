@@ -3,6 +3,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #include "Epetra_Vector.h"
 
@@ -11,17 +12,20 @@
 #include "RichardsProblem.hpp"
 #include "RichardsModelEvaluator.hpp"
 #include "BDF2_Dae.hpp"
+#include "BDF1_Dae.hh"
 
 namespace Amanzi {
 
-class Transient_Richards_PK : public Flow_PK {
+class Transient_Richards_PK : public Flow_PK, public Teuchos::VerboseObject<Transient_Richards_PK> {
  public:
   Transient_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<Flow_State>);
   ~Transient_Richards_PK ();
 
   int advance_to_steady_state();
   int advance_transient(double h);
+  int advance_steady(double h);
   int init_transient(double t0, double h0);
+  int init_steady(double t0, double h0);
   void commit_state(Teuchos::RCP<Flow_State>); 
 
   // After a successful advance() the following routines may be called.
@@ -49,8 +53,9 @@ private:
   RichardsProblem *problem;
   RichardsModelEvaluator *RME;
   
-  BDF2::Dae *time_stepper;
-
+  BDF2::Dae* time_stepper;
+  BDF1Dae* steady_time_stepper;
+  
   Epetra_Vector *solution;   // full cell/face solution
   Epetra_Vector *pressure_cells;   // cell pressures
   Epetra_Vector *pressure_faces;

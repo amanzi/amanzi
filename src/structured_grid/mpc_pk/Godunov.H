@@ -437,7 +437,7 @@ public:
 			FArrayBox &Aofs,    int aofs_ind,
 			FArrayBox &tforces, int tf_ind,
 			FArrayBox &Rockphi,
-			const Box &grd, Array<int> idx_total, Real dt );
+			const Box &grd, const Array<int>& idx_total, Real dt );
 
   // iconserv==1   => tforces = tforces + visc - divU*S
   // iconserv==0   => tforces = (tforces+visc)/rho

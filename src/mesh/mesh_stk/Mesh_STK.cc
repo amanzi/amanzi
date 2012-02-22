@@ -259,6 +259,49 @@ Mesh_STK::cell_get_face_dirs (const Entity_ID cellid,
 }
 
 
+// Get faces of a cell and directions in which the cell uses the face 
+
+// The Amanzi coding guidelines regarding function arguments is purposely
+// violated here to allow for a default input argument
+
+// On a distributed mesh, this will return all the faces of the
+// cell, OWNED or GHOST. Since STK cell-face relations are stored/created
+// according to Exodus II convention for standard cells, the output of
+// this routine will also follow this convention. What happens with 
+// general polyhedra is unknown
+
+// In 3D, direction is 1 if face normal points out of cell
+// and -1 if face normal points into cell
+// In 2D, direction is 1 if face/edge is defined in the same
+// direction as the cell polygon, and -1 otherwise
+
+void 
+Mesh_STK::cell_get_faces_and_dirs (const Entity_ID cellid,
+                                   Entity_ID_List *outfaceids,
+                                   std::vector<int> *face_dirs,
+				   const bool ordered) const
+{
+  stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
+  global_cell_id += 1;                  // need 1-based for stk::mesh
+
+  STK::Entity_Ids stk_face_ids;
+  mesh_->element_to_faces_and_dirs(global_cell_id, stk_face_ids, *face_dirs);
+  // 0-based for Epetra_Map
+  std::for_each(stk_face_ids.begin(), stk_face_ids.end(), bl::_1 -= 1);
+
+  outfaceids->clear();
+  face_dirs->clear();
+  for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
+       f != stk_face_ids.end(); f++) {
+    stk::mesh::EntityId global_face_id(*f);
+    ASSERT(this->face_epetra_map(true).MyGID(global_face_id));
+    stk::mesh::EntityId local_face_id = 
+        this->face_epetra_map(true).LID(global_face_id);
+    outfaceids->push_back(local_face_id);
+  }
+}
+
+
 // -------------------------------------------------------------
 // Mesh_STK::cell_get_nodes
 // -------------------------------------------------------------
@@ -575,6 +618,19 @@ Mesh_STK::cell_get_coordinates (const Entity_ID cellid,
   }
 }
     
+
+
+// ------------------------------------------------------------
+// Modify the coordinates of a node
+// ------------------------------------------------------------
+
+void
+Mesh_STK::node_set_coordinates(const Entity_ID nodeid, const double *coords)
+{
+  stk::mesh::EntityId gid(this->GID(nodeid, NODE));
+  gid++;                                // need 1-based for stk::mesh
+  mesh_->set_coordinates(gid, coords);
+}
 
 
 // -------------------------------------------------------------

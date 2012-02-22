@@ -176,6 +176,40 @@ Mesh_STK_Impl::element_to_face_dirs(stk::mesh::EntityId element,
   }
 }
 
+void
+Mesh_STK_Impl::element_to_faces_and_dirs(stk::mesh::EntityId element,
+                                         Entity_Ids& ids,
+                                         std::vector<int>& dirs) const
+{
+  // Look up element from global id.
+  const int cell_rank = entity_map_->kind_to_rank (CELL);
+  const int face_rank = entity_map_->kind_to_rank (FACE);
+
+  stk::mesh::Entity *entity = id_to_entity(cell_rank, element);
+  ASSERT (entity->identifier () == element);
+
+  const CellTopologyData* topo = stk::mesh::get_cell_topology (*entity);
+
+  ASSERT(topo != NULL);
+
+  stk::mesh::PairIterRelation faces = entity->relations( face_rank );
+  for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
+  {
+    stk::mesh::EntityId gid(it->entity ()->identifier ());
+    ids.push_back (gid);
+
+    stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
+        stk::mesh::field_data<Id_field_type>(*face_owner_, *(it->entity()));
+    int dir(1);
+    if (*owner != element) {
+      dir = -1;
+    }
+    dirs.push_back (dir);    
+  }
+
+  ASSERT (ids.size () == topo->side_count);
+}
+
 /** 
  * This may only be safe if @c element is locally owned or shared.
  * 
@@ -295,6 +329,22 @@ Mesh_STK_Impl::coordinates (stk::mesh::EntityId node) const
 
   stk::mesh::Entity *entity = id_to_entity(stk::mesh::Node, node);
   return coordinates (entity);
+
+}
+
+void
+Mesh_STK_Impl::set_coordinates (stk::mesh::EntityId node, const double *coords) 
+{
+
+  stk::mesh::Entity *entity = id_to_entity(stk::mesh::Node, node);
+  double * node_coordinates = stk::mesh::field_data(coordinate_field_, *entity);
+
+  std::cerr << "Node " << node << "coordinates:" << std::endl;
+  std::cerr << "   Before: " << node_coordinates[0] << node_coordinates[1] << node_coordinates[2] << std::endl;
+
+  std::copy(coords, coords+space_dimension_, node_coordinates);
+
+  std::cerr << "   After: " << node_coordinates[0] << node_coordinates[1] << node_coordinates[2] << std::endl << std::endl;
 
 }
 

@@ -50,7 +50,7 @@ class HDF5_MPI {
   std::string xdmfStepFilename() { return xdmfStepFilename_; }
   void setxdmfStepFilename(std::string xdmfStepFilename) {
                            xdmfStepFilename_ = xdmfStepFilename;}
-
+  
   int NumNodes() { return NumNodes_;}
   void setNumNodes(int NumNodes) {NumNodes_ = NumNodes;}
   int NumElems() { return NumElems_;}
@@ -122,6 +122,9 @@ class HDF5_MPI {
                       datatype_t type);
 
   int getCellTypeID_(int conn_len);
+  
+  
+  std::string stripFilename_(std::string filename);
   
   // parallel info
   Epetra_MpiComm viz_comm_;

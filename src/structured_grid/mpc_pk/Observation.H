@@ -13,6 +13,9 @@
 #include <AmrLevel.H>
 #include <Region.H>
 
+#include <cmath>
+
+
 /*
   @ManDoc: Class defining all possible types of observations
 */
@@ -23,42 +26,39 @@ public:
   */
   std::string name;
 
-  /* These specify which variable the source is contributing to. 
-       var_type: comp or tracer.
-       var_id  : name listed in the comp or tracer. 
-                 ALL: all of the components in var_type.
-		 USER: user specified routine in PROB_$D.F
-       id: based on var_type, var_id, this is converted to index in State_Type.
+  /* This is the string that is sent to the derive function of AmrLevel
   */
-  std::string var_type;
-  std::string var_id;
-  int id;
+  std::string field;
 
   /* This specifies the region in which the observation is applied. 
-     The user give the name but this is internally change 
-     to corresponding index in region_array.
    */
-  int region;
+  const Region& region;
 
   /* This specifies the observation type
    */
   std::string obs_type;
-  std::map<std::string, int> obs_type_list;
+  static std::map<std::string, int> obs_type_list;
 
   /* This specifies the operation type
-     0: average
-     1: integral over space
-     2: integral over space and time
    */
-  int op_type;
+  std::string op_type;
+  static std::map<std::string, int> op_type_list;
 
   Array<Real> times;
   std::map<int,Real> vals;
 
-  Observation();
+  std::string event_label;
 
-  void process(Real t_old, Real t_new);
+  Observation(const std::string& name,
+              const std::string& field,
+              const Region&      region,
+              const std::string& obs_type,
+              const std::string& eventLabel);
+
+  void process(Real t_old, Real t_new, int iter);
   static void setAmrPtr(Amr* amr) {amrp = amr;}
+  static void Cleanup ();
+  static void Initialize ();
 
 protected:
   std::pair<Real,Real> integral_and_volume (Real time);
@@ -68,7 +68,6 @@ protected:
   Real volume_time_integral(Real t_old, Real t_new);
   Real point_sample (Real time);
 
-  Real val_old, val_new;
-  bool initialized;
+  Real val_old, val_new;  
 };
 #endif /*_OBSERVATION_H_*/

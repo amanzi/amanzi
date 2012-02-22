@@ -2891,7 +2891,6 @@ Diffusion::getBndryData (ViscBndry& bndry,
        Rho_mfi.isValid() && Phi_fpi.isValid(); 
        ++Rho_mfi, ++Phi_fpi)
     {
-      pm_level->dirichletStateBC(Phi_fpi(),nGrow,time);
       const BoxList gCells = BoxLib::boxDiff(Phi_fpi().box(),Phi_fpi.validbox());
       for (BoxList::const_iterator bli = gCells.begin();
 	   bli != gCells.end();
@@ -2940,8 +2939,6 @@ Diffusion::FillBoundary (BndryRegister& bdry,
   for (FillPatchIterator S_fpi(*caller,S,nGrow,time,State_Type,0,NUM_SCALARS);
        Rho_mfi.isValid() && S_fpi.isValid(); ++Rho_mfi, ++S_fpi)
     {
-      pm_level->dirichletStateBC(S_fpi(),nGrow,time);
-
       S[S_fpi.index()].copy(S_fpi(),state_ind,0,num_comp);
       for (int n=0; n<num_comp; ++n)
 	S[S_fpi.index()].divide((*rho)[Rho_mfi],0,n,1);	

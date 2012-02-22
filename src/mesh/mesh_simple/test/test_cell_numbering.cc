@@ -59,11 +59,12 @@ TEST(NUMBERING) {
   std::cout << std::endl;
   
   // Write cell face-node connectivity
-  unsigned int cface[6];
-  int fdir[6];
+  //  unsigned int cface[6];
+  //  int fdir[6];
+  Amanzi::AmanziMesh::Entity_ID_List cface;
+  std::vector<int> fdir;
   std::cout << "Cell " << 0 << " faces (relative orientation)..." << std::endl;
-  mesh->cell_to_faces(0,cface,cface+6);
-  mesh->cell_to_face_dirs(0,fdir,fdir+6);
+  mesh->cell_get_faces_and_dirs(0,&cface,&fdir);
   for (int j = 0; j < 6; ++j) std::cout << j << ": " << cface[j] << "(" << fdir[j] << ")" << std::endl;
   
 }

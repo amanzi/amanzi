@@ -38,6 +38,7 @@
 #    define FORT_HYDRO             hydro
 #    define FORT_ROCKHOLD          rockhold
 #    define FORT_STEADYSTATE       steadystate
+#    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
 #else
 #  if defined(BL_FORT_USE_UPPERCASE)
@@ -77,6 +78,7 @@
 #    define FORT_HYDRO             HYDRO
 #    define FORT_ROCKHOLD          ROCKHOLD
 #    define FORT_STEADYSTATE       STEADYSTATE
+#    define FORT_STEADYSTATE_FAB   STEADYSTATEFAB
 #    define FORT_PATCH_GHOST       PATCH_GHOST
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_FILCC             filcc
@@ -115,6 +117,7 @@
 #    define FORT_HYDRO             hydro
 #    define FORT_ROCKHOLD          rockhold
 #    define FORT_STEADYSTATE       steadystate
+#    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_FILCC             filcc_
@@ -153,6 +156,7 @@
 #    define FORT_HYDRO             hydro_
 #    define FORT_ROCKHOLD          rockhold_
 #    define FORT_STEADYSTATE       steadystate_
+#    define FORT_STEADYSTATE_FAB   steadystatefab_
 #    define FORT_PATCH_GHOST       patch_ghost_
 #  endif
 
@@ -311,8 +315,7 @@ extern "C" {
 #endif
 			  const int* lo, const int* hi,
 			  const int* domlo, const int* domhi,const int* bc, 
-			  const int* inflow_bc_lo, const int* inflow_bc_hi,
-			  const int* nc, const bool* do_upwind);
+			  const int* nc, const int* do_upwind);
 
   void FORT_RICHARD_AJAC(const Real* S, ARLIM_P(slo), ARLIM_P(shi),
 
@@ -343,7 +346,7 @@ extern "C" {
 			 const int* domlo, const int* domhi, 
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
-			 const bool* do_upwind);
+			 const int* do_upwind);
 
   void FORT_RICHARD_NJAC(const Real* S, ARLIM_P(slo), ARLIM_P(shi),
 
@@ -374,7 +377,7 @@ extern "C" {
 			 const int* domlo, const int* domhi, 
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
-			 const Real* deps, const bool* do_upwind);
+			 const Real* deps, const int* do_upwind);
 
   void FORT_RICHARD_NJAC2(const Real* dfx, ARLIM_P(dfxlo), ARLIM_P(dfxhi),
 			  const Real* dfy, ARLIM_P(dfylo), ARLIM_P(dfyhi),
@@ -403,7 +406,7 @@ extern "C" {
 			  const int* domlo, const int* domhi, 
 			  const Real* dx, const int* bc,
 			  const int* inflow_bc_lo, const int* inflow_bc_hi,
-			  const Real* deps, const bool* do_upwind);
+			  const Real* deps, const int* do_upwind);
   
     void FORT_RICHARD_ALPHA (const Real* alpha,  ARLIM_P(alo),  ARLIM_P(ahi),
 			     const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
@@ -458,9 +461,7 @@ extern "C" {
 			const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
 			const int* lo, const int* hi,
 			const int* domlo, const int* domhi, 
-			const Real* dx, const int* bc,
-			const int* inflow_bc_lo, const int* inflow_bc_hi,
-			const Real* inflow_lo, const Real* inflow_hi);   
+			const Real* dx, const int* bc);   
   
   void FORT_AVG_UMAC (const Real* umac, ARLIM_P(umlo), ARLIM_P(umhi),
 		      const Real* vmac, ARLIM_P(vmlo), ARLIM_P(vmhi),
@@ -496,7 +497,14 @@ extern "C" {
 			const Real* kappa, ARLIM_P(klo), ARLIM_P(khi),
 			const Real* krcoef, ARLIM_P(clo), ARLIM_P(chi),
 			const int* nkrcoef,const Real* dx, 
-			const Real* inflow_vel, const int* nc, const Real* grav);
+			const Real* inflow_vel, const int* nc, const Real* grav);  
+
+  void FORT_STEADYSTATE_FAB(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi), 
+			    const Real* rhoval, const Real* muval, const int* ncomps,
+			    const Real* kappa, ARLIM_P(klo), ARLIM_P(khi),
+			    const Real* krcoef, ARLIM_P(clo), ARLIM_P(chi), const int* nkrcoef,
+			    const Real* vel, ARLIM_P(vlo), ARLIM_P(vhi),
+			    const Real* dx, const int* nc, const Real* grav);
   
   void FORT_PATCH_GHOST(const Real* p, ARLIM_P(p_lo), ARLIM_P(p_hi),
 			const int* ncomp, int* face, 

@@ -19,6 +19,22 @@ class Rock
 {
 public: 
 
+    Rock(const std::string& name,
+         Real               density,
+         Real               porosity,
+         int                porosity_dist_type,
+         const Array<Real>& porosity_dist_param,
+         const Array<Real>& permeability,
+         int                permeability_dist_type,
+         const Array<Real>& permeability_dist_param,
+         int                krType,
+         const Array<Real>& krParam,
+         int                cplType,
+         const Array<Real>& cplParam,
+         const PArray<Region>& regions);
+
+  std::ostream& operator<< (std::ostream& os) const;
+
   static std::map<std::string,int> create_rock_dist_map()
   {
     std::map<std::string,int> m;
@@ -58,7 +74,7 @@ public:
 
   // regions in which we have this rock type and
   // the distributions in each region.
-  Array<int> region;
+  PArray<Region> regions;
 
   /* The dist_type are as follows:
      0: read from file
@@ -79,50 +95,64 @@ public:
   static Array<int>  n_cell, fratio;
   static Array<Real> problo, probhi;
   
-  void build_pmap(MultiFab&      mfdata, 
-		  Array<Region*>& region_array, 
-		  std::string&    gsfile);
+  void build_pmap(MultiFab&             mfdata, 
+		  const std::string&    gsfile) const;
 
-  void build_kmap(MultiFab&      mfdata, 
-		  Array<Region*>& region_array, 
-		  std::string&    gsfile);
+  void build_kmap(MultiFab&             mfdata, 
+                  const std::string&    gsfile) const;
 
   //
   // @ManDoc Set mfdata to constant values given by val.
   //
-  void set_constant_val(MultiFab&    mfdata, 
-			Region*      region_local, 
-			Array<Real>& val);
+  void set_constant_val(MultiFab&          mfdata, 
+                        const Region&      region_local,
+			const Array<Real>& val) const;
+  //
+  // @ManDoc Set fab to constant values given by val.
+  //
+  void set_constant_val(FArrayBox&         fab, 
+                        const Region&      region_local,
+			const Array<Real>& val) const;
 
   //
   // @ManDoc Set mfdata to constant permeability values.
   //
-  void set_constant_kval(MultiFab& mfdata, 
-			 Region*   region_local);
+  void set_constant_kval(MultiFab&     mfdata, 
+			 const Region& region_local) const;
+
+  //
+  // @ManDoc Set fab to constant permeability values.
+  //
+  void set_constant_kval(FArrayBox&  fab, 
+			 const Real* dx) const;
 
   //
   // @ManDoc Set mfdata to constant porosity value.
   //
-  void set_constant_pval(MultiFab& mfdata, 
-			 Region*   region_local);
+  void set_constant_pval(MultiFab&     mfdata, 
+			 const Region& region_local) const;
+
+  //
+  // @ManDoc Set fab to constant porosity value.
+  //
+  void set_constant_pval(FArrayBox&  fab, 
+			 const Real* dx) const;
 
   //
   // @ManDoc Set fab to parameters relevant to relative permeability.
   //
-  void set_constant_krval(FArrayBox& fab,
-			  Array<Region*>& region_array, 
-			  const Real* dx);
+  void set_constant_krval(FArrayBox&            fab, 
+                          const Real*           dx) const;
   //
   // @ManDoc Set fab to parameters relevant to capillary pressure.
   //
-  void set_constant_cplval(FArrayBox& fab, 
-			   Array<Region*>& region_array,
-			   const Real* dx);
+  void set_constant_cplval(FArrayBox&            fab, 
+			   const Real*           dx) const;
 
-  static BoxArray build_finest_data(int        max_level, 
+  static BoxArray build_finest_data(int         max_level, 
 				    Array<int>& n_cell,
 				    Array<int>& fratio,
-				    int        maxBaseGrid = 32);
+				    int         maxBaseGrid = 32);
 
 private:
   
@@ -132,4 +162,7 @@ private:
   Array<Real> r_problo, r_probhi;
  
 };
+
+std::ostream& operator<< (std::ostream& os, const Rock& rhs);
+
 #endif /*_ROCK_H_*/

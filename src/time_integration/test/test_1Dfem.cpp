@@ -85,7 +85,7 @@ public:
 
   }
 
-  void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f) 
+  void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, const double dT=0.0) 
   {
     ASSERT(udot.MyLength() == n);
     ASSERT(u.MyLength() == n);

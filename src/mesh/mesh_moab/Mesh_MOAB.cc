@@ -62,7 +62,7 @@ namespace AmanziMesh
     result = 
       mbcore->load_file(filename,NULL,
 			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1.2",
-			NULL,NULL,NULL);
+			NULL,NULL,0);
       
     rank = mbcomm->rank();
       
@@ -72,7 +72,7 @@ namespace AmanziMesh
     // Load serial mesh
 
     result =
-      mbcore->load_file(filename,NULL,NULL,NULL,NULL,NULL);
+      mbcore->load_file(filename,NULL,NULL,NULL,NULL,0);
 
     rank = 0;
   }
@@ -1165,6 +1165,172 @@ void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs
 }
 
 
+  // Get faces of a cell and directions in which the cell uses the face 
+
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
+
+ 
+void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs,
+					 const bool ordered) const
+{
+  
+  MBEntityHandle cell;
+  MBRange cell_faces;
+  std::vector<MBEntityHandle> cell_nodes, face_nodes;
+  int *cell_faceids, *cell_facedirs;
+  int nf, result;
+  int cfstd[6][4] = {{0,1,5,4},    // Expected cell-face-node pattern
+		     {1,2,6,5},
+		     {2,3,7,6},
+		     {0,4,7,3},
+		     {0,3,2,1},
+		     {4,5,6,7}};
+
+  cell = cell_id_to_handle[cellid];
+
+  faceids->clear();
+  face_dirs->clear();
+
+      
+  result = mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
+			  MBInterface::INTERSECT);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Problem getting faces of cell" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  nf = cell_faces.size();
+
+  cell_faceids = new int[nf];			
+  cell_facedirs = new int[nf];
+
+
+  // Have to re-sort the faces according a specific template for hexes
+
+
+  if (ordered && nf == 6) { // Hex
+
+    MBEntityHandle *ordfaces, face;
+
+    ordfaces = new MBEntityHandle[6];
+
+    result = mbcore->get_connectivity(&cell, 1, cell_nodes);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Problem getting nodes of cell" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+
+    for (int i = 0; i < nf; i++) {
+  
+      // Search for a face that has all the expected nodes
+
+      bool found = false;
+      int j;
+      for (j = 0; j < nf; j++) {
+
+	face = cell_faces[j];
+	result = mbcore->get_connectivity(&face, 1, face_nodes);
+	if (result != MB_SUCCESS) {
+	  std::cerr << "Problem getting nodes of face" << std::endl;
+	  assert(result == MB_SUCCESS);
+	}
+
+
+	// Check if this face has all the expected nodes
+
+	bool all_present = true;
+
+	for (int k = 0; k < 4; k++) {
+	  Entity_ID node = cell_nodes[cfstd[i][k]];
+
+	  if (face_nodes[0] != node && face_nodes[1] != node &&
+	      face_nodes[2] != node && face_nodes[3] != node) {
+	    all_present = false;
+	    break;
+	  }
+	}
+
+	if (all_present) {
+	  found = true;
+	  break;
+	}
+      }
+
+      assert(found);
+
+      if (found)
+	ordfaces[i] = face;
+    }
+
+
+    result = mbcore->tag_get_data(lid_tag,ordfaces,6,cell_faceids);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Problem getting tag data" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+
+    for (int i = 0; i < nf; i++) {
+      MBEntityHandle face = ordfaces[i];
+      int sidenum, offset;
+
+      result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
+      if (result != MB_SUCCESS) {
+        cerr << "Could not find face dir in cell" << std::endl;
+        assert(result == MB_SUCCESS);
+      }
+    
+      // If this is a ghost face and the master has the opposite direction
+      // we are supposed to flip it
+
+      if (faceflip[cell_faceids[i]]) cell_facedirs[i] *= -1;
+    }
+
+    delete [] ordfaces;
+
+  }
+  else {
+    result = mbcore->tag_get_data(lid_tag,cell_faces,cell_faceids);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Problem getting tag data" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+
+    for (int i = 0; i < nf; i++) {
+      MBEntityHandle face = cell_faces[i];
+      int sidenum, offset;
+
+      result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
+      if (result != MB_SUCCESS) {
+        cerr << "Could not find face dir in cell" << std::endl;
+        assert(result == MB_SUCCESS);
+      }
+    
+      // If this is a ghost face and the master has the opposite direction
+      // we are supposed to flip it
+
+      if (faceflip[cell_faceids[i]]) cell_facedirs[i] *= -1;
+    }
+  }
+
+  for (int i = 0; i < nf; i++) {
+    faceids->push_back(cell_faceids[i]);
+    face_dirs->push_back(cell_facedirs[i]);
+  }
+
+  delete [] cell_faceids;
+  delete [] cell_facedirs;
+}
+
 
 void Mesh_MOAB::cell_get_nodes (Entity_ID cellid, Entity_ID_List *cnodes) const
 {
@@ -1268,6 +1434,22 @@ void Mesh_MOAB::node_get_coordinates (Entity_ID node_id, AmanziGeometry::Point *
   ncoord->set(coords);
 
 }
+
+// Modify a node's coordinates
+
+void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
+                                    const double *coords) {
+  MBEntityHandle v = vtx_id_to_handle[nodeid];
+
+  int result = mbcore->set_coords(&v, 1, coords);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Problem setting node coordinates" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
+}
+
+
 
 
 

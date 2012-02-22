@@ -33,6 +33,7 @@ public:
   Teuchos::RCP<Epetra_Vector>       get_darcy_flux ()       { return darcy_flux; };
   Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
   Teuchos::RCP<Epetra_Vector>       get_water_saturation () { return water_saturation; };
+  Teuchos::RCP<Epetra_Vector>       get_prev_water_saturation () { return prev_water_saturation; };
   Teuchos::RCP<Epetra_Vector>       get_water_density ()    { return water_density; };
   Teuchos::RCP<Epetra_Vector>       get_vertical_permeability ()     { return vertical_permeability; };
   Teuchos::RCP<Epetra_Vector>       get_horizontal_permeability ()   { return horizontal_permeability; };
@@ -120,8 +121,8 @@ public:
 
   void create_storage();
 
-  void write_vis (Amanzi::Vis& vis);
-  void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames);
+  void write_vis (Amanzi::Vis& vis, bool force=false);
+  void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force=false);
   void set_compnames(std::vector<std::string>& compnames_);
 
 private:
@@ -144,6 +145,7 @@ private:
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration; 
   Teuchos::RCP<Epetra_Vector> water_saturation;
+  Teuchos::RCP<Epetra_Vector> prev_water_saturation;
   Teuchos::RCP<Epetra_Vector> horizontal_permeability;
   Teuchos::RCP<Epetra_Vector> vertical_permeability;  
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;

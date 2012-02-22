@@ -26,12 +26,13 @@ class RichardsModelEvaluator : public BDF2::fnBase,
   // Initialization
   void initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
 
-  void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f);
+  void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, const double);
   void precon(const Epetra_Vector& u, Epetra_Vector& Pu);
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc);
 
   bool is_admissible(const Epetra_Vector& up);
+  void update_norm(double rtol, double atol);
 
  private:
   RichardsProblem* problem_;

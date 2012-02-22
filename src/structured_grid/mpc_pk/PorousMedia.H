@@ -24,6 +24,7 @@
 #include <Rock.H>
 #include <Source.H>
 #include <Observation.H>
+#include <RegionData.H>
 
 #ifdef AMANZI
 #include "simple_thermo_database.hh"
@@ -35,13 +36,6 @@ enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type};
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
 enum VcrNames { Xvcr=0, Yvcr, Zvcr};
-
-typedef struct
-{
-  int type;
-  Array<int>    region;
-  Array<double> param;
-} BCData;
 
 class PMBld
   :
@@ -56,6 +50,8 @@ class PMBld
 				const BoxArray& ba,
 				Real            time);
 };
+
+
 
 class PorousMedia
   :
@@ -79,6 +75,8 @@ public:
   virtual void restart (Amr&          papa,
 			std::istream& is,
 			bool          bReadSpecial = false);
+
+  static void CleanupStatics ();
   //
   // Read problem input file. 
   //
@@ -244,10 +242,14 @@ public:
   //
   // Returns the value of "gravity" for use in the projection outflow bcs.
   //
-  Real getGravity () 
+  static Real getGravity () 
   {
     return gravity;
   }
+
+  static void coarseTimeStep (Real stop_time);
+
+
   //
   // Fill the 'dcomp' component of MultiFab 'mf' from the 'varname'
   // component of plotfile 'pltfile'.
@@ -263,7 +265,7 @@ public:
 			   const std::string& pltfile,
 			   const std::string& varname);
 
-  static const Array<Observation>& TheObservationArray() {return observation_array;}
+  static PArray<Observation>& TheObservationArray() {return observations;}
 
   static void getDirichletFaces (Array<Orientation>& Faces,
 				 const int           comp_Type,
@@ -272,6 +274,24 @@ public:
   static bool grids_on_side_of_domain (const BoxArray&    _grids,
 				       const Box&         _domain,
 				       const Orientation& _Face); 
+
+  static const Array<std::string>& UserDerives() {return user_derive_list;}
+  static PArray<Region>& Regions() {return regions;}
+  static PArray<Rock>& Rocks() {return rocks;}
+  static const Array<Real>& Density() {return density;}
+  static const Array<Real>& Viscosity() {return muval;}
+  static int numComponents() {return ncomps;}
+  static const Array<std::string>& componentNames() {return cNames;}
+  static const Array<std::string>& phaseNames() {return pNames;}
+  static const Array<std::string>& soluteNames() {return tNames;}
+
+  static PArray<RegionData>& BCs() {return bc_array;}
+  static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
+
+  static Array<std::string> vis_cycle_macros, vis_time_macros;
+  static Array<std::string> chk_cycle_macros, chk_time_macros;
+  static int echo_inputs;
+
 protected:
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
@@ -294,6 +314,10 @@ protected:
 			     ParmParse& ppr,
 			     Array<std::string>& names, 
 			     Array<Real>& coef);
+
+  static PArray<Region> build_region_PArray(const Array<std::string>& region_names);
+  static const Rock& find_rock(const std::string& name);
+
   virtual void sum_integrated_quantities ();
 
   //
@@ -638,7 +662,8 @@ protected:
 			  const MultiFab* lbd,
 			  const MultiFab* u_mac,
 			  const int  nc = 0,
-			  const bool do_upwind = false);
+			  const int do_upwind = 0,
+			  double time = 0.);
   //
   // Calculate the diffusive term in the jacobian of richard's equation
   //
@@ -647,7 +672,7 @@ protected:
 			 const MultiFab* umac,
 			 const Real time,
 			 const int  nc = 0,
-			 const bool do_upwind = false,
+			 const int do_upwind = 0,
 			 const bool do_n = true);
 
   //
@@ -705,9 +730,22 @@ protected:
   //
   // Boundary conditions
   //  
+  void setPhysBoundaryValues (FArrayBox& dest,
+                              int        state_indx,
+                              Real       time,
+                              int        dest_comp,
+                              int        src_comp,
+                              int        num_comp);
   void dirichletStateBC (const Real time);
-  void dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time);
-  void dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time);
+  void dirichletStateBC (FArrayBox& fab, Real time);
+  void dirichletTracerBC (FArrayBox& fab, Real time);
+  bool get_inflow_velocity(const Orientation& face,
+                           FArrayBox&         ccBndFab,
+                           Real               time);
+  void get_inflow_density(const Orientation& face,
+			  const RegionData&  face_bc,
+			  FArrayBox&         ccBndFab,
+			  Real               time);
   //
   // Called in grid_places after other tagging routines to modify
   //   the list of tagged points
@@ -747,6 +785,15 @@ protected:
     return getLevel(lev).getViscFluxReg();
   }
 
+  void derive (const std::string& name,
+               Real           time,
+               MultiFab&      mf,
+               int            dcomp);
+
+  MultiFab* derive (const std::string& name,
+                    Real           time,
+                    int            ngrow);
+
   //
   // diagnostics
   //
@@ -758,14 +805,13 @@ protected:
   void check_minmax(int fscalar, int lscalar);
   void compute_divu (MultiFab& soln, MultiFab* umac);
 
+  void setup_bound_desc();
+
   // list
   static std::map<std::string, int> model_list;
-  static std::map<std::string, int> bc_list;
-  static std::map<std::string, int> obs_list;
   static std::map<std::string, int> phase_list;
   static std::map<std::string, int> comp_list;
   static std::map<std::string, int> tracer_list;
-  static std::map<std::string, int> region_list;
 
   /*
     Flow model.  Options are
@@ -785,13 +831,14 @@ protected:
   AuxBoundaryData aux_boundary_data_old;
   bool            FillPatchedOldState_ok;
 
-
-  // Region: use of pointer to allow derived class in array.
-  static Array<Region*> region_array;
+  static Real geometry_eps;
+  static PArray<Region> regions;
   static std::string surf_file;
+  static bool material_is_layered;
 
   // Rock
-  static Array<Rock> rock_array;
+  static PArray<Rock> rocks;
+  static std::map<std::string, int> rock_to_int; // hack to support user output
   static std::string gsfile;
   static MultiFab*   kappadata;
   static MultiFab*   phidata;
@@ -807,9 +854,10 @@ protected:
   static Array<std::string> pNames;
   static Array<std::string> cNames;
   static Array<Real> density;
-  static Array<BCData> ic_array;
-  static Array<BCData> bc_array;
+  static PArray<RegionData> ic_array;
+  static PArray<RegionData> bc_array;
   static Array<Real> muval;
+  static Array<std::string> user_derive_list;;
   
   // Tracers
   static Array<std::string> qNames;
@@ -817,8 +865,10 @@ protected:
   static int  ntracers; 
   static Array<int> tType; 
   static Array<Real> tDen;
-  static Array<BCData> tic_array;
-  static Array<BCData> tbc_array;
+  static Array<PArray<RegionData> > tic_array;
+  static Array<PArray<RegionData> > tbc_array;
+  static std::map<std::string,Array<int> > group_map;
+
   static Array<Real> tInflow;
 
   // Pressure
@@ -837,8 +887,10 @@ protected:
 #endif
   static Array<int>  rinflow_bc_lo;
   static Array<int>  rinflow_bc_hi;
-  static Array<Real> rinflow_vel_lo;
-  static Array<Real> rinflow_vel_hi;
+
+  typedef std::pair<Box,Array<int> > BCDesc;
+  std::map<Orientation,BCDesc> bc_descriptor_map;
+  Array<std::map<Orientation,BCDesc> > tbc_descriptor_map;
 
   // temperature
   static Real temperature;
@@ -849,7 +901,7 @@ protected:
 
   // observations
   static std::string obs_outputfile;
-  static Array<Observation> observation_array;
+  static PArray<Observation> observations;
 
 #ifdef AMANZI
   static PArray<amanzi::chemistry::SimpleThermoDatabase> chemSolve;

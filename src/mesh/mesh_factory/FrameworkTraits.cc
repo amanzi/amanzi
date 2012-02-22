@@ -124,6 +124,13 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
                            std::vector<int> *face_dirs) const
   {}
   
+  void cell_get_faces_and_dirs (const Amanzi::AmanziMesh::Entity_ID cellid,
+                                Amanzi::AmanziMesh::Entity_ID_List *faceids,
+                                std::vector<int> *face_dirs,
+                                const bool ordered=false) const
+  {}
+
+
   void cell_get_nodes (const Amanzi::AmanziMesh::Entity_ID cellid, 
                        Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
   {}
@@ -183,6 +190,10 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
 
   void cell_get_coordinates (const Amanzi::AmanziMesh::Entity_ID cellid, 
 			     std::vector<Amanzi::AmanziGeometry::Point> *ccoords) const
+  {}
+
+  void node_set_coordinates(const Amanzi::AmanziMesh::Entity_ID nodeid, 
+                                      const double *coords) 
   {}
 
   const Epetra_Map& cell_epetra_map (const bool include_ghost) const
