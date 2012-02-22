@@ -357,7 +357,7 @@ void MPC::cycle_driver () {
 	flow_dT = FPK->get_flow_dT();
 
         // adjust the time step, so that we exactly hit the switchover time
-        if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+2.0*flow_dT > Tswitch) {
+        if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
           limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
 	  tslimiter = MPC_LIMITS;
         }
@@ -488,9 +488,6 @@ void MPC::cycle_driver () {
 	    redo = false;
 	    try {
 	      FPK->advance_steady(mpc_dT);
-              FPK->commit_state(FS);
-              S->update_darcy_flux(FPK->Flux());
-              S->update_pressure(FPK->Pressure());
 	    }
 	    catch (int itr) {
 	      mpc_dT = 0.5*mpc_dT;
@@ -499,11 +496,12 @@ void MPC::cycle_driver () {
 	  } while (redo);
 	} else {
 	  FPK->advance_transient(mpc_dT);
-          S->update_darcy_flux(FPK->Flux());
-          S->update_pressure(FPK->Pressure());
-          FPK->commit_state(FS);
-          FPK->GetVelocity(*S->get_darcy_velocity());
 	}
+
+	FPK->commit_state(FS);
+	S->update_darcy_flux(FPK->Flux());
+	S->update_pressure(FPK->Pressure());
+	FPK->GetVelocity(*S->get_darcy_velocity());
       }
 
       // then advance transport
@@ -614,8 +612,8 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
   
   if (dT >= time_remaining) {
     return time_remaining;
-  } else if ( dT > 0.85*time_remaining ) {
-    return 0.6*time_remaining;
+  } else if ( dT > 0.75*time_remaining ) {
+    return 0.5*time_remaining;
   } else {
     return dT;
   }
