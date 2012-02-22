@@ -21,6 +21,7 @@
 #include "HexMeshGenerator.hh"
 #include "Mesh_STK_factory.hh"
 #include "GenerationSpec.hh"
+#include "errors.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -61,6 +62,7 @@ Mesh_STK::generate_(const unsigned int& ni, const unsigned int& nj, const unsign
                            xdelta, ydelta, zdelta);
   generate_(g);
 }
+
 
 void
 Mesh_STK::generate_(const GenerationSpec& gspec)
@@ -126,6 +128,29 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
             static_cast<unsigned int>(nz), 
             x0, y0, z0, xdelta, ydelta, zdelta);
 }
+
+
+// Have to define this dummy routine because we are not able to
+// eliminate the need in FrameworkTraits.cc which uses boost
+// functionality extensively
+
+Mesh_STK::Mesh_STK (const double x0, 
+                    const double y0,
+                    const double x1, 
+                    const double y1,
+                    const int nx, 
+                    const int ny, 
+                    const Epetra_MpiComm *communicator,
+                    const AmanziGeometry::GeometricModelPtr &gm) 
+  : mesh_(),
+    entity_map_ (2),
+    map_owned_(), map_used_()
+{
+  Exceptions::amanzi_throw(Errors::Message("STKMesh mesh cannot generate 2D meshes"));
+}
+  
+
+
 
 Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
                    const Epetra_MpiComm *comm,
