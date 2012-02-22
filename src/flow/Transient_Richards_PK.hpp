@@ -3,6 +3,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #include "Epetra_Vector.h"
 
@@ -15,7 +16,7 @@
 
 namespace Amanzi {
 
-class Transient_Richards_PK : public Flow_PK {
+class Transient_Richards_PK : public Flow_PK, public Teuchos::VerboseObject<Transient_Richards_PK> {
  public:
   Transient_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<Flow_State>);
   ~Transient_Richards_PK ();
