@@ -132,10 +132,10 @@ class DarcyProblem {
   {
     Epetra_Vector& darcy_flux = DPK->flow_state_next()->ref_darcy_flux();
 #ifdef HAVE_MPI
-  Epetra_Vector darcy_flux_wghost(mesh->face_map(true));
-  darcy_flux_wghost.Import(darcy_flux, DPK->ref_face_importer(), Insert);
+    Epetra_Vector darcy_flux_wghost(mesh->face_map(true));
+    darcy_flux_wghost.Import(darcy_flux, DPK->ref_face_importer(), Insert);
 #else
-  Epetra_Vector& darcy_flux_wghost = darcy_flux;
+    Epetra_Vector& darcy_flux_wghost = darcy_flux;
 #endif
 
     double error_L2 = 0.0;
@@ -154,8 +154,7 @@ class DarcyProblem {
         int f = faces[i];
         div += darcy_flux_wghost[f] * dirs[i];
       }
-      div /= mesh->cell_volume(c);
-      error_L2 += div*div;
+      error_L2 += div*div / mesh->cell_volume(c);
     }
     return sqrt(error_L2);
   }

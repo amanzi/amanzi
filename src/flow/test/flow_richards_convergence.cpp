@@ -68,6 +68,33 @@ double calculateDarcyFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flu
 }
 
 
+/* ******************************************************************
+* Calculate L2 divergence error in darcy flux.                                                    
+****************************************************************** */
+double calculateDarcyDivergenceError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flux)
+{
+  double error_L2 = 0.0;
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  for (int c=0; c<ncells_owned; c++) {
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+      
+    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    double div = 0.0;
+    for (int i=0; i<nfaces; i++) {
+      int f = faces[i];
+      div += darcy_flux[f] * dirs[i];
+    }
+    error_L2 += div*div / mesh->cell_volume(c);
+  }
+  return sqrt(error_L2);
+}
+
+
 TEST(FLOW_RICHARDS_CONVERGENCE) {
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
   int MyPID = comm->MyPID();
@@ -99,14 +126,15 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     RPK->advance_to_steady_state();
 
-    double pressure_error, flux_error;  // error checks
+    double pressure_err, flux_err, div_err;  // error checks
     Flow_State& FS_next = RPK->ref_flow_state_next();
-    pressure_error = calculatePressureCellError(mesh, FS_next.ref_pressure());
-    flux_error = calculateDarcyFluxError(mesh, FS_next.ref_darcy_flux());
+    pressure_err = calculatePressureCellError(mesh, FS_next.ref_pressure());
+    flux_err = calculateDarcyFluxError(mesh, FS_next.ref_darcy_flux());
+    div_err = calculateDarcyDivergenceError(mesh, FS_next.ref_darcy_flux());
 
-    if (n==80) CHECK(pressure_error < 5.0e-2 && flux_error < 5.0e-2);
-    printf("n=%3d nonlinear itrs=%4d  L2_pressure_error=%7.3e  l2_flux_error=%7.3e\n", 
-        n, RPK->num_nonlinear_steps, pressure_error, flux_error);
+    if (n==80) CHECK(pressure_err < 5.0e-2 && flux_err < 5.0e-2);
+    printf("n=%3d itrs=%4d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n", 
+        n, RPK->num_nonlinear_steps, pressure_err, flux_err, div_err);
 
     delete RPK; 
     delete S; 

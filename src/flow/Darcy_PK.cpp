@@ -113,9 +113,10 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
 
-  T_physical = FS->get_time();
-  double time = (standalone_mode) ? T_internal : T_physical;
+  double T_physical = FS->get_time();  // set-up internal clock 
+  T_internal = (standalone_mode) ? T_internal : T_physical;
 
+  double time = T_internal;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
@@ -212,10 +213,14 @@ int Darcy_PK::advance(double dT_MPC)
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
 
   dT = dT_MPC;
-  T_physical = FS->get_time();
-  double time = (standalone_mode) ? T_internal : T_physical;
+  if (num_itrs_trs == 0) {  // set-up internal clock
+    double T_physical = FS->get_time();
+    T_internal = (standalone_mode) ? T_internal : T_physical;
+  }
 
+  double time = T_internal;
   // missing code... (lipnikov@lanl.gov)
+  num_itrs_trs++;
 
   flow_status_ = FLOW_NEXT_STATE_COMPLETE;
   return 0;

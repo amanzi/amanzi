@@ -83,6 +83,8 @@ class Darcy_PK : public Flow_PK {
   int num_itrs_sss, max_itrs_sss;  // Parameters for steady state solution
   double convergence_tol_sss, residual_sss;
 
+  int num_itrs_trs;  // Pramaters for transient solver
+
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
   Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures

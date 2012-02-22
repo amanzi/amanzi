@@ -58,6 +58,7 @@ void Transport_PK::check_divergence_property()
     }
     if (TRANSPORT_AMANZI_VERSION == 2 && div < -tests_tolerance * umax) {
       cout << "TRANSPORT: The flow has large artificial sinks."<< endl;
+      cout << "cell = " << c << " div = " << div << " umax = " << umax << endl;
       flag = 1;
     }
 

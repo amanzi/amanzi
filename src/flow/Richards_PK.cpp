@@ -129,9 +129,10 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
 
-  T_physical = FS->get_time();
-  double time = (standalone_mode) ? T_internal : T_physical;
+  double T_physical = FS->get_time();
+  T_internal = (standalone_mode) ? T_internal : T_physical;
 
+  double time = T_internal;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_head->Compute(time);
@@ -301,19 +302,14 @@ int Richards_PK::advance_to_steady_state()
 int Richards_PK::advance(double dT_MPC) 
 {
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
-
   dT = dT_MPC;
-  T_physical = FS->get_time();
-  double time = (standalone_mode) ? T_internal : T_physical;
-  double dTnext;
 
-  // update boundary conditions
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  bc_head->Compute(time);
-  updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
-  applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
+  if (num_itrs_trs == 0) {  // set-up internal clock
+    double T_physical = FS->get_time();
+    T_internal = (standalone_mode) ? T_internal : T_physical;
+  }
 
+  double time = T_internal;
   if (num_itrs_trs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     computeUDot(time, *solution, udot);
@@ -323,6 +319,7 @@ int Richards_PK::advance(double dT_MPC)
     update_precon(time, *solution, dT, ierr);
   }
 
+  double dTnext;
   bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
   bdf2_dae->commit_solution(dT, *solution);
   bdf2_dae->write_bdf2_stepping_statistics();
@@ -527,7 +524,7 @@ void Richards_PK::computePreconditionerMFD(
   bc_head->Compute(Tp);
   updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
-  // setup new algebraic problems
+  // setup a new algebraic problem
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);

@@ -27,7 +27,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   dim = mesh_->space_dimension();
   MyPID = 0;
 
-  T_internal = T_physical = dT = 0.0;
+  T_internal = dT = 0.0;
   standalone_mode = false;
 
   FS_next = Teuchos::rcp(new Flow_State(*FS, CopyMemory) );  
@@ -100,7 +100,7 @@ void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
 
 
 /* ******************************************************************
-* Add a boundary marker to used faces.                                          
+* Add a boundary marker to owned faces.                                          
 ****************************************************************** */
 void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
                                       std::vector<double>& bc_values,
@@ -178,9 +178,9 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
         darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
         flag[f] = 1;
       }
-//div += darcy_mass_flux[f] * dirs[f];
+//div += darcy_mass_flux[f] * dirs[n];
     }
-//cout << "cell=" << c << " div=" << div << endl;
+//if(c==269) cout << "cell=" << c << " div=" << div << " " << T_internal << endl;
   }
 }
 

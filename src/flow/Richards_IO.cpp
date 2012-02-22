@@ -47,7 +47,10 @@ void Richards_PK::processParameterList()
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
 
-  double time = (standalone_mode) ? T_internal : T_physical;
+  double T_physical = FS->get_time();  // set-up internal clock
+  T_internal = (standalone_mode) ? T_internal : T_physical;
+
+  double time = T_internal;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);

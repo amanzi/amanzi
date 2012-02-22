@@ -126,7 +126,7 @@ class Flow_PK : public BDF2::fnBase {
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
  
-  void set_time(double T0, double dT0) { T_internal = T_physical = T0; dT = dT0; }
+  void set_time(double T0, double dT0) { T_internal = T0; dT = dT0; }
   void set_verbosity(int level) { verbosity = level; }
 
   // miscallenous members
@@ -143,7 +143,7 @@ class Flow_PK : public BDF2::fnBase {
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<Flow_State> FS_next; 
   
-  double T_internal, T_physical, dT, dT0;
+  double T_internal, dT, dT0;
   int flow_status_;
   int standalone_mode;
  

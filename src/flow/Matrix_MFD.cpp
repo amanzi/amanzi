@@ -193,7 +193,7 @@ void Matrix_MFD::applyBoundaryConditions(
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f]; 
       } else if (bc_markers[f] == FLOW_BC_FACE_FLUX) {
-        Ff[n] -= bc_values[f] * mesh_->face_area(f);
+        Ff[n] -= bc_values[f] * mesh_->face_area(f) * dirs[n];  // ???
       }
     }
   }
@@ -436,7 +436,7 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   ierr |= Yc.Multiply(1.0, *Acc, Xc, 1.0);
 
   if (ierr) { 
-    Errors::Message msg("Matrix_MFD::Apply has failed in calculating y = A*x.");
+    Errors::Message msg("Matrix_MFD::Apply has failed to calculate Y = inv(A) * X.");
     Exceptions::amanzi_throw(msg);
   }
   delete [] fvec_ptrs;

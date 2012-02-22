@@ -13,12 +13,12 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate f(u, du/dt) = s du/dt + A*u - g.                                         
+* Calculate f(u, du/dt) = d(s u)/dt + A*u - g.                                         
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  T_internal = T_physical = Tp;
+  //T_internal = Tp;  // breaks internal clock (lipnikov@lanl.gov)
   computePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
