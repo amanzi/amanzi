@@ -151,7 +151,70 @@ SUITE (MeshFramework)
     }
   }
 
-  TEST (ParameterGenerate)
+  TEST (Generate2D)
+  {
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    bool parallel(comm.NumProc() > 1);
+    
+    Amanzi::AmanziMesh::FrameworkPreference pref;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+
+    double x0( 0.0), y0( 0.0);
+    double x1(10.0), y1(10.0);
+    int nx(10), ny(10);
+
+    // The MSTK framework, if available, will always generate
+
+    if (framework_available(Amanzi::AmanziMesh::MSTK)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::MSTK);
+      mesh_factory.preference(pref);
+      mesh = mesh_factory(x0, y0,
+                          x1, y1,
+                          nx, ny);
+      CHECK(!mesh.is_null());
+      mesh.reset();
+    }
+
+    // The Simple framework is always available, but 
+    // cannot generate 2D meshes
+
+    pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
+    mesh_factory.preference(pref);
+
+    CHECK_THROW(mesh = mesh_factory(x0, y0,
+                                    x1, y1,
+                                    nx, ny),
+                Amanzi::AmanziMesh::Message);
+    mesh.reset();
+
+    // The STK, even if available cannot generate 2D meshes
+
+    if (framework_available(Amanzi::AmanziMesh::STKMESH)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::STKMESH);
+      mesh_factory.preference(pref);
+      CHECK_THROW(mesh = mesh_factory(x0, y0,
+                                      x1, y1,
+                                      nx, ny),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+    }
+
+    // The MOAB framework cannot generate
+
+
+    if (framework_available(Amanzi::AmanziMesh::MOAB)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::MOAB);
+      mesh_factory.preference(pref);
+      CHECK_THROW(mesh = mesh_factory(x0, y0,
+                                      x1, y1,
+                                      nx, ny),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+    }
+  }
+
+  TEST (ParameterGenerate3)
   {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     bool parallel(comm.NumProc() > 1);
@@ -163,34 +226,13 @@ SUITE (MeshFramework)
     // make a parameter list to try out
     
     Teuchos::ParameterList parameter_list;
-    parameter_list.set<int>("Number of Cells in X", 10);
-    parameter_list.set<int>("Number of Cells in Y", 10);
-    parameter_list.set<int>("Number of Cells in Z", 10);
+    Teuchos::Array<int> ncells = Teuchos::tuple<int>(10,10,10);
+    Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0, 0.0);
+    Teuchos::Array<double> high = Teuchos::tuple<double>(1.0, 1.0, 1.0);
+    parameter_list.set< Teuchos::Array<int> >("Number of Cells", ncells);
+    parameter_list.set< Teuchos::Array<double> >("Domain Low Corner", low);
+    parameter_list.set< Teuchos::Array<double> >("Domain High Corner", high);
     
-    parameter_list.set<double>("X_Min", 0);
-    parameter_list.set<double>("X_Max", 1);
-    
-    parameter_list.set<double>("Y_Min", 0);
-    parameter_list.set<double>("Y_Max", 1);
-    
-    parameter_list.set<double>("Z_Min", 0);
-    parameter_list.set<double>("Z_Max", 1);
-
-    //    parameter_list.set<int>("Number of mesh blocks",2);
-
-    //    Teuchos::ParameterList sublist1;
-    //    sublist1.set<double>("Z0", 0.0);
-    //    sublist1.set<double>("Z1", 0.3);
-    //    parameter_list.set("Mesh block 1", sublist1);
-
-    //    Teuchos::ParameterList sublist2;
-    //    sublist2.set<double>("Z0", 0.3);
-    //    sublist2.set<double>("Z1", 1.0);
-    //    parameter_list.set("Mesh block 2", sublist2);
-
-    // The Simple framework is always available, but will only
-    // generate in serial
-
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
     mesh_factory.preference(pref);
 
@@ -201,7 +243,6 @@ SUITE (MeshFramework)
     } else {
       mesh = mesh_factory(parameter_list);
       CHECK(!mesh.is_null());
-      // CHECK_EQUAL(2, mesh->num_sets(Amanzi::AmanziMesh::CELL));
       mesh.reset();
     }
 
@@ -212,7 +253,6 @@ SUITE (MeshFramework)
       mesh_factory.preference(pref);
       mesh = mesh_factory(parameter_list);
       CHECK(!mesh.is_null());
-      //      CHECK_EQUAL(3, mesh->num_sets(Amanzi::AmanziMesh::CELL));
       mesh.reset();
     }
 
@@ -221,7 +261,6 @@ SUITE (MeshFramework)
       mesh_factory.preference(pref);
       mesh = mesh_factory(parameter_list);
       CHECK(!mesh.is_null());
-      //      CHECK_EQUAL(3, mesh->num_sets(Amanzi::AmanziMesh::CELL));
       mesh.reset();
     }
 
@@ -234,6 +273,67 @@ SUITE (MeshFramework)
     CHECK_THROW(mesh = mesh_factory(parameter_list),
                 Amanzi::AmanziMesh::Message);
   }
+
+
+  TEST (ParameterGenerate2)
+  {
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    bool parallel(comm.NumProc() > 1);
+    
+    Amanzi::AmanziMesh::FrameworkPreference pref;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+
+    // make a parameter list to try out
+    
+    Teuchos::ParameterList parameter_list;
+    Teuchos::Array<int> ncells = Teuchos::tuple<int>(10,10);
+    Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0);
+    Teuchos::Array<double> high = Teuchos::tuple<double>(1.0, 1.0);
+    parameter_list.set< Teuchos::Array<int> >("Number of Cells", ncells);
+    parameter_list.set< Teuchos::Array<double> >("Domain Low Corner", low);
+    parameter_list.set< Teuchos::Array<double> >("Domain High Corner", high);
+    
+
+    // MSTK, if available, can generate 2D meshes
+
+    if (framework_available(Amanzi::AmanziMesh::MSTK)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::MSTK);
+      mesh_factory.preference(pref);
+      mesh = mesh_factory(parameter_list);
+      CHECK(!mesh.is_null());
+      mesh.reset();
+    }
+
+    // Simple mesh is always available but cannot generate 2D meshes
+
+    pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
+    mesh_factory.preference(pref);
+
+    CHECK_THROW(mesh = mesh_factory(parameter_list),
+                Amanzi::AmanziMesh::Message);
+    mesh.reset();
+
+    // The STK, even if available, cannot generate 2D meshes
+
+    if (framework_available(Amanzi::AmanziMesh::STKMESH)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::STKMESH);
+      mesh_factory.preference(pref);
+      CHECK_THROW(mesh = mesh_factory(parameter_list),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+    }
+
+    // Other frameworks can't generate, so they should throw
+    pref.clear(); 
+    if (framework_available(Amanzi::AmanziMesh::MOAB)) {
+      pref.push_back(Amanzi::AmanziMesh::MOAB);
+    }
+    mesh_factory.preference(pref);
+    CHECK_THROW(mesh = mesh_factory(parameter_list),
+                Amanzi::AmanziMesh::Message);
+  }
+
 
   // The Simple framework cannot read anything, even if it exists
   TEST (ReadSimple) {

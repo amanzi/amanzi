@@ -157,6 +157,8 @@ MeshFactory::create(double x0, double y0, double z0,
   ierr[0] = 0;
   aerr[0] = 0;
 
+  unsigned int dim = 3;
+
   if (nx <= 0 || ny <= 0 || nz <= 0) {
     ierr[0] += 1;
     e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d x %d") %
@@ -175,7 +177,7 @@ MeshFactory::create(double x0, double y0, double z0,
       
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm->NumProc() > 1)) {
+    if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm, *i, 
                                     x0, y0, z0, x1, y1, z1, 
@@ -199,8 +201,81 @@ MeshFactory::create(double x0, double y0, double z0,
 }
 
 /** 
- * This creates a mesh by generating a block of hexahedral cells,
- * but using a parameter list with the limits and cell counts.
+ * Coellective
+ *
+ * This creates a mesh by generating a block of quadrilateral cells.
+ *
+ * Hopefully, if any one process has an error, all processes will
+ * throw an Mesh::Message exception.
+ * 
+ * @param x0 origin x-coordinate
+ * @param y0 origin y-coordinate
+ * @param x1 maximum x-coordinate
+ * @param y1 maximum y-coordinate
+ * @param nx number of cells in the x-direction
+ * @param ny number of cells in the y-direction
+ * 
+ * @return mesh instance
+ */
+Teuchos::RCP<Mesh> 
+MeshFactory::create(double x0, double y0,
+                    double x1, double y1,
+                    int nx, int ny,
+                    const AmanziGeometry::GeometricModelPtr &gm)
+{
+  Teuchos::RCP<Mesh> result;
+  Message e("MeshFactory::create: error: ");
+  int ierr[1], aerr[1];
+  ierr[0] = 0;
+  aerr[0] = 0;
+
+  unsigned int dim = 2;
+
+  if (nx <= 0 || ny <= 0) {
+    ierr[0] += 1;
+    e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d") %
+                          nx % ny).c_str());
+  }
+  my_comm->SumAll(ierr, aerr, 1);
+  if (aerr[0] > 0) amanzi_throw(e);
+
+  if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0) {
+    ierr[0] += 1;
+    e.add_data(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g") %
+                          (x1 - x0) % (y1 - y0)).c_str());
+  }
+  my_comm->SumAll(ierr, aerr, 1);
+  if (aerr[0] > 0) amanzi_throw(e);
+      
+  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
+       i != my_preference.end(); i++) {
+    if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
+      try {
+        result = framework_generate(my_comm, *i, 
+                                    x0, y0, x1, y1,
+                                    nx, ny,
+                                    gm);
+        return result;
+      } catch (const Message& msg) {
+        ierr[0] += 1;
+        e.add_data(msg.what());
+      } catch (const std::exception& stde) {
+        ierr[0] += 1;
+        e.add_data("internal error: ");
+        e.add_data(stde.what());
+      }
+      my_comm->SumAll(ierr, aerr, 1);
+      if (aerr[0] > 0) amanzi_throw(e);
+    }
+  }
+  e.add_data("unable to generate mesh");
+  amanzi_throw(e);
+}
+
+/** 
+ * This creates a mesh by generating a block of
+ * quadrilateral/hexahedral cells, but using a parameter list with the
+ * limits and cell counts.
  * 
  * @param parameter_list 
  * 
@@ -216,9 +291,12 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   ierr[0] = 0;
   aerr[0] = 0;
 
+  Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("Number of Cells");
+  unsigned int dim = ncells.size();
+
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm->NumProc() > 1)) {
+    if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm, *i, parameter_list, gm);
         return result;

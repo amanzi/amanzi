@@ -84,6 +84,16 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
 
+  bogus_maps(double x0, double y0,
+	     double x1, double y1,
+	     int nx, int ny,
+	     const Epetra_MpiComm *communicator,
+             const Amanzi::AmanziGeometry::GeometricModelPtr& gm)
+      : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
+  {
+    Exceptions::amanzi_throw(Errors::Message("generation not supported"));
+  }
+
   bogus_maps(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
              const Epetra_MpiComm *communicator,
              const Amanzi::AmanziGeometry::GeometricModelPtr& gm)
@@ -356,7 +366,7 @@ struct FrameworkTraits {
   // FrameworkTraits<M>::canread
   // -------------------------------------------------------------
   /// A type to indicate whether this framework can mesh of a specific format
-  // FIXME: Doesn't MOAB read exodus files
+
   template < int FMT = 0 > 
   struct canread {
 
@@ -393,7 +403,7 @@ struct FrameworkTraits {
 
   /// Construct a mesh from a Exodus II file or file set
   static Teuchos::RCP<Mesh>
-read(const Epetra_MpiComm *comm, const std::string& fname,
+  read(const Epetra_MpiComm *comm, const std::string& fname,
      const AmanziGeometry::GeometricModelPtr& gm)
   {
     Teuchos::RCP<Mesh> 
@@ -402,14 +412,35 @@ read(const Epetra_MpiComm *comm, const std::string& fname,
   }
 
   /// A type to indicate whether this framework can generate meshes
+  template < unsigned int DIM = 0 >
   struct cangenerate {
+
     struct parallel : 
-        mpl::bool_< M == STKMESH || M == MSTK >::type
-    {};
+      mpl::eval_if<
+      mpl::bool_< M == STKMESH >
+      , mpl::bool_< DIM == 3 >
+      , mpl::eval_if< 
+          mpl::bool_< M == MSTK >
+          , mpl::bool_< DIM == 2 || DIM == 3 >
+          , mpl::false_
+          >
+      >::type {};
+    
     struct serial :
-        mpl::bool_<M == Simple || M == STKMESH || M == MSTK >::type
-    {};
-  };
+      mpl::eval_if<
+      mpl::bool_< M == Simple >
+      , mpl::bool_< DIM == 3 >
+      , mpl::eval_if< 
+          mpl::bool_< M == STKMESH >
+          , mpl::bool_< DIM == 3 >
+          , mpl::eval_if<
+              mpl::bool_< M == MSTK >
+              , mpl::bool_< DIM == 2 || DIM == 3 >
+              , mpl::false_
+              >
+          >
+      >::type {};
+    };
 
 /// Generate a hex mesh from explicit arguments
   static Teuchos::RCP<Mesh>
@@ -424,9 +455,22 @@ read(const Epetra_MpiComm *comm, const std::string& fname,
     return result;
   }
 
+/// Generate a quad mesh from explicit arguments
+  static Teuchos::RCP<Mesh>
+  generate(const double& x0, const double& y0,
+           const double& x1, const double& y1,
+           const unsigned int& nx, const unsigned int& ny,
+         const Epetra_MpiComm *comm, 
+         const AmanziGeometry::GeometricModelPtr& gm)
+  {
+    Teuchos::RCP<Mesh> 
+    result(new typename generate_maps::type(x0, y0, x1, y1, nx, ny, comm, gm));
+    return result;
+  }
+
 /// Generate a hex mesh from arguments sent in through a parameter list
   static Teuchos::RCP<Mesh>
-generate(Teuchos::ParameterList &parameter_list, const Epetra_MpiComm *comm,
+  generate(Teuchos::ParameterList &parameter_list, const Epetra_MpiComm *comm,
          const AmanziGeometry::GeometricModelPtr& gm)
   {
     GenerationSpec gspec(parameter_list);
@@ -569,27 +613,49 @@ framework_read(const Epetra_MpiComm *comm, const Framework& f, const std::string
 // -------------------------------------------------------------
 // framework_generates
 // -------------------------------------------------------------
-bool
-framework_generates(const Framework& f, const bool& parallel)
+
+template < int F >
+static bool 
+framework_generates(const bool& parallel, const unsigned int& dimension)
 {
-  bool result;
+  typedef FrameworkTraits<F> traits;
+  bool result = false;
+  switch (dimension) {
+  case 2:
+    result = parallel_test< typename traits::template cangenerate<2> >(parallel);
+    break;
+  case 3:
+    result = parallel_test< typename traits::template cangenerate<3> >(parallel);
+    break;
+  default:
+    result = false;
+  }
+  return result;
+}
+
+
+bool
+framework_generates(const Framework& f, const bool& parallel, const unsigned int& dimension)
+{
+  bool result;  
+
   switch (f) {
     case Simple:
-      result = parallel_test< FrameworkTraits<Simple>::cangenerate >(parallel);
+      result = framework_generates<Simple>(parallel, dimension);
       break;
-    case STKMESH:
-      result = parallel_test< FrameworkTraits<STKMESH>::cangenerate >(parallel);
+    case STKMESH:  
+      result = framework_generates<STKMESH>(parallel, dimension);
       break;
     case MOAB:
-      result = parallel_test< FrameworkTraits<MOAB>::cangenerate >(parallel);
+      result = framework_generates<MOAB>(parallel, dimension);
       break;
     case MSTK:
-      result = parallel_test< FrameworkTraits<MSTK>::cangenerate >(parallel);
+      result = framework_generates<MSTK>(parallel, dimension);
       break;
     default:
       {
         std::string msg = 
-            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+            boost::str(boost::format("Cannot generate dimension %d meshes") % static_cast<int>(dimension));
         Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
   }
@@ -619,6 +685,40 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
       break;
     case MSTK:
       result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
+      break;
+    default:
+      {
+        std::string msg = 
+            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+        Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
+      }
+  }
+  return result;
+}
+
+// -------------------------------------------------------------
+// framework_generate
+// -------------------------------------------------------------
+Teuchos::RCP<Mesh> 
+framework_generate(const Epetra_MpiComm *comm, const Framework& f, 
+                   const double& x0, const double& y0,
+                   const double& x1, const double& y1,
+                   const unsigned int& nx, const unsigned int& ny, 
+                   const AmanziGeometry::GeometricModelPtr& gm)
+{
+  Teuchos::RCP<Mesh> result;
+  switch (f) {
+    case Simple:
+      result = FrameworkTraits<Simple>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
+      break;
+    case STKMESH:
+      result = FrameworkTraits<STKMESH>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
+      break;
+    case MOAB:
+      result = FrameworkTraits<MOAB>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
+      break;
+    case MSTK:
+      result = FrameworkTraits<MSTK>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
       break;
     default:
       {
