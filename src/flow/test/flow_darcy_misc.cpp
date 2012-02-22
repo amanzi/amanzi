@@ -128,6 +128,38 @@ class DarcyProblem {
     return sqrt(error_L2);
   }
 
+  double calculateDarcyDivergenceError()
+  {
+    Epetra_Vector& darcy_flux = DPK->flow_state_next()->ref_darcy_flux();
+#ifdef HAVE_MPI
+  Epetra_Vector darcy_flux_wghost(mesh->face_map(true));
+  darcy_flux_wghost.Import(darcy_flux, DPK->ref_face_importer(), Insert);
+#else
+  Epetra_Vector& darcy_flux_wghost = darcy_flux;
+#endif
+
+    double error_L2 = 0.0;
+    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+    for (int c=0; c<ncells_owned; c++) {
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      
+      mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();
+
+      double div = 0.0;
+      for (int i=0; i<nfaces; i++) {
+        int f = faces[i];
+        div += darcy_flux_wghost[f] * dirs[i];
+      }
+      div /= mesh->cell_volume(c);
+      error_L2 += div*div;
+    }
+    return sqrt(error_L2);
+  }
+
   double calculateDarcyVelocityError(AmanziGeometry::Point& velocity_exact)
   {
     int dim = mesh->space_dimension();
@@ -170,12 +202,15 @@ SUITE(Darcy_PK) {
     DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
 
-    double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
-    CHECK(error < 1.0e-8);
-    error = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(error < 1.0e-8);
-    error = calculateDarcyFluxError(velocity);
-    CHECK(error < 1.0e-8);
+    double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
+    CHECK(errorP < 1.0e-8);
+    double errorL = calculatePressureFaceError(p0, pressure_gradient);
+    CHECK(errorL < 1.0e-8);
+    double errorU = calculateDarcyFluxError(velocity);
+    CHECK(errorU < 1.0e-8);
+    double errorDiv = calculateDarcyDivergenceError();
+    if (MyPID == 0) 
+        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
   }
 
 

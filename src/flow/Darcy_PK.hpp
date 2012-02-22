@@ -56,6 +56,7 @@ class Darcy_PK : public Flow_PK {
 
   // access methods
   Epetra_Vector& ref_solution_faces() { return *solution_faces; }
+  Epetra_Import& ref_face_importer() { return *face_importer_; }
 
   double rho() { return rho_; }
   double mu() { return mu_; }

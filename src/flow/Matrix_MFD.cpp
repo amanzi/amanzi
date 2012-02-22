@@ -22,24 +22,32 @@ Matrix_MFD::~Matrix_MFD()
 
 
 /* ******************************************************************
-* Calculate elemental inverse mass matrices (is *not* used).                                            
+* Calculate elemental inverse mass matrices. 
+* WARNING: The original Aff matrices are destroyed.                                            
 ****************************************************************** */
-void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K)
 {
+  int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs; 
 
-  Minv_cells.clear();
+  Aff_cells.clear();
   for (int c=0; c<K.size(); c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
 
-    if (nfaces == 6 || nfaces == 4) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
-    else mfd.darcy_mass_inverse(c, K[c], Bff);
-    Minv_cells.push_back(Bff);
+    if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+       else mfd.darcy_mass_inverse(c, K[c], Bff);
+       //mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
+    } else {
+       mfd.darcy_mass_inverse(c, K[c], Bff);
+    }
+
+    Aff_cells.push_back(Bff);
   }
 }
 

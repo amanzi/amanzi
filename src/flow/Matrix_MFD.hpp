@@ -38,7 +38,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   // main methods
   void setSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
-  void createMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
+  void createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void createMFDrhsVectors();
   void createMFDstiffnessMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K, Epetra_Vector& Krel_faces);
   void rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
@@ -90,7 +90,6 @@ class Matrix_MFD : public Epetra_Operator {
 
   bool flag_symmetry_;
 
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > Minv_cells;  // populated as needed
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells;
   std::vector<Epetra_SerialDenseVector> Acf_cells, Afc_cells;
   std::vector<double> Acc_cells;  // duplication may be useful later
