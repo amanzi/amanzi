@@ -499,8 +499,8 @@ void MPC::cycle_driver () {
 	}
 
 	FPK->commit_state(FS);
-	S->update_darcy_flux(FPK->Flux());
-	S->update_pressure(FPK->Pressure());
+	//S->update_darcy_flux(FPK->Flux());
+	//S->update_pressure(FPK->Pressure());
 	FPK->GetVelocity(*S->get_darcy_velocity());
       }
 

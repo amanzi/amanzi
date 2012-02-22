@@ -166,10 +166,10 @@ int Transient_Richards_PK::init_steady(double t0, double h_)
 
 int Transient_Richards_PK::advance_transient(double h) 
 {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  //using Teuchos::OSTab;
+  //Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  //Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  //OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   // Set problem parameters
   problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
@@ -181,24 +181,24 @@ int Transient_Richards_PK::advance_transient(double h)
   time_stepper->write_bdf2_stepping_statistics();
 
   
-  FS->get_pressure() = *pressure_cells;
-  FS->get_prev_water_saturation() = FS->get_water_saturation();
-  GetSaturation( FS->get_water_saturation() );
+  //FS->get_pressure() = *pressure_cells;
+  //FS->get_prev_water_saturation() = FS->get_water_saturation();
+  //GetSaturation( FS->get_water_saturation() );
 
-  double l1_error;
-  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
-    *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
-  }
+  //double l1_error;
+  //problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
+  //if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
+  //  *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
+ // }
 }
 
 
 int Transient_Richards_PK::advance_steady(double h) 
 {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  //using Teuchos::OSTab;
+  //Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  //Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  //OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   // Set problem parameters
   problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
@@ -209,15 +209,15 @@ int Transient_Richards_PK::advance_steady(double h)
 
   steady_time_stepper->write_bdf1_stepping_statistics();
 
-  FS->get_pressure() = *pressure_cells;
-  FS->get_prev_water_saturation() = FS->get_water_saturation();
-  GetSaturation( FS->get_water_saturation() );  
+  //FS->get_pressure() = *pressure_cells;
+  //FS->get_prev_water_saturation() = FS->get_water_saturation();
+  //GetSaturation( FS->get_water_saturation() );  
 
-  double l1_error;
-  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
-    *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
-  }
+  //double l1_error;
+  //problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
+  //if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
+  //  *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
+ // }
 }
 
 
@@ -230,7 +230,35 @@ void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
   
 void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS) 
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
+  FS->get_pressure() = *pressure_cells;
+  FS->get_prev_water_saturation() = FS->get_water_saturation();
+  GetSaturation( FS->get_water_saturation() );  
+
+  double l1_error;
+  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
+  FS->get_darcy_flux() = *richards_flux;
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
+    *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
+  }
+
+  // derive the velocity vector
+  GetVelocity(FS->get_darcy_velocity());
+
+
+  // now compute the discrepancy between the current and previous saturations
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
+    Epetra_Vector s_diff (FS->get_water_saturation());
+    s_diff = FS->get_water_saturation();
+    s_diff.Update(-1.0,FS->get_prev_water_saturation(),1.0);
+    double norm;
+    s_diff.NormInf(&norm);
+    *out << "discrepancy between current and previous saturation = " << norm << std::endl;
+  }
 }
 
 

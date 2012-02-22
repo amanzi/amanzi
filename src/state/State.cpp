@@ -823,7 +823,7 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
     std::vector<std::string> names(3);
     names[0] = "darcy velocity x";
     names[1] = "darcy velocity y";
-    names[1] = "darcy velocity z";
+    names[2] = "darcy velocity z";
     vis.write_vector(*get_darcy_velocity(), names);
 
     // write component data
