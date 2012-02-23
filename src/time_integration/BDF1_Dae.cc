@@ -260,8 +260,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     state.pclagcount++;
     int errc = 0;
 
-    *out << "updating precon with tnew = " << tnew << ", h = " << h << std::endl;
-    
     fn.update_precon (tnew, up, h, errc);
     if (errc != 0) {
       std::string msg = "BDF1 failed: error while updating the preconditioner.";
