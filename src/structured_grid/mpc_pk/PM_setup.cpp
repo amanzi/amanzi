@@ -1,6 +1,5 @@
 #include <winstd.H>
 #include <ParmParse.H>
-#include <ErrorList.H>
 #include <Interpolater.H>
 #include <MultiGrid.H>
 #include <ArrayLim.H>
@@ -357,6 +356,7 @@ set_z_vel_bc (BCRec&       bc,
 #endif
 
 typedef StateDescriptor::BndryFunc BndryFunc;
+typedef ErrorRec::ErrorFunc ErrorFunc;
 
 void 
 PorousMedia::setup_list()
@@ -664,7 +664,8 @@ PorousMedia::variableSetUp ()
   // "User defined" - atthough these must correspond to those in PorousMedia::derive
   IndexType regionIDtype(IndexType::TheCellType());
   int nCompRegion = 1;
-  ParmParse pp("amr");
+  std::string amr_prefix = "amr";
+  ParmParse pp(amr_prefix);
   int num_user_derives = pp.countval("user_derive_list");
   Array<std::string> user_derive_list(num_user_derives);
   pp.getarr("user_derive_list",user_derive_list,0,num_user_derives);
@@ -675,14 +676,69 @@ PorousMedia::variableSetUp ()
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************
   //
-  err_list.add("gradn",1,ErrorRec::Special,FORT_ADVERROR);
+  //err_list.add("gradn",1,ErrorRec::Special,ErrorFunc(FORT_ADVERROR));
 
-  int dump_pp = false; pproot.query("dump_parmparse_table",dump_pp);
-  if (dump_pp && ParallelDescriptor::IOProcessor())
+  Array<std::string> refinement_indicators;
+  pp.queryarr("refinement_indicators",refinement_indicators,0,pp.countval("refinement_indicators"));
+  for (int i=0; i<refinement_indicators.size(); ++i)
   {
-      std::cout << "\nDumping ParmParse table:\n \n";
-      ParmParse::dumpTable(std::cout);
-      std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+      std::string ref_prefix = amr_prefix + "." + refinement_indicators[i];
+      ParmParse ppr(ref_prefix);
+      Real min_time = 0; ppr.query("start_time",min_time);
+      Real max_time = -1; ppr.query("end_time",max_time);
+      int max_level = -1;  ppr.query("max_level",max_level);
+      Array<std::string> region_names(1,"All"); 
+      int nreg = ppr.countval("regions");
+      if (nreg) {
+          ppr.getarr("regions",region_names,0,nreg);
+      }
+      PArray<Region> regions = build_region_PArray(region_names);
+      if (ppr.countval("val_greater_than")) {
+          Real value; ppr.get("val_greater_than",value);
+          std::string field; ppr.get("field",field);
+          err_list.add(field.c_str(),0,ErrorRec::Special,
+                       PM_Error_Value(FORT_VALGTERROR,value,min_time,max_time,max_level,regions));
+      }
+      else if (ppr.countval("val_less_than")) {
+          Real value; ppr.get("val_less_than",value);
+          std::string field; ppr.get("field",field);
+          err_list.add(field.c_str(),0,ErrorRec::Special,
+                       PM_Error_Value(FORT_VALLTERROR,value,min_time,max_time,max_level,regions));
+      }
+      else if (ppr.countval("diff_greater_than")) {
+          BoxLib::Abort("Difference refinement not yet supported");
+          Real value; ppr.get("diff_greater_than",value);
+          std::string field; ppr.get("field",field);
+          err_list.add(field.c_str(),1,ErrorRec::Special,
+                       PM_Error_Value(FORT_DIFFGTERROR,value,min_time,max_time,max_level,regions));
+      }
+      else if (ppr.countval("in_region")) {
+          Real value; ppr.get("in_region",value);
+          err_list.add("PMAMR_DUMMY",1,ErrorRec::Special,
+                       PM_Error_Value(min_time,max_time,max_level,regions));
+      }
+      else {
+          BoxLib::Abort(std::string("Unrecognized refinement indicator for " + refinement_indicators[i]).c_str());
+      }
+  }
+
+
+
+  std::string pp_dump_file = ""; 
+  if (pproot.countval("dump_parmparse_table")) {
+      pproot.get("dump_parmparse_table",pp_dump_file);
+      std::ofstream ofs;
+      ofs.open(pp_dump_file.c_str());
+      if (ofs.fail()) {
+          BoxLib::Abort("Cannot open pp dump file");
+      }
+      if (ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "\nDumping ParmParse table:\n \n";
+          std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+      }
+      ParmParse::dumpTable(ofs);
+      ofs.close();
   }
 }
 

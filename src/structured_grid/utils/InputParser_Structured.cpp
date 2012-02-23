@@ -3,6 +3,7 @@
 #include "Teuchos_MPISession.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #include <InputParser_Structured.H>
 #include <PMAMR_Labels.H>
@@ -17,8 +18,10 @@ namespace Amanzi {
     namespace AmanziInput {
 
         void MyAbort(const std::string& m) {
-            std::cerr << m << std::endl;
-            throw std::exception();
+            if (Teuchos::MPISession::getRank() == 0) {
+                std::cerr << m << std::endl;
+                throw std::exception();
+            }
         }
 
         double atmToMKS = 101325;
@@ -29,6 +32,17 @@ namespace Amanzi {
             std::replace(s.begin(),s.end(),' ','_');
             AMR_to_Amanzi_label_map[s] = instring;
             return s;
+        }
+
+        Array<std::string> underscore(const Array<std::string>& instrings)
+        {
+            Array<std::string> ss(instrings.size());
+            for (int i=0; i<instrings.size(); ++i) {
+                ss[i] = instrings[i];
+                std::replace(ss[i].begin(),ss[i].end(),' ','_');
+                AMR_to_Amanzi_label_map[ss[i]] = instrings[i];
+            }
+            return ss;
         }
 
         //
@@ -57,8 +71,6 @@ namespace Amanzi {
             return struc_list;
 
         }
-
-
 
         //
         // convert mesh to structured format
@@ -89,8 +101,6 @@ namespace Amanzi {
             domlo = st_list.get<Array<double> >(ProbLo_str);
             domhi = st_list.get<Array<double> >(ProbHi_str);
 
-
-            // FIXME: This multiplier should be input
             if (domlo.size()<ndim  || domhi.size()<ndim) {
                 MyAbort("Domain size nonsensical");
             }
@@ -98,6 +108,7 @@ namespace Amanzi {
             for (int i=0; i<ndim; ++i) {
                 max_size=std::max(max_size,domhi[i]-domlo[i]);
             }
+            // FIXME: This multiplier should be input
             geometry_eps = 1.e-6*max_size;
 
             const ParameterList& eclist = parameter_list.sublist("Execution Control");
@@ -108,7 +119,7 @@ namespace Amanzi {
      
             for (int i=0;i<ndim;i++) {
                 if (n_cell[i]%bfactor > 0) {
-                    MyAbort("Number of Cells must be divisible by " + bfactor);
+                    MyAbort("Number of Cells must be divisible by blocking_factor = " + bfactor);
                 }
             }
 
@@ -124,6 +135,23 @@ namespace Amanzi {
             Array<int> is_periodic(ndim,0);
             glist.set("is_periodic",is_periodic);
             glist.set("coord_sys","0");
+        }
+
+        std::pair<std::string,bool> one_picked(const std::map<std::string,bool>& b)
+        {
+            std::pair<std::string,bool> res("",false);
+            if (b.size()) {
+                for (std::map<std::string,bool>::const_iterator it=b.begin(); it!=b.end(); ++it)
+                {
+                    if (res.second) {
+                        if (it->second) return std::pair<std::string,bool>("",false);
+                    }
+                    else {
+                        res = *it;
+                    }
+                }
+            }
+            return res;
         }
 
         //
@@ -251,16 +279,20 @@ namespace Amanzi {
                 if (optL[i] == num_str) {
                     const ParameterList& num_list = ec_list.sublist(num_str);
                     Array<std::string> nL, nP;
-                    PLoptions NUMopt(num_list,reqL,reqP,false,true); 
+                    PLoptions NUMopt(num_list,nL,nP,false,true); 
                     const Array<std::string> NUMoptL = NUMopt.OptLists();
                     for (int j=0; j<NUMoptL.size(); ++j) {
                         if (NUMoptL[j] == amr_str) {
                             const ParameterList& amr_list = num_list.sublist(amr_str);
-                            std::string max_level_str = "Max AMR Level";
-                            int max_level = 0;
-                            if (amr_list.isParameter(max_level_str)) {
-                                max_level = amr_list.get<int>(max_level_str);
+                            std::string num_level_str = "Number Of AMR Levels";
+                            int num_levels = 1;
+                            if (amr_list.isParameter(num_level_str)) {
+                                num_levels = amr_list.get<int>(num_level_str);
                             }
+                            if (num_levels < 1) {
+                                MyAbort("Must have at least 1 AMR level");
+                            }
+                            int max_level = num_levels - 1;
                             amr_out_list.set<int>("max_level",max_level);
                             
                             std::string ref_ratio_str = "Refinement Ratio";
@@ -268,7 +300,125 @@ namespace Amanzi {
                             if (amr_list.isParameter(ref_ratio_str)) {
                                 ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
                             }
+                            if (ref_ratio.size() < max_level) {
+                                MyAbort("Must provide a refinement ratio for each refined level");
+                            }
+                            for (int k=0; k<max_level; ++k) {
+                                if (ref_ratio[k] != 2 && ref_ratio[k]!=4) {
+                                    MyAbort("\"Refinement Ratio\" values must be 2 or 4");
+                                }
+                            }
                             amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
+
+                            std::string regrid_int_str = "Regrid Interval";
+                            Array<int> regrid_int(max_level,2);
+                            if (amr_list.isParameter(regrid_int_str)) {
+                                regrid_int = amr_list.get<Array<int> >(regrid_int_str);
+                            }
+                            if (regrid_int.size() < max_level) {
+                                MyAbort("Must provide a regridding interval for each refined level");
+                            }
+                            for (int k=0; k<max_level; ++k) {
+                                if (regrid_int[k] <= 0) {
+                                    MyAbort("Each value in \"" + regrid_int_str
+                                            + "\" must be values must be a postive integer");
+                                }
+                            }
+                            amr_out_list.set<Array<int> >("regrid_int",regrid_int);
+
+                            std::string refineNames_str = "Refinement Indicators";
+                            if (amr_list.isParameter(refineNames_str)) {
+                                const Array<std::string>& refineNames = 
+                                    amr_list.get<Array<std::string> >(refineNames_str);
+                                Array<std::string> names(refineNames.size());
+                                for (int k=0; k<refineNames.size(); ++k) {
+                                    names[k] = underscore(refineNames[k]);
+                                    const ParameterList& ref_list = amr_list.sublist(refineNames[k]);
+
+                                    std::string val_greater_str = "Value Greater";
+                                    std::string val_less_str = "Value Less";
+                                    std::string diff_greater_str = "Adjacent Difference Greater";
+                                    std::string in_region_str = "Inside Region";
+
+                                    bool do_greater = false;
+                                    bool do_less    = false;
+                                    bool do_diff    = false;
+                                    bool do_region  = false;
+                                    std::map<std::string,bool> pick_one;
+                                    if (ref_list.isParameter(val_greater_str)) {
+                                        pick_one["do_greater"] = true;
+                                    }
+                                    if (ref_list.isParameter(val_less_str)) {
+                                        pick_one["do_less"] = true;
+                                    }
+                                    if (ref_list.isParameter(diff_greater_str)) {
+                                        pick_one["do_diff"] = true;
+                                    }
+                                    if (ref_list.isParameter(in_region_str)) {
+                                        pick_one["do_region"] = true;
+                                    }
+
+                                    std::pair<std::string,bool> ch = one_picked(pick_one);
+                                    if (! ch.second)
+                                    {
+                                        MyAbort("Refinement indicator \"" + refineNames[k]
+                                                + "\" must specify one condition from the list: "
+                                                + "\"" + val_greater_str + "\", "
+                                                + "\"" + val_less_str + "\", "
+                                                + "\"" + diff_greater_str + "\", "
+                                                + "\"" + in_region_str + "\"" );
+                                    }
+                                    
+                                    std::string fieldName_str = "Field Name";
+                                    std::string regName_str = "Regions";
+
+                                    std::string ref_type = ch.first;
+                                    ParameterList ref_out_list;
+                                    if (ref_type != "do_region") {
+                                        ref_out_list.set<std::string>
+                                            ("field",underscore(ref_list.get<std::string>(fieldName_str)));
+
+                                        if (ref_type == "do_greater") {
+                                            ref_out_list.set<double>(
+                                                "val_greater_than",ref_list.get<double>(val_greater_str));
+                                        }
+                                        else if (ref_type == "do_less") {
+                                            ref_out_list.set<double>(
+                                                "val_less_than",ref_list.get<double>(val_less_str));
+                                        }
+                                        else if (ref_type == "do_diff") {
+                                            ref_out_list.set<double>(
+                                                "diff_greater_than",ref_list.get<double>(diff_greater_str));
+                                        }
+                                    }
+                                    else {
+                                        ref_out_list.set<bool>("in_region","TRUE");
+                                    }
+
+                                    std::string maxLev_str = "Maximum Refinement Level";
+                                    int max_level = -1;
+                                    if (ref_list.isParameter(maxLev_str)) {
+                                        max_level = ref_list.get<int>(maxLev_str);
+                                    }
+                                    ref_out_list.set<int>("max_level",max_level);
+
+                                    ref_out_list.set<Array<std::string> >(
+                                        "regions",underscore(ref_list.get<Array<std::string> >(regName_str)));
+                                    
+                                    std::string start_str = "Start Time";
+                                    std::string end_str = "End Time";
+                                    if (ref_list.isParameter(start_str)) {
+                                        ref_out_list.set<double>("start_time",ref_list.get<double>(start_str));
+                                    }
+                                    if (ref_list.isParameter(end_str)) {
+                                        ref_out_list.set<double>("end_time",ref_list.get<double>(end_str));
+                                    }
+
+                                    amr_out_list.set(names[k],ref_out_list);
+                                }
+
+                                amr_out_list.set<Array<std::string> >("refinement_indicators",names);
+                            }
                         }
                         else if (NUMoptL[j] == mg_str) {
                             const ParameterList& mg_list = num_list.sublist(mg_str);
@@ -2069,6 +2219,11 @@ namespace Amanzi {
             // Output
             // 
             convert_to_structured_output(parameter_list, struc_list);
+
+            std::string dump_str = "Dump ParmParse Table";
+            if (parameter_list.isParameter(dump_str)) {
+                struc_list.set<std::string>("dump_parmparse_table",parameter_list.get<std::string>(dump_str));
+            }
             return struc_list;
         }
 
