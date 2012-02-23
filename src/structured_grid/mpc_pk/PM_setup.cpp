@@ -2160,7 +2160,7 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read geometry." << std::endl;
 
-  if (echo_inputs > 1 && ParallelDescriptor::IOProcessor()) {
+  if (echo_inputs && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Regions: " << std::endl;
       for (int i=0; i<regions.size(); ++i) {
           std::cout << regions[i] << std::endl;
@@ -2172,7 +2172,7 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read rock."<< std::endl;
 
-  if (echo_inputs > 1 && ParallelDescriptor::IOProcessor()) {
+  if (echo_inputs && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Materials: " << std::endl;
       for (int i=0; i<rocks.size(); ++i) {
           std::cout << rocks[i] << std::endl;

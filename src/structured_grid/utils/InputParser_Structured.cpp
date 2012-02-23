@@ -582,6 +582,13 @@ namespace Amanzi {
             prob_out_list.set("visc_abs_tol",1.e-16);
             prob_out_list.set("visc_tol",1.e-14);
             prob_out_list.set("cfl",1);
+
+            bool echo_inputs = false;
+            std::string echo_str = "Echo Inputs";
+            if (parameter_list.isParameter(echo_str)) {
+                echo_inputs = parameter_list.get<bool>(echo_str);
+            }
+            struc_out_list.set<bool>("echo_inputs",echo_inputs);
         }
 
         static std::string dirStr[6] = {"-X", "-Y", "-Z", "+X", "+Y", "+Z"};
