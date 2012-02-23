@@ -181,7 +181,7 @@ int Transient_Richards_PK::advance_transient(double h)
   time_stepper->bdf2_step(h,0.0,*solution,hnext);
   //time_stepper->commit_solution(h,*solution);  
 
-  time_stepper->write_bdf2_stepping_statistics();
+  //time_stepper->write_bdf2_stepping_statistics();
 
   
   //FS->get_pressure() = *pressure_cells;
@@ -210,7 +210,7 @@ int Transient_Richards_PK::advance_steady(double h)
   steady_time_stepper->bdf1_step(h,*solution,hnext);
   //steady_time_stepper->commit_solution(h,*solution);  
 
-  steady_time_stepper->write_bdf1_stepping_statistics();
+  //steady_time_stepper->write_bdf1_stepping_statistics();
 
   //FS->get_pressure() = *pressure_cells;
   //FS->get_prev_water_saturation() = FS->get_water_saturation();
@@ -246,9 +246,12 @@ void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS, double h)
 
   if (steady_mode) {
     steady_time_stepper->commit_solution(h,*solution);  
+    steady_time_stepper->write_bdf1_stepping_statistics();
   } else {
     time_stepper->commit_solution(h,*solution);  
+    time_stepper->write_bdf2_stepping_statistics();
   }
+
 
   FS->get_pressure() = *pressure_cells;
   //FS->get_prev_water_saturation() = FS->get_water_saturation();
