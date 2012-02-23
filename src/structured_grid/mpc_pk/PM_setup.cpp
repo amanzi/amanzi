@@ -1808,62 +1808,6 @@ void  PorousMedia::read_tracer()
   }
 }
   
-void  PorousMedia::read_pressure()
-{
-#if 0
-  //
-  // Read in parameters for pressure
-  //
-  ParmParse pp("press");
-  press_lo.resize(BL_SPACEDIM);
-  press_hi.resize(BL_SPACEDIM);
-  inflow_bc_lo.resize(BL_SPACEDIM);
-  inflow_bc_hi.resize(BL_SPACEDIM);
-  inflow_vel_lo.resize(BL_SPACEDIM);
-  inflow_vel_hi.resize(BL_SPACEDIM);
-  for (int dir = 0; dir < BL_SPACEDIM; dir++)
-    {
-      press_lo[dir] = 0;
-      press_hi[dir] = 0;
-      inflow_bc_lo[dir] = 0;
-      inflow_bc_hi[dir] = 0;
-      inflow_vel_lo[dir] = 0;
-      inflow_vel_hi[dir] = 0;
-    }
-  pp.query("water_table_lo",wt_lo);
-  pp.query("water_table_hi",wt_hi);
-  if (pp.countval("press_lo") == BL_SPACEDIM)
-      pp.getarr("press_lo",press_lo,0,BL_SPACEDIM);
-  if (pp.countval("press_hi") == BL_SPACEDIM)
-    pp.getarr("press_hi",press_hi,0,BL_SPACEDIM);
-  if (pp.countval("inflow_bc_lo") == BL_SPACEDIM)
-    pp.getarr("inflow_bc_lo",inflow_bc_lo,0,BL_SPACEDIM);
-  if (pp.countval("inflow_bc_hi") == BL_SPACEDIM)
-    pp.getarr("inflow_bc_hi",inflow_bc_hi,0,BL_SPACEDIM);
-  if (pp.countval("inflow_vel_lo") == BL_SPACEDIM) 
-    pp.getarr("inflow_vel_lo",inflow_vel_lo,0,BL_SPACEDIM);
-  if (pp.countval("inflow_vel_hi") == BL_SPACEDIM) 
-    pp.getarr("inflow_vel_hi",inflow_vel_hi,0,BL_SPACEDIM);
-
-#ifdef MG_USE_FBOXLIB
-  if (model == model_list["richard"])
-    {
-      rinflow_bc_lo = inflow_bc_lo;
-      rinflow_bc_hi = inflow_bc_hi;
-    }
-#endif
-
-  Array<int> plo_bc(BL_SPACEDIM), phi_bc(BL_SPACEDIM);
-  pp.getarr("lo_bc",plo_bc,0,BL_SPACEDIM);
-  pp.getarr("hi_bc",phi_bc,0,BL_SPACEDIM);
-  for (int i = 0; i < BL_SPACEDIM; i++)
-    {
-      pres_bc.setLo(i,plo_bc[i]);
-      pres_bc.setHi(i,phi_bc[i]);
-    }
-#endif
-}
-
 void  PorousMedia::read_source()
 {
   //
@@ -2245,11 +2189,6 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
 
-  // pressure
-  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-  // std::cout << "Read pressure."<< std::endl;
-  //read_pressure();
-
   // source
   //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
   //  std::cout << "Read sources."<< std::endl;
@@ -2259,11 +2198,6 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read chemistry."<< std::endl;
   read_chem();
-
-  // read amr
-  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-  //std::cout << "Read amr."<< std::endl;
-  //read_amr();
 
   // source
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 

@@ -294,6 +294,11 @@ namespace Amanzi {
                             }
                             int max_level = num_levels - 1;
                             amr_out_list.set<int>("max_level",max_level);
+
+                            // Shut off subcycling
+                            bool do_amr_subcycling = false;                            
+                            int amr_nosub = ( do_amr_subcycling ? 0 : 1);
+                            amr_out_list.set<int>("nosub", amr_nosub);
                             
                             std::string ref_ratio_str = "Refinement Ratio";
                             Array<int> ref_ratio(max_level,2);
@@ -303,6 +308,7 @@ namespace Amanzi {
                             if (ref_ratio.size() < max_level) {
                                 MyAbort("Must provide a refinement ratio for each refined level");
                             }
+
                             for (int k=0; k<max_level; ++k) {
                                 if (ref_ratio[k] != 2 && ref_ratio[k]!=4) {
                                     MyAbort("\"Refinement Ratio\" values must be 2 or 4");
@@ -315,16 +321,80 @@ namespace Amanzi {
                             if (amr_list.isParameter(regrid_int_str)) {
                                 regrid_int = amr_list.get<Array<int> >(regrid_int_str);
                             }
-                            if (regrid_int.size() < max_level) {
-                                MyAbort("Must provide a regridding interval for each refined level");
+                            if (do_amr_subcycling) {
+                                if (regrid_int.size() < max_level) {
+                                    MyAbort("Must provide a regridding interval for each refined level");
+                                }
                             }
-                            for (int k=0; k<max_level; ++k) {
+                            else {
+                                if (regrid_int.size() != 1) {
+                                    MyAbort("Subcycling is disabled, only a single regridding interval is supported");
+                                }                                
+                            }
+
+                            for (int k=0; k<regrid_int.size(); ++k) {
                                 if (regrid_int[k] <= 0) {
                                     MyAbort("Each value in \"" + regrid_int_str
                                             + "\" must be values must be a postive integer");
                                 }
                             }
                             amr_out_list.set<Array<int> >("regrid_int",regrid_int);
+
+                            
+                            int blocking_factor_DEF = 8;
+                            std::string blocking_factor_str = "Blocking Factor";
+                            Array<int> blocking_factor(max_level+1,blocking_factor_DEF);
+                            if (amr_list.isParameter(blocking_factor_str)) {
+                                blocking_factor = amr_list.get<Array<int> >(blocking_factor_str);
+                            }
+                            if (blocking_factor.size() < max_level+1) {
+                                MyAbort("If provided, value of \"" + blocking_factor_str
+                                        + "\" required for each level");
+                            }
+                            for (int k=0; k<blocking_factor.size(); ++k) {
+                                double twoPower = std::log(blocking_factor[k])/std::log(2);
+                                if (twoPower != (int)(twoPower)) {
+                                    MyAbort("\"" + blocking_factor_str + "\" must be a power of two");
+                                }
+                            }
+                            amr_out_list.set<Array<int> >("blocking_factor",blocking_factor);
+
+                            
+                            int n_err_buf_DEF = 1;
+                            std::string n_err_buf_str = "Numbers Error Buffer Cells";
+                            Array<int> n_err_buf(max_level+1,n_err_buf_DEF);
+                            if (amr_list.isParameter(n_err_buf_str)) {
+                                n_err_buf = amr_list.get<Array<int> >(n_err_buf_str);
+                            }
+                            if (n_err_buf.size() < max_level) {
+                                MyAbort("If provided, value of \"" + n_err_buf_str
+                                        + "\" required for each refined level");
+                            }
+                            for (int k=0; k<n_err_buf.size(); ++k) {
+                                if (n_err_buf[k] < 0) {
+                                    MyAbort("\"" + n_err_buf_str + "\" must be > 0");
+                                }
+                            }
+                            amr_out_list.set<Array<int> >("n_error_buf",n_err_buf);
+
+                            
+                            int max_grid_DEF = (ndim==2 ? 128  :  32);
+                            std::string max_grid_str = "Maximum Grid Size";
+                            Array<int> max_grid(max_level+1,max_grid_DEF);
+                            if (amr_list.isParameter(max_grid_str)) {
+                                max_grid = amr_list.get<Array<int> >(max_grid_str);
+                            }
+                            if (max_grid.size() < max_level+1) {
+                                MyAbort("If provided, value of \"" + max_grid_str
+                                        + "\" required for each level");
+                            }
+                            for (int k=0; k<max_grid.size(); ++k) {
+                                if (max_grid[k] < blocking_factor[k]) {
+                                    MyAbort("\"" + max_grid_str + "\" must be > \"" + blocking_factor_str + "\"");
+                                }
+                            }
+                            amr_out_list.set<Array<int> >("max_grid_size",max_grid);
+
 
                             std::string refineNames_str = "Refinement Indicators";
                             if (amr_list.isParameter(refineNames_str)) {

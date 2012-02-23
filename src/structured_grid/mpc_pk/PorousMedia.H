@@ -366,11 +366,9 @@ protected:
   static void read_prob ();
   static void read_comp (); 
   static void read_tracer (); 
-  static void read_pressure (); 
   static void read_source (); 
   static void read_observation (); 
   static void read_chem (); 
-  static void read_amr ();
   static void assign_bc_coef(int type_id, 
 			     ParmParse& ppr,
 			     Array<std::string>& names, 
