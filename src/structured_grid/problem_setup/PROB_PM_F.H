@@ -19,6 +19,9 @@
 #    define FORT_ENTHFILL    enthfill
 #    define FORT_DIVUFILL    divufill
 #    define FORT_ADVERROR    adverror
+#    define FORT_VALGTERROR  valgterr
+#    define FORT_DIFFGTERROR diffgterr
+#    define FORT_VALLTERROR  vallterr
 #    define FORT_KPERROR     kperror
 #    define FORT_INIT_UMAC   initumac
 #    define FORT_CHEM        chem
@@ -47,6 +50,9 @@
 #    define FORT_ENTHFILL    ENTHFILL
 #    define FORT_DIVUFILL    DIVUFILL
 #    define FORT_ADVERROR    ADVERROR
+#    define FORT_VALGTERROR  VALGTERR
+#    define FORT_VALLTERROR  VALLTERR
+#    define FORT_DIFFGTERROR DIFFGTERR
 #    define FORT_KPERROR     KPERROR
 #    define FORT_INIT_UMAC   INITUMAC
 #    define FORT_CHEM        CHEM
@@ -75,6 +81,9 @@
 #    define FORT_ENTHFILL    enthfill
 #    define FORT_DIVUFILL    divufill
 #    define FORT_ADVERROR    adverror
+#    define FORT_VALGTERROR  valgterr
+#    define FORT_VALLTERROR  vallterr
+#    define FORT_DIFFGTERROR diffgterr
 #    define FORT_KPERROR     kperror
 #    define FORT_INIT_UMAC   initumac
 #    define FORT_MK_CPL      mkcpl
@@ -103,6 +112,9 @@
 #    define FORT_ENTHFILL    enthfill_
 #    define FORT_DIVUFILL    divufill_
 #    define FORT_ADVERROR    adverror_
+#    define FORT_VALGTERROR  valgterr_
+#    define FORT_VALLTERROR  vallterr_
+#    define FORT_DIFFGTERROR diffgterr_
 #    define FORT_KPERROR     kperror_
 #    define FORT_INIT_UMAC   initumac_
 #    define FORT_CHEM        chem_
@@ -197,6 +209,36 @@
                           const Real* dx, const Real* xlo,
                           const Real* prob_lo, const Real* time,
                           const int* level);
+    
+     void FORT_VALGTERROR(int* tag, ARLIM_P(tlo), ARLIM_P(thi),
+                          const int* tagval, const int* clearval,
+                          const Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
+                          const Real* mask, ARLIM_P(mask_lo), ARLIM_P(mask_hi),
+                          const int* lo, const int* hi, const int* nvar,
+                          const int* domain_lo, const int* domain_hi,
+                          const Real* dx, const Real* xlo,
+                          const Real* prob_lo, const Real* time,
+                          const int* level, const Real* value);
+    
+     void FORT_VALLTERROR(int* tag, ARLIM_P(tlo), ARLIM_P(thi),
+                          const int* tagval, const int* clearval,
+                          const Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
+                          const Real* mask, ARLIM_P(mask_lo), ARLIM_P(mask_hi),
+                          const int* lo, const int* hi, const int* nvar,
+                          const int* domain_lo, const int* domain_hi,
+                          const Real* dx, const Real* xlo,
+                          const Real* prob_lo, const Real* time,
+                          const int* level, const Real* value);
+    
+     void FORT_DIFFGTERROR(int* tag, ARLIM_P(tlo), ARLIM_P(thi),
+                           const int* tagval, const int* clearval,
+                           const Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
+                           const Real* mask, ARLIM_P(mask_lo), ARLIM_P(mask_hi),
+                           const int* lo, const int* hi, const int* nvar,
+                           const int* domain_lo, const int* domain_hi,
+                           const Real* dx, const Real* xlo,
+                           const Real* prob_lo, const Real* time,
+                           const int* level, const Real* value);
     
      void FORT_INIT_UMAC (const Real* umac, ARLIM_P(umlo), ARLIM_P(umhi),
                           const Real* vmac, ARLIM_P(vmlo), ARLIM_P(vmhi),

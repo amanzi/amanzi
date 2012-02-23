@@ -1,6 +1,5 @@
 #include <winstd.H>
 #include <ParmParse.H>
-#include <ErrorList.H>
 #include <Interpolater.H>
 #include <MultiGrid.H>
 #include <ArrayLim.H>
@@ -357,6 +356,7 @@ set_z_vel_bc (BCRec&       bc,
 #endif
 
 typedef StateDescriptor::BndryFunc BndryFunc;
+typedef ErrorRec::ErrorFunc ErrorFunc;
 
 void 
 PorousMedia::setup_list()
@@ -664,7 +664,8 @@ PorousMedia::variableSetUp ()
   // "User defined" - atthough these must correspond to those in PorousMedia::derive
   IndexType regionIDtype(IndexType::TheCellType());
   int nCompRegion = 1;
-  ParmParse pp("amr");
+  std::string amr_prefix = "amr";
+  ParmParse pp(amr_prefix);
   int num_user_derives = pp.countval("user_derive_list");
   Array<std::string> user_derive_list(num_user_derives);
   pp.getarr("user_derive_list",user_derive_list,0,num_user_derives);
@@ -675,14 +676,69 @@ PorousMedia::variableSetUp ()
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************
   //
-  err_list.add("gradn",1,ErrorRec::Special,FORT_ADVERROR);
+  //err_list.add("gradn",1,ErrorRec::Special,ErrorFunc(FORT_ADVERROR));
 
-  int dump_pp = false; pproot.query("dump_parmparse_table",dump_pp);
-  if (dump_pp && ParallelDescriptor::IOProcessor())
+  Array<std::string> refinement_indicators;
+  pp.queryarr("refinement_indicators",refinement_indicators,0,pp.countval("refinement_indicators"));
+  for (int i=0; i<refinement_indicators.size(); ++i)
   {
-      std::cout << "\nDumping ParmParse table:\n \n";
-      ParmParse::dumpTable(std::cout);
-      std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+      std::string ref_prefix = amr_prefix + "." + refinement_indicators[i];
+      ParmParse ppr(ref_prefix);
+      Real min_time = 0; ppr.query("start_time",min_time);
+      Real max_time = -1; ppr.query("end_time",max_time);
+      int max_level = -1;  ppr.query("max_level",max_level);
+      Array<std::string> region_names(1,"All"); 
+      int nreg = ppr.countval("regions");
+      if (nreg) {
+          ppr.getarr("regions",region_names,0,nreg);
+      }
+      PArray<Region> regions = build_region_PArray(region_names);
+      if (ppr.countval("val_greater_than")) {
+          Real value; ppr.get("val_greater_than",value);
+          std::string field; ppr.get("field",field);
+          err_list.add(field.c_str(),0,ErrorRec::Special,
+                       PM_Error_Value(FORT_VALGTERROR,value,min_time,max_time,max_level,regions));
+      }
+      else if (ppr.countval("val_less_than")) {
+          Real value; ppr.get("val_less_than",value);
+          std::string field; ppr.get("field",field);
+          err_list.add(field.c_str(),0,ErrorRec::Special,
+                       PM_Error_Value(FORT_VALLTERROR,value,min_time,max_time,max_level,regions));
+      }
+      else if (ppr.countval("diff_greater_than")) {
+          BoxLib::Abort("Difference refinement not yet supported");
+          Real value; ppr.get("diff_greater_than",value);
+          std::string field; ppr.get("field",field);
+          err_list.add(field.c_str(),1,ErrorRec::Special,
+                       PM_Error_Value(FORT_DIFFGTERROR,value,min_time,max_time,max_level,regions));
+      }
+      else if (ppr.countval("in_region")) {
+          Real value; ppr.get("in_region",value);
+          err_list.add("PMAMR_DUMMY",1,ErrorRec::Special,
+                       PM_Error_Value(min_time,max_time,max_level,regions));
+      }
+      else {
+          BoxLib::Abort(std::string("Unrecognized refinement indicator for " + refinement_indicators[i]).c_str());
+      }
+  }
+
+
+
+  std::string pp_dump_file = ""; 
+  if (pproot.countval("dump_parmparse_table")) {
+      pproot.get("dump_parmparse_table",pp_dump_file);
+      std::ofstream ofs;
+      ofs.open(pp_dump_file.c_str());
+      if (ofs.fail()) {
+          BoxLib::Abort("Cannot open pp dump file");
+      }
+      if (ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "\nDumping ParmParse table:\n \n";
+          std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+      }
+      ParmParse::dumpTable(ofs);
+      ofs.close();
   }
 }
 
@@ -1565,10 +1621,6 @@ void  PorousMedia::read_comp()
               is_inflow = true;
               component_bc = 1;
               pressure_bc = 1;
-
-              //FluxToRhoSat flux_to_sat(rock);
-              //bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
-              //                                          bc_type,ncomps));
 	      bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
           else if (bc_type == "noflow")
@@ -1597,7 +1649,7 @@ void  PorousMedia::read_comp()
                   if (purpose == PMAMR::RpurposeDEF[k]) {
                       BL_ASSERT(k != 6);
                       dir = k%3;
-                      is_hi = k>3;
+                      is_hi = k>=3;
                   }
               }
               if (dir<0 || dir > BL_SPACEDIM) {
@@ -1621,12 +1673,21 @@ void  PorousMedia::read_comp()
                   }
               }
               else {
-                  if ( (rinflow_bc_hi[dir] != is_inflow)
-                       || (phys_bc.lo(dir) != component_bc)
-                       || (pres_bc.lo(dir) != pressure_bc) )
-                  {
-                      std::cout << "Inconconsistent type for boundary " << std::endl;
-                      BoxLib::Abort();
+
+                  bool is_consistent = true;
+                  if (is_hi) {
+                      is_consistent = ( (rinflow_bc_hi[dir] == is_inflow)
+                                        && (phys_bc.hi()[dir] == component_bc)
+                                        && (pres_bc.hi()[dir] == pressure_bc) );
+                  }
+                  else {
+                      is_consistent = ( (rinflow_bc_lo[dir] == is_inflow)
+                                        && (phys_bc.lo()[dir] == component_bc)
+                                        && (pres_bc.lo()[dir] == pressure_bc) );
+                  }
+
+                  if (is_consistent) {
+                      BoxLib::Abort("Inconconsistent type for boundary ");
                   }
               }
           }
@@ -1747,62 +1808,6 @@ void  PorousMedia::read_tracer()
   }
 }
   
-void  PorousMedia::read_pressure()
-{
-#if 0
-  //
-  // Read in parameters for pressure
-  //
-  ParmParse pp("press");
-  press_lo.resize(BL_SPACEDIM);
-  press_hi.resize(BL_SPACEDIM);
-  inflow_bc_lo.resize(BL_SPACEDIM);
-  inflow_bc_hi.resize(BL_SPACEDIM);
-  inflow_vel_lo.resize(BL_SPACEDIM);
-  inflow_vel_hi.resize(BL_SPACEDIM);
-  for (int dir = 0; dir < BL_SPACEDIM; dir++)
-    {
-      press_lo[dir] = 0;
-      press_hi[dir] = 0;
-      inflow_bc_lo[dir] = 0;
-      inflow_bc_hi[dir] = 0;
-      inflow_vel_lo[dir] = 0;
-      inflow_vel_hi[dir] = 0;
-    }
-  pp.query("water_table_lo",wt_lo);
-  pp.query("water_table_hi",wt_hi);
-  if (pp.countval("press_lo") == BL_SPACEDIM)
-      pp.getarr("press_lo",press_lo,0,BL_SPACEDIM);
-  if (pp.countval("press_hi") == BL_SPACEDIM)
-    pp.getarr("press_hi",press_hi,0,BL_SPACEDIM);
-  if (pp.countval("inflow_bc_lo") == BL_SPACEDIM)
-    pp.getarr("inflow_bc_lo",inflow_bc_lo,0,BL_SPACEDIM);
-  if (pp.countval("inflow_bc_hi") == BL_SPACEDIM)
-    pp.getarr("inflow_bc_hi",inflow_bc_hi,0,BL_SPACEDIM);
-  if (pp.countval("inflow_vel_lo") == BL_SPACEDIM) 
-    pp.getarr("inflow_vel_lo",inflow_vel_lo,0,BL_SPACEDIM);
-  if (pp.countval("inflow_vel_hi") == BL_SPACEDIM) 
-    pp.getarr("inflow_vel_hi",inflow_vel_hi,0,BL_SPACEDIM);
-
-#ifdef MG_USE_FBOXLIB
-  if (model == model_list["richard"])
-    {
-      rinflow_bc_lo = inflow_bc_lo;
-      rinflow_bc_hi = inflow_bc_hi;
-    }
-#endif
-
-  Array<int> plo_bc(BL_SPACEDIM), phi_bc(BL_SPACEDIM);
-  pp.getarr("lo_bc",plo_bc,0,BL_SPACEDIM);
-  pp.getarr("hi_bc",phi_bc,0,BL_SPACEDIM);
-  for (int i = 0; i < BL_SPACEDIM; i++)
-    {
-      pres_bc.setLo(i,plo_bc[i]);
-      pres_bc.setHi(i,phi_bc[i]);
-    }
-#endif
-}
-
 void  PorousMedia::read_source()
 {
   //
@@ -2155,7 +2160,7 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read geometry." << std::endl;
 
-  if (echo_inputs > 1 && ParallelDescriptor::IOProcessor()) {
+  if (echo_inputs && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Regions: " << std::endl;
       for (int i=0; i<regions.size(); ++i) {
           std::cout << regions[i] << std::endl;
@@ -2167,7 +2172,7 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read rock."<< std::endl;
 
-  if (echo_inputs > 1 && ParallelDescriptor::IOProcessor()) {
+  if (echo_inputs && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Materials: " << std::endl;
       for (int i=0; i<rocks.size(); ++i) {
           std::cout << rocks[i] << std::endl;
@@ -2184,11 +2189,6 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
 
-  // pressure
-  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-  // std::cout << "Read pressure."<< std::endl;
-  //read_pressure();
-
   // source
   //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
   //  std::cout << "Read sources."<< std::endl;
@@ -2198,11 +2198,6 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read chemistry."<< std::endl;
   read_chem();
-
-  // read amr
-  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-  //std::cout << "Read amr."<< std::endl;
-  //read_amr();
 
   // source
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
