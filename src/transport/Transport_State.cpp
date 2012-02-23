@@ -84,7 +84,6 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
     tcc.ExtractView(&data_tcc);     
     total_component_concentration = Teuchos::rcp(new Epetra_MultiVector(View, cmap, data_tcc, tcc.NumVectors()));
   }
-
   S_ = S.S_;
 }
 
