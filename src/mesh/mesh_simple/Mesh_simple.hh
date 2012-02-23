@@ -31,6 +31,11 @@ public:
 	       int nx, int ny, int nz, const Epetra_MpiComm *communicator,
 	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
   
+  Mesh_simple (double x0, double y0,
+	       double x1, double y1,
+	       int nx, int ny, const Epetra_MpiComm *communicator,
+	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
+  
   Mesh_simple ( const GenerationSpec& gspec,
 		const Epetra_MpiComm *communicator,
                 const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);

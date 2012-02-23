@@ -7,6 +7,7 @@
 #include "Mesh_simple.hh"
 #include "GenerationSpec.hh"
 #include "dbc.hh"
+#include "errors.hh"
 
 namespace Amanzi
 {
@@ -31,6 +32,22 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
   update();
 
 }
+
+
+// Have to define this dummy routine because we are not able to
+// eliminate the need in FrameworkTraits.cc which uses boost
+// functionality extensively
+
+Mesh_simple::Mesh_simple (double x0, double y0,
+                          double x1, double y1,
+                          int nx, int ny, 
+                          const Epetra_MpiComm *communicator,
+                          const AmanziGeometry::GeometricModelPtr &gm) 
+{
+  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generated 2D meshes"));
+}
+  
+
 
 Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 			   const Epetra_MpiComm *communicator,

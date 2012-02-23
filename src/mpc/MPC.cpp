@@ -493,7 +493,7 @@ void MPC::cycle_driver () {
         // write visualization data for timestep if requested
         S->write_vis(*visualization, &(*aux), auxnames, force);
       } else {
-        S->write_vis(*visualization, force);
+        //S->write_vis(*visualization, force);
       }
 
       // write restart dump if requested

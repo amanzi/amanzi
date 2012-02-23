@@ -79,7 +79,15 @@ class MeshFactory {
                             (AmanziGeometry::GeometricModelPtr) NULL);
 
     
-  /// Create a hexahedral mesh using the specified parameter list
+  /// Create a quadrilateral mesh of the specified dimensions
+  Teuchos::RCP<Mesh> create(double x0, double y0,
+                            double x1, double y1,
+                            int nx, int ny,
+                            const AmanziGeometry::GeometricModelPtr &gm = 
+                            (AmanziGeometry::GeometricModelPtr) NULL);
+
+    
+  /// Create a quadrilateral/hexahedral mesh using the specified parameter list
   Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list, 
                             const AmanziGeometry::GeometricModelPtr &gm = 
                             (AmanziGeometry::GeometricModelPtr) NULL);
@@ -102,7 +110,17 @@ class MeshFactory {
     return create(x0, y0, z0, x1, y1, z1, nx, ny, nz, gm);
   }
 
-  /// Create a hexahedral mesh using the specified parameter list
+  /// Create a quadrilateral mesh of the specified dimensions -- operator
+  Teuchos::RCP<Mesh> operator() (double x0, double y0,
+                                 double x1, double y1,
+                                 int nx, int ny,
+                                 const AmanziGeometry::GeometricModelPtr &gm = 
+                                 (AmanziGeometry::GeometricModelPtr) NULL)
+  { 
+    return create(x0, y0, x1, y1, nx, ny, gm);
+  }
+
+  /// Create a quadrilateral/hexahedral mesh using the specified parameter list
   Teuchos::RCP<Mesh> operator() (Teuchos::ParameterList &parameter_list, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
                                  (AmanziGeometry::GeometricModelPtr) NULL)

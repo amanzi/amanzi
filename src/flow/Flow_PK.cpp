@@ -169,7 +169,6 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-//double div = 0.0;
     for (int n=0; n<nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -178,9 +177,7 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
         darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
         flag[f] = 1;
       }
-//div += darcy_mass_flux[f] * dirs[n];
     }
-//if(c==269) cout << "cell=" << c << " div=" << div << " " << T_internal << endl;
   }
 }
 

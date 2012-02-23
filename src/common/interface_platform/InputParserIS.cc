@@ -347,21 +347,11 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist )
         Teuchos::Array<double> low = generate.get<Teuchos::Array<double> >("Domain Low Corner");
         Teuchos::Array<double> high = generate.get<Teuchos::Array<double> >("Domain High Corner");
 
-        // msh_list.set<std::string>("Framework","MSTK");
         Teuchos::ParameterList& msh_gen = msh_list.sublist("Unstructured").sublist("Generate Mesh");
 
-        msh_gen.set<int>("Number of Cells in X",ncells[0]);
-        msh_gen.set<int>("Number of Cells in Y",ncells[1]);
-        msh_gen.set<int>("Number of Cells in Z",ncells[2]);
-
-        msh_gen.set<double>("X_Min",low[0]);
-        msh_gen.set<double>("X_Max",high[0]);
-
-        msh_gen.set<double>("Y_Min",low[1]);
-        msh_gen.set<double>("Y_Max",high[1]);
-
-        msh_gen.set<double>("Z_Min",low[2]);
-        msh_gen.set<double>("Z_Max",high[2]);
+        msh_gen.set< Teuchos::Array<int> >("Number of Cells",ncells); 
+ 	msh_gen.set< Teuchos::Array<double> >("Domain Low Corner",low); 
+ 	msh_gen.set< Teuchos::Array<double> >("Domain High Corner",high); 
 
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
         std::string format = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("Format");

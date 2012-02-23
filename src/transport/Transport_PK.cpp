@@ -148,7 +148,12 @@ int Transport_PK::Init()
 /* *******************************************************************
  * Estimation of the time step based on T.Barth (Lecture Notes   
  * presented at VKI Lecture Series 1994-05, Theorem 4.2.2.       
- * Routine must be called every time we update a flow field      
+ * Routine must be called every time we update a flow field.
+ *
+ * Warning: Barth calculates influx, we calculate outflux. The methods
+ * are equivalent for divergence-free flows and gurantee EMP. Outflux 
+ * takes into account sinks and sources but preserves only positivity
+ * of an advected mass.
  ****************************************************************** */
 double Transport_PK::calculate_transport_dT()
 {
@@ -158,19 +163,17 @@ double Transport_PK::calculate_transport_dT()
                                TS_nextBIG->ref_total_component_concentration());
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
-    check_divergence_property();
+    if (internal_tests) check_divergence_property();
     identify_upwind_cells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
   } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
-    //check_divergence_property();
     identify_upwind_cells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
   }
-
   // loop over faces and accumulate upwinding fluxes
   int  i, f, c, c1;
 
@@ -178,22 +181,22 @@ double Transport_PK::calculate_transport_dT()
   const Epetra_Map& fmap = mesh->face_map(true);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  std::vector<double> total_influx(number_wghost_cells, 0.0);
+  std::vector<double> total_outflux(number_wghost_cells, 0.0);
 
   for (f=fmin; f<=fmax; f++) {
-    c = (*downwind_cell_)[f];
-    if (c >= 0) total_influx[c] += fabs(darcy_flux[f]); 
+    c = (*upwind_cell_)[f];
+    if (c >= 0) total_outflux[c] += fabs(darcy_flux[f]); 
   }
 
   // loop over cells and calculate minimal dT
-  double influx, dT_cell; 
+  double outflux, dT_cell; 
   const Epetra_Vector& ws = TS->ref_water_saturation();
   const Epetra_Vector& phi = TS->ref_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
   for (c=cmin; c<=cmax_owned; c++) {
-    influx = total_influx[c];
-    if (influx) dT_cell = mesh->cell_volume(c) * phi[c] * ws[c] / influx;
+    outflux = total_outflux[c];
+    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * ws[c] / outflux;
 
     dT = std::min(dT, dT_cell);
   }
