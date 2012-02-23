@@ -106,7 +106,6 @@ BoxLib::Initialize_ParmParse(const Teuchos::ParameterList& params)
 {
   std::list<ParmParse::PP_entry> table;
   bldTable(params,table);
-  std::string dumStr;
   ParmParse::appendTable(table);
 }
 
