@@ -143,6 +143,7 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
   int errc;
   RME->update_precon(t0, *solution, h, errc);
   RME->update_norm(0.001,1.0);
+  steady_mode = false;
 }
 
 int Transient_Richards_PK::init_steady(double t0, double h_)
@@ -162,6 +163,8 @@ int Transient_Richards_PK::init_steady(double t0, double h_)
   int errc;
   RME->update_precon(t0, *solution, h, errc);
   RME->update_norm(0.0, 1.0); // we run the steady calculation with just an absolute norm
+
+  steady_mode = true;
 }
 
 int Transient_Richards_PK::advance_transient(double h) 
@@ -176,7 +179,7 @@ int Transient_Richards_PK::advance_transient(double h)
   problem->set_flow_state(FS);
 
   time_stepper->bdf2_step(h,0.0,*solution,hnext);
-  time_stepper->commit_solution(h,*solution);  
+  //time_stepper->commit_solution(h,*solution);  
 
   time_stepper->write_bdf2_stepping_statistics();
 
@@ -205,7 +208,7 @@ int Transient_Richards_PK::advance_steady(double h)
   problem->set_flow_state(FS);
 
   steady_time_stepper->bdf1_step(h,*solution,hnext);
-  steady_time_stepper->commit_solution(h,*solution);  
+  //steady_time_stepper->commit_solution(h,*solution);  
 
   steady_time_stepper->write_bdf1_stepping_statistics();
 
@@ -228,16 +231,28 @@ void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
   problem->DeriveVanGenuchtenSaturation(*pressure_cells, s);
 }
   
-void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS) 
+void  Transient_Richards_PK::commit_new_saturation(Teuchos::RCP<Flow_State> FS) {
+
+  FS->get_prev_water_saturation() = FS->get_water_saturation();
+  GetSaturation( FS->get_water_saturation() );  
+
+}
+void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS, double h) 
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
+  if (steady_mode) {
+    steady_time_stepper->commit_solution(h,*solution);  
+  } else {
+    time_stepper->commit_solution(h,*solution);  
+  }
+
   FS->get_pressure() = *pressure_cells;
-  FS->get_prev_water_saturation() = FS->get_water_saturation();
-  GetSaturation( FS->get_water_saturation() );  
+  //FS->get_prev_water_saturation() = FS->get_water_saturation();
+  //GetSaturation( FS->get_water_saturation() );  
 
   double l1_error;
   problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
