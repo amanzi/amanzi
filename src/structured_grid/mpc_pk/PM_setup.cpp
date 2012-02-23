@@ -1621,10 +1621,6 @@ void  PorousMedia::read_comp()
               is_inflow = true;
               component_bc = 1;
               pressure_bc = 1;
-
-              //FluxToRhoSat flux_to_sat(rock);
-              //bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
-              //                                          bc_type,ncomps));
 	      bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
           else if (bc_type == "noflow")
@@ -1653,7 +1649,7 @@ void  PorousMedia::read_comp()
                   if (purpose == PMAMR::RpurposeDEF[k]) {
                       BL_ASSERT(k != 6);
                       dir = k%3;
-                      is_hi = k>3;
+                      is_hi = k>=3;
                   }
               }
               if (dir<0 || dir > BL_SPACEDIM) {
@@ -1677,12 +1673,21 @@ void  PorousMedia::read_comp()
                   }
               }
               else {
-                  if ( (rinflow_bc_hi[dir] != is_inflow)
-                       || (phys_bc.lo(dir) != component_bc)
-                       || (pres_bc.lo(dir) != pressure_bc) )
-                  {
-                      std::cout << "Inconconsistent type for boundary " << std::endl;
-                      BoxLib::Abort();
+
+                  bool is_consistent = true;
+                  if (is_hi) {
+                      is_consistent = ( (rinflow_bc_hi[dir] == is_inflow)
+                                        && (phys_bc.hi()[dir] == component_bc)
+                                        && (pres_bc.hi()[dir] == pressure_bc) );
+                  }
+                  else {
+                      is_consistent = ( (rinflow_bc_lo[dir] == is_inflow)
+                                        && (phys_bc.lo()[dir] == component_bc)
+                                        && (pres_bc.lo()[dir] == pressure_bc) );
+                  }
+
+                  if (is_consistent) {
+                      BoxLib::Abort("Inconconsistent type for boundary ");
                   }
               }
           }
