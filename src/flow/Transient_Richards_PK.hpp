@@ -26,7 +26,8 @@ class Transient_Richards_PK : public Flow_PK, public Teuchos::VerboseObject<Tran
   int advance_steady(double h);
   int init_transient(double t0, double h0);
   int init_steady(double t0, double h0);
-  void commit_state(Teuchos::RCP<Flow_State>); 
+  void commit_state(Teuchos::RCP<Flow_State>, double); 
+  void commit_new_saturation(Teuchos::RCP<Flow_State>); 
 
   // After a successful advance() the following routines may be called.
   // Returns a reference to the cell pressure vector.
@@ -68,6 +69,7 @@ private:
   double ss_t0, ss_t1, ss_h0, ss_z;
 
   double h, hnext;
+  bool steady_mode;
 };
 
 }  // namespace Amanzi

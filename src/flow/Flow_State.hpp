@@ -20,7 +20,9 @@ class Flow_State {
       pressure_(S->get_pressure()),
       porosity_(S->get_porosity()),
       water_saturation_(S->get_water_saturation()),
-      prev_water_saturation_(S->get_prev_water_saturation()) 
+      prev_water_saturation_(S->get_prev_water_saturation()),
+      darcy_flux_(S->get_darcy_flux()),
+      darcy_velocity_(S->get_darcy_velocity())
   {};
   
   ~Flow_State() {};
@@ -36,6 +38,8 @@ class Flow_State {
   Epetra_Vector& get_water_saturation() { return *water_saturation_; }
   Epetra_Vector& get_prev_water_saturation() { return *prev_water_saturation_; }
   Epetra_Vector& get_pressure() { return *pressure_; }
+  Epetra_Vector& get_darcy_flux() { return *darcy_flux_; }
+  Epetra_MultiVector& get_darcy_velocity() { return *darcy_velocity_; }
 
  private:
   // object doesn't own anything -- all smart pointers to the real thing.
@@ -49,6 +53,8 @@ class Flow_State {
   const Teuchos::RCP<Epetra_Vector> porosity_;
   const Teuchos::RCP<Epetra_Vector> water_saturation_;
   const Teuchos::RCP<Epetra_Vector> prev_water_saturation_;  
+  const Teuchos::RCP<Epetra_Vector> darcy_flux_;
+  const Teuchos::RCP<Epetra_MultiVector> darcy_velocity_;
 };
 
 } // close namespace Amanzi
