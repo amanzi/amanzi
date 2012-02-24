@@ -878,7 +878,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
 
     int celltype = cell_get_type(cellid);
 
-    if (!ordered || (celltype >= TET && celltype <= HEX)) {
+    if (ordered && (celltype >= TET && celltype <= HEX)) {
       int lid;
 
 
