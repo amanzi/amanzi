@@ -65,8 +65,8 @@ TEST(FLOW_3D_RICHARDS) {
 
   // solve the problem
   S->set_time(0.0);
-  RPK->advance_to_steady_state();
-  RPK->commit_state(FS);
+  RPK->advanceToSteadyState();
+  RPK->commitState(FS);
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

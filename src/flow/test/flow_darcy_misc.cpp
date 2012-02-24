@@ -200,8 +200,8 @@ SUITE(Darcy_PK) {
     DPK->resetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advance_to_steady_state();
-    DPK->commit_state(DPK->flow_state());
+    DPK->advanceToSteadyState();
+    DPK->commitState(DPK->flow_state());
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(errorP < 1.0e-8);
@@ -237,8 +237,8 @@ SUITE(Darcy_PK) {
     DPK->resetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advance_to_steady_state();
-    DPK->commit_state(DPK->flow_state());
+    DPK->advanceToSteadyState();
+    DPK->commitState(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
@@ -268,8 +268,8 @@ SUITE(Darcy_PK) {
     DPK->resetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advance_to_steady_state();
-    DPK->commit_state(DPK->flow_state());
+    DPK->advanceToSteadyState();
+    DPK->commitState(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(error < 1.0e-8);
@@ -302,8 +302,8 @@ SUITE(Darcy_Velocity) {
     DPK->resetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advance_to_steady_state();
-    DPK->commit_state(DPK->flow_state());
+    DPK->advanceToSteadyState();
+    DPK->commitState(DPK->flow_state());
 
     double error = calculateDarcyVelocityError(velocity);
     CHECK(error < 1.0e-8);

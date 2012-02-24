@@ -238,13 +238,11 @@ void Transport_PK::advance(double dT_MPC)
   }
 
   // DEBUG
-  /*
   Epetra_MultiVector& tcc = TS_nextMPC->ref_total_component_concentration();
   GMV::open_data_file(*mesh_, (std::string)"transport.gmv");
   GMV::start_data();
   GMV::write_cell_data(tcc, 0, "component0");
   GMV::close_data_file();
-  */
 }
 
 

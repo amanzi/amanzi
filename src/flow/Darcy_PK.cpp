@@ -160,7 +160,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 * Calculates steady-state solution assuming that absolute permeability 
 * does not depend on time.                                                    
 ****************************************************************** */
-int Darcy_PK::advance_to_steady_state()
+int Darcy_PK::advanceToSteadyState()
 {
   solver->SetAztecOption(AZ_output, AZ_none);
 
@@ -221,7 +221,7 @@ int Darcy_PK::advance(double dT_MPC)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::commit_state(Teuchos::RCP<Flow_State> FS_MPC)
+void Darcy_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
 {  
   FS_MPC->ref_pressure() = *solution_cells;
 

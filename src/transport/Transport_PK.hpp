@@ -85,7 +85,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   // primary members
   double calculate_transport_dT();
   void advance(double dT);
-  void commit_state(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
+  void commitState(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
 
   void check_divergence_property();
   void check_GEDproperty(Epetra_MultiVector& tracer) const; 

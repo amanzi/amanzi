@@ -71,8 +71,8 @@ TEST(FLOW_3D_RICHARDS) {
 
   // solve the problem
   S.set_time(0.0);
-  RPK->advance_to_steady_state();
-  RPK->commit_state(FS);
+  RPK->advanceToSteadyState();
+  RPK->commitState(FS);
 
   // derive dependent variable
   Epetra_Vector& pressure = FS->ref_pressure();

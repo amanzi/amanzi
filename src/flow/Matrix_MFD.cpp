@@ -193,7 +193,7 @@ void Matrix_MFD::applyBoundaryConditions(
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f]; 
       } else if (bc_markers[f] == FLOW_BC_FACE_FLUX) {
-        Ff[n] -= bc_values[f] * mesh_->face_area(f) * dirs[n];  // ???
+        Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
     }
   }

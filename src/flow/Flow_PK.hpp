@@ -89,8 +89,9 @@ class Flow_PK : public BDF2::fnBase {
   virtual void InitTransient(double T0, double dT0) = 0;
 
   virtual int advance(double dT) = 0; 
-  virtual int advance_to_steady_state() = 0;
-  virtual void commit_state(Teuchos::RCP<Flow_State> FS) = 0;
+  virtual int advanceToSteadyState() = 0;
+  virtual void commitState(Teuchos::RCP<Flow_State> FS) = 0;
+  virtual void commitStateForTransport(Teuchos::RCP<Flow_State> FS) = 0;
 
   double calculate_flow_dT() { return dT; }
 

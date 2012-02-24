@@ -236,7 +236,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 /* ******************************************************************
 *  Wrapper for advance to steady-state routines.                                                    
 ****************************************************************** */
-int Richards_PK::advance_to_steady_state()
+int Richards_PK::advanceToSteadyState()
 {
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
 
@@ -433,10 +433,24 @@ int Richards_PK::advanceSteadyState_Picard()
 
 
 /* ******************************************************************
-* Transfer data from the external flow state FS_MPC. MPC may request
+* Transfer part of the internal data needed by transport to the 
+* flow state FS_MPC. MPC may request to populate the original state FS. 
+****************************************************************** */
+void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC) {
+
+  FS_MPC->ref_prev_water_saturation() = FS_MPC->ref_water_saturation();
+
+  Epetra_Vector& pressure = *solution_cells;
+  Epetra_Vector& water_saturation = FS_MPC->ref_water_saturation();
+  deriveSaturationFromPressure(pressure, water_saturation);
+}
+
+
+/* ******************************************************************
+* Transfer internal data to flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS_MPC)
+void Richards_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
   Epetra_Vector& pressure = FS_MPC->ref_pressure();
   pressure = *solution_cells;

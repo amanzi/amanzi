@@ -31,6 +31,7 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   horizontal_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
   porosity_ = Teuchos::rcp(new Epetra_Vector(cmap));
   water_saturation_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  prev_water_saturation_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   fluid_density_ = Teuchos::rcp(new double);
   fluid_viscosity_ = Teuchos::rcp(new double);
@@ -56,6 +57,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   horizontal_permeability_ = S->get_horizontal_permeability();
   porosity_ = S->get_porosity();
   water_saturation_ = S->get_water_saturation();
+  prev_water_saturation_ = S->get_prev_water_saturation();
 
   fluid_density_ = S->get_density();
   fluid_viscosity_ = S->get_viscosity();
@@ -78,6 +80,7 @@ Flow_State::Flow_State(State& S)
   horizontal_permeability_ = S.get_horizontal_permeability();
   porosity_ = S.get_porosity();
   water_saturation_ = S.get_water_saturation();
+  prev_water_saturation_ = S.get_prev_water_saturation();
 
   fluid_density_ = S.get_density();
   fluid_viscosity_ = S.get_viscosity();
@@ -106,6 +109,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     horizontal_permeability_ = FS.horizontal_permeability();
     porosity_ = FS.porosity();
     water_saturation_ = FS.water_saturation();
+    prev_water_saturation_ = FS.prev_water_saturation();
 
     fluid_density_ = FS.fluid_density();
     fluid_viscosity_ = FS.fluid_viscosity();
@@ -130,6 +134,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     pressure_ = Teuchos::rcp(new Epetra_Vector(FS.ref_pressure()));
     darcy_flux_ = Teuchos::rcp(new Epetra_Vector(FS.ref_darcy_flux()));
     water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_water_saturation()));
+    prev_water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_prev_water_saturation()));
   }
 
   S_ = FS.S_;

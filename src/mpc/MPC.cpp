@@ -458,7 +458,7 @@ void MPC::cycle_driver () {
 	  do {
 	    redo = false;
 	    try {
-	      FPK->advance_to_steady_state();
+	      FPK->advanceToSteadyState();
               if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
                 FPK->InitTransient(Tswitch, 1e-5);
                 break;
@@ -474,7 +474,7 @@ void MPC::cycle_driver () {
 	} else {
 	  FPK->advance(mpc_dT);
 	}
-        FPK->commit_state(FS);
+        FPK->commitStateForTransport(FS);
       }
 
       // =============================================================
@@ -548,9 +548,9 @@ void MPC::cycle_driver () {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      FPK->commit_state(FS,mpc_dT);
+      FPK->commitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
-        if (transport_enabled) TPK->commit_state(TS);
+        if (transport_enabled) TPK->commitState(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       }
 

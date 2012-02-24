@@ -40,8 +40,9 @@ class Richards_PK : public Flow_PK {
   void InitTransient(double T0, double dT0);
 
   int advance(double dT_MPC); 
-  int advance_to_steady_state();
-  void commit_state(Teuchos::RCP<Flow_State> FS);
+  int advanceToSteadyState();
+  void commitState(Teuchos::RCP<Flow_State> FS);
+  void commitStateForTransport(Teuchos::RCP<Flow_State> FS);
   void deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   int advanceSteadyState_Picard();

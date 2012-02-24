@@ -59,6 +59,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> horizontal_permeability() { return horizontal_permeability_; }
   Teuchos::RCP<Epetra_Vector> porosity() { return porosity_; }
   Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
+  Teuchos::RCP<Epetra_Vector> prev_water_saturation() { return prev_water_saturation_; }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
 
@@ -72,6 +73,7 @@ class Flow_State {
   Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability_; }
   Epetra_Vector& ref_porosity() { return *porosity_; }
   Epetra_Vector& ref_water_saturation() { return *water_saturation_; }
+  Epetra_Vector& ref_prev_water_saturation() { return *prev_water_saturation_; }
 
   // miscaleneous
   double get_time() { return (S_ == NULL) ? 0.0 : S_->get_time(); }
@@ -102,6 +104,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> horizontal_permeability_;
   Teuchos::RCP<Epetra_Vector> porosity_;
   Teuchos::RCP<Epetra_Vector> water_saturation_;
+  Teuchos::RCP<Epetra_Vector> prev_water_saturation_;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 };
