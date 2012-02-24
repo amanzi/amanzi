@@ -451,6 +451,35 @@ void MPC::cycle_driver () {
 	}
       }
 
+
+
+
+      // steady flow is special, it might redo a time step, so we print
+      // time step info after we've advanced steady flow
+
+      // first advance flow
+      if (flow_enabled) {
+	if (ti_mode == STEADY || (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch)) { 	
+	  bool redo(false);
+	  do {
+	    redo = false;
+	    try {
+	      FPK->advance_steady(mpc_dT);
+	    }
+	    catch (int itr) {
+	      mpc_dT = 0.5*mpc_dT;
+	      redo = true;
+	      tslimiter = FLOW_LIMITS;
+	      *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
+	    }
+	  } while (redo);
+	} else {
+	  FPK->advance_transient(mpc_dT);
+	}
+        FPK->commit_new_saturation(FS);
+      }
+
+      // =============================================================
       // write some info about the time step we are about to take
       
       // first determine what we will write about the time step limiter
@@ -477,32 +506,7 @@ void MPC::cycle_driver () {
 	*out << " " << limitstring;
         *out << std::endl;
       }
-
       // ==============================================================
-      
-      // first advance flow
-      if (flow_enabled) {
-	if (ti_mode == STEADY || (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch)) { 	
-	  bool redo(false);
-	  do {
-	    redo = false;
-	    try {
-	      FPK->advance_steady(mpc_dT);
-	    }
-	    catch (int itr) {
-	      mpc_dT = 0.5*mpc_dT;
-	      redo = true;
-	    }
-	  } while (redo);
-	} else {
-	  FPK->advance_transient(mpc_dT);
-	}
-
-	FPK->commit_state(FS);
-	S->update_darcy_flux(FPK->Flux());
-	S->update_pressure(FPK->Pressure());
-	FPK->GetVelocity(*S->get_darcy_velocity());
-      }
 
       // then advance transport
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
@@ -548,6 +552,7 @@ void MPC::cycle_driver () {
       // we're done with this time step, commit the state
       // in the process kernels
 
+      FPK->commit_state(FS,mpc_dT);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) TPK->commit_state(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);

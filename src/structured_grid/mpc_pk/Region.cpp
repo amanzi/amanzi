@@ -42,10 +42,10 @@ Region::setVal(FArrayBox&         fab,
 #if (BL_SPACEDIM == 2)	
   for (int iy=lo[1]; iy<hi[1]+1; iy++) 
   {
-      x[1] = std::min(std::max(domlo[1],dx[1]*(iy+0.5)),domhi[1]);
+      x[1] = std::min(std::max(domlo[1],domlo[1]+dx[1]*(iy+0.5)),domhi[1]);
       for (int ix=lo[0]; ix<hi[0]+1; ix++) 
       {
-          x[0] = std::min(std::max(domlo[0],dx[0]*(ix+0.5)),domhi[0]);
+          x[0] = std::min(std::max(domlo[0],domlo[0]+dx[0]*(ix+0.5)),domhi[0]);
 	  if (inregion(x))
           {
               for (int n=scomp; n<ncomp;n++) {
@@ -57,13 +57,13 @@ Region::setVal(FArrayBox&         fab,
 #else
   for (int iz=lo[2]; iz<hi[2]+1; iz++) 
   {
-      x[2] = std::min(std::max(domlo[2],dx[2]*(iz+0.5)),domhi[2]);
+      x[2] = std::min(std::max(domlo[2],domlo[2]+dx[2]*(iz+0.5)),domhi[2]);
       for (int iy=lo[1]; iy<hi[1]+1; iy++) 
       {
-          x[1] = std::min(std::max(domlo[1],dx[1]*(iy+0.5)),domhi[1]);
+          x[1] = std::min(std::max(domlo[1],domlo[1]+dx[1]*(iy+0.5)),domhi[1]);
           for (int ix=lo[0]; ix<hi[0]+1; ix++) 
           {
-              x[0] = std::min(std::max(domlo[0],dx[0]*(ix+0.5)),domhi[0]);
+              x[0] = std::min(std::max(domlo[0],domlo[0]+dx[0]*(ix+0.5)),domhi[0]);
               if (inregion(x))
               {
                   for (int n=scomp; n<ncomp;n++) {

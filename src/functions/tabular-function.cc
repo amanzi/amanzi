@@ -56,13 +56,15 @@ double TabularFunction::operator() (const double *x) const
     int j1 = 0, j2 = n-1;
     while (j2 - j1 > 1) {
       int j = (j1 + j2) / 2;
-      if (*x >= x_[j]) {
+      // if (*x >= x_[j]) { // right continuous
+      if (*x > x_[j]) { // left continuous
         j1 = j;
       } else {
         j2 = j;
       }
     }
-    // Now have x_[j1] <= *x < x_[j2]
+    // Now have x_[j1] <= *x < x_[j2], if right continuous
+    // or x_[j1] < *x <= x_[j2], if left continuous
     switch (form_[j1]) {
     case LINEAR:
       // Linear interpolation between x[j1] and x[j2]

@@ -28,7 +28,8 @@ public:
   int init_steady(double t0, double h0) {}; 
 
   int advance_to_steady_state();
-  void commit_state(Teuchos::RCP<Flow_State>) {}
+  void commit_state(Teuchos::RCP<Flow_State>, double) {}
+  void commit_new_saturation(Teuchos::RCP<Flow_State>) {}
 
   // After a successful advance() the following routines may be called.
 

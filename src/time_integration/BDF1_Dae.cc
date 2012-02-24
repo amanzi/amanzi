@@ -225,7 +225,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
 
   if (h < state.hmin) {
-    std::cout << h << " " << state.hmin << std::endl;
+    *out << h << " " << state.hmin << std::endl;
 
     std::string msg = "BDF1 failed: Time step crash";
     Errors::Message m(msg);
@@ -245,7 +245,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     up = u;
   }
 
-
   // u at the start of the time step
   Epetra_Vector u0(map);
   u0 = u;
@@ -260,6 +259,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     state.updpc_calls++;
     state.pclagcount++;
     int errc = 0;
+
     fn.update_precon (tnew, up, h, errc);
     if (errc != 0) {
       std::string msg = "BDF1 failed: error while updating the preconditioner.";
@@ -413,23 +413,6 @@ void BDF1Dae::write_bdf1_stepping_statistics() {
   oss.fill('0');
   oss.width(4);
   oss << right << state.updpc_calls;
-  oss << " NPCF:NNR:NNF:NSR=";
-  oss.fill('0');
-  oss.width(4);
-  oss << right << state.updpc_failed;
-  oss << ":";
-  oss.fill('0');
-  oss.width(2);
-  oss << right << state.retried_bce;
-  oss << ":";
-  oss.fill('0');
-  oss.width(2);
-  oss << right << state.failed_bce;
-  oss << ":";
-  oss.fill('0');
-  oss.width(2);
-  oss << right << state.rejected_steps;
-
 
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
