@@ -30,8 +30,6 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   T_internal = dT = 0.0;
   standalone_mode = false;
 
-  FS_next = Teuchos::rcp(new Flow_State(*FS, CopyMemory) );  
-
   ncells_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::USED);
 

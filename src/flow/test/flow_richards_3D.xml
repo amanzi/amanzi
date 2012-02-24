@@ -134,15 +134,9 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells in X" type="int" value="10"/>
-        <Parameter name="Number of Cells in Y" type="int" value="1"/>
-        <Parameter name="Number of Cells in Z" type="int" value="20"/>
-        <Parameter name="X_Min" type="double" value="0"/>
-        <Parameter name="X_Max" type="double" value="50"/>
-        <Parameter name="Y_Min" type="double" value="0"/>
-        <Parameter name="Y_Max" type="double" value="1"/>
-        <Parameter name="Z_Min" type="double" value="0"/>
-        <Parameter name="Z_Max" type="double" value="100"/>
+        <Parameter name="Number of Cells" type="Array int" value="{10, 1, 20}"/>
+        <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+        <Parameter name="Domain High Corner" type="Array double" value="{50.0, 1.0, 100.0}" />
       </ParameterList>
     </ParameterList>
   </ParameterList>

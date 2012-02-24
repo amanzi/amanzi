@@ -18,6 +18,7 @@ Transport_State::Transport_State(State& S)
   porosity = S.get_porosity();
   darcy_flux = S.get_darcy_flux();
   water_saturation = S.get_water_saturation();
+  prev_water_saturation = S.get_prev_water_saturation();
   water_density = S.get_water_density();
   mesh_maps = S.get_mesh_maps();
 
@@ -39,12 +40,14 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
     porosity = S.get_porosity();
     darcy_flux = S.get_darcy_flux();
     water_saturation = S.get_water_saturation();
+    prev_water_saturation = S.get_prev_water_saturation();
     water_density = S.get_water_density();
     mesh_maps = S.get_mesh_maps();
   }
   else if (mode == CopyMemory ) { 
     porosity = S.get_porosity(); 
-    water_saturation = S.get_water_saturation(); 
+    water_saturation = S.get_water_saturation();
+    prev_water_saturation = S.get_prev_water_saturation();
     water_density = S.get_water_density();
     mesh_maps = S.get_mesh_maps();
 
@@ -56,7 +59,7 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 
     total_component_concentration = Teuchos::rcp(new Epetra_MultiVector(cmap, number_vectors));
     darcy_flux = Teuchos::rcp(new Epetra_Vector(fmap));
-
+    
     copymemory_multivector(S.ref_total_component_concentration(), *total_component_concentration);
     copymemory_vector(S.ref_darcy_flux(), *darcy_flux);
   }
@@ -64,6 +67,7 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
   else if (mode == ViewMemory) {
     porosity = S.get_porosity(); 
     water_saturation = S.get_water_saturation(); 
+    prev_water_saturation = S.get_prev_water_saturation(); 
     water_density = S.get_water_density();
     mesh_maps = S.get_mesh_maps();
 
@@ -75,12 +79,11 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
     Epetra_Vector& df = S.ref_darcy_flux();
     df.ExtractView(&data_df);     
     darcy_flux = Teuchos::rcp(new Epetra_Vector(View, fmap, data_df));
-
+    
     Epetra_MultiVector & tcc = S.ref_total_component_concentration();
     tcc.ExtractView(&data_tcc);     
     total_component_concentration = Teuchos::rcp(new Epetra_MultiVector(View, cmap, data_tcc, tcc.NumVectors()));
   }
-
   S_ = S.S_;
 }
 
@@ -272,10 +275,11 @@ void Transport_State::analytic_porosity(double phi)
  ***************************************************************** */
 void Transport_State::analytic_water_saturation(double ws)
 {
-  const Epetra_BlockMap &  cmap = (*water_saturation).Map();
+  const Epetra_BlockMap& cmap = (*water_saturation).Map();
 
   for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
     (*water_saturation)[c] = ws;  // default is 1.0 
+    (*prev_water_saturation)[c] = ws;
   }
 }
 
@@ -285,7 +289,7 @@ void Transport_State::analytic_water_saturation(double ws)
  **************************************************************** */
 void Transport_State::analytic_water_density(double wd)
 {
-  const Epetra_BlockMap &  cmap = (*water_density).Map();
+  const Epetra_BlockMap& cmap = (*water_density).Map();
 
   for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
     (*water_density)[c] = wd;  // default is 1000.0

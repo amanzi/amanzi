@@ -637,13 +637,13 @@ framework_generates(const bool& parallel, const unsigned int& dimension)
 bool
 framework_generates(const Framework& f, const bool& parallel, const unsigned int& dimension)
 {
-  bool result;
+  bool result;  
 
   switch (f) {
     case Simple:
       result = framework_generates<Simple>(parallel, dimension);
       break;
-    case STKMESH:
+    case STKMESH:  
       result = framework_generates<STKMESH>(parallel, dimension);
       break;
     case MOAB:

@@ -1127,8 +1127,7 @@ c ::: ---------------------------------------------------------------
       subroutine FORT_RICHARD_COEF(lbd, DIMS(lbd), 
      &     dfx, DIMS(dfx), dfy, DIMS(dfy),
      &     umac, DIMS(umac), vmac, DIMS(vmac),
-     &     lo, hi, domlo, domhi, bc, 
-     &     inflow_bc_lo, inflow_bc_hi, nc, do_upwind)
+     &     lo, hi, domlo, domhi, bc, nc, do_upwind)
 
       implicit none
 
@@ -1143,7 +1142,6 @@ c ::: ---------------------------------------------------------------
       integer DIMDEC(vmac)
       integer nc
       integer bc(SDIM,2)
-      integer inflow_bc_lo(SDIM), inflow_bc_hi(SDIM)
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  dfx(DIMV(dfx))
       REAL_T  dfy(DIMV(dfy))
@@ -1165,14 +1163,10 @@ c ::: diffusion coefficient in x-dir
             if (i .eq. domlo(1)) then
                if (bc(1,1) .eq. EXT_DIR) then
                   H_coef = lbd(i-1,j,nc)
-               elseif (bc(1,1) .eq. FOEXTRAP .and. inflow_bc_lo(1) .eq. 1) then
-                  H_coef = zero
                end if
             elseif (i .eq. domhi(1)+1) then
                if (bc(1,2) .eq. EXT_DIR) then
                   H_coef = lbd(i,j,nc)
-               elseif (bc(1,2) .eq. FOEXTRAP .and. inflow_bc_hi(1) .eq. 1) then
-                  H_coef = zero
                end if    
             endif
             dfx(i,j) = H_coef 
@@ -1191,14 +1185,10 @@ c ::: diffusion coefficient in y-dir
             if (j .eq. domlo(2)) then
                if (bc(2,1) .eq. EXT_DIR) then
                   H_coef = lbd(i,j-1,nc) 
-               elseif (bc(2,1) .eq. FOEXTRAP .and. inflow_bc_lo(2) .eq. 1) then
-                  H_coef = zero
                end if    
             elseif (j .eq. domhi(2)+1) then
                if (bc(2,2) .eq. EXT_DIR) then
                   H_coef = lbd(i,j,nc) 
-               elseif (bc(2,2) .eq. FOEXTRAP .and. inflow_bc_hi(2) .eq. 1) then
-                  H_coef = zero
                end if    
             endif
             dfy(i,j) = H_coef
@@ -1615,8 +1605,10 @@ c           x-direction
                call get_cpl(pcn(n+2),comp,rhoval,phi(i+n,j),kappa(i+n,j),l_sigma,ncomps,
      &              l_cpl_sres,l_cpl_type,l_cpl_coef)
                if (do_upwind.eq.1) then
-                  ldx(1) = merge(ldx(1),merge(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)>=zero),ldx(1)==zero)
-                  ldx(2) = merge(ldx(2),merge(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)>=zero),ldx(2)==zero)
+                  ldx(1) = merge(ldx(1),
+     &                 merge(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)>=zero),ldx(1)==zero)
+                  ldx(2) = merge(ldx(2),
+     &                 merge(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)>=zero),ldx(2)==zero)
                else
                   ldx(1) = merge(ldx(1),kpx(i,j)*half*(ldn(1)+ldn(2)),ldx(1)==zero)
                   ldx(2) = merge(ldx(2),kpx(i+1,j)*half*(ldn(2)+ldn(3)),ldx(2)==zero)
@@ -1640,7 +1632,7 @@ c           y-direction
                if (comp(1)  > rhoval(1)) then
                   comp(1) = (one-deps)*s(i,j+n,1)
                   dcy(n+2) = - dcy(n+2)
-               end if               
+               end if  
                if (ncomps > 1) then 
                   comp(2) = rhoval(2)*(one - comp(1)/rhoval(1))
                end if
@@ -2135,9 +2127,7 @@ c
 c :: ------------------------------------------------------------    
       subroutine FORT_UPHASE_P(ux,DIMS(ux),uy,DIMS(uy),
      &     lbd,DIMS(lbd),p,DIMS(p),
-     &     lo,hi,domlo,domhi,dx,bc, 
-     &     inflow_bc_lo,inflow_bc_hi,
-     &     inflow_vel_lo,inflow_vel_hi)
+     &     lo,hi,domlo,domhi,dx,bc)
 
       implicit none
 
@@ -2150,13 +2140,11 @@ c :: ------------------------------------------------------------
       integer lo(SDIM),hi(SDIM)
       integer domlo(SDIM), domhi(SDIM)
       integer bc(SDIM,2)
-      integer inflow_bc_lo(SDIM),inflow_bc_hi(SDIM)
       REAL_T  dx(SDIM)
       REAL_T  ux(DIMV(ux))
       REAL_T  uy(DIMV(uy))
       REAL_T  p(DIMV(p))
       REAL_T  lbd(DIMV(lbd),ncomps)
-      REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
       integer do_upwind
       integer i, j
       REAL_T  grav, mult, ld, dp
@@ -2182,10 +2170,6 @@ c
                   ld   = lbd(i-1,j,1)
                elseif (bc(1,1) .eq. FOEXTRAP) then
                   mult = zero
-                  if (inflow_bc_lo(1) .eq. 1) then
-                     ld = zero
-                     ux(i,j) = inflow_vel_lo(1)
-                  end if
                end if
             end if
             if (i .eq. domhi(1)+1) then
@@ -2194,10 +2178,6 @@ c
                   ld   = lbd(i,j,1)
                elseif (bc(1,2) .eq. FOEXTRAP) then
                   mult = zero
-                  if (inflow_bc_hi(1) .eq. 1) then
-                     ld = zero
-                     ux(i,j) = inflow_vel_hi(1)
-                  end if
                end if
             end if
 
@@ -2221,10 +2201,6 @@ c
                   ld = lbd(i,j-1,1)
                elseif (bc(2,1) .eq. FOEXTRAP) then
                   mult = zero
-                  if (inflow_bc_lo(2) .eq. 1) then
-                     ld = zero
-                     uy(i,j) = inflow_vel_lo(2)
-                  end if
                end if
             end if
             if (j .eq. domhi(2)+1) then
@@ -2233,10 +2209,6 @@ c
                   ld = lbd(i,j,1)
                elseif (bc(2,2) .eq. FOEXTRAP) then
                   mult = zero
-                  if (inflow_bc_hi(2) .eq. 1) then
-                     ld = zero
-                     uy(i,j) = inflow_vel_hi(2)
-                  end if
                end if
             end if
 
@@ -2351,7 +2323,9 @@ c     dummy
                y = (dble(j)+half+qd(k))*dx(2)
                if (y .le. wt_loc) then
                   rho(i,j,1) = rho(i,j,1) + rhoval(1)*wt(k)
-                  rho(i,j,2) = zero
+                  if (ncomps > 1) then
+                     rho(i,j,2) = zero
+                  end if
                else
                   l_cpl_type = nint(cplcoef(i,j,1))
                   l_cpl_coef = cplcoef(i,j,2)
@@ -2384,6 +2358,64 @@ c ::: ------------------------------------------------------------------
 c ::: Define approximate steady state condition based on inflow velocity
 c ::: ------------------------------------------------------------------
       
+      subroutine FORT_STEADYSTATE_FAB(rho,DIMS(rho),rhoval,muval,ncomps,
+     &     kappa,DIMS(kappa),krcoef,DIMS(krcoef),nkrcoef,vel,DIMS(vel),
+     &     dx,nc,grav)
+
+      implicit none
+
+      integer nc
+      integer DIMDEC(rho)
+      integer DIMDEC(kappa)
+      integer DIMDEC(krcoef)
+      integer DIMDEC(vel)
+      integer ncomps, nkrcoef
+      REAL_T  rho(DIMV(rho),ncomps)
+      REAL_T  kappa(DIMV(kappa))
+      REAL_T  krcoef(DIMV(krcoef),nkrcoef)
+      REAL_T  rhoval(ncomps)
+      REAL_T  muval(ncomps)
+      REAL_T  dx(SDIM)
+      REAL_T  vel(DIMV(vel))
+      REAL_T  grav
+      
+      integer i,j,l_kr_type
+      REAL_T  l_kr_coef, l_sat_res
+      REAL_T  vtot, gstar, sol
+
+      vtot  = zero
+      do j = ARG_L2(rho), ARG_H2(rho)
+         do i = ARG_L1(rho), ARG_H1(rho)
+            l_kr_type = nint(krcoef(i,j,1))
+            l_kr_coef = krcoef(i,j,2)
+            l_sat_res = krcoef(i,j,3)
+
+            if (ncomps == 1) then
+               gstar = -kappa(i,j)*rhoval(1)*grav
+            else
+               gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
+            end if
+
+            call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
+     &           ncomps,l_kr_type,l_kr_coef)
+
+            sol = sol*(1.0-l_sat_res)+l_sat_res
+            
+            rho(i,j,1) = rhoval(1)*sol
+
+            if (ncomps > 1) then
+               rho(i,j,2) = rhoval(2)*(1.0-sol)
+            endif
+
+         end do
+      end do 
+
+      end
+
+c ::: ------------------------------------------------------------------
+c ::: Define approximate steady state condition based on inflow velocity
+c ::: ------------------------------------------------------------------
+      
       subroutine FORT_STEADYSTATE(rho,DIMS(rho),rhoval,muval,ncomps,
      &     kappa,DIMS(kappa),krcoef,DIMS(krcoef),nkrcoef,
      &     dx,inflow_vel,nc,grav)
@@ -2407,7 +2439,6 @@ c ::: ------------------------------------------------------------------
       integer i,j,l_kr_type
       REAL_T  l_kr_coef, l_sat_res
       REAL_T  vtot, gstar, sol
-      REAL_T  rtmp(2)
 
       vtot  = zero
       do j = ARG_L2(rho), ARG_H2(rho)
@@ -2416,9 +2447,11 @@ c ::: ------------------------------------------------------------------
             l_kr_coef = krcoef(i,j,2)
             l_sat_res = krcoef(i,j,3)
 
-            rtmp = 1.2
-            rtmp(1:ncomps) = rhoval(1:ncomps)
-            gstar = -kappa(i,j)*(rtmp(1)-rtmp(2))*grav
+            if (ncomps == 1) then
+               gstar = -kappa(i,j)*rhoval(1)*grav
+            else
+               gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
+            end if
 
             call FORT_FIND_INV_FLUX(sol,inflow_vel,nc,vtot,gstar,muval,
      &           ncomps,l_kr_type,l_kr_coef)

@@ -265,9 +265,6 @@ int MFD3D::L2_consistency(int cell,
     }
   }
  
-  std::vector<int> dirs;
-  mesh_->cell_get_face_dirs(cell, &dirs);
-
   for (int i=0; i<num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -340,7 +337,6 @@ int MFD3D::H1_consistency(int cell,
   if (num_nodes != N.numRows()) return num_nodes;  // matrix was not reshaped
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
-  int num_faces = faces.size();
 
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
@@ -349,6 +345,7 @@ int MFD3D::H1_consistency(int cell,
   /* to calculate matrix R, we use temporary matrix N */
   N = 0;
 
+  int num_faces = faces.size();
   for (int i=0; i<num_faces; i++) { 
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);

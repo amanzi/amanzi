@@ -254,6 +254,7 @@ void State::create_storage ()
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  prev_water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   vertical_permeability       = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   horizontal_permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   total_component_concentration
@@ -420,7 +421,8 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
        c != cell_ids.end();  c++) {
 
     std::vector<unsigned int> cface(6);
-    mesh_maps->cell_to_faces(*c, cface.begin(), cface.end());
+    std::vector<int> cfdirs;
+    mesh_maps->cell_get_faces_and_dirs(*c, &cface, &cfdirs, true);
 
     for (std::vector<unsigned int>::iterator f = cface.begin();
          f != cface.end(); f++) {
@@ -463,7 +465,8 @@ void State::set_darcy_flux( const double* u, const std::string region )
        c != cell_ids.end();  c++) {
 
     std::vector<unsigned int> cface(6);
-    mesh_maps->cell_to_faces(*c, cface.begin(), cface.end());
+    std::vector<int> cfdirs;
+    mesh_maps->cell_get_faces_and_dirs(*c, &cface, &cfdirs);
 
     for (std::vector<unsigned int>::iterator f = cface.begin();
          f != cface.end(); f++) {
@@ -790,58 +793,61 @@ void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, co
 
 
 void State::write_vis(Amanzi::Vis& vis, bool force) {
-  if ((force==true) || (vis.dump_requested(get_cycle()) && !vis.is_disabled() ))  {
-    using Teuchos::OSTab;
-    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-    
-    if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-      *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
+  if (!vis.is_disabled()) {
+    if ( force || vis.dump_requested(get_cycle()))  {
+      using Teuchos::OSTab;
+      Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+      
+      if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+        *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
+      }
+      
+      // create the new time step...
+      vis.create_timestep(get_time(),get_cycle());
+      
+      // dump all the state vectors into the file
+      vis.write_vector(*get_pressure(), "pressure");
+      vis.write_vector(*get_porosity(),"porosity");
+      vis.write_vector(*get_water_saturation(),"water saturation");
+      vis.write_vector(*get_water_density(),"water density");
+      vis.write_vector(*get_vertical_permeability(),"vertical permeability");
+      vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
+      vis.write_vector(*get_material_ids(),"material IDs");
+      
+      // compute volumetric water content for visualization (porosity*water_saturation)
+      Epetra_Vector vol_water( mesh_maps->cell_map(false) );
+      vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
+      vis.write_vector(vol_water,"volumetric water content");
+      
+      std::vector<std::string> names(3);
+      names[0] = "darcy velocity x";
+      names[1] = "darcy velocity y";
+      names[2] = "darcy velocity z";
+      vis.write_vector(*get_darcy_velocity(), names);
+      
+      // write component data
+      vis.write_vector( *get_total_component_concentration(), compnames);
+      vis.finalize_timestep();
+      
     }
-
-    // create the new time step...
-    vis.create_timestep(get_time(),get_cycle());
-
-    // dump all the state vectors into the file
-    vis.write_vector(*get_pressure(), "pressure");
-    vis.write_vector(*get_porosity(),"porosity");
-    vis.write_vector(*get_water_saturation(),"water saturation");
-    vis.write_vector(*get_water_density(),"water density");
-    vis.write_vector(*get_vertical_permeability(),"vertical permeability");
-    vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
-    vis.write_vector(*get_material_ids(),"material IDs");
-    
-    // compute volumetric water content for visualization (porosity*water_saturation)
-    Epetra_Vector vol_water( mesh_maps->cell_map(false) );
-    vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
-    vis.write_vector(vol_water,"volumetric water content");
-
-    std::vector<std::string> names(3);
-    names[0] = "darcy velocity x";
-    names[1] = "darcy velocity y";
-    names[1] = "darcy velocity z";
-    vis.write_vector(*get_darcy_velocity(), names);
-
-    // write component data
-    vis.write_vector( *get_total_component_concentration(), compnames);
-    vis.finalize_timestep();
-
   }
 }
 
 
-
 void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force)  {
   write_vis(vis, force);
-
-  if ( (force == false) || (vis.dump_requested(get_cycle()) && !vis.is_disabled() ) ) {
-    // write auxillary data
-    if (auxdata != NULL)  {
-      vis.write_vector( *auxdata , auxnames);
+  
+  if ( !vis.is_disabled() ) {
+    if ( force || vis.dump_requested(get_cycle())) {
+      // write auxillary data
+      if (auxdata != NULL)  {
+        vis.write_vector( *auxdata , auxnames);
+      }
+      
+      vis.finalize_timestep();
     }
-
-    vis.finalize_timestep();
   }
 }
 

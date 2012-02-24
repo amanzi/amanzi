@@ -37,8 +37,8 @@ class Darcy_PK : public Flow_PK {
 
   int advance(double dT); 
   int advance_to_steady_state();
-  void commit_state(Teuchos::RCP<Flow_State> FS) {};
-  void deriveDarcyVelocity(Epetra_MultiVector& velocity);
+  void commit_state(Teuchos::RCP<Flow_State> FS);
+  void deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   // methods required for time integration
   void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0) {};

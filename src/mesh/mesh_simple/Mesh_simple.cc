@@ -16,7 +16,7 @@ namespace AmanziMesh
 {
 
 Mesh_simple::Mesh_simple (double x0, double y0, double z0,
-			  double x1, double y1, double z1,
+ 			  double x1, double y1, double z1,
 			  int nx, int ny, int nz,
 			  const Epetra_MpiComm *communicator,
 			  const AmanziGeometry::GeometricModelPtr &gm):

@@ -107,6 +107,12 @@ public:
   void set_constant_val(MultiFab&          mfdata, 
                         const Region&      region_local,
 			const Array<Real>& val) const;
+  //
+  // @ManDoc Set fab to constant values given by val.
+  //
+  void set_constant_val(FArrayBox&         fab, 
+                        const Region&      region_local,
+			const Array<Real>& val) const;
 
   //
   // @ManDoc Set mfdata to constant permeability values.
@@ -115,10 +121,22 @@ public:
 			 const Region& region_local) const;
 
   //
+  // @ManDoc Set fab to constant permeability values.
+  //
+  void set_constant_kval(FArrayBox&  fab, 
+			 const Real* dx) const;
+
+  //
   // @ManDoc Set mfdata to constant porosity value.
   //
   void set_constant_pval(MultiFab&     mfdata, 
 			 const Region& region_local) const;
+
+  //
+  // @ManDoc Set fab to constant porosity value.
+  //
+  void set_constant_pval(FArrayBox&  fab, 
+			 const Real* dx) const;
 
   //
   // @ManDoc Set fab to parameters relevant to relative permeability.

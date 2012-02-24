@@ -87,7 +87,7 @@ class DarcyProblem {
   
   double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient)
   {
-    Epetra_Vector& pressure = DPK->flow_state_next()->ref_pressure();
+    Epetra_Vector& pressure = DPK->flow_state()->ref_pressure();
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -116,7 +116,7 @@ class DarcyProblem {
 
   double calculateDarcyFluxError(AmanziGeometry::Point& velocity_exact)
   {
-    Epetra_Vector& darcy_flux = DPK->flow_state_next()->ref_darcy_flux();
+    Epetra_Vector& darcy_flux = DPK->flow_state()->ref_darcy_flux();
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -130,7 +130,7 @@ class DarcyProblem {
 
   double calculateDarcyDivergenceError()
   {
-    Epetra_Vector& darcy_flux = DPK->flow_state_next()->ref_darcy_flux();
+    Epetra_Vector& darcy_flux = DPK->flow_state()->ref_darcy_flux();
 #ifdef HAVE_MPI
     Epetra_Vector darcy_flux_wghost(mesh->face_map(true));
     darcy_flux_wghost.Import(darcy_flux, DPK->ref_face_importer(), Insert);
@@ -163,8 +163,9 @@ class DarcyProblem {
   {
     int dim = mesh->space_dimension();
 
+    Epetra_Vector& flux = DPK->flow_state()->ref_darcy_flux();
     Epetra_MultiVector velocity(mesh->cell_map(false), dim);
-    DPK->deriveDarcyVelocity(velocity);
+    DPK->deriveDarcyVelocity(flux, velocity);
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -200,6 +201,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
+    DPK->commit_state(DPK->flow_state());
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(errorP < 1.0e-8);
@@ -236,6 +238,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
+    DPK->commit_state(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
@@ -266,6 +269,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
+    DPK->commit_state(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(error < 1.0e-8);
@@ -299,6 +303,7 @@ SUITE(Darcy_Velocity) {
 
     DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
+    DPK->commit_state(DPK->flow_state());
 
     double error = calculateDarcyVelocityError(velocity);
     CHECK(error < 1.0e-8);

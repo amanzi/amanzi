@@ -259,9 +259,6 @@ int Richards_PK::advance_to_steady_state()
   applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
 
   // start iterations
-  const Epetra_Vector& phi = FS->ref_porosity();
-  double water_mass0 = rho * FS->normLpCell(phi, water_saturation, 1.0);
-
   int ierr = 0;
   if (method_sss == FLOW_STEADY_STATE_PICARD) {
     ierr = advanceSteadyState_Picard();
@@ -270,26 +267,6 @@ int Richards_PK::advance_to_steady_state()
   } else if (method_sss == FLOW_STEADY_STATE_BDF2) {
     ierr = advanceSteadyState_BDF2();
   }
-
-  //create flow state to be returned
-  FS_next->ref_pressure() = *solution_cells;
-
-  // calculate darcy mass flux
-  Epetra_Vector& darcy_flux = FS_next->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyMassFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
-  for (int c=0; c<nfaces_owned; c++) darcy_flux[c] /= rho;
-
-  // final water saturation
-  water_saturation = FS_next->ref_water_saturation();
-  deriveSaturationFromPressure(FS_next->ref_pressure(), water_saturation);
-
-  double water_mass1 = rho * FS_next->normLpCell(phi, water_saturation, 1.0);
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    cout << "initial water mass = " << water_mass0 << " [KG]" << endl;    
-    cout << "final   water mass = " << water_mass1 << " [KG]" << endl; 
-  }   
 
   if (ierr == 0) flow_status_ = FLOW_STEADY_STATE_COMPLETE;
   return ierr;
@@ -327,13 +304,6 @@ int Richards_PK::advance(double dT_MPC)
   T_internal = bdf2_dae->most_recent_time();
   dT = dTnext;
   num_itrs_trs++;
-
-  // calculate darcy mass flux
-  Epetra_Vector& darcy_flux = FS_next->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyMassFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
-  for (int c=0; c<nfaces_owned; c++) darcy_flux[c] /= rho;
 
   flow_status_ = FLOW_NEXT_STATE_COMPLETE;
   return 0;
@@ -463,6 +433,29 @@ int Richards_PK::advanceSteadyState_Picard()
 
 
 /* ******************************************************************
+* Transfer data from the external flow state FS_MPC. MPC may request
+* to populate the original state FS. 
+****************************************************************** */
+void Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS_MPC)
+{
+  Epetra_Vector& pressure = FS_MPC->ref_pressure();
+  pressure = *solution_cells;
+
+  Epetra_Vector& water_saturation = FS_MPC->ref_water_saturation();
+  deriveSaturationFromPressure(pressure, water_saturation);
+
+  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
+  for (int c=0; c<nfaces_owned; c++) flux[c] /= rho;
+
+  Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
+  deriveDarcyVelocity(flux, velocity);
+}
+
+
+/* ******************************************************************
 * BDF methods need a good initial guess.
 * This method gives a less smoother solution than in Flow 1.0.
 ****************************************************************** */
@@ -584,11 +577,10 @@ void Richards_PK::addTimeDerivative_MFD(
 
 
 /* ******************************************************************
-* A wrapper for a similar matrix call.  
+* A wrapper for a similar matrix call.
 ****************************************************************** */
-void Richards_PK::deriveDarcyVelocity(Epetra_MultiVector& velocity) 
+void Richards_PK::deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) 
 {
-  Epetra_Vector& flux = flow_state_next()->ref_darcy_flux();
   matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 

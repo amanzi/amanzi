@@ -48,28 +48,30 @@ class Flow_State {
   Epetra_Vector* createFaceView(const Epetra_Vector& u) const;
 
   // access methods
-  Teuchos::RCP<Epetra_Vector> porosity() { return porosity_; }
-  Teuchos::RCP<Epetra_Vector> pressure() { return pressure_; }
-  Teuchos::RCP<Epetra_Vector> darcy_flux() { return darcy_flux_; }
-  Teuchos::RCP<Epetra_Vector> vertical_permeability() { return vertical_permeability_; }
-  Teuchos::RCP<Epetra_Vector> horizontal_permeability() { return horizontal_permeability_; }
-  Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
+  Teuchos::RCP<AmanziGeometry::Point> gravity() { return gravity_; }  // RCP pointers
 
   Teuchos::RCP<double> fluid_density() { return fluid_density_; }
   Teuchos::RCP<double> fluid_viscosity() { return fluid_viscosity_; }
-  Teuchos::RCP<AmanziGeometry::Point> gravity() { return gravity_; }
+  Teuchos::RCP<Epetra_Vector> pressure() { return pressure_; }
+  Teuchos::RCP<Epetra_Vector> darcy_flux() { return darcy_flux_; }
+
+  Teuchos::RCP<Epetra_Vector> vertical_permeability() { return vertical_permeability_; }
+  Teuchos::RCP<Epetra_Vector> horizontal_permeability() { return horizontal_permeability_; }
+  Teuchos::RCP<Epetra_Vector> porosity() { return porosity_; }
+  Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
 
-  Epetra_Vector& ref_porosity() { return *porosity_; }
+  double ref_fluid_density() { return *fluid_density_; }  // references
+  double ref_fluid_viscosity() { return *fluid_viscosity_; }
   Epetra_Vector& ref_pressure() { return *pressure_; }
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux_; }
+  Epetra_MultiVector& ref_darcy_velocity() { return *darcy_velocity_; }
+
   Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability_; }
   Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability_; }
+  Epetra_Vector& ref_porosity() { return *porosity_; }
   Epetra_Vector& ref_water_saturation() { return *water_saturation_; }
-
-  double ref_fluid_density() { return *fluid_density_; }
-  double ref_fluid_viscosity() { return *fluid_viscosity_; }
 
   // miscaleneous
   double get_time() { return (S_ == NULL) ? 0.0 : S_->get_time(); }
@@ -88,14 +90,17 @@ class Flow_State {
  private:
   State* S_;  
 
-  Teuchos::RCP<double> fluid_density_;
-  Teuchos::RCP<double> fluid_viscosity_;
   Teuchos::RCP<AmanziGeometry::Point> gravity_;
-  Teuchos::RCP<Epetra_Vector> vertical_permeability_;
-  Teuchos::RCP<Epetra_Vector> horizontal_permeability_;
+
+  Teuchos::RCP<double> fluid_density_;  // fluid properties
+  Teuchos::RCP<double> fluid_viscosity_;
   Teuchos::RCP<Epetra_Vector> pressure_;
-  Teuchos::RCP<Epetra_Vector> porosity_;
   Teuchos::RCP<Epetra_Vector> darcy_flux_;
+  Teuchos::RCP<Epetra_MultiVector> darcy_velocity_;
+
+  Teuchos::RCP<Epetra_Vector> vertical_permeability_;  // rock properties
+  Teuchos::RCP<Epetra_Vector> horizontal_permeability_;
+  Teuchos::RCP<Epetra_Vector> porosity_;
   Teuchos::RCP<Epetra_Vector> water_saturation_;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

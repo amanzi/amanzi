@@ -47,7 +47,7 @@ RegionData::apply(FArrayBox&  fab,
 {
     Array<Real> val = (*this)(time);
     for (int j=0; j<regions.size(); ++j)
-    {
+    { 
         regions[j].setVal(fab,val,dx,0,0,val.size());
     }
 }

@@ -163,9 +163,9 @@ SUITE (MeshFramework)
     double x0( 0.0), y0( 0.0);
     double x1(10.0), y1(10.0);
     int nx(10), ny(10);
-    
+
     // The MSTK framework, if available, will always generate
-    
+
     if (framework_available(Amanzi::AmanziMesh::MSTK)) {
       pref.clear(); pref.push_back(Amanzi::AmanziMesh::MSTK);
       mesh_factory.preference(pref);
@@ -175,10 +175,10 @@ SUITE (MeshFramework)
       CHECK(!mesh.is_null());
       mesh.reset();
     }
-    
+
     // The Simple framework is always available, but 
     // cannot generate 2D meshes
-    
+
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
     mesh_factory.preference(pref);
 
@@ -232,7 +232,7 @@ SUITE (MeshFramework)
     parameter_list.set< Teuchos::Array<int> >("Number of Cells", ncells);
     parameter_list.set< Teuchos::Array<double> >("Domain Low Corner", low);
     parameter_list.set< Teuchos::Array<double> >("Domain High Corner", high);
-
+    
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
     mesh_factory.preference(pref);
 

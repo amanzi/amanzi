@@ -75,11 +75,12 @@ TEST(FLOW_2D_RICHARDS) {
 
   // solve the problem
   RPK->advance_to_steady_state();
+  RPK->commit_state(FS);
  
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
-    GMV::write_cell_data(RPK->flow_state_next()->ref_pressure(), 0, "pressure");
+    GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
     GMV::close_data_file();
   }
 

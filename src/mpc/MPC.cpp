@@ -57,6 +57,9 @@ void MPC::mpc_init() {
 
   mpc_parameter_list =  parameter_list.sublist("MPC");
 
+  reset_times_.resize(0);
+  reset_times_dt_.resize(0);
+  
   read_parameter_list();
 
   // let users selectively disable individual process kernels
@@ -187,26 +190,63 @@ void MPC::read_parameter_list()  {
   Teuchos::ParameterList& ti_list =  mpc_parameter_list.sublist("Time Integration Mode");
   if (ti_list.isSublist("Initialize To Steady")) {
     ti_mode = INIT_TO_STEADY;
+    
+    Teuchos::ParameterList& init_to_steady_list = ti_list.sublist("Initialize To Steady");
 
-    T0 = ti_list.sublist("Initialize To Steady").get<double>("Start");
-    Tswitch = ti_list.sublist("Initialize To Steady").get<double>("Switch");
-    T1 = ti_list.sublist("Initialize To Steady").get<double>("End");
+    T0 = init_to_steady_list.get<double>("Start");
+    Tswitch = init_to_steady_list.get<double>("Switch");
+    T1 = init_to_steady_list.get<double>("End");
 
-    dTsteady = ti_list.sublist("Initialize To Steady").get<double>("Steady Initial Time Step");
-    dTtransient = ti_list.sublist("Initialize To Steady").get<double>("Transient Initial Time Step");
+    dTsteady = init_to_steady_list.get<double>("Steady Initial Time Step");
+    dTtransient = init_to_steady_list.get<double>("Transient Initial Time Step");
+
+    if (init_to_steady_list.isSublist("Time Period Control")) {
+      Teuchos::ParameterList& tpc_list = init_to_steady_list.sublist("Time Period Control");
+      
+      reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
+      reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
+
+      if (reset_times_.size() != reset_times_dt_.size()) {
+	Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
+	Exceptions::amanzi_throw(message);
+      }    
+    }
+
+
+
   } else if ( ti_list.isSublist("Steady")) {
     ti_mode = STEADY;
+    
+    Teuchos::ParameterList& steady_list = ti_list.sublist("Steady");
 
-    T0 = ti_list.sublist("Steady").get<double>("Start");
-    T1 = ti_list.sublist("Steady").get<double>("End");
-    dTsteady = ti_list.sublist("Steady").get<double>("Initial Time Step");
+    T0 = steady_list.get<double>("Start");
+    T1 = steady_list.get<double>("End");
+    dTsteady = steady_list.get<double>("Initial Time Step");
+
+    
 
   } else if ( ti_list.isSublist("Transient") ) {
     ti_mode = TRANSIENT;
 
-    T0 = ti_list.sublist("Transient").get<double>("Start");
-    T1 = ti_list.sublist("Transient").get<double>("End");
-    dTtransient =  ti_list.sublist("Transient").get<double>("Initial Time Step");
+    Teuchos::ParameterList& transient_list = ti_list.sublist("Transient");
+
+    T0 = transient_list.get<double>("Start");
+    T1 = transient_list.get<double>("End");
+    dTtransient =  transient_list.get<double>("Initial Time Step");
+
+    if (transient_list.isSublist("Time Period Control")) {
+      Teuchos::ParameterList& tpc_list = transient_list.sublist("Time Period Control");
+      
+      reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
+      reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
+
+      if (reset_times_.size() != reset_times_dt_.size()) {
+	Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
+	Exceptions::amanzi_throw(message);	
+      }
+    }
+
+
 
   } else {
     Errors::Message message("MPC: no valid Time Integration Mode was specified, you must specify exactly one of Initialize To Steady, Steady, or Transient.");
@@ -300,6 +340,7 @@ void MPC::cycle_driver () {
       // determine the time step we are now going to take
       double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99, limiter_dT=1e+99;
 
+
       if (flow_enabled && flow_model == "Richards") {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
@@ -311,16 +352,45 @@ void MPC::cycle_driver () {
 
       if (flow_enabled && flow_model == "Richards")  {
 	flow_dT = FPK->calculate_flow_dT();
-        // adjust the time step, so that we exactly hit the switchover time
-        if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+2.0*flow_dT > Tswitch) {
-          limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
-        }
-	// adjust the time step, so that we exactly hit the final time in steady mode
-	if (ti_mode == STEADY  &&  S->get_time()+2*flow_dT > T1) { 
-	  limiter_dT = time_step_limiter(S->get_time(), flow_dT, T1);
-	}
-      }
 
+        // adjust the time step, so that we exactly hit the switchover time
+        if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
+          limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
+	  tslimiter = MPC_LIMITS;
+        }
+      
+
+        // make sure we hit any of the reset times exactly (not in steady mode)
+        if (! ti_mode == STEADY) {
+          if (reset_times_.size() > 0) {
+	    // first we find the next reset time
+	    int next_time_index(-1);
+	    for (int ii=0; ii<reset_times_.size(); ii++) {
+	      if (S->get_time() < reset_times_[ii]) {
+	        next_time_index = ii;
+	        break;
+	      }
+	    }
+	    if (next_time_index >= 0) {
+	      // now we are trying to hit the next reset time exactly
+              if (ti_mode == INIT_TO_STEADY) {
+                if (reset_times_[next_time_index] != Tswitch) {
+	          if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
+	            limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
+	            tslimiter = MPC_LIMITS;
+	          }
+                }
+              } else {
+                if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
+                  limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
+                  tslimiter = MPC_LIMITS;
+                }
+              }
+	    }
+	  }
+        }
+      }
+	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
           transport_dT = TPK->calculate_transport_dT();
@@ -329,6 +399,7 @@ void MPC::cycle_driver () {
           chemistry_dT = CPK->max_time_step();
         }
       }
+
       
       // take the mpc time step as the min of all suggested time steps 
       mpc_dT = std::min( std::min( std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT );
@@ -343,23 +414,70 @@ void MPC::cycle_driver () {
       } else if (mpc_dT == limiter_dT) {
 	tslimiter = MPC_LIMITS;
       }
-
+      
       if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
 	mpc_dT = std::min( mpc_dT, dTtransient );
 	tslimiter = MPC_LIMITS; 
       }
 
-
       // make sure we will hit the final time exactly
       if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
         mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
 	tslimiter = MPC_LIMITS;
-      }
+      } 
       if (ti_mode == TRANSIENT && S->get_time()+2*mpc_dT > T1) { 
 	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
 	tslimiter = MPC_LIMITS;
       }
+      if (ti_mode == STEADY  &&  S->get_time()+2*mpc_dT > T1) { 
+	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
+	tslimiter = MPC_LIMITS;
+      }
       
+      // make sure that if we are currently on a reset time, to reset the time step
+      if (! ti_mode == STEADY) {
+	for (int ii=0; ii<reset_times_.size(); ++ii) {
+	  // this is probably iffy...
+	  if (S->get_time() == reset_times_[ii]) {
+	    mpc_dT = reset_times_dt_[ii];
+	    tslimiter = MPC_LIMITS;
+	    // now reset the BDF2 integrator..
+	    FPK->InitTransient(S->get_time(), mpc_dT);   
+	    break;	    
+	  }
+	}
+      }
+
+      // steady flow is special, it might redo a time step, so we print
+      // time step info after we've advanced steady flow
+
+      // first advance flow
+      if (flow_enabled) {
+	if (ti_mode == STEADY || (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch)) { 	
+	  bool redo(false);
+	  do {
+	    redo = false;
+	    try {
+	      FPK->advance_to_steady_state();
+              if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
+                FPK->InitTransient(Tswitch, 1e-5);
+                break;
+              }
+	    }
+	    catch (int itr) {
+	      mpc_dT = 0.5*mpc_dT;
+	      redo = true;
+	      tslimiter = FLOW_LIMITS;
+	      *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
+	    }
+	  } while (redo);
+	} else {
+	  FPK->advance(mpc_dT);
+	}
+        FPK->commit_state(FS);
+      }
+
+      // =============================================================
       // write some info about the time step we are about to take
       
       // first determine what we will write about the time step limiter
@@ -383,41 +501,10 @@ void MPC::cycle_driver () {
         *out << "Cycle = " << iter;
         *out << ",  Time(secs) = "<< S->get_time(); // / (60*60*24);
         *out << ",  dT(secs) = " << mpc_dT; // / (60*60*24)  << std::endl;
-	 *out << " " << limitstring;
+	*out << " " << limitstring;
         *out << std::endl;
       }
-
       // ==============================================================
-      
-      // first advance flow
-      if (flow_enabled) {
-	if (ti_mode == STEADY || (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch)) { 	
-	  bool redo(false);
-	  do {
-	    redo = false;
-	    try {
-	      FPK->advance_to_steady_state();
-              if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
-                FPK->InitTransient(Tswitch, 1e-5);
-                break;
-              }
-	    }
-	    catch (int itr) {
-	      mpc_dT = 0.5*mpc_dT;
-	      redo = true;
-	    }
-	  } while (redo);
-	} else {
-          FPK->advance(mpc_dT);
-
-          Teuchos::RCP<AmanziFlow::Flow_State> FS_next = FPK->flow_state_next();
-          FPK->commit_state(FS_next);
-
-          S->update_darcy_flux(FS_next->ref_darcy_flux());
-          S->update_pressure(FS_next->ref_pressure());
-          FPK->deriveDarcyVelocity(*S->get_darcy_velocity());
-	}
-      }
 
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
@@ -461,6 +548,7 @@ void MPC::cycle_driver () {
       // we're done with this time step, commit the state
       // in the process kernels
 
+      FPK->commit_state(FS,mpc_dT);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) TPK->commit_state(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
@@ -516,6 +604,12 @@ void MPC::cycle_driver () {
 double MPC::time_step_limiter (double T, double dT, double T_end) {
 
   double time_remaining = T_end - T;
+
+  if (time_remaining < 0.0) {
+    Errors::Message message("MPC: time step limiter logic error, T_end must be greater than T.");
+    Exceptions::amanzi_throw(message);    
+  }
+
   
   if (dT >= time_remaining) {
     return time_remaining;

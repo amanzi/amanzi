@@ -809,7 +809,7 @@ c         write(*,*) 'second derivative check', d2ld(1),d2ld(2),sat(1)
 
       end
 
-#if 1
+#if 0
 c     orig
       subroutine FORT_FIND_INV_FLUX(sol,vel,nc,vtot,gstar,muval,
      &     ncomps,kr_type,kr_coef)

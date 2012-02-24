@@ -349,9 +349,9 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist )
 
         Teuchos::ParameterList& msh_gen = msh_list.sublist("Unstructured").sublist("Generate Mesh");
 
-        msh_gen.set< Teuchos::Array<int> >("Number of Cells",ncells); 
- 	msh_gen.set< Teuchos::Array<double> >("Domain Low Corner",low); 
- 	msh_gen.set< Teuchos::Array<double> >("Domain High Corner",high); 
+        msh_gen.set< Teuchos::Array<int> >("Number of Cells",ncells);
+        msh_gen.set< Teuchos::Array<double> >("Domain Low Corner",low);
+        msh_gen.set< Teuchos::Array<double> >("Domain High Corner",high);
 
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
         std::string format = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("Format");
@@ -490,7 +490,9 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist )
 
       // continue to set some reasonable defaults
       trp_list.set<std::string>("enable internal tests","no");
+      trp_list.set<int>("verbosity level",0);
       trp_list.set<double>("CFL",1.0);
+      trp_list.set<std::string>("flow mode","transient");
     }
   }
 
@@ -652,6 +654,8 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
       }
     }
   }
+
+  flw_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
   return flw_list;
 }

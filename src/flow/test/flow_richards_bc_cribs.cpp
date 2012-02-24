@@ -72,9 +72,10 @@ TEST(FLOW_3D_RICHARDS) {
   // solve the problem
   S.set_time(0.0);
   RPK->advance_to_steady_state();
+  RPK->commit_state(FS);
 
   // derive dependent variable
-  Epetra_Vector& pressure = RPK->flow_state_next()->ref_pressure();
+  Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector  saturation(pressure);
   RPK->deriveSaturationFromPressure(pressure, saturation); 
 

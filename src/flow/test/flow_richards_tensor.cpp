@@ -80,40 +80,25 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   cout << "K=" << K << "  gravity=" << g << endl;
   cout << "grad(p)=" << v0 << endl;
 
-  // create the initial condition
-  Epetra_Vector u(RPK->super_map());
-  Epetra_Vector *ucells = FS->createCellView(u);
-  for (int c=0; c<ucells->MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    (*ucells)[c] = v0 * xc;
-  }
-
-  Epetra_Vector *ufaces = FS->createFaceView(u);
-  for (int f=0; f<ufaces->MyLength(); f++) {
-    const Point& xf = mesh->face_centroid(f);
-    (*ufaces)[f] = v0 * xf;
-  }
-  
-  S->update_pressure(*ucells);
-  S->set_time(0.0);
-
-  // set intial and final time
   RPK->advance_to_steady_state();
+  RPK->commit_state(FS);
 
   // check accuracy
-  Epetra_Vector& pressure = RPK->flow_state_next()->ref_pressure();
-  Epetra_Vector& darcy_flux = RPK->flow_state_next()->ref_darcy_flux();
+  Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
  
   double err_p = 0.0, err_u = 0.0;
-  for (int c=0; c<(*ucells).MyLength(); c++) {
+  int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c<ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
-    //cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
+    cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
     err_p += pow(pressure[c] - p_exact, 2.0);
   }
   err_p = sqrt(err_p);
 
-  for (int f=0; f<(*ufaces).MyLength(); f++) {
+  int nfaces = mesh->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f=0; f<nfaces; f++) {
     const Point& xf = mesh->face_centroid(f);
     const Point normal = mesh->face_normal(f);
   

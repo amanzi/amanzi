@@ -125,12 +125,12 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     RPK->set_verbosity(FLOW_VERBOSITY_NULL);
 
     RPK->advance_to_steady_state();
+    RPK->commit_state(FS);
 
     double pressure_err, flux_err, div_err;  // error checks
-    Flow_State& FS_next = RPK->ref_flow_state_next();
-    pressure_err = calculatePressureCellError(mesh, FS_next.ref_pressure());
-    flux_err = calculateDarcyFluxError(mesh, FS_next.ref_darcy_flux());
-    div_err = calculateDarcyDivergenceError(mesh, FS_next.ref_darcy_flux());
+    pressure_err = calculatePressureCellError(mesh, FS->ref_pressure());
+    flux_err = calculateDarcyFluxError(mesh, FS->ref_darcy_flux());
+    div_err = calculateDarcyDivergenceError(mesh, FS->ref_darcy_flux());
 
     if (n==80) CHECK(pressure_err < 5.0e-2 && flux_err < 5.0e-2);
     printf("n=%3d itrs=%4d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n", 

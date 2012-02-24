@@ -191,16 +191,6 @@ int Darcy_PK::advance_to_steady_state()
               << "Norm of true residual = " << residual_sss << std::endl;
   }
 
-  //create flow state to be returned
-  FS_next->ref_pressure() = *solution_cells;
-
-  // calculate darcy mass flux
-  Epetra_Vector& darcy_flux = FS_next->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyMassFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
-  for (int c=0; c<nfaces_owned; c++) darcy_flux[c] /= rho_;
-
   return 0;
 }
 
@@ -228,6 +218,23 @@ int Darcy_PK::advance(double dT_MPC)
 
 
 /* ******************************************************************
+* Transfer data from the external flow state FS_MPC. MPC may request
+* to populate the original state FS. 
+****************************************************************** */
+void Darcy_PK::commit_state(Teuchos::RCP<Flow_State> FS_MPC)
+{  
+  FS_MPC->ref_pressure() = *solution_cells;
+
+  // calculate darcy mass flux
+  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
+  for (int c=0; c<nfaces_owned; c++) flux[c] /= rho_;
+}
+
+
+/* ******************************************************************
 *  Temporary convertion from double to tensor.                                               
 ****************************************************************** */
 void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
@@ -251,9 +258,8 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 /* ******************************************************************
 * A wrapper for a similar matrix call.  
 ****************************************************************** */
-void Darcy_PK::deriveDarcyVelocity(Epetra_MultiVector& velocity) 
+void Darcy_PK::deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) 
 {
-  Epetra_Vector& flux = flow_state_next()->ref_darcy_flux();
   matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 
