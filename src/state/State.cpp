@@ -1,17 +1,16 @@
-#include "State.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Mesh.hh"
-#include "cell_geometry.hh"
-#include "Point.hh"
-#include "Geometry.hh"
-#include "linear-function.hh"
 
-#include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
+#include "Mesh.hh"
+#include "Point.hh"
+#include "linear-function.hh"
+
+#include "State.hpp"
 
 
 State::State(int number_of_components_,
@@ -391,16 +390,12 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
        c != cell_ids.end();  c++) {
     v[*c] = value;
   }
-
 }
 
-void State::set_darcy_flux( const double* u, const int mesh_block_id )
+
+void State::set_darcy_flux(const double* u, const int mesh_block_id)
 {
-  int  i, f;
-  double x[4][3], normal[3];
-
   // Epetra_Map face_map = mesh_maps->face_map(false);
-
   if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
     throw std::exception();
   }
@@ -409,42 +404,32 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
+  int dim = mesh_maps->space_dimension();
+  Amanzi::AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
   std::vector<unsigned int> cell_ids(mesh_block_size);
-
-
 
   mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                      cell_ids.begin(),cell_ids.end());
 
+  for (std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
+    mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);
+    int nfaces = faces.size();
 
-  for( std::vector<unsigned int>::iterator c = cell_ids.begin();
-       c != cell_ids.end();  c++) {
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
 
-    std::vector<unsigned int> cface(6);
-    std::vector<int> cfdirs;
-    mesh_maps->cell_get_faces_and_dirs(*c, &cface, &cfdirs, true);
-
-    for (std::vector<unsigned int>::iterator f = cface.begin();
-         f != cface.end(); f++) {
-
-      if (mesh_maps->face_map(false).MyLID(*f) ) {
-
-        mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
-
-        cell_geometry::quad_face_normal(x[0], x[1], x[2], x[3], normal);
-
-        (*darcy_flux)[*f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
+      if (mesh_maps->face_map(false).MyLID(f)) {
+        const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
+        (*darcy_flux)[f] = 0.0;
+        for (int i=0; i<dim; i++) (*darcy_flux)[f] += u[i] * normal[i];
       }
-
     }
   }
 }
 
-void State::set_darcy_flux( const double* u, const std::string region )
+void State::set_darcy_flux(const double* u, const std::string region)
 {
-  int  i, f;
-  double x[4][3], normal[3];
-
   if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
     throw std::exception();
   }
@@ -453,33 +438,26 @@ void State::set_darcy_flux( const double* u, const std::string region )
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
+  int dim = mesh_maps->space_dimension();
+  Amanzi::AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
   std::vector<unsigned int> cell_ids(mesh_block_size);
-
-
 
   mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
 
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
+    mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);
+    int nfaces = faces.size();
 
-  for( std::vector<unsigned int>::iterator c = cell_ids.begin();
-       c != cell_ids.end();  c++) {
+    for (int i = 0; i< nfaces; i++) {
+      int f = faces[i];
 
-    std::vector<unsigned int> cface(6);
-    std::vector<int> cfdirs;
-    mesh_maps->cell_get_faces_and_dirs(*c, &cface, &cfdirs);
-
-    for (std::vector<unsigned int>::iterator f = cface.begin();
-         f != cface.end(); f++) {
-
-      if (mesh_maps->face_map(false).MyLID(*f) ) {
-
-        mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
-
-        cell_geometry::quad_face_normal(x[0], x[1], x[2], x[3], normal);
-
-        (*darcy_flux)[*f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
+      if (mesh_maps->face_map(false).MyLID(f) ) {
+        const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
+        (*darcy_flux)[f] = 0.0;
+        for (int i=0; i<dim; i++) (*darcy_flux)[f] += u[i] * normal[i];
       }
-
     }
   }
 }
