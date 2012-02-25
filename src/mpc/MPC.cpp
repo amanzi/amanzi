@@ -120,6 +120,7 @@ void MPC::mpc_init() {
         parameter_list.sublist("Transport");
 
     TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
+    TPK->InitPK();
   }
 
   // flow...

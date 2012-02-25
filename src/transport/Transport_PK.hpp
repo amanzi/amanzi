@@ -83,6 +83,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   ~Transport_PK() { for (int i=0; i<bcs.size(); i++) delete bcs[i]; }
 
   // primary members
+  int InitPK();
   double calculate_transport_dT();
   void advance(double dT);
   void commitState(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
@@ -171,8 +172,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   double tests_tolerance;
 
  private:
-  int Init();  // move here all code from constructor 
-
   Teuchos::RCP<Transport_State> TS;
   Teuchos::RCP<Transport_State> TS_nextBIG;  // involves both owned and ghost values
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG

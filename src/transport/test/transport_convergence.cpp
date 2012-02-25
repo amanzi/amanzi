@@ -69,7 +69,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
-  
+    TPK.InitPK();
     TPK.set_standalone_mode(true);
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.print_statistics();
@@ -140,6 +140,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
+    TPK.InitPK();
     if (nx == 10) TPK.print_statistics();
     TPK.verbosity_level = 0;
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;

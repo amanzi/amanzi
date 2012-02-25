@@ -61,7 +61,7 @@ TEST(ADVANCE_WITH_MSTK) {
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
-
+  TPK.InitPK();
 
   // advance the state
   double dT = TPK.calculate_transport_dT();

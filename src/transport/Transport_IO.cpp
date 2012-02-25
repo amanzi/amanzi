@@ -133,7 +133,7 @@ void Transport_PK::process_parameter_list()
       Exceptions::amanzi_throw(msg);
     }
   }
-  print_statistics();
+  //print_statistics();
 }
 
 

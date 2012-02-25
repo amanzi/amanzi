@@ -54,8 +54,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   standalone_mode = false;
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
-
-  Init();  // must be moved out of the constructor (lipnikov@lanl.gov)
 }
 
 
@@ -63,7 +61,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-int Transport_PK::Init()
+int Transport_PK::InitPK()
 {
   TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory));  
   TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, ViewMemory));

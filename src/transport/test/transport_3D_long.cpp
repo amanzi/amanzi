@@ -72,6 +72,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   /* initialize a transport process kernel from the transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
+  TPK.InitPK();
   TPK.set_standalone_mode(true);
   TPK.print_statistics();
  
