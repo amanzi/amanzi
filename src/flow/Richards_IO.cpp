@@ -169,8 +169,6 @@ void Richards_PK::print_statistics() const
     cout << "    Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
   }
 }
- 
-
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

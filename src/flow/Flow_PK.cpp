@@ -7,8 +7,9 @@ Authors: Neil Carlson (version 1)
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "mfd3d.hpp"
+#include "gmv_mesh.hh"
 
+#include "mfd3d.hpp"
 #include "Flow_PK.hpp"
 #include "Flow_State.hpp"
 
@@ -205,6 +206,23 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
       else downwind_cell[f] = c; 
     }
   }
+}
+
+
+/* ****************************************************************
+* DEBUG: creating GMV file 
+**************************************************************** */
+void Flow_PK::writeGMVfile(Teuchos::RCP<Flow_State> FS) const
+{
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = FS->mesh();
+
+  GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+  GMV::start_data();
+  GMV::write_cell_data(FS->ref_pressure(), "pressure");
+  GMV::write_cell_data(FS->ref_water_saturation(), "saturation");
+  GMV::write_cell_data(FS->ref_darcy_velocity(), 0, "velocity_h");
+  GMV::write_cell_data(FS->ref_darcy_velocity(), dim-1, "velocity_v");
+  GMV::close_data_file();
 }
 
 }  // namespace AmanziFlow

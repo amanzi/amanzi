@@ -123,7 +123,8 @@ class Flow_PK : public BDF2::fnBase {
   // control members
   void validate_boundary_conditions(
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
-  inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
+  inline void set_standalone_mode(bool mode) { standalone_mode = mode; }
+  void writeGMVfile(Teuchos::RCP<Flow_State> FS) const;
  
   void set_time(double T0, double dT0) { T_internal = T0; dT = dT0; }
   void set_verbosity(int level) { verbosity = level; }

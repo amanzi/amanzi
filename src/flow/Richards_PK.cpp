@@ -15,11 +15,11 @@ Authors: Neil Carlson (nnc@lanl.gov),
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "gmv_mesh.hh"
 
 #include "Flow_BC_Factory.hpp"
 #include "boundary-function.hh"
 #include "Richards_PK.hpp"
+
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -214,6 +214,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
+    num_itrs_trs = 0; 
   } 
   else if (solver == NULL) {
     preconditioner->init_ML_preconditioner(ML_list);
@@ -436,13 +437,23 @@ int Richards_PK::advanceSteadyState_Picard()
 * Transfer part of the internal data needed by transport to the 
 * flow state FS_MPC. MPC may request to populate the original state FS. 
 ****************************************************************** */
-void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC) {
+void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC) 
+{
+  Epetra_Vector& pressure = FS_MPC->ref_pressure();
+  pressure = *solution_cells;
 
-  FS_MPC->ref_prev_water_saturation() = FS_MPC->ref_water_saturation();
-
-  Epetra_Vector& pressure = *solution_cells;
   Epetra_Vector& water_saturation = FS_MPC->ref_water_saturation();
+  FS_MPC->ref_prev_water_saturation() = water_saturation;
   deriveSaturationFromPressure(pressure, water_saturation);
+
+  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
+  for (int c=0; c<nfaces_owned; c++) flux[c] /= rho;
+
+  //DEBUG
+  writeGMVfile(FS_MPC);
 }
 
 
@@ -452,18 +463,10 @@ void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC) {
 ****************************************************************** */
 void Richards_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
-  Epetra_Vector& pressure = FS_MPC->ref_pressure();
-  pressure = *solution_cells;
-
-  Epetra_Vector& water_saturation = FS_MPC->ref_water_saturation();
-  deriveSaturationFromPressure(pressure, water_saturation);
+  //Epetra_Vector& pressure = FS_MPC->ref_pressure();
+  //pressure = *solution_cells;
 
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
-  for (int c=0; c<nfaces_owned; c++) flux[c] /= rho;
-
   Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
   deriveDarcyVelocity(flux, velocity);
 }

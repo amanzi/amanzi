@@ -11,6 +11,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "errors.hh"
 #include "tabular-function.hh"
+#include "gmv_mesh.hh"
 
 #include "Transport_PK.hpp"
 
@@ -152,6 +153,22 @@ void Transport_PK::print_statistics() const
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
     cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen or Kuzmin(experimental)") << endl;
   }
+}
+
+
+/* ****************************************************************
+* DEBUG: creating GMV file 
+**************************************************************** */
+void Transport_PK::writeGMVfile(Teuchos::RCP<Transport_State> TS) const
+{
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
+  Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
+
+  GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+  GMV::start_data();
+  GMV::write_cell_data(tcc, 0, "component0");
+  GMV::write_cell_data(TS->ref_water_saturation(), "saturation");
+  GMV::close_data_file();
 }
  
 }  // namespace AmanziTransport

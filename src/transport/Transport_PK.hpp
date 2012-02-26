@@ -109,6 +109,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   // control members
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void print_statistics() const;
+  void writeGMVfile(Teuchos::RCP<Transport_State> TS) const;
  
  private:
   // advection routines
