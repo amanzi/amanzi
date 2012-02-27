@@ -1154,6 +1154,8 @@ void Beaker::Display(void) const {
 
   DisplayAqueousEquilibriumComplexes();
 
+  DisplayGeneralKinetics();
+
   DisplayMinerals();
 
   DisplayMineralKinetics();
@@ -1215,6 +1217,19 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
   std::cout << std::endl;
 }  // end DisplayAqueousEquilibriumComplexes()
 
+void Beaker::DisplayGeneralKinetics(void) const {
+  std::cout << "---- General Kinetics" << std::endl;
+  std::cout << std::setw(12) << "Reaction"
+            << std::setw(38) << "forward_rate"
+            << std::setw(15) << "backward_rate"
+            << std::endl;
+  for (std::vector<GeneralRxn>::const_iterator rxn = generalKineticRxns_.begin();
+       rxn != generalKineticRxns_.end(); rxn++) {
+    rxn->Display();
+  }
+  std::cout << std::endl;
+}  // end DisplayAqueousEquilibriumComplexes()
+
 void Beaker::DisplayMinerals(void) const {
   if (minerals_.size() > 0) {
     std::cout << "---- Minerals" << std::endl;
@@ -1257,7 +1272,7 @@ void Beaker::DisplayIonExchangeSites(void) const {
   if (ion_exchange_rxns_.size() > 0) {
     std::cout << "---- Ion Exchange Sites" << std::endl;
     std::cout << std::setw(15) << "Species"
-              << std::setw(15) << "Location"
+              << std::setw(20) << "Location"
               << std::setw(10) << "Charge"
               << std::setw(10) << "CEC"
               << std::endl;

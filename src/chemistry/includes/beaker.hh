@@ -155,6 +155,7 @@ class Beaker {
   void DisplayParameters(void) const;
   void DisplayPrimary(void) const;
   void DisplayAqueousEquilibriumComplexes(void) const;
+  void DisplayGeneralKinetics(void) const;
   void DisplayMinerals(void) const;
   void DisplayMineralKinetics(void) const;
   void DisplayIonExchangeRxns(void) const;

@@ -145,7 +145,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
     }
     char first = '\0';
     if (line.length() > 0) first = line[0];
-    if (first == '#' || first == '\0' || first == ' ') {
+    if (first == '#' || first == '\0') {
       line_type = kCommentLine;
     } else if (first == '<') {
       if (line == kSectionPrimary) {
@@ -496,7 +496,7 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
     forward_stoichiometries.push_back(d);
   }
 
-  // parse forward rates
+  // parse backward rates
   std::vector<double> backward_stoichiometries;
   std::vector<int> backward_species_ids;
   backward_stoichiometries.clear();
@@ -799,7 +799,7 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
   no_spaces.tokenize(exchanger_data.at(2), space);
   std::string exchanger_location(no_spaces.at(0));
 
-  IonExchangeSite exchanger(exchanger_name);
+  IonExchangeSite exchanger(exchanger_name, exchanger_charge, exchanger_location);
   IonExchangeRxn ionx_rxn(exchanger);
 
   this->AddIonExchangeRxn(ionx_rxn);

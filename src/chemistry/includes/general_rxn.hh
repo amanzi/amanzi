@@ -38,6 +38,7 @@ class GeneralRxn {
                                  const std::vector<Species> primarySpecies,
                                  double por_den_sat_vol);
   void display(void) const;
+  void Display(void) const;
 
  protected:
 
