@@ -17,7 +17,7 @@ namespace Amanzi {
     Restart(); // this object will not create any output 
     ~Restart();
    
-    void dump_state (State& S);
+    void dump_state (State& S, bool force = false);
     void read_state (State& S, std::string& filename);
     void create_files ();
     void read_parameters(Teuchos::ParameterList& plist);

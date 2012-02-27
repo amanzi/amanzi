@@ -1021,8 +1021,12 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
           sublist.set<Teuchos::Array<double> >("gradient", ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value"));
           sublist.set<Teuchos::Array<double> >("reference coordinate", ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate"));
           sublist.set<double>("reference value", ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value"));
-        } else {
-          Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, or IC: Linear Pressure."));
+        } else if (ic_for_region->isSublist("IC: File Pressure")) {
+	  Teuchos::ParameterList& sublist = stt_mat.sublist("file pressure");
+	  sublist.set<std::string>("file name", ic_for_region->sublist("IC: File Pressure").get<std::string>("File"));
+	  sublist.set<std::string>("label", ic_for_region->sublist("IC: File Pressure").get<std::string>("Label"));
+	} else {
+          Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, IC: Linear Pressure, or IC: File Pressure."));
         }
 
         // write the initial conditions for saturation, since this is not a primary variable, this is not required
