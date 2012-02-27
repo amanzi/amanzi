@@ -589,7 +589,7 @@ void MPC::cycle_driver () {
       }
 
       // write restart dump if requested
-      restart->dump_state(*S);
+      restart->dump_state(*S, force);
     }
     
   }

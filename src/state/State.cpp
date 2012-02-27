@@ -194,19 +194,17 @@ void State::initialize_from_parameter_list()
       set_darcy_flux(u, region);
 
       // set the pressure
-      if (sublist.isSublist("uniform pressure"))
-      {
+      if (sublist.isSublist("uniform pressure")) {
         const Teuchos::ParameterList&  unif_p_list = sublist.sublist("uniform pressure");
         set_uniform_pressure( unif_p_list, region );
-      }
-      else if (sublist.isSublist("linear pressure"))
-      {
+      } else if (sublist.isSublist("linear pressure")) {
         const Teuchos::ParameterList&  lin_p_list = sublist.sublist("linear pressure");
         set_linear_pressure( lin_p_list, region );
-      }
-      else
-      {
-        // maybe throw an exception
+      } else if (sublist.isSublist("file pressure")) {
+	const Teuchos::ParameterList&  file_p_list = sublist.sublist("file pressure");
+	set_file_pressure(file_p_list, region);
+      } else {
+	// ?
       }
 
       // set the saturation
@@ -346,6 +344,32 @@ void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
   }
 
 }
+
+
+
+void State::set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
+                                     const std::string& region) {
+
+  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
+    throw std::exception();
+  }
+
+  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
+                                                         Amanzi::AmanziMesh::CELL,
+                                                         Amanzi::AmanziMesh::OWNED);
+
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+
+  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                              &cell_ids);
+
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin();
+       c != cell_ids.end();  c++) {
+    v[*c] = x[*c];
+  }
+}
+
+
 
 
 void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector& v,
@@ -766,6 +790,23 @@ void State::set_linear_pressure ( const Teuchos::ParameterList& lin_p_list, cons
   set_cell_value_in_region ( lin_p, *pressure, region );
 
 };
+
+
+void State::set_file_pressure ( const Teuchos::ParameterList& file_p_list, const std::string& region )
+{
+  // get parameters from parameter list
+  const std::string filename = file_p_list.get<std::string>("file name");
+  const std::string label = file_p_list.get<std::string>("label");
+
+  // read the pressure variable from the checkpoint file
+  Amanzi::HDF5_MPI *checkpoint_input = new Amanzi::HDF5_MPI(*mesh_maps->get_comm(), filename);   
+  
+  Epetra_Vector cell_vector(mesh_maps->cell_epetra_map(false));
+  checkpoint_input->readData(cell_vector,label);
+
+  set_cell_value_in_region ( cell_vector, *pressure, region );
+};
+
 
 void State::set_uniform_saturation ( const Teuchos::ParameterList& unif_s_list, const std::string& region )
 {
