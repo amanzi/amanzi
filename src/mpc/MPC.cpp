@@ -501,8 +501,8 @@ void MPC::cycle_driver () {
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << "Cycle = " << iter;
-        *out << ",  Time(secs) = "<< S->get_time(); // / (60*60*24);
-        *out << ",  dT(secs) = " << mpc_dT; // / (60*60*24)  << std::endl;
+        *out << ",  Time(secs) = "<< S->get_time() / (365.25*60*60*24);
+        *out << ",  dT(secs) = " << mpc_dT / (365.25*60*60*24);
 	*out << " " << limitstring;
         *out << std::endl;
       }
@@ -598,7 +598,7 @@ void MPC::cycle_driver () {
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
   {
     *out << "Cycle = " << iter;
-    *out << ",  Time(secs) = "<< S->get_time(); // / (60*60*24);
+    *out << ",  Time(secs) = "<< S->get_time()/ (365.25*60*60*24);
     *out << std::endl;
   }
 

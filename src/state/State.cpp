@@ -805,7 +805,7 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
       }
       
       // create the new time step...
-      vis.create_timestep(get_time(),get_cycle());
+      vis.create_timestep(get_time()/(365.25*24*60*60),get_cycle());
       
       // dump all the state vectors into the file
       vis.write_vector(*get_pressure(), "pressure");
