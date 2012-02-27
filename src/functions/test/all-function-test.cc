@@ -100,7 +100,7 @@ TEST(tabular_test)
   z = 0.5;
   CHECK_EQUAL((*f)(&z), 1.0);
   z = 1.0;
-  CHECK_EQUAL((*f)(&z), 3.0);
+  CHECK_EQUAL((*f)(&z), 1.0);
   z = 2.0;
   CHECK_EQUAL((*f)(&z), 2.5);
   z = 3.0;
@@ -108,7 +108,7 @@ TEST(tabular_test)
   z = 3.25;
   CHECK_EQUAL((*f)(&z), 2.0);
   z = 3.5;
-  CHECK_EQUAL((*f)(&z), 0.0);
+  CHECK_EQUAL((*f)(&z), 2.0);
   z = 4.0;
   CHECK_EQUAL((*f)(&z), 0.0);
   g = f->Clone();
