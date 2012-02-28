@@ -51,6 +51,8 @@ class Darcy_PK : public Flow_PK {
   void processParameterList();
   void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
 
+  void addTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+
   // control methods
   void print_statistics() const;
   void resetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list = dp_list_new; }

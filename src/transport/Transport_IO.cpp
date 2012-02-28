@@ -27,7 +27,6 @@ void Transport_PK::process_parameter_list()
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
   Teuchos::ParameterList transport_list;
-  // transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   transport_list = parameter_list;
 
   // global transport parameters
@@ -38,15 +37,17 @@ void Transport_PK::process_parameter_list()
   temporal_disc_order = transport_list.get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  string dispersivity_name = transport_list.get<string>("dispersivity model", "none");
+  string dispersivity_name = transport_list.get<string>("dispersivity model", "isotropic");
   if (dispersivity_name == "isotropic") { 
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC;
-  }
-  else if (dispersivity_name == "Bear") {
+  } else if (dispersivity_name == "Bear") {
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_BEAR;
-  }
-  else if (dispersivity_name == "Lichtner") {
+  } else if (dispersivity_name == "Lichtner") {
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
+  } else {
+    Errors::Message msg;
+    msg << "Dispersivity model is wrong (isotropic, Bear, Lichtner)." << "\n";
+    Exceptions::amanzi_throw(msg);    
   }
 
   dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
@@ -59,12 +60,22 @@ void Transport_PK::process_parameter_list()
     advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   } else if (advection_limiter_name == "Kuzmin") {
     advection_limiter = TRANSPORT_LIMITER_KUZMIN;
+  } else {
+    Errors::Message msg;
+    msg << "Advection limiter is wrong (BarthJespersen, Tensorial, Kuzmin)." << "\n";
+    Exceptions::amanzi_throw(msg);    
   }
 
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   string flow_mode_name = transport_list.get<string>("flow mode", "transient");
   if (flow_mode_name == "steady-state") {
     flow_mode = TRANSPORT_FLOW_STEADYSTATE;
+  } else if (flow_mode_name == "transient") {
+    flow_mode = TRANSPORT_FLOW_TRANSIENT;
+  } else {
+    Errors::Message msg;
+    msg << "Flow mode is wrong (steady-state, transient)." << "\n";
+    Exceptions::amanzi_throw(msg);
   }  
    
   // control parameter

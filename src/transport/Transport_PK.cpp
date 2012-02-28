@@ -236,7 +236,7 @@ void Transport_PK::advance(double dT_MPC)
   }
 
   // DEBUG
-  // writeGMVfile(TS_nextMPC);
+  writeGMVfile(TS_nextMPC);
 }
 
 

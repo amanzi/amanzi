@@ -31,7 +31,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> F
 
   FS = FS_MPC;
   dp_list = flow_list.sublist("Darcy Problem");
-
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
 
@@ -209,7 +208,29 @@ int Darcy_PK::advance(double dT_MPC)
   }
 
   double time = T_internal;
-  // missing code... (lipnikov@lanl.gov)
+  // work-around limited support for tensors
+  setAbsolutePermeabilityTensor(K);
+  for (int c=0; c<K.size(); c++) K[c] *= rho_ / mu_;
+
+  // calculate and assemble elemental stifness matrices
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+  matrix->createMFDrhsVectors();
+  addGravityFluxes_MFD(K, *Krel_faces, matrix);
+  addTimeDerivativeSpecificStorage(*solution_cells, dT, matrix);
+  matrix->applyBoundaryConditions(bc_markers, bc_values);
+  matrix->assembleGlobalMatrices();
+  matrix->computeSchurComplement(bc_markers, bc_values);
+  matrix->update_ML_preconditioner();
+
+  rhs = matrix->get_rhs();
+  Epetra_Vector b(*rhs);
+  solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
+  solver->SetLHS(&*solution);  // initial solution guess 
+
+  solver->Iterate(max_itrs_sss, convergence_tol_sss);
+  num_itrs_sss = solver->NumIters();
+  residual_sss = solver->TrueResidual();
+
   num_itrs_trs++;
 
   flow_status_ = FLOW_NEXT_STATE_COMPLETE;
@@ -251,6 +272,24 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
       for (int i=0; i<dim-1; i++) K[c](i, i) = horizontal_permeability[c];
       K[c](dim-1, dim-1) = vertical_permeability[c];
     }
+  }
+}
+
+
+/* ******************************************************************
+* Adds time derivative to cell-based part of MFD algebraic system.                                               
+****************************************************************** */
+void Darcy_PK::addTimeDerivativeSpecificStorage(
+   Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
+{
+  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
+  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+
+  for (int c=0; c<ncells_owned; c++) {
+    double volume = mesh_->cell_volume(c);
+    double factor = volume / dT_prec;
+    Acc_cells[c] += factor;
+    Fc_cells[c] += factor * pressure_cells[c];
   }
 }
 
