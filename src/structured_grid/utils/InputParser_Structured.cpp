@@ -321,21 +321,23 @@ namespace Amanzi {
                             if (amr_list.isParameter(regrid_int_str)) {
                                 regrid_int = amr_list.get<Array<int> >(regrid_int_str);
                             }
-                            if (do_amr_subcycling) {
-                                if (regrid_int.size() < max_level) {
-                                    MyAbort("Must provide a regridding interval for each refined level");
+                            if (max_level > 0) {
+                                if (do_amr_subcycling) {
+                                    if (regrid_int.size() < max_level) {
+                                        MyAbort("Must provide a regridding interval for each refined level");
+                                    }
                                 }
-                            }
-                            else {
-                                if (regrid_int.size() != 1) {
-                                    MyAbort("Subcycling is disabled, only a single regridding interval is supported");
-                                }                                
-                            }
+                                else {
+                                    if (regrid_int.size() != 1) {
+                                        MyAbort("Subcycling is disabled, only a single regridding interval is supported");
+                                    }                                
+                                }
 
-                            for (int k=0; k<regrid_int.size(); ++k) {
-                                if (regrid_int[k] <= 0) {
-                                    MyAbort("Each value in \"" + regrid_int_str
-                                            + "\" must be values must be a postive integer");
+                                for (int k=0; k<regrid_int.size(); ++k) {
+                                    if (regrid_int[k] <= 0) {
+                                        MyAbort("Each value in \"" + regrid_int_str
+                                                + "\" must be values must be a postive integer");
+                                    }
                                 }
                             }
                             amr_out_list.set<Array<int> >("regrid_int",regrid_int);
