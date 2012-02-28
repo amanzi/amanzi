@@ -8,13 +8,12 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 
-#include "Mesh_STK.hh"
 #include "MeshFactory.hh"
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
 
-#include "ImplicitTIBDF2fnBase.hh"
-#include "ImplicitTIBDF2.hh"
+#include "BDFFnBase.hh"
+#include "BDF2TimeIntegrator.hh"
 
 using namespace Amanzi;
 
@@ -35,7 +34,7 @@ SUITE(ODEIntegrationTests) {
     test_data() {
       // comm and mesh for maps
       comm = new Epetra_MpiComm(MPI_COMM_SELF);
-      AmanziMesh::MeshFactory mesh_fact(*comm);
+      AmanziMesh::MeshFactory mesh_fact(comm);
       mesh = mesh_fact(0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 2, 1, 1);
 
       // plist for setting up integrator
@@ -59,21 +58,26 @@ SUITE(ODEIntegrationTests) {
   };
 
   // ODE for testing
-  class nonlinearODE : public Amanzi::ImplicitTIBDF2fnBase {
+  class nonlinearODE : public Amanzi::BDFFnBase {
   public:
     nonlinearODE(double atol, double rtol) :
       rtol_(rtol), atol_(atol) {
     }
 
-    void fun(double t, Teuchos::RCP<const Amanzi::TreeVector> u,
-             Teuchos::RCP<const Amanzi::TreeVector> udot,
+    void fun(double told, double tnew, Teuchos::RCP<Amanzi::TreeVector> uold,
+             Teuchos::RCP<Amanzi::TreeVector> unew,
              Teuchos::RCP<Amanzi::TreeVector> f) {
       // f = udot - u^2
       // note that the exact solution is
       // uex = u0/(1-u0(t-t0))
 
-      f->Multiply(1.0, *u, *u, 0.0);
-      f->Update(1.0, *udot, -1.0);
+      // compute udot... f <-- (unew-uold)/(tnew-told)
+      *f = *unew;
+      double hinv(1.0/(tnew-told));
+      f->Update(-hinv,*uold,hinv);
+
+      // f <-- f - unew^2
+      f->Multiply(-1.0, *unew, *unew, 1.0);
     }
 
     void precon(Teuchos::RCP<const Amanzi::TreeVector> u, Teuchos::RCP<Amanzi::TreeVector> Pu) {
@@ -87,7 +91,7 @@ SUITE(ODEIntegrationTests) {
       return  norm_du/(atol_+rtol_*norm_u);
     }
 
-    void update_precon(double t, Teuchos::RCP<const Amanzi::TreeVector> up, double h, int& errc) {
+    void update_precon(double t, Teuchos::RCP<const Amanzi::TreeVector> up, double h) {
       // do nothing since the preconditioner is the identity
     }
 
@@ -106,13 +110,13 @@ SUITE(ODEIntegrationTests) {
     plist->set("Nonlinear solver tolerance", 0.01);
     plist->set("NKA max vectors",5);
     plist->set("NKA drop tolerance",0.01);
+    plist->set("Minimum allowed time step",1e-12);
 
     // create the PDE problem
     nonlinearODE NF (1e-6, 1e-6);
 
     // create the time stepper
-    Amanzi::ImplicitTIBDF2 TS(NF, init);
-    TS.setParameterList(plist);
+    Amanzi::BDF2TimeIntegrator TS(&NF, plist, init);
 
     // initial value
     u->PutScalar(-1.0);
@@ -139,18 +143,18 @@ SUITE(ODEIntegrationTests) {
         std::cout << "adjusting h, to hit the final time exactly...\n";
         h = tout - tlast;
       }
-      TS.bdf2_step(h, 0.0, u, hnext);
+      hnext = TS.time_step(h, u);
 
       u->Print(std::cout);
 
       TS.commit_solution(h, u);
 
-      TS.write_bdf2_stepping_statistics();
+      //TS.write_bdf2_stepping_statistics();
 
       h = hnext;
       i++;
 
-      tlast=TS.most_recent_time();
+      tlast=TS.time();
     } while (tout > tlast);
 
     // compute the error with the exact solution

@@ -2,7 +2,7 @@
 
 include_directories(${ATS_SOURCE_DIR}/src/data_structures)
 include_directories(${ATS_SOURCE_DIR}/src/ats_solvers)
-add_library(time_integration SolutionHistory.cc ImplicitTIBDF2.cc ExplicitTIRK.cc)
+add_library(time_integration SolutionHistory.cc BDF1TimeIntegrator.cc BDF2TimeIntegrator.cc ExplicitTIRK.cc)
 
 
 if (BUILD_TESTS)
