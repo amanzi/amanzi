@@ -27,7 +27,8 @@ class ActivityModelPitzerHWM : public ActivityModel {
  public:
 
   ActivityModelPitzerHWM(const std::string& database, const std::vector<Species>& primary_species,
-		                 const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
+		                 const std::vector<AqueousEquilibriumComplex>& aqueous_complexes,
+		                 const std::string& jfunction_approach_);
   ~ActivityModelPitzerHWM();
   double Evaluate(const Species& species);
   void EvaluateVector(std::vector<double>& gamma, double& water_activity,
@@ -104,6 +105,7 @@ class ActivityModelPitzerHWM : public ActivityModel {
   int index_h2o_species;                               // Local indice of water species
   int index_k_species;                                 // Local indice of K species   (usefull for macinnes convention)
   bool macinnes_scaled;                                // macinnes_scaled=true, then activity coefficients will be scaled according macinnes convention
+  std::string jfunction_approach;                      // Name of the J's functions approach
   std::vector<std::vector<double> > g_function;
   std::vector<std::vector<double> > g_pri_function;
   std::vector<std::vector<double> > f_function;
