@@ -157,7 +157,8 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 
 /* ******************************************************************
 * Calculates steady-state solution assuming that absolute permeability 
-* does not depend on time.                                                    
+* does not depend on time. The boundary conditions are calculated
+* only once, during the initialization step.                                                
 ****************************************************************** */
 int Darcy_PK::advanceToSteadyState()
 {
@@ -195,7 +196,8 @@ int Darcy_PK::advanceToSteadyState()
 
 
 /* ******************************************************************* 
-* Performs one time step of size dT (under *development*). 
+* Performs one time step of size dT. The boundary conditions are 
+* calculated only once, during the initialization step.  
 ******************************************************************* */
 int Darcy_PK::advance(double dT_MPC) 
 {
@@ -277,7 +279,8 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 
 
 /* ******************************************************************
-* Adds time derivative to cell-based part of MFD algebraic system.                                               
+* Adds time derivative to cell-based part of MFD algebraic system.
+* Specific storage at the moment is 1.                                              
 ****************************************************************** */
 void Darcy_PK::addTimeDerivativeSpecificStorage(
    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)

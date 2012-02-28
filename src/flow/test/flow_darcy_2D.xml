@@ -58,7 +58,7 @@
 
   <!--  FLOW  -->
   <ParameterList name="Flow">
-    <ParameterList name="Richards Problem">
+    <ParameterList name="Darcy Problem">
       <Parameter name="Atmospheric pressure" type="double" value="0.0"/>
       <ParameterList name="Diffusion Preconditioner">
         <ParameterList name="ML Parameters">
