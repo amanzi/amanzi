@@ -8,7 +8,6 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_Vector.h"
 
-#include "Mesh_STK.hh"
 #include "MeshFactory.hh"
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
@@ -30,7 +29,7 @@ SUITE(SolutionHistoryTests) {
 
     test_data() {
       comm = new Epetra_MpiComm(MPI_COMM_SELF);
-      AmanziMesh::MeshFactory mesh_fact(*comm);
+      AmanziMesh::MeshFactory mesh_fact(comm);
       mesh = mesh_fact(0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 2, 1, 1);
 
       // non-ghosted x

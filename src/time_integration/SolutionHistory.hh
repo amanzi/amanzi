@@ -15,9 +15,10 @@ namespace Amanzi {
 class SolutionHistory {
 
  public:
-  SolutionHistory (const int mvec, const Teuchos::RCP<TreeVector> x); 
-  SolutionHistory (const int mvec, double t, const Teuchos::RCP<TreeVector> x);
-  SolutionHistory (const int mvec, double t, const Teuchos::RCP<TreeVector> x, const Teuchos::RCP<TreeVector> xdot);
+  SolutionHistory (const int mvec, const Teuchos::RCP<const TreeVector> x); 
+  SolutionHistory (const int mvec, double t, const Teuchos::RCP<const TreeVector> x);
+  SolutionHistory (const int mvec, double t, const Teuchos::RCP<const TreeVector> x, 
+		   Teuchos::RCP<const TreeVector> xdot);
 
 
   // Flushes the accumulated solution vectors from an existing history
@@ -26,8 +27,9 @@ class SolutionHistory {
   // it is also recorded as the solution vector time derivative at time
   // index T.
 
-  void flush_history(const double t, const Teuchos::RCP<TreeVector> x);
-  void flush_history(const double t, const Teuchos::RCP<TreeVector> x, const Teuchos::RCP<TreeVector> xdot);
+  void flush_history(const double t, const Teuchos::RCP<const TreeVector> x);
+  void flush_history(const double t, const Teuchos::RCP<const TreeVector> x, 
+		     const Teuchos::RCP<const TreeVector> xdot);
 
 
 
@@ -40,7 +42,8 @@ class SolutionHistory {
   // discarded, it is the derivative vector that gets discarded.
 
   void record_solution(const double t, const Teuchos::RCP<const TreeVector> x);
-  void record_solution(const double t, const Teuchos::RCP<const TreeVector> x, const Teuchos::RCP<const TreeVector> xdot);
+  void record_solution(const double t, const Teuchos::RCP<const TreeVector> x, 
+		       const Teuchos::RCP<const TreeVector> xdot);
 
 
 
@@ -53,22 +56,22 @@ class SolutionHistory {
   // maximal interpolation order is used given the available data; once
   // the history is fully populated, the order of interpolation is MVEC-1.
 
-  void interpolate_solution(const double t, Teuchos::RCP<TreeVector> x);
-  void interpolate_solution(const double t, Teuchos::RCP<TreeVector> x, const int order);
+  void interpolate_solution(const double t, const Teuchos::RCP<TreeVector> x) const;
+  void interpolate_solution(const double t, const Teuchos::RCP<TreeVector> x, const int order) const;
 
 
 
   // Function returns the most recent solution vector
   // maintained by the history.
 
-  void most_recent_solution(Teuchos::RCP<TreeVector> x);
+  void most_recent_solution(Teuchos::RCP<TreeVector> x) const;
 
 
 
   // Function returns the the time index T associated with the most
   // recent solution vector maintained by the history THIS.
 
-  double most_recent_time();
+  double most_recent_time() const;
 
 
 
@@ -79,7 +82,7 @@ class SolutionHistory {
   // length of the result equals one less than the number of solution
   // vectors being maintained by the history.
 
-  void time_deltas(std::vector<double>& h);
+  void time_deltas(std::vector<double>& h) const;
 
 
 
@@ -87,13 +90,13 @@ class SolutionHistory {
   // maintained in the history structure THIS.  The number will be
   // between 0 and the value of MVEC used to create the structure.
 
-  int history_size();
+  int history_size() const;
 
   void Print(ostream& os) const;
 
  private:
 
-  void initialize(const int mvec, const Teuchos::RCP<TreeVector> v);
+  void initialize(const int mvec, const Teuchos::RCP<const TreeVector> v);
 
   int nvec;
   std::vector<double> times;                   // times

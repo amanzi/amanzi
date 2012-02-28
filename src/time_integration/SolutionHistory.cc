@@ -6,14 +6,14 @@
 namespace Amanzi {
 
 
-SolutionHistory::SolutionHistory(const int mvec, Teuchos::RCP<TreeVector> x) {
+SolutionHistory::SolutionHistory(const int mvec, const Teuchos::RCP<const TreeVector> x) {
   ASSERT(mvec>0);
 
   initialize(mvec, x);
 }
 
 
-SolutionHistory::SolutionHistory(const int mvec, const double t, Teuchos::RCP<TreeVector> x) {
+SolutionHistory::SolutionHistory(const int mvec, const double t, const Teuchos::RCP<const TreeVector> x) {
   ASSERT(mvec>0);
 
   initialize(mvec, x);
@@ -22,7 +22,8 @@ SolutionHistory::SolutionHistory(const int mvec, const double t, Teuchos::RCP<Tr
 
 
 SolutionHistory::SolutionHistory(const int mvec, const double t, 
-                                 Teuchos::RCP<TreeVector> x, Teuchos::RCP<TreeVector> xdot) {
+                                 const Teuchos::RCP<const TreeVector> x, 
+                                 const Teuchos::RCP<const TreeVector> xdot) {
   ASSERT(mvec>0);
 
   initialize(mvec, x);
@@ -30,7 +31,7 @@ SolutionHistory::SolutionHistory(const int mvec, const double t,
 }
 
 
-void SolutionHistory::initialize(const int mvec, Teuchos::RCP<TreeVector> v) {
+void SolutionHistory::initialize(const int mvec, const Teuchos::RCP<const TreeVector> v) {
   ASSERT(mvec>0);
 
   nvec = 0;
@@ -42,13 +43,14 @@ void SolutionHistory::initialize(const int mvec, Teuchos::RCP<TreeVector> v) {
 }
 
 
-void SolutionHistory::flush_history(const double t, Teuchos::RCP<TreeVector> x) {
+void SolutionHistory::flush_history(const double t, const Teuchos::RCP<const TreeVector> x) {
   nvec = 0;
   record_solution(t,x);
 }
 
 
-void SolutionHistory::flush_history(const double t, Teuchos::RCP<TreeVector> x, Teuchos::RCP<TreeVector> xdot) {
+void SolutionHistory::flush_history(const double t, const Teuchos::RCP<const TreeVector> x, 
+                                    const Teuchos::RCP<const TreeVector> xdot) {
   nvec = 0;
   record_solution(t,x,xdot);
 }
@@ -113,7 +115,7 @@ void SolutionHistory::record_solution(const double t, const Teuchos::RCP<const T
 }
 
 
-void SolutionHistory::interpolate_solution(const double t, Teuchos::RCP<TreeVector> x) {
+void SolutionHistory::interpolate_solution(const double t, const Teuchos::RCP<TreeVector> x) const {
 
   int order = nvec-1;
 
@@ -121,7 +123,7 @@ void SolutionHistory::interpolate_solution(const double t, Teuchos::RCP<TreeVect
 }
 
 
-void SolutionHistory::interpolate_solution(const double t, Teuchos::RCP<TreeVector> x, const int order) {
+void SolutionHistory::interpolate_solution(const double t, const Teuchos::RCP<TreeVector> x, const int order) const {
 
   ASSERT(order<nvec);
   ASSERT(order>0);
@@ -135,18 +137,18 @@ void SolutionHistory::interpolate_solution(const double t, Teuchos::RCP<TreeVect
 }
 
 
-void SolutionHistory::most_recent_solution(Teuchos::RCP<TreeVector> x) {
+void SolutionHistory::most_recent_solution(Teuchos::RCP<TreeVector> x) const {
 
   *x = *d[0];
 }
 
 
-double SolutionHistory::most_recent_time() {
+double SolutionHistory::most_recent_time() const {
   return times[0];
 }
 
 
-void SolutionHistory::time_deltas(std::vector<double>& h) {
+void SolutionHistory::time_deltas(std::vector<double>& h)  const {
 
   h.resize(nvec-1);
 
@@ -155,7 +157,7 @@ void SolutionHistory::time_deltas(std::vector<double>& h) {
 }
 
 
-int SolutionHistory::history_size() {
+int SolutionHistory::history_size() const {
   return nvec;
 }
 
