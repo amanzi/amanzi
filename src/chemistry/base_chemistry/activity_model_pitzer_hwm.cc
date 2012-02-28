@@ -44,8 +44,9 @@ const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope=9.3816144;    // 
     @details Create the object
 */
 ActivityModelPitzerHWM::ActivityModelPitzerHWM(const std::string& namedatabase,
-		                                 const std::vector<Species>& primary_species,
-		                                 const std::vector<AqueousEquilibriumComplex>& aqueous_complexes)
+		                                       const std::vector<Species>& primary_species,
+		                                       const std::vector<AqueousEquilibriumComplex>& aqueous_complexes,
+		                                       const std::string& jfunction_approach_)
     : ActivityModel(),
       aphi_debye_huckel_slope(aphi_debye_huckel_slope25),
       number_b_functions(0),
@@ -60,18 +61,25 @@ ActivityModelPitzerHWM::ActivityModelPitzerHWM(const std::string& namedatabase,
       index_h2o_species(-1),
       index_k_species(-1),
       number_species(0),
-      macinnes_scaled(false)
+      macinnes_scaled(false),
+      jfunction_approach("pitzer1975")
       {
+//---------------------------------------------------------------------------------------------
+// Store the J's functions approach name
+//---------------------------------------------------------------------------------------------
+jfunction_approach=jfunction_approach_;
 //---------------------------------------------------------------------------------------------
 // Store constant values for j functions
 // These constants were taken from Table III in Pitzer (1975).
 //---------------------------------------------------------------------------------------------
-const_j_functions.push_back(4.118);
-const_j_functions.push_back(7.247);
-const_j_functions.push_back(-4.408);
-const_j_functions.push_back(1.837);
-const_j_functions.push_back(-0.251);
-const_j_functions.push_back(0.0164);
+if (jfunction_approach=="pitzer1975") {
+   const_j_functions.push_back(4.118);
+   const_j_functions.push_back(7.247);
+   const_j_functions.push_back(-4.408);
+   const_j_functions.push_back(1.837);
+   const_j_functions.push_back(-0.251);
+   const_j_functions.push_back(0.0164);
+}
 //---------------------------------------------------------------------------------------------
 // Read Pitzer coefficients database
 //---------------------------------------------------------------------------------------------
@@ -413,33 +421,46 @@ for (int j=0; j<number_b_functions; j++) {
 void ActivityModelPitzerHWM::ComputeJFunctions(){
 const double e1(4.581), e2(0.7237),
 		     e3(0.012), e4(0.528), e12(7.8963);
-for (int i=0;i<number_j_functions; i++) {
- double zizj(charge_product.at(i));
- double x(2.352*sqrt(I_)*zizj);
- double x2(x*x);
- double x3(x2*x);
- double x4(x3*x);
- if (x<=0.03) {
-  double s1(const_j_functions.at(5)/x);
-  double s3(6.0*s1);
-  for (int k=4; k>=0; k--) {
-	s1=(s1+const_j_functions.at(k))/x;
-	s3=(s3+k*const_j_functions.at(k))/x;
-  }
-  s3=s3/x;
-  double s1q(s1*s1);
-  j_function.at(i)=-(1.0/6.0)*x2*log(x)*exp(-10.0*x2)+(1.0/s1);
-  j_pri_function.at(i)=((10.0*x2-1.0)*log(x)-0.5)*(x/3.0)*exp(-10.0*x2)+(s3/s1q);
 
- } else {
-  double xc4(pow(x,e4));
-  double xc2(pow(x,-e2));
-  double td1(e1*xc2*exp(-e3*xc4));
-  double td(4.0+td1);
-  j_function.at(i)=x/td;
-  j_pri_function.at(i)=(j_function.at(i)/x2)*(x+td1*(e2+e3*e4*xc4)*j_function.at(i));
- }
+if (jfunction_approach=="pitzer1975") {
+
+  for (int i=0;i<number_j_functions; i++) {
+
+	double zizj(charge_product.at(i));
+    double x(2.352*sqrt(I_)*zizj);
+    double x2(x*x);
+    double x3(x2*x);
+    double x4(x3*x);
+    if (x<=0.03) {
+     double s1(const_j_functions.at(5)/x);
+     double s3(6.0*s1);
+     for (int k=4; k>=0; k--) {
+	   s1=(s1+const_j_functions.at(k))/x;
+	   s3=(s3+k*const_j_functions.at(k))/x;
+     }
+     s3=s3/x;
+     double s1q(s1*s1);
+     j_function.at(i)=-(1.0/6.0)*x2*log(x)*exp(-10.0*x2)+(1.0/s1);
+     j_pri_function.at(i)=((10.0*x2-1.0)*log(x)-0.5)*(x/3.0)*exp(-10.0*x2)+(s3/s1q);
+
+    } else {
+     double xc4(pow(x,e4));
+     double xc2(pow(x,-e2));
+     double td1(e1*xc2*exp(-e3*xc4));
+     double td(4.0+td1);
+     j_function.at(i)=x/td;
+     j_pri_function.at(i)=(j_function.at(i)/x2)*(x+td1*(e2+e3*e4*xc4)*j_function.at(i));
+    }
+   }
+
+} else {
+
+	std::ostringstream error_stream;
+	error_stream << "Name for the J's functions approach not recognized" << "\n";
+	Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+
 }
+
 }
 /*!
     @brief Display

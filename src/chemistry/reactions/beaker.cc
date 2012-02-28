@@ -138,7 +138,7 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
                    const Beaker::BeakerParameters& parameters) {
   SetParameters(parameters);
 
-  this->SetupActivityModel(parameters.activity_model_name, parameters.pitzer_database);
+  this->SetupActivityModel(parameters.activity_model_name, parameters.pitzer_database, parameters.jfunction_pitzer);
   this->resize(static_cast<int>(this->primary_species().size()));
   this->VerifyComponentSizes(components);
 }  // end Setup()
@@ -235,7 +235,7 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
   }
 }  // end SetComponents()
 
-void Beaker::SetupActivityModel(std::string model, std::string pitzer_database) {
+void Beaker::SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer) {
   if (model != ActivityModelFactory::unit &&
       model != ActivityModelFactory::debye_huckel &&
       model != ActivityModelFactory::pitzer_hwm) {
@@ -246,7 +246,7 @@ void Beaker::SetupActivityModel(std::string model, std::string pitzer_database) 
   }
   ActivityModelFactory amf;
   // HWM model was added
-  activity_model_ = amf.Create(model, pitzer_database, primarySpecies_, aqComplexRxns_);
+  activity_model_ = amf.Create(model, pitzer_database, primarySpecies_, aqComplexRxns_, jfunction_pitzer);
   if (verbosity() == kDebugBeaker) {
     activity_model_->Display();
   }
