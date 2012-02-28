@@ -406,7 +406,7 @@ bool MeshAuditOld::check_cell_to_nodes() const
       mesh->cell_to_nodes(j, cnode.begin(), cnode.end()); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cnode.size(); ++k) {
-        if (cnode[k] < 0 || cnode[k] >= nnode) invalid_refs = true;
+        if (cnode[k] >= nnode) invalid_refs = true;
       }
       if (invalid_refs) bad_cells.push_back(j);
     } catch (...) {
@@ -477,7 +477,7 @@ bool MeshAuditOld::check_cell_to_faces() const
       mesh->cell_to_faces(j, cface.begin(), cface.end()); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cface.size(); ++k) {
-        if (cface[k] < 0 || cface[k] >= nface) invalid_refs = true;
+        if (cface[k] >= nface) invalid_refs = true;
       }
       if (invalid_refs) bad_cells.push_back(j);
     } catch (...) {
@@ -560,7 +560,7 @@ bool MeshAuditOld::check_face_to_nodes() const
       mesh->face_to_nodes(j, fnode.begin(), fnode.end()); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < fnode.size(); ++k) {
-        if (fnode[k] < 0 || fnode[k] >= nnode) invalid_refs = true;
+        if (fnode[k] >= nnode) invalid_refs = true;
       }
       if (invalid_refs) bad_faces.push_back(j);
     } catch (...) {
