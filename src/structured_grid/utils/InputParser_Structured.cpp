@@ -519,7 +519,7 @@ namespace Amanzi {
                                 }
                                 else if (name == Max_Step_str) {
                                     int max_step = prob_list.get<int>(Max_Step_str);
-                                    struc_out_list.set<double>("max_step", max_step);
+                                    struc_out_list.set<int>("max_step", max_step);
                                 }
                                 else if (name == Max_Time_Step_Size_str) {
                                     double max_dt = prob_list.get<double>(Max_Time_Step_Size_str);
