@@ -3,6 +3,9 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <string>
+#include <algorithm>
+#include <boost/lambda/lambda.hpp>
+#include <boost/bind.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -10,6 +13,19 @@
 
 namespace Amanzi {
 namespace AmanziInput {
+
+
+/**
+  * /author   Nathan Barnett
+  * /fn       compareEpsilon
+  * /brief    When handed an element in an array and an epsilon value,
+  *           compares the absolute difference between the two values
+  * /returns  boolean - true if out of epsilon value
+  */
+template <typename T>
+bool compareEpsilon(T& first, T eps) {
+  return fabs(first-*(&first-1))<eps;
+}
 
 
 Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
@@ -79,6 +95,7 @@ Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::P
   return time_macro;
 
 }
+
 
 
 Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist ) {
@@ -266,33 +283,72 @@ Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* 
 
 
 Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* plist ) {
-  Teuchos::ParameterList obs_list;
+  using namespace boost;
+  using boost::bind;
 
+  // Create a parameter list for holding data
+  Teuchos::ParameterList  obs_list;
+  Teuchos::Array<double>  observationPoints;
+
+  // Check if there is an "Output" XML node
   if ( plist->isSublist("Output") ) {
+    // If "Output" exists, check if there is an "Observation Data" subnode
     if ( plist->sublist("Output").isSublist("Observation Data") ) {
-
+      // If both exist, initialize a structure with the XML data
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
-
+      // If the node has value refering to the name of the output file, grab it
       if (olist.isParameter("Observation Output Filename")) {
         obs_list.set<std::string>("Observation Output Filename",olist.get<std::string>("Observation Output Filename"));
       } else {
+      // Otherwise, throw an exception
         Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
       }
-
+      // Iterate through the array
       for ( Teuchos::ParameterList::ConstIterator i = olist.begin();
             i != olist.end(); i++ ) {
+        // If the current iteration node is a "tree"
         if (  olist.isSublist( i->first ) ) {
-          // copy the observation data sublist
+          // copy the observation data sublist into the local list
           obs_list.sublist(i->first) = olist.sublist(i->first);
 
           if ( obs_list.sublist(i->first).isParameter("Time Macro") ) {
             std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
+            // Create a local parameter list and store the time macro (3 doubles)
             Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
             if (time_macro_list.isParameter("Start_Period_Stop")) {
               obs_list.sublist(i->first).set("Start_Period_Stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+              // Grab the times for start, stop, and period
+              Teuchos::Array<double> startPeriodStop = Teuchos::getParameter<Teuchos::Array<double> >(time_macro_list, "Start_Period_Stop");
+              // Since the Teuchos array is a reference, we copy into modifiable variables
+              double start  = startPeriodStop[0];
+              double stop   = startPeriodStop[2];;
+              double period = startPeriodStop[1];
+              // If the stop time from the macro is -1, we have to look elsewhere for the end time
+              if ( stop==-1 ) {
+                if (plist->isSublist("Execution Control")) {
+                  if ( plist->sublist("Execution Control").isSublist("Time Integration Mode") ) {
+                    Teuchos::ParameterList time_integration_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
+                    if (time_integration_mode_list.isSublist("Steady")) {
+                      stop = time_integration_mode_list.sublist("Steady").get<double>("End");
+                    } else if (time_integration_mode_list.isSublist("Transient")) {
+                      stop = time_integration_mode_list.sublist("Transient").get<double>("End");
+                    } else if (time_integration_mode_list.isSublist("Initialize To Steady")) {
+                      stop = time_integration_mode_list.sublist("Initialize To Steady").get<double>("End");
+                    } else {
+                      //throw Exception - no end time value
+                      Exceptions::amanzi_throw(Errors::Message("There is not an end time specified."));
+                    }
+                  }
+                }
+              }
+
+              for (double j=start; j<=stop; j+=period)
+                observationPoints.push_back(j);
             }
             if (time_macro_list.isParameter("Values")) {
               obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
+              Teuchos::Array<double> values = time_macro_list.get<Teuchos::Array<double> >("Values");
+              observationPoints.insert( observationPoints.end(), values.begin(), values.end() );
             }
             obs_list.sublist(i->first).remove("Time Macro");
           }
@@ -300,6 +356,10 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
           if ( obs_list.sublist(i->first).isParameter("Cycle Macro") ) {
             std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
             obs_list.sublist(i->first).set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
+            // Grab our global observation points
+            Teuchos::Array<int> startPeriodStop = get_Cycle_Macro(cycle_macro, plist);
+            for (int j=startPeriodStop[0]; j<=startPeriodStop[2]; j+=startPeriodStop[1]) 
+              observationPoints.push_back((double)j);
             obs_list.sublist(i->first).remove("Cycle Macro");
           }
 
@@ -313,9 +373,18 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
       }
     }
   }
+  // Sort the array of observation points and remove any identical ones
+  std::sort( observationPoints.begin(), observationPoints.end() );
+  // Remove points that are too close together
+  const double epsilon = 1E-6;
+  Teuchos::Array<double>::iterator it = 
+      std::remove_if( observationPoints.begin()+1, observationPoints.end(), 
+          bind(compareEpsilon<double>, _1, epsilon) );
+  observationPoints.resize( it - observationPoints.begin() );
+  obs_list.set<Teuchos::Array<double> >("ObservationPoints", observationPoints);
+  
   return obs_list;
 }
-
 
 
 Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist ) {
@@ -1083,11 +1152,9 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
     Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");
   }
 
-
-
-
   return stt_list;
 }
+
 
 Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
   Teuchos::ParameterList vlist;
