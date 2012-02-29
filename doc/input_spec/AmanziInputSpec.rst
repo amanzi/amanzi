@@ -229,6 +229,15 @@ Usage:
 
    * [S] `"Transient Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
+ * [U] `"Time Period Control`" (Optional)
+
+  * [U] `"Start Times`" [Array double]: List of times at which the current time-integrator will be reinitialized.
+  * [U] `"Initial Time Step`"[Array double]: The initial time step for each time period. If unspecified, Amanzi 
+    will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+  * `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
+    scaled by this factor (default value: 1)
+  * `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
+
  * [SU] `"Verbosity`" [string]: Defaults to `"Medium`"
 
   * [SU] `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
@@ -240,7 +249,6 @@ Usage:
   * [SU] `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
 
   * [SU] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
-
 
  * [SU] `"Numerical Control Parameters`" [list]
 
@@ -295,6 +303,11 @@ Example:
          <Parameter name="Start" type="double" value="0"/>
          <Parameter name="End" type="double" value="1.5768e9"/>
       </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Time Period Control">
+      <Parameter name="Period Start Times" type="Array double" value="{6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
+      <Parameter name="Initial Time Step" type="Array double" value="{60.0, 60.0, 60.0, 800.0}"/>
     </ParameterList>
 
     <Parameter name="Verbosity" type="string" type="High"/>
