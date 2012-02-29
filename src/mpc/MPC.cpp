@@ -60,8 +60,17 @@ void MPC::mpc_init() {
 
   reset_times_.resize(0);
   reset_times_dt_.resize(0);
+  observation_times_.resize(0);
   
   read_parameter_list();
+
+  // now we need to get the observations time from the observation data list
+  observation_times_.resize(0);
+  if (parameter_list.isSublist("Observation Data")) {
+    if (parameter_list.sublist("Observation Data").isParameter("Observation Times")) {
+      observation_times_ = parameter_list.sublist("Observation Data").get<Teuchos::Array<double> >("Observation Times");    
+    }
+  }
 
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
@@ -341,7 +350,7 @@ void MPC::cycle_driver () {
     while (  (S->get_time() < T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
 
       // determine the time step we are now going to take
-      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99, limiter_dT=1e+99;
+      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99, limiter_dT=1e+99, observation_dT=1e+99;
 
 
       if (flow_enabled && flow_model == "Richards") {
@@ -353,6 +362,9 @@ void MPC::cycle_driver () {
 	}
       }
 
+
+      
+
       if (flow_enabled && flow_model == "Richards")  {
 	flow_dT = FPK->get_flow_dT();
 
@@ -362,6 +374,10 @@ void MPC::cycle_driver () {
 	  tslimiter = MPC_LIMITS;
         }
       
+
+
+	
+
 
         // make sure we hit any of the reset times exactly (not in steady mode)
         if (! ti_mode == STEADY) {
@@ -403,9 +419,29 @@ void MPC::cycle_driver () {
         }
       }
 
-      
       // take the mpc time step as the min of all suggested time steps 
       mpc_dT = std::min( std::min( std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT );
+
+      // make sure we hit the observation times exactly
+      if (observation_times_.size()>0) {
+	int next_time_index(-1);
+	for (int ii=0; ii<observation_times_.size(); ii++) {
+	  if (S->get_time() < observation_times_[ii]) {
+	    next_time_index = ii;
+	    break;
+	  }	  
+	}
+	if (next_time_index >= 0) {
+	  // now we are trying to hit the next reset time exactly
+	  if (S->get_time()+2*mpc_dT > observation_times_[next_time_index]) {
+	    limiter_dT = time_step_limiter(S->get_time(), mpc_dT, observation_times_[next_time_index]);
+	    tslimiter = MPC_LIMITS;
+	  }	  
+	}
+      }
+
+      // take the mpc time step as the min of the last limiter and itself 
+      mpc_dT = std::min( mpc_dT, limiter_dT );
 
       // figure out who limits the time step
       if (mpc_dT == flow_dT) {

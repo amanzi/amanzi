@@ -685,6 +685,7 @@ double State::point_value(const std::string& point_region, const std::string& na
   {
     value = 0.0;
     volume = 0.0;
+
     for (int i=0; i<mesh_block_size; i++)
     {
       int ic = cell_ids[i];

@@ -356,10 +356,6 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
           if ( obs_list.sublist(i->first).isParameter("Cycle Macro") ) {
             std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
             obs_list.sublist(i->first).set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
-            // Grab our global observation points
-            Teuchos::Array<int> startPeriodStop = get_Cycle_Macro(cycle_macro, plist);
-            for (int j=startPeriodStop[0]; j<=startPeriodStop[2]; j+=startPeriodStop[1]) 
-              observationPoints.push_back((double)j);
             obs_list.sublist(i->first).remove("Cycle Macro");
           }
 
@@ -381,7 +377,7 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
       std::remove_if( observationPoints.begin()+1, observationPoints.end(), 
           bind(compareEpsilon<double>, _1, epsilon) );
   observationPoints.resize( it - observationPoints.begin() );
-  obs_list.set<Teuchos::Array<double> >("ObservationPoints", observationPoints);
+  obs_list.set<Teuchos::Array<double> >("Observation Times", observationPoints);
   
   return obs_list;
 }
