@@ -235,7 +235,9 @@ PorousMedia::setup_bound_desc()
     const BCRec& bc = desc_lst[State_Type].getBC(0);
     getDirichletFaces(Faces,State_Type,bc);
 
-    tbc_descriptor_map.resize(ntracers);
+    if (do_tracer_transport) {
+        tbc_descriptor_map.resize(ntracers);
+    }
 
     for (int iface = 0; iface < Faces.size(); iface++)
     {
@@ -273,29 +275,31 @@ PorousMedia::setup_bound_desc()
                     BoxLib::Abort();
                 }
 
-                for (int n=0; n<ntracers; ++n) {
-                    const PArray<RegionData>& tbcs = PorousMedia::TBCs(n);
-                    Array<int> myTBCs;
-                    for (int i=0; i<tbcs.size(); ++i) {
-                        const PArray<Region>& tregions = tbcs[i].Regions();
-                        int tfound = 0;
-                        for (int j=0; j<tregions.size(); ++j) {
-                            if (tregions[j].purpose == purpose) {
-                                tfound++;
+                if (do_tracer_transport) {
+                    for (int n=0; n<ntracers; ++n) {
+                        const PArray<RegionData>& tbcs = PorousMedia::TBCs(n);
+                        Array<int> myTBCs;
+                        for (int i=0; i<tbcs.size(); ++i) {
+                            const PArray<Region>& tregions = tbcs[i].Regions();
+                            int tfound = 0;
+                            for (int j=0; j<tregions.size(); ++j) {
+                                if (tregions[j].purpose == purpose) {
+                                    tfound++;
+                                }
+                            }
+                            
+                            if (tfound) {
+                                myTBCs.push_back(i);
                             }
                         }
-                        
-                        if (tfound) {
-                            myTBCs.push_back(i);
+                        if (myTBCs.size() > 0) 
+                        {
+                            tbc_descriptor_map[n][face] = BCDesc(ccBndBox,myTBCs);
                         }
-                    }
-                    if (myTBCs.size() > 0) 
-                    {
-                        tbc_descriptor_map[n][face] = BCDesc(ccBndBox,myTBCs);
-                    }
-                    else {
-                        std::cerr << "No tracer BCs responsible for filling face: " << Faces[iface] << std::endl;
-                        BoxLib::Abort();
+                        else {
+                            std::cerr << "No tracer BCs responsible for filling face: " << Faces[iface] << std::endl;
+                            BoxLib::Abort();
+                        }
                     }
 
                 }
@@ -991,7 +995,10 @@ PorousMedia::initData ()
     }
 
     FillStateBndry(cur_time,State_Type,0,ncomps);
-    FillStateBndry(cur_time,State_Type,ncomps,ntracers);
+
+    if (do_tracer_transport) {
+        FillStateBndry(cur_time,State_Type,ncomps,ntracers);
+    }
 
     P_new.setVal(0.);
     U_new.setVal(0.);
@@ -1887,7 +1894,7 @@ PorousMedia::advance_incompressible (Real time,
       // Add the advective and other terms to get scalars at t^{n+1}.
       scalar_update(dt,0,ncomps,corrector,u_macG_trac);
 
-      if (ntracers > 0)
+      if (do_tracer_transport && ntracers > 0)
 	{
 	  int ltracer = ncomps+ntracers-1;
 	  tracer_advection(u_macG_trac,dt,ncomps,ltracer,true);
@@ -1977,7 +1984,7 @@ PorousMedia::advance_incompressible (Real time,
     
       scalar_update(dt,0,ncomps,corrector,u_macG_trac);
 
-      if (ntracers > 0)
+      if (do_tracer_transport && ntracers > 0)
 	{
 	  int ltracer = ncomps+ntracers-1;
 	  tracer_advection(u_macG_trac,dt,ncomps,ltracer,true);
@@ -2071,7 +2078,7 @@ PorousMedia::advance_richard (Real time,
   }
 
   umac_edge_to_cen(u_mac_curr,Vel_Type); 
-  if (ntracers > 0)
+  if (do_tracer_transport && ntracers > 0)
     {
       int ltracer = ncomps+ntracers-1;
       tracer_advection(u_macG_trac,dt,ncomps,ltracer,true);
@@ -2118,7 +2125,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 	}
 
       fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
-      if (ntracers > 0)
+      if (do_tracer_transport && ntracers > 0)
 	{
 	  int ltracer = ncomps+ntracers-1;
 	  fine_lev.tracer_advection(fine_lev.u_macG_trac,dt,ncomps,ltracer,true);
@@ -2148,6 +2155,7 @@ PorousMedia::advance_tracer (Real time,
   // Time stepping for tracers, assuming steady-state condition. 
   //
 
+  BL_ASSERT(do_tracer_transport);
   BL_ASSERT(ntracers > 0);
     
   int ltracer = ncomps+ntracers-1;
@@ -3183,6 +3191,8 @@ PorousMedia::tracer_advection_update (Real dt,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection_update()");
 
+  BL_ASSERT(do_tracer_transport);
+
   MultiFab&  S_old    = get_old_data(State_Type);
   MultiFab&  S_new    = get_new_data(State_Type);
   MultiFab&  Aofs     = *aofs;
@@ -3449,6 +3459,8 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
                                bool reflux_on_this_call)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
+
+  BL_ASSERT(do_tracer_transport);
 
   if (verbose > 1 && ParallelDescriptor::IOProcessor())
   {
@@ -4119,9 +4131,9 @@ PorousMedia::scalar_capillary_update (Real      dt,
 
   int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
-  Real max_err_nwt = 1e-10;
+  Real max_err_nwt = 1e-5;
 #else
-  Real max_err_nwt = 1e-10;
+  Real max_err_nwt = 1e-5;
 #endif
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
@@ -4361,9 +4373,9 @@ PorousMedia::diff_capillary_update (Real      dt,
 
   int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
-  Real max_err_nwt = 1e-10;
+  Real max_err_nwt = 1e-5;
 #else
-  Real max_err_nwt = 1e-10;
+  Real max_err_nwt = 1e-5;
 #endif
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
@@ -4544,7 +4556,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = 10;
-  Real max_err_nwt = 1e-12;
+  Real max_err_nwt = 1e-5;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
@@ -4700,7 +4712,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = 20;
-  Real max_err_nwt = 1e-12;
+  Real max_err_nwt = 1e-5;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
@@ -4852,7 +4864,7 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
   bool do_n = true;
   int do_upwind = 1;
   int  max_itr_nwt = 20;
-  Real max_err_nwt = 1e-12;
+  Real max_err_nwt = 1e-8;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
@@ -5778,7 +5790,7 @@ PorousMedia::predictDT (MultiFab* u_macG)
 			     state_bc.dataPtr(),eigmax_m);
 	}
     
-      if (ntracers > 0)
+      if (do_tracer_transport && ntracers > 0)
 	{
 	  godunov->esteig_trc (grids[i], u_macG[0][i], u_macG[1][i],
 #if (BL_SPACEDIM == 3)    
@@ -6030,6 +6042,7 @@ PorousMedia::post_init_estDT (Real&        dt_init,
       n_factor  *= nc_save[k];
       dt_save[k] = dt0/( (Real) n_factor);
     }
+
 
   //
   // Hack.
@@ -7572,9 +7585,9 @@ PorousMedia::mac_sync ()
       
       int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
-      Real max_err_nwt = 1e-10;
+      Real max_err_nwt = 1e-5;
 #else
-      Real max_err_nwt = 1e-10;
+      Real max_err_nwt = 1e-5;
 #endif
  
       int  itr_nwt = 0;
@@ -7798,7 +7811,7 @@ PorousMedia::richard_sync ()
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = 20;
-  Real max_err_nwt = 1e-12;
+  Real max_err_nwt = 1e-5;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
@@ -9440,6 +9453,8 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
 void
 PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time)
 {
+    BL_ASSERT(do_tracer_transport);
+    
     for (int n=0; n<ntracers; ++n) 
     {
         if (tbc_descriptor_map[n].size()) 
