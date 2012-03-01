@@ -21,7 +21,7 @@ TEST(FACE_ADJ_CELLS) {
   const unsigned int exp_nadj[27] = {3,4,3, 4,5,4, 3,4,3,
 				     4,5,4, 5,6,5, 4,5,4,
 				     3,4,3, 4,5,4, 3,4,3};
-  const unsigned int exp_adjcells[27][6] = {{  1,  3,  9, -1, -1, -1},
+  const int exp_adjcells[27][6] = {{  1,  3,  9, -1, -1, -1},
 					    {  2,  4,  0, 10, -1, -1},
 					    {  5,  1, 11, -1, -1, -1},
 					    {  0,  4,  6, 12, -1, -1},

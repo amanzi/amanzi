@@ -148,6 +148,8 @@ int Mesh::precompute_geometric_quantities() const {
 
   geometry_precomputed = true;
 
+  return 1;
+
 } // Mesh::precompute_geometric_quantities
 
 
@@ -230,6 +232,7 @@ bool Mesh::valid_set_id(unsigned int id, Entity_kind kind) const
     }
   }
   
+  return false;
 }
 
 
@@ -275,6 +278,7 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
     }
   }
   
+  return false;
 }
 
 
@@ -646,6 +650,8 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     return AmanziGeometry::point_in_polygon(p,ccoords);
     
   }
+  
+  return false;
 }
 
 } // close namespace AmanziMesh

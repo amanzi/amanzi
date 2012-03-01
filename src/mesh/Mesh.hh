@@ -354,7 +354,7 @@ class Mesh
   // Centroid of cell
 
   inline
-  AmanziGeometry::Point cell_centroid (const Entity_ID cellid) const {
+  AmanziGeometry::Point& cell_centroid (const Entity_ID cellid) const {
     if (!geometry_precomputed) precompute_geometric_quantities();
     return cell_centroids[cellid];
   }
@@ -362,7 +362,7 @@ class Mesh
   // Centroid of face
 
   inline
-  AmanziGeometry::Point face_centroid (const Entity_ID faceid) const {
+  AmanziGeometry::Point& face_centroid (const Entity_ID faceid) const {
     if (!geometry_precomputed) precompute_geometric_quantities();
     return face_centroids[faceid];
   }
@@ -371,7 +371,7 @@ class Mesh
   // The vector is normalized and then weighted by the area of the face
 
   inline
-  AmanziGeometry::Point face_normal (const Entity_ID faceid) const {
+  AmanziGeometry::Point& face_normal (const Entity_ID faceid) const {
     if (!geometry_precomputed) precompute_geometric_quantities();
     return face_normals[faceid];
   }

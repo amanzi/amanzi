@@ -118,9 +118,9 @@ HexMeshGenerator::global_vertex(const unsigned int& i,
                                 const unsigned int& j, 
                                 const unsigned int& k) const
 {
-  ASSERT(i >= 0 && i < ni_ + 1);
-  ASSERT(j >= 0 && j < nj_ + 1);
-  ASSERT(k >= 0 && k < nk_ + 1);
+  ASSERT(i < ni_ + 1);
+  ASSERT(j < nj_ + 1);
+  ASSERT(k < nk_ + 1);
   unsigned int result;
   result = (i + j*(ni_+1) + k*(ni_+1)*(nj_+1)); // 0-based
   return result;
@@ -141,7 +141,7 @@ void
 HexMeshGenerator::global_rvertex(const unsigned int& index, 
                                  unsigned int& i, unsigned int& j, unsigned int& k) const
 {
-  ASSERT (index >= 0 && index < nvert_); // index is 0-based
+  ASSERT (index < nvert_); // index is 0-based
   
   unsigned int tmp(index);
   k = tmp / ((ni_+1)*(nj_+1));
@@ -171,9 +171,9 @@ HexMeshGenerator::global_cell(const unsigned int& i,
                               const unsigned int& j, 
                               const unsigned int& k) const
 {
-  ASSERT(i >= 0 && i < ni_);
-  ASSERT(j >= 0 && j < nj_);
-  ASSERT(k >= 0 && k < nk_);
+  ASSERT(i < ni_);
+  ASSERT(j < nj_);
+  ASSERT(k < nk_);
   unsigned int result;
   result = (i + j*(ni_) + k*(ni_)*(nj_)); // 0-based
   return result;
@@ -195,7 +195,7 @@ void
 HexMeshGenerator::global_rcell(const unsigned int& index,
                     unsigned int& i, unsigned int& j, unsigned int& k) const
 {
-  ASSERT (index >= 0 && index < ncell_); // index is 1-based
+  ASSERT (index < ncell_); // index is 1-based
   unsigned int tmp(index);
   k = tmp / ((ni_)*(nj_));
   tmp -= k*(ni_)*(nj_);
