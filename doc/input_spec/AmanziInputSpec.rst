@@ -256,11 +256,11 @@ Usage:
 
    * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
-   * [U] `"steady max iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
+   * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
 
-   * [U] `"steady min iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
+   * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
 
-   * [U] `"steady limit iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
+   * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
 
    * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
 
