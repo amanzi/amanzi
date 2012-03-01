@@ -203,6 +203,10 @@ int  PorousMedia::variable_scal_diff;
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
 //
+// Transport flame
+//
+int  PorousMedia::do_tracer_transport;
+//
 // Chemistry flag.
 //
 int  PorousMedia::do_chem;
@@ -437,6 +441,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::variable_scal_diff = 1; 
 
   PorousMedia::do_chem            = -1;
+  PorousMedia::do_tracer_transport          = -1;
   PorousMedia::do_full_strang     = 1;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -1121,6 +1126,8 @@ void PorousMedia::read_prob()
   // if model is specified, this supersedes model_name
   pb.query("model",model);
 
+  pb.query("do_tracer_transport",do_tracer_transport);
+
   // Verbosity
   pb.query("v",verbose);
   
@@ -1715,99 +1722,104 @@ void  PorousMedia::read_tracer()
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          std::string g; ppr.get("group",g);
-          group_map[g].push_back(i+ncomps);
-      
-          // Initial condition and boundary condition  
-          Array<std::string> tic_names;
-          int n_ic = ppr.countval("tinits");
-          if (n_ic <= 0)
-          {
-              BoxLib::Abort("each tracer must be initialized");
-          }
-          ppr.getarr("tinits",tic_names,0,n_ic);
-          tic_array[i].resize(n_ic,PArrayManage);
-          
-          for (int n = 0; n<n_ic; n++)
-          {
-              const std::string prefixIC(prefix + "." + tic_names[n]);
-              ParmParse ppri(prefixIC.c_str());
-              int n_ic_region = ppri.countval("regions");
-              Array<std::string> region_names;
-              ppri.getarr("regions",region_names,0,n_ic_region);
-              const PArray<Region> tic_regions = build_region_PArray(region_names);
-              std::string tic_type; ppri.get("type",tic_type);
-              
-              if (tic_type == "concentration")
-              {
-                  Real val = 0; ppri.query("val",val);
-                  tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
-              }
-              else {
-                  std::string m = "Tracer IC: \"" + tic_names[n] 
-                      + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
-                  BoxLib::Abort(m.c_str());
-              }
+          if (do_chem > -1) {
+              std::string g; ppr.get("group",g);
+              group_map[g].push_back(i+ncomps);
           }
 
-          Array<std::string> tbc_names;
-          int n_tbc = ppr.countval("tbcs");
-          if (n_tbc <= 0)
+          if (do_tracer_transport)
           {
-              BoxLib::Abort("each tracer requires boundary conditions");
-          }
-          ppr.getarr("tbcs",tbc_names,0,n_tbc);
-          tbc_array[i].resize(n_tbc,PArrayManage);
-          
-          for (int n = 0; n<n_tbc; n++)
-          {
-              const std::string prefixTBC(prefix + "." + tbc_names[n]);
-              ParmParse ppri(prefixTBC.c_str());
-              
-              int n_tbc_region = ppri.countval("regions");
-              Array<std::string> tbc_region_names;
-              ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
-              const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
-              std::string tbc_type; ppri.get("type",tbc_type);
-              
-              if (tbc_type == "concentration")
+              // Initial condition and boundary condition  
+              Array<std::string> tic_names;
+              int n_ic = ppr.countval("tinits");
+              if (n_ic <= 0)
               {
-                  Array<Real> times, vals;
-                  Array<std::string> forms;
-                  int nv = ppri.countval("vals");
-                  if (nv) {
-                      ppri.getarr("vals",vals,0,nv);
-                      if (nv>1) {
-                          ppri.getarr("times",times,0,nv);
-                          ppri.getarr("forms",forms,0,nv-1);
-                      }
-                      else {
-                          times.resize(1,0);
-                      }
+                  BoxLib::Abort("each tracer must be initialized");
+              }
+              ppr.getarr("tinits",tic_names,0,n_ic);
+              tic_array[i].resize(n_ic,PArrayManage);
+              
+              for (int n = 0; n<n_ic; n++)
+              {
+                  const std::string prefixIC(prefix + "." + tic_names[n]);
+                  ParmParse ppri(prefixIC.c_str());
+                  int n_ic_region = ppri.countval("regions");
+                  Array<std::string> region_names;
+                  ppri.getarr("regions",region_names,0,n_ic_region);
+                  const PArray<Region> tic_regions = build_region_PArray(region_names);
+                  std::string tic_type; ppri.get("type",tic_type);
+                  
+                  if (tic_type == "concentration")
+                  {
+                      Real val = 0; ppri.query("val",val);
+                      tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
                   }
                   else {
-                      vals.resize(1,0); // Default tracers to zero for all time
-                      times.resize(1,0);
-                      forms.resize(0);
+                      std::string m = "Tracer IC: \"" + tic_names[n] 
+                          + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
+                      BoxLib::Abort(m.c_str());
                   }
-                  int nComp = 1;
-                  tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
               }
-              else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+              
+              Array<std::string> tbc_names;
+              int n_tbc = ppr.countval("tbcs");
+              if (n_tbc <= 0)
               {
-                  Array<Real> val(1,0);
-                  tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                  BoxLib::Abort("each tracer requires boundary conditions");
               }
-              else {
-                  std::string m = "Tracer BC: \"" + tbc_names[n] 
-                      + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
-                  BoxLib::Abort(m.c_str());
+              ppr.getarr("tbcs",tbc_names,0,n_tbc);
+              tbc_array[i].resize(n_tbc,PArrayManage);
+              
+              for (int n = 0; n<n_tbc; n++)
+              {
+                  const std::string prefixTBC(prefix + "." + tbc_names[n]);
+                  ParmParse ppri(prefixTBC.c_str());
+                  
+                  int n_tbc_region = ppri.countval("regions");
+                  Array<std::string> tbc_region_names;
+                  ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
+                  const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
+                  std::string tbc_type; ppri.get("type",tbc_type);
+                  
+                  if (tbc_type == "concentration")
+                  {
+                      Array<Real> times, vals;
+                      Array<std::string> forms;
+                      int nv = ppri.countval("vals");
+                      if (nv) {
+                          ppri.getarr("vals",vals,0,nv);
+                          if (nv>1) {
+                              ppri.getarr("times",times,0,nv);
+                              ppri.getarr("forms",forms,0,nv-1);
+                          }
+                          else {
+                              times.resize(1,0);
+                          }
+                      }
+                      else {
+                          vals.resize(1,0); // Default tracers to zero for all time
+                          times.resize(1,0);
+                          forms.resize(0);
+                      }
+                      int nComp = 1;
+                      tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                  }
+                  else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+                  {
+                      Array<Real> val(1,0);
+                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                  }
+                  else {
+                      std::string m = "Tracer BC: \"" + tbc_names[n] 
+                          + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
+                      BoxLib::Abort(m.c_str());
+                  }
               }
           }
       }
   }
 }
-  
+
 void  PorousMedia::read_source()
 {
   //
@@ -2184,6 +2196,11 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read components."<< std::endl;
   
+  // chemistry
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read chemistry."<< std::endl;
+  read_chem();
+
   // tracers
   read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -2193,11 +2210,6 @@ void PorousMedia::read_params()
   //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
   //  std::cout << "Read sources."<< std::endl;
   //read_source();
-
-  // chemistry
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read chemistry."<< std::endl;
-  read_chem();
 
   // source
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 

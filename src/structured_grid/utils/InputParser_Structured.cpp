@@ -24,6 +24,16 @@ namespace Amanzi {
             }
         }
 
+        void MyAbort(const Array<std::string>& m) {
+            if (Teuchos::MPISession::getRank() == 0) {
+                for (int i=0; i<m.size(); ++i) {
+                    std::cerr << m[i] << " ";
+                }
+                std::cerr << std::endl;
+                throw std::exception();
+            }
+        }
+
         double atmToMKS = 101325;
 
         std::string underscore(const std::string& instring)
@@ -160,7 +170,8 @@ namespace Amanzi {
         void
         convert_to_structured_control(const ParameterList& parameter_list, 
                                       ParameterList&       struc_out_list,
-                                      bool&                do_tracer)
+                                      bool&                do_tracer_transport,
+                                      bool&                do_chem)
         {
             std::string ec_str = "Execution Control";
             std::string amr_str = "Adaptive Mesh Refinement Control";
@@ -215,8 +226,8 @@ namespace Amanzi {
             // Set transport model
             //
             std::string transport_mode = ec_list.get<std::string>(trans_str);
-            do_tracer = (transport_mode == "Off"  ?  0  :  1);
-            prob_out_list.set<int>("do_tracer",do_tracer);
+            do_tracer_transport = (transport_mode == "Off"  ?  0  :  1);
+            prob_out_list.set<int>("do_tracer_transport",do_tracer_transport);
 
             //
             // Set chemistry model
@@ -224,6 +235,7 @@ namespace Amanzi {
             std::string chem_mode = ec_list.get<std::string>(chem_str);
             if (chem_mode == "Off") {
                 prob_out_list.set("do_chem",-1);
+                do_chem = false;
             }
             else {
                 MyAbort("Chemistry Mode must be \"Off\"");
@@ -1832,7 +1844,8 @@ namespace Amanzi {
         convert_to_structured_state(const ParameterList& parameter_list, 
                                     ParameterList&       struc_list,
                                     StateDef&            stateDef,
-                                    bool                 do_tracer)
+                                    bool                 do_tracer_transport,
+                                    bool                 do_chem)
         {
             ParameterList& phase_list  = struc_list.sublist("phase");
             ParameterList& comp_list   = struc_list.sublist("comp"); 
@@ -1896,7 +1909,7 @@ namespace Amanzi {
             convert_ics(parameter_list,struc_list,stateDef);    
             convert_bcs(parameter_list,struc_list,stateDef);    
 
-            if (do_tracer) 
+            if (do_tracer_transport)
             {
                 SolutePLMMap solute_to_ictype = convert_solute_ics(stateDef);
                 SolutePLMMap solute_to_bctype = convert_solute_bcs(stateDef);
@@ -1931,13 +1944,19 @@ namespace Amanzi {
                     tmp.set<Array<std::string> >("tinits",icLabels);
                     tmp.set<Array<std::string> >("tbcs",bcLabels);
 
+                    solute_list.set(soluteName,tmp);
+                }
+            }
+
+            if (do_chem) 
+            {
+                for (int i=0; i<arraysolute.size(); ++i) {
+                    const std::string& soluteName = arraysolute[i];
                     // 
                     // FIXME: Solute groups not yet in spec, default set here
                     std::string group_name = "Total";
+                    ParameterList& tmp = solute_list.sublist(soluteName);
                     tmp.set<std::string>("group",group_name);
-
-                    solute_list.set(soluteName,tmp);
-            
                 }
             }
         }
@@ -2087,101 +2106,169 @@ namespace Amanzi {
 
 
             // vis data
-            const ParameterList& vlist = rlist.sublist("Visualization Data");
-            amr_list.set("plot_file",vlist.get<std::string>("File Name Base"));
-            Array<std::string> visNames;
+            const std::string vis_data_str = "Visualization Data";
+            const std::string vis_file_str = "File Name Base";
+            const std::string vis_var_str = "Variables";
+            const std::string vis_cycle_str = "Cycle Macros";
+            const std::string vis_time_str = "Time Macros";
+            const std::string vis_digits_str = "File Name Digits";
+            bool vis_vars_set = false;
+            Array<std::string> visNames, vis_cMacroNames, vis_tMacroNames;
+            int vis_digits = 5;
+            std::string vis_file = "plt";
+            if (rlist.isSublist(vis_data_str)) {                
+                const ParameterList& vlist = rlist.sublist(vis_data_str);
+                for (ParameterList::ConstIterator i=vlist.begin(); i!=vlist.end(); ++i)
+                {
+                    const std::string& name = vlist.name(i);
 
-            if (vlist.isParameter("Variables")) {
-                visNames = vlist.get<Array<std::string> >("Variables");
-                for (int i=0; i<visNames.size(); ++i) {
-                    std::string _visName = underscore(visNames[i]);
-                    bool found = false;
-                    for (int j=0; j<user_derive_list.size(); ++j) {
-                        if (_visName == user_derive_list[j]) {
-                            found = true;
+                    if (name == vis_file_str) {
+                        vis_file = vlist.get<std::string>(vis_file_str);
+                    }
+                    else if (name == vis_var_str)
+                    {                        
+                        visNames = vlist.get<Array<std::string> >(vis_var_str);
+                        for (int i=0; i<visNames.size(); ++i) {
+                            std::string _visName = underscore(visNames[i]);
+                            bool found = false;
+                            for (int j=0; j<user_derive_list.size(); ++j) {
+                                if (_visName == user_derive_list[j]) {
+                                    found = true;
+                                }
+                            }
+                            if (!found) {
+                                MyAbort("Invalid variable (\""+visNames[i]+
+                                        "\") in \"Visualization Data\" -> \"Variables\"");
+                            }
+                            visNames[i] = underscore(visNames[i]);
+                        }
+                        vis_vars_set = true;
+                    }
+                    else if (name == vis_cycle_str)
+                    {
+                        const Array<std::string>& vcMacros = vlist.get<Array<std::string> >(vis_cycle_str);
+                        for (int i=0; i<vcMacros.size(); ++i) {
+                            std::string label = underscore(vcMacros[i]);
+                            if (cycle_macros.find(label) != cycle_macros.end()) {
+                                vis_cMacroNames.push_back(label);
+                            }
+                            else {
+                                if (Teuchos::MPISession::getRank() == 0) {
+                                    std::cerr << "Unrecognized cycle macro in \""+vis_data_str+"\": \""
+                                              << vcMacros[i] << "\"" << std::endl;
+                                    
+                                    for (std::set<std::string>::const_iterator it=cycle_macros.begin();
+                                         it!=cycle_macros.end(); ++it) {
+                                        std::cout << *it << " " << std::endl;
+                                    }
+                                    throw std::exception();
+                                }
+                            }
                         }
                     }
-                    if (!found) {
-                        std::cerr << "Invalid variable (\"" << visNames[i]
-                                  << "\") in \"Visualization Data\" -> \"Variables\"" << std::endl;
-                        throw std::exception();
+                    else if (name == vis_time_str)
+                    {
+                        const Array<std::string>& vtMacros = vlist.get<Array<std::string> >(vis_time_str);
+                        for (int i=0; i<vtMacros.size(); ++i) {
+                            std::string label = underscore(vtMacros[i]);
+                            if (time_macros.find(label) != time_macros.end()) {
+                                vis_tMacroNames.push_back(label);
+                            }
+                            else {
+                                if (Teuchos::MPISession::getRank() == 0) {
+                                    std::cerr << "Unrecognized time macro in \""+vis_data_str+"\": \""
+                                              << vtMacros[i] << "\"" << std::endl;
+                                    
+                                    for (std::set<std::string>::const_iterator it=time_macros.begin();
+                                         it!=time_macros.end(); ++it) {
+                                        std::cout << *it << " " << std::endl;
+                                    }
+                                    throw std::exception();
+                                }
+                            }
+                        }
                     }
-                    visNames[i] = underscore(visNames[i]);
+                    else if (name == vis_digits_str) {
+                        vis_digits = vlist.get<int>(vis_digits_str);
+                        if (vis_digits<=0) {
+                            MyAbort("\""+vis_data_str+"\" -> \""+vis_digits_str+"\" must be > 0");
+                        }
+                    }
+                    else {
+                        MyAbort("Unrecognized entry in \""+vis_data_str+"\" parameter list: \""+name+"\"");
+                    }
                 }
             }
-            else {
-	        visNames.resize(user_derive_list.size());
-		for (int j=0; j<user_derive_list.size(); ++j) {
-		  visNames.push_back(AMR_to_Amanzi_label_map[user_derive_list[j]]); 
+
+            //
+            // Set default to dump all known fields
+            if (!vis_vars_set) {
+                visNames.resize(user_derive_list.size());
+                for (int j=0; j<user_derive_list.size(); ++j) {
+                    visNames.push_back(underscore(user_derive_list[j])); 
                 }
             }
+
+
             amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
-
-            Array<std::string> vis_cMacroNames, vis_tMacroNames;
-            if (vlist.isParameter("Cycle Macro")) {
-                const std::string& vcMacros = vlist.get<std::string>("Cycle Macro");
-		std::string label = underscore(vcMacros);
-		if (cycle_macros.find(label) != cycle_macros.end()) {
-		  vis_cMacroNames.push_back(label);
-		}
-		else {
-		  std::cerr << "Unrecognized cycle macro in Visualization Data: \""
-			    << vcMacros << "\"" << std::endl;
-		  
-		  for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
-		    std::cout << *it << " " << std::endl;
-		  }
-		  throw std::exception();
-		}
-                
-            }
-            if (vlist.isParameter("Time Macros")) {
-	      const std::string& vtMacros = vlist.get<std::string>("Time Macros");
-	      std::string label = underscore(vtMacros);
-	      if (time_macros.find(label) != time_macros.end()) {
-		vis_tMacroNames.push_back(label);
-	      }
-	      else {
-		std::cerr << "Unrecognized time macro in Visualization Data: \""
-			  << vtMacros << "\"" << std::endl;
-		
-		for (std::set<std::string>::const_iterator it=time_macros.begin(); it!=time_macros.end(); ++it) {
-		  std::cout << *it << " " << std::endl;
-		}
-		throw std::exception();
-	      }
-	    }
-
             amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
             amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
+            amr_list.set<int>("plot_digits",vis_digits);
+            amr_list.set<std::string>("plot_file",vis_file);
 
-            //amr_list.set<std::string>("plot_vars",""); // Shut off, per spec
 
-            // check point data
-            const ParameterList& chlist = rlist.sublist("Checkpoint Data");
-            amr_list.set("check_file",chlist.get<std::string>("File Name Base"));
-            Array<std::string> chkNames;
-
+            // chk data
+            const std::string chk_data_str = "Checkpoint Data";
+            const std::string chk_file_str = "File Name Base";
+            const std::string chk_cycle_str = "Cycle Macros";
+            const std::string chk_digits_str = "File Name Digits";
+            bool cycle_macro_set = false;
+            int chk_digits = 5;
+            std::string chk_file = "chk";
             Array<std::string> chk_cMacroNames;
-            if (chlist.isParameter("Cycle Macro")) {
-                const std::string& ccMacros = chlist.get<std::string>("Cycle Macro");
-		std::string label = underscore(ccMacros);
-		if (cycle_macros.find(label) != cycle_macros.end()) {
-		  chk_cMacroNames.push_back(label);
-		}
-		else {
-		  std::cerr << "Unrecognized cycle macro in Checkpoint Data: \""
-			    << ccMacros << "\"" << std::endl;
-		  throw std::exception();
-		}
-                
-            }
-            else {
-                std::cerr << "Must provide \"Cycle Macro\" in Checkpoint Data" << std::endl;
-                throw std::exception();
+            if (rlist.isSublist(chk_data_str)) {                
+                const ParameterList& clist = rlist.sublist(chk_data_str);
+                for (ParameterList::ConstIterator i=clist.begin(); i!=clist.end(); ++i)
+                {
+                    const std::string& name = clist.name(i);
+                    if (name == chk_file_str) {
+                        chk_file = clist.get<std::string>(chk_file_str);
+                    }
+                    else if (name == chk_cycle_str) {
+                        const Array<std::string>& ccMacros = clist.get<Array<std::string> >(chk_cycle_str);
+                        for (int i=0; i<ccMacros.size(); ++i) {
+                            std::string label = underscore(ccMacros[i]);
+                            if (cycle_macros.find(label) != cycle_macros.end()) {
+                                chk_cMacroNames.push_back(label);
+                            }
+                            else {
+                                if (Teuchos::MPISession::getRank() == 0) {
+                                    std::cerr << "Unrecognized cycle macro in \""+chk_data_str+"\": \""
+                                              << ccMacros[i] << "\"" << std::endl;
+                                    
+                                    for (std::set<std::string>::const_iterator it=cycle_macros.begin();
+                                         it!=cycle_macros.end(); ++it) {
+                                        std::cout << *it << " " << std::endl;
+                                    }
+                                    throw std::exception();
+                                }
+                            }
+                        }
+                    }
+                    else if (name == chk_digits_str) {
+                        chk_digits = clist.get<int>(chk_digits_str);
+                        if (chk_digits<=0) {
+                            MyAbort("\""+chk_data_str+"\" -> \""+chk_digits_str+"\" must be > 0");
+                        }
+                    }
+                    else {
+                        MyAbort("Unrecognized entry in \""+chk_data_str+"\" parameter list: \""+name+"\"");
+                    }
+                }
             }
             amr_list.set<Array<std::string> >("chk_cycle_macros",chk_cMacroNames);
-
+            amr_list.set<int>("chk_digits",chk_digits);
+            amr_list.set<std::string>("check_file",chk_file);
 
         
             // observation
@@ -2268,7 +2355,7 @@ namespace Amanzi {
         convert_to_structured(const ParameterList& parameter_list)
         {
             ParameterList struc_list = setup_structured();
-            bool do_tracer;
+            bool do_tracer_transport, do_chem;
             //
             // determine spatial dimension of the problem
             // 
@@ -2280,7 +2367,7 @@ namespace Amanzi {
             //
             // Execution control
             //
-            convert_to_structured_control(parameter_list,struc_list, do_tracer);
+            convert_to_structured_control(parameter_list,struc_list, do_tracer_transport, do_chem);
             //
             // Regions
             //
@@ -2293,7 +2380,7 @@ namespace Amanzi {
             // State
             //
             StateDef stateDef(parameter_list);
-            convert_to_structured_state(parameter_list, struc_list, stateDef, do_tracer);
+            convert_to_structured_state(parameter_list, struc_list, stateDef, do_tracer_transport, do_chem);
             //
             // Output
             // 

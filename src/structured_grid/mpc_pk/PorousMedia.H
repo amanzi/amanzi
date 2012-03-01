@@ -1086,6 +1086,7 @@ protected:
   // Chemistry parameters 
   //
   static int  do_chem;
+  static int  do_tracer_transport;
   static int  do_full_strang;
   static int  n_chem_interval;
   static int  it_chem;
