@@ -66,19 +66,26 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   int ncells_local = cmap.NumMyElements();
   int ncells_global = cmap.NumGlobalElements();
 
-  // get coords
-  double *nodes = new double[nnodes_local*3];
-  globaldims[0] = nnodes_global;
-  globaldims[1] = 3;
-  localdims[0] = nnodes_local;
-  localdims[1] = 3;
+  // get coords  
 
-  std::vector<double> xc(3);
+  // Here the domain should be queried to find out if it is a 2D or 3D domain
+  // but we can kludge it by asking the first node of the mesh
+
+  AmanziGeometry::Point xc;
+  mesh_maps.node_get_coordinates(0, &xc);
+  
+  unsigned int spdim = xc.dim();
+  
+  double *nodes = new double[nnodes_local*spdim];
+  globaldims[0] = nnodes_global;
+  globaldims[1] = spdim;
+  localdims[0] = nnodes_local;
+  localdims[1] = spdim;
+
   for (int i = 0; i < nnodes_local; i++) {
-    mesh_maps.node_to_coordinates(i, xc.begin(), xc.end());
-    nodes[i*3] = xc[0];
-    nodes[i*3+1] = xc[1];
-    nodes[i*3+2] = xc[2];
+    mesh_maps.node_get_coordinates(i, &xc);
+    for (int j = 0; j < spdim; j++)
+      nodes[i*spdim+j] = xc[j];
   }
 
   // write out coords

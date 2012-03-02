@@ -72,6 +72,15 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
+  Mesh_STK (const double x0, 
+            const double y0,
+            const double x1, 
+            const double y1,
+            const int nx, 
+            const int ny, 
+            const Epetra_MpiComm *communicator,
+            const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
+
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
            const Epetra_MpiComm *comm,

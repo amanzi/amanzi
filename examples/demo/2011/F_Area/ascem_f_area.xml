@@ -18,22 +18,22 @@
   	     <Parameter name="Flow Model" type="string" value="Richards"/>
 	     <Parameter name="Transport Model" type="string" value="Off"/> 
 	     <Parameter name="Chemistry Model" type="string" value="Off"/>
-              <Parameter name="Verbosity" type="string" value="Low"/>
+              <Parameter name="Verbosity" type="string" value="Extreme"/>
               <ParameterList name="Time Integration Mode">
                  <ParameterList name="Initialize To Steady">
 	           <Parameter name="Start" type="double" value="0.0"/>
 	           <Parameter name="Switch" type="double" value="3.1536e8"/> 
 	           <Parameter name="End" type="double" value="3.1536e9"/>                                                <!-- 100 years -->
-   	           <Parameter name="Steady Initial Time Step" type="double" value="1000"/>
+   	           <Parameter name="Steady Initial Time Step" type="double" value="1.0e3"/>
 	           <Parameter name="Transient Initial Time Step" type="double" value="60"/>
 	        </ParameterList>
 	   </ParameterList>
 
            <ParameterList name="Numerical Control Parameters">
              <ParameterList name="Unstructured Algorithm">
-               <Parameter name="steady max iterations" type="int" value="15"/>
+               <Parameter name="steady max iterations" type="int" value="50"/>
                <Parameter name="steady min iterations" type="int" value="8"/>
-               <Parameter name="steady limit iterations" type="int" value="25"/>
+               <Parameter name="steady limit iterations" type="int" value="100"/>
                <Parameter name="steady nonlinear tolerance" type="double" value="1.0"/>
                <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
                <Parameter name="steady time step increase factor" type="double" value="1.2"/>
@@ -271,8 +271,10 @@
              <ParameterList name="IC: Linear Pressure">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Reference Value" type="double" value="101325.0e0"/>
-               <Parameter name="Reference Coordinate" type="Array double" value="{0., 0., 0.}"/>
-               <Parameter name="Gradient Value" type="Array double" value="{0., 0., -5000.0e0}"/>
+               <!-- SABEA: Reference coordinate refers to reference level. In this case it is corresponding to water-table position ?? -->
+               <Parameter name="Reference Coordinate" type="Array double" value="{0., 0., 60.0}"/>
+               <!-- SABEA: Units for the gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2 -->
+               <Parameter name="Gradient Value" type="Array double" value="{0., 0., -9793.5192}"/>
              </ParameterList>
              <ParameterList name="Solute IC">
                <ParameterList name="Aqueous">

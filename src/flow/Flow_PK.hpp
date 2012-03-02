@@ -20,7 +20,8 @@ public:
   virtual int init_transient(double t0, double h0) = 0; 
   virtual int init_steady(double t0, double h0) = 0; 
   
-  virtual void commit_state(Teuchos::RCP<Flow_State>) = 0;
+  virtual void commit_state(Teuchos::RCP<Flow_State>, double ) = 0;
+  virtual void commit_new_saturation(Teuchos::RCP<Flow_State>) = 0;
 
   // After a successful advance() the following routines may be called.
 

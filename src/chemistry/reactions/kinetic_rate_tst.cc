@@ -341,8 +341,8 @@ void KineticRateTST::Display(void) const {
   std::cout << "      log10_rate constant = " << log10_rate_constant() << std::endl;
   std::cout << "      rate constant = " << std::scientific << rate_constant() << std::endl;
   std::cout << "      rate modifiers: " << std::endl;
-  std::cout << "        ";
   for (unsigned int mod = 0; mod < this->modifying_species_names.size(); mod++) {
+    std::cout << "        ";
     std::cout << "{ " << this->modifying_species_names.at(mod) << " }";
     std::cout << "^" << this->modifying_exponents.at(mod) << " " << std::endl;
   }

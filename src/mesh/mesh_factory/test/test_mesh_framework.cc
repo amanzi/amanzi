@@ -113,12 +113,21 @@ SUITE (Framework)
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     bool parallel(comm.NumProc() > 1);
     
-    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel));
-    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel));
-    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STKMESH, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel,3));
+    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel,3));
+    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STKMESH, parallel,3));
     if (parallel) {
-      CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel,3));
     } 
+
+
+    //    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel,2));
+    //    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel,2));
+    //    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STKMESH, parallel,2));
+    //    if (parallel) {
+    //      CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel,2));
+    //    } 
+
   }
 
 }

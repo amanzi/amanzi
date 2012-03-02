@@ -39,16 +39,16 @@ TEST(SETS) {
   unsigned int fsetsize, expfsetsizes[2] = {9,3};
 
 
-  unsigned int expfsetfaces[2][9] = {{0,3,6,1,4,7,2,5,8},
-				     {60,61,62,-1,-1,-1,-1,-1,-1}};
+  int expfsetfaces[2][9] = {{0,3,6,1,4,7,2,5,8},
+			    {60,61,62,-1,-1,-1,-1,-1,-1}};
 
   std::string expnsetnames[3] = {"Sample Point 1", "INTERIOR XY PLANE", 
                                  "TOP BOX"};
 
   unsigned int nsetsize, expnsetsizes[3] = {1, 16, 4};
-  unsigned int expnsetnodes[3][16] = {{21,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
-                                      {16,20,24,28,17,21,25,29,18,22,26,30,19,23,27,31},
-                                      {53,57,54,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}};
+  int expnsetnodes[3][16] = {{21,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
+			     {16,20,24,28,17,21,25,29,18,22,26,30,19,23,27,31},
+			     {53,57,54,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}};
 
   std::string infilename = "test/hex_3x3x3.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);

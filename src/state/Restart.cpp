@@ -62,71 +62,66 @@ void Amanzi::Restart::read_parameters(Teuchos::ParameterList& plist)
 }
 
 
-void Amanzi::Restart::dump_state(State& S)
+void Amanzi::Restart::dump_state(State& S, bool force)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-  if (!disabled) 
-    {
-      if (dump_requested(S.get_cycle()))
-	{
-
-	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
-	    {
-	      *out << "Writing checkpoint, cycle = " << S.get_cycle() << std::endl;
-	    }
-	  
-	  // create the restart file
-	  std::stringstream oss; 
-	  oss.flush();
-	  oss << filebasename;
-	  oss.fill('0'); 
-	  oss.width(filenamedigits);
-	  oss << std::right << S.get_cycle(); 
-	  
-	  restart_output->createDataFile(oss.str());	  
-
-
-	  // dump all the state vectors into the restart file
-	  restart_output->writeDataReal(*S.get_pressure(),"pressure");
-	  restart_output->writeDataReal(*S.get_porosity(),"porosity");
-	  restart_output->writeDataReal(*S.get_water_saturation(),"water saturation");
-	  restart_output->writeDataReal(*S.get_water_density(),"water density");
-	  restart_output->writeDataReal(*S.get_horizontal_permeability(),"horizontal permeability");
-	  restart_output->writeDataReal(*S.get_vertical_permeability(),"vertical permeability");
-	  restart_output->writeDataReal(*(*S.get_darcy_velocity())(0),"darcy velocity x");
-	  restart_output->writeDataReal(*(*S.get_darcy_velocity())(1),"darcy velocity y");
-	  restart_output->writeDataReal(*(*S.get_darcy_velocity())(2),"darcy velocity z");
-	  restart_output->writeDataReal(*S.get_material_ids(),"material IDs");
-	  
-	  for (int i=0; i<S.get_number_of_components(); i++)
-	    {
-	      std::stringstream tcc_name;
-	      
-	      tcc_name << "component " << i;
-	      
-	      restart_output->writeDataReal(*(*S.get_total_component_concentration())(i),tcc_name.str());
-	    }
-
-	  restart_output->writeDataReal(*S.get_darcy_flux(),"darcy flux");	  
-
-
-	  restart_output->writeAttrReal(S.get_time(),"time");
-	  restart_output->writeAttrInt(S.get_cycle(),"cycle");
-
-	  restart_output->writeAttrReal((*S.get_gravity())[0],"gravity x");
-	  restart_output->writeAttrReal((*S.get_gravity())[1],"gravity y");
-	  restart_output->writeAttrReal((*S.get_gravity())[2],"gravity z");
-	  
-	  restart_output->writeAttrReal((*S.get_density()),"density");
-	  restart_output->writeAttrReal((*S.get_viscosity()),"viscosity");	
-	  
-	  restart_output->writeAttrInt(S.get_number_of_components(),"number of components");
-	}
+  if (!disabled) {
+    if (force || dump_requested(S.get_cycle())) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	*out << "Writing checkpoint, cycle = " << S.get_cycle() << std::endl;
+      }
+      
+      // create the restart file
+      std::stringstream oss; 
+      oss.flush();
+      oss << filebasename;
+      oss.fill('0'); 
+      oss.width(filenamedigits);
+      oss << std::right << S.get_cycle(); 
+      
+      restart_output->createDataFile(oss.str());	  
+      
+      
+      // dump all the state vectors into the restart file
+      restart_output->writeDataReal(*S.get_pressure(),"pressure");
+      restart_output->writeDataReal(*S.get_porosity(),"porosity");
+      restart_output->writeDataReal(*S.get_water_saturation(),"water saturation");
+      restart_output->writeDataReal(*S.get_water_density(),"water density");
+      restart_output->writeDataReal(*S.get_horizontal_permeability(),"horizontal permeability");
+      restart_output->writeDataReal(*S.get_vertical_permeability(),"vertical permeability");
+      restart_output->writeDataReal(*(*S.get_darcy_velocity())(0),"darcy velocity x");
+      restart_output->writeDataReal(*(*S.get_darcy_velocity())(1),"darcy velocity y");
+      restart_output->writeDataReal(*(*S.get_darcy_velocity())(2),"darcy velocity z");
+      restart_output->writeDataReal(*S.get_material_ids(),"material IDs");
+      
+      for (int i=0; i<S.get_number_of_components(); i++) {
+	std::stringstream tcc_name;
+	
+	tcc_name << "component " << i;
+	
+	restart_output->writeDataReal(*(*S.get_total_component_concentration())(i),tcc_name.str());
+      }
+      
+      restart_output->writeDataReal(*S.get_darcy_flux(),"darcy flux");	  
+      
+      
+      restart_output->writeAttrReal(S.get_time(),"time");
+      restart_output->writeAttrInt(S.get_cycle(),"cycle");
+      
+      restart_output->writeAttrReal((*S.get_gravity())[0],"gravity x");
+      restart_output->writeAttrReal((*S.get_gravity())[1],"gravity y");
+      restart_output->writeAttrReal((*S.get_gravity())[2],"gravity z");
+      
+      restart_output->writeAttrReal((*S.get_density()),"density");
+      restart_output->writeAttrReal((*S.get_viscosity()),"viscosity");	
+      
+      restart_output->writeAttrInt(S.get_number_of_components(),"number of components");
     }
+  }
 }
 
 

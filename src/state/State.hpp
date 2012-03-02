@@ -111,6 +111,7 @@ public:
 
   void set_linear_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
   void set_uniform_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
+  void set_file_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
   void set_linear_saturation ( const Teuchos::ParameterList& ic_list, const std::string& region );
   void set_uniform_saturation ( const Teuchos::ParameterList& ic_list, const std::string& region );
 
@@ -136,6 +137,9 @@ private:
 				const std::string& region);
 
   void set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector &v,
+				const std::string& region);
+
+  void set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
 				const std::string& region);
 
   // state vectors

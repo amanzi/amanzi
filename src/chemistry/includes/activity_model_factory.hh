@@ -17,7 +17,8 @@ class ActivityModelFactory {
   ActivityModel* Create(const std::string& model,
 		                const std::string& database,
                         std::vector<Species>& prim,
-                        std::vector<AqueousEquilibriumComplex>& sec);
+                        std::vector<AqueousEquilibriumComplex>& sec,
+                        const std::string& jfunction_pitzer);
   static const std::string debye_huckel;
   static const std::string pitzer_hwm;
   static const std::string unit;

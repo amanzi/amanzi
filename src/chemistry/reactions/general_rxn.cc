@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <iostream>
+#include <iomanip>
 
 #include "block.hh"
 
@@ -176,6 +177,29 @@ void GeneralRxn::display(void) const {
   std::cout << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
   std::cout << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
 }  // end display()
+
+void GeneralRxn::Display(void) const {
+  // convention for this reaction is that reactants have negative
+  // stoichiometries, products have positive stoichiometries....
+  // write them in standard chemistry notation by printing -stoich
+  for (unsigned int i = 0; i < forward_species_ids_.size(); i++) {
+    std::cout << -stoichiometry_[i] << " " << species_names_[i];
+    if (i < forward_species_ids_.size() - 1) {
+      std::cout << " + ";
+    }
+  }
+  std::cout << " <---> ";
+  for (unsigned int i = 0; i < backward_species_ids_.size(); i++) {
+    std::cout << -stoichiometry_[i] << " " << species_names_[i];
+    if (i < backward_species_ids_.size() - 1) {
+      std::cout << " + ";
+    }
+  }
+  std::cout << std::endl;
+  std::cout << std::setw(50) << std::scientific << this->kf_
+            << std::setw(15) << std::scientific << this->kb_
+            << std::fixed << std::endl;
+}  // end Display()
 
 }  // namespace chemistry
 }  // namespace amanzi

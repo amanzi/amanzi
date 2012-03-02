@@ -229,6 +229,15 @@ Usage:
 
    * [S] `"Transient Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
+ * [U] `"Time Period Control`" (Optional)
+
+  * [U] `"Start Times`" [Array double]: List of times at which the current time-integrator will be reinitialized.
+  * [U] `"Initial Time Step`"[Array double]: The initial time step for each time period. If unspecified, Amanzi 
+    will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+  * `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
+    scaled by this factor (default value: 1)
+  * `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
+
  * [SU] `"Verbosity`" [string]: Defaults to `"Medium`"
 
   * [SU] `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
@@ -241,18 +250,17 @@ Usage:
 
   * [SU] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
 
-
  * [SU] `"Numerical Control Parameters`" [list]
 
   * [U] `"Unstructured Algorithm`" [list]
 
    * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
-   * [U] `"steady max iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
+   * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
 
-   * [U] `"steady min iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
+   * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
 
-   * [U] `"steady limit iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
+   * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
 
    * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
 
@@ -295,6 +303,11 @@ Example:
          <Parameter name="Start" type="double" value="0"/>
          <Parameter name="End" type="double" value="1.5768e9"/>
       </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Time Period Control">
+      <Parameter name="Period Start Times" type="Array double" value="{6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
+      <Parameter name="Initial Time Step" type="Array double" value="{60.0, 60.0, 60.0, 800.0}"/>
     </ParameterList>
 
     <Parameter name="Verbosity" type="string" type="High"/>
@@ -794,7 +807,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU all except file] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+  * [SU, all except file for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
 
   * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -842,7 +855,7 @@ The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
-* `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
+* [U] `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
 
 
 The following boundary condition parameterizations are supported:

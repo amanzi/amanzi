@@ -31,6 +31,11 @@ public:
 	       int nx, int ny, int nz, const Epetra_MpiComm *communicator,
 	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
   
+  Mesh_simple (double x0, double y0,
+	       double x1, double y1,
+	       int nx, int ny, const Epetra_MpiComm *communicator,
+	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
+  
   Mesh_simple ( const GenerationSpec& gspec,
 		const Epetra_MpiComm *communicator,
                 const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
@@ -352,7 +357,9 @@ private:
   std::vector<int> cell_to_face_dirs_;
   std::vector<unsigned int> cell_to_node_;
   std::vector<unsigned int> face_to_node_;
-  std::vector<unsigned int> face_to_cell_;
+                                           // special bcos we may label one of the cells
+  std::vector<int> face_to_cell_;          // as -1 to indicate that there is no cell on 
+                                           // that side of the face
   std::vector<unsigned int> node_to_face_;
   std::vector<unsigned int> node_to_cell_;
 

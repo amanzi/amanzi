@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
   components.ion_exchange_sites.clear();
   components.total.clear();
   components.total_sorbed.clear();
+
   SimulationParameters simulation_params;
   if (!input_file_name.empty()) {
     ReadInputFile(input_file_name, &simulation_params, &components);
@@ -300,7 +301,7 @@ void ReadInputFile(const std::string& file_name,
     std::string raw_line;
     getline(input_file, raw_line);
     //std::cout << raw_line << std::endl;
-    if ((raw_line.size() > 0) && (raw_line[raw_line.size() - 1] == '\r')) {
+    if ((raw_line.size() > 0) && (raw_line.at(raw_line.size() - 1) == '\r')) {
       // getline only searches for \n line ends. windows files use \r\n
       // check for a hanging \r and remove it if it is there
       raw_line.resize(raw_line.size() - 1);
@@ -371,7 +372,10 @@ void ParseSimulationParameter(const std::string& raw_line,
       value.assign(param_value.at(0));
     }
     if (param.at(0).find(kDescriptionParam) != std::string::npos) {
-      params->description.assign(value);
+      // the description probably has spaces in it, so we want to use
+      // the raw parameter value from param.at(1) rather than the
+      // version in value, which has been tokenized by spaces!
+      params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
       params->verbosity_name.assign(value);
     } else if (param.at(0).find(kComparisonModelParam) != std::string::npos) {

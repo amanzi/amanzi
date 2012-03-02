@@ -194,19 +194,17 @@ void State::initialize_from_parameter_list()
       set_darcy_flux(u, region);
 
       // set the pressure
-      if (sublist.isSublist("uniform pressure"))
-      {
+      if (sublist.isSublist("uniform pressure")) {
         const Teuchos::ParameterList&  unif_p_list = sublist.sublist("uniform pressure");
         set_uniform_pressure( unif_p_list, region );
-      }
-      else if (sublist.isSublist("linear pressure"))
-      {
+      } else if (sublist.isSublist("linear pressure")) {
         const Teuchos::ParameterList&  lin_p_list = sublist.sublist("linear pressure");
         set_linear_pressure( lin_p_list, region );
-      }
-      else
-      {
-        // maybe throw an exception
+      } else if (sublist.isSublist("file pressure")) {
+	const Teuchos::ParameterList&  file_p_list = sublist.sublist("file pressure");
+	set_file_pressure(file_p_list, region);
+      } else {
+	// ?
       }
 
       // set the saturation
@@ -346,6 +344,32 @@ void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
   }
 
 }
+
+
+
+void State::set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
+                                     const std::string& region) {
+
+  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
+    throw std::exception();
+  }
+
+  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
+                                                         Amanzi::AmanziMesh::CELL,
+                                                         Amanzi::AmanziMesh::OWNED);
+
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+
+  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                              &cell_ids);
+
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin();
+       c != cell_ids.end();  c++) {
+    v[*c] = x[*c];
+  }
+}
+
+
 
 
 void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector& v,
@@ -661,6 +685,7 @@ double State::point_value(const std::string& point_region, const std::string& na
   {
     value = 0.0;
     volume = 0.0;
+
     for (int i=0; i<mesh_block_size; i++)
     {
       int ic = cell_ids[i];
@@ -767,6 +792,23 @@ void State::set_linear_pressure ( const Teuchos::ParameterList& lin_p_list, cons
 
 };
 
+
+void State::set_file_pressure ( const Teuchos::ParameterList& file_p_list, const std::string& region )
+{
+  // get parameters from parameter list
+  const std::string filename = file_p_list.get<std::string>("file name");
+  const std::string label = file_p_list.get<std::string>("label");
+
+  // read the pressure variable from the checkpoint file
+  Amanzi::HDF5_MPI *checkpoint_input = new Amanzi::HDF5_MPI(*mesh_maps->get_comm(), filename);   
+  
+  Epetra_Vector cell_vector(mesh_maps->cell_epetra_map(false));
+  checkpoint_input->readData(cell_vector,label);
+
+  set_cell_value_in_region ( cell_vector, *pressure, region );
+};
+
+
 void State::set_uniform_saturation ( const Teuchos::ParameterList& unif_s_list, const std::string& region )
 {
   // get value from paramter list
@@ -793,58 +835,61 @@ void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, co
 
 
 void State::write_vis(Amanzi::Vis& vis, bool force) {
-  if ((force==true) || (vis.dump_requested(get_cycle()) && !vis.is_disabled() ))  {
-    using Teuchos::OSTab;
-    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-    
-    if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-      *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
+  if (!vis.is_disabled()) {
+    if ( force || vis.dump_requested(get_cycle()))  {
+      using Teuchos::OSTab;
+      Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+      
+      if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+        *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
+      }
+      
+      // create the new time step...
+      vis.create_timestep(get_time()/(365.25*24*60*60),get_cycle());
+      
+      // dump all the state vectors into the file
+      vis.write_vector(*get_pressure(), "pressure");
+      vis.write_vector(*get_porosity(),"porosity");
+      vis.write_vector(*get_water_saturation(),"water saturation");
+      vis.write_vector(*get_water_density(),"water density");
+      vis.write_vector(*get_vertical_permeability(),"vertical permeability");
+      vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
+      vis.write_vector(*get_material_ids(),"material IDs");
+      
+      // compute volumetric water content for visualization (porosity*water_saturation)
+      Epetra_Vector vol_water( mesh_maps->cell_map(false) );
+      vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
+      vis.write_vector(vol_water,"volumetric water content");
+      
+      std::vector<std::string> names(3);
+      names[0] = "darcy velocity x";
+      names[1] = "darcy velocity y";
+      names[2] = "darcy velocity z";
+      vis.write_vector(*get_darcy_velocity(), names);
+      
+      // write component data
+      vis.write_vector( *get_total_component_concentration(), compnames);
+      vis.finalize_timestep();
+      
     }
-
-    // create the new time step...
-    vis.create_timestep(get_time(),get_cycle());
-
-    // dump all the state vectors into the file
-    vis.write_vector(*get_pressure(), "pressure");
-    vis.write_vector(*get_porosity(),"porosity");
-    vis.write_vector(*get_water_saturation(),"water saturation");
-    vis.write_vector(*get_water_density(),"water density");
-    vis.write_vector(*get_vertical_permeability(),"vertical permeability");
-    vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
-    vis.write_vector(*get_material_ids(),"material IDs");
-    
-    // compute volumetric water content for visualization (porosity*water_saturation)
-    Epetra_Vector vol_water( mesh_maps->cell_map(false) );
-    vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
-    vis.write_vector(vol_water,"volumetric water content");
-
-    std::vector<std::string> names(3);
-    names[0] = "darcy velocity x";
-    names[1] = "darcy velocity y";
-    names[1] = "darcy velocity z";
-    vis.write_vector(*get_darcy_velocity(), names);
-
-    // write component data
-    vis.write_vector( *get_total_component_concentration(), compnames);
-    vis.finalize_timestep();
-
   }
 }
 
 
-
 void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force)  {
   write_vis(vis, force);
-
-  if ( (force == false) || (vis.dump_requested(get_cycle()) && !vis.is_disabled() ) ) {
-    // write auxillary data
-    if (auxdata != NULL)  {
-      vis.write_vector( *auxdata , auxnames);
+  
+  if ( !vis.is_disabled() ) {
+    if ( force || vis.dump_requested(get_cycle())) {
+      // write auxillary data
+      if (auxdata != NULL)  {
+        vis.write_vector( *auxdata , auxnames);
+      }
+      
+      vis.finalize_timestep();
     }
-
-    vis.finalize_timestep();
   }
 }
 

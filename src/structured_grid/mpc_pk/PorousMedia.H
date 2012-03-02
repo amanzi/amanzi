@@ -51,6 +51,67 @@ class PMBld
 				Real            time);
 };
 
+extern "C"
+{
+//
+// Function called by BCRec for user-supplied boundary data.
+//
+    typedef void (*PMEF)(int* tag, ARLIM_P(tlo), ARLIM_P(thi),
+                         const int* tagval, const int* clearval,
+                         const Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
+                         const Real* mask, ARLIM_P(mask_lo), ARLIM_P(mask_hi),
+                         const int* lo, const int* hi, const int* nvar,
+                         const int* domain_lo, const int* domain_hi,
+                         const Real* dx, const Real* xlo,
+                         const Real* prob_lo, const Real* time,
+                         const int* level, const Real* value);
+}
+
+class PM_Error_Value
+    :
+    public ErrorRec::ErrorFunc
+{
+public:
+    PM_Error_Value()
+	:
+        pmef(0), value(), min_time(), max_time(), max_level() {}
+    
+    PM_Error_Value (Real min_time, Real max_time, int max_level, 
+                    const PArray<Region>& regions);
+
+    PM_Error_Value (PMEF pmef, Real value, Real min_time,
+                    Real max_time, int max_level, const PArray<Region>& regions);
+
+    virtual ~PM_Error_Value () {}
+    
+    virtual ErrorRec::ErrorFunc* clone () const
+    {
+        return new PM_Error_Value(pmef,value,min_time,max_time,max_level,regions);
+    }
+
+    bool regionOnly() const {return pmef==0;}
+    void tagCells(int* tag, ARLIM_P(tlo), ARLIM_P(thi),
+                  const int* tagval, const int* clearval,
+                  const Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
+                  const Real* mask, ARLIM_P(mask_lo), ARLIM_P(mask_hi),
+                  const int* lo, const int* hi, const int* nvar,
+                  const int* domain_lo, const int* domain_hi,
+                  const Real* dx, const Real* xlo,
+                  const Real* prob_lo, const Real* time,
+                  const int* level) const;
+    int MaxLevel() const {return max_level;}
+    Real MinTime() const {return min_time;}
+    Real MaxTime() const {return max_time;}
+    Real Value() const {return value;}
+    const PArray<Region>& Regions () const {return regions;}
+
+protected:
+    void set_regions(const PArray<Region>& regions);
+    PMEF pmef;
+    Real value, min_time, max_time;
+    int max_level;
+    PArray<Region> regions;
+};
 
 
 class PorousMedia
@@ -305,11 +366,9 @@ protected:
   static void read_prob ();
   static void read_comp (); 
   static void read_tracer (); 
-  static void read_pressure (); 
   static void read_source (); 
   static void read_observation (); 
   static void read_chem (); 
-  static void read_amr ();
   static void assign_bc_coef(int type_id, 
 			     ParmParse& ppr,
 			     Array<std::string>& names, 
@@ -1027,6 +1086,7 @@ protected:
   // Chemistry parameters 
   //
   static int  do_chem;
+  static int  do_tracer_transport;
   static int  do_full_strang;
   static int  n_chem_interval;
   static int  it_chem;

@@ -1,9 +1,3 @@
-Command Line Options: 
-	Model: pflotran
-	Test number: 3
-	Verbosity: 2
-
-
 -- Beaker description ------------------------------------------------
 ---- Parameters
     tolerance: 1e-12
@@ -22,13 +16,13 @@ Command Line Options:
 
 ---- Aqueous Equilibrium Complexes
     Reaction                               log Keq  Charge       GMW  D-H a0
-    OH- = -1.000 H+
+    OH- = -1.000 H+ + 1.00 H2O
                                           13.99510   -1.00  17.00730    3.50
     CO3-- = -1.000 H+ + 1.000 HCO3-
                                           10.32880   -2.00  60.00920    4.50
-    CO2(aq) = 1.000 H+ + 1.000 HCO3-
+    CO2(aq) = 1.000 H+ + 1.000 HCO3- + -1.00 H2O
                                           -6.34470    0.00  44.00980    3.00
-    CaOH+ = -1.000 H+ + 1.000 Ca++
+    CaOH+ = -1.000 H+ + 1.000 Ca++ + 1.00 H2O
                                           12.85000    1.00  57.08530    4.00
     CaHCO3+ = 1.000 Ca++ + 1.000 HCO3-
                                           -1.04670    1.00 101.09510    4.00

@@ -98,23 +98,25 @@ Beaker::~Beaker() {
 }  // end Beaker destructor
 
 void Beaker::resize() {
+  total_.resize(ncomp());
   delete dtotal_;
   dtotal_ = new Block(ncomp());
-  // For now, assume that dtotal is always allocated
-  delete dtotal_sorbed_;
-  dtotal_sorbed_ = new Block(ncomp());
-  dtotal_sorbed_->zero();
+  
+  if (surfaceComplexationRxns_.size() > 0 || 
+      sorption_isotherm_rxns_.size() > 0) {
+    total_sorbed_.resize(ncomp(), 0.0);
+    delete dtotal_sorbed_;
+    dtotal_sorbed_ = new Block(ncomp());
+    dtotal_sorbed_->zero();
+  }
+  else {
+    total_sorbed_.resize(0);
+    dtotal_sorbed_ = NULL;
+  }
 
   fixed_accumulation.resize(ncomp());
   residual.resize(ncomp());
   prev_molal.resize(ncomp());
-  total_.resize(ncomp());
-  // TODO(bandre): FIXED? this should only be done if we are actually using sorption.
-  if (surfaceComplexationRxns_.size() > 0 || ion_exchange_rxns_.size() > 0) {
-    total_sorbed_.resize(ncomp(), 0.0);
-    // for (unsigned int i = 0; i < total_sorbed_.size(); i++)
-    //  total_sorbed_[i] = 0.;
-  }
 
   delete J;
   J = new Block(ncomp());
@@ -136,7 +138,7 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
                    const Beaker::BeakerParameters& parameters) {
   SetParameters(parameters);
 
-  this->SetupActivityModel(parameters.activity_model_name, parameters.pitzer_database);
+  this->SetupActivityModel(parameters.activity_model_name, parameters.pitzer_database, parameters.jfunction_pitzer);
   this->resize(static_cast<int>(this->primary_species().size()));
   this->VerifyComponentSizes(components);
 }  // end Setup()
@@ -233,7 +235,7 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
   }
 }  // end SetComponents()
 
-void Beaker::SetupActivityModel(std::string model, std::string pitzer_database) {
+void Beaker::SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer) {
   if (model != ActivityModelFactory::unit &&
       model != ActivityModelFactory::debye_huckel &&
       model != ActivityModelFactory::pitzer_hwm) {
@@ -244,7 +246,7 @@ void Beaker::SetupActivityModel(std::string model, std::string pitzer_database) 
   }
   ActivityModelFactory amf;
   // HWM model was added
-  activity_model_ = amf.Create(model, pitzer_database, primarySpecies_, aqComplexRxns_);
+  activity_model_ = amf.Create(model, pitzer_database, primarySpecies_, aqComplexRxns_, jfunction_pitzer);
   if (verbosity() == kDebugBeaker) {
     activity_model_->Display();
   }
@@ -425,14 +427,18 @@ void Beaker::updateEquilibriumChemistry(void) {
        m != minerals_.end(); m++) {
     m->Update(primarySpecies_,water_);
   }
-
-  // add equilibrium surface complexation here
+  // surface complexation
   for (std::vector<SurfaceComplexationRxn>::iterator srfcplx =
            surfaceComplexationRxns_.begin();
        srfcplx != surfaceComplexationRxns_.end(); srfcplx++) {
     srfcplx->Update(primarySpecies_);
   }
-
+  // sorption isotherms
+  for (std::vector<SorptionIsothermRxn>::iterator i =
+           sorption_isotherm_rxns_.begin();
+       i != sorption_isotherm_rxns_.end(); i++) {
+    i->Update(primarySpecies_);
+  }
   // add equilibrium ion exchange here?
   for (std::vector<IonExchangeRxn>::iterator ier = ion_exchange_rxns_.begin();
        ier != ion_exchange_rxns_.end(); ier++) {
@@ -465,10 +471,16 @@ void Beaker::calculateTotal(std::vector<double> *total,
   for (unsigned int i = 0; i < total_sorbed->size(); i++) {
     (*total_sorbed)[i] = 0.;
   }
-  // add in contributions
+  // add in surface complex contributions
   for (std::vector<SurfaceComplexationRxn>::iterator i =
            surfaceComplexationRxns_.begin();
        i != surfaceComplexationRxns_.end(); i++) {
+    i->AddContributionToTotal(total_sorbed);
+  }
+  // add in isotherm contributions
+  for (std::vector<SorptionIsothermRxn>::iterator i =
+           sorption_isotherm_rxns_.begin();
+       i != sorption_isotherm_rxns_.end(); i++) {
     i->AddContributionToTotal(total_sorbed);
   }
   // add ion exchange
@@ -497,20 +509,24 @@ void Beaker::calculateDTotal(Block* dtotal, Block* dtotal_sorbed) {
   // scale by density of water
   dtotal->scale(water_density_kg_L());
 
+  // calculate sorbed derivatives
   if (dtotal_sorbed) {
     dtotal_sorbed->zero();
-  }
-  // calculate sorbed derivatives
-  for (std::vector<SurfaceComplexationRxn>::iterator i =
-           surfaceComplexationRxns_.begin();
-       i != surfaceComplexationRxns_.end(); i++) {
-    i->AddContributionToDTotal(primarySpecies_, dtotal_sorbed);
-  }
-  // ion exchange
-  // add ion exchange
-  for (std::vector<IonExchangeRxn>::iterator ier = ion_exchange_rxns_.begin();
-       ier != ion_exchange_rxns_.end(); ier++) {
-    ier->AddContributionToDTotal(primarySpecies_,dtotal_sorbed);
+    for (std::vector<SurfaceComplexationRxn>::iterator i =
+             surfaceComplexationRxns_.begin();
+         i != surfaceComplexationRxns_.end(); i++) {
+      i->AddContributionToDTotal(primarySpecies_, dtotal_sorbed);
+    }
+    for (std::vector<SorptionIsothermRxn>::iterator i =
+             sorption_isotherm_rxns_.begin();
+         i != sorption_isotherm_rxns_.end(); i++) {
+      i->AddContributionToDTotal(primarySpecies_, dtotal_sorbed);
+    }
+    // add ion exchange
+    for (std::vector<IonExchangeRxn>::iterator ier = ion_exchange_rxns_.begin();
+         ier != ion_exchange_rxns_.end(); ier++) {
+      ier->AddContributionToDTotal(primarySpecies_,dtotal_sorbed);
+    }
   }
 }  // end calculateDTotal()
 
@@ -575,7 +591,7 @@ void Beaker::addAccumulation(std::vector<double> *residual) {
 void Beaker::addAccumulation(const std::vector<double>& total,
                              const std::vector<double>& total_sorbed,
                              std::vector<double> *residual) {
-  // accumulation_coef = porosity*saturation*volume*1000./dt
+  // aqueous_accumulation_coef = porosity*saturation*volume*1000./dt
   // units = (mol solute/L water)*(m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = mol/sec
   // 1000.d0 converts vol from m^3 -> L
@@ -586,10 +602,8 @@ void Beaker::addAccumulation(const std::vector<double>& total,
 
   // add accumulation term for equilibrium sorption (e.g. Kd, surface
   // complexation) here
-  // accumulation_coef = porosity*saturation*volume*1000./dt
-  // units = (mol solute/L water)*(m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
-  //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = mol/sec
-  // 1000.d0 converts vol from m^3 -> L
+  // sorbed_accumulation_coef = volume/dt
+  // units = (mol solute/m^3 bulk)*(m^3 bulk)/(sec) = mol/sec
   // all residual entries should be in mol/sec
   for (unsigned int i = 0; i < total_sorbed.size(); i++) {
     (*residual)[i] += sorbed_accumulation_coef() * total_sorbed[i];
@@ -603,7 +617,7 @@ void Beaker::addAccumulationDerivative(Block* J) {
 void Beaker::addAccumulationDerivative(Block* J,
                                        Block* dtotal,
                                        Block* dtotal_sorbed) {
-  // accumulation_coef = porosity*saturation*volume*1000./dt
+  // aqueous_accumulation_coef = porosity*saturation*volume*1000./dt
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*(m^3 bulk)/(sec)
   //         *(kg water/L water)*(1000L water/m^3 water) = kg water/sec
   // all Jacobian entries should be in kg water/sec
@@ -611,7 +625,11 @@ void Beaker::addAccumulationDerivative(Block* J,
 
   // add accumulation derivative term for equilibrium sorption
   // (e.g. Kd, surface complexation) here
-  J->addValues(dtotal_sorbed, sorbed_accumulation_coef());
+  // sorbed_accumulation_coef = volume/dt
+  // units = (kg water/m^3 bulk)*(m^3 bulk)/(sec) = kg water/sec
+  if (dtotal_sorbed) {
+    J->addValues(dtotal_sorbed, sorbed_accumulation_coef());
+  }
 }  // end calculateAccumulationDerivative()
 
 void Beaker::calculateFixedAccumulation(const std::vector<double>& total,
@@ -724,7 +742,7 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) {
   for (unsigned int i = 0; i < aqueous_totals.size(); i++) {
     charge_balance += aqueous_totals.at(i) * primarySpecies_.at(i).charge();
   }
-  if (charge_balance > tolerance()) {
+  if (std::fabs(charge_balance) > tolerance()) {
     if (verbosity() > kTerse) {
       std::cout << "WARNING: Beaker::CheckChargeBalance() :\n"
                 << "         charge balance = " << std::scientific
@@ -1136,6 +1154,8 @@ void Beaker::Display(void) const {
 
   DisplayAqueousEquilibriumComplexes();
 
+  DisplayGeneralKinetics();
+
   DisplayMinerals();
 
   DisplayMineralKinetics();
@@ -1197,6 +1217,19 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
   std::cout << std::endl;
 }  // end DisplayAqueousEquilibriumComplexes()
 
+void Beaker::DisplayGeneralKinetics(void) const {
+  std::cout << "---- General Kinetics" << std::endl;
+  std::cout << std::setw(12) << "Reaction"
+            << std::setw(38) << "forward_rate"
+            << std::setw(15) << "backward_rate"
+            << std::endl;
+  for (std::vector<GeneralRxn>::const_iterator rxn = generalKineticRxns_.begin();
+       rxn != generalKineticRxns_.end(); rxn++) {
+    rxn->Display();
+  }
+  std::cout << std::endl;
+}  // end DisplayAqueousEquilibriumComplexes()
+
 void Beaker::DisplayMinerals(void) const {
   if (minerals_.size() > 0) {
     std::cout << "---- Minerals" << std::endl;
@@ -1239,7 +1272,7 @@ void Beaker::DisplayIonExchangeSites(void) const {
   if (ion_exchange_rxns_.size() > 0) {
     std::cout << "---- Ion Exchange Sites" << std::endl;
     std::cout << std::setw(15) << "Species"
-              << std::setw(15) << "Location"
+              << std::setw(20) << "Location"
               << std::setw(10) << "Charge"
               << std::setw(10) << "CEC"
               << std::endl;
@@ -1328,9 +1361,9 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   }
 
   if (total_sorbed_.size() > 0) {
-    std::cout << "---- Surface Complex Sites" << std::endl;
+    std::cout << "---- Sorbed Components" << std::endl;
     std::cout << std::setw(15) << "Name"
-              << std::setw(15) << "Molarity" << std::endl;
+              << std::setw(15) << "Moles / m^3" << std::endl;
     for (int i = 0; i < ncomp(); i++) {
       std::cout << std::setw(15) << primarySpecies_.at(i).name()
                 << std::scientific << std::setprecision(5)

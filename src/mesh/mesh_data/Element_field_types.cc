@@ -45,6 +45,8 @@ std::string type_to_name (FIELD_TYPE type)
         return "scalar";
     case VECTOR:
         return "vector";
+    default:
+      return "unknown";
     }
 }
 
