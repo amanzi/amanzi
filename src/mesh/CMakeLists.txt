@@ -34,19 +34,12 @@ add_install_library(mesh)
 target_link_libraries(mesh geometry)
 
 
-
-#
-# Library: cell_geometry (WILL GO AWAY WHEN EVERYONE SWITCHES TO THE NEW API)
-#
-add_library(cell_geometry cell_geometry.cc)
-add_install_library(cell_geometry)
-
 #
 # Library: mesh_audit
 #
-add_library(mesh_audit MeshAudit.cc MeshAuditOld.cc)
+add_library(mesh_audit MeshAudit.cc)
 add_install_library(mesh_audit)
-target_link_libraries(mesh_audit mesh error_handling cell_geometry ${Epetra_LIBRARIES})
+target_link_libraries(mesh_audit mesh error_handling ${Epetra_LIBRARIES})
 
 #
 # Install Header files
