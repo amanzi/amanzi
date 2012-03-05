@@ -1493,8 +1493,10 @@ void  PorousMedia::read_comp()
               Array<Real> vals(ncomps);
               for (int j = 0; j<cNames.size(); j++) {
                   ppr.get(cNames[j].c_str(),vals[j]);
+                  vals[j] *= density[j];
               }
-              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,vals));
+              std::string generic_type = "scalar";
+              ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
           }
           else if (ic_type == "hydrostatic")
           {
