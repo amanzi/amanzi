@@ -287,17 +287,33 @@ namespace Amanzi {
 
             // Deal with optional settings
             const Array<std::string> optL = ECopt.OptLists();
+
+            // AMR gridding control defaults
+            int num_levels = 1;
+            int max_level = num_levels-1;
+            bool do_amr_subcycling = false;                            
+            int ref_ratio_DEF = 8;
+            Array<int> ref_ratio(max_level,ref_ratio_DEF);
+            int regrid_int_DEF = 2;
+            Array<int> regrid_int(num_levels,regrid_int_DEF);
+            int blocking_factor_DEF = 8;
+            Array<int> blocking_factor(max_level,blocking_factor_DEF);
+            int n_err_buf_DEF = 1;
+            Array<int> n_err_buf(max_level,n_err_buf_DEF);
+            int max_grid_DEF = (ndim==2 ? 128  :  32);
+            Array<int> max_grid(num_levels,max_grid_DEF);
+
             for (int i=0; i<optL.size(); ++i) {
                 if (optL[i] == num_str) {
                     const ParameterList& num_list = ec_list.sublist(num_str);
                     Array<std::string> nL, nP;
                     PLoptions NUMopt(num_list,nL,nP,false,true); 
                     const Array<std::string> NUMoptL = NUMopt.OptLists();
+
                     for (int j=0; j<NUMoptL.size(); ++j) {
                         if (NUMoptL[j] == amr_str) {
                             const ParameterList& amr_list = num_list.sublist(amr_str);
                             std::string num_level_str = "Number Of AMR Levels";
-                            int num_levels = 1;
                             if (amr_list.isParameter(num_level_str)) {
                                 num_levels = amr_list.get<int>(num_level_str);
                             }
@@ -305,15 +321,9 @@ namespace Amanzi {
                                 MyAbort("Must have at least 1 AMR level");
                             }
                             int max_level = num_levels - 1;
-                            amr_out_list.set<int>("max_level",max_level);
 
-                            // Shut off subcycling
-                            bool do_amr_subcycling = false;                            
-                            int amr_nosub = ( do_amr_subcycling ? 0 : 1);
-                            amr_out_list.set<int>("nosub", amr_nosub);
-                            
                             std::string ref_ratio_str = "Refinement Ratio";
-                            Array<int> ref_ratio(max_level,2);
+                            ref_ratio.resize(max_level,2);
                             if (amr_list.isParameter(ref_ratio_str)) {
                                 ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
                             }
@@ -326,10 +336,9 @@ namespace Amanzi {
                                     MyAbort("\"Refinement Ratio\" values must be 2 or 4");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
 
                             std::string regrid_int_str = "Regrid Interval";
-                            Array<int> regrid_int(max_level,2);
+                            regrid_int.resize(max_level,2);
                             if (amr_list.isParameter(regrid_int_str)) {
                                 regrid_int = amr_list.get<Array<int> >(regrid_int_str);
                             }
@@ -352,12 +361,10 @@ namespace Amanzi {
                                     }
                                 }
                             }
-                            amr_out_list.set<Array<int> >("regrid_int",regrid_int);
 
                             
-                            int blocking_factor_DEF = 8;
                             std::string blocking_factor_str = "Blocking Factor";
-                            Array<int> blocking_factor(max_level+1,blocking_factor_DEF);
+                            blocking_factor.resize(max_level+1,blocking_factor_DEF);
                             if (amr_list.isParameter(blocking_factor_str)) {
                                 blocking_factor = amr_list.get<Array<int> >(blocking_factor_str);
                             }
@@ -371,12 +378,11 @@ namespace Amanzi {
                                     MyAbort("\"" + blocking_factor_str + "\" must be a power of two");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("blocking_factor",blocking_factor);
 
                             
-                            int n_err_buf_DEF = 1;
                             std::string n_err_buf_str = "Numbers Error Buffer Cells";
-                            Array<int> n_err_buf(max_level+1,n_err_buf_DEF);
+                            int n_err_buf_DEF = 1;
+                            n_err_buf.resize(max_level+1,n_err_buf_DEF);
                             if (amr_list.isParameter(n_err_buf_str)) {
                                 n_err_buf = amr_list.get<Array<int> >(n_err_buf_str);
                             }
@@ -389,12 +395,10 @@ namespace Amanzi {
                                     MyAbort("\"" + n_err_buf_str + "\" must be > 0");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("n_error_buf",n_err_buf);
 
                             
-                            int max_grid_DEF = (ndim==2 ? 128  :  32);
                             std::string max_grid_str = "Maximum Grid Size";
-                            Array<int> max_grid(max_level+1,max_grid_DEF);
+                            max_grid.resize(max_level+1,max_grid_DEF);
                             if (amr_list.isParameter(max_grid_str)) {
                                 max_grid = amr_list.get<Array<int> >(max_grid_str);
                             }
@@ -407,7 +411,6 @@ namespace Amanzi {
                                     MyAbort("\"" + max_grid_str + "\" must be > \"" + blocking_factor_str + "\"");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("max_grid_size",max_grid);
 
 
                             std::string refineNames_str = "Refinement Indicators";
@@ -480,7 +483,7 @@ namespace Amanzi {
                                     }
 
                                     std::string maxLev_str = "Maximum Refinement Level";
-                                    int max_level = -1;
+                                    int max_level = 0;
                                     if (ref_list.isParameter(maxLev_str)) {
                                         max_level = ref_list.get<int>(maxLev_str);
                                     }
@@ -547,6 +550,16 @@ namespace Amanzi {
                 else {
                     MyAbort("Unrecognized optional parameter to \"" + ec_str + "\" list: \"" + optL[i] + "\"");
                 }
+
+                amr_out_list.set<int>("max_level",max_level);
+                amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
+                amr_out_list.set<Array<int> >("regrid_int",regrid_int);
+                amr_out_list.set<Array<int> >("blocking_factor",blocking_factor);
+                amr_out_list.set<Array<int> >("n_error_buf",n_err_buf);
+                amr_out_list.set<Array<int> >("max_grid_size",max_grid);
+                int amr_nosub = ( do_amr_subcycling ? 0 : 1);
+                amr_out_list.set<int>("nosub", amr_nosub);                            
+
             }
 
             const Array<std::string> optP = ECopt.OptParms();
@@ -571,7 +584,7 @@ namespace Amanzi {
                         prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 2;  diffuse_v = 1;
                     }
                     else if (v_val == "Extreme") {
-                        prob_v = 3; mg_v = 3; cg_v = 3; amr_v = 3;  diffuse_v = 0;
+                        prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1;
                     }
                     prob_out_list.set("v",prob_v);
                     amr_out_list.set("v",amr_v);
@@ -1183,11 +1196,12 @@ namespace Amanzi {
                                   const std::string&   Amanzi_type,
                                   ParameterList&       fPLout)
         {
-            fPLout.set<std::string>("type","saturation");
             Array<std::string> nullList, reqP;
             const std::string val_name="Value"; reqP.push_back(val_name);
             PLoptions opt(fPLin,nullList,reqP,true,true); 
-            fPLout.set<double>("val",fPLin.get<double>(val_name));
+            // FIXME: Assumes Water exists, and that this is what was intended....
+            fPLout.set<double>("Water",fPLin.get<double>(val_name));
+            fPLout.set<std::string>("type","saturation");
         }
 
 

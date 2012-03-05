@@ -4131,9 +4131,9 @@ PorousMedia::scalar_capillary_update (Real      dt,
 
   int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
-  Real max_err_nwt = 1e-5;
+  Real max_err_nwt = 1e-8;
 #else
-  Real max_err_nwt = 1e-5;
+  Real max_err_nwt = 1e-8;
 #endif
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
@@ -4373,9 +4373,9 @@ PorousMedia::diff_capillary_update (Real      dt,
 
   int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
-  Real max_err_nwt = 1e-5;
+  Real max_err_nwt = 1e-8;
 #else
-  Real max_err_nwt = 1e-5;
+  Real max_err_nwt = 1e-8;
 #endif
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
@@ -4556,7 +4556,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = 10;
-  Real max_err_nwt = 1e-5;
+  Real max_err_nwt = 1e-8;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
@@ -4712,7 +4712,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = 20;
-  Real max_err_nwt = 1e-5;
+  Real max_err_nwt = 1e-8;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
@@ -7585,9 +7585,9 @@ PorousMedia::mac_sync ()
       
       int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
-      Real max_err_nwt = 1e-5;
+      Real max_err_nwt = 1e-8;
 #else
-      Real max_err_nwt = 1e-5;
+      Real max_err_nwt = 1e-8;
 #endif
  
       int  itr_nwt = 0;
@@ -7811,7 +7811,7 @@ PorousMedia::richard_sync ()
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = 20;
-  Real max_err_nwt = 1e-5;
+  Real max_err_nwt = 1e-8;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();

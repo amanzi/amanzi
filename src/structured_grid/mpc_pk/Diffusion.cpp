@@ -1158,7 +1158,8 @@ Diffusion::richard_iter (Real                   dt,
       PArray<MultiFab> a1_p;
       Array<PArray<MultiFab> > bb_p(BL_SPACEDIM);    
       const Real S_tol     = visc_tol;
-      const Real S_tol_abs = get_scaled_abs_tol(Rhs, visc_abs_tol);
+      const Real S_tol_abs = visc_abs_tol;
+      //const Real S_tol_abs = get_scaled_abs_tol(Rhs, visc_abs_tol);
       Real final_resnorm;
       int  fill_bcs_for_gradient = 1;
       MGT_Solver mgt_solver = getOp(0,1,xa,xb,cur_time,visc_bndry,bc,true);
@@ -1533,7 +1534,8 @@ Diffusion::richard_iter_p (Real                   dt,
       PArray<MultiFab> a1_p;
       Array<PArray<MultiFab> > bb_p(BL_SPACEDIM);    
       const Real S_tol     = visc_tol;
-      const Real S_tol_abs = get_scaled_abs_tol(Rhs, visc_abs_tol);
+      //const Real S_tol_abs = get_scaled_abs_tol(Rhs, visc_abs_tol);
+      const Real S_tol_abs = visc_abs_tol;
       Real final_resnorm;
       int  fill_bcs_for_gradient = 1;
       MGT_Solver mgt_solver = getOp(0,1,xa,xb,cur_time,visc_bndry,bc,true);
