@@ -5674,7 +5674,9 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 
   if (dt_eig != 0.0)
     {
-      estdt = cfl * dt_eig;
+        if (cfl>0) {
+            estdt = cfl * dt_eig;
+        }
     } 
   else 
     {
@@ -5684,6 +5686,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
       if (u_mac == 0) 
 	{
 	  making_new_umac = 1;
+
 	  u_mac = new MultiFab[BL_SPACEDIM];
 	  for (int dir = 0; dir < BL_SPACEDIM; dir++)
 	    {
@@ -5716,8 +5719,9 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 
       predictDT(u_mac);
 
-      estdt = cfl*dt_eig;
-
+      if (cfl>0) {
+          estdt = cfl*dt_eig;
+      }
       if (making_new_umac)
 	delete [] u_mac;
     }
@@ -5728,7 +5732,18 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 Real
 PorousMedia::initialTimeStep (MultiFab* u_mac)
 {
-  return init_shrink*estTimeStep(u_mac);
+    Real dt_0 = estTimeStep(u_mac);
+
+    if (stop_time >= 0.0)
+    {        
+        const Real eps      = 0.0001*dt_0;
+        const Real cur_time = state[State_Type].curTime();
+        if ((cur_time + dt_0) >= (stop_time - eps)) {
+            dt_0 = stop_time - cur_time;
+        }
+    }
+
+    return dt_0 * init_shrink;
 }
 
 void 
@@ -5922,7 +5937,6 @@ PorousMedia::computeNewDt (int                   finest_level,
       if (a != b)
 	dt_0 = b * plot_per - cur_time;
     }
-
   n_factor = 1;
   for (int i = 0; i <= max_level; i++)
     {

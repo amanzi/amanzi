@@ -211,6 +211,7 @@ namespace Amanzi {
             else if (flow_mode == "Richards") {
                 model_name = "richard";
                 prob_out_list.set("have_capillary",1);
+                prob_out_list.set("cfl",-1);
             }
             else if (flow_mode == "Single-phase") {
                 model_name = "single-phase";
@@ -254,30 +255,76 @@ namespace Amanzi {
                     prob_out_list.set("do_simple",2);
                 }
             }
-            else if (t_list.isSublist(transient_str)) {
+            else if (t_list.isSublist(transient_str) 
+                     || t_list.isSublist(init_to_steady_str) )
+            {
                 const ParameterList& tran_list = t_list.sublist(transient_str);
-               
                 reqP.clear(); 
                 std::string Start_str = "Start"; reqP.push_back(Start_str);
                 std::string End_str = "End"; reqP.push_back(End_str);
                 std::string Init_Time_Step_str = "Initial Time Step";
-                std::string Time_Step_Mult_str = "Time Step Multiplier";
-                PLoptions opt(tran_list,reqL,reqP,true,false); 
-                const Array<std::string> optStr = opt.OptLists();
+                std::string Time_Step_Change_Max_str = "Maximum Time Step Change";
+                std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier";
+                std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
+                std::string Max_Step_str = "Maximum Cycle Number";
 
+                PLoptions opt(tran_list,reqL,reqP,true,false); 
+                const Array<std::string> optStr = opt.OptParms();
                 struc_out_list.set<double>("start_time", tran_list.get<double>(Start_str));
                 struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
+                double dt_init = -1;
+                double dt_init_mult = -1;
+                double change_max = -1;
+                int step_max = -1;
+                double dt_max = -1;
+
                 for (int i=0; i<optStr.size(); ++i) {
                     if (optStr[i] == Init_Time_Step_str) {
-                        struc_out_list.set<double>("dt_init", tran_list.get<double>(Init_Time_Step_str));
+                        dt_init = tran_list.get<double>(Init_Time_Step_str);
+                    }
+                    else if (optStr[i] == Time_Step_Change_Max_str) {
+                        change_max = tran_list.get<double>(Time_Step_Change_Max_str);
+                    }
+                    else if (optStr[i] == Init_Time_Step_Mult_str) {
+                        dt_init_mult = tran_list.get<double>(Init_Time_Step_Mult_str);
+                    }
+                    else if (optStr[i] == Max_Time_Step_Size_str) {
+                        dt_max = tran_list.get<double>(Max_Time_Step_Size_str);
+                    }
+                    else if (optStr[i] == Max_Step_str) {
+                        step_max = tran_list.get<double>(Max_Step_str);
                     }
                     else {
-                        MyAbort("Unrecognized option under \""+transient_str+"\"");
+                        MyAbort("Unrecognized option under \""+transient_str+"\": \""+optStr[i]+"\"" );
                     }
                 }
-            }
-            else if (t_list.isSublist(init_to_steady_str)) {
-                MyAbort("\"" + init_to_steady_str + "\" not yet supported" );
+
+                if (dt_init > 0) {
+                    double fac = (dt_init_mult > 0  ?  dt_init_mult  :  1);
+                    struc_out_list.set<double>("dt_init", dt_init*fac);
+                }
+                else {
+                    if (dt_init_mult > 0) {
+                        prob_out_list.set<double>("init_shrink", dt_init_mult);
+                    }
+                } 
+
+                if (change_max > 0) {                        
+                    prob_out_list.set<double>("change_max", change_max);
+                }
+
+                if (step_max>0) {
+                    struc_out_list.set<int>("max_step", step_max);
+                }
+                
+                if (dt_max > 0) {
+                    if (model_name == "richard") {
+                        prob_out_list.set<double>("richard_max_dt", dt_max);
+                    }
+                    else {
+                        prob_out_list.set<double>("max_dt", dt_max);
+                    }
+                }
             }
             else {
                 std::cout << t_list << std::endl;
@@ -523,26 +570,9 @@ namespace Amanzi {
                         }
                         else if (NUMoptL[j] == prob_str) {
                             const ParameterList& prob_list = num_list.sublist(prob_str);
-                            std::string Max_Time_Step_Change_str = "Maximum Time Step Change";
-                            std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
-                            std::string Max_Step_str = "Maximum Cycle Number";
                             for (ParameterList::ConstIterator it=prob_list.begin(); it!=prob_list.end(); ++it) {
                                 const std::string& name = prob_list.name(it);
-                                if (name == Max_Time_Step_Change_str) {
-                                    prob_out_list.set<double>("change_max",
-                                                              prob_list.get<double>(Max_Time_Step_Change_str));
-                                }
-                                else if (name == Max_Step_str) {
-                                    int max_step = prob_list.get<int>(Max_Step_str);
-                                    struc_out_list.set<int>("max_step", max_step);
-                                }
-                                else if (name == Max_Time_Step_Size_str) {
-                                    double max_dt = prob_list.get<double>(Max_Time_Step_Size_str);
-                                    struc_out_list.set<double>("max_dt", max_dt);
-                                }
-                                else {
-                                    prob_out_list.setEntry(name,num_list.getEntry(name));
-                                }
+                                prob_out_list.setEntry(name,prob_list.getEntry(name));
                             }
                         }
                     }
@@ -608,7 +638,6 @@ namespace Amanzi {
             // Set other basic algorithm defaults
             prob_out_list.set("visc_abs_tol",1.e-16);
             prob_out_list.set("visc_tol",1.e-14);
-            prob_out_list.set("cfl",1);
 
             bool echo_inputs = false;
             std::string echo_str = "Echo Inputs";
