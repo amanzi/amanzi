@@ -160,12 +160,12 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
         if (EXISTS "${NetCDF_LIBRARY_DIR}")
 
-            find_library(NetCDF_C_LIBRARY
+            find_library(_NetCDF_C_LIBRARY
                          NAMES netcdf
                          HINTS ${NetCDF_LIBRARY_DIR}
                          NO_DEFAULT_PATH)
 
-            find_library(NetCDF_CXX_LIBRARY
+            find_library(_NetCDF_CXX_LIBRARY
                          NAMES netcdf_c++
                          HINTS ${NetCDF_LIBRARY_DIR}
                          NO_DEFAULT_PATH)
@@ -182,13 +182,13 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
             if (EXISTS "${NetCDF_DIR}" )
 
-                find_library(NetCDF_C_LIBRARY
+                find_library(_NetCDF_C_LIBRARY
                              NAMES netcdf
                              HINTS ${NetCDF_DIR}
                              PATH_SUFFIXES "lib" "Lib"
                              NO_DEFAULT_PATH)
 
-                find_library(NetCDF_CXX_LIBRARY
+                find_library(_NetCDF_CXX_LIBRARY
                              NAMES netcdf_c++
                              HINTS ${NetCDF_DIR}
                              PATH_SUFFIXES "lib" "Lib"
@@ -203,11 +203,11 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
         else()
 
-            find_library(NetCDF_C_LIBRARY
+            find_library(_NetCDF_C_LIBRARY
                          NAMES netcdf
                          PATH_SUFFIXES ${netcdf_lib_suffixes})
             
-            find_library(NetCDF_CXX_LIBRARY
+            find_library(_NetCDF_CXX_LIBRARY
                          NAMES netcdf_c++
                          PATH_SUFFIXES ${netcdf_lib_suffixes})
 
@@ -216,15 +216,23 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
     endif()
 
-    if ( NOT NetCDF_C_LIBRARY )
-        message(SEND_ERROR "Can not locate NetCDF C library")
-    endif()    
-    
-    if ( NOT NetCDF_CXX_LIBRARY )
-        message(SEND_ERROR "Can not locate NetCDF CXX library")
-    endif()    
-
-
+    # Define the NetCDF library targets
+    if ( _NetCDF_C_LIBRARY )
+      add_imported_library(netcdf LOCATION "${_NetCDF_C_LIBRARY}" LINK_LANGUAGES "C")
+      set(NetCDF_C_LIBRARY netcdf)
+    else()
+      message(SEND_ERROR "Can not locate NetCDF C library")
+    endif()  
+   
+    if ( _NetCDF_CXX_LIBRARY )
+      add_imported_library(netcdf_c++ 
+	                   LOCATION ${_NetCDF_CXX_LIBRARY} 
+			   LINK_LANGUAGES "CXX"
+			   LINK_INTERFACE_LIBRARIES "netcdf")
+      set(NetCDF_CXX_LIBRARY netcdf_c++)			 
+    else()
+      message(SEND_ERROR "Can not locate NetCDF C++ library")
+    endif()  
    
     # Define the LIBRARIES and INCLUDE_DORS
     set(NetCDF_INCLUDE_DIRS ${NetCDF_INCLUDE_DIR})
@@ -256,9 +264,22 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
         endif()
     endif()    
 
+    # If NetCDF was built with HDF5 then add that to the target properties
+    # NetCDF calls HDF5 HL routines and not all HDF5 installations will have 
+    # this library. Warn the user if HL is not detected. Use the 
+    # HDF5_C_LIBRARIES to define link needs since it will contain hdf5 and
+    # hdf5_hl.
     if(NetCDF_NEEDS_HDF5) 
         message(STATUS "NetCDF requires HDF5")
-        add_package_dependency(NetCDF DEPENDS_ON HDF5)
+	find_package(HDF5 QUIET REQUIRED)
+	if ( HDF5_FOUND )
+	  if ( NOT HDF5_HL_FOUND )
+	    message(WARNING "NetCDF calls the HDF5 HL library but this HDF5 does not have one")
+	  endif() 
+	  set_target_properties(netcdf PROPERTIES 
+	                        IMPORTED_LINK_INTERFACE_LIBRARIES "${HDF5_C_LIBRARIES}")
+	  list(APPEND NetCDF_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})		      
+	endif()    
     endif()
 
 endif(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS )    

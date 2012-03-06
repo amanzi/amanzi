@@ -115,7 +115,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
 
         if (EXISTS "${ASCEMIO_LIBRARY_DIR}")
 
-            find_library(ASCEMIO_LIBRARY
+            find_library(_ASCEMIO_LIBRARY
                          NAMES parallelio
                          HINTS ${ASCEMIO_LIBRARY_DIR}
                          NO_DEFAULT_PATH)
@@ -130,7 +130,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
 
             if (EXISTS "${ASCEMIO_DIR}" )
 
-                find_library(ASCEMIO_LIBRARY
+                find_library(_ASCEMIO_LIBRARY
                              NAMES parallelio
                              HINTS ${ASCEMIO_DIR}
                              PATH_SUFFIXES "lib" "Lib"
@@ -144,7 +144,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
 
         else()
 
-            find_library(ASCEMIO_LIBRARY
+            find_library(_ASCEMIO_LIBRARY
                          NAMES parallelio
                          PATH_SUFFIXES ${ascemio_lib_suffixes})
 
@@ -152,7 +152,13 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
 
     endif()
 
-    if ( NOT ASCEMIO_LIBRARY )
+    if ( _ASCEMIO_LIBRARY )
+        set(ASCEMIO_LIBRARY ascemio)
+        add_imported_library(${ASCEMIO_LIBRARY}
+	                     LOCATION ${_ASCEMIO_LIBRARY}
+                             LINK_LANGUAGES "C")
+    else()
+        set(ASCEMIO_LIBRARY ASCEMIO_LIBRARY-NOTFOUND)
         message(SEND_ERROR "Can not locate ASCEMIO library")
     endif()    
     
@@ -162,14 +168,18 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
     set(ASCEMIO_LIBRARIES    ${ASCEMIO_LIBRARY})
 
     message(STATUS "ASCEMIO requires HDF5")
-    add_package_dependency(ASCEMIO DEPENDS_ON HDF5)
+    find_package(HDF5 QUIET REQUIRED)
+    set_target_properties(${ASCEMIO_LIBRARY} PROPERTIES
+                          IMPORTED_LINK_INTERFACE_LIBRARIES "${HDF5_C_LIBRARIES}")
+    list(APPEND ASCEMIO_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})			
+    #add_package_dependency(ASCEMIO DEPENDS_ON HDF5)
 
 endif(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS )    
 
 # Send useful message if everything is found
 find_package_handle_standard_args(ASCEMIO DEFAULT_MSG
-                                           ASCEMIO_LIBRARIES
-                                           ASCEMIO_INCLUDE_DIRS)
+                                           ASCEMIO_INCLUDE_DIRS
+					   ASCEMIO_LIBRARIES)
 
 # find_package)handle)standard_args should set ASCEMIO_FOUND but it does not!
 if ( ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)

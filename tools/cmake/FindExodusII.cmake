@@ -25,6 +25,8 @@
 # Standard CMake modules see CMAKE_ROOT/Modules
 include(FindPackageHandleStandardArgs)
 
+include(AddImportedLibrary)
+
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
 include(AddPackageDependency)
@@ -118,7 +120,7 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
 
         if (EXISTS "${ExodusII_LIBRARY_DIR}")
 
-            find_library(ExodusII_LIBRARY
+            find_library(_ExodusII_LIBRARY
                          NAMES ${exodus_lib_names}
                          HINTS ${ExodusII_LIBRARY_DIR}
                          NO_DEFAULT_PATH)
@@ -134,7 +136,7 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
 
             if (EXISTS "${ExodusII_DIR}" )
 
-                find_library(ExodusII_LIBRARY
+                find_library(_ExodusII_LIBRARY
                              NAMES ${exodus_lib_names}
                              HINTS ${ExodusII_DIR}
                              PATH_SUFFIXES ${exodus_lib_suffixes}
@@ -142,13 +144,13 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
 
             else()
                  message(SEND_ERROR "ExodusII_DIR=${ExodusII_DIR} does not exist")
-                 set(ExodusIILIBRARY "ExodusII_LIBRARY-NOTFOUND")
+                 set(ExodusII_LIBRARY "ExodusII_LIBRARY-NOTFOUND")
             endif()    
 
 
         else()
 
-            find_library(ExodusII_LIBRARY
+            find_library(_ExodusII_LIBRARY
                          NAMES ${exodus_lib_names}
                          PATH_SUFFIXES ${exodus_lib_suffixes})
 
@@ -156,7 +158,13 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
 
     endif()
 
-    if ( NOT ExodusII_LIBRARY )
+    # Create the library target store the name in ExodusII_LIBRARY
+    if ( _ExodusII_LIBRARY )
+        set(ExodusII_LIBRARY exodusii)
+	add_imported_library(${ExodusII_LIBRARY}
+	                     LOCATION ${_ExodusII_LIBRARY}
+			     LINK_LANGUAGES "C;CXX")
+    else()
         message(SEND_ERROR "Can not locate ExodusII library")
     endif()    
 
@@ -164,7 +172,14 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
     # Define prerequisite packages
     set(ExodusII_INCLUDE_DIRS ${ExodusII_INCLUDE_DIR})
     set(ExodusII_LIBRARIES    ${ExodusII_LIBRARY})
-    add_package_dependency(ExodusII DEPENDS_ON NetCDF)
+
+    # Search for NetCDF
+    find_package(NetCDF QUIET REQUIRED)
+    set_target_properties(${ExodusII_LIBRARY} PROPERTIES
+                          IMPORTED_LINK_INTERFACE_LIBRARIES "${NetCDF_LIBRARIES}")
+    list(APPEND ExodusII_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})			
+
+    #add_package_dependency(ExodusII DEPENDS_ON NetCDF)
 
    
 endif(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS )    

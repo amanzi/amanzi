@@ -40,7 +40,7 @@ file(GLOB stk_mesh_files "*.cc")
 add_library(stk_mesh ${stk_mesh_files})
 add_install_library(stk_mesh)
 target_link_libraries(stk_mesh error_handling mesh_data mesh 
-                      ${Trilinos_LIBRARIES} ${ExodusII_LIBRARIES})
+                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${STK_LIBRARIES} ${ExodusII_LIBRARIES})
 
 #
 # Install Targets
