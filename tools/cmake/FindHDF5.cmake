@@ -518,7 +518,14 @@ if ( NOT HDF5_FIND_QUIETLY )
 
 endif()
 
+# DEBUG prints
+print_variable(HDF5_VERSION)
+print_variable(HDF5_INCLUDE_DIRS)
+print_variable(HDF5_LIBRARIES)
+set(CMAKE_VERSION "${CMAKE_CACHE_MAJOR_VERSION}.${CMAKE_CACHE_MINOR_VERSION}.${CMAKE_CACHE_PATCH_VERSION}")
+print_variable(CMAKE_VERSION)
+
 find_package_handle_standard_args( HDF5 
-    REQUIRED_VARS HDF5_INCLUDE_DIRS HDF5_LIBRARIES
-    VERSION_VAR   HDF5_VERSION
+                                   REQUIRED_VARS HDF5_INCLUDE_DIRS HDF5_LIBRARIES
+                                   VERSION_VAR   HDF5_VERSION
 )
