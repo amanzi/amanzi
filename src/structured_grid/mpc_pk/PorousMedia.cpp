@@ -5937,6 +5937,16 @@ PorousMedia::computeNewDt (int                   finest_level,
       if (a != b)
 	dt_0 = b * plot_per - cur_time;
     }
+
+  // 
+  // Limit by max_dt
+  //
+#ifdef MG_USE_FBOXLIB
+  if (model == model_list["richard"]) {
+      dt_0 = std::min(richard_max_dt,dt_0);
+  }  
+#endif
+
   n_factor = 1;
   for (int i = 0; i <= max_level; i++)
     {

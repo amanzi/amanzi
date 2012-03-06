@@ -1003,7 +1003,9 @@ PorousMedia::read_rock()
         ParmParse am("amr");
         am.query("max_level",max_level);
         am.getarr("n_cell",n_cell,0,BL_SPACEDIM);
-        am.getarr("ref_ratio",fratio,0,max_level);
+        if (max_level>0) {
+            am.getarr("ref_ratio",fratio,0,max_level);
+        }
         
         ParmParse gm("geometry");
         gm.getarr("prob_lo",problo,0,BL_SPACEDIM);
