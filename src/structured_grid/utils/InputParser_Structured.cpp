@@ -191,6 +191,7 @@ namespace Amanzi {
             std::string ec_str = "Execution Control";
             std::string amr_str = "Adaptive Mesh Refinement Control";
             std::string prob_str = "Basic Algorithm Control";
+            std::string it_str = "Iterative Linear Solver Control";
             std::string cg_str = "Conjugate Gradient Algorithm";
             std::string mg_str = "Multigrid Algorithm";
             std::string mac_str = "Pressure Discretization Control";
@@ -517,7 +518,7 @@ namespace Amanzi {
                             }
 
                             
-                            std::string n_err_buf_str = "Numbers Error Buffer Cells";
+                            std::string n_err_buf_str = "Number Error Buffer Cells";
                             int n_err_buf_DEF = 1;
                             n_err_buf.resize(max_level+1,n_err_buf_DEF);
                             if (amr_list.isParameter(n_err_buf_str)) {
@@ -681,13 +682,25 @@ namespace Amanzi {
                         {
                             process_expert_options(num_list.sublist(amr_str),amr_out_list);
                         }
-                        else if (NUMoptL[j] == mg_str)
+                        else if (NUMoptL[j] == it_str)
                         {
-                            process_expert_options(num_list.sublist(mg_str),mg_out_list);
-                        }
-                        else if (NUMoptL[j] == cg_str)
-                        {
-                            process_expert_options(num_list.sublist(cg_str),cg_out_list);
+                            const ParameterList& it_list = num_list.sublist(it_str);
+                            for (ParameterList::ConstIterator k=it_list.begin(); k!=it_list.end(); ++k) 
+                            {
+                                const std::string& itname = it_list.name(k);
+                                if (itname == mg_str)
+                                {
+                                    process_expert_options(num_list.sublist(mg_str),mg_out_list);
+                                }
+                                else if (itname == cg_str)
+                                {
+                                    process_expert_options(num_list.sublist(cg_str),cg_out_list);
+                                }
+                                else
+                                {
+                                    MyAbort("Unrecognized optional parameter to \"" + it_str + "\" list: \"" + itname + "\"");
+                                }
+                            }
                         }
                         else if (NUMoptL[j] == prob_str)
                         {
