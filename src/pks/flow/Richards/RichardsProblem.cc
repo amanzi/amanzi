@@ -236,16 +236,6 @@ void RichardsProblem::SetPermeability(const Epetra_Vector &k) {
   for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
 };
 
-void RichardsProblem::SetPorosity(double phi) {
-  /// verify 0 <= phi <= 1
-  phi_->PutScalar(phi);
-};
-
-void RichardsProblem::SetPorosity(const Epetra_Vector& phi) {
-  /// verify 0 <= phi <= 1
-  *phi_ = phi;
-};
-
 void RichardsProblem::SetFluidDensity(double rho) {
   /// should verify rho > 0
   rho_ = rho;

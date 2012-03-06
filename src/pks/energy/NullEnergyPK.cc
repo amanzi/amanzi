@@ -80,15 +80,6 @@ namespace Amanzi {
     soln->set_data(temp);
   };
 
-  // Pointer copy temperature fields from state into solution vector.
-  void NullEnergyPK::state_to_solution(Teuchos::RCP<State>& S,
-          Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<TreeVector>& soln_dot) {
-    Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-    soln->set_data(temp);
-    Teuchos::RCP<CompositeVector> temp_dot = S->GetFieldData("temperature_dot", "energy");
-    soln_dot->set_data(temp_dot);
-  };
-
   // Pointer copy temperature fields from solution vector into state.  Used within
   // compute_f() of strong couplers to set the current iterate in the state for
   // use with other PKs.
@@ -96,14 +87,6 @@ namespace Amanzi {
           Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> temp = soln->data();
     S->SetData("temperature", "energy", temp);
-  };
-
-  void NullEnergyPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
-          Teuchos::RCP<TreeVector>& soln_dot, Teuchos::RCP<State>& S) {
-    Teuchos::RCP<CompositeVector> temp = soln->data();
-    S->SetData("temperature", "energy", temp);
-    Teuchos::RCP<CompositeVector> temp_dot = soln_dot->data();
-    S->SetData("temperature_dot", "energy", temp_dot);
   };
 
   // Advance methods calculate the constant value

@@ -52,7 +52,7 @@ public:
   bool advance(double dt);
 
   // -- Commit any secondary (dependent) variables.
-  void commit_state(double dt, Teuchos::RCP<State>& S) {}
+  void commit_state(double dt, Teuchos::RCP<State>& S);
 
   // -- Update diagnostics for vis.
   void calculate_diagnostics(Teuchos::RCP<State>& S);
@@ -86,6 +86,10 @@ private:
 
   double h0_; // initial timestep size
   double h_, hnext_; // current, next step sizes
+
+  // TODO: these should be scoped pointers
+  Teuchos::RCP<Matrix_MFD> matrix_
+  Teuchos::RCP<Matrix_MFD> preconditioner_
 };
 
 } // close namespace Amanzi

@@ -6,20 +6,20 @@
 namespace Amanzi {
 
 DarcyPK::DarcyPK(Teuchos::ParameterList &flow_plist, Teuchos::RCP<State> &S,
-                 Teuchos::RCP<TreeVector>& soln) :
+                 Teuchos::RCP<TreeVector>& solution) :
     flow_plist(plist_) {
+
+  solution_ = solution;
 
   // Require fields in the state.
   S->require_field("pressure", FIELD_LOCATION_CELL, "flow");
   S->get_field_record("pressure")->set_io_vis(true);
-  Teuchos::RCP<Epetra_MultiVector> soln_prs =
-    Teuchos::rcp(new Epetra_MultiVector(*S->get_field("pressure")));
-  soln->PushBack(soln_prs);
+  Teuchos::RCP<Epetra_MultiVector> pressure_ptr = S->get_field("pressure", "flow");
+  solution_->PushBack(pressure_ptr);
 
   S->require_field("pressure_lambda", FIELD_LOCATION_FACE, "flow");
-  Teuchos::RCP<Epetra_MultiVector> lambda_soln_prs =
-    Teuchos::rcp(new Epetra_MultiVector(*S->get_field("pressure_lambda")));
-  soln->PushBack(lambda_soln_prs);
+  Teuchos::RCP<Epetra_MultiVector> lambda_pressure_ptr = S->get_field("pressure_lambda", "flow");
+  soln->PushBack(lambda_pressure_ptr);
 
   // Require flux for transport/etc.
   S->require_field("darcy_flux", FIELD_LOCATION_FACE, "flow");

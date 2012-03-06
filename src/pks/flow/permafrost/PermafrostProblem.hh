@@ -58,7 +58,7 @@ public:
   void DerivePermeability(const Epetra_Vector &phi,
                           Teuchos::RCP<Epetra_Vector> &perm) const;
   void DeriveLiquidRelPerm(const Epetra_Vector &saturation,
-                           Teuchos::RCP<Epetra_Vector> &rel_perm) const;
+                           Teuchos::RCP<Epetra_Vector> &k_rel) const;
   void DeriveGasDensity(const Epetra_Vector &pressure, const Epetra_Vector &temp,
                         Teuchos::RCP<Epetra_Vector> &rho) const;
   void DeriveLiquidDensity(const Epetra_Vector &pressure, const Epetra_Vector &temp,
