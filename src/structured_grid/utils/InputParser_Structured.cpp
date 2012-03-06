@@ -164,6 +164,21 @@ namespace Amanzi {
             return res;
         }
 
+
+        void process_expert_options(const ParameterList& pl,
+                                    ParameterList&       out_pl)
+        {
+            const std::string expert_str = "Expert Settings";
+            if (pl.isSublist(expert_str)) {
+                const ParameterList& expert_list = pl.sublist(expert_str);
+                for (ParameterList::ConstIterator it=expert_list.begin(); it!=expert_list.end(); ++it) {
+                    const std::string& name = expert_list.name(it);
+                    out_pl.setEntry(name,expert_list.getEntry(name));
+                }
+            }
+        }
+
+
         //
         // convert execution control to structured format
         //
@@ -176,6 +191,7 @@ namespace Amanzi {
             std::string ec_str = "Execution Control";
             std::string amr_str = "Adaptive Mesh Refinement Control";
             std::string prob_str = "Basic Algorithm Control";
+            std::string it_str = "Iterative Linear Solver Control";
             std::string cg_str = "Conjugate Gradient Algorithm";
             std::string mg_str = "Multigrid Algorithm";
             std::string mac_str = "Pressure Discretization Control";
@@ -199,6 +215,14 @@ namespace Amanzi {
             ParameterList& mac_out_list     = struc_out_list.sublist("mac");
             ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
 
+
+            bool echo_inputs = false;
+            std::string echo_str = "Echo Inputs";
+            if (parameter_list.isParameter(echo_str)) {
+                echo_inputs = parameter_list.get<bool>(echo_str);
+            }
+            struc_out_list.set<bool>("echo_inputs",echo_inputs);
+
             //
             // Set flow model
             //
@@ -211,6 +235,7 @@ namespace Amanzi {
             else if (flow_mode == "Richards") {
                 model_name = "richard";
                 prob_out_list.set("have_capillary",1);
+                prob_out_list.set("cfl",-1);
             }
             else if (flow_mode == "Single-phase") {
                 model_name = "single-phase";
@@ -254,30 +279,76 @@ namespace Amanzi {
                     prob_out_list.set("do_simple",2);
                 }
             }
-            else if (t_list.isSublist(transient_str)) {
+            else if (t_list.isSublist(transient_str) 
+                     || t_list.isSublist(init_to_steady_str) )
+            {
                 const ParameterList& tran_list = t_list.sublist(transient_str);
-               
-                reqP.clear(); 
+                reqP.clear(); reqL.clear();
                 std::string Start_str = "Start"; reqP.push_back(Start_str);
                 std::string End_str = "End"; reqP.push_back(End_str);
                 std::string Init_Time_Step_str = "Initial Time Step";
-                std::string Time_Step_Mult_str = "Time Step Multiplier";
-                PLoptions opt(tran_list,reqL,reqP,true,false); 
-                const Array<std::string> optStr = opt.OptLists();
+                std::string Time_Step_Change_Max_str = "Maximum Time Step Change";
+                std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier";
+                std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
+                std::string Max_Step_str = "Maximum Cycle Number";
 
+                PLoptions Topt(tran_list,reqL,reqP,true,false); 
+                const Array<std::string> ToptP = Topt.OptParms();
                 struc_out_list.set<double>("start_time", tran_list.get<double>(Start_str));
                 struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
-                for (int i=0; i<optStr.size(); ++i) {
-                    if (optStr[i] == Init_Time_Step_str) {
-                        struc_out_list.set<double>("dt_init", tran_list.get<double>(Init_Time_Step_str));
+                double dt_init = -1;
+                double dt_init_mult = -1;
+                double change_max = -1;
+                int step_max = -1;
+                double dt_max = -1;
+
+                for (int i=0; i<ToptP.size(); ++i) {
+                    if (ToptP[i] == Init_Time_Step_str) {
+                        dt_init = tran_list.get<double>(Init_Time_Step_str);
+                    }
+                    else if (ToptP[i] == Time_Step_Change_Max_str) {
+                        change_max = tran_list.get<double>(Time_Step_Change_Max_str);
+                    }
+                    else if (ToptP[i] == Init_Time_Step_Mult_str) {
+                        dt_init_mult = tran_list.get<double>(Init_Time_Step_Mult_str);
+                    }
+                    else if (ToptP[i] == Max_Time_Step_Size_str) {
+                        dt_max = tran_list.get<double>(Max_Time_Step_Size_str);
+                    }
+                    else if (ToptP[i] == Max_Step_str) {
+                        step_max = tran_list.get<double>(Max_Step_str);
                     }
                     else {
-                        MyAbort("Unrecognized option under \""+transient_str+"\"");
+                        MyAbort("Unrecognized option under \""+transient_str+"\": \""+ToptP[i]+"\"" );
                     }
                 }
-            }
-            else if (t_list.isSublist(init_to_steady_str)) {
-                MyAbort("\"" + init_to_steady_str + "\" not yet supported" );
+
+                if (dt_init > 0) {
+                    double fac = (dt_init_mult > 0  ?  dt_init_mult  :  1);
+                    struc_out_list.set<double>("dt_init", dt_init*fac);
+                }
+                else {
+                    if (dt_init_mult > 0) {
+                        prob_out_list.set<double>("init_shrink", dt_init_mult);
+                    }
+                } 
+
+                if (change_max > 0) {                        
+                    prob_out_list.set<double>("change_max", change_max);
+                }
+
+                if (step_max>0) {
+                    struc_out_list.set<int>("max_step", step_max);
+                }
+                
+                if (dt_max > 0) {
+                    if (model_name == "richard") {
+                        prob_out_list.set<double>("richard_max_dt", dt_max);
+                    }
+                    else {
+                        prob_out_list.set<double>("max_dt", dt_max);
+                    }
+                }
             }
             else {
                 std::cout << t_list << std::endl;
@@ -287,17 +358,100 @@ namespace Amanzi {
 
             // Deal with optional settings
             const Array<std::string> optL = ECopt.OptLists();
-            for (int i=0; i<optL.size(); ++i) {
-                if (optL[i] == num_str) {
+            const Array<std::string> optP = ECopt.OptParms();
+
+            //
+            // Basic Algorithm Defaults
+            //
+            double visc_abs_tol = 1.e-16; prob_out_list.set<double>("visc_abs_tol",visc_abs_tol);
+            double visc_tol = 1.e-14; prob_out_list.set<double>("visc_tol",visc_tol);
+
+            //
+            // Verbosity Default
+            //
+            std::string v_val = "Medium";
+
+            //
+            // AMR gridding control defaults
+            //
+            int num_levels = 1;
+            int max_level = num_levels-1;
+            bool do_amr_subcycling = false;                            
+            int ref_ratio_DEF = 8;
+            Array<int> ref_ratio(max_level,ref_ratio_DEF);
+            int regrid_int_DEF = 2;
+            Array<int> regrid_int(num_levels,regrid_int_DEF);
+            int blocking_factor_DEF = 8;
+            Array<int> blocking_factor(max_level,blocking_factor_DEF);
+            int n_err_buf_DEF = 1;
+            Array<int> n_err_buf(max_level,n_err_buf_DEF);
+            int max_grid_DEF = (ndim==2 ? 128  :  32);
+            Array<int> max_grid(num_levels,max_grid_DEF);
+
+            // 
+            // Optional parameters
+            //
+            std::string restart_file_str = "Restart from Checkpoint Data File";
+
+            for (int i=0; i<optP.size(); ++i) {
+                if (optP[i] == v_str) {
+                    //
+                    // Verbosity level
+                    //
+                    v_val = ec_list.get<std::string>(v_str);
+                }
+                else if (optP[i] == restart_file_str) {
+                    //
+                    // Restart from checkpoint?
+                    //
+                    amr_out_list.set<std::string>("restart",ec_list.get<std::string>(restart_file_str));
+                }
+                else {
+                    MyAbort("Unrecognized optional parameter to \"" + ec_str + "\": \"" + optP[i] + "\"");
+                }
+            }
+
+            //
+            // Verbosity implementation
+            //
+            int prob_v, mg_v, cg_v, amr_v, diffuse_v;
+            if (v_val == "None") {
+                prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0;
+            }
+            else if (v_val == "Low") {
+                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0;
+            }
+            else if (v_val == "Medium") {
+                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 1;
+            }
+            else if (v_val == "High") {
+                prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 1;
+            }
+            else if (v_val == "Extreme") {
+                prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1;
+            }
+
+            // 
+            // Optional lists
+            //
+            for (int i=0; i<optL.size(); ++i)
+            {
+                if (optL[i] == num_str)
+                {
                     const ParameterList& num_list = ec_list.sublist(num_str);
                     Array<std::string> nL, nP;
                     PLoptions NUMopt(num_list,nL,nP,false,true); 
                     const Array<std::string> NUMoptL = NUMopt.OptLists();
-                    for (int j=0; j<NUMoptL.size(); ++j) {
-                        if (NUMoptL[j] == amr_str) {
+
+                    for (int j=0; j<NUMoptL.size(); ++j)
+                    {
+                        if (NUMoptL[j] == amr_str)
+                        {
+                            //
+                            // AMR Options
+                            //
                             const ParameterList& amr_list = num_list.sublist(amr_str);
                             std::string num_level_str = "Number Of AMR Levels";
-                            int num_levels = 1;
                             if (amr_list.isParameter(num_level_str)) {
                                 num_levels = amr_list.get<int>(num_level_str);
                             }
@@ -305,15 +459,9 @@ namespace Amanzi {
                                 MyAbort("Must have at least 1 AMR level");
                             }
                             int max_level = num_levels - 1;
-                            amr_out_list.set<int>("max_level",max_level);
 
-                            // Shut off subcycling
-                            bool do_amr_subcycling = false;                            
-                            int amr_nosub = ( do_amr_subcycling ? 0 : 1);
-                            amr_out_list.set<int>("nosub", amr_nosub);
-                            
                             std::string ref_ratio_str = "Refinement Ratio";
-                            Array<int> ref_ratio(max_level,2);
+                            ref_ratio.resize(max_level,2);
                             if (amr_list.isParameter(ref_ratio_str)) {
                                 ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
                             }
@@ -326,10 +474,9 @@ namespace Amanzi {
                                     MyAbort("\"Refinement Ratio\" values must be 2 or 4");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
 
                             std::string regrid_int_str = "Regrid Interval";
-                            Array<int> regrid_int(max_level,2);
+                            regrid_int.resize(max_level,2);
                             if (amr_list.isParameter(regrid_int_str)) {
                                 regrid_int = amr_list.get<Array<int> >(regrid_int_str);
                             }
@@ -352,12 +499,10 @@ namespace Amanzi {
                                     }
                                 }
                             }
-                            amr_out_list.set<Array<int> >("regrid_int",regrid_int);
 
                             
-                            int blocking_factor_DEF = 8;
                             std::string blocking_factor_str = "Blocking Factor";
-                            Array<int> blocking_factor(max_level+1,blocking_factor_DEF);
+                            blocking_factor.resize(max_level+1,blocking_factor_DEF);
                             if (amr_list.isParameter(blocking_factor_str)) {
                                 blocking_factor = amr_list.get<Array<int> >(blocking_factor_str);
                             }
@@ -371,12 +516,11 @@ namespace Amanzi {
                                     MyAbort("\"" + blocking_factor_str + "\" must be a power of two");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("blocking_factor",blocking_factor);
 
                             
+                            std::string n_err_buf_str = "Number Error Buffer Cells";
                             int n_err_buf_DEF = 1;
-                            std::string n_err_buf_str = "Numbers Error Buffer Cells";
-                            Array<int> n_err_buf(max_level+1,n_err_buf_DEF);
+                            n_err_buf.resize(max_level+1,n_err_buf_DEF);
                             if (amr_list.isParameter(n_err_buf_str)) {
                                 n_err_buf = amr_list.get<Array<int> >(n_err_buf_str);
                             }
@@ -389,12 +533,10 @@ namespace Amanzi {
                                     MyAbort("\"" + n_err_buf_str + "\" must be > 0");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("n_error_buf",n_err_buf);
 
                             
-                            int max_grid_DEF = (ndim==2 ? 128  :  32);
                             std::string max_grid_str = "Maximum Grid Size";
-                            Array<int> max_grid(max_level+1,max_grid_DEF);
+                            max_grid.resize(max_level+1,max_grid_DEF);
                             if (amr_list.isParameter(max_grid_str)) {
                                 max_grid = amr_list.get<Array<int> >(max_grid_str);
                             }
@@ -407,7 +549,6 @@ namespace Amanzi {
                                     MyAbort("\"" + max_grid_str + "\" must be > \"" + blocking_factor_str + "\"");
                                 }
                             }
-                            amr_out_list.set<Array<int> >("max_grid_size",max_grid);
 
 
                             std::string refineNames_str = "Refinement Indicators";
@@ -480,7 +621,7 @@ namespace Amanzi {
                                     }
 
                                     std::string maxLev_str = "Maximum Refinement Level";
-                                    int max_level = -1;
+                                    int max_level = 0;
                                     if (ref_list.isParameter(maxLev_str)) {
                                         max_level = ref_list.get<int>(maxLev_str);
                                     }
@@ -504,43 +645,74 @@ namespace Amanzi {
                                 amr_out_list.set<Array<std::string> >("refinement_indicators",names);
                             }
                         }
-                        else if (NUMoptL[j] == mg_str) {
-                            const ParameterList& mg_list = num_list.sublist(mg_str);
-                            for (ParameterList::ConstIterator it=mg_list.begin(); it!=mg_list.end(); ++it) {
-                                const std::string& name = mg_list.name(it);
-                                mg_out_list.setEntry(name,mg_list.getEntry(name));
+                    }
+                }
+            }
+                    
+            amr_out_list.set<int>("max_level",max_level);
+            amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
+            amr_out_list.set<Array<int> >("regrid_int",regrid_int);
+            amr_out_list.set<Array<int> >("blocking_factor",blocking_factor);
+            amr_out_list.set<Array<int> >("n_error_buf",n_err_buf);
+            amr_out_list.set<Array<int> >("max_grid_size",max_grid);
+            int amr_nosub = ( do_amr_subcycling ? 0 : 1);
+            amr_out_list.set<int>("nosub", amr_nosub);
+
+            amr_out_list.set("v",amr_v);
+            mg_out_list.set("v",mg_v);
+            cg_out_list.set("v",cg_v);
+            prob_out_list.set("v",prob_v);
+            diffuse_out_list.set("v",diffuse_v);
+            
+            for (int i=0; i<optL.size(); ++i)
+            {
+                if (optL[i] == num_str)
+                {
+                    const ParameterList& num_list = ec_list.sublist(num_str);
+                    Array<std::string> nL, nP;
+                    PLoptions NUMopt(num_list,nL,nP,false,true); 
+                    const Array<std::string> NUMoptL = NUMopt.OptLists();
+
+                    //
+                    // Now process expert lists to overwrite any settings directly
+                    //
+                    for (int j=0; j<NUMoptL.size(); ++j)
+                    {
+                        if (NUMoptL[j] == amr_str)
+                        {
+                            process_expert_options(num_list.sublist(amr_str),amr_out_list);
+                        }
+                        else if (NUMoptL[j] == it_str)
+                        {
+                            const ParameterList& it_list = num_list.sublist(it_str);
+                            for (ParameterList::ConstIterator k=it_list.begin(); k!=it_list.end(); ++k) 
+                            {
+                                const std::string& itname = it_list.name(k);
+                                if (itname == mg_str)
+                                {
+                                    process_expert_options(it_list.sublist(mg_str),mg_out_list);
+                                }
+                                else if (itname == cg_str)
+                                {
+                                    process_expert_options(it_list.sublist(cg_str),cg_out_list);
+                                }
+                                else
+                                {
+                                    MyAbort("Unrecognized optional parameter to \"" + it_str + "\" list: \"" + itname + "\"");
+                                }
                             }
                         }
-                        else if (NUMoptL[j] == cg_str) {
-                            const ParameterList& cg_list = num_list.sublist(cg_str);
-                            for (ParameterList::ConstIterator it=cg_list.begin(); it!=cg_list.end(); ++it) {
-                                const std::string& name = cg_list.name(it);
-                                cg_out_list.setEntry(name,cg_list.getEntry(name));
-                            }
+                        else if (NUMoptL[j] == prob_str)
+                        {
+                            process_expert_options(num_list.sublist(prob_str),prob_out_list);
                         }
-                        else if (NUMoptL[j] == prob_str) {
-                            const ParameterList& prob_list = num_list.sublist(prob_str);
-                            std::string Max_Time_Step_Change_str = "Maximum Time Step Change";
-                            std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
-                            std::string Max_Step_str = "Maximum Cycle Number";
-                            for (ParameterList::ConstIterator it=prob_list.begin(); it!=prob_list.end(); ++it) {
-                                const std::string& name = prob_list.name(it);
-                                if (name == Max_Time_Step_Change_str) {
-                                    prob_out_list.set<double>("change_max",
-                                                              prob_list.get<double>(Max_Time_Step_Change_str));
-                                }
-                                else if (name == Max_Step_str) {
-                                    int max_step = prob_list.get<int>(Max_Step_str);
-                                    struc_out_list.set<int>("max_step", max_step);
-                                }
-                                else if (name == Max_Time_Step_Size_str) {
-                                    double max_dt = prob_list.get<double>(Max_Time_Step_Size_str);
-                                    struc_out_list.set<double>("max_dt", max_dt);
-                                }
-                                else {
-                                    prob_out_list.setEntry(name,num_list.getEntry(name));
-                                }
-                            }
+                        else if (NUMoptL[j] == diffuse_str)
+                        {
+                            process_expert_options(num_list.sublist(diffuse_str),diffuse_out_list);
+                        }
+                        else
+                        {
+                            MyAbort("Unrecognized optional parameter to \"" + num_str + "\" list: \"" + NUMoptL[j] + "\"");
                         }
                     }
                 }
@@ -548,61 +720,6 @@ namespace Amanzi {
                     MyAbort("Unrecognized optional parameter to \"" + ec_str + "\" list: \"" + optL[i] + "\"");
                 }
             }
-
-            const Array<std::string> optP = ECopt.OptParms();
-            int prob_v, mg_v, cg_v, amr_v, diffuse_v;
-            for (int i=0; i<optP.size(); ++i) {
-                if (optP[i] == v_str) {
-                    std::string v_val = "Medium";
-                    if (ec_list.isParameter(v_str)) {
-                        v_val = ec_list.get<std::string>(v_str);
-                    }
-
-                    if (v_val == "None") {
-                        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0;
-                    }
-                    else if (v_val == "Low") {
-                        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0;
-                    }
-                    else if (v_val == "Medium") {
-                        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 1;
-                    }
-                    else if (v_val == "High") {
-                        prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 2;  diffuse_v = 1;
-                    }
-                    else if (v_val == "Extreme") {
-                        prob_v = 3; mg_v = 3; cg_v = 3; amr_v = 3;  diffuse_v = 0;
-                    }
-                    prob_out_list.set("v",prob_v);
-                    amr_out_list.set("v",amr_v);
-                    mg_out_list.set("v",mg_v);
-                    cg_out_list.set("v",cg_v);
-                    diffuse_out_list.set("v",diffuse_v);
-                }
-                else if (optP[i] == num_str) {
-
-                    prob_out_list.set("v",prob_v);
-                    amr_out_list.set("v",amr_v);
-                    mg_out_list.set("v",mg_v);
-                    cg_out_list.set("v",cg_v);
-                    diffuse_out_list.set("v",diffuse_v);
-                }
-                else {
-                    MyAbort("Unrecognized optional parameter to \"" + ec_str + "\": \"" + optP[i] + "\"");
-                }
-            }
-
-            // Set other basic algorithm defaults
-            prob_out_list.set("visc_abs_tol",1.e-16);
-            prob_out_list.set("visc_tol",1.e-14);
-            prob_out_list.set("cfl",1);
-
-            bool echo_inputs = false;
-            std::string echo_str = "Echo Inputs";
-            if (parameter_list.isParameter(echo_str)) {
-                echo_inputs = parameter_list.get<bool>(echo_str);
-            }
-            struc_out_list.set<bool>("echo_inputs",echo_inputs);
         }
 
         static std::string dirStr[6] = {"-X", "-Y", "-Z", "+X", "+Y", "+Z"};
@@ -1183,11 +1300,12 @@ namespace Amanzi {
                                   const std::string&   Amanzi_type,
                                   ParameterList&       fPLout)
         {
-            fPLout.set<std::string>("type","saturation");
             Array<std::string> nullList, reqP;
             const std::string val_name="Value"; reqP.push_back(val_name);
             PLoptions opt(fPLin,nullList,reqP,true,true); 
-            fPLout.set<double>("val",fPLin.get<double>(val_name));
+            // FIXME: Assumes Water exists, and that this is what was intended....
+            fPLout.set<double>("Water",fPLin.get<double>(val_name));
+            fPLout.set<std::string>("type","saturation");
         }
 
 

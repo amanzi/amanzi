@@ -1003,7 +1003,9 @@ PorousMedia::read_rock()
         ParmParse am("amr");
         am.query("max_level",max_level);
         am.getarr("n_cell",n_cell,0,BL_SPACEDIM);
-        am.getarr("ref_ratio",fratio,0,max_level);
+        if (max_level>0) {
+            am.getarr("ref_ratio",fratio,0,max_level);
+        }
         
         ParmParse gm("geometry");
         gm.getarr("prob_lo",problo,0,BL_SPACEDIM);
@@ -1493,8 +1495,10 @@ void  PorousMedia::read_comp()
               Array<Real> vals(ncomps);
               for (int j = 0; j<cNames.size(); j++) {
                   ppr.get(cNames[j].c_str(),vals[j]);
+                  vals[j] *= density[j];
               }
-              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,vals));
+              std::string generic_type = "scalar";
+              ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
           }
           else if (ic_type == "hydrostatic")
           {
