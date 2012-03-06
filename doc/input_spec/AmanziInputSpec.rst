@@ -277,9 +277,9 @@ Usage:
   * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is allowed to be lagged at most this amount of iterations.
 
 
-  If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optoin sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage.)
+  If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
-  * [S] `"Basic Algorithm Settings`" [list] Additional algorithmic details of the structured-grid algorithm. Optional.
+  * [S] `"Basic Algorithm Settings`" [list] Additional controls for details of the structured-grid algorithm. Optional.
 
   * [S] `"Adaptive Mesh Refinement`" [list] Additional details related to the adaptive mesh refinement algorithm. Optional.
 
@@ -293,11 +293,11 @@ Usage:
 
    * [S] `"Number Error Buffer Cells`" [Array int] Number of coarse cells automatically tagged to surround user-tagged cells prior to generation of fine grids.  Used to guarantee buffer between refinement levels.
 
-   * [S] `"Maximum Grid Size`" [Array int] Since of largest dimension of any mesh generated at each level.  A single value implies that the same value is to be used for all levels.
+   * [S] `"Maximum Grid Size`" [Array int] Size of largest dimension of any mesh generated at each level.  A single value implies that the same value is to be used for all levels.
 
-   * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicator lists, REFINE.  Criteria will be applied in the order listed.
+   * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
 
-    * [S] REFINE [list] A user-label for a single refinement criteria indicator function.  The list must indicate `"Field Name`", `"Regions`" and one of the following values:
+    * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  Definition of the criteria must indicate `"Field Name`" (the name of a known derive field), `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters:
 
      * [S] `"Value Greater`" [double] The threshold value.  For each coarse cell, if the value of the given field is larger than this value, tag the cell for refinement
 
@@ -305,7 +305,7 @@ Usage:
 
      * [S] `"Adjacent Difference Greater`" [double] The threshold value.  For each coarse cell, if the maximum difference of the values for the given field between adjacent neighbors is larger than this value, tag the cell for refinement.
 
-     * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified regions should be tagged for refinement.
+     * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified list of regions should be tagged for refinement.
 
      Additionally, the following optional parameters are available:
 
@@ -381,8 +381,7 @@ Example:
   </ParameterList>
 
 
-This example specifies that a time-dependent evolution of Richards equation is desired, evolving over the physical time interval, 0 to 1.5768e9 seconds.  While it assumes default values for most of the structured grid numerical control parameters, it explicitly sets the amr blocking factor to a value of 4.
-
+This example specifies that a time-dependent evolution of Richards equation is desired, evolving over the physical time interval, 0 to 1.5768e9 seconds.  Here a 3-level AMR hierarchy is desired, where refinement up to level 1 is based on a threshold value of capillary pressure in the CCugr region.  Additionally, fine grid up to the maximum allowed (3) is generated over the Hgr and CCugr regions.  The user has also set the expert setting for a parameter called "visc_abs_tol".
 
 
 Domain
