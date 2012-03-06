@@ -690,11 +690,11 @@ namespace Amanzi {
                                 const std::string& itname = it_list.name(k);
                                 if (itname == mg_str)
                                 {
-                                    process_expert_options(num_list.sublist(mg_str),mg_out_list);
+                                    process_expert_options(it_list.sublist(mg_str),mg_out_list);
                                 }
                                 else if (itname == cg_str)
                                 {
-                                    process_expert_options(num_list.sublist(cg_str),cg_out_list);
+                                    process_expert_options(it_list.sublist(cg_str),cg_out_list);
                                 }
                                 else
                                 {
