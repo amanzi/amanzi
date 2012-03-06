@@ -1,0 +1,97 @@
+<ParameterList name="Main">
+  <ParameterList name="General Description">
+    <Parameter name="Description" type="string" value="ASCEM 2012 F-Area 1-D Reactive Transport - Structured Mesh"/>
+    <Parameter name="Authors" type="string" value="bandre"/>
+    <Parameter name="Creation date" type="string" value="2012-03-01 15:00"/>
+    <Parameter name="Last modified" type="string" value="2012-03-06 13:07"/>
+  </ParameterList>
+
+  <ParameterList name="Execution Control">
+    <Parameter name="Flow Model" type="string" value="Single Phase"/>
+    <Parameter name="Transport Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Off"/>
+
+    <ParameterList name="Time Integration Mode">
+      <ParameterList name="Transient">
+	<Parameter name="Start" type="double" value="0.0"/>
+	<Parameter name="End" type="double" value="1.89341556e9"/> <!-- 60 years -->
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Mesh">
+    <ParameterList name="Structured">
+      <Parameter name="Number of Cells" type="Array int" value="{100, 2, 2}"/>
+      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+      <Parameter name="Domain High Corner" type="Array double" value="{100.0, 1.0, 1.0}" />
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Domain">
+    <Parameter name="Spatial Dimension" type="int" value="2"/>
+  </ParameterList>
+
+  <ParameterList name="Regions">
+
+  </ParameterList>
+
+  <ParameterList name="Material Properties">
+
+  </ParameterList>
+  
+  <ParameterList name="Phase Definitions">
+    <ParameterList name="Aqueous">
+      <ParameterList name="Phase Properties">
+        <ParameterList name="Viscosity: Uniform">
+          <Parameter name="Viscosity" type="double" value="8.9e-4"/>
+        </ParameterList>
+        <ParameterList name="Density: Uniform">
+          <Parameter name="Density" type="double" value="998.32"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Phase Components">
+        <ParameterList name="Water">
+          <Parameter name="Component Solutes" type="Array string" value="{Tracer}"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+
+  <ParameterList name="Boundary Conditions">
+
+  </ParameterList>
+
+  <ParameterList name="Initial Conditions">
+
+  </ParameterList>
+
+  <ParameterList name="Output">
+    <ParameterList name="Time Macros">
+      <ParameterList name="Annual">
+        <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7, -1}"/>
+      </ParameterList>      
+    </ParameterList>
+
+    <ParameterList name="Cycle Macros">
+      <ParameterList name="Every-10-steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0, 10, -1}"/>
+      </ParameterList>
+       
+    </ParameterList>
+    <ParameterList name="Visualization Data">
+      <Parameter name="File Name Base" type="string" value="test-viz"/>
+      <Parameter name="Time Macro" type="string" value="Annual"/>
+    </ParameterList>
+
+    <ParameterList name="Checkpoint Data">
+      <Parameter name="File Name Base" type="string" value="test-checkpoint"/>
+      <Parameter name="Cycle Macro" type="string" value="Every-10-steps"/>
+    </ParameterList>
+
+    <ParameterList name="Observation Data">
+
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

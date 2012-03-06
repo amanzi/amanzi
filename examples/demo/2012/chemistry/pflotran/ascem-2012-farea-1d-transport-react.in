@@ -1,0 +1,430 @@
+:Description: Savanna River F-Basin, 2012 ASCEM demo; based on description and toughreact input file from Sergio Bea
+
+:=========================== flow mode ========================================
+: Uniform velocity (see below). No flow mode specified.
+
+:=========================== useful tranport parameters ==================
+UNIFORM_VELOCITY 6.02486e-7 0.d0 0.d0 !m/s (19 m/y)
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    H+
+    Al+++
+    Ca++
+    Cl-      : charge balance
+    Fe+++
+    CO2(aq)
+    K+       : conservative tracer
+    Mg++
+    Na+
+    SiO2(aq)
+    SO4--
+    tritium  : tracer w/ radioactive decay for calibrating flow
+    NO3-
+    UO2++
+  /
+  SECONDARY_SPECIES
+    OH-
+    HCO3-
+    CO3--
+    NaHCO3(aq)
+    NaCO3-
+    NaOH(aq)
+    AlOH++
+    Al(OH)2+
+    Al(OH)3(aq)
+    Al(OH)4-
+    CaOH+
+    CaHCO3+
+    CaCO3(aq)
+    MgOH+
+    MgHCO3+
+    MgCO3(aq)
+    (UO2)2(OH)2++  
+    (UO2)2CO3(OH)3-
+    (UO2)2OH+++
+    (UO2)3(CO3)6(6-)
+    (UO2)3(OH)4++
+    UO2(OH)4--
+    (UO2)3(OH)5+
+    (UO2)3(OH)7-
+    (UO2)3O(OH)2(HCO3)+
+    (UO2)4(OH)7+
+    UO2NO3+
+    UO2OH+
+    UO2(OH)2(aq)
+    UO2(OH)3-
+    UO2CO3(aq)
+    UO2(CO3)2--
+    UO2(CO3)3----
+    CaUO2(CO3)3--
+    Ca2UO2(CO3)3(aq)
+    MgUO2(CO3)3--
+    UO2OSi(OH)3+
+  /
+
+
+  REDOX_SPECIES
+    Fe+++
+  /
+
+  GAS_SPECIES
+    CO2(g)
+  /
+
+  MINERALS
+    Schoepite
+    Kaolinite
+    Gibbsite
+    Jurbanite
+    Basaluminite
+    Opal
+    Quartz
+    Goethite
+  /
+
+  GENERAL_REACTION
+    REACTION tritium <-> 
+    FORWARD_RATE -1.78577e-09 : [s^-1] half life of 12.3 y
+    BACKWARD_RATE 0.d0
+  /
+
+  MINERAL_KINETICS
+    Quartz
+      :RATE_CONSTANT 4.51856e-14
+      RATE_CONSTANT -13.345
+    /
+    Kaolinite
+      : dissolution
+      :AFFINITY_POWER 0.5
+      PREFACTOR
+        : neutral
+        RATE_CONSTANT -12.967
+      /
+      PREFACTOR
+      : acid
+        RATE_CONSTANT -11.098
+        PREFACTOR_SPECIES H+
+          ALPHA 0.777
+        /
+      /
+      PREFACTOR
+        : base
+        RATE_CONSTANT -16.839
+        PREFACTOR_SPECIES H+
+          ALPHA -0.472
+        /
+      /
+    /
+skip
+    Kaolinite
+      : precipitation
+      :AFFINITY_POWER 0.5
+      PREFACTOR
+        : neutral
+        RATE_CONSTANT -14.126
+      /
+      PREFACTOR
+      : acid
+        RATE_CONSTANT -12.256
+        PREFACTOR_SPECIES H+
+          ALPHA 0.777
+        /
+      /
+      PREFACTOR
+        : base
+        RATE_CONSTANT -17.996
+        PREFACTOR_SPECIES H+
+          ALPHA -0.472
+        /
+      /
+    /
+noskip
+    Goethite
+      RATE_CONSTANT -7.94
+    /
+    Schoepite
+      : equilibrium => fast rate
+      RATE_CONSTANT 2.0
+    /
+    Gibbsite
+      RATE_CONSTANT -11.5
+    /
+    Jurbanite
+      RATE_CONSTANT -8.0
+    /
+    Basaluminite
+      RATE_CONSTANT -8.0
+    /
+    Opal
+      : dissolution
+      RATE_CONSTANT -12.135
+    /
+skip
+    Opal
+      : precipitation
+      RATE_CONSTANT -9.135
+    /
+noskip
+  /
+
+  SORPTION
+    SURFACE_COMPLEXATION_RXN
+      EQUILIBRIUM
+      MINERAL Kaolinite
+      SITE >dong_kOH 3.8193e-6   : [mol/m^3]
+      COMPLEXES
+        (>dong_kOH)2UO2+
+        (>dong_kOH)2UO2CO3-
+        >dong_kOH2+0.5
+        >dong_kOH2NO3-0.5
+        >dong_kOHNa+0.5
+      /
+    /
+    SURFACE_COMPLEXATION_RXN
+      EQUILIBRIUM
+      MINERAL Goethite 
+      SITE >dong_FeOH 4.9817e-6   : [mol/m^3]
+      COMPLEXES
+        (>dong_FeOH)2UO2+
+        (>dong_FeOH)2UO2CO3-
+        >dong_FeOH2+0.5
+        (>dong_FeOH)2CO2-
+        >dong_FeOCO2Na-0.5
+     /
+    /
+    SURFACE_COMPLEXATION_RXN
+      EQUILIBRIUM
+      MINERAL Quartz
+      SITE >SiOH 16.6e-06   : [mol/m^3]
+      COMPLEXES
+        >SiOH2+
+        >SiO-
+        >SiONa
+      /
+    /
+    ION_EXCHANGE_RXN
+      MINERAL Kaolinite
+      CEC 24.986855814  : [mol/m^3]
+      CATIONS
+        Na+   1.0
+        UO2++ 0.223872113857
+        Ca++  0.316227766017
+        Al+++ 1.71132830416
+        H+    0.0251188643151
+      /
+    /
+  / :sorption
+
+
+  DATABASE ./ascem-2012-farea.dat
+  LOG_FORMULATION
+  OPERATOR_SPLITTING
+  ACTIVITY_COEFFICIENTS TIMESTEP
+
+  OUTPUT
+    primary_species
+    total_sorbed
+    Schoepite
+    Kaolinite
+    Gibbsite
+    Jurbanite
+    Basaluminite
+    Opal
+    Quartz
+    Goethite
+  /
+END
+
+
+:=========================== solver options ===================================
+LINEAR_SOLVER TRANSPORT
+  SOLVER DIRECT
+END
+
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  NXYZ 100 1 1
+  BOUNDS
+    0.d0 100.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+END
+
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.0d-32
+END
+
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY bulk
+  ID 1
+  POROSITY 1.0
+  TORTUOSITY 1.0
+  LONGITUDINAL_DISPERSIVITY 0.d0
+END
+
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION all
+  AT_CELL_CENTER
+END
+
+
+:=========================== output options ===================================
+OUTPUT
+  times y 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 10.0 20.0 30.0 40.0 50.0
+
+:  FORMAT TECPLOT POINT
+  FORMAT HDF5
+  VELOCITIES
+  MASS_BALANCE
+END
+
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 60.d0 y
+  INITIAL_TIMESTEP_SIZE 0.001d0 y
+  MAXIMUM_TIMESTEP_SIZE 0.001d0 y
+END
+
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION inlet
+  FACE WEST
+  COORDINATES
+    0.d0 0.d0 0.d0
+    0.d0 1.d0 1.d0
+  /
+END
+
+REGION outlet
+  FACE EAST
+  COORDINATES
+    100.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 background
+  /
+END
+
+TRANSPORT_CONDITION source
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 seepage
+  /
+END
+
+TRANSPORT_CONDITION outlet
+  TYPE zero_gradient
+  CONSTRAINT_LIST
+    0.d0 background
+  /
+END
+
+
+:=========================== constraints ======================================
+CONSTRAINT background
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+       5.4        P
+    Al+++    3.09d-8    M Kaolinite
+    Ca++     1.00e-5    T
+    Cl-      9.98e-3    Z
+    Fe+++    2.92e-16   M Goethite
+    CO2(aq)  -3.5       G CO2(g)
+    K+       3.32e-5    T
+    Mg++     5.35e-3    T
+    Na+      2.78e-4    T
+    SiO2(aq) 1.77e-4    M Quartz
+    SO4--    2.25e-5    T
+    tritium  1.0e-15    T
+    NO3-     1.0e-3     T
+    UO2++    1.25e-10   T
+  /
+  MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
+    Quartz        0.88     5.258e3
+    Kaolinite     0.11     6.032e4
+    Goethite      0.016    6.732e3
+    Schoepite     0.0      0.1
+    Gibbsite      0.0      0.1
+    Basaluminite  0.0      0.1
+    Opal          0.0      0.1
+    Jurbanite     0.0      0.1
+  /
+END
+
+CONSTRAINT seepage
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+       2.05       P
+    Al+++    1.00d-8    T
+    Ca++     1.00e-5    T
+    Cl-      3.39e-5    T
+    Fe+++    2.75e-6    M Goethite
+    CO2(aq)  -3.5       G CO2(g)
+    K+       1.72e-6    T
+    Mg++     2.47e-6    T
+    Na+      6.82e-5    Z
+    SiO2(aq) 1.18e-4    T
+    SO4--    4.80e-5    T
+    tritium  2.17e-9    T
+    NO3-     1.00e-2    T
+    UO2++    3.01e-5    T
+  /
+  MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
+    Quartz        0.88     5.258e3
+    Kaolinite     0.11     6.032e4
+    Goethite      0.016    6.732e3
+    Schoepite     0.0      0.1
+    Gibbsite      0.0      0.1
+    Basaluminite  0.0      0.1
+    Opal          0.0      0.1
+    Jurbanite     0.0      0.1
+  /
+END
+
+
+:=========================== condition couplers ===============================
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION source
+  REGION inlet
+END
+
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION outlet
+  REGION outlet
+END
+
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL bulk
+END
+
