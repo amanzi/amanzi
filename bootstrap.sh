@@ -36,7 +36,10 @@ hg_binary=`which hg`
 curl_binary=`which curl`
 
 # CMake
-cmake_binary=`which cmake`
+cmake_binary=
+cmake_version=2.8.7
+cmake_url=http://www.cmake.org/files/v2.8
+cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
 parallel_jobs=2
@@ -55,8 +58,8 @@ mpi_root_dir=
 tpl_config_file=
 
 # TPL build parameters
-tpl_download_dir=${amanzi_build_dir}
 tpl_build_dir=${amanzi_build_dir}/TPL_BUILD
+tpl_download_dir=${tpl_build_dir}/Downloads
 tpl_install_prefix=${dflt_prefix}
 
 # ---------------------------------------------------------------------------- #
@@ -70,16 +73,22 @@ function exit_now()
 }
 function status_message()
 {
-  echo "[`date`] $1"
+
+  local GREEN='32m'
+  echo -n "[`date`]"
+  echo -e "\033[$GREEN $1\033[m"
+
 }
 function error_message()
 {
-  echo "Amanzi Bootstrap ERROR: $1"
+  local RED='31m'
+  echo -e "Amanzi Bootstrap ERROR:\033[$RED $1\033[m"
 }
 
 function warn_message()
 {
-  echo "Amanzi Bootstrap Warning: $1"
+  local PINK='35m'
+  echo -e "Amanzi Bootstrap Warning:\033[$PINK $1\033[m"
 }
 
 function fatal_message()
@@ -106,10 +115,16 @@ function download_file()
 
   curl_opts=
   if [ ! -z "${output}" ]; then
-    curl_opts="--output $output"
+    if [ -d "${output}" ]; then
+      curl_opts="--output $output/$file"
+    else
+      curl_opts="--output $output"
+    fi
   else
     curl_opts="--remote-name"
   fi
+  cmd="${curl_binary} ${curl_opts} $url/$file"
+  echo $cmd
   ${curl_binary} $curl_opts $url/$file
   status=$?
 
@@ -219,10 +234,10 @@ function parse_argv()
 {
   argv=( "$@" )
   last=$(( ${#argv[@]} - 1 ))
-  for i in `seq 0 $(( ${#argv[@]} - 1))`
+  for i in `seq 0 ${last}`
   do
     opt=${argv[$i]}
-    echo "i: ${i} opt=$opt last: $last"
+    #echo "i: ${i} opt=$opt last: $last"
     case ${opt} in
 
       -h|--h|--help)
@@ -232,6 +247,10 @@ function parse_argv()
 
       --prefix=*)
                  prefix=`parse_option_with_equal ${opt} 'prefix'`
+		 ;;
+
+      --parallel=[0-9]*)
+                 parallel_jobs=`parse_option_with_equal ${opt} 'parallel'`
 		 ;;
 
       --with-c-compiler=*)
@@ -318,6 +337,148 @@ curl_test_protocol()
   fi
 }  
 
+# CMake functions
+
+function cmake_version
+{
+  ver_string=`${curl_binary} --version | sed 's/cmake version[ ]*//'`
+  echo ${ver_string}
+}
+
+function download_cmake
+{
+   target_dir=$1
+   target=
+   pwd_save=`pwd`
+   if [ ! -z "${target_dir}" ]; then
+     mkdir_now ${target_dir}
+     cd ${target_dir}
+     target=${target_dir}/${cmake_archive_file}
+   fi
+
+   download_file ${cmake_url} ${cmake_archive_file} ${target}
+
+   cd ${pwd_save}
+
+   status_message "CMake download complete"
+
+
+}
+
+function unpack_cmake
+{
+  archive=$1
+  final_source_dir=$2
+
+  pwd_save=`pwd`
+
+  # Create the final source destination
+  mkdir_now ${final_source_dir}
+  cd ${final_source_dir}
+
+  # Untar the archive file removing the leading path component  
+  tar -z -x -f ${archive} --strip-components 1
+
+  if [ $? -ne 0 ]; then
+    error_message "Failed to untar CMake archive file ${archive}"
+    exit_now 30
+  fi
+
+  cd ${pwd_save}
+  status_message "Unpack CMake complete"
+}
+
+function configure_cmake
+{
+  source_dir=$1
+  build_dir=$2
+  install_dir=$3
+
+  pwd_save=`pwd`
+
+  # Create and cd to the build directory
+  mkdir_now ${build_dir}
+  cd ${build_dir}
+
+  # Build the bootstrap args
+  boot_args="--prefix=${install_dir}"
+  echo "boot_args=$boot_args"
+
+  curl_supports_https=`curl_test_protocol https`
+  if [ "${curl_supports_https}" ]; then
+    boot_args="${boot_args} --system-curl"
+  fi
+
+  boot_args="${boot_args} --parallel=${parallel_jobs}"
+
+  # Run the bootstrap script
+  bootstrap_script=${source_dir}/bootstrap
+  if [ ! -e ${bootstrap_script} ]; then
+    error_message "CMake bootstrap script ${bootstrap_script} does not exist"
+    exit_now 30
+  fi
+
+  ${bootstrap_script} ${boot_args}
+
+  if [ $? -ne 0 ]; then
+    error_message "CMake bootstrap script failed"
+    exit_now 30
+  fi
+
+  cd ${pwd_save}
+
+  status_message "Configure CMake complete"
+
+
+}
+
+function build_cmake
+{
+  root_build_dir=$1
+  root_install_dir=$2
+  root_download_dir=$3
+
+  cmake_root_build_dir=${root_build_dir}/cmake
+  cmake_source_dir=${cmake_root_build_dir}/cmake-${cmake_version}-source
+  cmake_build_dir=${cmake_root_build_dir}/cmake-${cmake_version}-build
+
+  # Download the file
+  download_file ${cmake_url} ${cmake_archive_file} ${root_download_dir}
+
+  # Define the full path name of the archive file
+  if [ ! -z "${root_download_dir}" ]; then
+    archive=${root_download_dir}/${cmake_archive_file}
+  else
+    archive=${cmake_archive_file}
+  fi
+
+  # Unpack the archive file
+  unpack_cmake ${archive} ${cmake_source_dir}
+
+  # Configure (bootstrap) CMake
+  configure_cmake ${cmake_source_dir} ${cmake_build_dir} ${root_install_dir}
+
+  # Build CMake 
+  cd ${cmake_build_dir}
+  make -j ${parallel_jobs}
+  if [ $? -ne 0 ]; then
+    error_message "Failed to build CMake"
+    exit_now 30
+  fi
+
+  # Install CMake 
+  make install
+  if [ $? -ne 0 ]; then
+    error_message "Failed to install CMake"
+    exit_now 30
+  fi
+
+  cmake_binary=${root_install_dir}/bin/cmake
+
+  status_message "CMake build complete"
+
+}
+
 # Mercury functions
 function ascem_hg_clone
 {
@@ -337,6 +498,9 @@ function define_c_compiler
     error_message "Please define a C compiler"
     exit_now 10
   fi
+
+  export CC=${build_c_compiler}
+
 }
 
 function define_cxx_compiler
@@ -345,14 +509,21 @@ function define_cxx_compiler
     error_message "Please define a C++ compiler"
     exit_now 10
   fi
+
+  export CXX=${build_cxx_compiler}
+
 }
 
 function define_fort_compiler
 {
+
   if [ -z "${build_fort_compiler}" ]; then
     error_message "Please define a Fortran compiler"
     exit_now 10
   fi
+
+  export FC=${build_fort_compiler}
+
 }
 
 function define_mpi_cc_compiler
@@ -382,17 +553,26 @@ function check_compilers
 # Tool Checks
 function check_tools
 {
-  if [ ! -e "${cmake_binary}" ]; then
-    error_message "CMake binary does not exist"
-    exit_now 10
-  fi
+
+  # Check Mercurial
   if [ ! -e "${hg_binary}" ]; then
     error_message "Mercurial (hg) binary does not exist"
     exit_now 10
   fi
+
+  # Check CURL 
   if [ ! -e "${curl_binary}" ]; then
     error_message "CURL binary does not exist"
     exit_now 10
+  fi
+
+  # Check CMake
+  if [ -z "${cmake_binary}" ]; then 
+    build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+  fi
+  if [ ! -e "${cmake_binary}" ]; then
+    error_message "CMake binary ${cmake_binary} does not exist"
+    exit_now 30
   fi
 
   status_message "Tool check complete"
@@ -410,6 +590,11 @@ function define_build_directories
   # The TPL build directory
   if [ ! -e "${tpl_build_dir}" ]; then
     mkdir_now "${tpl_build_dir}"
+  fi
+
+  # The TPL download directory
+  if [ ! -e "${tpl_download_dir}" ]; then
+    mkdir_now "${tpl_download_dir}"
   fi
 
   status_message "Build directories ready"
@@ -430,14 +615,14 @@ array=( "$@" )
 parse_argv "${array[@]}"
 
 
+# Create the directories
+define_build_directories
+
 # Define the compilers
 check_compilers
 
 # Check the cmake, hg and curl tools
 check_tools
-
-# Create the directories
-define_build_directories
 
 # Now build the TPLs if the config file is not defined
 if [ -z "${tpl_config_file}" ]; then
@@ -490,6 +675,7 @@ if [ -z "${tpl_config_file}" ]; then
   cd ${pwd_save}
 
   status_message "TPL build complete"
+
 else 
 
   if [ ! -e "${tpl_config_file}"]; then
@@ -498,6 +684,7 @@ else
   fi
 
 fi
+
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
@@ -535,6 +722,7 @@ status_message "Build Amanzi with configure file ${tpl_config_file}"
 #DEBUGcd $pwd_save
 #DEBUG
 #DEBUG
+
 status_message "Bootstrap complete"
 
 exit_now 0
