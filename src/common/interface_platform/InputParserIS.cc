@@ -667,9 +667,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 
         Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
         // set some reasonable defaults...
-        time_integrator.set<int>("Nonlinear solver max iterations", 6);
-        time_integrator.set<int>("NKA max vectors", 5);
-        time_integrator.set<int>("Maximum number of BDF tries", 10);
+        time_integrator.set<int>("Nonlinear solver max iterations", 10);
+        time_integrator.set<int>("NKA max vectors", 10);
+        time_integrator.set<int>("Maximum number of BDF tries", 20);
         time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
         time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
         time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
