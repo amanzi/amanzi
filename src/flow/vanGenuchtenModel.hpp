@@ -21,7 +21,7 @@ public:
   double pressure(double saturation);
 
 private:
-  double clip_capillary(double);
+  double quadr_fn(double x, double p_ct, double f_pc_t);
 
   const double m;     // van Genuchten m
   double n;           // van Genuchten n

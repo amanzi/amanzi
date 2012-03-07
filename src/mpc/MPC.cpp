@@ -380,7 +380,7 @@ void MPC::cycle_driver () {
 
 
         // make sure we hit any of the reset times exactly (not in steady mode)
-        if (! ti_mode == STEADY) {
+        if (ti_mode != STEADY &&   S->get_time() >= Tswitch) {
           if (reset_times_.size() > 0) {
 	    // first we find the next reset time
 	    int next_time_index(-1);
@@ -392,19 +392,10 @@ void MPC::cycle_driver () {
 	    }
 	    if (next_time_index >= 0) {
 	      // now we are trying to hit the next reset time exactly
-              if (ti_mode == INIT_TO_STEADY) {
-                if (reset_times_[next_time_index] != Tswitch) {
-	          if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
-	            limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
-	            tslimiter = MPC_LIMITS;
-	          }
-                }
-              } else {
-                if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
-                  limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
-                  tslimiter = MPC_LIMITS;
-                }
-              }
+	      if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
+		limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
+		tslimiter = MPC_LIMITS;
+	      }
 	    }
 	  }
         }
@@ -478,6 +469,9 @@ void MPC::cycle_driver () {
 	for (int ii=0; ii<reset_times_.size(); ++ii) {
 	  // this is probably iffy...
 	  if (S->get_time() == reset_times_[ii]) {
+
+	    *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
+
 	    mpc_dT = reset_times_dt_[ii];
 	    tslimiter = MPC_LIMITS;
 	    // now reset the BDF2 integrator..
@@ -536,6 +530,7 @@ void MPC::cycle_driver () {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+	*out << std::setprecision(14);
         *out << "Cycle = " << iter;
         *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
         *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);
