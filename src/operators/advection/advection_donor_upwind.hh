@@ -35,10 +35,14 @@ public:
 
 private:
   void IdentifyUpwindCells_();
+  int f_begin_, f_count_, f_owned_, f_end_;
+  int c_begin_, c_count_, c_owned_, c_end_;
 
-  int f_min_;
-  int f_count_;
-}
+  Teuchos::RCP<Epetra_IntVector> upwind_cell_;
+  Teuchos::RCP<Epetra_IntVector> downwind_cell_;
+};
 
 } // namespace Operators
 } // namespace Amanzi
+
+#endif

@@ -13,7 +13,9 @@ Interface for the process kernel factory.
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "State.hh"
+
+#include "tree_vector.hh"
+#include "state.hh"
 #include "PK.hh"
 
 namespace Amanzi {

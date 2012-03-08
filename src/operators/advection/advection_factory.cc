@@ -9,6 +9,7 @@
    ------------------------------------------------------------------------- */
 
 #include "advection_donor_upwind.hh"
+#include "advection_factory.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -20,4 +21,7 @@ Teuchos::RCP<Advection> AdvectionFactory::create(Teuchos::ParameterList& plist,
   if (method == "donor upwind") {
     return Teuchos::rcp(new AdvectionDonorUpwind(plist, mesh));
   }
-}
+};
+
+} // namespace Operators
+} // namespace Amanzi

@@ -7,15 +7,20 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
+#include "bdf2_time_integrator.hh"
+#include "advection_factory.hh"
+
 #include "air_water_rock.hh"
 
 namespace Amanzi {
 namespace Energy {
 
 
-Energy_AirWaterRock::Energy_AirWaterRock(Teuchos::ParameterList& plist,
+AirWaterRock::AirWaterRock(Teuchos::ParameterList& plist,
         Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) :
-    energy_plist_(plist), solution_(soln) {
+    energy_plist_(plist) {
+
+  solution_ = soln;
 
   // require fields
   // primary variable: temperature on both cells and faces, ghosted, with 1 dof
@@ -61,21 +66,21 @@ Energy_AirWaterRock::Energy_AirWaterRock(Teuchos::ParameterList& plist,
 
 
   // operator for advection terms
-  AdvectionFactory advection_factory();
+  Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = energy_plist_.sublist("Advection");
-  advection_ = advection_factory.create(advect_plist, mesh_);
+  advection_ = advection_factory.create(advect_plist, S->mesh());
   advection_->set_num_dofs(1);
 
   // check if we need to make a time integrator
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
-    time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this, solution_));
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
-    time_stepper_->setParameterList(bdf2_list_p);
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
+      Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
+    time_stepper_ = Teuchos::rcp(new BDF2TimeIntegrator(this, bdf2_plist_p, solution_));
   }
 };
 
 // -- Initialize owned (dependent) variables.
-void Energy_AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
+void AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
   // constant initial temperature
   if (energy_plist_.isParameter("Constant temperature")) {
     double T = energy_plist_.get<double>("Constant temperature");
@@ -89,7 +94,7 @@ void Energy_AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     // model evaluator params
     // -- tolerances
-    atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
+    atol_ = energy_plist_.get<double>("Absolute error tolerance",1e-5);
     rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 
     // -- initialize time derivative
@@ -102,31 +107,29 @@ void Energy_AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
 };
 
 // -- transfer operators -- ONLY COPIES POINTERS
-void Energy_AirWaterRock::state_to_solution(const Teuchos::RCP<State>& S,
+void AirWaterRock::state_to_solution(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& soln) {
   //Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
   soln->set_data(S->GetFieldData("temperature", "energy"));
 };
 
-void Energy_AirWaterRock::solution_to_state(const Teuchos::RCP<TreeVector>& soln,
+void AirWaterRock::solution_to_state(const Teuchos::RCP<TreeVector>& soln,
         const Teuchos::RCP<State>& S) {
   //Teuchos::RCP<CompositeVector> temp = soln->data();
   S->SetData("temperature", "energy", soln->data());
 };
 
   // -- Choose a time step compatible with physics.
-double Energy_AirWaterRock::get_dt() {
+double AirWaterRock::get_dt() {
   return dt_;
 };
 
 // -- Advance from state S0 to state S1 at time S0.time + dt.
-bool Energy_AirWaterRock::advance(double dt) {
+bool AirWaterRock::advance(double dt) {
   // take the bdf timestep
   double h = dt;
-  double hnext;
-  time_stepper_->bdf2_step(h, 0.0, solution_, hnext);
+  time_stepper_->time_step(h, solution_);
   time_stepper_->commit_solution(h, solution_);
-  time_stepper_->write_bdf2_stepping_statistics();
   return false;
 };
 
