@@ -21,7 +21,7 @@ vanGenuchtenModel::vanGenuchtenModel(std::string region_, double m_, double alph
 
 double vanGenuchtenModel::k_relative(double p)
 {
-  const double pc_transition ( 100.0 ); 
+  const double pc_transition ( 50.0 ); 
 
   double pc = p_atm - p; // capillary pressure
 
@@ -44,7 +44,7 @@ double vanGenuchtenModel::k_relative(double p)
 
 double vanGenuchtenModel::saturation(double p)
 {
-  const double pc_transition ( 100.0 ); 
+  const double pc_transition ( 50.0 ); 
 
   double pc = p_atm - p; // capillary pressure
   if (pc > pc_transition) {
