@@ -9,36 +9,36 @@ Author: Ethan Coon
 
 #include "air_water_rock.hh"
 
-//namespace Amanzi {
-//namespace Energy {
+namespace Amanzi {
+namespace Energy {
 
-void Energy_AirWaterRock::UpdateSecondaryVariables_() {
+void AirWaterRock::UpdateSecondaryVariables_() {
   // get needed variables
   Teuchos::RCP<const CompositeVector> temp_old =
-    S_inter_->GetVectorData("temperature");
+    S_inter_->GetFieldData("temperature");
   Teuchos::RCP<const CompositeVector> temp_new =
-    S_next_->GetVectorData("temperature");
+    S_next_->GetFieldData("temperature");
 
   Teuchos::RCP<const CompositeVector> mol_frac_gas_old =
-    S_inter_->GetVectorData("mol_frac_gas");
+    S_inter_->GetFieldData("mol_frac_gas");
   Teuchos::RCP<const CompositeVector> mol_frac_gas_new =
-    S_next_->GetVectorData("mol_frac_gas");
+    S_next_->GetFieldData("mol_frac_gas");
 
   // and the secondary variables to be calculated
   Teuchos::RCP<CompositeVector> internal_energy_gas_old =
-    S_inter_->GetVectorData("internal_energy_gas", "energy");
+    S_inter_->GetFieldData("internal_energy_gas", "energy");
   Teuchos::RCP<CompositeVector> internal_energy_gas_new =
-    S_next_->GetVectorData("internal_energy_gas", "energy");
+    S_next_->GetFieldData("internal_energy_gas", "energy");
 
   Teuchos::RCP<CompositeVector> internal_energy_liquid_old =
-    S_inter_->GetVectorData("internal_energy_liquid", "energy");
+    S_inter_->GetFieldData("internal_energy_liquid", "energy");
   Teuchos::RCP<CompositeVector> internal_energy_liquid_new =
-    S_next_->GetVectorData("internal_energy_liquid", "energy");
+    S_next_->GetFieldData("internal_energy_liquid", "energy");
 
   Teuchos::RCP<CompositeVector> internal_energy_rock_old =
-    S_inter_->GetVectorData("internal_energy_rock", "energy");
+    S_inter_->GetFieldData("internal_energy_rock", "energy");
   Teuchos::RCP<CompositeVector> internal_energy_rock_new =
-    S_next_->GetVectorData("internal_energy_rock", "energy");
+    S_next_->GetFieldData("internal_energy_rock", "energy");
 
   // update secondary variables
   InternalEnergyGas_(*temp_old, *mol_frac_gas_old, internal_energy_gas_old);
@@ -51,59 +51,59 @@ void Energy_AirWaterRock::UpdateSecondaryVariables_() {
   InternalEnergyRock_(*temp_new, internal_energy_rock_new);
 };
 
-void Energy_AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
+void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
   Teuchos::RCP<const CompositeVector> poro0 =
-    S_inter_->GetVectorData("porosity");
+    S_inter_->GetFieldData("porosity");
   Teuchos::RCP<const CompositeVector> poro1 =
-    S_next_->GetVectorData("porosity");
+    S_next_->GetFieldData("porosity");
 
   Teuchos::RCP<const CompositeVector> density_gas0 =
-    S_inter_->GetVectorData("density_gas");
+    S_inter_->GetFieldData("density_gas");
   Teuchos::RCP<const CompositeVector> density_gas1 =
-    S_next_->GetVectorData("density_gas");
+    S_next_->GetFieldData("density_gas");
 
   Teuchos::RCP<const CompositeVector> density_liq0 =
-    S_inter_->GetVectorData("density_liquid");
+    S_inter_->GetFieldData("density_liquid");
   Teuchos::RCP<const CompositeVector> density_liq1 =
-    S_next_->GetVectorData("density_liquid");
+    S_next_->GetFieldData("density_liquid");
 
   Teuchos::RCP<const CompositeVector> sat_liq0 =
-    S_inter_->GetVectorData("saturation_liquid");
+    S_inter_->GetFieldData("saturation_liquid");
   Teuchos::RCP<const CompositeVector> sat_liq1 =
-    S_next_->GetVectorData("saturation_liquid");
+    S_next_->GetFieldData("saturation_liquid");
 
   Teuchos::RCP<const CompositeVector> sat_gas0 =
-    S_inter_->GetVectorData("saturation_gas");
+    S_inter_->GetFieldData("saturation_gas");
   Teuchos::RCP<const CompositeVector> sat_gas1 =
-    S_next_->GetVectorData("saturation_gas");
+    S_next_->GetFieldData("saturation_gas");
 
   Teuchos::RCP<const CompositeVector> int_energy_gas0 =
-    S_inter_->GetVectorData("internal_energy_gas");
+    S_inter_->GetFieldData("internal_energy_gas");
   Teuchos::RCP<const CompositeVector> int_energy_gas1 =
-    S_next_->GetVectorData("internal_energy_gas");
+    S_next_->GetFieldData("internal_energy_gas");
 
   Teuchos::RCP<const CompositeVector> int_energy_liq0 =
-    S_inter_->GetVectorData("internal_energy_liquid");
+    S_inter_->GetFieldData("internal_energy_liquid");
   Teuchos::RCP<const CompositeVector> int_energy_liq1 =
-    S_next_->GetVectorData("internal_energy_liquid");
+    S_next_->GetFieldData("internal_energy_liquid");
 
   Teuchos::RCP<const CompositeVector> int_energy_rock0 =
-    S_inter_->GetVectorData("internal_energy_rock");
+    S_inter_->GetFieldData("internal_energy_rock");
   Teuchos::RCP<const CompositeVector> int_energy_rock1 =
-    S_next_->GetVectorData("internal_energy_rock");
+    S_next_->GetFieldData("internal_energy_rock");
 
   Teuchos::RCP<const CompositeVector> cell_volume0 =
-    S_inter_->GetVectorData("cell_volume");
+    S_inter_->GetFieldData("cell_volume");
   Teuchos::RCP<const CompositeVector> cell_volume1 =
-    S_next_->GetVectorData("cell_volume");
+    S_next_->GetFieldData("cell_volume");
 
   Teuchos::RCP<const double> density_rock =
     S_next_->GetScalarData("density_rock");
 
   double dt = S_next_->time() - S_inter_->time();
 
-  int c_min = c=mesh_->cell_map(true).MinLID();
-  int c_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_min = S_->mesh()->cell_map(true).MinLID();
+  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=c_min; c != c_min+c_owned; ++c) {
     double edens_liq1 = (*density_liq1)(c) * (*sat_liq1)(c) *
       (*int_energy_liq1)(c);
@@ -125,19 +125,19 @@ void Energy_AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
   }
 }
 
-void Energy_AirWaterRock::AddAdvection_(Teuchos::RCP<CompositeVector> f) {
+void AirWaterRock::AddAdvection_(Teuchos::RCP<CompositeVector> f) {
   Teuchos::RCP<CompositeVector> field = advection_->field();
 
   // stuff density_liquid * enthalpy_liquid into the field cells
   field->ViewComponent("cell")->PutScalar(0);
 
   Teuchos::RCP<const CompositeVector> density_liq =
-    S_next_->GetVectorData("density_liquid");
+    S_next_->GetFieldData("density_liquid");
   Teuchos::RCP<const CompositeVector> enthalpy_liq =
-    S_next_->GetVectorData("specific_enthalpy_liquid");
+    S_next_->GetFieldData("specific_enthalpy_liquid");
 
-  int c_min = c=mesh_->cell_map(true).MinLID();
-  int c_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_min = S_->mesh()->cell_map(true).MinLID();
+  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=c_min; c != c_min+c_owned; ++c) {
     (*field)("cell",c) = (*density_liq)(c)*(*enthalpy_liq)(c);
   }
@@ -147,3 +147,6 @@ void Energy_AirWaterRock::AddAdvection_(Teuchos::RCP<CompositeVector> f) {
     (*f)("cell",c) += (*field)("cell",c);
   }
 };
+
+} //namespace Energy
+} //namespace Amanzi

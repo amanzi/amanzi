@@ -22,6 +22,9 @@ namespace Operators {
 class Advection {
 
 public:
+  Advection(Teuchos::ParameterList& advect_plist,
+            Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+    advect_plist_(advect_plist), mesh_(mesh) {}
 
   Teuchos::RCP<const CompositeVector> flux() const { return flux_; }
   virtual void set_flux(Teuchos::RCP<const CompositeVector>& flux);
@@ -40,7 +43,9 @@ protected:
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList advect_plist_;
-}
+};
 
 } // namespace Operators
 } // namespace Amanzi
+
+#endif

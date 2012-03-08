@@ -27,7 +27,9 @@ public:
 
   Teuchos::RCP<Advection> create(Teuchos::ParameterList& advect_plist,
           Teuchos::RCP<AmanziMesh::Mesh> mesh);
-}
+};
 
 } // namespace Operators
 } // namespace Amanzi
+
+#endif

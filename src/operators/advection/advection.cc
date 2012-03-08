@@ -8,6 +8,8 @@
    Base class for advection.
    ------------------------------------------------------------------------- */
 
+#include "advection.hh"
+
 namespace Amanzi {
 namespace Operators {
 
@@ -16,7 +18,7 @@ void Advection::set_flux(Teuchos::RCP<const CompositeVector>& flux) {
   flux_ = flux;
 }
 
-void Adevection::set_num_dofs(int num_dofs) {
+void Advection::set_num_dofs(int num_dofs) {
   if (field_ == Teuchos::null || num_dofs_ != num_dofs) {
     num_dofs_ = num_dofs;
 
@@ -28,7 +30,7 @@ void Adevection::set_num_dofs(int num_dofs) {
     locations[0] = AmanziMesh::CELL;
     locations[1] = AmanziMesh::FACE;
 
-    field_ = Teuchos::rcp(new CompositeVector(names, locations, num_dofs_, true));
+    field_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs_, true));
     field_->CreateData();
   }
 }

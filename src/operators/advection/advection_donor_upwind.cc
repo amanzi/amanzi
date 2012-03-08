@@ -10,13 +10,13 @@
 
 #include "advection_donor_upwind.hh"
 
-//namespace Amanzi {
-//namespace Operators {
+namespace Amanzi {
+namespace Operators {
 
 
 AdvectionDonorUpwind::AdvectionDonorUpwind(Teuchos::ParameterList& advect_plist,
         Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-  advect_plist_(advect_plist), mesh_(mesh) {
+    Advection(advect_plist, mesh) {
 
   f_begin_ = mesh_->face_map(true).MinLID();
   f_count_ = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -28,8 +28,8 @@ AdvectionDonorUpwind::AdvectionDonorUpwind(Teuchos::ParameterList& advect_plist,
   c_owned_ = c_begin_ + c_count_;
   c_end_ = mesh_->cell_map(true).MaxLID() + 1;
 
-  upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
-  downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
+  upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
+  downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
 
 };
 
@@ -53,8 +53,8 @@ void AdvectionDonorUpwind::Advect() {
     int c2 = (*downwind_cell_)[f];
 
     if (c1 >=0) {
-      u = fabs((*flux)(f));
-      for (int i=0; i != num_dofs; ++i) {
+      u = fabs((*flux_)(f));
+      for (int i=0; i != num_dofs_; ++i) {
         (*field_)("face",i,f) = u * (*field_)("cell",i,c1);
       }
     }
@@ -67,17 +67,17 @@ void AdvectionDonorUpwind::Advect() {
     int c2 = (*downwind_cell_)[f];
 
     if (c1 >=0 && c1 < c_owned_ && c2 >= 0 && c2 < c_owned_) {
-      for (int i=0; i<num_components; i++) {
+      for (int i=0; i<num_dofs_; i++) {
         double flux = (*field_)("face",i,f);
         (*field_)("cell",i,c1) -= flux;
         (*field_)("cell",i,c2) += flux;
       }
     } else if (c1 >=0 && c1 < c_owned_ && (c2 >= c_owned_ || c2 < 0)) {
-      for (int i=0; i<num_components; i++) {
+      for (int i=0; i<num_dofs_; i++) {
         (*field_)("cell",i,c1) -= (*field_)("face",i,f);
       }
     } else if (c1 >= c_owned_ && c2 >= 0 && c2 < c_owned_) {
-      for (int i=0; i<num_components; i++) {
+      for (int i=0; i<num_dofs_; i++) {
         (*field_)("cell",i,c2) += (*field_)("face",i,f);
       }
     }
