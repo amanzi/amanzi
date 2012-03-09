@@ -229,7 +229,7 @@ namespace Amanzi {
             std::string model_name;
             std::string flow_mode = ec_list.get<std::string>(flow_str);
             if (flow_mode == "Off") {
-                MyAbort("Flow Mode = \"" + flow_mode + "\" not supported");
+                MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
                 prob_out_list.set("do_simple",2);
             }
             else if (flow_mode == "Richards") {
@@ -244,6 +244,9 @@ namespace Amanzi {
             else if (flow_mode == "Multi-phase") {
                 model_name = "two-phase";
                 prob_out_list.set("cfl",0.75);
+            }
+            else {
+                MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
             }
             prob_out_list.set("model_name",model_name);
 
@@ -1566,7 +1569,7 @@ namespace Amanzi {
                     fluxvals[i] = -fluxvals[i];
                 }
             }
-    
+
             std::string rock_label;
             if (require_rock) {
                 rock_label = fPLin.get<std::string>(rock_name);
@@ -2092,6 +2095,17 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Porosity"));
             user_derive_list.push_back(underscore("Aqueous Saturation"));
             user_derive_list.push_back(underscore("Aqueous Pressure"));
+
+            if (struc_list.isSublist("tracer")) {
+                const ParameterList& solute_list = struc_list.sublist("tracer");
+                for (ParameterList::ConstIterator it=solute_list.begin(); it!=solute_list.end(); ++it) {
+                    const std::string& name = solute_list.name(it);
+                    if (solute_list.isSublist(name)) {
+                        user_derive_list.push_back(underscore("Aqueous "+name+" Concentration"));
+                    }
+                }
+            }
+
             amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);
 
             const ParameterList& rlist = parameter_list.sublist("Output");
