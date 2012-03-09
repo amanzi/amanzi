@@ -9755,6 +9755,8 @@ PorousMedia::derive (const std::string& name,
 {
     const DeriveRec* rec = derive_lst.get(name);
 
+    bool not_found_yet = false;
+
     if (name=="Material_ID") {
         
         BL_ASSERT(dcomp < mf.nComp());
@@ -9902,7 +9904,23 @@ PorousMedia::derive (const std::string& name,
         MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
 
     } else {
-        
+
+        not_found_yet = true;
+    }
+
+    if (not_found_yet) {
+
+        for (int n=0; n<ntracers && not_found_yet; ++n) {
+            std::string tname = "Aqueous_" + tNames[n] + "_Concentration";
+            if (name==tname) {
+                AmrLevel::derive(tNames[n],time,mf,dcomp);
+                not_found_yet = false;
+            }
+        }
+    }
+
+    if (not_found_yet)
+    {
         AmrLevel::derive(name,time,mf,dcomp);
     }
 }

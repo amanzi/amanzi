@@ -2095,6 +2095,17 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Porosity"));
             user_derive_list.push_back(underscore("Aqueous Saturation"));
             user_derive_list.push_back(underscore("Aqueous Pressure"));
+
+            if (struc_list.isSublist("tracer")) {
+                const ParameterList& solute_list = struc_list.sublist("tracer");
+                for (ParameterList::ConstIterator it=solute_list.begin(); it!=solute_list.end(); ++it) {
+                    const std::string& name = solute_list.name(it);
+                    if (solute_list.isSublist(name)) {
+                        user_derive_list.push_back(underscore("Aqueous "+name+" Concentration"));
+                    }
+                }
+            }
+
             amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);
 
             const ParameterList& rlist = parameter_list.sublist("Output");
