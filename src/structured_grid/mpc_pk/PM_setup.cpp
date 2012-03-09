@@ -154,8 +154,6 @@ Array<Real> PorousMedia::press_lo;
 Array<Real> PorousMedia::press_hi;
 Array<int>  PorousMedia::inflow_bc_lo;
 Array<int>  PorousMedia::inflow_bc_hi;
-Array<Real> PorousMedia::inflow_vel_lo;
-Array<Real> PorousMedia::inflow_vel_hi;
 Array<int>  PorousMedia::rinflow_bc_lo;
 Array<int>  PorousMedia::rinflow_bc_hi;
 //
@@ -1139,7 +1137,7 @@ void PorousMedia::read_prob()
   pb.query("dt_cutoff",dt_cutoff);
   pb.query("change_max",change_max);
   pb.query("fixed_dt",fixed_dt);
-  pb.query("richard_max_dt",richard_max_dt);
+  pb.query("max_dt",richard_max_dt);
   pb.query("sum_interval",sum_interval);
 
   // Gravity are specified as m/s^2 in the input file
@@ -1527,12 +1525,19 @@ void  PorousMedia::read_comp()
       rinflow_bc_hi.resize(BL_SPACEDIM,0); 
       inflow_bc_lo.resize(BL_SPACEDIM,0); 
       inflow_bc_hi.resize(BL_SPACEDIM,0); 
-      inflow_vel_lo.resize(BL_SPACEDIM,0); 
-      inflow_vel_hi.resize(BL_SPACEDIM,0); 
 
       bc_array.resize(n_bcs,PArrayManage);
       Array<std::string> bc_names;
       cp.getarr("bc_labels",bc_names,0,n_bcs);
+
+      // default to no flow first.
+      for (int j=0;j<BL_SPACEDIM;j++) {
+	phys_bc.setLo(j,4);
+	pres_bc.setLo(j,4);
+	phys_bc.setHi(j,4);
+	pres_bc.setHi(j,4);
+      }	  
+
       for (int i = 0; i<n_bcs; i++)
       {
           const std::string& bcname = bc_names[i];
@@ -1545,8 +1550,9 @@ void  PorousMedia::read_comp()
           const PArray<Region> bc_regions = build_region_PArray(region_names);
           std::string bc_type; ppr.get("type",bc_type);
 
-          bool is_inflow;
-          int component_bc, pressure_bc;
+          bool is_inflow = false;
+          int component_bc = 4;
+	  int pressure_bc  = 4;
 
           if (bc_type == "pressure")
           {
@@ -1582,9 +1588,6 @@ void  PorousMedia::read_comp()
           }
           else if (bc_type == "zero_total_velocity")
           {
-	      //std::string rocklabel=""; ppr.get("rock",rocklabel);
-	      //const Rock& rock = find_rock(rocklabel);
-
               Array<Real> vals, times;
               Array<std::string> forms;
 
@@ -1645,13 +1648,13 @@ void  PorousMedia::read_comp()
           }
           else
           {
-              std::cout << bc_type << " not a valid bc_type " << std::endl;
-              BoxLib::Abort();
+	    std::cout << bc_type << " not a valid bc_type " << std::endl;
+	    BoxLib::Abort();
           }
-
 
           // Some clean up 
           std::set<std::string> o_set;
+
           for (int j=0; j<bc_regions.size(); ++j)
           {
               const std::string purpose = bc_regions[j].purpose;

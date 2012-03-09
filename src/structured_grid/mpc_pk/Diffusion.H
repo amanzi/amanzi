@@ -118,7 +118,6 @@ public:
 		       const MultiFab*        alpha,
 		       const MultiFab* const* beta,
 		       const MultiFab* const* beta_dp,
-		       MultiFab*              pc,
 		       MultiFab*              umac,
 		       const bool             do_upwind,
 		       Real*                  err_nwt); 
@@ -132,9 +131,9 @@ public:
 				 PArray<MultiFab>&         alpha, 
 				 Array<PArray<MultiFab> >& beta,
 				 Array<PArray<MultiFab> >& beta_dp,
-				 PArray<MultiFab>&         pc,
 				 const bool                do_upwind,
 				 Real*                     err_nwt);
+
     void richard_iter_p(Real                   dt,
 			int                    nc,
 			Real                   gravity,
@@ -144,19 +143,29 @@ public:
 			const MultiFab*        dalpha,
 			const MultiFab* const* beta,
 			const MultiFab* const* beta_dp,
-			MultiFab*              pc,
 			MultiFab*              umac,
 			const bool             do_upwind,
 			Real*                  err_nwt); 
- 
 
+    void richard_composite_iter_p (Real                      dt,
+				   int                       nlevs,
+				   int                       nc,
+				   Real                      gravity,
+				   Array<Real>               density,
+				   PArray<MultiFab>&         res_fix,
+				   PArray<MultiFab>&         alpha, 
+				   PArray<MultiFab>&         dalpha, 
+				   Array<PArray<MultiFab> >& beta,
+				   Array<PArray<MultiFab> >& beta_dp,
+				   const bool                do_upwind,
+				   Real*                     err_nwt);
+ 
     void richard_iter_eqb (int                    nc,
 			   Real                   gravity,
 			   Array<Real>            density,
 			   MultiFab&              res_fix,
 			   const MultiFab* const* beta,
 			   const MultiFab* const* beta_dp,
-			   MultiFab*              pc,
 			   MultiFab*              umac,
 			   const bool             do_upwind,
 			   Real*                  err_nwt);    

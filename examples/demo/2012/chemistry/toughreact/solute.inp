@@ -1,0 +1,236 @@
+#Title
+SRS Project - 2D acid-U(VI) seepage drainage in Savannah River Site 
+
+#ISPIA INIBOUND ISOLVC NGAM NGAS1 ichdump kcpl Ico2h2o  nu
+    2    0        5    2      0      1     1     0      0 
+#SL1MIN      RCOUR     STIMAX    CNFACT(=1 fully implicit)
+   1.00e-4 1000.000     2.0        1.0  
+
+#Read input and output file names:
+database_no_corr.dat           ! thermodynamic database
+iter.dat                       ! iteration information
+svrs_conc.dat                  ! aqueous concentrations in tecplot form
+svrs_min.dat                   ! mineral data  in tecplot form
+svrs_gas.dat                   ! gas data  in tecplot form
+time.dat                       ! concentrations at specific elements over time
+
+#ITIME     WUPC   DFFUN     DFFUNG
+  1.0       1.0   1.0d-09   0.0     
+#               note, dffun is calculated assuming 100 m dispersivity
+#               tort=0.5, and D for KNO3 1.8E-9 m2/sec     
+
+
+#MAXITPTR  TOLTR    MAXITPCH  TOLCH    MAXITPAD  TOLAD      TOLDC    TOLDR    TOL_REMOVE  RATE_REMOVE 
+  1      0.100E-06   100    1.000E-05     30     1.0e-4       0.0      0.0     
+
+#NWTI NWNOD NWCOM NWMIN NWAQ NWADS NWEXC  iconflag(=0:mol/kg) minflag(=1:Vf) 
+10     0      -1     -1    -1   -1    0        0                   1   
+
+#Nodes for which to output data in time file (15a5) (NWNOD nodes): 
+
+#Primary (total) aqueous species for which to output concentrations in time and plot files (NWCOM species, any order):       
+H2O
+H+        
+Al+++     
+Ca++      
+Cl-       
+Fe+++     
+HCO3-     
+K+        
+Mg++      
+Na+       
+SiO2(aq)  
+SO4--     
+tritium    
+NO3-
+UO2++
+>dong_kOH   
+>dong_hfoOH 
+>dong_kX-
+>SiOH       
+
+#Minerals for which to output data in time and plot files (NWMIN minerals):
+schoepite   
+co2(atm)
+kaolinite   
+gibbsite    
+jurbanite   
+basaluminite
+opal_proxy  
+sio2(am)_g  
+quartz      
+goethite    
+           
+#Individual aqueous species for which to output concentrations in time and plot files (NWAQ species, any order):
+oh-                 
+co2(aq)             
+co3-2      
+nahco3(aq)          
+naco3-              
+naoh(aq)            
+koh(aq)             
+aloh+2              
+al(oh)2+            
+al(oh)3(aq)         
+al(oh)4-            
+caoh+               
+cahco3+             
+caco3(aq)           
+mgoh+               
+mghco3+             
+mgco3(aq)             
+(uo2)2(oh)2+2       
+(uo2)2co3(oh)3-     
+(uo2)2oh+3          
+(uo2)3(co3)6(6-)    
+(uo2)3(oh)4+2       
+uo2(oh)4-2          
+(uo2)3(oh)5+        
+(uo2)3(oh)7-        
+(uo2)3o(oh)2(hco3)+ 
+(uo2)4(oh)7+        
+uo2no3+             
+uo2oh+              
+uo2(oh)2(aq)        
+uo2(oh)3-           
+uo2co3(aq)          
+uo2(co3)2-2         
+uo2(co3)3-4         
+cauo2(co3)3-2       
+ca2uo2(co3)3        
+mguo2(co3)3-2       
+uo2osi(oh)3+      
+
+#Adsorption species for which to output concentrations in time and plot files (NWADS species, any order):
+>(dong_kOH)2UO2+
+>(dong_kOH)2UO2CO3-
+>dong_kOH2+0.5
+>dong_kOH2NO3
+>dong_kOHNa+0.5
+>(dong_hfoOH)2UO2+
+>(dong_hfoOH)2UO2CO3-
+>dong_hfoOH+0.5
+>(dong_hfoOH)2CO2-
+>dong_hfoOHCO2Na
+>(dong_kX-)2UO2
+>(dong_kX-)2Ca
+>(dong_kX-)3Al
+>dong_kX-Na
+>dong_kX-H
+>sioh2+
+>sio-
+>siona
+
+#Exchange species for which to output concentrations in time and plot files (NWEXC species, any order):                                   
+
+#IZIWDF IZBWDF IZMIDF IZGSDF IZADDF IZEXDF IZPPDF IZKDDF (default types of chemical zones)
+  1       1      1      1      1      1      1     1
+  
+# chemical zone codes for nodes:              
+A11 1    0    0    1    1    1    1    1    1    1    1
+A11 2    0    0    1    0    1    1    1    1    1    1
+A11 3    0    0    1    0    1    1    1    1    1    1
+A11 4    0    0    1    0    1    1    1    1    1    1
+A11 5    0    0    1    0    1    1    1    1    1    1
+A11 6    0    0    1    0    1    1    1    1    1    1
+A11 7    0    0    1    0    1    1    1    1    1    1
+A11 8    0    0    1    0    1    1    1    1    1    1
+A11 9    0    0    1    0    1    1    1    1    1    1
+A1110    0    0    1    0    1    1    1    1    1    1
+A1111    0    0    1    0    1    1    1    1    1    1
+A1112    0    0    1    0    1    1    1    1    1    1
+A1113    0    0    1    0    1    1    1    1    1    1
+A1114    0    0    1    0    1    1    1    1    1    1
+A1115    0    0    1    0    1    1    1    1    1    1
+A1116    0    0    1    0    1    1    1    1    1    1
+A1117    0    0    1    0    1    1    1    1    1    1
+A1118    0    0    1    0    1    1    1    1    1    1
+A1119    0    0    1    0    1    1    1    1    1    1
+A1120    0    0    1    0    1    1    1    1    1    1
+A1121    0    0    1    0    1    1    1    1    1    1
+A1122    0    0    1    0    1    1    1    1    1    1
+A1123    0    0    1    0    1    1    1    1    1    1
+A1124    0    0    1    0    1    1    1    1    1    1
+A1125    0    0    1    0    1    1    1    1    1    1
+A1126    0    0    1    0    1    1    1    1    1    1
+A1127    0    0    1    0    1    1    1    1    1    1
+A1128    0    0    1    0    1    1    1    1    1    1
+A1129    0    0    1    0    1    1    1    1    1    1
+A1130    0    0    1    0    1    1    1    1    1    1
+A1131    0    0    1    0    1    1    1    1    1    1
+A1132    0    0    1    0    1    1    1    1    1    1
+A1133    0    0    1    0    1    1    1    1    1    1
+A1134    0    0    1    0    1    1    1    1    1    1
+A1135    0    0    1    0    1    1    1    1    1    1
+A1136    0    0    1    0    1    1    1    1    1    1
+A1137    0    0    1    0    1    1    1    1    1    1
+A1138    0    0    1    0    1    1    1    1    1    1
+A1139    0    0    1    0    1    1    1    1    1    1
+A1140    0    0    1    0    1    1    1    1    1    1
+A1141    0    0    1    0    1    1    1    1    1    1
+A1142    0    0    1    0    1    1    1    1    1    1
+A1143    0    0    1    0    1    1    1    1    1    1
+A1144    0    0    1    0    1    1    1    1    1    1
+A1145    0    0    1    0    1    1    1    1    1    1
+A1146    0    0    1    0    1    1    1    1    1    1
+A1147    0    0    1    0    1    1    1    1    1    1
+A1148    0    0    1    0    1    1    1    1    1    1
+A1149    0    0    1    0    1    1    1    1    1    1
+A1150    0    0    1    0    1    1    1    1    1    1
+A1151    0    0    1    0    1    1    1    1    1    1
+A1152    0    0    1    0    1    1    1    1    1    1
+A1153    0    0    1    0    1    1    1    1    1    1
+A1154    0    0    1    0    1    1    1    1    1    1
+A1155    0    0    1    0    1    1    1    1    1    1
+A1156    0    0    1    0    1    1    1    1    1    1
+A1157    0    0    1    0    1    1    1    1    1    1
+A1158    0    0    1    0    1    1    1    1    1    1
+A1159    0    0    1    0    1    1    1    1    1    1
+A1160    0    0    1    0    1    1    1    1    1    1
+A1161    0    0    1    0    1    1    1    1    1    1
+A1162    0    0    1    0    1    1    1    1    1    1
+A1163    0    0    1    0    1    1    1    1    1    1
+A1164    0    0    1    0    1    1    1    1    1    1
+A1165    0    0    1    0    1    1    1    1    1    1
+A1166    0    0    1    0    1    1    1    1    1    1
+A1167    0    0    1    0    1    1    1    1    1    1
+A1168    0    0    1    0    1    1    1    1    1    1
+A1169    0    0    1    0    1    1    1    1    1    1
+A1170    0    0    1    0    1    1    1    1    1    1
+A1171    0    0    1    0    1    1    1    1    1    1
+A1172    0    0    1    0    1    1    1    1    1    1
+A1173    0    0    1    0    1    1    1    1    1    1
+A1174    0    0    1    0    1    1    1    1    1    1
+A1175    0    0    1    0    1    1    1    1    1    1
+A1176    0    0    1    0    1    1    1    1    1    1
+A1177    0    0    1    0    1    1    1    1    1    1
+A1178    0    0    1    0    1    1    1    1    1    1
+A1179    0    0    1    0    1    1    1    1    1    1
+A1180    0    0    1    0    1    1    1    1    1    1
+A1181    0    0    1    0    1    1    1    1    1    1
+A1182    0    0    1    0    1    1    1    1    1    1
+A1183    0    0    1    0    1    1    1    1    1    1
+A1184    0    0    1    0    1    1    1    1    1    1
+A1185    0    0    1    0    1    1    1    1    1    1
+A1186    0    0    1    0    1    1    1    1    1    1
+A1187    0    0    1    0    1    1    1    1    1    1
+A1188    0    0    1    0    1    1    1    1    1    1
+A1189    0    0    1    0    1    1    1    1    1    1
+A1190    0    0    1    0    1    1    1    1    1    1
+A1191    0    0    1    0    1    1    1    1    1    1
+A1192    0    0    1    0    1    1    1    1    1    1
+A1193    0    0    1    0    1    1    1    1    1    1
+A1194    0    0    1    0    1    1    1    1    1    1
+A1195    0    0    1    0    1    1    1    1    1    1
+A1196    0    0    1    0    1    1    1    1    1    1
+A1197    0    0    1    0    1    1    1    1    1    1
+A1198    0    0    1    0    1    1    1    1    1    1
+A1199    0    0    1    0    1    1    1    1    1    1
+B11 1    0    0    1    0    1    1    1    1    1    1
+
+# this "end" record is needed now
+end 
+
+
+
+>dong_kOH2NO3   

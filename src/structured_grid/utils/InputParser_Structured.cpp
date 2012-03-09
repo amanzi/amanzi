@@ -342,13 +342,8 @@ namespace Amanzi {
                 }
                 
                 if (dt_max > 0) {
-                    if (model_name == "richard") {
-                        prob_out_list.set<double>("richard_max_dt", dt_max);
-                    }
-                    else {
-                        prob_out_list.set<double>("max_dt", dt_max);
-                    }
-                }
+		  prob_out_list.set<double>("max_dt", dt_max);
+		}
             }
             else {
                 std::cout << t_list << std::endl;
@@ -1564,7 +1559,7 @@ namespace Amanzi {
 	        std::cerr << "Mass fluxes not yet supported" << std::endl;
                 throw std::exception();
             }
-    
+
             // Convert to inward flux
             if (is_out) {
                 for (int i=0; i<fluxvals.size(); ++i) {

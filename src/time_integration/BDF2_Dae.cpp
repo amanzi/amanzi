@@ -462,7 +462,7 @@ namespace BDF2 {
 	
 	
 	double perr = fn.enorm(u, u0);
-	if (perr < 4.0) // accept the step.
+	if (true) //  (perr < 4.0) // accept the step. 
 	  { 
 	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {
