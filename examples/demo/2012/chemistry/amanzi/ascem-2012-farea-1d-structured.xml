@@ -8,13 +8,13 @@
     <Parameter name="Description" type="string" value="ASCEM 2012 F-Area 1-D Reactive Transport - Structured Mesh"/>
     <Parameter name="Authors" type="string" value="bandre,msday"/>
     <Parameter name="Creation date" type="string" value="2012-03-01 15:00"/>
-    <Parameter name="Last modified" type="string" value="2012-03-06 13:07"/>
+    <Parameter name="Last modified" type="string" value="2012-03-08 17:55"/>
   </ParameterList>
 
 
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Richards"/>
-    <Parameter name="Transport Model" type="string" value="Off"/>
+    <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
@@ -111,7 +111,7 @@
           <ParameterList name="Water">
             <ParameterList name="Tracer">
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-              <ParameterList name="IC: Uniform">
+              <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0"/>
               </ParameterList>
             </ParameterList>
@@ -137,7 +137,7 @@
             <ParameterList name="Tracer">
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="BC: Uniform Concentration">
-		<Parameter name="Value" type="double" value="1.0"/>
+		<Parameter name="Values" type="Array double" value="{1.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
