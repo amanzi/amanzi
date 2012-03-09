@@ -13,7 +13,9 @@
 
 #include "Mesh.hh"
 #include "Element_types.hh"
+#include "MeshDefs.hh"
 #include "errors.hh"
+#include "dbc.hh"
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
 
@@ -121,7 +123,7 @@ class HDF5_MPI {
   void readFieldData_(Epetra_Vector &x, std::string varname,
                       datatype_t type);
 
-  int getCellTypeID_(int conn_len);
+  int getCellTypeID_(AmanziMesh::Cell_type type);
   
   
   std::string stripFilename_(std::string filename);
@@ -151,6 +153,7 @@ class HDF5_MPI {
   int NumElems_;
   int ConnLength_;
   int Iteration_;
+  int SpaceDim_;
 
   // Mesh information
   int conn_;
