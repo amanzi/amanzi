@@ -234,7 +234,8 @@ function parse_argv()
 {
   argv=( "$@" )
   last=$(( ${#argv[@]} - 1 ))
-  for i in `seq 0 ${last}`
+  i=0
+  while [ $i -le ${last} ]
   do
     opt=${argv[$i]}
     #echo "i: ${i} opt=$opt last: $last"
@@ -307,6 +308,7 @@ function parse_argv()
 		   ;;
       esac
 
+      i=$[$i+1]
   done
 
 }
