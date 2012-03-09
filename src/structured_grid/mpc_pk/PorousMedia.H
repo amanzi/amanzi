@@ -743,6 +743,7 @@ protected:
   // Calculate divergence of velocity boundary condition 
   //
   void calc_richard_velbc(MultiFab& res,
+			  MultiFab* uphase,
 			  const Real dt = 1.0);
 #endif
 
@@ -751,12 +752,22 @@ protected:
   //
   void calcCapillary (const Real time);
   void calcCapillary (MultiFab* pc, const MultiFab& S);
+  void calcCapillary (FArrayBox&       pc,
+		      const FArrayBox& S,
+		      const FArrayBox& rockphi,
+		      const FArrayBox& rockkappa,
+		      const FArrayBox& cplcoef,
+		      const Box&       grids,
+		      const Array<int>& s_bc);
   void smooth_pc (MultiFab* pc);
   //
   // Calculate inverse capillary pressure
   //
-  void calcInvCapillary (const Real time);
   void calcInvCapillary (MultiFab& S,const MultiFab& pc);
+  //
+  // Calculate inverse pressure
+  //
+  void calcInvPressure (MultiFab& S,const MultiFab& P);
   //
   // Calculate lambda = relative permeability/mu
   //
@@ -797,7 +808,8 @@ protected:
                               int        num_comp);
   void dirichletStateBC (const Real time);
   void dirichletStateBC (FArrayBox& fab, Real time);
-  void dirichletTracerBC (FArrayBox& fab, Real time);
+  void dirichletTracerBC(FArrayBox& fab, Real time);
+  void dirichletPressBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            Real               time);
@@ -937,8 +949,6 @@ protected:
   static Array<Real> press_hi;
   static Array<int>  inflow_bc_lo;
   static Array<int>  inflow_bc_hi;
-  static Array<Real> inflow_vel_lo;
-  static Array<Real> inflow_vel_hi;
 
   // Richard boundary conditions		
 #ifdef MG_USE_FBOXLIB
@@ -949,6 +959,7 @@ protected:
 
   typedef std::pair<Box,Array<int> > BCDesc;
   std::map<Orientation,BCDesc> bc_descriptor_map;
+  std::map<Orientation,BCDesc> pbc_descriptor_map;
   Array<std::map<Orientation,BCDesc> > tbc_descriptor_map;
 
   // temperature

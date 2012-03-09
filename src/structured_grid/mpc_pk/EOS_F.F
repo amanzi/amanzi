@@ -366,14 +366,22 @@ c ::: -----------------------------------------------------------
             print *,'cpl_type=1 requires ncomps=2'
             call bl_pd_abort()
          endif
-         sat(2) = one - 0.2d0*log(pc*sqrt(kappa/phi)/sigma)
+         if (pc > zero) then
+            sat(2) = one - 0.2d0*log(pc*sqrt(kappa/phi)/sigma)
+         else
+            sat(2) = zero
+         end if
          if (ncomps > 1) then
             sat(1) = one - sat(2)
          end if
 
       elseif (cpl_type .eq. 2) then
 c        lambda = 2
-         sat(1) = one/(sigma*pc)**2
+         if (pc > zero) then
+            sat(1) = one/(sigma*pc)**2
+         else
+            sat(1) = one
+         end if
          if (ncomps > 1) then
             sat(2) = one-sat(1)
          end if
@@ -392,7 +400,11 @@ c            sat(1) = sqrt(one/(one+sat(1)*sat(1)))
 c         end if
 
          m = cpl_coef
-         sat(1) = (one + (pc*sigma)**(one/(one-m)))**(-m)
+         if (pc > zero) then
+            sat(1) = (one + (pc*sigma)**(one/(one-m)))**(-m)
+         else
+            sat(1) = one
+         end if
          if (ncomps > 1) then
             sat(2) = one-sat(1)
          end if

@@ -18,44 +18,56 @@ vanGenuchtenModel::vanGenuchtenModel(std::string region_, double m_, double alph
   set_region(region_);
 }
  
-double vanGenuchtenModel::clip_capillary(double pc) {
-  return pc;
-  //  return std::min<double>(2e6,pc);
-}
-
 
 double vanGenuchtenModel::k_relative(double p)
 {
+  const double pc_transition ( 50.0 ); 
+
   double pc = p_atm - p; // capillary pressure
-  if (pc > 0.0) {
+
+  if (pc > pc_transition) {
     double se = pow(1.0 + pow(alpha*pc,n),-m);
     
     return sqrt(se) * pow( 1.0 - pow( 1.0 - pow(se,1.0/m),m), 2);
-  } else {
+  } else if (pc <= 0.0) {
     return 1.0;
+  } else {
+    
+    double se_pc_transition(pow(1.0 + pow(alpha*pc_transition,n),-m));
+    double f_pc_transition(sqrt(se_pc_transition) * pow( 1.0 - pow( 1.0 - pow(se_pc_transition,1.0/m),m), 2));
+    
+    return quadr_fn(pc, pc_transition, f_pc_transition);
   }
+
 }
 
 
 double vanGenuchtenModel::saturation(double p)
 {
+  const double pc_transition ( 50.0 ); 
+
   double pc = p_atm - p; // capillary pressure
-  if (pc > 0.0) {
+  if (pc > pc_transition) {
     return pow(1.0 + pow(alpha*pc,n),-m) * (1.0 - sr) + sr;
-  } else {
+  } else if (pc <= 0.0 ) {
     return 1.0;
+  } else {
+    
+    double f_pc_transition(pow(1.0 + pow(alpha*pc_transition,n),-m) * (1.0 - sr) + sr);
+    return quadr_fn(pc, pc_transition, f_pc_transition);
   }
 }
 
 
 double vanGenuchtenModel::d_saturation(double p)
 {
+
   double pc = p_atm - p; // capillary pressure
   if (pc > 0.0) {
     return m * n * pow(1.0 + pow(alpha*pc,n),-m-1.0) * pow(alpha*pc,n-1.0) * alpha  * (1.0 - sr);
-  } else {
+  } else { 
     return 0.0;
-  }
+  } 
 }  
 
 
@@ -69,4 +81,11 @@ double vanGenuchtenModel::pressure(double sl)
 void vanGenuchtenModel::update_p_atm(double new_p_atm)
 {
   p_atm = new_p_atm;
+}
+
+
+double vanGenuchtenModel::quadr_fn(double x, double pc_t, double f_pc_t) {
+  
+  return (f_pc_t - 1.0)/(pc_t*pc_t) * x*x + 1.0;
+
 }

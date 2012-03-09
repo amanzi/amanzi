@@ -821,8 +821,7 @@ c
      &                          const_diff_coef,sbc,pbc,
      &                          dom_lo,dom_hi,dx,lo,hi,
      &                          wt_lo, wt_hi,
-     &                          inflow_bc_lo,inflow_bc_hi,
-     &                          inflow_vel_lo,inflow_vel_hi)
+     &                          inflow_bc_lo,inflow_bc_hi)
 
       implicit none
 
@@ -855,7 +854,6 @@ c
       REAL_T rho,rho1,rho2
       REAL_T s1,s2
       REAL_T wt_lo, wt_hi
-      REAL_T inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
 
       integer i,j,k,l,nc
       integer compcount(nphases)
@@ -1252,11 +1250,7 @@ c ::: Set no slip conditions and outflow conditions
       if (pbc(1,1).eq. FOEXTRAP .and. lo(1) .eq. dom_lo(1)) then
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
-               if (inflow_bc_lo(1) .eq. 1) then
-                  umac(lo(1),j,k) = inflow_vel_lo(1)
-               else
-                  umac(lo(1),j,k) = zero
-               end if
+               umac(lo(1),j,k) = zero
             end do
          end do
       end if
@@ -1264,11 +1258,7 @@ c ::: Set no slip conditions and outflow conditions
       if (pbc(1,2).eq. FOEXTRAP .and. hi(1) .eq. dom_hi(1)) then
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
-               if (inflow_bc_hi(1) .eq. 1) then
-                  umac(hi(1)+1,j,k) = inflow_vel_hi(1)
-               else
-                  umac(hi(1)+1,j,k) = zero
-               end if
+               umac(hi(1)+1,j,k) = zero
             end do
          end do
       end if
@@ -1276,11 +1266,7 @@ c ::: Set no slip conditions and outflow conditions
       if (pbc(2,1).eq. FOEXTRAP .and. lo(2) .eq. dom_lo(2)) then
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
-               if (inflow_bc_lo(2) .eq. 1) then
-                  vmac(i,lo(2),k) = inflow_vel_lo(2)
-               else
-                  vmac(i,lo(2),k) = zero
-               end if
+               vmac(i,lo(2),k) = zero
             end do
          end do
       end if
@@ -1288,11 +1274,7 @@ c ::: Set no slip conditions and outflow conditions
       if (pbc(2,2).eq. FOEXTRAP .and. hi(2) .eq. dom_hi(2)) then
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
-               if (inflow_bc_hi(2) .eq. 1) then
-                  vmac(i,hi(2)+1,k) = inflow_vel_hi(2)
-               else
-                  vmac(i,hi(2)+1,k) = zero
-               end if
+               vmac(i,hi(2)+1,k) = zero
             end do
          end do
       end if
@@ -1300,11 +1282,6 @@ c ::: Set no slip conditions and outflow conditions
       if (pbc(3,1).eq. FOEXTRAP .and. lo(3) .eq. dom_lo(3)) then
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
-               if (inflow_bc_lo(3) .eq. 1) then
-                  wmac(i,j,lo(3)) = inflow_vel_lo(3)
-               else
-                  wmac(i,j,lo(3)) = zero
-               end if
                wmac(i,j,lo(3)) = zero
             end do
          end do
@@ -1313,11 +1290,7 @@ c ::: Set no slip conditions and outflow conditions
       if (pbc(3,2).eq. FOEXTRAP .and. hi(3) .eq. dom_hi(3)) then
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
-               if (inflow_bc_hi(3) .eq. 1) then
-                  wmac(i,j,hi(3)+1) = inflow_vel_hi(3)
-               else
-                  wmac(i,j,hi(3)+1) = zero
-               end if
+               wmac(i,j,hi(3)+1) = zero
             end do
          end do
       end if
