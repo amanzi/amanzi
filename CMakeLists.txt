@@ -35,7 +35,10 @@ set(AMANZI_PYTHON_DIR          "${AMANZI_SOURCE_DIR}/tools/py_lib")
 # Set the module search path so find_package and include commands
 # can locate files in <root source tree>/tools/cmake
 set(AMANZI_MODULE_PATH "${AMANZI_SOURCE_TOOLS_DIR}/cmake")
-set(CMAKE_MODULE_PATH  ${AMANZI_MODULE_PATH})
+set(CMAKE_MODULE_PATH 
+    ${AMANZI_MODULE_PATH}
+    ${AMANZI_MODULE_PATH}/Modules
+    ${AMANZI_MODULE_PATH}/Utils)
 
 # Code version defined
 include(AmanziVersion)
