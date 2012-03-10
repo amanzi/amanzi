@@ -5805,7 +5805,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
       return factor*fixed_dt;
     }
 
-  Real estdt        = 1.0e+20;
+  Real estdt        = 1.0e+20; // FIXME: need more robust
   const Real cur_time = state[State_Type].curTime();
 
   if (dt_eig != 0.0)
@@ -5890,7 +5890,7 @@ PorousMedia::predictDT (MultiFab* u_macG)
   const Real* dx       = geom.CellSize();
   const Real  cur_time = state[State_Type].curTime();
 
-  dt_eig = 1.e20;
+  dt_eig = 1.e20; // FIXME: Need more robust
 
   Real eigmax[BL_SPACEDIM] = { D_DECL(0,0,0) };
   for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),GEOM_GROW,
@@ -9891,6 +9891,22 @@ PorousMedia::derive (const std::string& name,
         }
         else {
             BoxLib::Abort("PorousMedia::derive: Aqueous_Pressure not yet implemented for non-Richard");
+        }
+    }
+    else if (name=="Aqueous_Volumetric_Flux_X" || name=="Aqueous_Volumetric_Flux_Y" || name=="Aqueous_Volumetric_Flux_Z")
+    {
+        int dir = ( name=="Aqueous_Volumetric_Flux_X"  ?  0  :
+                    name == "Aqueous_Volumetric_Flux_Y" ? 1 : 2);
+
+        BL_ASSERT(dir < BL_SPACEDIM);
+        if (model == model_list["richard"]) {
+            compute_vel_phase(u_mac_curr,0,time);    
+            umac_edge_to_cen(u_mac_curr,Vel_Type); 
+            int ncomp = 1;
+            MultiFab::Copy(mf,get_new_data(Vel_Type),dir,dcomp,ncomp,0);
+        }
+        else {
+            BoxLib::Abort("PorousMedia::derive: Aqueous_Volumetric_Flux_{X,Y,Z} not yet implemented for non-Richard");
         }
     }
     else if (name=="Porosity") {

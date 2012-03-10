@@ -2095,6 +2095,11 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Porosity"));
             user_derive_list.push_back(underscore("Aqueous Saturation"));
             user_derive_list.push_back(underscore("Aqueous Pressure"));
+            user_derive_list.push_back(underscore("Aqueous Volumetric Flux X"));
+            user_derive_list.push_back(underscore("Aqueous Volumetric Flux Y"));
+#if BL_SPACEDIM==3
+            user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
+#endif
 
             if (struc_list.isSublist("tracer")) {
                 const ParameterList& solute_list = struc_list.sublist("tracer");
