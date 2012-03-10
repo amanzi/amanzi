@@ -15,6 +15,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Mesh.hh"
 #include "composite_vector.hh"
+#include "boundary-function.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -27,19 +28,26 @@ public:
     advect_plist_(advect_plist), mesh_(mesh) {}
 
   Teuchos::RCP<const CompositeVector> flux() const { return flux_; }
-  virtual void set_flux(Teuchos::RCP<const CompositeVector>& flux);
+  virtual void set_flux(const Teuchos::RCP<const CompositeVector>& flux);
 
   int num_dofs() const { return num_dofs_; }
   virtual void set_num_dofs(int num_dofs);
 
   Teuchos::RCP<CompositeVector> field() { return field_; }
 
-  virtual void Advect() = 0;
+  virtual void set_bcs(const Teuchos::RCP< std::vector<Teuchos::RCP<BoundaryFunction> > > bcs,
+                       const Teuchos::RCP< std::vector<int> > bcs_dof) {
+    bcs_ = bcs; bcs_dof_ = bcs_dof;
+  }
+
+  virtual void Apply() = 0;
 
 protected:
   int num_dofs_;
   Teuchos::RCP<const CompositeVector> flux_;
   Teuchos::RCP<CompositeVector> field_;
+  Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_;
+  Teuchos::RCP< std::vector<int> > bcs_dof_;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList advect_plist_;

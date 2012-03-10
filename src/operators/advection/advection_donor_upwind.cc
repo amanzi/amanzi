@@ -35,19 +35,22 @@ AdvectionDonorUpwind::AdvectionDonorUpwind(Teuchos::ParameterList& advect_plist,
 
 
 // set flux and determine upwind cells
-void AdvectionDonorUpwind::set_flux(Teuchos::RCP<const CompositeVector>& flux) {
+void AdvectionDonorUpwind::set_flux(const Teuchos::RCP<const CompositeVector>& flux) {
   flux_ = flux;
   IdentifyUpwindCells_();
 };
 
 
-void AdvectionDonorUpwind::Advect() {
+void AdvectionDonorUpwind::Apply() {
 
   field_->ScatterMasterToGhosted("cell"); // communicate the cells
 
   double u;
   // collect fluxes in faces
-  field_->ViewComponent("face")->PutScalar(0.0);
+  Teuchos::RCP<Epetra_MultiVector> faces = field_->ViewComponent("face",true);
+  faces->PutScalar(0.0);
+
+  //  field_->ViewComponent("face")->PutScalar(0.0);
   for (int f=f_begin_; f != f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
@@ -60,23 +63,33 @@ void AdvectionDonorUpwind::Advect() {
     }
   }
 
+  // put boundary conditions in faces
+  for (int n=0; n != bcs_->size(); ++n) {
+    int i = (*bcs_dof_)[n];
+    for (BoundaryFunction::Iterator bc=(*bcs_)[n]->begin(); bc != (*bcs_)[n]->end(); ++bc) {
+      int f = bc->first;
+      int c2 = (*downwind_cell_)[f];
+
+      if (c2 >= 0) {
+        u = fabs((*flux_)(f));
+        (*field_)("face",i,f) = u * bc->second;
+      }
+    }
+  }
+
+
   field_->ViewComponent("cell")->PutScalar(0.0);
   // put fluxes in cell
   for (int f=f_begin_; f != f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    if (c1 >=0 && c1 < c_owned_ && c2 >= 0 && c2 < c_owned_) {
-      for (int i=0; i<num_dofs_; i++) {
-        double flux = (*field_)("face",i,f);
-        (*field_)("cell",i,c1) -= flux;
-        (*field_)("cell",i,c2) += flux;
-      }
-    } else if (c1 >=0 && c1 < c_owned_ && (c2 >= c_owned_ || c2 < 0)) {
+    if (c1 >=0 && c1 < c_owned_) {
       for (int i=0; i<num_dofs_; i++) {
         (*field_)("cell",i,c1) -= (*field_)("face",i,f);
       }
-    } else if (c1 >= c_owned_ && c2 >= 0 && c2 < c_owned_) {
+    }
+    if (c2 >=0 && c2 < c_owned_) {
       for (int i=0; i<num_dofs_; i++) {
         (*field_)("cell",i,c2) += (*field_)("face",i,f);
       }

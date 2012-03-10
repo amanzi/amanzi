@@ -7,6 +7,7 @@
 
 #add_subdirectory(mpc)
 add_subdirectory(energy)
+add_subdirectory(transport)
 #add_subdirectory(flow)
 
 # ATS include directories
