@@ -38,8 +38,6 @@ ConstantTemperature::ConstantTemperature(Teuchos::ParameterList& energy_plist,
   Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
   solution_->set_data(temp);
 
-  S->RequireField("temperature_dot", "energy", AmanziMesh::CELL);
-
   // check if we need to make a time integrator
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
@@ -55,9 +53,6 @@ void ConstantTemperature::initialize(const Teuchos::RCP<State>& S) {
   S->GetFieldData("temperature", "energy")->PutScalar(T_);
   S->GetRecord("temperature", "energy")->set_initialized();
 
-  S->GetFieldData("temperature_dot", "energy")->PutScalar(0.0);
-  S->GetRecord("temperature_dot", "energy")->set_initialized();
-
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     // model evaluator params
     // -- tolerances
@@ -65,7 +60,7 @@ void ConstantTemperature::initialize(const Teuchos::RCP<State>& S) {
     rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 
     // -- initialize time derivative
-    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(*solution_));
+    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
@@ -135,8 +130,8 @@ void ConstantTemperature::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<
 double ConstantTemperature::enorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
-  Teuchos::RCP<const Epetra_MultiVector> temp_vec = u->data()->ViewComponent("temperature", false);
-  Teuchos::RCP<const Epetra_MultiVector> temp_dot_vec = du->data()->ViewComponent("temperature_dot", false);
+  Teuchos::RCP<const Epetra_MultiVector> temp_vec = u->data()->ViewComponent("cell", false);
+  Teuchos::RCP<const Epetra_MultiVector> temp_dot_vec = du->data()->ViewComponent("cell", false);
 
   for (unsigned int lcv=0; lcv != temp_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*temp_dot_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*temp_vec)(0))[lcv]));

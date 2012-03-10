@@ -30,8 +30,8 @@ public:
   AdvectionDonorUpwind(Teuchos::ParameterList& advect_plist,
                        Teuchos::RCP<AmanziMesh::Mesh> mesh);
 
-  virtual void set_flux(Teuchos::RCP<const CompositeVector>& flux);
-  virtual void Advect();
+  virtual void set_flux(const Teuchos::RCP<const CompositeVector>& flux);
+  virtual void Apply();
 
 private:
   void IdentifyUpwindCells_();

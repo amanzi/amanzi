@@ -142,7 +142,7 @@ void AirWaterRock::AddAdvection_(Teuchos::RCP<CompositeVector> f) {
     (*field)("cell",c) = (*density_liq)(c)*(*enthalpy_liq)(c);
   }
 
-  advection_->Advect();
+  advection_->Apply();
   for (int c=c_min; c != c_min+c_owned; ++c) {
     (*f)("cell",c) += (*field)("cell",c);
   }

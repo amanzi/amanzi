@@ -13,7 +13,7 @@
 namespace Amanzi {
 namespace Operators {
 
-void Advection::set_flux(Teuchos::RCP<const CompositeVector>& flux) {
+void Advection::set_flux(const Teuchos::RCP<const CompositeVector>& flux) {
   // check that flux includes FACES and has one dof
   flux_ = flux;
 }
