@@ -56,21 +56,24 @@ enum Matrix_bc {
   MATRIX_BC_FLUX
 };
 
-class MatrixMFD {
+class MatrixMFD : public Epetra_Operator {
 
 public:
   Matrix_MFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh) :
     plist_(plist), mesh_(mesh) {}
 
-  // main methods
+  // main computational methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
 
   void CreateMFDmassMatrices(MFD_method method, std::vector<WhetStone::Tensor>& K);
-  void CreateMFDrhsVectors();
   void CreateMFDstiffnessMatrices(MFD_method method,
           const std::vector<WhetStone::Tensor>& K, const CompositeVector& K_faces);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
           const Epetra_Vector& new_scale);
+  void CreateMFDrhsVectors();
+  Teuchos::RCP<Epetra_Vector>& rhs() { return rhs_; }
+  void InitializeSuperVecs(const CompositeVector& sample);
+
   void ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
           const std::vector<double>& bc_values);
 
@@ -79,6 +82,21 @@ public:
   void ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
           const std::vector<double>& bc_values);
 
+  // operator methods: MatrixMFD is an Epetra_Operator
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  bool UseTranspose() const { return false; }
+  int SetUseTranspose(bool) { return 1; }
+
+  const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
+  const Epetra_Map& OperatorDomainMap() const { return *supermap_; }
+  const Epetra_Map& OperatorRangeMap() const { return *supermap_; }
+
+  const char* Label() const { return strdup("Matrix MFD"); }
+  double NormInf() const { return 0.0; }
+  bool HasNormInf() const { return false; }
+
+  // operator methods for CompositeVectors
   void Apply(const CompositeVector& X,
              const Teuchos::RCP<CompositeVector>& Y) const;
   void ApplyInverse(const CompositeVector& X,
@@ -88,19 +106,15 @@ public:
   void ComputeNegativeResidual(const CompositeVector& X,
                                const Teuchos::RCP<CompositeVector>& F) const;
 
+  // extra methods for preconditioning
+  void InitMLPreconditioner(Teuchos::ParameterList& ml_plist_);
+  void UpdateMLPreconditioner();
+
+  // extra methods for convenience
   void DeriveFlux(const CompositeVector& solution,
                   const Teuchos::RCP<CompositeVector>& flux) const;
   void DeriveCellVelocity(const CompositeVector& flux,
                           const Teuchos::RCP<CompositeVector>& velocity) const;
-
-  void InitMLPreconditioner(Teuchos::ParameterList& ml_plist_);
-  void UpdateMLPreconditioner();
-
-  bool UseTranspose() const { return false; }
-  int SetUseTranspose(bool) { return 1; }
-
-  // access methods
-  Teuchos::RCP<Epetra_Vector>& rhs() { return rhs_; }
 
 private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
@@ -123,6 +137,10 @@ private:
 
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
+
+  Teuchos::RCP<Epetra_Map> supermap_;
+  Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO
+  Teuchos::RCP<CompositeVector> vector_y_;
 };
 
 }  // namespace AmanziFlow

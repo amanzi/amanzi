@@ -10,6 +10,7 @@
 namespace Amanzi {
 namespace AmanziFlow {
 
+// main computational methods
 
 /* ******************************************************************
  * Calculate elemental inverse mass matrices.
@@ -147,6 +148,15 @@ void MatrixMFD::CreateMFDrhsVectors() {
   }
 }
 
+/* ******************************************************************
+ *  Create work vectors for Apply-ing the operator from/to Epetra_Vectors
+ * (Supervectors) instead of CompositeVectors -- for use with AztecOO
+ ****************************************************************** */
+void MatrixMFD::InitializeSuperVecs(const CompositeVector& sample) {
+  vector_x_ = Teuchos::rcp(new CompositeVector(sample));
+  vector_y_ = Teuchos::rcp(new CompositeVector(sample));
+  supermap_ = vector_x_->supermap();
+}
 
 /* ******************************************************************
  * Applies boundary conditions to elemental stiffness matrices and
@@ -333,7 +343,22 @@ void MatrixMFD::ComputeSchurComplement(std::vector<Matrix_bc>& bc_markers,
 }
 
 /* ******************************************************************
- * Parallel matvec product Aff_cells_ * X.
+ * Parallel matvec product A * X.
+ ****************************************************************** */
+int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  vector_x_->CopyFromSuperVector(*X(0));
+  Apply(*vector_x_, vector_y_);
+  vector_y_->CopyToSuperVector(*Y(0));
+}
+
+int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  vector_x_->CopyFromSuperVector(*X(0));
+  ApplyInverse(*vector_x_, vector_y_);
+  vector_y_->CopyToSuperVector(*Y(0));
+}
+
+/* ******************************************************************
+ * Parallel matvec product A * X.
  ****************************************************************** */
 void MatrixMFD::Apply(const CompositeVector& X,
                      const Teuchos::RCP<CompositeVector>& Y) const {
