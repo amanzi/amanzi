@@ -668,33 +668,37 @@ double State::point_value(const std::string& point_region, const std::string& na
                               &cell_ids);
 
 
+  // check if Aqueous concentration was requested
+  std::string var;
+
+  int pos = name.find("Aqueous concentration");
+  if (pos != string::npos) {
+    var = name.substr(0,pos-1);
+  } else {
+    var = name;
+  }
+  
+
   // extract the value if it is a component
-  if ( comp_no.find(name) != comp_no.end() )
-  {
+  if ( comp_no.find(var) != comp_no.end() )  {
     value = 0.0;
     volume = 0.0;
-    for (int i=0; i<mesh_block_size; i++)
-    {
+    for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
-      value += (*(*total_component_concentration)( comp_no[name] ))[ic] *  mesh_maps->cell_volume(ic);
-
+      value += (*(*total_component_concentration)( comp_no[var] ))[ic] *  mesh_maps->cell_volume(ic);
+      
       volume += mesh_maps->cell_volume(ic);
     }
-  }
-  else if ( name == "Volumetric water content" )
-  {
+  } else if ( var == "Volumetric water content" ) {
     value = 0.0;
     volume = 0.0;
-
-    for (int i=0; i<mesh_block_size; i++)
-    {
+    
+    for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
       value +=  (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
-  }
-  else
-  {
+  } else {
     std::stringstream ss;
     ss << "State::point_value: cannot make an observation for variable " << name;
     Errors::Message m(ss.str().c_str());
