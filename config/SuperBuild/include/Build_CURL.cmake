@@ -59,10 +59,10 @@ ExternalProject_Add(${CURL_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${CURL_source_dir}           # Source directory
                     CONFIGURE_COMMAND
-		              <SOURCE_DIR>/configure
+                                     <SOURCE_DIR>/configure
                                          --prefix=<INSTALL_DIR>
                                          --enable-static
-					 --disable-shared
+                                         --disable-shared
                                          --with-zlib=${TPL_INSTALL_PREFIX}/lib
                                          CC=${CMAKE_C_COMPILER}
                                          CXX=${CMAKE_CXX_COMPILER}
@@ -78,5 +78,5 @@ ExternalProject_Add(${CURL_BUILD_TARGET}
                     # -- Output control
                     ${CURL_logging_args})
 
-# --- Define the CURL executable		  
+# --- Define the CURL executable  
 global_set(CURL_EXECUTABLE ${TPL_INSTALL_PREFIX}/bin/curl)

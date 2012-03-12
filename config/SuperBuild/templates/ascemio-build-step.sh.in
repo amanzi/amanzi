@@ -8,7 +8,7 @@ export CFLAGS='@Amanzi_COMMON_CFLAGS@'
 
 echo "Building in-source @ASCEMIO_source_dir@/src"
 cd @ASCEMIO_source_dir@/src
-make CC=@CMAKE_C_COMPILER@ HDF5_INCLUDE_DIR=@HDF5_install_dir@/include 
+make CC=@CMAKE_C_COMPILER@ HDF5_INCLUDE_DIR=@TPL_INSTALL_PREFIX@/include 
 make_exit=$?
 echo "make returned ${make_exit}"
 

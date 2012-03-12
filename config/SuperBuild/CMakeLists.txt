@@ -260,48 +260,45 @@ endif()
 include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS 
            -DMETIS_DIR:FILEPATH=${METIS_install_dir})
+
+# CCSE
+set(CCSE_BL_SPACEDIM_DFLT 2)
+if(NOT CCSE_BL_SPACEDIM )
+  set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
+endif()
+include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS 
+           -DCCSE_DIR:FILEPATH=${CCSE_install_dir}
+           -DENABLE_MPI:BOOL=TRUE
+           -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
+           -DAMANZI_PRECISION:STRING=DOUBLE
+           -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
+           
+# CGNS
+include(${SuperBuild_BUILD_FILES_DIR}/Build_CGNS.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS 
+          -DENABLE_CGNS:BOOL=TRUE
+          -DCGNS_DIR:FILEPATH=${CGNS_install_dir})
+# Boost
+include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
+#TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DBOOST_ROOT:FILEPATH=${Boost_install_dir}
+           -DBoost_USE_STATIC_LIBS:BOOL=TRUE
+           -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
+
+# HDF5  
+include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
+#BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DHDF5_ROOT:FILEPATH=${HDF5_install_dir})
+
 # ASCEM-IO  
-#include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake) 
-#append_set(Amanzi_TPL_CMAKE_ARGS
-#           -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # Now build the remaining TPLs
-
-#DEBUG
-#DEBUG# CCSE
-#DEBUG# Temp option until the CMakeLists.txt file is fixed
-#DEBUGset(CCSE_BL_SPACEDIM_DFLT 2)
-#DEBUGif(NOT CCSE_BL_SPACEDIM )
-#DEBUG  set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
-#DEBUGendif()
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS 
-#DEBUG           -DCCSE_DIR:FILEPATH=${CCSE_install_dir}
-#DEBUG           -DENABLE_MPI:BOOL=TRUE
-#DEBUG           -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
-#DEBUG           -DAMANZI_PRECISION:STRING=DOUBLE
-#DEBUG           -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
-#DEBUG           
-#DEBUG# CGNS
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_CGNS.cmake) 
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS 
-#DEBUG          -DENABLE_CGNS:BOOL=TRUE
-#DEBUG          -DCGNS_DIR:FILEPATH=${CGNS_install_dir})
-#DEBUG
-#DEBUG# Boost
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
-#DEBUG#TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS
-#DEBUG           -DBOOST_ROOT:FILEPATH=${Boost_install_dir}
-#DEBUG	   -DBoost_USE_STATIC_LIBS:BOOL=TRUE
-#DEBUG	   -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
-#DEBUG
-#DEBUG# HDF5  
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
-#DEBUG#BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS
-#DEBUG           -DHDF5_DIR:FILEPATH=${HDF5_install_dir})
-#DEBUG
 #DEBUG
 #DEBUG# NetCDF
 #DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_netCDF.cmake) 
@@ -421,9 +418,9 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 #DEBUG  if (ENABLE_Structured AND NOT ENABLE_CCSE )
 #DEBUG    message(FATAL_ERROR "The structured part of Amanzi requires CCSE. "
 #DEBUG                        "Please enable CCSE with"
-#DEBUG			"\n-D ENABLE_CCSE:BOOL=TRUE\n"
-#DEBUG			"and rerun cmake."
-#DEBUG			)
+#DEBUG"\n-D ENABLE_CCSE:BOOL=TRUE\n"
+#DEBUG"and rerun cmake."
+#DEBUG)
 #DEBUG  endif()
 #DEBUG
 #DEBUG

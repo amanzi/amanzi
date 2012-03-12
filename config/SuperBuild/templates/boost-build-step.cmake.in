@@ -1,10 +1,15 @@
+set(command @Boost_source_dir@/bjam --prefix=@TPL_INSTALL_PREFIX@ --build-dir=@Boost_build_dir@ install)
 execute_process(
-  COMMAND @Boost_source_dir@/bjam --prefix=@Boost_install_dir@ --build-dir=@Boost_build_dir@ install
+  COMMAND ${command}
   WORKING_DIRECTORY "@Boost_source_dir@"
-  RESULT_VARIABLE exit_code
+  RESULT_VARIABLE result
 )
 
-if ( NOT ${exit_code} EQUAL 0 )
-    message(FATAL_ERROR "Boost build step failed")
-endif()
+if (result)
+  set(msg "Boost build command failed")
+  foreach(arg IN LISTS command )
+    set(msg "${msg} '${arg}'")
+  endforeach()
+  message(FATAL_ERROR ${msg})
+endif()  
 

@@ -2,41 +2,45 @@
 
 #
 # Build TPL:  CCSE 
-#    
-define_external_project(CCSE TARGET ccse)
+#  
 
-# With ENABLE_MPI CCSE requires MPI wrappers and sets compilers to
-# <MPI_PREFIX>/bin/mpi* in the root CMakeLists.txt
-#if ( NOT MPI_PREFIX )
-#  message(FATAL_ERROR "When compiling CCSE you must define an root MPI installation"
-#                      " path with the variable MPI_PREFIX."
-#		      "\n-DMPI_PREFIX:FILEPATH=<MPI Root installation path>\n"#
-#"Please define this argument and re-run cmake."
-#  )
-#endif()
+# --- Define all the directories and common external project flags
+define_external_project_args(CCSE TARGET ccse)
 
-# ############################################################################ #
-# Comman CMake arguments for 2D and 3D
-# ############################################################################ #
+# --- Define the CMake configure parameters
+# Note:
+#      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
+#      CMAKE_ARGS -DVAR=VALUE OK
+# NO WHITESPACE between -D and VAR. Parser blows up otherwise.
 message(STATUS "Build CCSE with space dimension ${CCSE_BL_SPACEDIM}")
-set(CCSE_CMAKE_COMMON_ARGS
+set(CCSE_CMAKE_CACHE_ARGS
                        -DENABLE_Config_Report:BOOL=TRUE
-		       -DENABLE_MPI:BOOL=TRUE
-		       -DMPI_PREFIX:FILEPATH=${MPI_PREFIX}
-		       -DENABLE_OpenMP:BOOL=TRUE
-		       -DENABLE_TESTS:BOOL=FALSE
-		       -DBL_PRECISION:STRING=DOUBLE
-		       -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
-		     
-# ############################################################################ #
-# Add external project
-# ############################################################################ #
-ExternalProject_Add(${CCSE_target}
-    ${CCSE_ep_directory_args}
-    ${CCSE_url_args}
-    CMAKE_ARGS
-             ${Amanzi_CMAKE_COMPILER_ARGS}
-	     ${CCSE_CMAKE_COMMON_ARGS}
-	     -DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}
-    ${CCSE_logging_opts}                  
-)
+                       -DENABLE_OpenMP:BOOL=TRUE
+                       -DENABLE_TESTS:BOOL=FALSE
+                       -DBL_PRECISION:STRING=DOUBLE
+                       -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM}
+                       -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
+                       -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                       -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS})
+
+# --- Add external project build and tie to the CCSE build target
+ExternalProject_Add(${CCSE_BUILD_TARGET}
+                    DEPENDS   ${CCSE_PACKAGE_DEPENDS}             # Package dependency target
+                    TMP_DIR   ${CCSE_tmp_dir}                     # Temporary files directory
+                    STAMP_DIR ${CCSE_stamp_dir}                   # Timestamp and log directory
+                    # -- Download and URL definitions
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
+                    URL          ${CCSE_URL}                      # URL may be a web site OR a local file
+                    URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
+                    # -- Configure
+                    SOURCE_DIR       ${CCSE_source_dir}               # Source directory
+                    CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                    # -- Build
+                    BINARY_DIR        ${CCSE_build_dir}           # Build directory 
+                    BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE   ${CCSE_BUILD_IN_SOURCE}     # Flag for in source builds
+                    # -- Install
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    # -- Output control
+                    ${CCSE_logging_args}) 

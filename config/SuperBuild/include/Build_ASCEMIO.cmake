@@ -8,54 +8,57 @@
 define_external_project_args(ASCEMIO 
                              TARGET ascemio
                              BUILD_IN_SOURCE
-			     DEPENDS HDF5)
+                             DEPENDS HDF5)
 
 
-message("IN HERE")			   
-#DEBUG
-#DEBUG# ########################################################################### #
-#DEBUG# Build the build command
-#DEBUG# ########################################################################### #
-#DEBUG
-#DEBUG# Build the build script
-#DEBUGset(ASCEMIO_sh_build ${ASCEMIO_prefix_dir}/ascemio-build-step.sh)
-#DEBUGconfigure_file(${SuperBuild_BUILD_FILES_DIR}/ascemio-build-step.sh.in
-#DEBUG               ${ASCEMIO_sh_build}
-#DEBUG	       @ONLY)
-#DEBUG
-#DEBUG# Configure the CMake command file
-#DEBUGset(ASCEMIO_cmake_build ${ASCEMIO_prefix_dir}/ascemio-build-step.cmake)
-#DEBUGconfigure_file(${SuperBuild_BUILD_FILES_DIR}/ascemio-build-step.cmake.in
-#DEBUG               ${ASCEMIO_cmake_build}
-#DEBUG	       @ONLY)
-#DEBUGset(ASCEMIO_BUILD_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_build})	
-#DEBUG
-#DEBUG# ########################################################################### #
-#DEBUG# Build the install command
-#DEBUG# ########################################################################### #
-#DEBUG
-#DEBUG# Build the install script
-#DEBUGset(ASCEMIO_sh_install ${ASCEMIO_prefix_dir}/ascemio-install-step.sh)
-#DEBUGconfigure_file(${SuperBuild_BUILD_FILES_DIR}/ascemio-install-step.sh.in
-#DEBUG               ${ASCEMIO_sh_install}
-#DEBUG	       @ONLY)
-#DEBUG
-#DEBUG# Configure the CMake command file
-#DEBUGset(ASCEMIO_cmake_install ${ASCEMIO_prefix_dir}/ascemio-install-step.cmake)
-#DEBUGconfigure_file(${SuperBuild_BUILD_FILES_DIR}/ascemio-install-step.cmake.in
-#DEBUG               ${ASCEMIO_cmake_install}
-#DEBUG	       @ONLY)
-#DEBUGset(ASCEMIO_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_install})	
-#DEBUG
-#DEBUG# ########################################################################### #
-#DEBUG# Add External Project
-#DEBUG# ########################################################################### #
-#DEBUGExternalProject_Add(${ASCEMIO_target}
-#DEBUG    DEPENDS hdf5
-#DEBUG    ${ASCEMIO_ep_directory_args}
-#DEBUG    ${ASCEMIO_url_args}
-#DEBUG    CONFIGURE_COMMAND ""
-#DEBUG    BUILD_COMMAND ${ASCEMIO_BUILD_COMMAND}
-#DEBUG    INSTALL_COMMAND ${ASCEMIO_INSTALL_COMMAND}
-#DEBUG    ${ASCEMIO_logging_opts}
-#DEBUG)
+# -- Define the build command
+
+# Build the build script
+set(ASCEMIO_sh_build ${ASCEMIO_prefix_dir}/ascemio-build-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-build-step.sh.in
+               ${ASCEMIO_sh_build}
+               @ONLY)
+
+# Configure the CMake command file
+set(ASCEMIO_cmake_build ${ASCEMIO_prefix_dir}/ascemio-build-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-build-step.cmake.in
+               ${ASCEMIO_cmake_build}
+       @ONLY)
+set(ASCEMIO_BUILD_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_build})
+
+# --- Define the install command
+
+# Build the install script
+set(ASCEMIO_sh_install ${ASCEMIO_prefix_dir}/ascemio-install-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-install-step.sh.in
+               ${ASCEMIO_sh_install}
+               @ONLY)
+
+# Configure the CMake command file
+set(ASCEMIO_cmake_install ${ASCEMIO_prefix_dir}/ascemio-install-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-install-step.cmake.in
+               ${ASCEMIO_cmake_install}
+               @ONLY)
+set(ASCEMIO_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_install})
+
+# --- Add external project build and tie to the ZLIB build target
+ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
+                    DEPENDS   ${ASCEMIO_PACKAGE_DEPENDS}             # Package dependency target
+                    TMP_DIR   ${ASCEMIO_tmp_dir}                     # Temporary files directory
+                    STAMP_DIR ${ASCEMIO_stamp_dir}                   # Timestamp and log directory
+                    # -- Download and URL definitions
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                 # Download directory
+                    URL          ${ASCEMIO_URL}                      # URL may be a web site OR a local file
+                    URL_MD5      ${ASCEMIO_MD5_SUM}                  # md5sum of the archive file
+                    # -- Configure
+                    SOURCE_DIR       ${ASCEMIO_source_dir}           # Source directory
+                    CONFIGURE_COMMAND ""
+                    # -- Build
+                    BINARY_DIR        ${ASCEMIO_build_dir}           # Build directory 
+                    BUILD_COMMAND     ${ASCEMIO_BUILD_COMMAND}       # Build command
+                    BUILD_IN_SOURCE   ${ASCEMIO_BUILD_IN_SOURCE}     # Flag for in source builds
+                    # -- Install
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}           # Install directory
+                    INSTALL_COMMAND  ${ASCEMIO_INSTALL_COMMAND}      # Install command
+                    # -- Output control
+                    ${ASCEMIO_logging_args})

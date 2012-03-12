@@ -30,9 +30,9 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     URL          ${ZLIB_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${ZLIB_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
-                    SOURCE_DIR       ${ZLIB_source_dir}           # Source directory
-                    CMAKE_CACHE_ARGS ${ZLIB_CMAKE_CACHE_ARGS}     # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                    ${Amanzi_CMAKE_C_COMPILER_ARGS}               # Ensure uniform build
+                    SOURCE_DIR       ${ZLIB_source_dir}               # Source directory
+                    CMAKE_CACHE_ARGS ${ZLIB_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
                     # -- Build
                     BINARY_DIR        ${ZLIB_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
