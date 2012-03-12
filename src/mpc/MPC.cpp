@@ -209,21 +209,7 @@ void MPC::read_parameter_list()  {
 
     dTsteady = init_to_steady_list.get<double>("Steady Initial Time Step");
     dTtransient = init_to_steady_list.get<double>("Transient Initial Time Step");
-
-    if (init_to_steady_list.isSublist("Time Period Control")) {
-      Teuchos::ParameterList& tpc_list = init_to_steady_list.sublist("Time Period Control");
-      
-      reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
-      reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
-
-      if (reset_times_.size() != reset_times_dt_.size()) {
-	Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
-	Exceptions::amanzi_throw(message);
-      }    
-    }
-
-
-
+    
   } else if ( ti_list.isSublist("Steady")) {
     ti_mode = STEADY;
     
@@ -244,24 +230,25 @@ void MPC::read_parameter_list()  {
     T1 = transient_list.get<double>("End");
     dTtransient =  transient_list.get<double>("Initial Time Step");
 
-    if (transient_list.isSublist("Time Period Control")) {
-      Teuchos::ParameterList& tpc_list = transient_list.sublist("Time Period Control");
-      
-      reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
-      reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
-
-      if (reset_times_.size() != reset_times_dt_.size()) {
-	Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
-	Exceptions::amanzi_throw(message);	
-      }
-    }
-
-
-
   } else {
     Errors::Message message("MPC: no valid Time Integration Mode was specified, you must specify exactly one of Initialize To Steady, Steady, or Transient.");
     Exceptions::amanzi_throw(message);    
   }
+
+  if (mpc_parameter_list.isSublist("Time Period Control")) {
+
+    Teuchos::ParameterList& tpc_list =  mpc_parameter_list.sublist("Time Period Control"); 
+    
+    reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
+    reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
+    
+    if (reset_times_.size() != reset_times_dt_.size()) {
+      Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
+      Exceptions::amanzi_throw(message);
+    }    
+  }
+
+
 }
 
 
