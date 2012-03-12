@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+# METIS recommends running with the make configure target
+#5.0.xmake config shared=0 cc=@CMAKE_C_COMPILER@ prefix=@TPL_INSTALL_PREFIX@
+metis_src_dir=@METIS_source_dir@
+
+mpicc_compiler=@CMAKE_C_COMPILER@
+@PERL_EXECUTABLE@  -w -i -p -e "s:^CC[\s]=.*:CC = ${mpicc_compiler}:" @METIS_source_dir@/Makefile.in
+
+
+exit $?

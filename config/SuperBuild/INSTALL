@@ -1,0 +1,144 @@
+=============================================
+Amanzi Third Party Library (TPL) Build System
+=============================================
+
+Introduction
+------------
+This project builds the required and optional TPL software for the Amanzi code
+project. The build system is designed to configure and build TPLs to the
+requirements documented here https://software.lanl.gov/ascem/trac/wiki/Amanzi/Building/SoftwareRequirements.
+
+Users are required to provide the following to build
+
+    * CMake version 2.8.5 or higher.
+    * Mercurial version 0.98 or higher.
+    * MPI installation with compiler wrappers. (mpicc, mpicxx, etc.)
+    * OpenSSL (required to build CURL) installation. This is available on
+      most UNIX flavored systems and Macs.
+    * BLAS/LAPACK built and tuned to the target architecture. See the 
+      Trilinos Configuration section for more information.
+    * A location to install all the TPLs. The entire software stack
+      will be installed in directories rooted to this directory. Since the
+      download--patch-build-install cycle for each TPL is tied to a single  
+      target, the user must have read and write permission for this location.
+    * The build directory will need approximately 2.1 Gb of space and the 
+      install directory tree requires 300 Mb.
+
+Getting TPL-Build
+-----------------
+
+TPL-Build is a separate software project that resides in the ASCEM litterbox
+repository. Use mercurial to clone a copy of the repository,
+
+``hg clone https://software.lanl.gov/ascem/hg/litterbox``.
+
+
+Building TPLs
+-------------
+
+In most cases, the entire suite of software can be built with the following steps
+    1. cmake  \
+           -D CMAKE_C_COMPILER=/full/path/mpicc \
+	   -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
+	   -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
+	   -D TPL_INSTALL_PREFIX=/full/path/to/tpls
+	   /full/path/to/litterbox/tpl-build
+    2. make -j n, where n is the number of make jobs.
+    3. make install
+    
+The final step, make install, copies a CMake configuration file,amanzi-tpl-config.cmake,
+to the install location under share/cmake that is useful when building Amanzi. 
+Passing this configuration to cmake using the -C option defines all the TPL locations
+needed to build amanzi.
+
+For example,
+
+``cmake -C /full/path/to/amanzi-tpl-config.cmake [Additional CMake opts] /full/path/amanzi``
+
+will build and link amanzi linked against the TPLs built with this 
+project, reducing the need for complicated build scripts.
+
+Known Issues
+------------
+
+Trilinos fails to build with GCC 4.6
+++++++++++++++++++++++++++++++++++++
+We are currently using Trilinos 10.6.4 and can not upgrade to a newer
+version until the mesh class is upgraded to address changes in STK. The
+4.6 GCC compiler is much more picky than previous versions and the
+``ptrdiff_t`` definition is found in the ``cstddef.h`` file which is not 
+included in several Trilinos header files. The TPL build system has a patch for 
+this bug, but is not not enabled by default. To enable the patch,
+add -D ENABLE_Trilinos_Patch:BOOL=TRUE to the TPL build cmake configuration
+command. 
+
+TPL build fails with any PGI compiler
++++++++++++++++++++++++++++++++++++++
+We have not found a PGI C++ compiler that builds our Boost configuration
+successfully. TPL build system has successfully built with GCC 4.4, 4.5 and
+4.6 and Intel 11.* and Intel 12.*.
+
+Library parallelio (ASCEM-IO) missing archive index (MacOSX)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+This bug has only been reported on Macs. Users will experience this bug
+when linking the HDF5 test binaries in the Amanzi test suite. Despite a kludge
+in the shell script to build ASCEM-IO, this problem presists. The work-around
+is to run ranlib on the installed libparallelio.a library.
+
+Fails to locate OpenSSL in the build CURL step
+++++++++++++++++++++++++++++++++++++++++++++++
+CURL needs the location of OpenSSL to enable downloads from secure sites.
+There is a find_package call in the CURL build definition that attempts
+to find the system OpenSSL. If this find fails, define the installation 
+location of OpenSSL with ``-D OPENSSL_ROOT_DIR:FILEPATH=<directory>`` when 
+configuring and rerun cmake.
+
+
+Trilinos Configuration
+----------------------
+
+Amanzi relies on Trilinos for basic distributed data structures, input file
+handling and non-linear solvers. It is critical, for performance reasons, that
+the Trilinos build point to tuned BLAS and LAPACK libraries. On most systems,
+the BLAS and LAPACK libraries found in standard system libraries
+(/usr/lib or /usr/lib64) are generic implementations. Nearly all large class
+clusters have tuned BLAS/LAPACK libraries. Please consult the support
+documentation for these machines to find the recommended libraries.
+
+Once the tuned BLAS/LAPACK libraries have been identified, the full path name 
+of the libraries should be passed in with the configurations variables 
+``BLAS_LIBRARIES`` and ``LAPACK_LIBRARIES``. Multiple library names should be 
+separated with a semi-colon. Although the tpl-build will pass these names to 
+the Trilinos build system, that will not guarantee a smooth Amanzi build. In 
+some cases, Intel's MKL libraries, require additional link flags when building 
+Amanzi. Use the ``CMAKE_EXE_LINKER_FLAGS`` configuration variable to define these
+additional link flags when building Amanzi. 
+
+
+Trilinos Build Configuration Files
+++++++++++++++++++++++++++++++++++
+
+TPL-Build contains Trilinos CMake configuration files for specific platforms and
+compilers. The files are located under the tpl-build/cmake directory.
+The file name should be defined while configuring tpl-build with the option
+``-D Trilinos_Build_Config_File:STRING=<file>``. This configuration file will 
+be the last CMake configuration variable passed to Trilinos, thus all the 
+definitions in this file will override previous configuration definitions.
+
+
+:Hopper (NERSC):
+
+                :Compiler: Intel
+		:Config File: trilinos-build-libsci-intel.cmake
+		:Description: Defines the LibSci libraries as BLAS/LAPACK 
+                              libraries.
+
+
+:Hopper (NERSC):
+
+                :Compiler: GNU
+		:Config File: trilinos-build-libsci-gnu.cmake
+		:Description: Defines the LibSci libraries as BLAS/LAPACK 
+                              libraries.
+
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Source and build locations
+trilinos_src_dir=@Trilinos_source_dir@
+
+patch_file=@SuperBuild_SOURCE_DIR@/cmake/trilinos-10.6.4-gcc46.patch
+
+cd ${trilinos_src_dir}
+patch -p1 < ${patch_file}
+exit $?

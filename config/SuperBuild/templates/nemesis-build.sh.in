@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+nemesis_src_dir=@ExodusII_source_dir@/nemesis
+nemesis_build_dir=@ExodusII_prefix_dir@/nemesis-build
+
+# NETCDF
+export NETCDF_DIR=@NETCDF_install_dir@
+netcdf_library=@CMAKE_STATIC_LIBRARY_PREFIX@netcdf@CMAKE_STATIC_LIBRARY_SUFFIX@
+netcdf_ncdump=@NETCDF_install_dir@/bin/ncdump
+
+# HDF5
+hdf5_library=@HDF5_install_dir@/lib/@CMAKE_STATIC_LIBRARY_PREFIX@hdf5@CMAKE_STATIC_LIBRARY_SUFFIX@
+hdf5hl_library=@HDF5_install_dir@/lib/@CMAKE_STATIC_LIBRARY_PREFIX@hdf5_hl@CMAKE_STATIC_LIBRARY_SUFFIX@
+
+# ZLIB
+z_library=@ZLIB_install_dir@/lib/@CMAKE_STATIC_LIBRARY_PREFIX@z@CMAKE_STATIC_LIBRARY_SUFFIX@
+
+# ExodusII
+exodusii_library=@ExodusII_install_dir@/lib/@CMAKE_STATIC_LIBRARY_PREFIX@exoIIv2c@CMAKE_STATIC_LIBRARY_SUFFIX@
+
+if [[ ! -e ${nemesis_build_dir} ]]; then
+  mkdir -p ${nemesis_build_dir}
+fi
+
+cd ${nemesis_build_dir}
+
+@CMAKE_COMMAND@  \
+                -D CMAKE_INSTALL_PREFIX=@TPL_INSTALL_PREFIX@ \
+                -D CMAKE_C_COMPILER=@CMAKE_C_COMPILER@ \
+                -D CMAKE_CXX_COMPILER=@CMAKE_CXX_COMPILER@ \
+                -D CMAKE_BUILD_TYPE=@CMAKE_BUILD_TYPE@ \
+                -D CMAKE_C_FLAGS='@Amanzi_COMMON_CFLAGS@' \
+                -D CMAKE_CXX_FLAGS='@Amanzi_COMMON_CXXFLAGS@' \
+                -D NETCDF_INCLUDE_DIR=@NETCDF_install_dir@/include \
+                -D NETCDF_LIBRARY=@NETCDF_install_dir@/lib/${netcdf_library} \
+                -D NETCDF_NCDUMP=${netcdf_ncdump} \
+                -D HDF5_LIBRARY=${hdf5_library} \
+                -D HDF5HL_LIBRARY=${hdf5hl_library} \
+                -D Z_LIBRARY=${z_library} \
+                -D EXODUS_LIBRARY=${exodusii_library} \
+                ${nemesis_src_dir}
+
+if [ $? -ne 0 ]; then
+  echo "Failed to configure nemesis"
+  exit $?
+fi
+
+make
+
+if [ $? -ne 0 ]; then
+  echo "Failed to build nemesis"
+  exit $?
+fi
+
+make install
+
+if [ $? -ne 0 ]; then
+  echo "Failed to install nemesis"
+  exit
+fi
+
+
+
+exit $?

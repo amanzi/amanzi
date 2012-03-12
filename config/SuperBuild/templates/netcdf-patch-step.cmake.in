@@ -1,0 +1,8 @@
+# CMake netCDF patch file
+
+# Now run the patch script
+execute_process(
+  COMMAND sh @NETCDF_sh_patch@
+  WORKING_DIRECTORY "@NETCDF_source_dir@"
+)
+               

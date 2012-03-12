@@ -1,0 +1,8 @@
+# CMake ExodusII configure file
+
+# Now run the patch script
+execute_process(
+  COMMAND sh @ExodusII_sh_configure@
+  WORKING_DIRECTORY "@ExodusII_source_dir@"
+)
+               

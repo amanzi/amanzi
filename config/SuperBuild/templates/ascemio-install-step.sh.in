@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+cd @ASCEMIO_source_dir@/src
+make ASCEMIO_INSTALL_DIR=@TPL_INSTALL_PREFIX@ install
+
+exit $?
