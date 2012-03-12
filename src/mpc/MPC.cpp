@@ -239,7 +239,7 @@ void MPC::read_parameter_list()  {
 
     Teuchos::ParameterList& tpc_list =  mpc_parameter_list.sublist("Time Period Control"); 
     
-    reset_times_ = tpc_list.get<Teuchos::Array<double> >("Period Start Times");
+    reset_times_ = tpc_list.get<Teuchos::Array<double> >("Start Times");
     reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
     
     if (reset_times_.size() != reset_times_dt_.size()) {
