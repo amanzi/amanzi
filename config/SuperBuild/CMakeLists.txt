@@ -323,23 +323,25 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
            -DTrilinos_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 #DEBUG
-#DEBUG# ############################################################################ #
-#DEBUG# Create a CMake cache scipt
-#DEBUG# ############################################################################ #
-#DEBUGset(SuperBuild_Amanzi_CACHE_SCRIPT amanzi-tpl-config.cmake)
-#DEBUGconfigure_file(${SuperBuild_BUILD_FILES_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}.in
-#DEBUG               ${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}
-#DEBUG               @ONLY)
-#DEBUGinstall( FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
-#DEBUG         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake
-#DEBUG       )
 #DEBUG
-#DEBUG# ############################################################################ #
-#DEBUG#  Final steps
-#DEBUG# ############################################################################ #
-#DEBUG
-#DEBUG# Build the docs
-#DEBUGadd_subdirectory(doc)
+# ############################################################################ #
+#  Final steps
+# ############################################################################ #
+
+#  --- Create a CMake cache scipt
+set(SuperBuild_Amanzi_CACHE_SCRIPT amanzi-tpl-config.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}.in
+               ${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}
+               @ONLY)
+install( FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
+         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake
+       )
+
+#  --- Build the docs
+option(BUILD_DOCS "Build the SuperBuild documentation" FALSE)
+if ( BUILD_DOCS )
+  add_subdirectory(doc)
+endif()
 #DEBUG
 #DEBUG# Build the Amanzi build script
 #DEBUGoption(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)

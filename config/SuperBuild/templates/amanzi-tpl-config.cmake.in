@@ -30,13 +30,13 @@ set(ENABLE_MOAB_Mesh FALSE CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
 
 # UnitTest
 set(ENABLE_TESTS @ENABLE_TESTS@ CACHE BOOL "Build the tests")
-set(UnitTest_DIR @UnitTest_install_dir@ CACHE PATH "UnitTest installation prefix")
+set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 
 # METIS  
-set(METIS_DIR  @METIS_install_dir@ CACHE PATH "METIS installation prefix")
+set(METIS_DIR  @TPL_INSTALL_PREFIX@ CACHE PATH "METIS installation prefix")
 
 # CCSE
-set(CCSE_DIR @CCSE_install_dir@ CACHE PATH "CCSE installation prefix")
+set(CCSE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CCSE installation prefix")
 set(ENABLE_MPI TRUE CACHE BOOL "CCSE required MPI flag")
 set(ENABLE_OpenMPI TRUE CACHE BOOL "CCSE required flag")
 set(AMANZI_PRECISION DOUBLE CACHE STRING "CCSE precision")
@@ -44,28 +44,28 @@ set(AMANZI_SPACEDIM @CCSE_BL_SPACEDIM@ CACHE STRING "BoxLib Space dimension")
 
 # CGNS
 set(ENABLE_CGNS TRUE CACHE BOOL "Enable CGNS viz capability")
-set(CGNS_DIR @CGNS_install_dir@ CACHE PATH "CGNS installation prefix")
+set(CGNS_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CGNS installation prefix")
 
 # Boost
-set(BOOST_ROOT @Boost_install_dir@ CACHE PATH "Boost installation prefix")
+set(BOOST_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "Boost installation prefix")
 set(Boost_USE_STATIC_LIBS TRUE CACHE BOOL "Use only static Boost libraries")
 set(Boost_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for Boost libraries in system paths")
 
 # HDF5  
-set(HDF5_DIR @HDF5_install_dir@ CACHE PATH "HDF5 installation prefix")
+set(HDF5_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "HDF5 installation prefix")
 
 # ASCEM-IO  
-set(ASCEMIO_DIR @ASCEMIO_install_dir@ CACHE PATH "ASCEM-IO installation prefix")
+set(ASCEMIO_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ASCEM-IO installation prefix")
 
 # NetCDF
-set(NetCDF_DIR @NETCDF_install_dir@ CACHE PATH "NetCDF installation prefix")
+set(NetCDF_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "NetCDF installation prefix")
 
 # ExodusII
-set(ExodusII_DIR @ExodusII_install_dir@ CACHE PATH "ExodusII installation prefix")
+set(ExodusII_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ExodusII installation prefix")
 
 # MSTK
 set(MSTK_INCLUDE_DIR @MSTK_INCLUDE_DIR@ CACHE PATH "MSTK include installation path")
 set(MSTK_LIBRARY_DIR @MSTK_LIBRARY_DIR@ CACHE PATH "MSTK include installation path")
 
 # Trilinos  
-set(Trilinos_DIR @Trilinos_install_dir@ CACHE PATH "Trilinos installation prefix")
+set(Trilinos_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
