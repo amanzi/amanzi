@@ -375,7 +375,7 @@ namespace Amanzi {
             int num_levels = 1;
             int max_level = num_levels-1;
             bool do_amr_subcycling = false;                            
-            int ref_ratio_DEF = 8;
+            int ref_ratio_DEF = 2;
             Array<int> ref_ratio(max_level,ref_ratio_DEF);
             int regrid_int_DEF = 2;
             Array<int> regrid_int(num_levels,regrid_int_DEF);
@@ -2064,7 +2064,7 @@ namespace Amanzi {
                 }
             }
 
-            if (do_chem) 
+            if (do_chem || do_tracer_transport)
             {
                 for (int i=0; i<arraysolute.size(); ++i) {
                     const std::string& soluteName = arraysolute[i];
