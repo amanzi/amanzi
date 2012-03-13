@@ -22,7 +22,6 @@ project(SuperBuild)
 # Define Amanzi directories 
 # ############################################################################ #
 file(TO_CMAKE_PATH ${SuperBuild_SOURCE_DIR}/../.. Amanzi_SOURCE_DIR)
-file(TO_CMAKE_PATH ${SuperBuild_BINARY_DIR}/../.. Amanzi_BINARY_DIR)
 
 # ############################################################################ #
 # Update the CMake module path
@@ -283,7 +282,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
 #TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
-           -DBOOST_ROOT:FILEPATH=${Boost_install_dir}
+           -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
            -DBoost_USE_STATIC_LIBS:BOOL=TRUE
            -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
 
@@ -314,7 +313,7 @@ if ( ENABLE_MSTK_Mesh )
   append_set(Amanzi_TPL_CMAKE_ARGS
             -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
             -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
-            -MSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+            -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
 # Trilinos  
@@ -341,104 +340,110 @@ option(BUILD_DOCS "Build the SuperBuild documentation" FALSE)
 if ( BUILD_DOCS )
   add_subdirectory(doc)
 endif()
-#DEBUG
-#DEBUG# Build the Amanzi build script
-#DEBUGoption(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)
-#DEBUGif ( BUILD_Amanzi )
-#DEBUG
-#DEBUG  set(Amanzi_CMAKE_ARGS ${Amanzi_CMAKE_COMPILER_ARGS})
-#DEBUG
-#DEBUG  # Enable the config report
-#DEBUG  append_set(Amanzi_CMAKE_ARGS -DENABLE_Config_Report:BOOL=TRUE)
-#DEBUG
-#DEBUG  # Install path
-#DEBUG  if (Amanzi_INSTALL_PREFIX)
-#DEBUG    append_set(Amanzi_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:FILEPATH=${Amanzi_INSTALL_PREFIX})
-#DEBUG  endif()
-#DEBUG
-#DEBUG  # Build type
-#DEBUG  if(CMAKE_BUILD_TYPE)
-#DEBUG    append_set(Amanzi_CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
-#DEBUG  endif() 
-#DEBUG
-#DEBUG  # Disable shared libraries and executable unless user has requested shared libs
-#DEBUG  set(Amanzi_SHARED_CMAKE_ARGS)
-#DEBUG  if(BUILD_SHARED_LIBS)
-#DEBUG    append_set(Amanzi_SHARED_CMAKE_ARGS -DBUILD_SHARED_LIBS:BOOL=TRUE)
-#DEBUG  else()  
-#DEBUG    append_set(Amanzi_SHARED_CMAKE_ARGS 
-#DEBUG               -DBUILD_SHARED_LIBS:BOOL=FALSE
-#DEBUG            -DPREFER_STATIC_LIBRARIES:BOOL=TRUE)
-#DEBUG    #        -DBUILD_STATIC_EXECUTABLES:BOOL=TRUE)
-#DEBUG  endif()      
-#DEBUG
-#DEBUG  append_set(Amanzi_CMAKE_ARGS ${Amanzi_SHARED_CMAKE_ARGS})
-#DEBUG
-#DEBUG  # MPI
-#DEBUG  set(Amanzi_MPI_CMAKE_ARGS)
-#DEBUG  if ( MPI_EXEC )
-#DEBUG    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC:FILEPATH=${MPI_EXEC})
-#DEBUG  else()  
-#DEBUG    message(FATAL_ERROR "Enable Amanzi build requires MPI parallel run launch command\n"
-#DEBUG                        "Please define the this binary with:\n"
-#DEBUG                        "-DMPI_EXEC:FILEPATH=<binary>\n"
-#DEBUG                        "and re-run cmake")
-#DEBUG  endif()        
-#DEBUG
-#DEBUG  if ( MPI_EXEC_MAX_NUMPROCS )
-#DEBUG    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_MAX_NUMPROCS:STRING=${MPI_EXEC_NUMPROCS})
-#DEBUG  else()  
-#DEBUG    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_MAX_NUMPROCS:STRING=4)
-#DEBUG  endif()        
-#DEBUG
-#DEBUG  if ( MPI_EXEC_NUMPROCS_FLAG )
-#DEBUG    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG})
-#DEBUG  else()  
-#DEBUG    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n)
-#DEBUG  endif()        
-#DEBUG
-#DEBUG  append_set(Amanzi_CMAKE_ARGS ${Amanzi_MPI_CMAKE_ARGS})
-#DEBUG  
-#DEBUG  append_set(Amanzi_CMAKE_ARGS ${Amanzi_TPL_CMAKE_ARGS})
-#DEBUG
-#DEBUG
-#DEBUG  append_set(Amanzi_CMAKE_ARGS
-#DEBUG             -DENABLE_Unstructured:BOOL=${ENABLE_Unstructured}
-#DEBUG             -DENABLE_Structured:BOOL=${ENABLE_Structured})
-#DEBUG
-#DEBUG  #print_variable(Amanzi_CMAKE_ARGS) 
-#DEBUG
-#DEBUG  if(NOT Amanzi_SOURCE_DIR)
-#DEBUG    message(FATAL_ERROR "Enable Amanzi build requires an Amanzi source directory."
-#DEBUG                        "Define this dorectory with:"
-#DEBUG                        "-DAmanzi_SOURCE_DIR:FILEPAHT=<Amanzi source location>"
-#DEBUG                        "and re-run cmake")
-#DEBUG  endif()
-#DEBUG  message(STATUS "Will build Amanzi source located in ${Amanzi_SOURCE_DIR}")
-#DEBUG
-#DEBUG  if (ENABLE_Structured AND NOT ENABLE_CCSE )
-#DEBUG    message(FATAL_ERROR "The structured part of Amanzi requires CCSE. "
-#DEBUG                        "Please enable CCSE with"
-#DEBUG"\n-D ENABLE_CCSE:BOOL=TRUE\n"
-#DEBUG"and rerun cmake."
-#DEBUG)
-#DEBUG  endif()
-#DEBUG
-#DEBUG
-#DEBUG  # Now add amanzi to the build stack
-#DEBUG  include(ExternalProject)
-#DEBUG
-#DEBUG  set(Amanzi_DEPENDS exodusii hdf5 ascemio unittest boost mstk cgns trilinos)
-#DEBUG  if ( ENABLE_Structured )
-#DEBUG    append_set(Amanzi_DEPENDS ccse)
-#DEBUG  endif()  
-#DEBUG  ExternalProject_Add(amanzi
-#DEBUG                      DEPENDS ${Amanzi_DEPENDS}
-#DEBUG                      SOURCE_DIR ${Amanzi_SOURCE_DIR}
-#DEBUG                      BINARY_DIR ${CMAKE_BINARY_DIR}/amanzi-build
-#DEBUG                      DOWNLOAD_COMMAND ""
-#DEBUG                      UPDATE_COMMAND ""
-#DEBUG                      CMAKE_ARGS ${Amanzi_CMAKE_ARGS}
-#DEBUG                      INSTALL_COMMAND "")
-#DEBUGendif()        
-#DEBUG               
+
+# Build the Amanzi build script
+option(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)
+if ( BUILD_Amanzi )
+
+  set(Amanzi_CMAKE_ARGS ${Amanzi_CMAKE_COMPILER_ARGS})
+
+  # Enable the config report
+  append_set(Amanzi_CMAKE_ARGS -DENABLE_Config_Report:BOOL=TRUE)
+
+  # Install path
+  if (Amanzi_INSTALL_PREFIX)
+    append_set(Amanzi_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:FILEPATH=${Amanzi_INSTALL_PREFIX})
+  endif()
+
+  # Build type
+  if(CMAKE_BUILD_TYPE)
+    append_set(Amanzi_CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+  endif() 
+
+  # Disable shared libraries and executable unless user has requested shared libs
+  set(Amanzi_SHARED_CMAKE_ARGS)
+  if(BUILD_SHARED_LIBS)
+    append_set(Amanzi_SHARED_CMAKE_ARGS -DBUILD_SHARED_LIBS:BOOL=TRUE)
+  else()  
+    append_set(Amanzi_SHARED_CMAKE_ARGS 
+               -DBUILD_SHARED_LIBS:BOOL=FALSE
+            -DPREFER_STATIC_LIBRARIES:BOOL=TRUE)
+    #        -DBUILD_STATIC_EXECUTABLES:BOOL=TRUE)
+  endif()      
+
+  append_set(Amanzi_CMAKE_ARGS ${Amanzi_SHARED_CMAKE_ARGS})
+
+  # MPI
+  set(Amanzi_MPI_CMAKE_ARGS)
+  if ( MPI_EXEC )
+    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC:FILEPATH=${MPI_EXEC})
+  else()  
+    message(FATAL_ERROR "Enable Amanzi build requires MPI parallel run launch command\n"
+                        "Please define the this binary with:\n"
+                        "-DMPI_EXEC:FILEPATH=<binary>\n"
+                        "and re-run cmake")
+  endif()        
+
+  if ( MPI_EXEC_MAX_NUMPROCS )
+    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_MAX_NUMPROCS:STRING=${MPI_EXEC_NUMPROCS})
+  else()  
+    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_MAX_NUMPROCS:STRING=4)
+  endif()        
+
+  if ( MPI_EXEC_NUMPROCS_FLAG )
+    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG})
+  else()  
+    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n)
+  endif()        
+
+  append_set(Amanzi_CMAKE_ARGS ${Amanzi_MPI_CMAKE_ARGS})
+  
+  append_set(Amanzi_CMAKE_ARGS ${Amanzi_TPL_CMAKE_ARGS})
+
+
+  append_set(Amanzi_CMAKE_ARGS
+             -DENABLE_Unstructured:BOOL=${ENABLE_Unstructured}
+             -DENABLE_Structured:BOOL=${ENABLE_Structured})
+
+  #print_variable(Amanzi_CMAKE_ARGS) 
+
+  if(NOT Amanzi_SOURCE_DIR)
+    message(FATAL_ERROR "Enable Amanzi build requires an Amanzi source directory."
+                        "Define this dorectory with:"
+                        "-DAmanzi_SOURCE_DIR:FILEPATH=<Amanzi source location>"
+                        "and re-run cmake")
+  endif()
+  message(STATUS "Will build Amanzi source located in ${Amanzi_SOURCE_DIR}")
+
+
+  # Now add amanzi to the build stack
+  include(ExternalProject)
+
+  set(Amanzi_DEPENDS 
+                  ${ExodusII_BUILD_TARGET}
+		  ${HDF5_BUILD_TARGET}
+		  ${ASCEMIO_BUILD_TARGET}
+		  ${UnitTest_BUILD_TARGET}
+		  ${Boost_BUILD_TARGET}
+		  ${MSTK_BUILD_TARGET}
+		  ${CGNS_BUILD_TARGET}
+		  ${CCSE_BUILD_TARGET}
+		  ${Trilinos_BUILD_TARGET})
+
+  if ( ENABLE_Structured )
+    list(APPEND Amanzi_DEPENDS ${CCSE_BUILD_TARGET})
+  endif()  
+  ExternalProject_Add(amanzi
+                      DEPENDS ${Amanzi_DEPENDS}
+		      PREFIX ${CMAKE_BINARY_DIR}/Amanzi
+                      SOURCE_DIR ${Amanzi_SOURCE_DIR}
+                      DOWNLOAD_COMMAND ""
+                      UPDATE_COMMAND ""
+                      CMAKE_ARGS
+		                ${Amanzi_CMAKE_ARGS}
+				${Amanzi_CMAKE_C_COMPILER_ARGS}
+				${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+				${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                      INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
+endif()        
+               

@@ -633,14 +633,8 @@ if [ -z "${tpl_config_file}" ]; then
   pwd_save=`pwd`
 
 
-  # Get the TPL build project
-  tpl_build_src_dir=${tpl_download_dir}/litterbox/tpl-build
-  if [ ! -e "${tpl_build_src_dir}" ]; then 
-    status_message "Fetching TPL build from ${ascem_site}"
-    mkdir_now ${tpl_download_dir}
-    cd ${tpl_download_dir}
-    ascem_hg_clone litterbox
-  fi
+  # Define the TPL build source directory
+  tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
 
   # Configure the TPL build
   cd ${tpl_build_dir}
