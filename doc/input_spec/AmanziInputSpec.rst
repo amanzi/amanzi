@@ -1031,7 +1031,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * [SU] `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
 
-  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
 
     * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
 
@@ -1072,12 +1072,12 @@ Example:
     <ParameterList name="Integrated Mass">
       <Parameter name="Region" type="string" value="All"/>
       <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
-      <Parameter name="Variables" type="Array string" value="{Volumetric Water Content, Tc-99 Aqueous Concentration}"/>
+      <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
       <Parameter name="Time Macro" type="string" value="Annual"/>
     </ParameterList>
   </ParameterList>
 
-In this example, the user requests an annual report of the integrated volume of water and aqueous solute concentration over the entire domain.
+In this example, the user requests an annual report of the integrated volume of water over the entire domain.
 
 
 Diagnostic Output
@@ -1092,7 +1092,9 @@ the simulation and written to stdout while the simulation is running.
 
 * `"Diagnostic Output`" [list] can accept multiple lists for named Diagnostics (DIAGNOSTIC)
 
-  * DIAGNOSTIC [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * DIAGNOSTIC [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+
+    *  `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
 
     * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
@@ -1130,16 +1132,15 @@ Example:
     <ParameterList name="User specified name of this diagnostic output">
       <Parameter name="Region" type="string" value="Some user specified point region"/>
       <Parameter name="Functional" type="string" value="Diagnostic Output: Point"/>
-      <Parameter name="Variables" type="Array string" value="{Volumetric Water Content, Tc-99 Aqueous Concentration}"/>
+      <Parameter name="Variable" type="Array string" value="Volumetric Water Content"/>
       <Parameter name="Cycle Macro" type="string" value="first 100"/>
     </ParameterList>
   </ParameterList>
 
 
 
-In this example the simulation will make point observations of the water volume and
-concentration of Tc-99 in every one of the first 100 cycles and write the result
-of these to stdout. 
+In this example the simulation will make point observations of the water volume 
+in every one of the first 100 cycles and write the result of these to stdout. 
 
 
 Checkpoint Data
