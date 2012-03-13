@@ -80,14 +80,6 @@ ExternalProject_Add(${METIS_BUILD_TARGET}
 		    INSTALL_COMMAND  ${METIS_INSTALL_COMMAND}       # Install command
                     # -- Output control
                     ${METIS_logging_args})
-# ########################################################################### #
-#ExternalProject_Add(${METIS_target}
-#    ${METIS_ep_directory_args}
-#    ${METIS_url_args}
-#    CONFIGURE_COMMAND ${METIS_CONFIGURE_COMMAND}
-#    INSTALL_COMMAND ${METIS_INSTALL_COMMAND}
-#    ${METIS_logging_opts}
-#)
 
 # MSTK needs the full library name
 include(BuildLibraryName)

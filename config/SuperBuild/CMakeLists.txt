@@ -308,18 +308,20 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-#DEBUG# MSTK
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS
-#DEBUG  -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
-#DEBUG          -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
-#DEBUG          -MSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
-#DEBUG
-#DEBUG# Trilinos  
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS
-#DEBUG           -DENABLE_STK_Mesh:BOOL=TRUE
-#DEBUG           -DTrilinos_DIR:FILEPATH=${Trilinos_install_dir})
+# MSTK
+if ( ENABLE_MSTK_Mesh )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
+  append_set(Amanzi_TPL_CMAKE_ARGS
+            -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
+            -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
+            -MSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+endif()
+
+# Trilinos  
+include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
+           -DTrilinos_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 #DEBUG
 #DEBUG# ############################################################################ #
 #DEBUG# Create a CMake cache scipt

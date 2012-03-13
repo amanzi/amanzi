@@ -6,7 +6,12 @@
 # Source and build locations
 trilinos_src_dir=@Trilinos_source_dir@
 
-patch_file=@SuperBuild_SOURCE_DIR@/cmake/trilinos-10.6.4-gcc46.patch
+patch_file=@SuperBuild_SOURCE_DIR@/templates/trilinos-10.6.4-gcc46.patch
+
+if [[ ! -e ${patch_file} ]]; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+fi
 
 cd ${trilinos_src_dir}
 patch -p1 < ${patch_file}

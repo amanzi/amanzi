@@ -47,7 +47,7 @@ endif()
 include(BuildWhitespaceString)
 build_whitespace_string(curl_cflags -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CFLAGS})
 
-# --- Add external project build and tie to the ZLIB build target
+# --- Add external project build and tie to the CURL build target
 ExternalProject_Add(${CURL_BUILD_TARGET}
                     DEPENDS   ${CURL_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${CURL_tmp_dir}                     # Temporary files directory
