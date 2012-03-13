@@ -30,9 +30,9 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DMETIS_LIBRARY:PATH=${METIS_LIBRARY}
                     -DMetis_INCLUDE_DIR:PATH=${TPL_INSTALL_PREFIX}/include 
                     -DMETIS_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include
-                    -DENABLE_Tests:BOOL=TRUE
+                    -DENABLE_Tests:BOOL=FALSE
                     -DINSTALL_DIR:PATH=<INSTALL_DIR>
-                    -DINSTALL_ADD_VERSION:BOOL=TRUE)
+                    -DINSTALL_ADD_VERSION:BOOL=FALSE)
 
 # --- Add external project build and tie to the MSTK build target
 ExternalProject_Add(${MSTK_BUILD_TARGET}
