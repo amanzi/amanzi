@@ -10,7 +10,7 @@ requirements documented here https://software.lanl.gov/ascem/trac/wiki/Amanzi/Bu
 
 Users are required to provide the following to build
 
-    * CMake version 2.8.5 or higher.
+    * CMake version 2.8.6 or higher.
     * Mercurial version 0.98 or higher.
     * MPI installation with compiler wrappers. (mpicc, mpicxx, etc.)
     * OpenSSL (required to build CURL) installation. This is available on
@@ -27,22 +27,24 @@ Users are required to provide the following to build
 Getting TPL-Build
 -----------------
 
-TPL-Build is a separate software project that resides in the ASCEM litterbox
-repository. Use mercurial to clone a copy of the repository,
+TPL-Build is a seperate CMake project in the Amanzi repository. You will need 
+a clone of the Amanzi repository,
 
-``hg clone https://software.lanl.gov/ascem/hg/litterbox``.
+``hg clone https://software.lanl.gov/ascem/hg/amanzi``.
+
+The root directory for TPL-Build is amanzi/config/SuperBuild. 
 
 
 Building TPLs
 -------------
 
-In most cases, the entire suite of software can be built with the following steps
+In most cases, the entire suite of TPL software can be built with the following steps
     1. cmake  \
            -D CMAKE_C_COMPILER=/full/path/mpicc \
 	   -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
 	   -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
 	   -D TPL_INSTALL_PREFIX=/full/path/to/tpls
-	   /full/path/to/litterbox/tpl-build
+	   /full/path/to/amanzi/config/SuperBuild
     2. make -j n, where n is the number of make jobs.
     3. make install
     
@@ -58,17 +60,48 @@ For example,
 will build and link amanzi linked against the TPLs built with this 
 project, reducing the need for complicated build scripts.
 
+Invoking SuperBuild
+-------------------
+
+SuperBuild is the term the project uses to describe a complete software build, beginning
+with CMake and ending at Amanzi. The work is under development, but the preliminary 
+scripts and functionality is available. 
+
+For now, we recommended users that wish to SuperBuild Amanzi do the following,
+
+    1. Install CMake. See http://www.cmake.org for more information.
+    2. Clone the Amanzi repository.
+       `` hg clone https://software.lanl.gov/ascem/hg/amanzi``
+    3. Configure SuperBuild.
+       cmake \
+           -D CMAKE_C_COMPILER=/full/path/mpicc \
+	   -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
+	   -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
+	   -D TPL_INSTALL_PREFIX=/full/path/to/install/tpls \
+	   -D BUILD_Amanzi=TRUE \
+	   -D Amanzi_INSTALL_PREFIX=/full/path/to/install/amanzi \
+	   /full/path/to/amanzi/config/SuperBuild
+    4. make [-j n] amanzi, where ``-j n`` is the number of parallel make threads.
+
+There is a script called bootstrap.sh under development that enventually will install all
+the required software, including CMake but is not ready for general use at this time.
+
+
 Known Issues
 ------------
 
-Trilinos fails to build with GCC 4.6
-++++++++++++++++++++++++++++++++++++
+Trilinos ptrdiff_t compile error
+++++++++++++++++++++++++++++++++
 We are currently using Trilinos 10.6.4 and can not upgrade to a newer
-version until the mesh class is upgraded to address changes in STK. The
+version until the mesh class is upgraded to address changes in STK. In
+this older version of Trilinos, there are several header files that use
+ptrdiff_t without including cstddef.h. In particular, the
 4.6 GCC compiler is much more picky than previous versions and the
-``ptrdiff_t`` definition is found in the ``cstddef.h`` file which is not 
-included in several Trilinos header files. The TPL build system has a patch for 
-this bug, but is not not enabled by default. To enable the patch,
+``ptrdiff_t`` definition is found in the ``cstddef.h`` for versions 4.6 and
+greater. The TPL build system has a patch for this bug. 
+It attempts to find the compiler version and will apply the patch
+if the compiler id (CMAKE_COMPILER_ID) is GNU and the version is greater than
+4.6. To enable the patch for other compilers and versions
 add -D ENABLE_Trilinos_Patch:BOOL=TRUE to the TPL build cmake configuration
 command. 
 
