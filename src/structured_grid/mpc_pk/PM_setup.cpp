@@ -735,12 +735,15 @@ PorousMedia::variableSetUp ()
       if (ofs.fail()) {
           BoxLib::Abort("Cannot open pp dump file");
       }
-      if (ParallelDescriptor::IOProcessor())
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
       {
-          std::cout << "\nDumping ParmParse table:\n \n";
-          std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+          std::cout << "\nDumping ParmParse table:\n";
       }
       ParmParse::dumpTable(ofs);
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "... done dumping ParmParse table.\n" << '\n';
+      }
       ofs.close();
   }
 }

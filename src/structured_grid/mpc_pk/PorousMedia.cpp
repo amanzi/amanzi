@@ -1123,7 +1123,6 @@ PorousMedia::initData ()
 
   is_first_step_after_regrid = true;
   old_intersect_new          = grids;
-  std::cout << "finish initializing\n";
 }
 
 //
@@ -5862,6 +5861,15 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 	delete [] u_mac;
     }
 
+  // 
+  // Limit by max_dt
+  //
+#ifdef MG_USE_FBOXLIB
+  if (model == model_list["richard"]) {
+      estdt = std::min(richard_max_dt,estdt);
+  }  
+#endif
+
   return estdt;
 }
 
@@ -10428,7 +10436,7 @@ PorousMedia::check_sum()
 
   ParallelDescriptor::ReduceRealMax(&minmax[0],2,IOProc);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     {
       std::cout << "   SUM SATURATION MAX/MIN = " 
 		<< minmax[1] << ' ' << minmax[0] << '\n';
@@ -10514,7 +10522,7 @@ PorousMedia::check_minmax(int fscalar, int lscalar)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), nscal, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), nscal, IOProc);
   
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     {
         for (int kk = 0; kk < nscal; kk++)
 	{
@@ -10545,7 +10553,7 @@ PorousMedia::check_minmax(MultiFab& mf)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomp, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomp, IOProc);
   
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomp; kk++)
 	{

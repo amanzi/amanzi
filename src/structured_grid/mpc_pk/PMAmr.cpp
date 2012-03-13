@@ -130,7 +130,7 @@ PMAmr::coarseTimeStep (Real stop_time)
 
         ParallelDescriptor::ReduceRealMax(run_stop,IOProc);
 
-        if (ParallelDescriptor::IOProcessor())
+        if (verbose>1 && ParallelDescriptor::IOProcessor())
             std::cout << "\nCoarse TimeStep time: " << run_stop << '\n' ;
 
         long min_fab_bytes = BoxLib::total_bytes_allocated_in_fabs_hwm;
@@ -143,7 +143,7 @@ PMAmr::coarseTimeStep (Real stop_time)
         //
         BoxLib::total_bytes_allocated_in_fabs_hwm = 0;
 
-        if (ParallelDescriptor::IOProcessor())
+        if (verbose>1 && ParallelDescriptor::IOProcessor())
             std::cout << "\nFAB byte spread across MPI nodes for timestep: ["
                       << min_fab_bytes << " ... " << max_fab_bytes << "]\n";
     }
