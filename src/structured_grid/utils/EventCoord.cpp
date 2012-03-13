@@ -43,7 +43,8 @@ EventCoord::TimeEvent::ThisEventDue(Real time, Real dt, Real& dt_red) const
     }
     else {
         for (int i=0; i<times.size(); ++i) {
-            if (times[i] > time  &&  times[i] <= time + dt) {
+            Real eps = 1.e-6*dt;
+            if (times[i] > time  &&  times[i] <= time + dt + eps) {
                 dt_red = std::min(dt, times[i]-time);
                 return true;
             }
@@ -60,11 +61,12 @@ EventCoord::TimeEvent::ThisEventDue(Real time, Real dt, Real& dt_red) const
                 else {
                     Real min_dt = max_dt;
                     for (int j=0; j<times.size(); ++j) {
-                        if (time < times[j]) {
+                        if (i!=j  && time < times[j]  &&  time + dt > times[j]) {
                             min_dt = std::min(min_dt, times[j] - time);
                         }
                     }
                     dt_red = std::min(dt, min_dt);
+                    return dt_red < dt;
                 }
                 return true;
             }

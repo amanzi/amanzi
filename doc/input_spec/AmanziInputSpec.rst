@@ -1033,7 +1033,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
 
-    * [SU] `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
+    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
 
     * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 

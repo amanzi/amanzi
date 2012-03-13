@@ -173,16 +173,6 @@ PMAmr::coarseTimeStep (Real stop_time)
         runlog_terse << level_steps[0] << " " << cumtime << " " << dt_level[0] << '\n';
 
     
-    PArray<Observation>& observations = PorousMedia::TheObservationArray();
-    if (observations_to_process.size()) {
-        if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
-            std::cout << " Process observations: \n";
-        }
-        for (int i=0; i<observations_to_process.size(); ++i) {
-            std::cout << observations[observations_to_process[i]].name << " " << std::endl;
-        }
-    }
-
     int to_checkpoint = 0;    
     int to_stop       = 0;    
     if (ParallelDescriptor::IOProcessor())

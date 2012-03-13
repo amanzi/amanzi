@@ -816,6 +816,8 @@ PorousMedia::restart (Amr&          papa,
   if (grids == papa.getLevel(level).boxArray())
     is_grid_changed_after_regrid = false;
 
+  // Set up boundary condition work
+  setup_bound_desc();
 }
 
 void

@@ -282,8 +282,7 @@ namespace Amanzi {
                     prob_out_list.set("do_simple",2);
                 }
             }
-            else if (t_list.isSublist(transient_str) 
-                     || t_list.isSublist(init_to_steady_str) )
+            else if (t_list.isSublist(transient_str))
             {
                 const ParameterList& tran_list = t_list.sublist(transient_str);
                 reqP.clear(); reqL.clear();
@@ -319,7 +318,7 @@ namespace Amanzi {
                         dt_max = tran_list.get<double>(Max_Time_Step_Size_str);
                     }
                     else if (ToptP[i] == Max_Step_str) {
-                        step_max = tran_list.get<double>(Max_Step_str);
+                        step_max = tran_list.get<int>(Max_Step_str);
                     }
                     else {
                         MyAbort("Unrecognized option under \""+transient_str+"\": \""+ToptP[i]+"\"" );
@@ -2405,13 +2404,16 @@ namespace Amanzi {
         
             // observation
             Array<std::string> arrayobs;
-            const ParameterList& olist = rlist.sublist("Observation Data");
+            std::string obs_str = "Observation Data";
+            const ParameterList& olist = rlist.sublist(obs_str);
             ParameterList sublist;
-            for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {
+            std::string obs_file_str = "Observation Output Filename";
+            std::string obs_file="observation.out";
+            for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {                
                 std::string label = olist.name(i);
-                std::string _label = underscore(label);
                 const ParameterEntry& entry = olist.getEntry(label);
                 if (entry.isList()) {
+                    std::string _label = underscore(label);
                     const ParameterList& rslist = olist.sublist(label);
                     std::string functional = rslist.get<std::string>("Functional");
                     std::string region_name = rslist.get<std::string>("Region");
@@ -2442,39 +2444,30 @@ namespace Amanzi {
                         sublist.set("time_macro",timeMacro);
                     }
 	  
-                    Array<std::string> arrayvariables;
-                    Array<std::string> variables = rslist.get<Array<std::string> >("Variables");
-                    if (variables.size()!=1) {
-                        std::cerr << "Currently must provide a single Variable per observation" << std::endl;
-                            throw std::exception();                        
+                    const std::string& variable = rslist.get<std::string>("Variable");
+                    std::string _variable = underscore(variable);
+                    bool found = false;
+                    for (int k=0; k<user_derive_list.size() && !found; ++k) {
+                        if (_variable == user_derive_list[k]) {
+                            found = true;
+                        }
                     }
-                    for (int j=0; j<variables.size(); ++j) {
-                        std::string _variable = underscore(variables[j]);
-                        bool found = false;
-                        for (int k=0; k<user_derive_list.size() && !found; ++k) {
-                            if (_variable == user_derive_list[k]) {
-                                found = true;
-                            }
-                        }
-                        if (found) {
-                            arrayvariables.push_back(_variable);
-                        } else 
-                        {
-                            std::cerr << variables[j] 
-                                      << " is not a valid derive variable name. Must be on of: ";
-                            for (int k=0; k<user_derive_list.size() && !found; ++k) {
-                                std::cerr << "\"" << user_derive_list[k] << "\" ";
-                            }
-                            std::cerr << std::endl;
-                            throw std::exception();
-                        }
-
+                    if (!found) {
+                        MyAbort(variable + " is not a valid derive variable name");
                     }
 
-                    sublist.set<std::string>("field",arrayvariables[0]);
+                    sublist.set<std::string>("field",_variable);
 
                     obs_list.set(_label,sublist);
                     arrayobs.push_back(_label);
+                }
+                else {
+                    if (label == obs_file_str) {
+                        obs_file = underscore(olist.get<std::string>(obs_file_str));
+                    }
+                    else {
+                        MyAbort("Unrecognized option under \""+obs_str+"\": \""+label+"\"" );
+                    }
                 }
             }
             obs_list.set("observation",arrayobs);
@@ -2564,7 +2557,7 @@ Execution Control
        Maximum Time Step Change (change_max)
        Initial Time Step Multiplier (init_shrink)
        Maximum Time Step Size (dt_max)
-       Maximum cycle Number (max_step)
+       Maximum Cycle Number (max_step)
      Initialize To Steady
 
   Verbosity
