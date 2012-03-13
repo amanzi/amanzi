@@ -1989,7 +1989,7 @@ c
       REAL_T  mult
       
       integer i, j
-      print *, inflow_bc_lo, inflow_bc_hi
+c      print *, inflow_bc_lo, inflow_bc_hi
       if (lo(1) .eq. domlo(1) .and. inflow_bc_lo(1) .eq. 1) then
            do j = lo(2),hi(2)
               rg(lo(1),j) = rg(lo(1),j) - mult*ux(lo(1),j)/dx(1)

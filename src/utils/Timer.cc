@@ -1,32 +1,51 @@
 /**
  *  \file   Timer.cc
- *  \brief  Timer can be used to return the running time of a program in clock cycles.
+ *  \brief  Timer can be used to return the running time of a program in
+ *          clock cycles.
  *
  *  \date   Apr 14, 2011
  *  \author Nathan Barnett
  */
 
-#include "Timer.h"
+#include "Timer.hh"
 #include <sstream>
 
 
 namespace Amanzi
 {
 
+unsigned Timer::_instances = 0;
 
 /**
- *  \fn     Constructor
- *  \brief  Includes an option for naming the timer - for printout
+ *  \fn         Constructor
+ *  \brief      Includes an option for naming the timer - for printout
+ *  \param[in]  Name of the timer
  */
-Timer::Timer(std::string name="Timer_") : _start(0), _stop(0), _running(false), _name(name)
+Timer::Timer(std::string name) : _start(0), _stop(0), _running(false), _name(name)
 {
-  // If we used a generic name, concat the instance number so that the timer names are unique
+  // We increment the number of timer instances and grab the current number 
+  // for our own
+  _num = _instances;
+  _instances++;
+
+  // If we used a generic name, concat the instance number so that the timer 
+  // names are unique
   if (_name=="Timer_")
   {
     std::stringstream ss;
-    ss << _name << _instance;
-    _name = ss.string();
+    ss << _name << _num;
+    _name = ss.str();
   }
+}
+
+
+/**
+ *  \fn     Destructor
+ */
+Timer::~Timer()
+{
+  // This timer got killed - remove one from the list
+  _instances--;
 }
 
 
@@ -49,7 +68,7 @@ void Timer::start()
  */
 void Timer::stop()
 {
-  _stop = clock();
+  _stop    = clock();
   _running = false;
 }
 
@@ -63,6 +82,7 @@ void Timer::stop()
  *           Otherwise, will return the difference between the current cpu 
  *           cycle count and the start member variable. Note that this is not
  *           the wall time, but the time the cpu actually uses.
+ *  \returns Number of clock cycles (clock_t)
  */
 clock_t Timer::getTicks()
 {
@@ -82,16 +102,29 @@ clock_t Timer::getTicks()
  *           will return the number of seconds between the current cpu cycle 
  *           count and the start member variable. Note that this is not the 
  *           wall time, but the time the cpu actually uses.
+ *  \returns Number of seconds (double)
  */
 double Timer::getTime()
 {
-	if ( _running ) return (( clock() - _start ) / CLOCKS_PER_SEC);
-	else 			return (( _stop - _start ) / CLOCKS_PER_SEC);
+  if ( _running ) 
+    return (double( clock() - _start ) / (double)CLOCKS_PER_SEC);
+  else 
+    return (double( _stop - _start ) / (double)CLOCKS_PER_SEC);
 }
 
-std::ostream& operator<<(std::ostream& os)
+/**
+ *  \fn      friend ostream operator<<
+ *  \brief   Outputs text to a ostream
+ *  \returns Text string as an output stream
+ */
+std::ostream& operator<<(std::ostream& os, Timer& t)
 {
-  os << _name << " completed in " << getTime() << " seconds.";
+  if (t._running)
+    os  << t._name << " is currently at " << t.getTime() << " seconds.";
+  else
+    os << t._name << " completed in " << t.getTime() << " seconds.";
+
+  return os;
 }
 
 

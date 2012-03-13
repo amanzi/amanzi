@@ -1123,7 +1123,6 @@ PorousMedia::initData ()
 
   is_first_step_after_regrid = true;
   old_intersect_new          = grids;
-  std::cout << "finish initializing\n";
 }
 
 //
@@ -5805,7 +5804,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
       return factor*fixed_dt;
     }
 
-  Real estdt        = 1.0e+20;
+  Real estdt        = 1.0e+20; // FIXME: need more robust
   const Real cur_time = state[State_Type].curTime();
 
   if (dt_eig != 0.0)
@@ -5862,6 +5861,15 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 	delete [] u_mac;
     }
 
+  // 
+  // Limit by max_dt
+  //
+#ifdef MG_USE_FBOXLIB
+  if (model == model_list["richard"]) {
+      estdt = std::min(richard_max_dt,estdt);
+  }  
+#endif
+
   return estdt;
 }
 
@@ -5890,7 +5898,7 @@ PorousMedia::predictDT (MultiFab* u_macG)
   const Real* dx       = geom.CellSize();
   const Real  cur_time = state[State_Type].curTime();
 
-  dt_eig = 1.e20;
+  dt_eig = 1.e20; // FIXME: Need more robust
 
   Real eigmax[BL_SPACEDIM] = { D_DECL(0,0,0) };
   for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),GEOM_GROW,
@@ -9755,6 +9763,8 @@ PorousMedia::derive (const std::string& name,
 {
     const DeriveRec* rec = derive_lst.get(name);
 
+    bool not_found_yet = false;
+
     if (name=="Material_ID") {
         
         BL_ASSERT(dcomp < mf.nComp());
@@ -9891,6 +9901,22 @@ PorousMedia::derive (const std::string& name,
             BoxLib::Abort("PorousMedia::derive: Aqueous_Pressure not yet implemented for non-Richard");
         }
     }
+    else if (name=="Aqueous_Volumetric_Flux_X" || name=="Aqueous_Volumetric_Flux_Y" || name=="Aqueous_Volumetric_Flux_Z")
+    {
+        int dir = ( name=="Aqueous_Volumetric_Flux_X"  ?  0  :
+                    name == "Aqueous_Volumetric_Flux_Y" ? 1 : 2);
+
+        BL_ASSERT(dir < BL_SPACEDIM);
+        if (model == model_list["richard"]) {
+            compute_vel_phase(u_mac_curr,0,time);    
+            umac_edge_to_cen(u_mac_curr,Vel_Type); 
+            int ncomp = 1;
+            MultiFab::Copy(mf,get_new_data(Vel_Type),dir,dcomp,ncomp,0);
+        }
+        else {
+            BoxLib::Abort("PorousMedia::derive: Aqueous_Volumetric_Flux_{X,Y,Z} not yet implemented for non-Richard");
+        }
+    }
     else if (name=="Porosity") {
         
         const BoxArray& BA = mf.boxArray();
@@ -9902,7 +9928,23 @@ PorousMedia::derive (const std::string& name,
         MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
 
     } else {
-        
+
+        not_found_yet = true;
+    }
+
+    if (not_found_yet) {
+
+        for (int n=0; n<ntracers && not_found_yet; ++n) {
+            std::string tname = "Aqueous_" + tNames[n] + "_Concentration";
+            if (name==tname) {
+                AmrLevel::derive(tNames[n],time,mf,dcomp);
+                not_found_yet = false;
+            }
+        }
+    }
+
+    if (not_found_yet)
+    {
         AmrLevel::derive(name,time,mf,dcomp);
     }
 }
@@ -10394,7 +10436,7 @@ PorousMedia::check_sum()
 
   ParallelDescriptor::ReduceRealMax(&minmax[0],2,IOProc);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     {
       std::cout << "   SUM SATURATION MAX/MIN = " 
 		<< minmax[1] << ' ' << minmax[0] << '\n';
@@ -10480,7 +10522,7 @@ PorousMedia::check_minmax(int fscalar, int lscalar)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), nscal, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), nscal, IOProc);
   
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     {
         for (int kk = 0; kk < nscal; kk++)
 	{
@@ -10511,7 +10553,7 @@ PorousMedia::check_minmax(MultiFab& mf)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomp, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomp, IOProc);
   
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomp; kk++)
 	{

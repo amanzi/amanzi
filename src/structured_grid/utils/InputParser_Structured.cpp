@@ -229,7 +229,7 @@ namespace Amanzi {
             std::string model_name;
             std::string flow_mode = ec_list.get<std::string>(flow_str);
             if (flow_mode == "Off") {
-                MyAbort("Flow Mode = \"" + flow_mode + "\" not supported");
+                MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
                 prob_out_list.set("do_simple",2);
             }
             else if (flow_mode == "Richards") {
@@ -244,6 +244,9 @@ namespace Amanzi {
             else if (flow_mode == "Multi-phase") {
                 model_name = "two-phase";
                 prob_out_list.set("cfl",0.75);
+            }
+            else {
+                MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
             }
             prob_out_list.set("model_name",model_name);
 
@@ -372,7 +375,7 @@ namespace Amanzi {
             int num_levels = 1;
             int max_level = num_levels-1;
             bool do_amr_subcycling = false;                            
-            int ref_ratio_DEF = 8;
+            int ref_ratio_DEF = 2;
             Array<int> ref_ratio(max_level,ref_ratio_DEF);
             int regrid_int_DEF = 2;
             Array<int> regrid_int(num_levels,regrid_int_DEF);
@@ -1566,7 +1569,7 @@ namespace Amanzi {
                     fluxvals[i] = -fluxvals[i];
                 }
             }
-    
+
             std::string rock_label;
             if (require_rock) {
                 rock_label = fPLin.get<std::string>(rock_name);
@@ -2061,7 +2064,7 @@ namespace Amanzi {
                 }
             }
 
-            if (do_chem) 
+            if (do_chem || do_tracer_transport)
             {
                 for (int i=0; i<arraysolute.size(); ++i) {
                     const std::string& soluteName = arraysolute[i];
@@ -2092,6 +2095,22 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Porosity"));
             user_derive_list.push_back(underscore("Aqueous Saturation"));
             user_derive_list.push_back(underscore("Aqueous Pressure"));
+            user_derive_list.push_back(underscore("Aqueous Volumetric Flux X"));
+            user_derive_list.push_back(underscore("Aqueous Volumetric Flux Y"));
+#if BL_SPACEDIM==3
+            user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
+#endif
+
+            if (struc_list.isSublist("tracer")) {
+                const ParameterList& solute_list = struc_list.sublist("tracer");
+                for (ParameterList::ConstIterator it=solute_list.begin(); it!=solute_list.end(); ++it) {
+                    const std::string& name = solute_list.name(it);
+                    if (solute_list.isSublist(name)) {
+                        user_derive_list.push_back(underscore("Aqueous "+name+" Concentration"));
+                    }
+                }
+            }
+
             amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);
 
             const ParameterList& rlist = parameter_list.sublist("Output");
@@ -2510,3 +2529,299 @@ namespace Amanzi {
 }
 
 
+/*
+Mesh
+  Structured
+    Number of Cells
+    Domain Low Corner
+    Domain High Corner
+     ... sets geometry_eps = 1.e-6*max_size;
+
+Domain
+  Spatial Dimension
+
+Execution Control
+
+  Flow Model:
+     Off (do_simple=2)
+     Richards (... sets model_name=richard, have_capillary=1, cfl=-1)
+     Single-phase (... sets model_name=single-phase, do_simple=1)
+     Multi-phase (... sets model_name=two-phase, cfl=0.75)
+
+  Transport Model
+     Off (... sets do_tracer_transport=0)
+     On  (... sets do_tracer_transport=1)
+
+  Chemistry Model
+     Off (... sets do_chem=-1)
+
+  Time Integration Mode
+     Steady
+     Transient
+       Start (start_time)
+       End (stop_time)
+       Initial Time Step (dt_init)
+       Maximum Time Step Change (change_max)
+       Initial Time Step Multiplier (init_shrink)
+       Maximum Time Step Size (dt_max)
+       Maximum cycle Number (max_step)
+     Initialize To Steady
+
+  Verbosity
+    None     ... sets prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0
+    Low      ... sets prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1; diffuse_v = 0
+    Medium   ... sets prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2; diffuse_v = 1
+    High     ... sets prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3; diffuse_v = 1
+    Extreme  ... sets prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3; diffuse_v = 1
+
+  Restart from Checkpoint Data File (amr.restart)
+  Echo Inputs (TRUE-> echo_inputs=true)
+  Dump ParmParse Table
+
+  Numerical Control Parameters
+
+    Adaptive Mesh Refinement Control
+      Number Of AMR Levels (1)
+      Refinement Ratio (2)
+      Regrid Interval (2)
+      Blocking Factor (8)
+      Number Error Buffer Cells (1)
+      Maximum Grid Size (128, 32)
+      Refinement Indicators
+        Value Greater, Value Less, Adjacent Difference Greater, Inside Region
+        Field Name
+        Regions
+        Maximum Refinement Level
+        Start Time
+        End Time
+      Expert Settings
+
+      ....set amr.nosub, is_periodic=0
+
+    Basic Algorithm Control
+      Expert Settings
+      ...set visc_abs_tol=1.e-16, visc_tol=1.e-14
+
+    Iterative Linear Solver Control
+      Conjugate Gradient Algorithm
+        Expert Settings
+      Multigrid Algorithm
+        Expert Settings
+
+    Pressure Discretization Control
+      Expert Settings
+
+    Diffusion Discretization Control
+      Expert Settings
+
+Regions
+   NAME
+     REGION-FUNC     
+
+Material Properties
+  NAME
+    Porosity: Uniform
+      Value
+       ... set porosity_dist=uniform
+    Intrinsic Permeability: Anisotropic Uniform
+      Horizontal
+      Vertical
+       ... set permeability_dist=uniform
+    Capillary_Pressure: van Genuchten
+      alpha
+      m
+      Sr
+      ... set cpl_type=3, vals=[m,alpha*Pa/atm,Sr,0]
+    Relative_Permeability
+      ... assume Mualem, set kr_type=3, set vals=[cpl[0,2,3]]
+    Regions_Assigned
+    Density 
+      ... set kp (def="Permeability Output File"), pp (def="Porosity Output File")
+
+Phase Definitions
+  Phase Properties
+    Density: Uniform
+      Density
+    Viscosity: Uniform
+      Viscosity
+  Phase Components
+    NAME
+      Component Solutes
+       ...sets group=Total
+
+Boundary Conditions
+  NAME
+    Assigned Regions
+    BC-FUNC
+    Solute BC
+      NAME
+        SOLUTE-BC-FUNC
+        Concentration Units
+
+Initial Conditions
+  NAME
+    IC: Uniform Saturation, IC: Linear Saturation, IC: Uniform Pressure,IC: Linear Pressure, IC: Hydrostatic
+    Assigned Regions
+    IC-FUNC
+    Solute IC
+      NAME
+        SOLUTE-IC-FUNC
+        Concentration Units
+
+
+Output
+  Time Macros
+    NAME
+      Times, Start_Period_Stop
+
+  Cycle Macros
+    NAME
+      Cycles
+      Start_Period_Stop
+
+  Visualization Data
+    File Name Base
+    Variables
+    Cycle Macros, Time Macros, File Name Digits
+
+  Checkpoint Data
+    File Name Base
+    Variables
+    Cycle Macros, File Name Digits
+
+  Observation Data
+    Functional
+    Region
+    Observation Data: Integral, Observation Data: Point
+    Time Macro
+    Variables
+
+
+
+REGION-FUNC:
+------------
+
+Region: Color Function
+  File
+  Value
+   ... sets purpose=all, type=color_function
+
+Region: Point
+  Coordinate
+   ... sets purpose=all, type=point
+
+Region: Box
+  Low Coordinate
+  High Coordinate
+   if (length(d)<geometry_eps) {
+     ... sets type=surface, purpose=all
+   }
+   else {
+     ... sets type=box, purpose=all
+   }
+
+Region: Plane
+  Direction
+  Location
+   FIXME: ignores sign of direction
+  ... sets type=surface, purpose=0-5 for orientation
+
+
+
+
+BC-FUNC:
+---------
+
+BC: No Flow
+  .. sets type=noflow
+
+BC: Uniform Saturation
+  ... sets type = saturation
+  Values
+  Times
+  Time Functions
+
+BC: Linear Saturation
+  ... sets type = saturation
+  Values
+  Times
+  Time Functions
+  FIXME: no gradient info processed
+
+BC: Linear Pressure
+  ... sets type = pressure
+  Reference Values
+  Gradient Value
+  Reference Coordinate
+
+BC: Uniform Pressure
+  Values
+  Times
+  Time Functions
+
+BC: Flux
+  Inward Volumetric Flux, Inward Mass Flux, Outward Volumetric Flux, Outward Mass Flux
+  Times
+  Time Functions
+    ...sets aqueous_vol_flux, inflowtimes, inflowfncs, and type=zero_total_velocity
+
+BC: Uniform Concentration
+  Values
+  Times
+  Time Functions
+  Molar Concentration, Molal Concentration, Specific Concentration
+    ..sets type=concentration
+
+BC: Zero Gradient or BC: Outflow
+  ... sets type=outflow
+
+BC: No Flow
+  ... sets type=noflow
+
+
+Additionally:
+
+  Hard_set bcs in PMAMR (for sat, pressure, inflow)
+    noflow:                  (4,4,0)
+    pressure or hydrostatic: (1,2,0)
+    saturation:              (1,2,0)
+    zero_total_velocity:     (1,1,1)
+    else:                    (4,4,4)
+
+
+
+
+IC-FUNC:
+--------
+
+IC: Uniform Saturation
+  Value (sets Water saturation value, type=saturation)
+
+IC: Linear Saturation
+  Value (sets Water saturation value, type=saturation)
+  FIXME: no gradient info processed
+
+IC: Uniform Pressure
+  Phase
+  Value
+  ... sets type=hydrostatic, val, water_table_height
+
+IC: Linear Pressure
+  Phase
+  Reference Value
+  Gradient Value
+  Reference Coordinate
+  ... sets type=hydrostatic, val, grad, water_table_height
+
+IC: Uniform Concentration
+  Value
+  Molar Concentration, Molal Concentration, Specific Concentration, 
+   ...sets type=concentration
+
+
+user_derives: "Material ID", "Capillary Pressure", "Volumetric Water Content",
+              "Porosity", "Aqueous Saturation", "Aqueous Pressure", "Aqueous Volumetric Flux X",
+              "Aqueous Volumetric Flux Y", "Aqueous Volumetric Flux Z", "Aqueous TRACER Concentration"
+
+
+*/

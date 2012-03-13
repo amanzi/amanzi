@@ -735,12 +735,15 @@ PorousMedia::variableSetUp ()
       if (ofs.fail()) {
           BoxLib::Abort("Cannot open pp dump file");
       }
-      if (ParallelDescriptor::IOProcessor())
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
       {
-          std::cout << "\nDumping ParmParse table:\n \n";
-          std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+          std::cout << "\nDumping ParmParse table:\n";
       }
       ParmParse::dumpTable(ofs);
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "... done dumping ParmParse table.\n" << '\n';
+      }
       ofs.close();
   }
 }
@@ -1729,7 +1732,7 @@ void  PorousMedia::read_tracer()
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          if (do_chem > -1) {
+          if (do_chem > -1  ||  do_tracer_transport == 1) {
               std::string g; ppr.get("group",g);
               group_map[g].push_back(i+ncomps);
           }

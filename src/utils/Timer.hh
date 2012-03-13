@@ -20,10 +20,10 @@ namespace Amanzi
 
 class Timer
 {
-  friend std::ostream& operator<<(std::ostream& os);
+  friend std::ostream& operator<<(std::ostream& os, Timer& t);
 
 public:
-  Timer(std::string name);
+  explicit Timer(std::string name="Timer_");
   void start();
   void stop();
   clock_t getTicks();
@@ -31,11 +31,12 @@ public:
   ~Timer();
 
 private:
-  std::string     _name;     //!< Name of the timer (defaults to "Timer + _instance")
-  clock_t 	  _start;    //!< Time at which the timer was started
-  clock_t 	  _stop;     //!< Time at which the timer was stopped
-  bool 		  _running;  //!< Flag for determining if the timer is running
-  static unsigned _instance; //!< Keeps track of the number of timers instantiated
+  std::string     _name;      //!< Name of the timer (defaults to "Timer + _instance")
+  clock_t 	  _start;     //!< Time at which the timer was started
+  clock_t 	  _stop;      //!< Time at which the timer was stopped
+  bool 		  _running;   //!< Flag for determining if the timer is running
+  static unsigned _instances; //!< Keeps track of the number of timers instantiated
+  unsigned        _num;       //!< Number of this timer
 };
 
 } //end of namespace Amanzi

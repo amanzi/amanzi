@@ -485,6 +485,10 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
     Teuchos::ParameterList exe_sublist = plist->sublist("Execution Control");
 
     mpc_list.sublist("Time Integration Mode") = exe_sublist.sublist("Time Integration Mode");
+    
+    if (exe_sublist.isSublist("Time Period Control")) {
+      mpc_list.sublist("Time Period Control") = exe_sublist.sublist("Time Period Control");
+    }
 
     // now interpret the modes
     if ( exe_sublist.isParameter("Transport Model") ) {
