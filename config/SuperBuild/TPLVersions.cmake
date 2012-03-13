@@ -111,13 +111,13 @@ set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)
 #
 # TPL: netCDF
 #
-set(NETCDF_VERSION_MAJOR 4)
-set(NETCDF_VERSION_MINOR 1)
-set(NETCDF_VERSION_PATCH 3)
-set(NETCDF_VERSION ${NETCDF_VERSION_MAJOR}.${NETCDF_VERSION_MINOR}.${NETCDF_VERSION_PATCH})
-set(NETCDF_URL_STRING     "http://www.unidata.ucar.edu/downloads/netcdf/ftp")
-set(NETCDF_ARCHIVE_FILE   netcdf-${NETCDF_VERSION}.tar.gz)
-set(NETCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814) 
+set(NetCDF_VERSION_MAJOR 4)
+set(NetCDF_VERSION_MINOR 1)
+set(NetCDF_VERSION_PATCH 3)
+set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
+set(NetCDF_URL_STRING     "http://www.unidata.ucar.edu/downloads/netcdf/ftp")
+set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
+set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814) 
 
 #
 # TPL: ASCEMIO

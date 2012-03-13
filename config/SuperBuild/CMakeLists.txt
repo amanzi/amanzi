@@ -259,7 +259,7 @@ endif()
 # METIS  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS 
-           -DMETIS_DIR:FILEPATH=${METIS_install_dir})
+           -DMETIS_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # CCSE
 set(CCSE_BL_SPACEDIM_DFLT 2)
@@ -268,7 +268,7 @@ if(NOT CCSE_BL_SPACEDIM )
 endif()
 include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS 
-           -DCCSE_DIR:FILEPATH=${CCSE_install_dir}
+           -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}
            -DENABLE_MPI:BOOL=TRUE
            -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
            -DAMANZI_PRECISION:STRING=DOUBLE
@@ -278,7 +278,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_CGNS.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS 
           -DENABLE_CGNS:BOOL=TRUE
-          -DCGNS_DIR:FILEPATH=${CGNS_install_dir})
+          -DCGNS_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 # Boost
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
 #TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
@@ -291,25 +291,23 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
 #BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
-           -DHDF5_ROOT:FILEPATH=${HDF5_install_dir})
+           -DHDF5_ROOT:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # ASCEM-IO  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-# Now build the remaining TPLs
-#DEBUG
-#DEBUG# NetCDF
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_netCDF.cmake) 
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS
-#DEBUG           -DNetCDF_DIR:FILEPATH=${NETCDF_install_dir})
-#DEBUG
-#DEBUG# ExodusII
-#DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
-#DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS
-#DEBUG           -DExodusII_DIR:FILEPATH=${ExodusII_install_dir})
-#DEBUG
+# NetCDF
+include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# ExodusII
+include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
 #DEBUG# MSTK
 #DEBUGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
 #DEBUGappend_set(Amanzi_TPL_CMAKE_ARGS
