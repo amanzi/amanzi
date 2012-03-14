@@ -122,16 +122,6 @@ namespace Amanzi {
             geometry_eps = 1.e-6*max_size;
 
             const ParameterList& eclist = parameter_list.sublist("Execution Control");
-            int bfactor = 2;
-            if (eclist.isSublist("amr"))
-                if (eclist.sublist("amr").isParameter("blocking_factor"))
-                    bfactor = eclist.sublist("amr").get<int>("blocking_factor");
-     
-            for (int i=0;i<ndim;i++) {
-                if (n_cell[i]%bfactor > 0) {
-                    MyAbort("Number of Cells must be divisible by blocking_factor = " + bfactor);
-                }
-            }
 
             ParameterList& alist = struc_list.sublist("amr");
             alist.set("n_cell",n_cell);
@@ -379,7 +369,7 @@ namespace Amanzi {
             int regrid_int_DEF = 2;
             Array<int> regrid_int(num_levels,regrid_int_DEF);
             int blocking_factor_DEF = 8;
-            Array<int> blocking_factor(max_level,blocking_factor_DEF);
+            Array<int> blocking_factor(num_levels,blocking_factor_DEF);
             int n_err_buf_DEF = 1;
             Array<int> n_err_buf(max_level,n_err_buf_DEF);
             int max_grid_DEF = (ndim==2 ? 128  :  32);
@@ -514,7 +504,6 @@ namespace Amanzi {
                                 }
                             }
 
-                            
                             std::string n_err_buf_str = "Number Error Buffer Cells";
                             int n_err_buf_DEF = 1;
                             n_err_buf.resize(max_level+1,n_err_buf_DEF);
@@ -646,6 +635,21 @@ namespace Amanzi {
                 }
             }
                     
+            Array<int> n_cell = amr_out_list.get<Array<int> >("n_cell");
+            for (int i=0;i<blocking_factor.size();i++) {
+                
+                for (int n=0;n<ndim;n++) {
+                    if (n_cell[n]%blocking_factor[i] > 0) {
+                        std::stringstream buf;
+                        for (int j=0;j<blocking_factor.size();j++) {
+                            buf << blocking_factor[j] << " ";
+                        }
+                        std::string m; buf >> m;
+                        MyAbort("Number of Cells must be divisible by blocking_factor = " + m);
+                    }
+                }
+            }
+                            
             amr_out_list.set<int>("max_level",max_level);
             amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
             amr_out_list.set<Array<int> >("regrid_int",regrid_int);
