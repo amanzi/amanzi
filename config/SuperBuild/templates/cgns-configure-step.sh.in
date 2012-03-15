@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+# CGNS recommends running with the make configure target
+#5.0.xmake config shared=0 cc=@CMAKE_C_COMPILER@ prefix=@TPL_INSTALL_PREFIX@
+cgns_src_dir=@CGNS_source_dir@
+cgns_prefix=@TPL_INSTALL_PREFIX@
+
+# Compiler and flags
+export CC=@CMAKE_C_COMPILER@
+export CFLAGS='@Amanzi_COMMON_CFLAGS@'
+
+@CGNS_source_dir@/configure \
+                  --prefix=${cgns_prefix} \
+                  --enable-lfs \
+                  --enable-64bit \
+                  --with-fortran=no 
+                  
+
+exit $?

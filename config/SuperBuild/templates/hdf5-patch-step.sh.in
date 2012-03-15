@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Source and build locations
+hdf5_src_dir=@HDF5_source_dir@
+
+patch_file=@SuperBuild_SOURCE_DIR@/cmake/hdf5-cmake-patch.diff
+file_to_patch=${hdf5_src_dir}/CMakeLists.txt
+
+patch ${file_to_patch} ${patch_file}
+exit $?

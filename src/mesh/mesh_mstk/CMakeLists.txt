@@ -42,7 +42,7 @@ add_definitions("-DUSE_MPI -DMSTK_HAVE_MPI")
 set(mstk_mesh_files Mesh_MSTK.cc) 
 add_library(mstk_mesh ${mstk_mesh_files})
 add_install_library(mstk_mesh)
-target_link_libraries(mstk_mesh mesh geometry error_handling ${MSTK_LIBRARIES} ${ExodusII_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+target_link_libraries(mstk_mesh mesh geometry error_handling ${MSTK_LIBRARY} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 #
 # Install Targets

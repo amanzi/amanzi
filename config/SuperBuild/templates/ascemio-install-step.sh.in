@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+cd @ASCEMIO_source_dir@/src
+make ASCEMIO_INSTALL_DIR=@TPL_INSTALL_PREFIX@ install
+make_exit=$?
+
+ranlib @TPL_INSTALL_PREFIX@/lib/libparallelio.a
+
+
+
+exit ${make_exit}

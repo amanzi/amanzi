@@ -35,13 +35,22 @@ set(AMANZI_PYTHON_DIR          "${AMANZI_SOURCE_DIR}/tools/py_lib")
 # Set the module search path so find_package and include commands
 # can locate files in <root source tree>/tools/cmake
 set(AMANZI_MODULE_PATH "${AMANZI_SOURCE_TOOLS_DIR}/cmake")
-set(CMAKE_MODULE_PATH  ${AMANZI_MODULE_PATH})
+set(CMAKE_MODULE_PATH 
+    ${AMANZI_MODULE_PATH}
+    ${AMANZI_MODULE_PATH}/Modules
+    ${AMANZI_MODULE_PATH}/Utils)
 
 # Code version defined
 include(AmanziVersion)
 
 # Addtional build options
 include(AmanziOptions)
+
+# Add the TPL build targets
+option(ENABLE_SuperBuild "Create TPL build targets" OFF)
+if ( ENABLE_SuperBuild )
+  add_subdirectory(config/SuperBuild)
+endif()
 
 # Find required Amanzi TPL
 include(AmanziTPL)

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+# UnitTest Makefile does not have an install target
+
+# Set the make environment variables
+export LDFLAGS='-L@TPL_INSTALL_PREFIX@/lib'
+export CXXFLAGS='@Amanzi_COMMON_CXXFLAGS@'
+
+# Directory Definitions
+unittest_src_dir=@UnitTest_source_dir@
+unittest_lib_dir=@TPL_INSTALL_PREFIX@/lib
+unittest_include_dir=@TPL_INSTALL_PREFIX@/include/unittest++
+
+# Create the install directories
+if [ ! -e ${unittest_lib_dir} ]; then mkdir -p ${unittest_lib_dir}; fi
+if [ ! -e ${unittest_include_dir} ]; then mkdir -p ${unittest_include_dir}; fi
+if [ ! -e ${unittest_include_dir}/Posix ]; then mkdir -p ${unittest_include_dir}/Posix; fi
+
+cd ${unittest_src_dir}
+
+# Copy the library
+echo "Copying the library to ${unittest_lib_dir}"
+cp libUnitTest++.a ${unittest_lib_dir}
+
+# Copy the include files
+echo "Copying include files to ${unittest_include_dir}"
+cp src/*.h ${unittest_include_dir}
+echo "Copying include files to ${unittest_include_dir}/Posix"
+cp src/Posix/*.h ${unittest_include_dir}/Posix

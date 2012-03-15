@@ -894,9 +894,9 @@ function build_mstk {
     	    -D CMAKE_BUILD_TYPE:STRING=Release \
     	    -D ENABLE_PARALLEL=yes \
     	    -D ENABLE_ExodusII=yes \
+	    -D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \
     	    -D NetCDF_DIR:FILEPATH=${NETCDF_PREFIX} \
     	    -D ExodusII_DIR:FILEPATH=${EXODUS_PREFIX} \
-	    -D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \
     	    -D Metis_DIR:FILEPATH=${METIS_PREFIX} \
     	    -D METIS_LIB_DIR:FILEPATH=${METIS_PREFIX}/lib \
     	    -D Metis_INCLUDE_DIR:FILEPATH=${METIS_PREFIX}/include \
