@@ -499,15 +499,16 @@ if ( NOT HDF5_FIND_QUIETLY )
   # Create a not found list
 
   message(STATUS "HDF5 Version: ${HDF5_VERSION}")
-  message(STATUS "\tHDF5_INCLUDE_DIRS      =${HDF5_INCLUDE_DIRS}")
-  message(STATUS "\tHDF5_LIBRARIES         =${HDF5_LIBRARIES}")
-  message(STATUS "\tHDF5_LINK_LIBRARIES    =${HDF5_LINK_LIBRARIES}")
-  message(STATUS "\tHDF5_IS_PARALLEL       =${HDF5_IS_PARALLEL}")
+  #message(STATUS "\tHDF5_INCLUDE_DIRS      =${HDF5_INCLUDE_DIRS}")
+  #message(STATUS "\tHDF5_LIBRARIES         =${HDF5_LIBRARIES}")
+  #message(STATUS "\tHDF5_LINK_LIBRARIES    =${HDF5_LINK_LIBRARIES}")
+  #message(STATUS "\tHDF5_IS_PARALLEL       =${HDF5_IS_PARALLEL}")
   message(STATUS "\tFound the following component libraries")
   set(HDF5_COMPONENTS_NOTFOUND)
   foreach (_component ${HDF5_VALID_COMPONENTS} )
     if ( HDF5_${_component}_FOUND )
-      message(STATUS "\t  HDF5_${_component}_LIBRARY\t\t=${HDF5_${_component}_LIBRARY}")
+	#message(STATUS "\t  HDF5_${_component}_LIBRARY\t\t=${HDF5_${_component}_LIBRARY}")
+	message(STATUS "\t${HDF5_${_component}_LIBRARY}")
     else()   
       list(APPEND HDF5_COMPONENTS_NOTFOUND ${_component})
     endif()
@@ -518,14 +519,7 @@ if ( NOT HDF5_FIND_QUIETLY )
 
 endif()
 
-# DEBUG prints
-print_variable(HDF5_VERSION)
-print_variable(HDF5_INCLUDE_DIRS)
-print_variable(HDF5_LIBRARIES)
-set(CMAKE_VERSION "${CMAKE_CACHE_MAJOR_VERSION}.${CMAKE_CACHE_MINOR_VERSION}.${CMAKE_CACHE_PATCH_VERSION}")
-print_variable(CMAKE_VERSION)
-
-find_package_handle_standard_args( HDF5 
-                                   REQUIRED_VARS HDF5_INCLUDE_DIRS HDF5_LIBRARIES
-                                   VERSION_VAR   HDF5_VERSION
-)
+find_package_handle_standard_args( HDF5 DFLT_MESSAGE
+                                   HDF5_INCLUDE_DIRS
+				   HDF5_LIBRARIES
+				   HDF5_VERSION)
