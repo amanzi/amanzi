@@ -1,0 +1,30 @@
+# pflotran database preprocessing :
+#        date : 20120314e   192630.223
+#       input : ascem-2012-waste-tanks-batch.in
+
+<Primary Species
+Pu_238  ;   1.00 ;   0.00 ; 238.00
+U_234  ;   1.00 ;   0.00 ; 234.00
+Th_230  ;   1.00 ;   0.00 ; 230.00
+Ra_226  ;   1.00 ;   0.00 ; 226.00
+Pb_210  ;   1.00 ;   0.00 ; 210.00
+
+<Aqueous Equilibrium Complexes
+
+<General Kinetics
+  1.00 Pu_238 <->   1.00 U_234 ;   1.00 Pu_238 ;  -2.50000E-10 ;   1.00 U_234 ;   0.00000E+00
+  1.00 U_234 <->   1.00 Th_230 ;   1.00 U_234 ;  -8.90000E-14 ;   1.00 Th_230 ;   0.00000E+00
+  1.00 Th_230 <->   1.00 Ra_226 ;   1.00 Th_230 ;  -2.90000E-13 ;   1.00 Ra_226 ;   0.00000E+00
+  1.00 Ra_226 <->   1.00 Pb_210 ;   1.00 Ra_226 ;  -1.40000E-11 ;   1.00 Pb_210 ;   0.00000E+00
+
+<Minerals
+
+<Mineral Kinetics
+
+<Ion Exchange Sites
+
+<Ion Exchange Complexes
+
+<Surface Complex Sites
+
+<Surface Complexes
