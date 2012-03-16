@@ -6,6 +6,16 @@
 #
 #
 
+#
+# TPL: OpenMPI
+#
+set(OpenMPI_VERSION_MAJOR 1)
+set(OpenMPI_VERSION_MINOR 4)
+set(OpenMPI_VERSION_PATCH 4)
+set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
+set(OpenMPI_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
+set(OpenMPI_MD5_SUM        e58a1ea7b8af62453aaa0ddaee5f26a0) 
 
 #
 # TPL: CURL
