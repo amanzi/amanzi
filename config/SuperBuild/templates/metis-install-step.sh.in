@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+# METIS recommends running with the make configure target
+cd @METIS_source_dir@
+#5.0.xmake install
+
+# Manual install required for 4.0.x versions
+metis_lib_dir=@TPL_INSTALL_PREFIX@/lib
+metis_include_dir=@TPL_INSTALL_PREFIX@/include
+metis_bin_dir=@TPL_INSTALL_PREFIX@/bin
+if [ ! -e ${metis_lib_dir} ]; then mkdir -p ${metis_lib_dir} ; fi
+if [ ! -e ${metis_include_dir} ]; then mkdir -p ${metis_include_dir} ; fi
+if [ ! -e ${metis_bin_dir} ]; then mkdir -p ${metis_bin_dir} ; fi
+
+
+cp pmetis kmetis oemetis onmetis partnmesh partdmesh mesh2nodal mesh2dual graphchk ${metis_bin_dir}
+cp libmetis.a ${metis_lib_dir}
+cp Lib/defs.h Lib/metis.h Lib/rename.h Lib/macros.h Lib/proto.h Lib/struct.h ${metis_include_dir}
+
+
+
+
+
+
+exit $?

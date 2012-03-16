@@ -52,6 +52,7 @@ add_definitions("-DUSE_MPI")
 file(GLOB output_source_files "gmv*.c" "gmv*.cc")
 set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
+# HDF5 serial test, HDF5 now required so always enables
 file(GLOB hdf5_source "hdf5_mesh*.cc")
 list(APPEND output_source_files "${hdf5_source}")
 list(APPEND output_tpl_list ${HDF5_LIBRARIES})

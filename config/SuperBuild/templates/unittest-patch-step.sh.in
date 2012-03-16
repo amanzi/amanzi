@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Change the compiler, C++ flags
+cxx_compiler=@CMAKE_CXX_COMPILER@
+cxx_flags='@Amanzi_COMMON_CXXFLAGS@'
+
+# Set the Makefile
+make_file=@UnitTest_source_dir@/Makefile
+
+echo "Patching file ${make_file}"
+@PERL_EXECUTABLE@ -w -i -p -e "s:^CXX[\s]{0,}=.*:CXX = ${cxx_compiler}:" ${make_file}
+@PERL_EXECUTABLE@ -w -i -p -e "s:^CXXFLAGS[\s]{0,}\?=.*:CXXFLAGS ?= ${cxx_flags}:" ${make_file}
+
+exit $?

@@ -1,0 +1,18 @@
+# CMake METIS configure file
+
+# Now run the patch script
+execute_process(
+  COMMAND sh @METIS_sh_configure@
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY "@METIS_source_dir@"
+)
+
+if (result)
+  set(msg "METIS configure command failed")
+  foreach(arg IN LISTS command )
+    set(msg "${msg} '${arg}'")
+  endforeach()
+  message(FATAL_ERROR ${msg})
+endif()  
+
+              

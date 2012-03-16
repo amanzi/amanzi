@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Source and build locations
+exodusii_src_dir=@ExodusII_source_dir@/exodus
+exodusii_build_dir=@ExodusII_build_dir@
+
+# NETCDF
+export NETCDF_DIR=@TPL_INSTALL_PREFIX@
+netcdf_library=@CMAKE_STATIC_LIBRARY_PREFIX@netcdf@CMAKE_STATIC_LIBRARY_SUFFIX@
+netcdf_ncdump=@TPL_INSTALL_PREFIX@/bin/ncdump
+
+# HDF5
+hdf5_library=@TPL_INSTALL_PREFIX@/lib/@CMAKE_STATIC_LIBRARY_PREFIX@hdf5@CMAKE_STATIC_LIBRARY_SUFFIX@
+hdf5hl_library=@TPL_INSTALL_PREFIX@/lib/@CMAKE_STATIC_LIBRARY_PREFIX@hdf5_hl@CMAKE_STATIC_LIBRARY_SUFFIX@
+
+# Common CMake Arguments
+cmake_args='@common_cmake_args@'
+
+cd ${exodusii_build_dir}
+
+cmake   \
+      -D CMAKE_INSTALL_PREFIX=@TPL_INSTALL_PREFIX@ \
+      -D CMAKE_C_COMPILER=@CMAKE_C_COMPILER@ \
+      -D CMAKE_CXX_COMPILER=@CMAKE_CXX_COMPILER@ \
+      -D CMAKE_BUILD_TYPE=@CMAKE_BUILD_TYPE@ \
+      -D CMAKE_C_FLAGS='@Amanzi_COMMON_CFLAGS@' \
+      -D CMAKE_CXX_FLAGS='@Amanzi_COMMON_CXXFLAGS@' \
+      -D NETCDF_INCLUDE_DIR=@TPL_INSTALL_PREFIX@/include \
+      -D NETCDF_LIBRARY=@TPL_INSTALL_PREFIX@/lib/${netcdf_library} \
+      -D NETCDF_NCDUMP=${netcdf_ncdump} \
+      -D HDF5_LIBRARY=${hdf5_library} \
+      -D HDF5HL_LIBRARY=${hdf5hl_library} \
+      -D BUILD_TESTING:BOOL=OFF \
+      ${exodusii_src_dir}
+exit $?

@@ -1,0 +1,8 @@
+# CMake ASCEMIO configure file
+
+# Now run the patch script
+execute_process(
+  COMMAND sh @ASCEMIO_sh_install@
+  WORKING_DIRECTORY "@ASCEMIO_source_dir@"
+)
+               

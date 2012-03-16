@@ -115,7 +115,7 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
         if (EXISTS "${MSTK_LIBRARY_DIR}")
 
-            find_library(MSTK_LIBRARY
+            find_library(_MSTK_LIBRARY
                          NAMES ${mstk_lib_names}
                          HINTS ${MSTK_LIBRARY_DIR}
                          NO_DEFAULT_PATH)
@@ -131,7 +131,7 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
             if (EXISTS "${MSTK_DIR}" )
 
-                find_library(MSTK_LIBRARY
+                find_library(_MSTK_LIBRARY
                              NAMES ${mstk_lib_names}
                              HINTS ${MSTK_DIR}
                              PATH_SUFFIXES ${mstk_lib_suffixes}
@@ -139,13 +139,13 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
             else()
                  message(SEND_ERROR "MSTK_DIR=${MSTK_DIR} does not exist")
-                 set(MSTKLIBRARY "MSTK_LIBRARY-NOTFOUND")
+                 set(_MSTK_LIBRARY _MSTK_LIBRARY-NOTFOUND)
             endif()    
 
 
         else()
 
-            find_library(MSTK_LIBRARY
+            find_library(_MSTK_LIBRARY
                          NAMES ${mstk_lib_names}
                          PATH_SUFFIXES ${mstk_lib_suffixes})
 
@@ -153,23 +153,44 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
     endif()
 
-    if ( NOT MSTK_LIBRARY )
+    # Create the target
+    if ( _MSTK_LIBRARY )
+        set(MSTK_LIBRARY mstk)
+	add_imported_library(${MSTK_LIBRARY}
+	                     LOCATION ${_MSTK_LIBRARY}
+			     LINK_LANGUAGES "C")
+    else()			   
         message(SEND_ERROR "Can not locate MSTK library")
     endif()    
 
    
-    # Define prerequisite packages
+    # Update the INCLUDE_DIRS and LIBRARIES variables
     set(MSTK_INCLUDE_DIRS ${MSTK_INCLUDE_DIR})
     set(MSTK_LIBRARIES    ${MSTK_LIBRARY})
 
+    # Define the dependent libs
+    set(_MSTK_DEP_LIBS)
+
+    # MSTK depends on ExodusII
+    find_package(ExodusII QUIET REQUIRED)
+    list(APPEND MSTK_INCLUDE_DIRS ${ExodusII_INCLUDE_DIRS})			
+    list(APPEND _MSTK_DEP_LIBS ${ExodusII_LIBRARY})
+
+    # And METIS
+    find_package(METIS QUIET REQUIRED)
+    list(APPEND MSTK_INCLUDE_DIR ${METIS_INCLUDE_DIRS})
+    list(APPEND _MSTK_DEP_LIBS ${METIS_LIBRARIES})
+
+    set_target_properties(${MSTK_LIBRARY} PROPERTIES
+                          IMPORTED_LINK_INTERFACE_LIBRARIES "${_MSTK_DEP_LIBS}")
     # MSTK requires METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
-    add_package_dependency(MSTK DEPENDS_ON METIS)
+    #add_package_dependency(MSTK DEPENDS_ON METIS)
     
     # MSTK depends on ExodusII
-    add_package_dependency(MSTK DEPENDS_ON ExodusII)
+    #add_package_dependency(MSTK DEPENDS_ON ExodusII)
 
     # MSTK depends on NetCDF
-    add_package_dependency(MSTK DEPENDS_ON NetCDF)
+    #add_package_dependency(MSTK DEPENDS_ON NetCDF)
    
 endif(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS )    
 
