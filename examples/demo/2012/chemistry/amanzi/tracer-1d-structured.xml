@@ -14,17 +14,17 @@
 
 
   <ParameterList name="Execution Control">
-    <Parameter name="Verbosity" type="string" value="Expert"/>
+    <Parameter name="Verbosity" type="string" value="Medium"/>
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
         <Parameter name="Start" type="double" value="0"/>
-        <Parameter name="End" type="double" value="100"/>
+        <Parameter name="End" type="double" value="3.16e7"/>
         <Parameter name="Initial Time Step Multiplier" type="double" value="0.01"/>
         <Parameter name="Maximum Time Step Change" type="double" value="1.1"/>
-        <Parameter name="Maximum Time Step Size" type="double" value="0.5"/>
+        <Parameter name="Maximum Time Step Size" type="double" value="86400.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -54,8 +54,8 @@
         <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="1.e-7"/>
-        <Parameter name="Vertical" type="double" value="1.e-7"/>
+        <Parameter name="Horizontal" type="double" value="1.94e-13"/>
+        <Parameter name="Vertical" type="double" value="1.94e-13"/>
       </ParameterList>
       <!--LVZ soil-->
       <ParameterList name="Capillary Pressure: van Genuchten">
