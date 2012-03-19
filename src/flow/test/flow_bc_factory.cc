@@ -22,13 +22,14 @@ int main (int argc, char *argv[])
   return UnitTest::RunAllTests ();
 }
 
+
 struct bits_and_pieces
 {
   Epetra_MpiComm *comm;
   Teuchos::RCP<Mesh> mesh;
   GeometricModel *gm;
   
-  enum Side { LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP };
+  enum Side {LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP};
   
   bits_and_pieces()
   {
@@ -63,6 +64,7 @@ struct bits_and_pieces
   }
 };
 
+
 TEST_FIXTURE(bits_and_pieces, pressure_empty)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -74,7 +76,9 @@ TEST_FIXTURE(bits_and_pieces, pressure_empty)
   BoundaryFunction* bc = bc_fact.createPressure();
   bc->Compute(0.0);
   CHECK(bc->end() == bc->begin());
+  delete bc;
 }
+
 
 TEST_FIXTURE(bits_and_pieces, pressure)
 {
@@ -88,7 +92,9 @@ TEST_FIXTURE(bits_and_pieces, pressure)
   BoundaryFunction* bc = bc_fact.createPressure();
   bc->Compute(0.0);
   CHECK_EQUAL(12, bc->size());
+  delete bc;
 }
+
 
 SUITE(pressure_bad_param) {
   TEST_FIXTURE(bits_and_pieces, pressure_not_list)
@@ -99,6 +105,7 @@ SUITE(pressure_bad_param) {
     //BoundaryFunction *bc = bc_fact.createPressure();
     CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
   }
+
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
   {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
@@ -107,6 +114,7 @@ SUITE(pressure_bad_param) {
     //BoundaryFunction *bc = bc_fact.createPressure();
     CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
   }
+
   TEST_FIXTURE(bits_and_pieces, bad_region)
   {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
@@ -120,6 +128,7 @@ SUITE(pressure_bad_param) {
     //BoundaryFunction* bc = bc_fact.createPressure();
     CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
   }
+
   TEST_FIXTURE(bits_and_pieces, bad_function)
   {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
@@ -173,17 +182,17 @@ SUITE(mass_flux_bad_param) {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
     params->set("pressure",0); // wrong -- this should be a sublist
     FlowBCFactory bc_fact(mesh, params);
-    //BoundaryFunction* bc = bc_fact.createPressure();
     CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(),Errors::Message);
   }
+
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
   {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
     params->sublist("pressure").set("fubar", 0); // wrong -- expecting only sublists
     FlowBCFactory bc_fact(mesh, params);
-    //BoundaryFunction* bc = bc_fact.createPressure();
     CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
   }
+
   TEST_FIXTURE(bits_and_pieces, bad_region)
   {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
@@ -191,12 +200,11 @@ SUITE(mass_flux_bad_param) {
     foo.sublist("boundary pressure").sublist("function-constant").set("value",0.0);
     // wrong - missing Regions parameter
     FlowBCFactory bc_fact(mesh, params);
-    //BoundaryFunction* bc = bc_fact.createPressure();
     CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
     foo.set("regions",0.0); // wrong -- type should be Array<string>
-    //BoundaryFunction* bc = bc_fact.createPressure();
     CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
   }
+
   TEST_FIXTURE(bits_and_pieces, bad_function)
   {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);

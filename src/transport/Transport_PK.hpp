@@ -110,6 +110,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void print_statistics() const;
   void writeGMVfile(Teuchos::RCP<Transport_State> TS) const;
+  double bestL2fit(const std::vector<double>& h, const std::vector<double>& error);
  
  private:
   // advection routines

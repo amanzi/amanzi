@@ -5,8 +5,8 @@
 
 namespace Amanzi {
 
-void BoundaryFunction::Define (const std::vector<std::string> &regions,
-                               const Teuchos::RCP<const Function> &f)
+void BoundaryFunction::Define(const std::vector<std::string> &regions,
+                              const Teuchos::RCP<const Function> &f)
 {
   // Form the set of face indices that belong to any of the given regions.
   // We use a std::set here to filter out any duplicate indices.
@@ -48,11 +48,13 @@ void BoundaryFunction::Define (const std::vector<std::string> &regions,
   for (Domain::const_iterator d = this_domain.begin(); d != this_domain.end(); ++d) value_[*d];
 }
 
-void BoundaryFunction::Define (const std::string region, const Teuchos::RCP<const Function> &f)
+
+void BoundaryFunction::Define(const std::string region, const Teuchos::RCP<const Function> &f)
 {
   std::vector<std::string> regions(1,region);
   Define(regions, f);
 }
+
 
 void BoundaryFunction::Compute(double t)
 {
