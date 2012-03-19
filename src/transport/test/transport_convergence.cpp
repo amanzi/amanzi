@@ -49,6 +49,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   string xmlFileName = "test/transport_convergence.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
+  // convergence estimate
+  std::vector<double> h;
+  std::vector<double> L1error, L2error;
+
   for (int nx=20; nx<321; nx*=2 ) {
     // create an MSTK mesh framework 
     ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
@@ -97,8 +101,19 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
+    h.push_back(5.0 / nx);
+    L1error.push_back(L1);
+    L2error.push_back(L2);
+
     delete gm;
   }
+
+  double L1rate = Amanzi::AmanziTransport::bestLSfit(h, L1error);
+  double L2rate = Amanzi::AmanziTransport::bestLSfit(h, L2error);
+  printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
+
+  CHECK_CLOSE(L1rate, 1.0, 0.1);
+  CHECK_CLOSE(L2rate, 1.0, 0.1);
 
   delete comm;
 }
@@ -123,6 +138,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
+  // convergence estimate
+  std::vector<double> h;
+  std::vector<double> L1error, L2error;
+
   for (int nx=10; nx<81; nx*=2 ) {
     RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, (const Epetra_MpiComm *)comm, gm)); 
 
@@ -175,7 +194,18 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     double L1, L2;  // L1 and L2 errors
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
     printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
+
+    h.push_back(5.0 / nx);
+    L1error.push_back(L1);
+    L2error.push_back(L2);
   }
+
+  double L1rate = Amanzi::AmanziTransport::bestLSfit(h, L1error);
+  double L2rate = Amanzi::AmanziTransport::bestLSfit(h, L2error);
+  printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
+
+  CHECK_CLOSE(L1rate, 2.0, 0.3);
+  CHECK_CLOSE(L2rate, 2.0, 0.4);
 
   delete gm;
   delete comm;

@@ -162,7 +162,7 @@ void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
 
 
 /* *******************************************************************
- * Check that te tracer is between 0 and 1                         
+ * Check that the tracer is between 0 and 1.                        
  ****************************************************************** */
 void Transport_PK::check_tracer_bounds(Epetra_MultiVector& tracer, 
                                        int component,
@@ -195,9 +195,9 @@ void Transport_PK::check_tracer_bounds(Epetra_MultiVector& tracer,
 
 
 /* *******************************************************************
- * Check that te tracer is between 0 and 1                         
+ * Calculates best least square fit for data (h[i], error[i]).                       
  ****************************************************************** */
-double Transport_PK::bestL2fit(const std::vector<double>& h, const std::vector<double>& error)
+double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 {
   double a = 0.0, b = 0.0, c = 0.0, d = 0.0, tmp1, tmp2;
 

@@ -74,6 +74,8 @@ const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
+double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
+
 
 class Transport_PK : public Explicit_TI::fnBase {
  public:
@@ -110,7 +112,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void print_statistics() const;
   void writeGMVfile(Teuchos::RCP<Transport_State> TS) const;
-  double bestL2fit(const std::vector<double>& h, const std::vector<double>& error);
  
  private:
   // advection routines
