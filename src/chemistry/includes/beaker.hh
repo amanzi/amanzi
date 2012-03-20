@@ -165,6 +165,7 @@ class Beaker {
   void DisplayIonExchangeComplexes(void) const;
   void DisplaySurfaceSites(void) const;
   void DisplaySurfaceComplexes(void) const;
+  void DisplaySorptionIsotherms(void) const;
   void DisplayComponents(const BeakerComponents& components) const;
   void DisplayTotalColumnHeaders(void) const;
   void DisplayTotalColumns(const double time, const std::vector<double>& total) const;

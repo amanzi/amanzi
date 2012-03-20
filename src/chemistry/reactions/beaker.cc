@@ -73,7 +73,7 @@ Beaker::Beaker()
   generalKineticRxns_.clear();
   mineral_rates_.clear();
   ion_exchange_rxns_.clear();
-
+  sorption_isotherm_rxns_.clear();
   total_.clear();
   total_sorbed_.clear();
 }  // end Beaker() constructor
@@ -92,6 +92,15 @@ Beaker::~Beaker() {
       delete(*rate);
     }
   }
+
+  if (sorption_isotherm_rxns_.size() != 0) {
+    std::vector<SorptionIsothermRxn>::iterator rxn;
+    for (rxn = sorption_isotherm_rxns_.begin(); 
+         rxn != sorption_isotherm_rxns_.end(); ++rxn) {
+      rxn->CleanMemory();
+    }
+  }
+
 #ifdef GLENN
   delete solver;
 #endif
@@ -1168,6 +1177,8 @@ void Beaker::Display(void) const {
 
   DisplaySurfaceComplexes();
 
+  DisplaySorptionIsotherms();
+
   std::cout << "------------------------------------------------ Beaker description --"
             << std::endl;
 }  // end Display()
@@ -1326,6 +1337,22 @@ void Beaker::DisplaySurfaceComplexes(void) const {
     for (s = surfaceComplexationRxns_.begin();
          s != surfaceComplexationRxns_.end(); s++) {
       s->DisplayComplexes();
+    }
+    std::cout << std::endl;
+  }
+}  // end DisplaySurfaceComplexes()
+
+void Beaker::DisplaySorptionIsotherms(void) const {
+  if (total_sorbed_.size() > 0) {
+    std::cout << "---- Equilibrium Sorption Isotherms" << std::endl;
+    std::cout << std::setw(12) << "Species"
+              << std::setw(15) << "isotherm"
+              << std::setw(15) << "parameters"
+              << std::endl;
+    std::vector<SorptionIsothermRxn>::const_iterator s;
+    for (s = sorption_isotherm_rxns_.begin();
+         s != sorption_isotherm_rxns_.end(); s++) {
+      s->Display();
     }
     std::cout << std::endl;
   }

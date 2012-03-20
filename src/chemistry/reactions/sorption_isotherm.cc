@@ -8,7 +8,9 @@
 namespace amanzi {
 namespace chemistry {
 
-SorptionIsotherm::SorptionIsotherm() {
+SorptionIsotherm::SorptionIsotherm(const std::string name)
+    : name_(name) {
+
 }  // end SorptionIsotherm() constructor
 
 SorptionIsotherm::~SorptionIsotherm() {

@@ -9,13 +9,15 @@ namespace amanzi {
 namespace chemistry {
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich()
-    : KD_(0.), 
+    : SorptionIsotherm("freundlich"),
+      KD_(0.), 
       one_over_n_(0.) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich(const double KD, 
                                                        const double one_over_n)
-    : KD_(KD), 
+    : SorptionIsotherm("freundlich"),
+      KD_(KD), 
       one_over_n_(one_over_n) {
 }  // end SorptionIsothermLangmuir() constructor
 
