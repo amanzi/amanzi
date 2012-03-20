@@ -86,6 +86,7 @@
 
 # (To distributed this file outside of CMake, substitute the full
 #  License text for the above reference.)
+include(PrintVariable)
 
 get_property(_LANGUAGES_ GLOBAL PROPERTY ENABLED_LANGUAGES)
 if(NOT _LANGUAGES_ MATCHES Fortran)
@@ -148,16 +149,21 @@ endif()
 set(_libraries_work TRUE)
 set(${LIBRARIES})
 set(_combined_name)
+print_variable(_list)
 foreach(_library ${_list})
+
   set(_combined_name ${_combined_name}_${_library})
 
   if(_libraries_work)
 
     if ( BLA_VENDOR_PATH )
+      print_variable(BLA_VENDOR_PATH)
+      print_variable(_library)
       find_library(${_prefix}_${_library}_LIBRARY
 	           NAMES ${_library}
-		   HINTS ${BLA_VENDOR_PATH}
+		   PATHS ${BLA_VENDOR_PATH}
 		   NO_DEFAULT_PATHS)
+      print_variable(${_prefix}_${_library}_LIBRARY)
     endif()
     
     find_library(${_prefix}_${_library}_LIBRARY
@@ -213,7 +219,7 @@ endif(_libraries_work)
 if(NOT _libraries_work)
   set(${LIBRARIES} FALSE)
 endif(NOT _libraries_work)
-#message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
+message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
 endmacro(Check_Fortran_Libraries)
 
 set(BLAS_LINKER_FLAGS)
