@@ -23,7 +23,9 @@ us to the air-water system.
 #include "bdf_time_integrator.hh"
 #include "bdf_fn_base.hh"
 
+#include "twophase_thermal_conductivity.hh"
 #include "advection.hh"
+#include "matrix_mfd.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -82,21 +84,36 @@ private:
   void InternalEnergyRock_(const CompositeVector& temp,
                             const Teuchos::RCP<CompositeVector>& int_energy_rock);
 
+  void SpecificEnthalpyLiquid_(const CompositeVector& int_energy_liquid,
+          const CompositeVector& pres, const CompositeVector& mol_dens_liq,
+          const Teuchos::RCP<CompositeVector>& spec_enthalpy_liq);
+
   void ThermalConductivity_(const CompositeVector& porosity,
                            const CompositeVector& saturation_liquid,
-                           const Teuchos::RCP<CompositeVector>& conductivity_e);
+                           const Teuchos::RCP<CompositeVector>& thermal_conductivity);
 
-  void UpdateSecondaryVariables_();
+  // helper methods for calling the above methods
+  void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
+  void UpdateThermalConductivity_(const Teuchos::RCP<State>& S);
+  void UpdateSpecificEnthalpyLiquid_(const Teuchos::RCP<State>& S);
+
   void AddAccumulation_(Teuchos::RCP<CompositeVector> f);
   void AddAdvection_(Teuchos::RCP<CompositeVector> f);
-
+  void ApplyConduction_(Teuchos::RCP<CompositeVector> f);
 
   // misc setup information
   Teuchos::ParameterList energy_plist_;
   double dt_;
 
+  // constitutive relations
+  Teuchos::RCP<EnergyRelations::TwophaseThermalConductivity> thermal_conductivity_model_;
+  Teuchos::RCP<EnergyRelations::InternalEnergyGas> internal_energy_gas_model_;
+
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
+  Teuchos::RCP<Operators::MatrixMFD> matrix_;
+  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  std::vector<WhetStone::Tensor> Ke_; // thermal conductivity, needed as tensor for MFD
 
   // time integration
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;

@@ -12,8 +12,10 @@ add_subdirectory(transport)
 
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constant_temperature)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
+include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/air_water_rock)
 
 add_library(pks PK_Factory.cc)

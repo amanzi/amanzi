@@ -12,43 +12,48 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-void AirWaterRock::UpdateSecondaryVariables_() {
+void AirWaterRock::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
   // get needed variables
-  Teuchos::RCP<const CompositeVector> temp_old =
-    S_inter_->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> temp_new =
-    S_next_->GetFieldData("temperature");
-
-  Teuchos::RCP<const CompositeVector> mol_frac_gas_old =
-    S_inter_->GetFieldData("mol_frac_gas");
-  Teuchos::RCP<const CompositeVector> mol_frac_gas_new =
-    S_next_->GetFieldData("mol_frac_gas");
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas");
 
   // and the secondary variables to be calculated
-  Teuchos::RCP<CompositeVector> internal_energy_gas_old =
-    S_inter_->GetFieldData("internal_energy_gas", "energy");
-  Teuchos::RCP<CompositeVector> internal_energy_gas_new =
-    S_next_->GetFieldData("internal_energy_gas", "energy");
-
-  Teuchos::RCP<CompositeVector> internal_energy_liquid_old =
-    S_inter_->GetFieldData("internal_energy_liquid", "energy");
-  Teuchos::RCP<CompositeVector> internal_energy_liquid_new =
-    S_next_->GetFieldData("internal_energy_liquid", "energy");
-
-  Teuchos::RCP<CompositeVector> internal_energy_rock_old =
-    S_inter_->GetFieldData("internal_energy_rock", "energy");
-  Teuchos::RCP<CompositeVector> internal_energy_rock_new =
-    S_next_->GetFieldData("internal_energy_rock", "energy");
+  Teuchos::RCP<CompositeVector> int_energy_gas =
+    S->GetFieldData("internal_energy_gas", "energy");
+  Teuchos::RCP<CompositeVector> int_energy_liquid =
+    S->GetFieldData("internal_energy_liquid", "energy");
+  Teuchos::RCP<CompositeVector> int_energy_rock =
+    S->GetFieldData("internal_energy_rock", "energy");
 
   // update secondary variables
-  InternalEnergyGas_(*temp_old, *mol_frac_gas_old, internal_energy_gas_old);
-  InternalEnergyGas_(*temp_new, *mol_frac_gas_new, internal_energy_gas_new);
+  InternalEnergyGas_(*temp, *mol_frac_gas, int_energy_gas);
+  InternalEnergyLiquid_(*temp, int_energy_liquid);
+  InternalEnergyRock_(*temp, int_energy_rock);
 
-  InternalEnergyLiquid_(*temp_old, internal_energy_liquid_old);
-  InternalEnergyLiquid_(*temp_new, internal_energy_liquid_new);
+};
 
-  InternalEnergyRock_(*temp_old, internal_energy_rock_old);
-  InternalEnergyRock_(*temp_new, internal_energy_rock_new);
+void AirWaterRock::UpdateSpecificEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<const CompositeVector> mol_dens_liq = S->GetFieldData("mol_dens_liquid");
+  Teuchos::RCP<const CompositeVector> int_energy_liquid =
+    S->GetFieldData("internal_energy_liquid");
+
+  Teuchos::RCP<CompositeVector> spec_enthalpy_liq =
+    S->GetFieldData("specific_enthalpy_liquid", "energy");
+
+  // update enthalpy of liquid
+  SpecificEnthalpyLiquid_(*int_energy_liquid, *pres, *mol_dens_liq, spec_enthalpy_liq);
+};
+
+void AirWaterRock::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> poro =
+    S->GetFieldData("porosity");
+  Teuchos::RCP<const CompositeVector> sat_liq =
+    S->GetFieldData("saturation_liquid");
+  Teuchos::RCP<CompositeVector> thermal_conductivity =
+    S_next_->GetFieldData("thermal_conductivity", "energy");
+
+  ThermalConductivity_(*poro, *sat_liq, thermal_conductivity);
 };
 
 void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
@@ -105,6 +110,7 @@ void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
   int c_min = S_->mesh()->cell_map(true).MinLID();
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=c_min; c != c_min+c_owned; ++c) {
+    // calculte the energy density at the old and new times
     double edens_liq1 = (*density_liq1)(c) * (*sat_liq1)(c) *
       (*int_energy_liq1)(c);
     double edens_gas1 = (*density_gas1)(c) * (*sat_gas1)(c) *
@@ -121,31 +127,54 @@ void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
     double energy0 = ((*poro0)(c) * (edens_gas0 + edens_liq0) +
                       (0-(*poro0)(c)) * (edens_rock0)) * (*cell_volume0)(c);
 
+    // add the time derivative of energy density to the residual
     (*f)("cell",0,c) += (energy1 - energy0)/dt;
   }
-}
+};
 
 void AirWaterRock::AddAdvection_(Teuchos::RCP<CompositeVector> f) {
   Teuchos::RCP<CompositeVector> field = advection_->field();
 
   // stuff density_liquid * enthalpy_liquid into the field cells
-  field->ViewComponent("cell")->PutScalar(0);
-
   Teuchos::RCP<const CompositeVector> density_liq =
     S_next_->GetFieldData("density_liquid");
+
+  UpdateSpecificEnthalpyLiquid_(S_next_);
   Teuchos::RCP<const CompositeVector> enthalpy_liq =
     S_next_->GetFieldData("specific_enthalpy_liquid");
 
+  field->ViewComponent("cell")->PutScalar(0);
   int c_min = S_->mesh()->cell_map(true).MinLID();
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=c_min; c != c_min+c_owned; ++c) {
     (*field)("cell",c) = (*density_liq)(c)*(*enthalpy_liq)(c);
   }
 
+  // apply the advection operator and add to residual
   advection_->Apply();
   for (int c=c_min; c != c_min+c_owned; ++c) {
     (*f)("cell",c) += (*field)("cell",c);
   }
+};
+
+void AirWaterRock::ApplyConduction_(Teuchos::RCP<CompositeVector> f) {
+  // compute the stiffness matrix at the new time
+  Teuchos::RCP<const CompositeVector> temp =
+    S_next_->GetFieldData("temperature");
+
+  // get conductivity, and push it into whetstone tensor
+  UpdateThermalConductivity_(S_next_);
+  Teuchos::RCP<CompositeVector> thermal_conductivity =
+    S_next_->GetFieldData("thermal_conductivity", "energy");
+
+  for (int c=0; c != Ke_.size(); ++c) {
+    Ke_[c](0,0) = (*thermal_conductivity)("cell", c);
+  }
+
+  // calculate the div-grad operator, apply it to temperature, and add to residual
+  matrix_->CreateMFDstiffnessMatrices(Ke_, *thermal_conductivity);
+  matrix_->CreateMFDrhsVectors();
+  matrix_->ComputeNegativeResidual(*temp, f);
 };
 
 } //namespace Energy

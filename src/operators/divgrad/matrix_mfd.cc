@@ -9,16 +9,27 @@
 #include "matrix_mfd.hh"
 
 namespace Amanzi {
-namespace Operator {
+namespace Operators {
+
+MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+    plist_(plist), mesh_(mesh) {
+  std::string methodstring = plist.get<string>("MFD method");
+
+  if (methodstring == "polyhedra") {
+    method_ = MFD_POLYHEDRA;
+  } else if (methodstring == "polyhedra monotone") {
+    method_ = MFD_POLYHEDRA_MONOTONE;
+  } else if (methodstring == "hexahedra monotone") {
+    method_ = MFD_HEXAHEDRA_MONOTONE;
+  }
+}
 
 // main computational methods
-
 /* ******************************************************************
  * Calculate elemental inverse mass matrices.
  * WARNING: The original Aff_ matrices are destroyed.
  ****************************************************************** */
-void MatrixMFD::CreateMFDmassMatrices(MFD_method method,
-        std::vector<WhetStone::Tensor>& K) {
+void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
@@ -31,7 +42,7 @@ void MatrixMFD::CreateMFDmassMatrices(MFD_method method,
 
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
 
-    if (method == MFD_HEXAHEDRA_MONOTONE) {
+    if (method_ == MFD_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) {
         mfd.darcy_mass_inverse_hex(c, K[c], Bff);
       } else {
@@ -49,8 +60,8 @@ void MatrixMFD::CreateMFDmassMatrices(MFD_method method,
 /* ******************************************************************
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
-void MatrixMFD::CreateMFDstiffnessMatrices(MFD_method method,
-        std::vector<WhetStone::Tensor>& K, const CompositeVector& K_faces) {
+void MatrixMFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
+        const CompositeVector& K_faces) {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
@@ -69,7 +80,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(MFD_method method,
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (method == MFD_HEXAHEDRA_MONOTONE) {
+    if (method_ == MFD_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) {
         mfd.darcy_mass_inverse_hex(c, K[c], Bff);
       } else {
