@@ -134,7 +134,7 @@ option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 if ( NOT MPI_EXEC )
   find_program(MPI_EXEC
                NAMES mpirun mpiexec aprun
-               HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX
+               HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX ENV MPI_HOME ENV MPIHOME
                )
 endif()
 
