@@ -22,12 +22,14 @@ void AirWaterRock::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_ol
   // pointer-copy temperature into states and update any auxilary data
   solution_to_state(u_old, S_inter_);
   solution_to_state(u_new, S_next_);
-  UpdateSecondaryVariables_();
+  UpdateSecondaryVariables_(S_inter_);
+  UpdateSecondaryVariables_(S_next_);
 
   // get access to the solution
   Teuchos::RCP<CompositeVector> res = f->data();
 
   // conduction term
+  ApplyConduction_(res);
 
   // source term?
 

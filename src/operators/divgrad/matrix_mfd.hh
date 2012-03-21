@@ -31,7 +31,7 @@
 #include "mfd3d.hpp"
 
 namespace Amanzi {
-namespace Operator {
+namespace Operators {
 
 enum MFD_method {
   MFD_NULL = 0,
@@ -61,15 +61,14 @@ enum Matrix_bc {
 class MatrixMFD : public Epetra_Operator {
 
 public:
-  MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-    plist_(plist), mesh_(mesh) {}
+  MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh);
 
   // main computational methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
 
-  void CreateMFDmassMatrices(MFD_method method, std::vector<WhetStone::Tensor>& K);
-  void CreateMFDstiffnessMatrices(MFD_method method,
-          std::vector<WhetStone::Tensor>& K, const CompositeVector& K_faces);
+  void CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
+  void CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
+          const CompositeVector& K_faces);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
           const Epetra_Vector& new_scale);
   void CreateMFDrhsVectors();
@@ -123,6 +122,7 @@ private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
   bool flag_symmetry_;
+  MFD_method method_;
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
