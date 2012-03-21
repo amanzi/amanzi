@@ -10,11 +10,21 @@ define_external_project_args(HDF5
 
 # --- Define configure parameters
 
-# Use the common cflags
+# Use the common cflags, cxxflags
 include(BuildWhitespaceString)
-build_whitespace_string(hdf5_cppflags
+build_whitespace_string(hdf5_cflags
                        -I${TPL_INSTALL_PREFIX}/include
                        ${Amanzi_COMMON_CFLAGS})
+
+build_whitespace_string(hdf5_cxxflags
+                       -I${TPL_INSTALL_PREFIX}/include
+                       ${Amanzi_COMMON_CXXFLAGS})
+set(cpp_flag_list 
+    -I${TPL_INSTALL_PREFIX}/include
+    ${Amanzi_COMMON_CFLAGS}
+    ${Amanzi_COMMON_CXXFLAGS})
+list(REMOVE_DUPLICATES cpp_flag_list)
+build_whitespace_string(hdf5_cppflags ${cpp_flags_list})
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${HDF5_BUILD_TARGET}
@@ -37,7 +47,9 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                                                  --enable-parallel
                                                  --with-zlib=${TPL_INSTALL_PREFIX}
                                                  CC=${CMAKE_C_COMPILER}
+                                                 CFLAGS=${hdf5_cflags}
                                                  CXX=${CMAKE_CXX_COMPILER}
+                                                 CXXFLAGS=${hdf5_cxxflags}
                                                  CPPFLAGS=${hdf5_cppflags}
                                                  LDFLAGS=-L${TPL_INSTALL_PREFIX}/lib
                     # -- Build
