@@ -13,7 +13,7 @@
 # Other projects (subdirectories) can reference this directory
 # through these variables.
 
-include_directories(${ATS_SOURCE_DIR}/src/operators)
 add_subdirectory(advection)
+add_subdirectory(divgrad)
 
 # elliptic operators?

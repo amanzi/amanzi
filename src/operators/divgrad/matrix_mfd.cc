@@ -4,11 +4,12 @@
   Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
+#include "errors.hh"
 #include "Epetra_FECrsGraph.h"
 #include "matrix_mfd.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Operator {
 
 // main computational methods
 
@@ -162,8 +163,8 @@ void MatrixMFD::InitializeSuperVecs(const CompositeVector& sample) {
  * Applies boundary conditions to elemental stiffness matrices and
  * creates elemental rigth-hand-sides.
  ****************************************************************** */
-void MatrixMFD::ApplyBoundaryConditions(std::vector<Matrix_bc>& bc_markers,
-        std::vector<double>& bc_values) {
+void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
+        const std::vector<double>& bc_values) {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -181,7 +182,7 @@ void MatrixMFD::ApplyBoundaryConditions(std::vector<Matrix_bc>& bc_markers,
 
     for (int n=0; n != nfaces; ++n) {
       int f=faces[n];
-      if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
+      if (bc_markers[f] == MFD_BC_DIRICHLET) {
         for (int m=0; m != nfaces; ++m) {
           Ff[m] -= Bff(m, n) * bc_values[f];
           Bff(n, m) = Bff(m, n) = 0.0;
@@ -191,7 +192,7 @@ void MatrixMFD::ApplyBoundaryConditions(std::vector<Matrix_bc>& bc_markers,
 
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
-      } else if (bc_markers[f] == MATRIX_BC_FLUX) {
+      } else if (bc_markers[f] == MFD_BC_FLUX) {
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
     }
@@ -241,16 +242,19 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   Aff_->GlobalAssemble();
   Sff_->GlobalAssemble();
 
-  if (flag_symmetry_) Afc_ = Acf_;
-  else Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
+  if (flag_symmetry_) {
+    Afc_ = Acf_;
+  } else {
+    Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
+  }
 
-  std::vector<std::string>> names(2);
+  std::vector<std::string> names(2);
   names[0] = "cell"; names[1] = "face";
 
-  std::vector<AmanziMesh::Entity_kind>> locations(2);
+  std::vector<AmanziMesh::Entity_kind> locations(2);
   locations[0] = AmanziMesh::CELL; locations[1] = AmanziMesh::FACE;
 
-  rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, 1, true);
+  rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, 1, true));
 }
 
 
@@ -291,22 +295,22 @@ void MatrixMFD::AssembleGlobalMatrices() {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    (*rhs)("cell",c) = Fc_cells_[c];
+    (*rhs_)("cell",c) = Fc_cells_[c];
 
     for (int n=0; n != nfaces; ++n) {
       int f = faces[n];
-      (*rhs)("face",f) += Ff_cells_[c][n];
+      (*rhs_)("face",f) += Ff_cells_[c][n];
     }
   }
-  rhs->GatherGhostedToMaster("face", Add);
+  rhs_->GatherGhostedToMaster("face", Add);
 }
 
 
 /* ******************************************************************
  * Compute the face Schur complement of 2x2 block matrix.
  ****************************************************************** */
-void MatrixMFD::ComputeSchurComplement(std::vector<Matrix_bc>& bc_markers,
-        std::vector<double>& bc_values) {
+void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
+        const std::vector<double>& bc_values) {
   Sff_->PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces_LID;
@@ -345,16 +349,16 @@ void MatrixMFD::ComputeSchurComplement(std::vector<Matrix_bc>& bc_markers,
 /* ******************************************************************
  * Parallel matvec product A * X.
  ****************************************************************** */
-int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-  vector_x_->CopyFromSuperVector(*X(0));
+int MatrixMFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  vector_x_->DataFromSuperVector(*X(0));
+  vector_y_->DataFromSuperVector(*Y(0));
   Apply(*vector_x_, vector_y_);
-  vector_y_->CopyToSuperVector(*Y(0));
 }
 
-int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-  vector_x_->CopyFromSuperVector(*X(0));
+int MatrixMFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  vector_x_->DataFromSuperVector(*X(0));
+  vector_y_->DataFromSuperVector(*Y(0));
   ApplyInverse(*vector_x_, vector_y_);
-  vector_y_->CopyToSuperVector(*Y(0));
 }
 
 /* ******************************************************************
@@ -399,7 +403,7 @@ void MatrixMFD::Apply(const CompositeVector& X,
  * not Epetra_MultiVectors.
  *
  ****************************************************************** */
-void MatrixMFD::Apply(const CompositeVector& X,
+void MatrixMFD::ApplyInverse(const CompositeVector& X,
                      const Teuchos::RCP<CompositeVector>& Y) const {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nvectors = X.num_dofs(0);
@@ -433,9 +437,9 @@ void MatrixMFD::Apply(const CompositeVector& X,
  * Linear algebra operations with matrices: r = f - A * x
  ****************************************************************** */
 void MatrixMFD::ComputeResidual(const CompositeVector& solution,
-          const Teuchos::RCP<CompositeVector>& residual) {
+          const Teuchos::RCP<CompositeVector>& residual) const {
   Apply(solution, residual);
-  residual.Update(1.0, *rhs, -1.0);
+  residual->Update(1.0, *rhs_, -1.0);
 }
 
 
@@ -443,9 +447,9 @@ void MatrixMFD::ComputeResidual(const CompositeVector& solution,
  * Linear algebra operations with matrices: r = A * x - f
  ****************************************************************** */
 void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
-        const Teuchos::RCP<CompositeVector>& residual) {
+        const Teuchos::RCP<CompositeVector>& residual) const {
   Apply(solution, residual);
-  residual.Update(-1.0, *rhs, 1.0);
+  residual->Update(-1.0, *rhs_, 1.0);
 }
 
 
@@ -454,7 +458,7 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
  ****************************************************************** */
 void MatrixMFD::InitMLPreconditioner(Teuchos::ParameterList& ml_plist) {
   ml_plist_ = ml_plist;
-  ml_prec_ = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false);
+  ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
 }
 
 
@@ -478,7 +482,7 @@ void MatrixMFD::UpdateMLPreconditioner() {
  * Flow_PK::addGravityFluxes_DarcyFlux.
  ****************************************************************** */
 void MatrixMFD::DeriveFlux(const CompositeVector& solution,
-                           const Teuchos::RCP<CompositeVector>& flux) {
+                           const Teuchos::RCP<CompositeVector>& flux) const {
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
@@ -486,7 +490,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  std::vector<int> flag(solution->ViewComponent("face", true)->MyLength(), 0);
+  std::vector<int> flag(solution.ViewComponent("face", true)->MyLength(), 0);
 
   for (int c=0; c != ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);

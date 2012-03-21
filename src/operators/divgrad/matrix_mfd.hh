@@ -13,6 +13,7 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
+#include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_CrsMatrix.h"
@@ -25,6 +26,7 @@
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "composite_vector.hh"
 #include "boundary-function.hh"
 #include "mfd3d.hpp"
 
@@ -51,15 +53,15 @@ const int MFD_MAX_NODES = 47;  // These polyhedron parameters must
 const int MFD_MAX_EDGES = 60;  // be calculated in Init().
 
 enum Matrix_bc {
-  MATRIX_BC_NULL = 0,
-  MATRIX_BC_DIRICHLET,
-  MATRIX_BC_FLUX
+  MFD_BC_NULL = 0,
+  MFD_BC_DIRICHLET,
+  MFD_BC_FLUX
 };
 
 class MatrixMFD : public Epetra_Operator {
 
 public:
-  Matrix_MFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+  MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh) :
     plist_(plist), mesh_(mesh) {}
 
   // main computational methods
@@ -67,11 +69,12 @@ public:
 
   void CreateMFDmassMatrices(MFD_method method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDstiffnessMatrices(MFD_method method,
-          const std::vector<WhetStone::Tensor>& K, const CompositeVector& K_faces);
+          std::vector<WhetStone::Tensor>& K, const CompositeVector& K_faces);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
           const Epetra_Vector& new_scale);
   void CreateMFDrhsVectors();
-  Teuchos::RCP<Epetra_Vector>& rhs() { return rhs_; }
+
+  Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
   void InitializeSuperVecs(const CompositeVector& sample);
 
   void ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
@@ -118,11 +121,12 @@ public:
 
 private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::ParameterList plist_;
   bool flag_symmetry_;
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
-  std::vector<double> Acc_cells;  // duplication may be useful later
+  std::vector<double> Acc_cells_;  // duplication may be useful later
 
   std::vector<Epetra_SerialDenseVector> Ff_cells_;
   std::vector<double> Fc_cells_;
@@ -138,7 +142,7 @@ private:
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
 
-  Teuchos::RCP<Epetra_Map> supermap_;
+  Teuchos::RCP<const Epetra_Map> supermap_;
   Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO
   Teuchos::RCP<CompositeVector> vector_y_;
 };
