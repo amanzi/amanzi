@@ -99,14 +99,19 @@ class FlowBCFactory {
   BoundaryFunction* createPressure() const;
   BoundaryFunction* createMassFlux() const;
   BoundaryFunction* createStaticHead(double, double, AmanziGeometry::Point&) const;
+  BoundaryFunction* createSeepageFace() const;
 
  private:
   void processPressureList(Teuchos::ParameterList&, BoundaryFunction*) const;
   void processPressureSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
   void processMassFluxList(Teuchos::ParameterList&, BoundaryFunction*) const;
   void processMassFluxSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processStaticHeadList(double, double, AmanziGeometry::Point&, Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processStaticHeadSpec(double, double, AmanziGeometry::Point&, Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processStaticHeadList(double p0, double rho, AmanziGeometry::Point& gravity, 
+                             Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processStaticHeadSpec(double p0, double rho, AmanziGeometry::Point& gravity, 
+                             Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processSeepageFaceList(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processSeepageFaceSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
      
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;

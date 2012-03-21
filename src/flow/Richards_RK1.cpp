@@ -43,7 +43,11 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     bc_pressure->Compute(time);
     bc_flux->Compute(time);
     bc_head->Compute(time);
-    updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+    bc_seepage->Compute(time);
+    updateBoundaryConditions(
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_cells, atm_pressure, 
+        bc_markers, bc_values);
 
     // create algebraic problem (matrix = preconditioner)
     matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);

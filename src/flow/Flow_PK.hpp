@@ -98,11 +98,11 @@ class Flow_PK : public BDF2::fnBase {
   virtual void deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
 
   // boundary condition members
-  void updateBoundaryConditions(BoundaryFunction *bc_pressure, 
-                                BoundaryFunction *bc_head,
-                                BoundaryFunction *bc_flux,
-                                std::vector<int>& bc_markers,
-                                std::vector<double>& bc_values);
+  void updateBoundaryConditions(
+      BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
+      BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+      const Epetra_Vector& pressure_cells, const double atm_pressure,
+      std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
   void applyBoundaryConditions(std::vector<int>& bc_markers,
                                std::vector<double>& bc_values,

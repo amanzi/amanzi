@@ -29,6 +29,7 @@ void Darcy_PK::processParameterList()
   bc_pressure = bc_factory.createPressure();
   bc_head = bc_factory.createStaticHead(atm_pressure, rho_, gravity_);
   bc_flux = bc_factory.createMassFlux();
+  bc_seepage = bc_factory.createSeepageFace();
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
 
@@ -39,6 +40,7 @@ void Darcy_PK::processParameterList()
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
+  bc_seepage->Compute(time);
 
   // Steady state solution
   Teuchos::ParameterList& sss_list = dp_list.sublist("Steady state solution");

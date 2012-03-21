@@ -7,6 +7,7 @@ Authors: Neil Carlson (version 1)
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "Mesh.hh"
 #include "gmv_mesh.hh"
 
 #include "mfd3d.hpp"
@@ -66,11 +67,11 @@ Epetra_Map* Flow_PK::createSuperMap()
 /* ******************************************************************
 * Add a boundary marker to used faces.                                          
 ****************************************************************** */
-void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
-                                       BoundaryFunction* bc_head, 
-                                       BoundaryFunction* bc_flux,
-                                       std::vector<int>& bc_markers,
-                                       std::vector<double>& bc_values)
+void Flow_PK::updateBoundaryConditions(
+    BoundaryFunction* bc_pressure, BoundaryFunction* bc_head, 
+    BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+    const Epetra_Vector& pressure_cells, const double atm_pressure,
+    std::vector<int>& bc_markers, std::vector<double>& bc_values)
 {
   for (int n=0; n<bc_markers.size(); n++) {
     bc_markers[n] = FLOW_BC_FACE_NULL;
@@ -94,6 +95,21 @@ void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
     int f = bc->first;    
     bc_markers[f] = FLOW_BC_FACE_FLUX;
     bc_values[f] = bc->second;
+  }
+
+  AmanziMesh::Entity_ID_List cells;
+  for (bc=bc_seepage->begin(); bc!=bc_seepage->end(); ++bc) {
+    int f = bc->first;
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells); 
+    int c = cells[0];  // Assume that face and cell are on the same processor.
+
+    if (pressure_cells[c] < atm_pressure) {
+      bc_markers[f] = FLOW_BC_FACE_FLUX;
+      bc_values[f] = bc->second;
+    } else {
+      bc_markers[f] = FLOW_BC_FACE_PRESSURE;
+      bc_values[f] = atm_pressure;
+    }
   }
 }
 

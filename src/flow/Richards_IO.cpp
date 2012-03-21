@@ -44,6 +44,7 @@ void Richards_PK::processParameterList()
   bc_pressure = bc_factory.createPressure();
   bc_head = bc_factory.createStaticHead(atm_pressure, rho, gravity_);
   bc_flux = bc_factory.createMassFlux();
+  bc_seepage = bc_factory.createSeepageFace();
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
 
@@ -54,6 +55,7 @@ void Richards_PK::processParameterList()
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
+  bc_seepage->Compute(time);
 
   // Create water retention models
   if (!rp_list.isSublist("Water retention models")) {

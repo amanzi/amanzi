@@ -79,7 +79,8 @@ Darcy_PK::~Darcy_PK()
   }
   delete bc_pressure;
   delete bc_head;
-  delete bc_flux; 
+  delete bc_flux;
+  delete bc_seepage; 
 }
 
 
@@ -119,7 +120,11 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
-  updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+  bc_seepage->Compute(time);
+  updateBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage, 
+      *solution_cells, atm_pressure, 
+      bc_markers, bc_values);
 
   // Process other fundamental structures
   K.resize(ncells_owned);

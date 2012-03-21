@@ -131,9 +131,10 @@ class Richards_PK : public Flow_PK {
 
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
 
-  BoundaryFunction* bc_pressure;  // Pressure Dirichlet b.c., excluding static head
-  BoundaryFunction* bc_head;  // Static pressure head b.c.; also Dirichlet-type
-  BoundaryFunction* bc_flux;  // Outward mass flux b.c.
+  BoundaryFunction* bc_pressure;  // Pressure BC.
+  BoundaryFunction* bc_head;  // Static pressure head BC.
+  BoundaryFunction* bc_flux;  // Outward mass flux BC.
+  BoundaryFunction* bc_seepage;  // Seepage face BC.
   std::vector<int> bc_markers;  // Used faces are marked with boundary conditions.
   std::vector<double> bc_values;
 

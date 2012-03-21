@@ -103,6 +103,7 @@ Richards_PK::~Richards_PK()
   delete bc_pressure;
   delete bc_flux;
   delete bc_head;
+  delete bc_seepage;
 }
 
 
@@ -139,7 +140,11 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_head->Compute(time);
-  updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+  bc_seepage->Compute(time);
+  updateBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage, 
+      *solution_cells, atm_pressure, 
+      bc_markers, bc_values);
 
   // Process other fundamental structures
   K.resize(ncells_owned);
@@ -533,7 +538,11 @@ void Richards_PK::computePreconditionerMFD(
   bc_pressure->Compute(Tp);
   bc_flux->Compute(Tp);
   bc_head->Compute(Tp);
-  updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+  bc_seepage->Compute(Tp);
+  updateBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage, 
+      *u_cells, atm_pressure, 
+      bc_markers, bc_values);
 
   // setup a new algebraic problem
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
