@@ -66,6 +66,7 @@ ExternalProject_Add(${CURL_BUILD_TARGET}
                                          --with-zlib=${TPL_INSTALL_PREFIX}/lib
                                          CC=${CMAKE_C_COMPILER}
                                          CFLAGS=${curl_cflags}
+                                         CPPFLAGS=${curl_cflags}
                                          LDFLAGS=-L${TPL_INSTALL_PREFIX}/lib
                                          ${ssl_pkg_config}
                     # -- Build
