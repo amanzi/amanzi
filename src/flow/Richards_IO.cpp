@@ -107,6 +107,8 @@ void Richards_PK::processParameterList()
       method_sss = AmanziFlow::FLOW_STEADY_STATE_PICARD;
     } else if (method_name == "backward Euler") {
       method_sss = AmanziFlow::FLOW_STEADY_STATE_BACKWARD_EULER;
+    } else if (method_name == "BDF1") {
+      method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF1; 
     } else if (method_name == "BDF2") {
       method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
     }
@@ -136,9 +138,11 @@ void Richards_PK::processParameterList()
 
     method_name = trs_list.get<string>("method", "BDF2");
     if (method_name == "backward Euler") {
-      method_trs = AmanziFlow::FLOW_STEADY_STATE_BACKWARD_EULER;
+      method_trs = AmanziFlow::FLOW_TRANSIENT_BACKWARD_EULER;
+    } else if (method_name == "BDF1") {
+      method_trs = AmanziFlow::FLOW_TRANSIENT_BDF1; 
     } else if (method_name == "BDF2") {
-      method_trs = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
+      method_trs = AmanziFlow::FLOW_TRANSIENT_BDF2; 
     }
 
     Teuchos::ParameterList& err_list = trs_list.sublist("Error control");

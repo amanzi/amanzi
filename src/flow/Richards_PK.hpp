@@ -18,6 +18,7 @@ Authors: Neil Carlson (version 1)
 
 #include "mfd3d.hpp"
 #include "BDF2_Dae.hpp"
+#include "BDF1_Dae.hh"
 
 #include "Flow_State.hpp"
 #include "Flow_PK.hpp"
@@ -48,6 +49,7 @@ class Richards_PK : public Flow_PK {
   int advanceSteadyState_Picard();
   int advanceSteadyState_BackwardEuler();
   int advanceSteadyState_ForwardEuler();
+  int advanceSteadyState_BDF1();
   int advanceSteadyState_BDF2();
  
   // methods required for time integration
@@ -110,13 +112,15 @@ class Richards_PK : public Flow_PK {
   int max_itrs;
   double convergence_tol;
 
+  BDF2::Dae* bdf2_dae;  // Time intergrators
+  BDF1Dae* bdf1_dae;
+
   int method_sss;  // Parameters for steady-state solution
   int num_itrs_sss, max_itrs_sss;
   double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
 
-  BDF2::Dae* bdf2_dae;  // Parameters for transient solution
-  int method_trs;
+  int method_trs;  // Parameters for transient solution
   double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;

@@ -75,7 +75,7 @@ TEST(FLOW_2D_RICHARDS) {
 
   // solve the problem
   RPK->advanceToSteadyState();
-  RPK->commitState(FS);
+  RPK->commitStateForTransport(FS);
  
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

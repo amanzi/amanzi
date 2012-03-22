@@ -72,7 +72,7 @@ TEST(FLOW_3D_RICHARDS) {
   // solve the problem
   S.set_time(0.0);
   RPK->advanceToSteadyState();
-  RPK->commitState(FS);
+  RPK->commitStateForTransport(FS);
 
   // derive dependent variable
   Epetra_Vector& pressure = FS->ref_pressure();

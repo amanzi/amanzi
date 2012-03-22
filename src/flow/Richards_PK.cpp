@@ -68,9 +68,10 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   // miscalleneous
   solver = NULL;
   bdf2_dae = NULL;
+  bdf1_dae = NULL;
 
-  method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
-  method_trs = FLOW_STEADY_STATE_BDF2;
+  method_sss = FLOW_STEADY_STATE_BDF1;
+  method_trs = FLOW_TRANSIENT_BDF2;
   num_itrs_trs = 0;
 
   absolute_tol_sss = absolute_tol_trs = 1.0; 
@@ -168,7 +169,8 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
 /* ******************************************************************
 * Separate initialization of solver may be required for steady state
-* and transient runs.       
+* and transient runs. BDF2 and BDF1 will eventually merge but are 
+* separated strictly (no code optimization) for the moment.
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
@@ -186,8 +188,20 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
   } 
+  else if (method_sss == FLOW_STEADY_STATE_BDF1) {
+    preconditioner = new Matrix_MFD(FS, *super_map_);
+    preconditioner->setSymmetryProperty(is_matrix_symmetric);
+    preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
+    preconditioner->init_ML_preconditioner(ML_list); 
+
+    // Create the BDF1 time integrator
+    Teuchos::ParameterList solver_list = rp_list.sublist("Steady state solution").sublist("Nonlinear solvers");
+    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
+    if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
+    bdf1_dae->setParameterList(bdf1_list);
+  } 
   else {
-    preconditioner->init_ML_preconditioner(ML_list);
+    preconditioner->init_ML_preconditioner(ML_list);  // preconditioner = matrix in this case.
     solver = new AztecOO;
     solver->SetUserOperator(matrix);
     solver->SetPrecOperator(preconditioner);
@@ -202,13 +216,15 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
 
 /* ******************************************************************
-* Initialization analyzes status of matrix/preconditioner pair.      
+* Initialization analyzes status of matrix/preconditioner pair. 
+* BDF2 and BDF1 will eventually merge but are separated strictly 
+* (no code optimization) for the moment.     
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
-  if (method_trs == FLOW_STEADY_STATE_BDF2) {
+  if (method_trs == FLOW_TRANSIENT_BDF2) {
     if (preconditioner == matrix) {
       preconditioner = new Matrix_MFD(FS, *super_map_);
       preconditioner->setSymmetryProperty(is_matrix_symmetric);
@@ -223,7 +239,23 @@ void Richards_PK::InitTransient(double T0, double dT0)
     bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
     num_itrs_trs = 0; 
-  } 
+  }
+  else if (method_trs == FLOW_TRANSIENT_BDF1) {
+    if (preconditioner == matrix) {
+      preconditioner = new Matrix_MFD(FS, *super_map_);
+      preconditioner->setSymmetryProperty(is_matrix_symmetric);
+      preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
+      preconditioner->init_ML_preconditioner(ML_list); 
+    } 
+    // Reset the BDF1 time integrator
+    if (bdf1_dae != NULL) delete bdf1_dae;  // the only way to reset it
+
+    Teuchos::ParameterList solver_list = rp_list.sublist("Transient solution").sublist("Nonlinear solvers");
+    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
+    bdf1_dae = new BDF1Dae(*this, *super_map_);
+    bdf1_dae->setParameterList(bdf1_list);
+    num_itrs_trs = 0; 
+  }
   else if (solver == NULL) {
     preconditioner->init_ML_preconditioner(ML_list);
     solver = new AztecOO;
@@ -273,6 +305,8 @@ int Richards_PK::advanceToSteadyState()
     ierr = advanceSteadyState_Picard();
   } else if (method_sss == FLOW_STEADY_STATE_BACKWARD_EULER) {
     ierr = advanceSteadyState_BackwardEuler();
+  } else if (method_sss == FLOW_STEADY_STATE_BDF1) {
+    ierr = advanceSteadyState_BDF1();
   } else if (method_sss == FLOW_STEADY_STATE_BDF2) {
     ierr = advanceSteadyState_BDF2();
   }
@@ -283,7 +317,8 @@ int Richards_PK::advanceToSteadyState()
 
 
 /* ******************************************************************* 
-* Performs one time step of size dT (under *development*). 
+* Performs one time step of size dT.
+* Warning: BDF2 and BDF1 will merge eventually.
 ******************************************************************* */
 int Richards_PK::advance(double dT_MPC) 
 {
@@ -299,18 +334,30 @@ int Richards_PK::advance(double dT_MPC)
   if (num_itrs_trs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     computeUDot(time, *solution, udot);
-    bdf2_dae->set_initial_state(time, *solution, udot);
+    if (method_trs == FLOW_TRANSIENT_BDF2) {
+      bdf2_dae->set_initial_state(time, *solution, udot);
+    } else if (method_trs == FLOW_TRANSIENT_BDF1) {
+      bdf1_dae->set_initial_state(time, *solution, udot);
+    }
 
     int ierr;
     update_precon(time, *solution, dT, ierr);
   }
 
   double dTnext;
-  bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
-  bdf2_dae->commit_solution(dT, *solution);
-  bdf2_dae->write_bdf2_stepping_statistics();
+  if (method_trs == FLOW_TRANSIENT_BDF2) {
+    bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
+    bdf2_dae->commit_solution(dT, *solution);
+    bdf2_dae->write_bdf2_stepping_statistics();
 
-  T_internal = bdf2_dae->most_recent_time();
+    T_internal = bdf2_dae->most_recent_time();
+  } else if (method_trs == FLOW_TRANSIENT_BDF1) {
+    bdf1_dae->bdf1_step(dT, *solution, dTnext);
+    bdf1_dae->commit_solution(dT, *solution);
+    bdf1_dae->write_bdf1_stepping_statistics();
+
+    T_internal = bdf1_dae->most_recent_time();
+  }
   dT = dTnext;
   num_itrs_trs++;
 
@@ -320,7 +367,49 @@ int Richards_PK::advance(double dT_MPC)
 
 
 /* ******************************************************************* 
-* Performs one time step of size dT. 
+* Performs one time step of size dT using first-order time integrator.
+******************************************************************* */
+int Richards_PK::advanceSteadyState_BDF1() 
+{
+  T_internal = T0_sss;
+  dT = dT0_sss;
+  bool last_step = false;
+
+  int itrs = 0;
+  while (itrs < max_itrs_sss && T_internal < T1_sss) {
+    if (itrs == 0) {  // initialization of BDF1
+      Epetra_Vector udot(*super_map_);
+      computeUDot(T0_sss, *solution, udot);
+      bdf1_dae->set_initial_state(T0_sss, *solution, udot);
+
+      int ierr;
+      update_precon(T0_sss, *solution, dT0_sss, ierr);
+    }
+
+    double dTnext;
+    bdf1_dae->bdf1_step(dT, *solution, dTnext);
+    bdf1_dae->commit_solution(dT, *solution);
+    bdf1_dae->write_bdf1_stepping_statistics();
+
+    T_internal = bdf1_dae->most_recent_time();
+    dT = dTnext; 
+    itrs++;
+
+    double Tdiff = T1_sss - T_internal;
+    if (dTnext > Tdiff) {
+      dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
+      last_step = true;
+    }
+    if (last_step && dT < 1e-3) break;
+  }
+
+  num_nonlinear_steps = itrs;
+  return 0;
+}
+
+
+/* ******************************************************************* 
+* Performs one time step of size dT using second-order time integrator.
 ******************************************************************* */
 int Richards_PK::advanceSteadyState_BDF2() 
 {
