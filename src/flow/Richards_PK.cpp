@@ -62,9 +62,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
 
-  // time independent data
-  setAbsolutePermeabilityTensor(K);
-
   // miscalleneous
   solver = NULL;
   bdf2_dae = NULL;
@@ -468,6 +465,8 @@ int Richards_PK::advanceSteadyState_Picard()
   double L2norm, L2error = 1.0;
 
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
+    setAbsolutePermeabilityTensor(K);
+
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       calculateRelativePermeabilityFace(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
@@ -615,6 +614,7 @@ void Richards_PK::computePreconditionerMFD(
   // setup absolute and compute relative permeabilities
   Epetra_Vector* u_cells = FS->createCellView(u);
 
+  setAbsolutePermeabilityTensor(K);
   if (!is_matrix_symmetric) {  // Define K and Krel_faces
     calculateRelativePermeabilityFace(*u_cells);
     for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
