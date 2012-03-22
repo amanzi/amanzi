@@ -31,7 +31,7 @@ class TwophaseThermalConductivity {
 public:
   TwophaseThermalConductivity(Teuchos::ParameterList& plist);
 
-  double CalculateConductivity(double porosity, double sat_liq, double dens_rock);
+  double CalculateConductivity(double porosity, double sat_liq);
 
 private:
   void InitializeFromPlist_();
@@ -44,6 +44,7 @@ private:
   double k_liquid_;
   double k_gas_;
   double d_;
+  double rho_rock_;
 };
 
 }

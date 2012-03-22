@@ -74,6 +74,14 @@ AirWaterRock::AirWaterRock(Teuchos::ParameterList& plist,
   internal_energy_gas_model_ =
     Teuchos::rcp(new EnergyRelations::InternalEnergyGas(ieg_plist));
 
+  Teuchos::ParameterList iel_plist = energy_plist_.sublist("Internal Energy Liquid Model");
+  internal_energy_liquid_model_ =
+    Teuchos::rcp(new EnergyRelations::InternalEnergyLinear(iel_plist));
+
+  Teuchos::ParameterList ier_plist = energy_plist_.sublist("Internal Energy Rock Model");
+  internal_energy_rock_model_ =
+    Teuchos::rcp(new EnergyRelations::InternalEnergyLinear(ier_plist));
+
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = energy_plist_.sublist("Advection");

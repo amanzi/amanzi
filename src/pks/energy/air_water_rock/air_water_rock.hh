@@ -24,6 +24,8 @@ us to the air-water system.
 #include "bdf_fn_base.hh"
 
 #include "twophase_thermal_conductivity.hh"
+#include "internal_energy_linear.hh"
+#include "internal_energy_gas.hh"
 #include "advection.hh"
 #include "matrix_mfd.hh"
 
@@ -97,9 +99,10 @@ private:
   void UpdateThermalConductivity_(const Teuchos::RCP<State>& S);
   void UpdateSpecificEnthalpyLiquid_(const Teuchos::RCP<State>& S);
 
-  void AddAccumulation_(Teuchos::RCP<CompositeVector> f);
-  void AddAdvection_(Teuchos::RCP<CompositeVector> f);
-  void ApplyConduction_(Teuchos::RCP<CompositeVector> f);
+  void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
+  void AddAdvection_(const Teuchos::RCP<State> S,
+                     const Teuchos::RCP<CompositeVector> f, bool negate);
+  void ApplyConduction_(const Teuchos::RCP<State> S, const Teuchos::RCP<CompositeVector> f);
 
   // misc setup information
   Teuchos::ParameterList energy_plist_;
@@ -108,6 +111,8 @@ private:
   // constitutive relations
   Teuchos::RCP<EnergyRelations::TwophaseThermalConductivity> thermal_conductivity_model_;
   Teuchos::RCP<EnergyRelations::InternalEnergyGas> internal_energy_gas_model_;
+  Teuchos::RCP<EnergyRelations::InternalEnergyLinear> internal_energy_liquid_model_;
+  Teuchos::RCP<EnergyRelations::InternalEnergyLinear> internal_energy_rock_model_;
 
   // operators
   Teuchos::RCP<Operators::Advection> advection_;

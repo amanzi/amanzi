@@ -25,8 +25,13 @@ InternalEnergyGas::InternalEnergyGas(Teuchos::ParameterList& plist) :
   InitializeFromPlist_();
 };
 
-double InternalEnergyGas::CalculateInternalEnergy(double temp, double mol_frac_gas) {
+double InternalEnergyGas::InternalEnergy(double temp, double mol_frac_gas) {
   return (1.0 + 0.622*mol_frac_gas) * Cv_air_ * (temp - 273.15) + mol_frac_gas*heat_vaporization_;
+};
+
+double InternalEnergyGas::DInternalEnergyDT(double temp, double mol_frac_gas) {
+  // evaluated at constant mol_frac gas for now?
+  return (1.0 + 0.622*mol_frac_gas) * Cv_air_;
 };
 
 void InternalEnergyGas::InitializeFromPlist_() {
