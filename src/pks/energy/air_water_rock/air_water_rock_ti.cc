@@ -28,21 +28,21 @@ void AirWaterRock::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_ol
   // get access to the solution
   Teuchos::RCP<CompositeVector> res = f->data();
 
-  // conduction term
-  ApplyConduction_(res);
+  // conduction term, implicit
+  ApplyConduction_(S_next_, res);
 
   // source term?
 
   // accumulation term
   AddAccumulation_(res);
 
-  // advection term
-  AddAdvection_(res);
+  // advection term, explicit
+  AddAdvection_(S_inter_, res, true);
 };
 
 // applies preconditioner to u and returns the result in Pu
 void AirWaterRock::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  *Pu = *u;
+  preconditioner_->ApplyInverse(*u->data(), Pu->data());
 };
 
 // computes a norm on u-du and returns the result
@@ -66,7 +66,94 @@ double AirWaterRock::enorm(Teuchos::RCP<const TreeVector> u,
 };
 
 // updates the preconditioner
-void AirWaterRock::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {}
+void AirWaterRock::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+  S_next_->set_time(t);
+  PK::solution_to_state(up, S_next_); // not sure why this isn't getting found? --etc
+  UpdateSecondaryVariables_(S_next_);
+  UpdateThermalConductivity_(S_next_);
+
+  // div K_e grad u
+  Teuchos::RCP<CompositeVector> thermal_conductivity =
+    S_next_->GetFieldData("thermal_conductivity", "energy");
+
+  for (int c=0; c != Ke_.size(); ++c) {
+    Ke_[c](0,0) = (*thermal_conductivity)("cell", c);
+  }
+
+  // // update boundary conditions
+  // bc_pressure->Compute(Tp);
+  // bc_flux->Compute(Tp);
+  // bc_head->Compute(Tp);
+  // updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+
+  preconditioner_->CreateMFDstiffnessMatrices(Ke_, *thermal_conductivity);
+  preconditioner_->CreateMFDrhsVectors();
+
+  // update with accumulation terms
+  Teuchos::RCP<const CompositeVector> temp =
+    S_next_->GetFieldData("temperature");
+
+  Teuchos::RCP<const CompositeVector> poro =
+    S_next_->GetFieldData("porosity");
+
+  if (internal_energy_gas_model_->IsMolarBasis()) {
+    Teuchos::RCP<const CompositeVector> dens_gas =
+      S_next_->GetFieldData("molar_density_gas");
+  } else {
+    Teuchos::RCP<const CompositeVector> dens_gas =
+      S_next_->GetFieldData("density_gas");
+  }
+  Teuchos::RCP<const CompositeVector> mol_frac_gas =
+    S_next_->GetFieldData("mol_frac_gas");
+
+
+  if (internal_energy_liquid_model_->IsMolarBasis()) {
+    Teuchos::RCP<const CompositeVector> dens_liq =
+      S_next_->GetFieldData("molar_density_liquid");
+  } else {
+    Teuchos::RCP<const CompositeVector> dens_liq =
+      S_next_->GetFieldData("density_liquid");
+  }
+
+  Teuchos::RCP<const CompositeVector> sat_liq =
+    S_next_->GetFieldData("saturation_liquid");
+  Teuchos::RCP<const CompositeVector> sat_gas =
+    S_next_->GetFieldData("saturation_gas");
+
+  Teuchos::RCP<const CompositeVector> cell_volume =
+    S_next_->GetFieldData("cell_volume");
+
+  Teuchos::RCP<const double> dens_rock =
+    S_next_->GetScalarData("density_rock");
+
+  std::vector<double>& Acc_cells = preconditioner_->get_Acc_cells();
+  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c<ncells; c++) {
+    double T = (*temp)("cell",0,c);
+    double phi = (*poro)("cell",0,c);
+    double volume = mesh_->cell_volume(c);
+    double du_liq_dT = internal_energy_liquid_model_->DInternalEnergyDT(T);
+    double du_gas_dT = internal_energy_gas_model_->DInternalEnergyDT(T, (*mol_frac_gas)("cell",0,c));
+    double du_rock_dT = internal_energy_rock_model_->DInternalEnergyDT(T);
+
+    double factor_gas = (*dens_gas)(c)*(*sat_gas)(c)*du_gas_dT;
+    double factor_liq = (*dens_liq)(c)*(*sat_liq)(c)*du_liq_dT;
+    double factor_rock = (*dens_rock)(c)*du_rock_dT;
+
+    double factor = (phi * (factor_gas + factor_liq) +
+                     (1-phi) * factor_rock) * (*cell_volume)(c);
+
+    Acc_cells[c] += factor/h;
+  }
+
+
+  //  preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+  preconditioner_->AssembleGlobalMatrices();
+
+  preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+  preconditioner_->UpdateMLPreconditioner();
+
+};
 
 } // namespace Energy
 } // namespace Amanzi

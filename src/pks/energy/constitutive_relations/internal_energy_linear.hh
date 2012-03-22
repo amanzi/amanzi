@@ -6,16 +6,16 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Internal energy model for gas, relative to water @237.15K
+Linear internal energy model -- function of Cv and temperature
 
 See ATS process model documentation's permafrost physical properties
 documentation for details.
 
-UNITS: J/mol
+UNITS: J/{mol/kg}
 ------------------------------------------------------------------------- */
 
-#ifndef INTERNAL_ENERGY_GAS_
-#define INTERNAL_ENERGY_GAS_
+#ifndef INTERNAL_ENERGY_LINEAR_
+#define INTERNAL_ENERGY_LINEAR_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -23,21 +23,24 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class InternalEnergyGas {
+class InternalEnergyLinear {
 
 public:
-  InternalEnergyGas(Teuchos::ParameterList& plist);
+  InternalEnergyLinear(Teuchos::ParameterList& plist);
 
-  double InternalEnergy(double temp, double mol_frac_gas);
-  double DInternalEnergyDT(double temp, double mol_frac_gas);
+  bool IsMolarBasis() { return molar_basis_; }
 
-private:
-  void InitializeFromPlist_();
+  double InternalEnergy(double temp);
+  double DInternalEnergyDT(double temp, double mol_frac_gas) { return Cv_; }
+
+protected:
+  virtual void InitializeFromPlist_();
 
   Teuchos::ParameterList plist_;
 
-  double Cv_air_; // units: J/(mol-K)
-  double heat_vaporization_; // units: J/mol
+  double Cv_; // units: J/({mol/kg}-K)
+  double T_ref_; // units: K
+  bool molar_basis_;
 };
 
 }

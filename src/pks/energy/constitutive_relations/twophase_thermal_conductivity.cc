@@ -21,7 +21,7 @@ TwophaseThermalConductivity::TwophaseThermalConductivity(Teuchos::ParameterList&
   InitializeFromPlist_();
 };
 
-double TwophaseThermalConductivity::CalculateConductivity(double poro, double sat_liq, double dens_rock) {
+double TwophaseThermalConductivity::CalculateConductivity(double poro, double sat_liq) {
   double k_dry = (d_*(1-poro)*k_rock_ + k_gas_*poro)/(d_*(1-poro) + poro);
   double k_sat = pow(k_rock_,(1-poro)) * pow(k_liquid_,poro);
   double kersten = pow(sat_liq + eps_, alpha_);
@@ -36,6 +36,7 @@ void TwophaseThermalConductivity::InitializeFromPlist_() {
   k_rock_ = plist_.get<double>("thermal conductivity of rock");
   k_liquid_ = plist_.get<double>("thermal conductivity of liquid");
   k_gas_ = plist_.get<double>("thermal conductivity of gas");
+  rho_rock_ = plist_.get<double>("rock density");
 };
 
 } // namespace Relations
