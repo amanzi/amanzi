@@ -168,7 +168,8 @@ class Beaker {
   void DisplaySorptionIsotherms(void) const;
   void DisplayComponents(const BeakerComponents& components) const;
   void DisplayTotalColumnHeaders(void) const;
-  void DisplayTotalColumns(const double time, const std::vector<double>& total) const;
+  void DisplayTotalColumns(const double time, 
+                           const BeakerComponents& total) const;
   void DisplayResults(void) const;
 
   void ncomp(int i) {

@@ -1230,10 +1230,7 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
 
 void Beaker::DisplayGeneralKinetics(void) const {
   std::cout << "---- General Kinetics" << std::endl;
-  std::cout << std::setw(12) << "Reaction"
-            << std::setw(38) << "forward_rate"
-            << std::setw(15) << "backward_rate"
-            << std::endl;
+  std::cout << std::setw(12) << "Reaction" << std::endl;
   for (std::vector<GeneralRxn>::const_iterator rxn = generalKineticRxns_.begin();
        rxn != generalKineticRxns_.end(); rxn++) {
     rxn->Display();
@@ -1485,14 +1482,26 @@ void Beaker::DisplayTotalColumnHeaders(void) const {
   for (int i = 0; i < ncomp(); i++) {
     std::cout << std::setw(15) << primarySpecies_.at(i).name();
   }
+  if (total_sorbed_.size() > 0) {
+    for (int i = 0; i < total_sorbed_.size(); i++) {
+      std::string temp = primarySpecies_.at(i).name() + "_sorbed";
+      std::cout << std::setw(15) << temp;
+    }
+  }
   std::cout << std::endl;
 }  // end DisplayTotalColumnHeaders()
 
-void Beaker::DisplayTotalColumns(const double time, const std::vector<double>& total) const {
+void Beaker::DisplayTotalColumns(const double time, 
+                                 const BeakerComponents& components) const {
   std::cout << std::scientific << std::setprecision(5) << std::setw(15);
   std::cout << time;
   for (int i = 0; i < ncomp(); i++) {
-    std::cout << std::setw(15) << total.at(i);
+    std::cout << std::setw(15) << components.total.at(i);
+  }
+  if (total_sorbed_.size() > 0) {
+    for (int i = 0; i < total_sorbed_.size(); i++) {
+      std::cout << std::setw(15) << components.total_sorbed.at(i);
+    }
   }
   std::cout << std::endl;
 }  // end DisplayTotalColumns()

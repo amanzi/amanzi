@@ -114,14 +114,14 @@ int main(int argc, char** argv) {
       if (simulation_params.num_time_steps != 0) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
-        chem->DisplayTotalColumns(0.0, components.total);
+        chem->DisplayTotalColumns(0.0, components);
         // parameters.max_iterations = 2;
         for (int time_step = 0; time_step < simulation_params.num_time_steps;
              time_step++) {
           chem->ReactionStep(&components, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
             chem->DisplayTotalColumns((time_step + 1) * simulation_params.delta_time,
-                                      components.total);
+                                      components);
           }
           if (simulation_params.verbosity >= ac::kDebugNewtonSolver) {
             ac::Beaker::SolverStatus status = chem->status();
