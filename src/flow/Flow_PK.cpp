@@ -78,7 +78,7 @@ void Flow_PK::updateBoundaryConditions(
     bc_values[n] = 0.0;
   }
 
-  BoundaryFunction::Iterator bc;
+  Amanzi::Iterator bc;
   for (bc=bc_pressure->begin(); bc!=bc_pressure->end(); ++bc) {
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_PRESSURE;
@@ -127,6 +127,20 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
         bc_markers[f] == FLOW_BC_FACE_HEAD) {
       pressure_faces[f] = bc_values[f];
     }
+  }
+}
+
+
+/* ******************************************************************
+* Add source and sink terms. We use a simplified algorithms than for
+* boundary conditions.                                          
+****************************************************************** */
+void Flow_PK::addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
+{  
+  Amanzi::Iterator src;
+  for (src=src_sink->begin(); src!=src_sink->end(); ++src) {
+    int c = src->first; 
+    rhs[c] += mesh_->cell_volume(c) * src->second;
   }
 }
 

@@ -9,7 +9,7 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 #include "constant-function.hh"
 #include "polynomial-function.hh"
 #include "linear-function.hh"
@@ -146,13 +146,13 @@ TEST_FIXTURE(reference_mesh, values2)
   bf.Define(regions, f3);
   // Check values at t=1
   bf.Compute(1.0);
-  for (BoundaryFunction::Iterator i = bf.begin(); i != bf.end(); ++i) {
+  for (Amanzi::Iterator i = bf.begin(); i != bf.end(); ++i) {
     AmanziGeometry::Point p = mesh->face_centroid(i->first);
     CHECK_EQUAL(p.x()+2*p.y()+3*p.z(), i->second);
   }
   // Check values at t=2
   bf.Compute(2.0);
-  for (BoundaryFunction::Iterator i = bf.begin(); i != bf.end(); ++i) {
+  for (Amanzi::Iterator i = bf.begin(); i != bf.end(); ++i) {
     AmanziGeometry::Point p = mesh->face_centroid(i->first);
     CHECK_EQUAL(2*(p.x()+2*p.y()+3*p.z()), i->second);
   }

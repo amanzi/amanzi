@@ -6,6 +6,7 @@ Authors: Neil Carlson (version 1)
 */
 
 #include "Flow_BC_Factory.hpp"
+#include "Flow_Source_Factory.hpp"
 #include "Darcy_PK.hpp"
 
 namespace Amanzi {
@@ -33,14 +34,26 @@ void Darcy_PK::processParameterList()
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
 
-  double T_physical = FS->get_time();
-  T_internal = (standalone_mode) ? T_internal : T_physical;
-
   double time = T_internal;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
+
+  // Create the source object if any
+  if (dp_list.isSublist("source terms")) {
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list.sublist("source terms", true));  
+    FlowSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.createSource();
+
+    src_sink->Compute(time);
+  } else {
+    src_sink = NULL;
+  }
+
+  // Set up internal clock.
+  double T_physical = FS->get_time();
+  T_internal = (standalone_mode) ? T_internal : T_physical;
 
   // Steady state solution
   Teuchos::ParameterList& sss_list = dp_list.sublist("Steady state solution");

@@ -50,7 +50,7 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 # Library: flow
 #
 add_library(flow Flow_PK.cpp Flow_State.cpp 
-                 Flow_BC_Factory.cpp Flow_VandV.cpp 
+                 Flow_BC_Factory.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
                  Darcy_PK.cpp Darcy_IO.cpp 
                  Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_RK1.cpp Richards_WRM.cpp
                  Matrix_MFD.cpp Matrix_VAG.cpp 
@@ -99,6 +99,11 @@ if (BUILD_TESTS)
     add_executable(flow_darcy_2D test/Main.cc test/flow_darcy_2D.cpp)
     target_link_libraries(flow_darcy_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(flow_darcy_2D flow_darcy_2D KIND int)
+ 
+    # Test: transient Darcy flow with a source
+    add_executable(flow_darcy_well test/Main.cc test/flow_darcy_well.cpp)
+    target_link_libraries(flow_darcy_well ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_darcy_well flow_darcy_well KIND int)
  
     # Test: miscaleneous Richards flow routines
     add_executable(flow_richards_convergence test/Main.cc test/flow_richards_convergence.cpp)

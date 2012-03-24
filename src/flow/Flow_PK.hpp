@@ -17,7 +17,8 @@ Usage:
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "boundary-function.hh"
+#include "boundary_function.hh"
+#include "domain_function.hh"
 #include "mfd3d.hpp"
 #include "BDF2_fnBase.hpp"
 
@@ -113,6 +114,8 @@ class Flow_PK : public BDF2::fnBase {
                                std::vector<double>& bc_values,
                                Epetra_Vector& pressure_faces);
 
+  void addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
+
   // gravity members
   void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
                             const Epetra_Vector& Krel_faces, 
@@ -151,8 +154,10 @@ class Flow_PK : public BDF2::fnBase {
   int flow_status_;
   int standalone_mode;
  
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   int dim;
+
+ private:
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace AmanziFlow

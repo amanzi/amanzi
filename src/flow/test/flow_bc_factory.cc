@@ -7,7 +7,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Flow_BC_Factory.hpp"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 #include "function-factory.hh"
 #include "errors.hh"
 
@@ -254,7 +254,7 @@ TEST_FIXTURE(bits_and_pieces, static_head)
   bc0->Compute(0.0);
   CHECK_EQUAL(12, bc0->size());
 
-  BoundaryFunction::Iterator i, j;
+  Amanzi::Iterator i, j;
   bc1->Compute(0.0);
   for (i = bc0->begin(), j = bc1->begin(); i != bc0->end(); ++i, ++j) {
     CHECK_EQUAL(1+ i->second, j->second);

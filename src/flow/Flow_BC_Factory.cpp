@@ -1,10 +1,10 @@
 /*
 This is the flow component of the Amanzi code. 
 License: BSD
-Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
+Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
+         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#include "boundary-function.hh"
 #include "function-factory.hh"
 #include "errors.hh"
 
@@ -147,16 +147,10 @@ void FlowBCFactory::processPressureSpec(Teuchos::ParameterList& list, BoundaryFu
   }
 
   Teuchos::ParameterList* f_list;
-  if (list.isParameter("boundary pressure")) {
-    if (list.isSublist("boundary pressure")) {
-      // validate function-factory sublist
-      f_list = &list.sublist("boundary pressure");
-    } else {  // "boundary pressure" is not a sublist
-      m << "parameter \"boundary pressure\" is not a sublist";
-      Exceptions::amanzi_throw(m);
-    }
-  } else {
-    m << "sublist \"boundary pressure\" is missing";
+  if (list.isSublist("boundary pressure")) {
+    f_list = &list.sublist("boundary pressure");
+  } else {  // "boundary pressure" is not a sublist
+    m << "parameter \"boundary pressure\" is not a sublist";
     Exceptions::amanzi_throw(m);
   }
 
@@ -225,16 +219,10 @@ void FlowBCFactory::processMassFluxSpec(Teuchos::ParameterList& list,
   }
 
   Teuchos::ParameterList* f_list;
-  if (list.isParameter("outward mass flux")) {
-    if (list.isSublist("outward mass flux")) {
-      // validate function-factory sublist
-      f_list = &list.sublist("outward mass flux");
-    } else {
-      m << "parameter \"outward mass flux\" is not a sublist";
-      Exceptions::amanzi_throw(m);
-    }
+  if (list.isSublist("outward mass flux")) {
+    f_list = &list.sublist("outward mass flux");
   } else {
-    m << "sublist \"outward mass flux\" is missing";
+    m << "parameter \"outward mass flux\" is not a sublist";
     Exceptions::amanzi_throw(m);
   }
 
@@ -306,16 +294,10 @@ void FlowBCFactory::processStaticHeadSpec(
 
   // Get the water table elevation function sublist.
   Teuchos::ParameterList* water_table_list;
-  if (list.isParameter("water table elevation")) {
-    if (list.isSublist("water table elevation")) {
-      // validate function-factory sublist
-      water_table_list = &list.sublist("water table elevation");
-    } else {  // "water table elevation" is not a sublist
-      m << "parameter \"water table elevation\" is not a sublist";
-      Exceptions::amanzi_throw(m);
-    }
-  } else {  // "water table elevation" sublist is missing.
-    m << "sublist \"water table elevation\" is missing";
+  if (list.isSublist("water table elevation")) {
+    water_table_list = &list.sublist("water table elevation");
+  } else {
+    m << "parameter \"water table elevation\" is not a sublist";
     Exceptions::amanzi_throw(m);
   }
 
@@ -394,16 +376,10 @@ void FlowBCFactory::processSeepageFaceSpec(Teuchos::ParameterList& list,
   }
 
   Teuchos::ParameterList* f_list;
-  if (list.isParameter("outward mass flux")) {
-    if (list.isSublist("outward mass flux")) {
-      // validate function-factory sublist
-      f_list = &list.sublist("outward mass flux");
-    } else {
-      m << "parameter \"outward mass flux\" is not a sublist";
-      Exceptions::amanzi_throw(m);
-    }
-  } else {  // "outward mass flux" sublist is missing
-    m << "sublist \"outward mass flux\" is missing";
+  if (list.isSublist("outward mass flux")) {
+    f_list = &list.sublist("outward mass flux");
+  } else {
+    m << "parameter \"outward mass flux\" is not a sublist";
     Exceptions::amanzi_throw(m);
   }
 
@@ -420,7 +396,6 @@ void FlowBCFactory::processSeepageFaceSpec(Teuchos::ParameterList& list,
   // Add this BC specification to the boundary function.
   bc->Define(regions, f);
 }
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

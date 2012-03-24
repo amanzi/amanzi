@@ -17,7 +17,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 #include "Point.hh"
 
 #include "Flow_BC_Factory.hpp"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 #include "Richards_PK.hpp"
 
 

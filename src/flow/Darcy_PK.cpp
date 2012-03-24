@@ -214,7 +214,20 @@ int Darcy_PK::advance(double dT_MPC)
     T_internal = (standalone_mode) ? T_internal : T_physical;
   }
 
+  // update boundary conditions and source terms
   double time = T_internal;
+  bc_pressure->Compute(time);
+  bc_head->Compute(time);
+  bc_flux->Compute(time);
+  bc_seepage->Compute(time);
+
+  if (src_sink != NULL) src_sink->Compute(time);
+
+  updateBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage, 
+      *solution_cells, atm_pressure, 
+      bc_markers, bc_values);
+
   // work-around limited support for tensors
   setAbsolutePermeabilityTensor(K);
   for (int c=0; c<K.size(); c++) K[c] *= rho_ / mu_;
@@ -230,6 +243,8 @@ int Darcy_PK::advance(double dT_MPC)
   matrix->update_ML_preconditioner();
 
   rhs = matrix->get_rhs();
+  if (src_sink != NULL) addSourceTerms(src_sink, *rhs);
+
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess 

@@ -15,7 +15,8 @@ Authors: Neil Carlson (version 1)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
+#include "domain_function.hh"
 #include "tensor.hpp"
 
 #include "Flow_PK.hpp"
@@ -94,12 +95,14 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
   Teuchos::RCP<Epetra_Vector> rhs_faces;
 
-  BoundaryFunction* bc_pressure;  // Pressure Dirichlet BC. 
-  BoundaryFunction* bc_head;  // Static pressure head BC.
-  BoundaryFunction* bc_flux;  // Outward mass flux BC.
-  BoundaryFunction* bc_seepage;  // Seepage face BC.
+  BoundaryFunction* bc_pressure;  // Boundary conditions. 
+  BoundaryFunction* bc_head;
+  BoundaryFunction* bc_flux;
+  BoundaryFunction* bc_seepage;
   std::vector<int> bc_markers;  // Used faces marked with boundary conditions
   std::vector<double> bc_values;
+
+  DomainFunction* src_sink;  // Source and sink terms
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 

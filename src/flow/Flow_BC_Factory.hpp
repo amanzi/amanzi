@@ -84,15 +84,15 @@ The gravitational acceleration is assumed to be directed in the negative z-direc
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
 
 class FlowBCFactory {
  public:
-  FlowBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
-                const Teuchos::RCP<Teuchos::ParameterList> &params)
+  FlowBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                const Teuchos::RCP<Teuchos::ParameterList>& params)
      : mesh_(mesh), params_(params) {}
   ~FlowBCFactory() {};
   

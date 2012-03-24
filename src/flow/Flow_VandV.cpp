@@ -19,7 +19,7 @@ void Flow_PK::validate_boundary_conditions(
 {
   // Create sets of the face indices belonging to each BC type.
   std::set<int> pressure_faces, head_faces, flux_faces;
-  BoundaryFunction::Iterator bc;
+  Amanzi::Iterator bc;
   for (bc=bc_pressure->begin(); bc!=bc_pressure->end(); ++bc) pressure_faces.insert(bc->first);
   for (bc=bc_head->begin(); bc!=bc_head->end(); ++bc) head_faces.insert(bc->first);
   for (bc=bc_flux->begin(); bc!=bc_flux->end(); ++bc) flux_faces.insert(bc->first);

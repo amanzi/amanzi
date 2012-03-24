@@ -18,7 +18,7 @@ Usage:
 
 #include "tensor.hpp"
 #include "Explicit_TI_fnBase.hpp"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 
 #include "State.hpp"
 #include "Transport_State.hpp"
