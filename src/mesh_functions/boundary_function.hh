@@ -16,7 +16,7 @@ class BoundaryFunction : public MeshFunction {
  public:
   BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
 
-  void Define(const std::vector<std::string> &regions, const Teuchos::RCP<const Function>& f);
+  void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const Function>& f);
 };
 
 } // namespace Amanzi

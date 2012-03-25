@@ -365,7 +365,7 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
   // loop over exterior boundary sets
   for (int n=0; n<bcs.size(); n++) {
     int i = bcs_tcc_index[n];
-    for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+    for (Amanzi::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
       int f = bc->first;
       int c2 = (*downwind_cell_)[f]; 
 
@@ -465,7 +465,7 @@ void Transport_PK::extract_boundary_conditions(const int component,
 
   for (int n=0; n<bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
-      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+      for (Amanzi::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
         int f = bc->first;
         bc_face_id[f] = TRANSPORT_BC_CONSTANT_TCC;
         bc_face_value[f] = bc->second;

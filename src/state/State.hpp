@@ -79,21 +79,22 @@ public:
   void set_zero_total_component_concentration();
   void set_total_component_concentration(const double* conc, const int mesh_block_id); 
   void set_total_component_concentration(const double* conc, const std::string region ); 
-  void set_porosity( const double phi );
-  void set_porosity( const double phi, const int mesh_block_id );
-  void set_porosity( const double phi, const std::string region );
-  void set_permeability (const double kappa);
-  void set_permeability (const double kappa, const int mesh_block_id);
-  void set_permeability (const double kappa, const std::string region);
-  void set_horizontal_permeability (const double kappa);
-  void set_horizontal_permeability (const double kappa, const int mesh_block_id);
-  void set_horizontal_permeability (const double kappa, const std::string region);  
-  void set_vertical_permeability (const double kappa);
-  void set_vertical_permeability (const double kappa, const int mesh_block_id);
-  void set_vertical_permeability (const double kappa, const std::string region);
+  void set_porosity(const double phi);
+  void set_porosity(const double phi, const int mesh_block_id);
+  void set_porosity(const double phi, const std::string region);
+  void set_permeability(const double kappa);
+  void set_permeability(const double kappa, const int mesh_block_id);
+  void set_permeability(const double kappa, const std::string region);
+  void set_horizontal_permeability(const double kappa);
+  void set_horizontal_permeability(const double kappa, const int mesh_block_id);
+  void set_horizontal_permeability(const double kappa, const std::string region);  
+  void set_vertical_permeability(const double kappa);
+  void set_vertical_permeability(const double kappa, const int mesh_block_id);
+  void set_vertical_permeability(const double kappa, const std::string region);
   void set_viscosity(const double mu);
   void set_gravity(const double *g);
   void set_number_of_components(const int n);
+  void set_specific_storage(const double ss, const std::string region);
 
 
   // set methods 
@@ -150,6 +151,7 @@ private:
   Teuchos::RCP<Epetra_Vector> vertical_permeability;  
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
   Teuchos::RCP<Epetra_Vector> material_ids;
+  Teuchos::RCP<Epetra_Vector> specific_storage;
 
   Teuchos::RCP<double*> gravity;
   Teuchos::RCP<double> density;

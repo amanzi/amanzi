@@ -21,10 +21,11 @@ typedef std::map<int,double>::const_iterator Iterator;
 
 class MeshFunction {  
  public:
+  MeshFunction() {};
   virtual ~MeshFunction() {};
 
   virtual void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const Function>& f) = 0;
-  void Define(const std::string region, const Teuchos::RCP<const Function>& f);
+  void DefineFromString(const std::string region, const Teuchos::RCP<const Function>& f);
   
   void Compute(double);
   Iterator begin() const { return value_.begin(); }

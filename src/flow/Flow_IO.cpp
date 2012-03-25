@@ -28,9 +28,9 @@ void Flow_PK::processParameterList()
 }
 
 
-/* ************************************************************* */
-/* Printing information about Transport status                   */
-/* ************************************************************* */
+/* ****************************************************************
+* Printing information about Flow status
+**************************************************************** */
 void Flow_PK::print_statistics() const
 {
   if (!MyPID && verbosity_level > 0) {

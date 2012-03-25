@@ -97,7 +97,7 @@ void Transport_PK::limiterTensorial(const int component,
   // Step 2: limit gradient on the Dirichlet boundary
   for (int n=0; n<bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
-      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+      for (Amanzi::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
         int f = bc->first;
         int c1 = (*upwind_cell_)[f]; 
         int c2 = (*downwind_cell_)[f]; 
@@ -250,7 +250,7 @@ void Transport_PK::limiterBarthJespersen(const int component,
   // Step 2: limiting gradient on the Dirichlet boundary
   for (int n=0; n<bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
-      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+      for (Amanzi::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
         int f = bc->first;
         int c2 = (*downwind_cell_)[f]; 
 
@@ -358,7 +358,7 @@ void Transport_PK::limiterKuzmin(const int component,
   // Update min/max at nodes from influx boundary data
   for (int n=0; n<bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
-      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+      for (Amanzi::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
         int f = bc->first;
         int c2 = (*downwind_cell_)[f]; 
 

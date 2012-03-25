@@ -209,7 +209,6 @@ void State::initialize_from_parameter_list()
       }
 
       // set the saturation
-      // set the pressure
       if (sublist.isSublist("uniform saturation"))
       {
         const Teuchos::ParameterList&  unif_s_list = sublist.sublist("uniform saturation");
@@ -225,7 +224,11 @@ void State::initialize_from_parameter_list()
         // maybe throw an exception
       }
 
-
+      // set the specific storage
+      if (sublist.isSublist("Constant specific storage"))
+      {
+        set_specific_storage(sublist.get<double>("Constant specific storage"), region);
+      }
 
       // read the component concentrations from the xml file
       // and initialize them in mesh block mesh_block_ID
@@ -265,6 +268,8 @@ void State::create_storage ()
   viscosity = Teuchos::rcp(new double);
   gravity =   Teuchos::rcp(new double*);
   *gravity = new double[3];
+
+  specific_storage = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
 }
 
 
@@ -489,6 +494,11 @@ void State::set_porosity( const double phi, const int mesh_block_id )
 void State::set_porosity( const double phi, const std::string region )
 {
   set_cell_value_in_region(phi,*porosity,region);
+}
+
+void State::set_specific_storage(const double ss, const std::string region)
+{
+  set_cell_value_in_region(ss, *specific_storage, region);
 }
 
 void State::set_zero_total_component_concentration()
