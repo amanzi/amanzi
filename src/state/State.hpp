@@ -43,6 +43,8 @@ public:
   Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
   Teuchos::RCP<double*>             get_gravity()      { return gravity; }
 
+  Teuchos::RCP<Epetra_Vector>       get_specific_storage() { return specific_storage; };
+
   Teuchos::RCP<Epetra_MultiVector>  get_darcy_velocity () { return darcy_velocity; }
   Teuchos::RCP<Epetra_MultiVector>  get_total_component_concentration () 
   { return total_component_concentration; };

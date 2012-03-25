@@ -61,6 +61,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
   Teuchos::RCP<Epetra_Vector> prev_water_saturation() { return prev_water_saturation_; }
 
+  Teuchos::RCP<Epetra_Vector> specific_storage() { return specific_storage_; }
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
 
   double ref_fluid_density() { return *fluid_density_; }  // references
@@ -75,6 +76,8 @@ class Flow_State {
   Epetra_Vector& ref_water_saturation() { return *water_saturation_; }
   Epetra_Vector& ref_prev_water_saturation() { return *prev_water_saturation_; }
 
+  Epetra_Vector& ref_specific_storage() { return *specific_storage_; }
+
   // miscaleneous
   double get_time() { return (S_ == NULL) ? 0.0 : S_->get_time(); }
   double normLpCell(const Epetra_Vector& v1, double p);
@@ -88,6 +91,7 @@ class Flow_State {
   void set_permeability(double Kh, double Kv);
   void set_permeability(double Kh, double Kv, const string region);
   void set_gravity(double g);
+  void set_specific_storage(double ss);
 
  private:
   State* S_;  
@@ -105,6 +109,8 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> porosity_;
   Teuchos::RCP<Epetra_Vector> water_saturation_;
   Teuchos::RCP<Epetra_Vector> prev_water_saturation_;
+
+  Teuchos::RCP<Epetra_Vector> specific_storage_;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 };

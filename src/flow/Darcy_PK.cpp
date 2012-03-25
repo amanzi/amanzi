@@ -274,6 +274,9 @@ void Darcy_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
   for (int c=0; c<nfaces_owned; c++) flux[c] /= rho_;
+
+  //DEBUG
+  writeGMVfile(FS_MPC);
 }
 
 
@@ -305,12 +308,14 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 void Darcy_PK::addTimeDerivativeSpecificStorage(
    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
+  const Epetra_Vector& specific_storage = FS->ref_specific_storage();
+
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
 
   for (int c=0; c<ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume / dT_prec;
+    double factor = volume / dT_prec * specific_storage[c];
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }

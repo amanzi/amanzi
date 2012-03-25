@@ -51,6 +51,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
   FS->set_permeability(0.1, 2.0, "Computational domain");
   FS->set_porosity(0.2);
+  FS->set_specific_storage(1e-1);
   FS->set_fluid_viscosity(1.0);
   FS->set_fluid_density(1.0);
   FS->set_gravity(-1.0);
@@ -72,7 +73,7 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   // transient solution
   double dT = 1.0;
-  for (int n=0; n<50; n++) {
+  for (int n=0; n<20; n++) {
     DPK->advance(dT); 
     DPK->commitState(FS);
  

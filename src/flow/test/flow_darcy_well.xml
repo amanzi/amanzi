@@ -113,7 +113,7 @@
           <Parameter name="regions" type="Array string" value="{Well}"/>
           <ParameterList name="sink">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="2.0"/>
+              <Parameter name="value" type="double" value="-0.1"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

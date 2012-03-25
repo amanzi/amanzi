@@ -42,6 +42,8 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
   for (int i=0; i<3; i++) (*gravity_)[i] = 0.0;
 
+  specific_storage_ = Teuchos::rcp(new Epetra_Vector(cmap));
+
   mesh_ = mesh;
 
   S_ = NULL;  
@@ -68,6 +70,8 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
   for (int i=0; i<3; i++) (*gravity_)[i] = (*(S->get_gravity()))[i];
 
+  specific_storage_ = S->get_specific_storage();
+
   mesh_ = S->get_mesh_maps();
 
   S_ = &*S;
@@ -90,6 +94,8 @@ Flow_State::Flow_State(State& S)
 
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
   for (int i=0; i<3; i++) (*gravity_)[i] = (*(S.get_gravity()))[i];
+
+  specific_storage_ = S.get_specific_storage();
 
   mesh_ = S.get_mesh_maps();
 
@@ -117,6 +123,8 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     darcy_flux_ = FS.darcy_flux();
 
     gravity_ = FS.gravity();
+    specific_storage_ = FS.specific_storage();
+
     mesh_ = FS.mesh();
   } 
   else if (mode == CopyMemory ) {
@@ -128,6 +136,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     fluid_viscosity_ = FS.fluid_viscosity();
 
     gravity_ = FS.gravity();
+    specific_storage_ = FS.specific_storage();
     mesh_ = FS.mesh();
 
     // allocate memory for the next state
@@ -326,6 +335,15 @@ void Flow_State::set_permeability(double Kh, double Kv, const string region)
     (*horizontal_permeability_)[c] = Kh;
     (*vertical_permeability_)[c] = Kv;
   }
+}
+
+
+/* *******************************************************************
+ * DEBUG: create constant porosity
+ ****************************************************************** */
+void Flow_State::set_specific_storage(double ss)
+{
+  specific_storage_->PutScalar(ss);
 }
 
 
