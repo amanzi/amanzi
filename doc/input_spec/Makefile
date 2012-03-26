@@ -16,6 +16,10 @@ pdf: AmanziInputSpec.rst
 	pdflatex AmanziInputSpec.tex; \
 	pdflatex AmanziInputSpec.tex
 
+native-html: AmanziNativeSpecV2.rst
+	$(CBpath)/rst2html-pygments $(PY_CSS) AmanziNativeSpecV2.rst AmanziNativeSpecV2.html
+
+
 all: html pdf
 
 clean-html: 
