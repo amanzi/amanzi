@@ -1,0 +1,169 @@
+:Description: Savanna River Waste Tank, 2012 ASCEM demo; based on description from Greg Flach 
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    Pu_238
+    U_234
+    Th_230
+    Ra_226
+    Pb_210
+  /
+
+  GENERAL_REACTION
+    REACTION Pu_238 <-> U_234
+    FORWARD_RATE -2.5e-10 : [s^-1] half life of 87.7 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION U_234 <-> Th_230
+    FORWARD_RATE -8.9e-14 : [s^-1] half life of 245500 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION Th_230 <-> Ra_226
+    FORWARD_RATE -2.9e-13 : [s^-1] half life of 75380 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION Ra_226 <-> Pb_210
+    FORWARD_RATE -1.4e-11 : [s^-1] half life of 1600 y
+    BACKWARD_RATE 0.d0
+  /
+
+
+skip
+  SORPTION
+    ISOTHERM_REACTIONS
+      : Kd [kg_h2o/m^3 bulk] = Kd [L_h2o/kg_bulk] * rho_h2o * rho_bulk 
+      Pu_238
+        DISTRIBUTION_COEFFICIENT 7.7d5
+      /
+    /
+  END :sorption
+noskip
+
+  DATABASE ascem-2012-waste-tanks.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS OFF
+
+  OUTPUT
+    primary_species
+  /
+
+END
+
+:=========================== solver options ===================================
+TIMESTEPPER
+  TS_ACCELERATION 8
+/
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  ORIGIN 0.d0 0.d0 0.d0
+  NXYZ 1 1 1
+  BOUNDS
+    0.d0 1.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+END
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.5d0
+/
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION all
+  AT_CELL_CENTER
+/
+
+:=========================== output options ===================================
+OUTPUT
+  PERIODIC_OBSERVATION TIMESTEP 1
+/
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 60.d0 y
+  INITIAL_TIMESTEP_SIZE 1.0d0 y
+  MAXIMUM_TIMESTEP_SIZE 1.0d0 y
+/
+
+:=========================== output options ===================================
+OUTPUT
+  times y 1.0 2.0 10.0 20.0 40.0 60.0
+
+  FORMAT TECPLOT POINT
+  FORMAT HDF5
+  VELOCITIES
+  MASS_BALANCE
+/
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    1.d0 1.d0 1.d0
+  /
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE zero_gradient
+  CONSTRAINT_LIST
+:    0.d0 background
+    0.d0 seepage
+  /
+END
+
+
+:=========================== constraints ======================================
+CONSTRAINT background
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    Pu_238   1.0e-15     T
+    U_234    1.0e-15     T
+    Th_230   1.0e-15     T
+    Ra_226   1.0e-15     T
+    Pb_210   1.0e-15     T
+  /
+
+END
+
+CONSTRAINT seepage
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    Pu_238   1.0e-9     T
+    U_234    1.0e-9     T
+    Th_230   1.0e-9     T
+    Ra_226   1.0e-9     T
+    Pb_210   1.0e-9     T
+  /
+
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+

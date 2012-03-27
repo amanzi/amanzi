@@ -44,6 +44,10 @@ void SorptionIsothermRxn::AddContributionToDTotal(
 }  // end AddContributionToDTotal()
 
 void SorptionIsothermRxn::Display(void) const {
+  std::cout << std::setw(12) << species_name_
+            << std::setw(15) << isotherm_->name()
+            << std::setw(15);
+  isotherm_->Display();
 }  // end Display()
 
 }  // namespace chemistry
