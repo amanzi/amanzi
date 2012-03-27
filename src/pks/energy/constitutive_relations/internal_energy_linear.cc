@@ -30,7 +30,7 @@ double InternalEnergyLinear::InternalEnergy(double temp) {
 };
 
 void InternalEnergyLinear::InitializeFromPlist_() {
-  molar_basis_ = plist_.get<bool>("molar-basis (otherwise, mass-basis)", false);
+  molar_basis_ = plist_.get<bool>("molar-basis", false);
   Cv_ = plist_.get<double>("heat capacity [J/({kg/mol}-K)]");
   T_ref_ = plist_.get<double>("Reference temperature [K]", 273.15);
 };

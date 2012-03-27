@@ -35,6 +35,7 @@ double InternalEnergyGas::DInternalEnergyDT(double temp, double mol_frac_gas) {
 };
 
 void InternalEnergyGas::InitializeFromPlist_() {
+  molar_basis_ = plist_.get<bool>("molar-basis (otherwise, mass-basis)", true);
   Cv_air_ = plist_.get<double>("heat capacity of air [J/(mol-K)]", 13.0);
   heat_vaporization_ = plist_.get<double>("heat of vaporization of water [J/mol]", 4.065e4);
 };

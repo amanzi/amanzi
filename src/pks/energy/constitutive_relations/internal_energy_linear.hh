@@ -31,7 +31,7 @@ public:
   bool IsMolarBasis() { return molar_basis_; }
 
   double InternalEnergy(double temp);
-  double DInternalEnergyDT(double temp, double mol_frac_gas) { return Cv_; }
+  double DInternalEnergyDT(double temp) { return Cv_; }
 
 protected:
   virtual void InitializeFromPlist_();

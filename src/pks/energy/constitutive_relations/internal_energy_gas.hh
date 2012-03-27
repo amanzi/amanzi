@@ -28,6 +28,8 @@ class InternalEnergyGas {
 public:
   InternalEnergyGas(Teuchos::ParameterList& plist);
 
+  bool IsMolarBasis() { return molar_basis_; }
+
   double InternalEnergy(double temp, double mol_frac_gas);
   double DInternalEnergyDT(double temp, double mol_frac_gas);
 
@@ -38,6 +40,7 @@ private:
 
   double Cv_air_; // units: J/(mol-K)
   double heat_vaporization_; // units: J/mol
+  bool molar_basis_;
 };
 
 }

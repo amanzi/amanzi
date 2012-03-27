@@ -53,7 +53,6 @@ void PassiveTracer::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize the advection method
   advection_->set_num_dofs(1);
-  advection_->set_bcs(bcs_, bcs_dof_);
 
   if (!transport_plist_.get<bool>("Strongly Coupled PK", false)) {
     // model evaluator params
@@ -165,10 +164,6 @@ void PassiveTracer::solution_to_state(const Teuchos::RCP<TreeVector>& soln,
 // -- advance using the BDF integrator
 bool PassiveTracer::advance(double dt) {
   state_to_solution(S_next_, solution_);
-
-  // update boundary conditions
-  double time = S_->time();
-  for (int i=0; i != bcs_->size(); ++i) (*bcs_)[i]->Compute(time);
 
   // take the bdf timestep
   double h = dt;
