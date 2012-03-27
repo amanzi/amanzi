@@ -21,7 +21,7 @@ cmake_args='@common_cmake_args@'
 
 cd ${exodusii_build_dir}
 
-cmake   \
+@CMAKE_COMMAND@   \
       -D CMAKE_INSTALL_PREFIX=@TPL_INSTALL_PREFIX@ \
       -D CMAKE_C_COMPILER=@CMAKE_C_COMPILER@ \
       -D CMAKE_CXX_COMPILER=@CMAKE_CXX_COMPILER@ \

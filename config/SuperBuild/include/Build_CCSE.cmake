@@ -14,6 +14,7 @@ define_external_project_args(CCSE TARGET ccse)
 # NO WHITESPACE between -D and VAR. Parser blows up otherwise.
 message(STATUS "Build CCSE with space dimension ${CCSE_BL_SPACEDIM}")
 set(CCSE_CMAKE_CACHE_ARGS
+                       
                        -DENABLE_Config_Report:BOOL=TRUE
                        -DENABLE_OpenMP:BOOL=TRUE
                        -DENABLE_TESTS:BOOL=FALSE
@@ -35,7 +36,9 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}               # Source directory
                     CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}    # Ensure uniform build
+                                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}  # Ensure uniform build
+				     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}  # Ensure uniform build
                     # -- Build
                     BINARY_DIR        ${CCSE_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
