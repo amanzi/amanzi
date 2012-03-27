@@ -598,12 +598,37 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 
     /* base face */
 
-    MFace_ptr face0 = List_Entry(rfaces,0);
-    int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
-
 
     if (celltype >= TET && celltype <= HEX) {
       int lid;
+      MFace_ptr face0;
+      int fdir0;
+
+
+      if (celltype == TET || celltype == HEX) {
+        face0 = List_Entry(rfaces,0);
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+      }
+      else if (celltype == PRISM) {
+        /* Find one of the 3 node faces */
+        int i;
+        for (i = 0; i < 5; i++) {
+          face0 = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face0) == 3)
+            break;
+        }
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
+      }
+      else if (celltype == PYRAMID) {
+        /* Find the 4 node face */
+        int i;
+        for (i = 0; i < 5; i++) {
+          face0 = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face0) == 4)
+            break;
+        }
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
+      }
       
       int mkid = MSTK_GetMarker();
       MEnt_Mark(face0,mkid);
@@ -715,14 +740,37 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
 
     List_ptr rfaces = MR_Faces((MRegion_ptr)cell);   
 
-    /* base face */
-
-    MFace_ptr face0 = List_Entry(rfaces,0);
-    int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
-
-
     if (celltype >= TET && celltype <= HEX) {
       int lid;
+      MFace_ptr face0;
+      int fdir0;
+
+
+      if (celltype == TET || celltype == HEX) {
+        face0 = List_Entry(rfaces,0);
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+      }
+      else if (celltype == PRISM) {
+        /* Find one of the 3 node faces */
+        int i;
+        for (i = 0; i < 5; i++) {
+          face0 = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face0) == 3)
+            break;
+        }
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
+      }
+      else if (celltype == PYRAMID) {
+        /* Find the 4 node face */
+        int i;
+        for (i = 0; i < 5; i++) {
+          face0 = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face0) == 4)
+            break;
+        }
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
+      }
+      
 
       int mkid = MSTK_GetMarker();
       MEnt_Mark(face0,mkid);
@@ -860,7 +908,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
 {
 
   MEntity_ptr cell;
-  int j,nf, result;
+  int j, nf, result;
 
   ASSERT(faceids != NULL);
   ASSERT(face_dirs != NULL);
@@ -879,13 +927,35 @@ void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
     int celltype = cell_get_type(cellid);
 
     if (ordered && (celltype >= TET && celltype <= HEX)) {
-      int lid;
-
+      MFace_ptr face0;
+      int fdir0, lid;
 
       /* base face */
 
-      MFace_ptr face0 = List_Entry(rfaces,0);
-      int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+      if (celltype == TET || celltype == HEX) {
+        face0 = List_Entry(rfaces,0);
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+      }
+      else if (celltype == PRISM) {
+        /* Find one of the 3 node faces */
+        int i;
+        for (i = 0; i < 5; i++) {
+          face0 = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face0) == 3)
+            break;
+        }
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
+      }
+      else if (celltype == PYRAMID) {
+        /* Find the 4 node face */
+        int i;
+        for (i = 0; i < 5; i++) {
+          face0 = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face0) == 4)
+            break;
+        }
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
+      }
 
       /* Markers for faces to avoid searching */
 
