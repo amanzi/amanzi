@@ -37,7 +37,7 @@ class AirWaterRock : public PK, public BDFFnBase {
 public:
 
   AirWaterRock(Teuchos::ParameterList& plist, Teuchos::RCP<State>& S,
-                      Teuchos::RCP<TreeVector>& soln);
+                      Teuchos::RCP<TreeVector>& solution);
 
   // AirWaterRock is a PK
   // -- Initialize owned (dependent) variables.
@@ -45,8 +45,8 @@ public:
 
   // -- transfer operators -- ONLY COPIES POINTERS
   virtual void state_to_solution(const Teuchos::RCP<State>& S,
-                                 const Teuchos::RCP<TreeVector>& soln);
-  virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
+                                 const Teuchos::RCP<TreeVector>& solution);
+  virtual void solution_to_state(const Teuchos::RCP<TreeVector>& solution,
                                  const Teuchos::RCP<State>& S);
 
   // -- Choose a time step compatible with physics.
@@ -104,9 +104,24 @@ private:
                      const Teuchos::RCP<CompositeVector> f, bool negate);
   void ApplyConduction_(const Teuchos::RCP<State> S, const Teuchos::RCP<CompositeVector> f);
 
+  // methods for applying/using the discretization/operators
+  void UpdateBoundaryConditions_();
+  void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
+
   // misc setup information
   Teuchos::ParameterList energy_plist_;
   double dt_;
+
+  // boundary conditions
+  Teuchos::RCP<BoundaryFunction> bc_temperature_;
+  Teuchos::RCP<BoundaryFunction> bc_flux_;
+  std::vector<Operators::Matrix_bc> bc_markers_;
+  std::vector<double> bc_values_;
+
+  // this is stupid and duplicates work, but currently advection and diffusion
+  // expect BCs differently
+  Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_advection_;
+  Teuchos::RCP< std::vector< int > > bcs_advection_dofs_;
 
   // constitutive relations
   Teuchos::RCP<EnergyRelations::TwophaseThermalConductivity> thermal_conductivity_model_;

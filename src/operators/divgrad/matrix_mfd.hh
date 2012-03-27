@@ -63,6 +63,10 @@ class MatrixMFD : public Epetra_Operator {
 public:
   MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh);
 
+  // access to data for updating manually
+  std::vector<double>& Acc_cells() { return Acc_cells_; }
+  Teuchos::RCP<const Epetra_Vector> Acc() { return Acc_; }
+
   // main computational methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
 

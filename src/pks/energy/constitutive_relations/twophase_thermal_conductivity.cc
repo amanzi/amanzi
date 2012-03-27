@@ -36,7 +36,6 @@ void TwophaseThermalConductivity::InitializeFromPlist_() {
   k_rock_ = plist_.get<double>("thermal conductivity of rock");
   k_liquid_ = plist_.get<double>("thermal conductivity of liquid");
   k_gas_ = plist_.get<double>("thermal conductivity of gas");
-  rho_rock_ = plist_.get<double>("rock density");
 };
 
 } // namespace Relations

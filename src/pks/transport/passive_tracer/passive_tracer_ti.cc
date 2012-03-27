@@ -18,10 +18,14 @@ void PassiveTracer::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_o
   Teuchos::RCP<CompositeVector> res = f->data();
   res->PutScalar(0.0);
 
+  // update bcs
+  for (int i=0; i != bcs_->size(); ++i) (*bcs_)[i]->Compute(t_new);
+
   // accumulation term
   AddAccumulation_(res);
 
-  // advection term (gets bcs)
+  // advection term
+  advection_->set_bcs(bcs_, bcs_dof_);
   AddAdvection_(res);
 };
 

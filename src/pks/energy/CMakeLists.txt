@@ -6,7 +6,12 @@
 #
 
 # ATS include directories
+
+# additional common components
+add_subdirectory(bc_factory)
 add_subdirectory(constitutive_relations)
+
+# PKs
 add_subdirectory(constant_temperature)
 add_subdirectory(air_water_rock)
 

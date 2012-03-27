@@ -266,6 +266,7 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   locations[0] = AmanziMesh::CELL; locations[1] = AmanziMesh::FACE;
 
   rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, 1, true));
+  rhs_->CreateData();
 }
 
 
@@ -313,7 +314,7 @@ void MatrixMFD::AssembleGlobalMatrices() {
       (*rhs_)("face",f) += Ff_cells_[c][n];
     }
   }
-  rhs_->GatherGhostedToMaster("face", Add);
+  rhs_->GatherGhostedToMaster("face");
 }
 
 
@@ -430,7 +431,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   Tf.Update(1.0, *X.ViewComponent("face", false), -1.0);
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
-  ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+  ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
