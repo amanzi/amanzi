@@ -38,7 +38,7 @@ set(METIS_DIR  @TPL_INSTALL_PREFIX@ CACHE PATH "METIS installation prefix")
 # CCSE
 set(CCSE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CCSE installation prefix")
 set(ENABLE_MPI TRUE CACHE BOOL "CCSE required MPI flag")
-set(ENABLE_OpenMPI TRUE CACHE BOOL "CCSE required flag")
+set(ENABLE_OpenMP @ENABLE_OpenMP@ CACHE BOOL "CCSE required flag")
 set(AMANZI_PRECISION DOUBLE CACHE STRING "CCSE precision")
 set(AMANZI_SPACEDIM @CCSE_BL_SPACEDIM@ CACHE STRING "BoxLib Space dimension")
 
