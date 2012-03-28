@@ -83,6 +83,11 @@ State
 Flow
 ====
 
+Flow sublist includes only one sublist, either `"Darcy Problem`" or `"Richars Problem`".
+The second sublist contains all objects of the first one.
+
+Sublist `"Water retention models`"
+
 Transport
 =========
 
