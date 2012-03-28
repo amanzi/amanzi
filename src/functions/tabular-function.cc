@@ -49,7 +49,8 @@ double TabularFunction::operator() (const double *x) const
   int n = x_.size();
   if (*x <= x_[0]) {
     y = y_[0];
-  } else if (*x >= x_[n-1]) {
+  //} else if (*x >= x_[n-1]) {
+  } else if (*x > x_[n-1]) {
     y = y_[n-1];
   } else {
     // binary search to find interval containing *x

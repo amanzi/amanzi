@@ -197,13 +197,13 @@ Usage:
 
  * [SU] `"Time Integration Mode`" [list]: accepts one of three integration modes:
 
-  * [U] `"Steady`" [list] - Amanzi is run in steady mode.
+  * [SU] `"Steady`" [list] - Amanzi is run in steady mode.
 
-   * [U] `"Start`" [double] (Optional): Initial value for psuedo time (used as a continuation parameter) to generate a steady solution
+   * [SU] `"Start`" [double] (Optional): Initial value for psuedo time (used as a continuation parameter) to generate a steady solution
 
-   * [U] `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
+   * [SU] `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
 
-   * [U] `"Initial Time Step`" [double]: The intitial time step for the steady calculation.
+   * [SU] `"Initial Time Step`" [double]: The initial time step for the steady calculation.
 
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
@@ -213,7 +213,13 @@ Usage:
    
    * [SU] `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
-   * `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
+   * [S]`"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
+
+   * [S] `"Maximum Time Step Size`" [double]: The maximum time step size allowed.
+
+   * [S] `"Maximum Time Step Change`" [double]: The maximum allowed increase in successive time steps.
+
+   * [S] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
 
   * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
@@ -227,7 +233,14 @@ Usage:
 
    * [U] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
-   * [S] `"Transient Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
+ * [U] `"Time Period Control`" (Optional)
+
+  * [U] `"Start Times`" [Array double]: List of times at which the current time-integrator will be reinitialized.
+  * [U] `"Initial Time Step`"[Array double]: The initial time step for each time period. If unspecified, Amanzi 
+    will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+  * `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
+    scaled by this factor (default value: 1)
+  * `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
 
  * [SU] `"Verbosity`" [string]: Defaults to `"Medium`"
 
@@ -241,44 +254,76 @@ Usage:
 
   * [SU] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
 
+ * [SU] `"Numerical Control Parameters`" [list]: Detailed control parameters associated with the underlying numerical implementation
 
- * [SU] `"Numerical Control Parameters`" [list]
+  If the unstructured option is active, the following list of parameters is valid:
 
-  * [U] `"Unstructured Algorithm`" [list]
+  * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
-   * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
+  * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
 
-   * [U] `"steady max iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
+  * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
 
-   * [U] `"steady min iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
+  * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
 
-   * [U] `"steady limit iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
+  * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
 
-   * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
+  * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor.
 
-   * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor.
+  * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor.
 
-   * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor.
+  * [U] `"steady max time step"` [double] During the steady state solve, the time step is not allowed to grow past this value.
 
-   * [U] `"steady max time step"` [double] During the steady state solve, the time step is not allowed to grow past this value.
+  * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is allowed to be lagged at most this amount of iterations.
 
-   * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is allowed to be lagged at most this amount of iterations.
 
-  * [S] `"Structured Algorithm`" [list]
+  If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
-   * [S] `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)
+  * [S] `"Basic Algorithm Settings`" [list] Additional controls for details of the structured-grid algorithm. Optional.
 
-   * [S] `"Adaptive Mesh Refinement`" [list] accepts a list of input parameters that pertains to adaptive mesh refinement algorithm. Optional.
+  * [S] `"Adaptive Mesh Refinement`" [list] Additional details related to the adaptive mesh refinement algorithm. Optional.
 
-   * [S] `"Diffusion Discretization Control`" [list] Algorithmic options for the parabolic diffusion solver. Optional.  Details to be added.
+   * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
-   * [S] `"Pressure Discretization Control`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
+   * [S] `"Refinement Ratio`" [Array int] Grid spacing ratio between adjacent refinement levels.  One value required for each coarse level. Only values of 2 or 4 are supported.
 
-   * [S] `"Iterative Linear Solver Control`" [list] Detailed controls for linear solvers. Details to be added.
+   * [S] `"Regrid Interval`" [Array int] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level) 
 
-    * [S] `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
+   * [S] `"Blocking Factor`" [Array int] Number by which each grid per level is evenly divisable in each dimension (typically used to guarantee multigrid hierachy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
 
-    * [S] `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
+   * [S] `"Number Error Buffer Cells`" [Array int] Number of coarse cells automatically tagged to surround user-tagged cells prior to generation of fine grids.  Used to guarantee buffer between refinement levels.
+
+   * [S] `"Maximum Grid Size`" [Array int] Size of largest dimension of any mesh generated at each level.  A single value implies that the same value is to be used for all levels.
+
+   * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
+
+    * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  Definition of the criteria must indicate `"Field Name`" (the name of a known derive field), `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters:
+
+     * [S] `"Value Greater`" [double] The threshold value.  For each coarse cell, if the value of the given field is larger than this value, tag the cell for refinement
+
+     * [S] `"Value Less`" [double] The threshold value.  For each coarse cell, if the value of the given field is smaller than this value, tag the cell for refinement
+
+     * [S] `"Adjacent Difference Greater`" [double] The threshold value.  For each coarse cell, if the maximum difference of the values for the given field between adjacent neighbors is larger than this value, tag the cell for refinement.
+
+     * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified list of regions should be tagged for refinement.
+
+     Additionally, the following optional parameters are available:
+
+     * [S] `"Maximum Refinement Level`" [int] If set, this identifies the highest level of refinement that will be triggered by this indicator
+
+     * [S] `"Start Time`" [double] If set, this identifies the time after which this criteria will be applied
+
+     * [S] `"End Time`" [double] If set, this identifies the time before which this criteria will be applied
+
+  * [S] `"Diffusion Discretization Control`" [list] Additional details related to the parabolic diffusion solver. Optional.  Details to be added.
+
+  * [S] `"Pressure Discretization Control`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
+
+  * [S] `"Iterative Linear Solver Control`" [list] Detailed controls for linear solvers. Details to be added.
+
+   * [S] `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
+
+   * [S] `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
 
 Example:
 
@@ -297,12 +342,38 @@ Example:
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="Time Period Control">
+      <Parameter name="Period Start Times" type="Array double" value="{6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
+      <Parameter name="Initial Time Step" type="Array double" value="{60.0, 60.0, 60.0, 800.0}"/>
+    </ParameterList>
+
     <Parameter name="Verbosity" type="string" type="High"/>
 
     <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Structured Algorithm">
-        <ParameterList name="Adaptive Mesh Refinement">
-          <Parameter name="Blocking Factor" type="int" value="4"/>
+      <ParameterList name="Adaptive Mesh Refinement Control">
+        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
+        <Parameter name="Refinement Ratio" type="Array int" value="{4, 4}"/>
+        <Parameter name="Regrid Interval" type="Array int" value="{2}"/>
+        <Parameter name="Blocking Factor" type="Array int" value="{8, 8, 8}"/>
+        <Parameter name="Maximum Grid Size" type="Array int" value="{16, 16, 16}"/>
+        <Parameter name="Numbers Error Buffer Cells" type="Array int" value="{2, 1}"/>
+
+        <Parameter name="Refinement Indicators" type="Array string" value="{Pc ref, Region ref}"/>
+        <ParameterList name="Pc ref">
+          <Parameter name="Maximum Refinement Level" type="int" value="1"/>
+          <Parameter name="Field Name" type="string" value="Capillary Pressure"/>
+          <Parameter name="Regions" type="Array string" value="{CCugr}"/>
+          <Parameter name="Value Greater" type="double" value="1.e6"/>
+        </ParameterList>
+        <ParameterList name="Region ref">
+          <Parameter name="Regions" type="Array string" value="{Hgr, CCugr}"/>
+          <Parameter name="Inside Region" type="bool" value="TRUE"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="Basic Algorithm Settings">
+        <ParameterList name="Expert Settings">
+          <Parameter name="visc_abs_tol" type="double" value="1.e-14"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -310,8 +381,7 @@ Example:
   </ParameterList>
 
 
-This example specifies that a time-dependent evolution of Richards equation is desired, evolving over the physical time interval, 0 to 1.5768e9 seconds.  While it assumes default values for most of the structured grid numerical control parameters, it explicitly sets the amr blocking factor to a value of 4.
-
+This example specifies that a time-dependent evolution of Richards equation is desired, evolving over the physical time interval, 0 to 1.5768e9 seconds.  Here a 3-level AMR hierarchy is desired, where refinement up to level 1 is based on a threshold value of capillary pressure in the CCugr region.  Additionally, fine grid up to the maximum allowed (3) is generated over the Hgr and CCugr regions.  The user has also set the expert setting for a parameter called "visc_abs_tol".
 
 
 Domain
@@ -794,7 +864,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU all except file] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+  * [SU, all except file for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
 
   * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -842,7 +912,7 @@ The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
-* `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
+* [U] `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
 
 
 The following boundary condition parameterizations are supported:
@@ -961,9 +1031,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * [SU] `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
 
-  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
 
-    * [SU] `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
+    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
 
     * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
@@ -1002,12 +1072,12 @@ Example:
     <ParameterList name="Integrated Mass">
       <Parameter name="Region" type="string" value="All"/>
       <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
-      <Parameter name="Variables" type="Array string" value="{Volumetric Water Content, Tc-99 Aqueous Concentration}"/>
+      <Parameter name="Variable" type="string" value="Volumetric Water Content"/>
       <Parameter name="Time Macro" type="string" value="Annual"/>
     </ParameterList>
   </ParameterList>
 
-In this example, the user requests an annual report of the integrated volume of water and aqueous solute concentration over the entire domain.
+In this example, the user requests an annual report of the integrated volume of water over the entire domain.
 
 
 Diagnostic Output
@@ -1022,7 +1092,9 @@ the simulation and written to stdout while the simulation is running.
 
 * `"Diagnostic Output`" [list] can accept multiple lists for named Diagnostics (DIAGNOSTIC)
 
-  * DIAGNOSTIC [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * DIAGNOSTIC [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+
+    *  `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
 
     * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
@@ -1060,16 +1132,15 @@ Example:
     <ParameterList name="User specified name of this diagnostic output">
       <Parameter name="Region" type="string" value="Some user specified point region"/>
       <Parameter name="Functional" type="string" value="Diagnostic Output: Point"/>
-      <Parameter name="Variables" type="Array string" value="{Volumetric Water Content, Tc-99 Aqueous Concentration}"/>
+      <Parameter name="Variable" type="Array string" value="Volumetric Water Content"/>
       <Parameter name="Cycle Macro" type="string" value="first 100"/>
     </ParameterList>
   </ParameterList>
 
 
 
-In this example the simulation will make point observations of the water volume and
-concentration of Tc-99 in every one of the first 100 cycles and write the result
-of these to stdout. 
+In this example the simulation will make point observations of the water volume 
+in every one of the first 100 cycles and write the result of these to stdout. 
 
 
 Checkpoint Data

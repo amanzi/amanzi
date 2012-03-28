@@ -30,7 +30,7 @@ class SimpleThermoDatabase : public Beaker {
   void ParseIonExchangeComplex(const std::string& data);
   void ParseSurfaceComplexSite(const std::string& data);
   void ParseSurfaceComplex(const std::string& data);
-  void ParseIsotherm(const std::string& data);
+  void ParseSorptionIsotherm(const std::string& data);
   void FinishSurfaceComplexation(void);
   void ParseReaction(const std::string& reaction,
                      std::string* name,
@@ -38,6 +38,11 @@ class SimpleThermoDatabase : public Beaker {
                      std::vector<double>* stoichiometries,
                      std::vector<int>* species_ids,
                      double* h2o_stoich);
+  void ParseReactionString(const std::string reaction,
+                           std::vector<SpeciesName>* species,
+                           std::vector<double>* stoichiometries);
+  int SpeciesNameToID(const std::string species_name);
+  void RemoveLeadingAndTrailingSpaces(std::string* s);
   void ParseIonExchangeReaction(const std::string& reaction,
                                 std::string* name,
                                 SpeciesName* primary_name,

@@ -130,7 +130,7 @@ PMAmr::coarseTimeStep (Real stop_time)
 
         ParallelDescriptor::ReduceRealMax(run_stop,IOProc);
 
-        if (ParallelDescriptor::IOProcessor())
+        if (verbose>1 && ParallelDescriptor::IOProcessor())
             std::cout << "\nCoarse TimeStep time: " << run_stop << '\n' ;
 
         long min_fab_bytes = BoxLib::total_bytes_allocated_in_fabs_hwm;
@@ -143,7 +143,7 @@ PMAmr::coarseTimeStep (Real stop_time)
         //
         BoxLib::total_bytes_allocated_in_fabs_hwm = 0;
 
-        if (ParallelDescriptor::IOProcessor())
+        if (verbose>1 && ParallelDescriptor::IOProcessor())
             std::cout << "\nFAB byte spread across MPI nodes for timestep: ["
                       << min_fab_bytes << " ... " << max_fab_bytes << "]\n";
     }
@@ -173,16 +173,6 @@ PMAmr::coarseTimeStep (Real stop_time)
         runlog_terse << level_steps[0] << " " << cumtime << " " << dt_level[0] << '\n';
 
     
-    PArray<Observation>& observations = PorousMedia::TheObservationArray();
-    if (observations_to_process.size()) {
-        if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
-            std::cout << " Process observations: \n";
-        }
-        for (int i=0; i<observations_to_process.size(); ++i) {
-            std::cout << observations[observations_to_process[i]].name << " " << std::endl;
-        }
-    }
-
     int to_checkpoint = 0;    
     int to_stop       = 0;    
     if (ParallelDescriptor::IOProcessor())

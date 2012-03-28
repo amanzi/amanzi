@@ -1,0 +1,19 @@
+# CMake NEMESIS configure file
+
+# Now run the patch script
+set(command sh @NEMESIS_sh_build@)
+execute_process(
+  COMMAND ${command}
+  WORKING_DIRECTORY "@ExodusII_source_dir@"
+  RESULT_VARIABLE result
+)
+
+
+if (result)
+  set(msg "NEMESIS build command failed")
+  foreach(arg IN LISTS command )
+    set(msg "${msg} '${arg}'")
+  endforeach()
+  message(FATAL_ERROR ${msg})
+endif()  
+               

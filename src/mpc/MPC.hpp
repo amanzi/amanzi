@@ -94,7 +94,9 @@ namespace Amanzi
     // time period control
     Teuchos::Array<double> reset_times_;
     Teuchos::Array<double> reset_times_dt_;
-
+    
+    // observation times control
+    Teuchos::Array<double> observation_times_;
    
   };
   

@@ -1,0 +1,5 @@
+execute_process(
+  COMMAND sh bootstrap.sh --prefix=@Boost_install_dir@ @Boost_toolset@ --with-libraries=@Boost_projects@
+  WORKING_DIRECTORY "@Boost_source_dir@"
+)
+

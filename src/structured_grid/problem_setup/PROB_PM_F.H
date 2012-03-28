@@ -270,8 +270,7 @@
                           const int* dom_lo, const int* dom_hi, 
 			  const Real* dx, const int* lo, const int* hi,
 			  const Real* wt_lo, const Real* wt_hi,
-			  const int* inflow_bc_lo, const int* inflow_bc_hi,
-			  const Real* inflow_vel_lo, const Real* inflow_vel_hi);
+			  const int* inflow_bc_lo, const int* inflow_bc_hi);
 
     void FORT_USER_KAPPA (const Real* kp_dat, ARLIM_P(kp_lo), ARLIM_P(kp_hi), 
 			  const Real* kappaval, const int* nkpval, 

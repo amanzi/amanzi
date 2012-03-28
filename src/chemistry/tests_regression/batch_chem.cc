@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
   components.ion_exchange_sites.clear();
   components.total.clear();
   components.total_sorbed.clear();
+
   SimulationParameters simulation_params;
   if (!input_file_name.empty()) {
     ReadInputFile(input_file_name, &simulation_params, &components);
@@ -113,14 +114,14 @@ int main(int argc, char** argv) {
       if (simulation_params.num_time_steps != 0) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
-        chem->DisplayTotalColumns(0.0, components.total);
+        chem->DisplayTotalColumns(0.0, components);
         // parameters.max_iterations = 2;
         for (int time_step = 0; time_step < simulation_params.num_time_steps;
              time_step++) {
           chem->ReactionStep(&components, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
             chem->DisplayTotalColumns((time_step + 1) * simulation_params.delta_time,
-                                      components.total);
+                                      components);
           }
           if (simulation_params.verbosity >= ac::kDebugNewtonSolver) {
             ac::Beaker::SolverStatus status = chem->status();
@@ -154,7 +155,11 @@ int main(int argc, char** argv) {
   // cleanup memory
   delete chem;
 
-  std::cout << "Done!\n";
+  if (!error) {
+    std::cout << "Success!\n";
+  } else {
+    std::cout << "Failed!\n";
+  }
   return error;
 }  // end main()
 
@@ -300,7 +305,7 @@ void ReadInputFile(const std::string& file_name,
     std::string raw_line;
     getline(input_file, raw_line);
     //std::cout << raw_line << std::endl;
-    if ((raw_line.size() > 0) && (raw_line[raw_line.size() - 1] == '\r')) {
+    if ((raw_line.size() > 0) && (raw_line.at(raw_line.size() - 1) == '\r')) {
       // getline only searches for \n line ends. windows files use \r\n
       // check for a hanging \r and remove it if it is there
       raw_line.resize(raw_line.size() - 1);
@@ -317,17 +322,21 @@ void ReadInputFile(const std::string& file_name,
     }
 
     if (line_type == kSection) {
-      if (raw_line.find(kSimulationSection) != std::string::npos) {
+      size_t first = raw_line.find_first_not_of('[');
+      size_t last = raw_line.find_last_of(']');
+      last--;
+      std::string section_name = raw_line.substr(first, last);
+      if (section_name.compare(kSimulationSection) == 0) {
         current_section = kSectionSimulation;
-      } else if (raw_line.find(kTotalSection) != std::string::npos) {
+      } else if (section_name.compare(kTotalSection) == 0) {
         current_section = kSectionTotal;
-      } else if (raw_line.find(kMineralSection) != std::string::npos) {
+      } else if (section_name.compare(kMineralSection) == 0) {
         current_section = kSectionMineral;
-      } else if (raw_line.find(kIonExchangeSection) != std::string::npos) {
+      } else if (section_name.compare(kIonExchangeSection) == 0) {
         current_section = kSectionIonExchange;
-      } else if (raw_line.find(kSorbedSection) != std::string::npos) {
+      } else if (section_name.compare(kSorbedSection) == 0) {
         current_section = kSectionSorbed;
-      } else if (raw_line.find(kFreeIonSection) != std::string::npos) {
+      } else if (section_name.compare(kFreeIonSection) == 0) {
         current_section = kSectionFreeIon;
       } else {
         std::cout << "batch_chem::ReadInputFile(): ";
@@ -371,7 +380,10 @@ void ParseSimulationParameter(const std::string& raw_line,
       value.assign(param_value.at(0));
     }
     if (param.at(0).find(kDescriptionParam) != std::string::npos) {
-      params->description.assign(value);
+      // the description probably has spaces in it, so we want to use
+      // the raw parameter value from param.at(1) rather than the
+      // version in value, which has been tokenized by spaces!
+      params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
       params->verbosity_name.assign(value);
     } else if (param.at(0).find(kComparisonModelParam) != std::string::npos) {

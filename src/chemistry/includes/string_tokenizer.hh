@@ -35,6 +35,9 @@ class StringTokenizer : public std::vector<std::string> {
                   const std::string& delimiters = " \t\n");
   void tokenize(const std::string& source,
                 const std::string& delimiters = " \t\n");
+  // the following tokenizes, but places delimiters in list too - geh
+  void tokenize_leave_delimiters(const std::string& source,
+                                const std::string& delimiters = " \t\n");
 };
 
 }  // namespace chemistry

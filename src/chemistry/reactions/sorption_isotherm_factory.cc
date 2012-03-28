@@ -1,6 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "sorption_isotherm_factory.hh"
 
+#include <cstdlib>
 #include <sstream>
 #include <string>
 
@@ -9,6 +10,7 @@
 #include "sorption_isotherm_langmuir.hh"
 #include "sorption_isotherm_freundlich.hh"
 #include "chemistry_exception.hh"
+#include "string_tokenizer.hh"
 #include "verbosity.hh"
 #include "exceptions.hh"
 
@@ -26,15 +28,42 @@ SorptionIsothermFactory::~SorptionIsothermFactory(void) {
 }  // end ActivityModelFactory destructor
 
 SorptionIsotherm* SorptionIsothermFactory::Create( 
-    const std::string& isotherm_type) {
+    const std::string& isotherm_type,
+    const StringTokenizer parameters) {
   SorptionIsotherm* sorption_isotherm = NULL;
 
   if (isotherm_type == linear) {
-    sorption_isotherm = new SorptionIsothermLinear();
+    SorptionIsothermLinear *linear_isotherm =
+      new SorptionIsothermLinear(std::atof(parameters[0].c_str()));
+    sorption_isotherm = linear_isotherm;
   } else if (isotherm_type == langmuir) {
-    sorption_isotherm = new SorptionIsothermLangmuir();
+    // require two parameters
+    if (parameters.size() != 2) {
+      std::ostringstream error_stream;
+      error_stream << "SorptionIsothermFactory::Create(): \n"
+                   << "  Langmuir isotherm requires exactly two parameters, received "
+                   << parameters.size() << ".\n"
+                   << "    param_1 == Kd, param_2 == b  .\n"; 
+      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    }
+    SorptionIsothermLangmuir *langmuir_isotherm =
+        new SorptionIsothermLangmuir(std::atof(parameters.at(0).c_str()),
+                                     std::atof(parameters.at(1).c_str()));
+    sorption_isotherm = langmuir_isotherm;
   } else if (isotherm_type == freundlich) {
-    sorption_isotherm = new SorptionIsothermFreundlich();
+    // require two parameters
+    if (parameters.size() != 2) {
+      std::ostringstream error_stream;
+      error_stream << "SorptionIsothermFactory::Create(): \n"
+                   << "  Freundlich isotherm requires exactly two parameters, received "
+                   << parameters.size() << ".\n"
+                   << "    param_1 == Kd, param_2 == 1/n  .\n"; 
+      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    }
+    SorptionIsothermFreundlich *freundlich_isotherm =
+        new SorptionIsothermFreundlich(std::atof(parameters.at(0).c_str()),
+                                       std::atof(parameters.at(1).c_str()));
+    sorption_isotherm = freundlich_isotherm;
   } else {
     // default type, error...!
     std::ostringstream error_stream;
@@ -49,8 +78,8 @@ SorptionIsotherm* SorptionIsothermFactory::Create(
   if (sorption_isotherm == NULL) {
     // something went wrong, should throw an exception and exit gracefully....
     std::ostringstream error_stream;
-    error_stream << "ActivityModelFactory::Create(): \n"
-                 << "Activity model was not created for some reason....\n";
+    error_stream << "SorptionIsothermFactory::Create(): \n"
+                 << "SorptionIsotherm was not created for some reason....\n";
     Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   } else {
     // finish any additional setup

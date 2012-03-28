@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     
     Amanzi::ObservationData output_observations;  
     Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm,driver_parameter_list,output_observations);
-    
+
     if ( ret == Amanzi::Simulator::FAIL ) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
     }
@@ -117,14 +117,19 @@ int main(int argc, char *argv[]) {
     const Teuchos::ParameterList& obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
     if (obs_list.isParameter("Observation Output Filename")) {
       std::string obs_file = obs_list.get<std::string>("Observation Output Filename");
-      
+
       if (rank == 0) {
-	std::ofstream out(obs_file.c_str());
-	out.precision(16);
-	out.setf(std::ios::scientific);
+      
+        std::ofstream out; out.open(obs_file.c_str(),std::ios::out);
+        if (!out.good()) {
+            std::cout << "OPEN PROBLEM" << endl;
+        }
+      
+        out.precision(16);
+        out.setf(std::ios::scientific);
 	
-	out << "Observation Name, Region, Functional, Variable, Time, Value\n";
-	out << "===========================================================\n";
+        out << "Observation Name, Region, Functional, Variable, Time, Value\n";
+        out << "===========================================================\n";
 
 	for (Teuchos::ParameterList::ConstIterator i=obs_list.begin(); i!=obs_list.end(); ++i) {
 	  std::string label  = obs_list.name(i);
@@ -134,22 +139,31 @@ int main(int argc, char *argv[]) {
 #endif
 	  const Teuchos::ParameterEntry& entry = obs_list.getEntry(label);
 	  if (entry.isList()) {
-	    const Teuchos::ParameterList& ind_obs_list = obs_list.sublist(label);
-	    for (int j = 0; j < output_observations[_label].size(); j++) {
-	    if (output_observations[_label][j].is_valid)
-	      out << label << ", " 
-		  << ind_obs_list.get<std::string>("Region") << ", "
-		  << ind_obs_list.get<std::string>("Functional") << ", "
-		  << ind_obs_list.get<Teuchos::Array<std::string> >("Variables") << ", "
-		  << output_observations[_label][j].time << ", "
-		  << output_observations[_label][j].value << std::endl;
-	    }
-	  }
-	}
-	out.close();
+            const Teuchos::ParameterList& ind_obs_list = obs_list.sublist(label);
+            for (int j = 0; j < output_observations[_label].size(); j++) {
+
+              if (output_observations[_label][j].is_valid) {
+                  if (!out.good()) {
+                      std::cout << "PROBLEM BEFORE" << endl;
+                  }
+                  out << label << ", " 
+                    << ind_obs_list.get<std::string>("Region") << ", "
+                    << ind_obs_list.get<std::string>("Functional") << ", "
+                    << ind_obs_list.get<std::string>("Variable") << ", "
+                    << output_observations[_label][j].time << ", "
+                      << output_observations[_label][j].value << '\n';
+                  if (!out.good()) {
+                      std::cout << "PROBLEM AFTER" << endl;
+                  }
+              }
+            }
+          }
+        }
+          out.close();
       }
     }
     
+      
     std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n";
     
     delete simulator;

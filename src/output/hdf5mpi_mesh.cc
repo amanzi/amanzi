@@ -65,6 +65,12 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   const Epetra_Map &cmap = mesh_maps.cell_map(false);
   int ncells_local = cmap.NumMyElements();
   int ncells_global = cmap.NumGlobalElements();
+  
+  // get space dimension
+  int space_dim = mesh_maps.space_dimension();
+  //AmanziGeometry::Point xc;
+  //mesh_maps.node_get_coordinates(0, &xc);
+  //unsigned int space_dim = xc.dim();
 
   // get coords
   double *nodes = new double[nnodes_local*3];
@@ -73,12 +79,17 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   localdims[0] = nnodes_local;
   localdims[1] = 3;
 
-  std::vector<double> xc(3);
+  std::vector<double> xc(space_dim);
   for (int i = 0; i < nnodes_local; i++) {
     mesh_maps.node_to_coordinates(i, xc.begin(), xc.end());
-    nodes[i*3] = xc[0];
+    // VisIt and ParaView require all mesh entities to be in 3D space
+    nodes[i*3+0] = xc[0];
     nodes[i*3+1] = xc[1];
-    nodes[i*3+2] = xc[2];
+    if (space_dim == 3) {
+      nodes[i*3+2] = xc[2];
+    } else {
+      nodes[i*3+2] = 0.0;
+    }
   }
 
   // write out coords
@@ -133,12 +144,14 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   // TODO(barker): make a list of cell types found, 
   //               if all the same then write out as a uniform mesh of that type
   int local_conn(0);
+  AmanziMesh::Cell_type type;
   std::vector<int> each_conn(ncells_local);
   for (int i=0; i<ncells_local; i++) {
     mesh_maps.cell_get_nodes(i,&nodeids);
     each_conn[i] = nodeids.size();
     local_conn += each_conn[i]+1;  // add 1 for elem_typeID
-    if ( getCellTypeID_(each_conn[i]) == 3) local_conn += 1; // add 1 if polygon
+    type = mesh_maps.cell_get_type(i); 
+    if ( getCellTypeID_(type) == 3) local_conn += 1; // add 1 if polygon
   }
   std::vector<int> local_connAll(viz_comm_.NumProc(),0);
   viz_comm_.GatherAll(&local_conn, &local_connAll[0], 1);
@@ -161,8 +174,8 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
     std::vector<unsigned int> xe(conn_len);
     mesh_maps.cell_to_nodes(i, xe.begin(), xe.end());
     // store cell type id
-    int type = getCellTypeID_(conn_len); 
-    cells[idx] = type;
+    type = mesh_maps.cell_get_type(i);
+    cells[idx] = getCellTypeID_(type); 
     idx++;
     // TODO(barker): this shouldn't be a hardcoded value
     if (type == 3) {
@@ -621,27 +634,35 @@ void HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   
 }
   
-int HDF5_MPI::getCellTypeID_(int conn_len) {
+int HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type) {
   
   //TODO(barker): how to return polyhedra?
   // cell type id's defined in Xdmf/include/XdmfTopology.h
-  switch (conn_len) {
-    case 4:
-      // Tet 
-      return 6;
-    case 5:
-      // Pyramid
-      return 7;
-    case 6:
-      // wedge/prism
-      return 8;
-    case 8:
-      // Hex
-      return 9;
-    default:
-      // return polygon
+  
+  ASSERT (cell_valid_type(type));
+
+  switch (type)
+  {
+    case AmanziMesh::POLYGON:
       return 3;
-  }
+    case AmanziMesh::TRI:
+      return 4;
+    case AmanziMesh::QUAD:
+      return 5;
+    case AmanziMesh::TET:
+      return 6;
+    case AmanziMesh::PYRAMID:
+      return 7;
+    case AmanziMesh::PRISM:
+      return 8; //wedge
+    case AmanziMesh::HEX:
+      return 9;
+    case AmanziMesh::POLYHED:
+      return 3; //for now same as polygon
+    default:
+      return 3; //unknown, for now same as polygon
+    }
+
 }
   
 void HDF5_MPI::createXdmfMesh_(const std::string xmfFilename) {
@@ -755,7 +776,7 @@ Teuchos::XMLObject HDF5_MPI::addXdmfGeo_() {
 
   Teuchos::XMLObject DataItem("DataItem");
   DataItem.addAttribute("DataType", "Float");
-  tmp1 << NumNodes() << " 3";
+  tmp1 << NumNodes() << " " << " 3";
   DataItem.addAttribute("Dimensions", tmp1.str());
   DataItem.addAttribute("Format", "HDF");
   tmp = stripFilename_(H5MeshFilename()) + ":/Mesh/Nodes";

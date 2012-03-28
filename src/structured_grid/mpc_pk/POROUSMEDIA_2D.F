@@ -695,8 +695,10 @@ c :: ----------------------------------------------------------
       end
 
 c ::: -----------------------------------------------------------
-c ::: Compute the capillary pressure, p_c.
-c :::    It calls get_cpl in EOS_F.F. 
+c ::: Compute the inverse of the capillary pressure. 
+c ::: Assume capillary pressure is positive.  Otherwise, we have 
+c ::: saturated condition.
+c :::    It calls get_invcpl in EOS_F.F. 
 c ::: -----------------------------------------------------------
 
       subroutine FORT_MK_INV_CPL(pc,DIMS(pc),s,DIMS(s),
@@ -729,9 +731,15 @@ c ::: -----------------------------------------------------------
             l_sigma    = coef(i,j,3)
             l_sat_res  = coef(i,j,4)
 
-            call get_invcpl(s(i,j,:),pc(i,j),rhoval,phi(i,j),
-     &           kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
-
+            if (pc(i,j) .gt. zero) then
+               call get_invcpl(s(i,j,:),pc(i,j),rhoval,phi(i,j),
+     &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
+            else
+               s(i,j,1) = rhoval(1)
+               if (ncomps .gt. 1) then
+                  s(i,j,2) = zero
+               end if
+            end if
          end do 
       end do
 
@@ -768,13 +776,12 @@ c ::: -----------------------------------------------------------
       integer l_cpl_type
       REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpc
 
-      do j = lo(2)-1,hi(2)+1
-         do i = lo(1)-1,hi(1)+1
+      do j =  ARG_L2(s),ARG_H2(s)
+         do i = ARG_L1(s),ARG_H1(s)
             l_cpl_type = nint(coef(i,j,1))
             l_cpl_coef = coef(i,j,2)
             l_sigma    = coef(i,j,3)
             l_sat_res  = coef(i,j,4)
-
             if (i .eq. lo(1)-1 .and. bc(1,1) .eq. HOEXTRAP) then
                dpc = pc(i+2,j)-pc(i+1,j)
                pc(i,j) = pc(i+1,j) - dpc/2.0
@@ -788,7 +795,7 @@ c ::: -----------------------------------------------------------
                dpc = pc(i,j-1)-pc(i,j-2)
                pc(i,j) = pc(i,j-1) + dpc/2.0
             else
-               call get_cpl(pc(i,j),s(i,j,:),rhoval,phi(i,j),
+               call get_cpl(pc(i,j),s(i,j,:),rhoval(1),phi(i,j),
      &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
             endif
          end do 
@@ -1693,7 +1700,7 @@ c :: ------------------------------------------------------------
      &     bx,DIMS(bx),by,DIMS(by),
      &     umac, DIMS(umac), vmac, DIMS(vmac),
      &     kpx, DIMS(kpx), kpy, DIMS(kpy),
-     &     lbd,DIMS(lbd),pc,DIMS(pc),
+     &     lbd,DIMS(lbd),p,DIMS(p),
      &     phi,DIMS(phi),kappa,DIMS(kappa),
      &     krcoef,DIMS(krcoef),nkrcoef,
      &     cplcoef,DIMS(cplcoef),ncplcoef,
@@ -1710,7 +1717,7 @@ c :: ------------------------------------------------------------
       integer DIMDEC(vmac)
       integer DIMDEC(kpx)
       integer DIMDEC(kpy)
-      integer DIMDEC(pc)
+      integer DIMDEC(p)
       integer DIMDEC(lbd)
       integer DIMDEC(phi)
       integer DIMDEC(kappa)
@@ -1728,7 +1735,7 @@ c :: ------------------------------------------------------------
       REAL_T  vmac(DIMV(vmac))
       REAL_T  kpx(DIMV(kpx))
       REAL_T  kpy(DIMV(kpy))
-      REAL_T  pc(DIMV(pc))
+      REAL_T  p(DIMV(p))
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
       REAL_T  krcoef(DIMV(krcoef),nkrcoef)
@@ -1742,7 +1749,7 @@ c :: ------------------------------------------------------------
       REAL_T  grav, rgx, rgy
       REAL_T  multx(2), multy(2), ldx(2), ldy(2)
       REAL_T  comp(ncomps),cap
-      REAL_T  ldtmp(ncomps),ldn(3),pcn(3),rgtmpx(3),rgtmpy(3), dcx(3), dcy(3)
+      REAL_T  ldtmp(ncomps),ldn(3),pn(3),rgtmpx(3),rgtmpy(3), dcx(3), dcy(3)
 c
 c     gravity is nonzero only in the y direction
 c
@@ -1810,10 +1817,10 @@ c
                end if
             end if
 
-            rgx = (ldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
-     &           ldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)))/dx(1) 
-            rgy = (ldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) - 
-     &           ldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav))/dx(2)           
+            rgx = (ldx(2)*(multx(2)*(p(i+1,j)-p(i,j))/dx(1)) -
+     &           ldx(1)*(multx(1)*(p(i,j)-p(i-1,j))/dx(1)))/dx(1) 
+            rgy = (ldy(2)*(multy(2)*(p(i,j+1)-p(i,j))/dx(2) - grav) - 
+     &           ldy(1)*(multy(1)*(p(i,j)-p(i,j-1))/dx(2) - grav))/dx(2)           
 
 c           x-direction
             do n = -1,1 
@@ -1825,14 +1832,14 @@ c           x-direction
                l_sigma     = cplcoef(i+n,j,3)
                l_cpl_sres  = cplcoef(i+n,j,4)
                ldn = lbd(i-1:i+1,j,1)
-               pcn = pc(i-1:i+1,j)
-               cap = pc(i+n,j) + deps/l_sigma
+               pn  = p(i-1:i+1,j)
+               pn(n+2)  = pn(n+2) + deps/l_sigma
                dcx(n+2) = deps/l_sigma
+               cap = -pn(n+2)
                call get_invcpl(comp,cap,rhoval,phi(i+n,j),kappa(i+n,j),l_sigma,
      &              ncomps,l_cpl_sres,l_cpl_type,l_cpl_coef)
                call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
                ldn(n+2) = ldtmp(1)
-               pcn(n+2) = cap
                if (do_upwind.eq.1) then
                   ldx(1) = merge(ldx(1),merge(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)>=zero),ldx(1)==zero)
                   ldx(2) = merge(ldx(2),merge(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)>=zero),ldx(2)==zero)
@@ -1846,8 +1853,8 @@ c           x-direction
                   ldx(2) = merge(ldx(2),kpx(i+1,j)*ldn(3),ldx(2)==zero)
                end if
 
-               rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1)) -
-     &           ldx(1)*(-multx(1)*(pcn(2)-pcn(1))/dx(1)))/dx(1) 
+               rgtmpx(n+2) = (ldx(2)*(multx(2)*(pn(3)-pn(2))/dx(1)) -
+     &           ldx(1)*(multx(1)*(pn(2)-pn(1))/dx(1)))/dx(1) 
             end do
 
 c           y-direction
@@ -1855,19 +1862,19 @@ c           y-direction
                l_kr_type  = nint(krcoef(i,j+n,1))
                l_kr_coef  = krcoef(i,j+n,2)
                l_kr_sres  = krcoef(i,j+n,3)
-               l_cpl_type  = nint(cplcoef(i,j+n,1))
-               l_cpl_coef  = cplcoef(i,j+n,2)
-               l_sigma     = cplcoef(i,j+n,3)
-               l_cpl_sres  = cplcoef(i,j+n,4)
+               l_cpl_type = nint(cplcoef(i,j+n,1))
+               l_cpl_coef = cplcoef(i,j+n,2)
+               l_sigma    = cplcoef(i,j+n,3)
+               l_cpl_sres = cplcoef(i,j+n,4)
                ldn = lbd(i,j-1:j+1,1)
-               pcn = pc(i,j-1:j+1)
-               cap = pc(i,j+n) + deps/l_sigma
+               pn  = p(i,j-1:j+1)
+               pn(n+2)  = pn(n+2) + deps/l_sigma
                dcy(n+2) = deps/l_sigma
+               cap = -pn(n+2)
                call get_invcpl(comp,cap,rhoval,phi(i,j+n),kappa(i,j+n),l_sigma,
      &              ncomps,l_cpl_sres,l_cpl_type,l_cpl_coef)
                call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
                ldn(n+2) = ldtmp(1)
-               pcn(n+2) = cap
                if (do_upwind.eq.1) then
                   ldy(1) = merge(ldy(1),merge(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)>=zero),ldy(1)==zero)
                   ldy(2) = merge(ldy(2),merge(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)>=zero),ldy(2)==zero)
@@ -1880,8 +1887,8 @@ c           y-direction
                elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
                   ldy(2) = merge(ldy(2),kpy(i,j+1)*ldn(3),ldy(2)==zero)
                end if
-               rgtmpy(n+2) = (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2) - grav) - 
-     &           ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2) - grav))/dx(2)                
+               rgtmpy(n+2) = (ldy(2)*(multy(2)*(pn(3)-pn(2))/dx(2) - grav) - 
+     &           ldy(1)*(multy(1)*(pn(2)-pn(1))/dx(2) - grav))/dx(2)                
 
             end do
 
@@ -1897,8 +1904,7 @@ c           y-direction
       end
 
 c ::: -----------------------------------------------------------
-c ::: Compute the capillary pressure, p_c.
-c :::    It calls get_cpl in EOS_F.F. 
+c ::: Compute dn/dp = -dn/dpc
 c ::: -----------------------------------------------------------
 
       subroutine FORT_RICHARD_ALPHA(alpha,DIMS(alpha),s,DIMS(s),
@@ -1950,7 +1956,7 @@ c ::: -----------------------------------------------------------
             call get_dcplds(dpcdn,sat,rtmp,phi(i,j),
      &           kappa(i,j),l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
          
-            alpha(i,j) = phi(i,j)/dpcdn*rhoval(1)*(one-l_sat_res)
+            alpha(i,j) =  - phi(i,j)/dpcdn*rhoval(1)*(one-l_sat_res)
          end do 
       end do
 
@@ -1964,44 +1970,47 @@ c      res = res + \nabla vel at boundary
 c    ----------------------------------------------------------
 c  
       subroutine FORT_RICHARD_VELBC(rg,DIMS(rg),
+     &     ux,DIMS(ux),uy,DIMS(uy),
      &     lo,hi,domlo,domhi,dx,
-     &     inflow_bc_lo,inflow_bc_hi,
-     &     inflow_vel_lo,inflow_vel_hi, mult)
+     &     inflow_bc_lo,inflow_bc_hi,mult)
 
       implicit none
       
       integer DIMDEC(rg)
+      integer DIMDEC(ux)
+      integer DIMDEC(uy)
       integer lo(SDIM),hi(SDIM)
       integer domlo(SDIM), domhi(SDIM)
       integer inflow_bc_lo(SDIM),inflow_bc_hi(SDIM)
-      REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
       REAL_T  dx(SDIM)
       REAL_T  rg(DIMV(rg))
+      REAL_T  ux(DIMV(ux))
+      REAL_T  uy(DIMV(uy))
       REAL_T  mult
       
       integer i, j
-
+c      print *, inflow_bc_lo, inflow_bc_hi
       if (lo(1) .eq. domlo(1) .and. inflow_bc_lo(1) .eq. 1) then
            do j = lo(2),hi(2)
-              rg(lo(1),j) = rg(lo(1),j) - mult*inflow_vel_lo(1)/dx(1)
+              rg(lo(1),j) = rg(lo(1),j) - mult*ux(lo(1),j)/dx(1)
            end do
       end if
       if (hi(1) .eq. domhi(1) .and. inflow_bc_hi(1) .eq. 1) then
            do j = lo(2),hi(2)
-              rg(hi(1),j) = rg(hi(1),j) + mult*inflow_vel_hi(1)/dx(1)
+              rg(hi(1),j) = rg(hi(1),j) + mult*ux(hi(1)+1,j)/dx(1)
            end do
-      end if
+        end if
       if (lo(2) .eq. domlo(2) .and. inflow_bc_lo(2) .eq. 1) then
            do i = lo(1),hi(1)
-              rg(i,lo(2)) = rg(i,lo(2)) - mult*inflow_vel_lo(2)/dx(2)
+              rg(i,lo(2)) = rg(i,lo(2)) - mult*uy(i,lo(2))/dx(2)
            end do
       end if
       if (hi(2) .eq. domhi(2) .and. inflow_bc_hi(2) .eq. 1) then
            do i = lo(1),hi(1)
-              rg(i,hi(2)) = rg(i,hi(2)) + mult*inflow_vel_hi(2)/dx(2)
+              rg(i,hi(2)) = rg(i,hi(2)) + mult*uy(i,hi(2)+1)/dx(2)
            end do
       end if
-
+   
       end     
 
 c ::: ----------------------------------------------------------
@@ -2331,11 +2340,11 @@ c     dummy
                   l_cpl_coef = cplcoef(i,j,2)
                   l_sigma    = cplcoef(i,j,3)
                   l_sat_res  = cplcoef(i,j,4)
-                  satlim(1) = 1.1*l_sat_res*rhoval(1)
+                  satlim(1) = l_sat_res*rhoval(1)
                   if (ncomps .eq. 1) then
                      pc = rhoval(1)*grav*(y-wt_loc)
                   else
-                     satlim(2) = (one - 1.1*l_sat_res)*rhoval(2)
+                     satlim(2) = (one - l_sat_res)*rhoval(2)
                      pc = (rhoval(1)-rhoval(2))*grav*(y-wt_loc)
                   endif
                   call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
@@ -2349,6 +2358,40 @@ c     dummy
                   endif
                end if
             end do 
+         end do
+      end do 
+
+      end
+
+
+c ::: ---------------------------------------------------------
+c ::: Define hydrostatic boundary condition
+c ::: ---------------------------------------------------------
+      
+      subroutine FORT_HYDRO_PRESSURE(p,DIMS(p),rhoval,ncomps,
+     &     dx,wt_loc,grav)
+
+      implicit none
+
+      integer DIMDEC(p)
+      integer ncomps
+      REAL_T  p(DIMV(p))
+      REAL_T  rhoval(ncomps)
+      REAL_T  dx(SDIM)
+      REAL_T  wt_loc
+      REAL_T  grav
+      
+      integer i,j
+      REAL_T  y
+
+      do j = ARG_L2(p), ARG_H2(p)
+            y = (dble(j)+half)*dx(2)
+         do i = ARG_L1(p), ARG_H1(p)
+            if (ncomps .eq. 1) then
+               p(i,j) = -rhoval(1)*grav*(y-wt_loc)
+            else
+               p(i,j) = -(rhoval(1)-rhoval(2))*grav*(y-wt_loc)
+            endif
          end do
       end do 
 
@@ -2925,8 +2968,8 @@ c     dummy
                   l_cpl_coef = cplcoef(i,j,2)
                   l_sigma    = cplcoef(i,j,3)
                   l_sat_res  = cplcoef(i,j,4)
-                  satlim(1) = 1.1*l_sat_res*rhoval(1)
-                  satlim(2) = (one - 1.1*l_sat_res)*rhoval(2)
+                  satlim(1) = l_sat_res*rhoval(1)
+                  satlim(2) = (one - l_sat_res)*rhoval(2)
                   pc = (rhoval(1)-rhoval(2))*grav*(y-prevLoc) + intRhoG
                   call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
      &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)

@@ -86,7 +86,7 @@ TEST(TestComputeActivityCoeff_System_I) {
  vector<double> gamma;
  double actw;
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
- am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
+ am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_,"pitzer1975");
  am_->Display();
  am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O);
  actw=log10(H2O.act_coef());
@@ -177,7 +177,7 @@ TEST(TestComputeActivityCoeff_System_II) {
  sp_.push_back(SO4);
  vector<double> gamma;
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
- am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
+ am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_,"pitzer1975");
  am_->Display();
  double actw;
  am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O);
@@ -274,7 +274,7 @@ TEST(TestComputeActivityCoeff_System_III) {
  sp_.push_back(Br);
  vector<double> gamma;
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
- am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
+ am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_,"pitzer1975");
  am_->Display();
  double actw;
  am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O);
@@ -323,7 +323,7 @@ TEST(TestInvalidActivityModel) {
  sp_.clear();
  sp_.push_back(Cl);
  sp_.push_back(Na);
- CHECK_THROW(am_= amfac_.Create("invalid activity model","phreeqc_pitzer.dat",sp_, aqx_), ac::ChemistryException);
+ CHECK_THROW(am_= amfac_.Create("invalid activity model","phreeqc_pitzer.dat",sp_, aqx_,"pitzer1975"), ac::ChemistryException);
 }
 /*!
    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestInvalidDatabase
@@ -348,7 +348,7 @@ TEST(TestInvalidDatabase) {
  sp_.clear();
  sp_.push_back(Cl);
  sp_.push_back(Na);
- CHECK_THROW(am_= amfac_.Create("pitzer-hwm","invalid data base",sp_, aqx_), ac::ChemistryException);
+ CHECK_THROW(am_= amfac_.Create("pitzer-hwm","invalid data base",sp_,aqx_,"pitzer1975"), ac::ChemistryException);
 }
 /*!
    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroNumberSpecies
@@ -364,7 +364,7 @@ TEST(TestZeroNumberSpecies) {
  ac::ActivityModel* am_;
  vector<ac::Species> sp_;
  vector<ac::AqueousEquilibriumComplex> aqx_;
- CHECK_THROW(am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_), ac::ChemistryException);
+ CHECK_THROW(am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_,aqx_,"pitzer1975"), ac::ChemistryException);
 }
 /*!
    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
@@ -392,7 +392,7 @@ TEST(TestZeroConcentrations) {
  sp_.push_back(Na);
  vector<double> gamma;
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
- am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
+ am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_,aqx_,"pitzer1975");
  am_->Display();
  CHECK_THROW(am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O), ac::ChemistryException);
 }
@@ -425,7 +425,7 @@ TEST(TestNumberSpecies) {
  sp_.push_back(Ca);
  vector<double> gamma;
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
- am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
+ am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_,aqx_,"pitzer1975");
  am_->Display();
  sp_.pop_back();
  CHECK_THROW(am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O), ac::ChemistryException);

@@ -29,13 +29,14 @@ ActivityModelFactory::~ActivityModelFactory() {
 ActivityModel* ActivityModelFactory::Create(const std::string& model,
 		                                    const std::string& database,
 		                                    std::vector<Species>& prim,
-		                                    std::vector<AqueousEquilibriumComplex>& sec) {
+		                                    std::vector<AqueousEquilibriumComplex>& sec,
+		                                    const std::string& jfunction_pitzer) {
   ActivityModel* activity_model = NULL;
 
   if (model == debye_huckel) {
     activity_model = new ActivityModelDebyeHuckel();
   } else if (model == pitzer_hwm) {
-    activity_model = new ActivityModelPitzerHWM(database,prim,sec);
+    activity_model = new ActivityModelPitzerHWM(database,prim,sec,jfunction_pitzer);
   } else if (model == unit) {
     activity_model = new ActivityModelUnit();
   } else {

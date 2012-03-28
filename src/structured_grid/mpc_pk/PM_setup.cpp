@@ -154,8 +154,6 @@ Array<Real> PorousMedia::press_lo;
 Array<Real> PorousMedia::press_hi;
 Array<int>  PorousMedia::inflow_bc_lo;
 Array<int>  PorousMedia::inflow_bc_hi;
-Array<Real> PorousMedia::inflow_vel_lo;
-Array<Real> PorousMedia::inflow_vel_hi;
 Array<int>  PorousMedia::rinflow_bc_lo;
 Array<int>  PorousMedia::rinflow_bc_hi;
 //
@@ -202,6 +200,10 @@ int  PorousMedia::variable_scal_diff;
 
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
+//
+// Transport flame
+//
+int  PorousMedia::do_tracer_transport;
 //
 // Chemistry flag.
 //
@@ -437,6 +439,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::variable_scal_diff = 1; 
 
   PorousMedia::do_chem            = -1;
+  PorousMedia::do_tracer_transport          = -1;
   PorousMedia::do_full_strang     = 1;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -732,12 +735,15 @@ PorousMedia::variableSetUp ()
       if (ofs.fail()) {
           BoxLib::Abort("Cannot open pp dump file");
       }
-      if (ParallelDescriptor::IOProcessor())
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
       {
-          std::cout << "\nDumping ParmParse table:\n \n";
-          std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+          std::cout << "\nDumping ParmParse table:\n";
       }
       ParmParse::dumpTable(ofs);
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "... done dumping ParmParse table.\n" << '\n';
+      }
       ofs.close();
   }
 }
@@ -998,7 +1004,9 @@ PorousMedia::read_rock()
         ParmParse am("amr");
         am.query("max_level",max_level);
         am.getarr("n_cell",n_cell,0,BL_SPACEDIM);
-        am.getarr("ref_ratio",fratio,0,max_level);
+        if (max_level>0) {
+            am.getarr("ref_ratio",fratio,0,max_level);
+        }
         
         ParmParse gm("geometry");
         gm.getarr("prob_lo",problo,0,BL_SPACEDIM);
@@ -1121,6 +1129,8 @@ void PorousMedia::read_prob()
   // if model is specified, this supersedes model_name
   pb.query("model",model);
 
+  pb.query("do_tracer_transport",do_tracer_transport);
+
   // Verbosity
   pb.query("v",verbose);
   
@@ -1130,7 +1140,7 @@ void PorousMedia::read_prob()
   pb.query("dt_cutoff",dt_cutoff);
   pb.query("change_max",change_max);
   pb.query("fixed_dt",fixed_dt);
-  pb.query("richard_max_dt",richard_max_dt);
+  pb.query("max_dt",richard_max_dt);
   pb.query("sum_interval",sum_interval);
 
   // Gravity are specified as m/s^2 in the input file
@@ -1486,8 +1496,10 @@ void  PorousMedia::read_comp()
               Array<Real> vals(ncomps);
               for (int j = 0; j<cNames.size(); j++) {
                   ppr.get(cNames[j].c_str(),vals[j]);
+                  vals[j] *= density[j];
               }
-              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,vals));
+              std::string generic_type = "scalar";
+              ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
           }
           else if (ic_type == "hydrostatic")
           {
@@ -1516,12 +1528,19 @@ void  PorousMedia::read_comp()
       rinflow_bc_hi.resize(BL_SPACEDIM,0); 
       inflow_bc_lo.resize(BL_SPACEDIM,0); 
       inflow_bc_hi.resize(BL_SPACEDIM,0); 
-      inflow_vel_lo.resize(BL_SPACEDIM,0); 
-      inflow_vel_hi.resize(BL_SPACEDIM,0); 
 
       bc_array.resize(n_bcs,PArrayManage);
       Array<std::string> bc_names;
       cp.getarr("bc_labels",bc_names,0,n_bcs);
+
+      // default to no flow first.
+      for (int j=0;j<BL_SPACEDIM;j++) {
+	phys_bc.setLo(j,4);
+	pres_bc.setLo(j,4);
+	phys_bc.setHi(j,4);
+	pres_bc.setHi(j,4);
+      }	  
+
       for (int i = 0; i<n_bcs; i++)
       {
           const std::string& bcname = bc_names[i];
@@ -1534,8 +1553,9 @@ void  PorousMedia::read_comp()
           const PArray<Region> bc_regions = build_region_PArray(region_names);
           std::string bc_type; ppr.get("type",bc_type);
 
-          bool is_inflow;
-          int component_bc, pressure_bc;
+          bool is_inflow = false;
+          int component_bc = 4;
+	  int pressure_bc  = 4;
 
           if (bc_type == "pressure")
           {
@@ -1571,9 +1591,6 @@ void  PorousMedia::read_comp()
           }
           else if (bc_type == "zero_total_velocity")
           {
-	      //std::string rocklabel=""; ppr.get("rock",rocklabel);
-	      //const Rock& rock = find_rock(rocklabel);
-
               Array<Real> vals, times;
               Array<std::string> forms;
 
@@ -1634,13 +1651,13 @@ void  PorousMedia::read_comp()
           }
           else
           {
-              std::cout << bc_type << " not a valid bc_type " << std::endl;
-              BoxLib::Abort();
+	    std::cout << bc_type << " not a valid bc_type " << std::endl;
+	    BoxLib::Abort();
           }
-
 
           // Some clean up 
           std::set<std::string> o_set;
+
           for (int j=0; j<bc_regions.size(); ++j)
           {
               const std::string purpose = bc_regions[j].purpose;
@@ -1715,99 +1732,104 @@ void  PorousMedia::read_tracer()
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          std::string g; ppr.get("group",g);
-          group_map[g].push_back(i+ncomps);
-      
-          // Initial condition and boundary condition  
-          Array<std::string> tic_names;
-          int n_ic = ppr.countval("tinits");
-          if (n_ic <= 0)
-          {
-              BoxLib::Abort("each tracer must be initialized");
-          }
-          ppr.getarr("tinits",tic_names,0,n_ic);
-          tic_array[i].resize(n_ic,PArrayManage);
-          
-          for (int n = 0; n<n_ic; n++)
-          {
-              const std::string prefixIC(prefix + "." + tic_names[n]);
-              ParmParse ppri(prefixIC.c_str());
-              int n_ic_region = ppri.countval("regions");
-              Array<std::string> region_names;
-              ppri.getarr("regions",region_names,0,n_ic_region);
-              const PArray<Region> tic_regions = build_region_PArray(region_names);
-              std::string tic_type; ppri.get("type",tic_type);
-              
-              if (tic_type == "concentration")
-              {
-                  Real val = 0; ppri.query("val",val);
-                  tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
-              }
-              else {
-                  std::string m = "Tracer IC: \"" + tic_names[n] 
-                      + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
-                  BoxLib::Abort(m.c_str());
-              }
+          if (do_chem > -1  ||  do_tracer_transport == 1) {
+              std::string g; ppr.get("group",g);
+              group_map[g].push_back(i+ncomps);
           }
 
-          Array<std::string> tbc_names;
-          int n_tbc = ppr.countval("tbcs");
-          if (n_tbc <= 0)
+          if (do_tracer_transport)
           {
-              BoxLib::Abort("each tracer requires boundary conditions");
-          }
-          ppr.getarr("tbcs",tbc_names,0,n_tbc);
-          tbc_array[i].resize(n_tbc,PArrayManage);
-          
-          for (int n = 0; n<n_tbc; n++)
-          {
-              const std::string prefixTBC(prefix + "." + tbc_names[n]);
-              ParmParse ppri(prefixTBC.c_str());
-              
-              int n_tbc_region = ppri.countval("regions");
-              Array<std::string> tbc_region_names;
-              ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
-              const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
-              std::string tbc_type; ppri.get("type",tbc_type);
-              
-              if (tbc_type == "concentration")
+              // Initial condition and boundary condition  
+              Array<std::string> tic_names;
+              int n_ic = ppr.countval("tinits");
+              if (n_ic <= 0)
               {
-                  Array<Real> times, vals;
-                  Array<std::string> forms;
-                  int nv = ppri.countval("vals");
-                  if (nv) {
-                      ppri.getarr("vals",vals,0,nv);
-                      if (nv>1) {
-                          ppri.getarr("times",times,0,nv);
-                          ppri.getarr("forms",forms,0,nv-1);
-                      }
-                      else {
-                          times.resize(1,0);
-                      }
+                  BoxLib::Abort("each tracer must be initialized");
+              }
+              ppr.getarr("tinits",tic_names,0,n_ic);
+              tic_array[i].resize(n_ic,PArrayManage);
+              
+              for (int n = 0; n<n_ic; n++)
+              {
+                  const std::string prefixIC(prefix + "." + tic_names[n]);
+                  ParmParse ppri(prefixIC.c_str());
+                  int n_ic_region = ppri.countval("regions");
+                  Array<std::string> region_names;
+                  ppri.getarr("regions",region_names,0,n_ic_region);
+                  const PArray<Region> tic_regions = build_region_PArray(region_names);
+                  std::string tic_type; ppri.get("type",tic_type);
+                  
+                  if (tic_type == "concentration")
+                  {
+                      Real val = 0; ppri.query("val",val);
+                      tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
                   }
                   else {
-                      vals.resize(1,0); // Default tracers to zero for all time
-                      times.resize(1,0);
-                      forms.resize(0);
+                      std::string m = "Tracer IC: \"" + tic_names[n] 
+                          + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
+                      BoxLib::Abort(m.c_str());
                   }
-                  int nComp = 1;
-                  tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
               }
-              else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+              
+              Array<std::string> tbc_names;
+              int n_tbc = ppr.countval("tbcs");
+              if (n_tbc <= 0)
               {
-                  Array<Real> val(1,0);
-                  tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                  BoxLib::Abort("each tracer requires boundary conditions");
               }
-              else {
-                  std::string m = "Tracer BC: \"" + tbc_names[n] 
-                      + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
-                  BoxLib::Abort(m.c_str());
+              ppr.getarr("tbcs",tbc_names,0,n_tbc);
+              tbc_array[i].resize(n_tbc,PArrayManage);
+              
+              for (int n = 0; n<n_tbc; n++)
+              {
+                  const std::string prefixTBC(prefix + "." + tbc_names[n]);
+                  ParmParse ppri(prefixTBC.c_str());
+                  
+                  int n_tbc_region = ppri.countval("regions");
+                  Array<std::string> tbc_region_names;
+                  ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
+                  const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
+                  std::string tbc_type; ppri.get("type",tbc_type);
+                  
+                  if (tbc_type == "concentration")
+                  {
+                      Array<Real> times, vals;
+                      Array<std::string> forms;
+                      int nv = ppri.countval("vals");
+                      if (nv) {
+                          ppri.getarr("vals",vals,0,nv);
+                          if (nv>1) {
+                              ppri.getarr("times",times,0,nv);
+                              ppri.getarr("forms",forms,0,nv-1);
+                          }
+                          else {
+                              times.resize(1,0);
+                          }
+                      }
+                      else {
+                          vals.resize(1,0); // Default tracers to zero for all time
+                          times.resize(1,0);
+                          forms.resize(0);
+                      }
+                      int nComp = 1;
+                      tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                  }
+                  else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+                  {
+                      Array<Real> val(1,0);
+                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                  }
+                  else {
+                      std::string m = "Tracer BC: \"" + tbc_names[n] 
+                          + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
+                      BoxLib::Abort(m.c_str());
+                  }
               }
           }
       }
   }
 }
-  
+
 void  PorousMedia::read_source()
 {
   //
@@ -2184,6 +2206,11 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read components."<< std::endl;
   
+  // chemistry
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read chemistry."<< std::endl;
+  read_chem();
+
   // tracers
   read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -2193,11 +2220,6 @@ void PorousMedia::read_params()
   //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
   //  std::cout << "Read sources."<< std::endl;
   //read_source();
-
-  // chemistry
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read chemistry."<< std::endl;
-  read_chem();
 
   // source
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 

@@ -45,12 +45,12 @@ int main (int argc, char* argv[])
   CLP.setDocString("reads mesh file or file set and does a series of checks\n");
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::MOAB, 
     Amanzi::AmanziMesh::STKMESH, 
-    Amanzi::AmanziMesh::MSTK 
+    Amanzi::AmanziMesh::MSTK, 
+    Amanzi::AmanziMesh::MOAB 
   };
   const char *framework_names[] = {
-    "MOAB", "stk::mesh", "MSTK"
+    "stk::mesh", "MSTK", "MOAB"
   };
 
   const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
@@ -101,8 +101,10 @@ int main (int argc, char* argv[])
     return 1;
   }
 
-  // the first, and only, command line argument is a file name. Three
+  // One command line argument is a file name. Three
   // types are supported depending on which frameworks are compiled in
+
+  // A second command line argument is the framework preference
 
   Amanzi::AmanziMesh::MeshFactory factory(&comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;

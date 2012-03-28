@@ -17,7 +17,7 @@ namespace Amanzi {
 
     struct Observable 
     {
-      Observable (Teuchos::Array<std::string> variable_,
+      Observable (std::string variable_,
 		  std::string region_,
 		  std::string functional_,
 		  Teuchos::Array<double> times_,
@@ -27,7 +27,7 @@ namespace Amanzi {
 	sps(sps_)
       {};
       
-      Teuchos::Array<std::string> variable;
+      std::string variable;
       std::string region;
       std::string functional;
       Teuchos::Array<double> times;

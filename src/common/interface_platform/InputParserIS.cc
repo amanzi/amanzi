@@ -3,6 +3,9 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <string>
+#include <algorithm>
+#include <boost/lambda/lambda.hpp>
+#include <boost/bind.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -12,8 +15,22 @@
 namespace Amanzi {
 namespace AmanziInput {
 
-Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) 
-{
+
+/**
+  * /author   Nathan Barnett
+  * /fn       compareEpsilon
+  * /brief    When handed an element in an array and an epsilon value,
+  *           compares the absolute difference between the two values
+  * /returns  boolean - true if out of epsilon value
+  */
+template <typename T>
+bool compareEpsilon(T& first, T eps) {
+  return fabs(first-*(&first-1))<eps;
+}
+
+
+Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
+
   numproc_ = numproc;
 
   Teuchos::ParameterList new_list, tmp_list;
@@ -260,33 +277,72 @@ Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* 
 
 Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* plist ) 
 {
-  Teuchos::ParameterList obs_list;
+  using namespace boost;
+  using boost::bind;
 
+  // Create a parameter list for holding data
+  Teuchos::ParameterList  obs_list;
+  Teuchos::Array<double>  observationPoints;
+
+  // Check if there is an "Output" XML node
   if ( plist->isSublist("Output") ) {
+    // If "Output" exists, check if there is an "Observation Data" subnode
     if ( plist->sublist("Output").isSublist("Observation Data") ) {
-
+      // If both exist, initialize a structure with the XML data
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
-
+      // If the node has value refering to the name of the output file, grab it
       if (olist.isParameter("Observation Output Filename")) {
         obs_list.set<std::string>("Observation Output Filename",olist.get<std::string>("Observation Output Filename"));
       } else {
+      // Otherwise, throw an exception
         Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
       }
-
+      // Iterate through the array
       for ( Teuchos::ParameterList::ConstIterator i = olist.begin();
             i != olist.end(); i++ ) {
+        // If the current iteration node is a "tree"
         if (  olist.isSublist( i->first ) ) {
-          // copy the observation data sublist
+          // copy the observation data sublist into the local list
           obs_list.sublist(i->first) = olist.sublist(i->first);
 
           if ( obs_list.sublist(i->first).isParameter("Time Macro") ) {
             std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
+            // Create a local parameter list and store the time macro (3 doubles)
             Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
             if (time_macro_list.isParameter("Start_Period_Stop")) {
               obs_list.sublist(i->first).set("Start_Period_Stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+              // Grab the times for start, stop, and period
+              Teuchos::Array<double> startPeriodStop = Teuchos::getParameter<Teuchos::Array<double> >(time_macro_list, "Start_Period_Stop");
+              // Since the Teuchos array is a reference, we copy into modifiable variables
+              double start  = startPeriodStop[0];
+              double stop   = startPeriodStop[2];;
+              double period = startPeriodStop[1];
+              // If the stop time from the macro is -1, we have to look elsewhere for the end time
+              if ( stop==-1 ) {
+                if (plist->isSublist("Execution Control")) {
+                  if ( plist->sublist("Execution Control").isSublist("Time Integration Mode") ) {
+                    Teuchos::ParameterList time_integration_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
+                    if (time_integration_mode_list.isSublist("Steady")) {
+                      stop = time_integration_mode_list.sublist("Steady").get<double>("End");
+                    } else if (time_integration_mode_list.isSublist("Transient")) {
+                      stop = time_integration_mode_list.sublist("Transient").get<double>("End");
+                    } else if (time_integration_mode_list.isSublist("Initialize To Steady")) {
+                      stop = time_integration_mode_list.sublist("Initialize To Steady").get<double>("End");
+                    } else {
+                      //throw Exception - no end time value
+                      Exceptions::amanzi_throw(Errors::Message("There is not an end time specified."));
+                    }
+                  }
+                }
+              }
+
+              for (double j=start; j<=stop; j+=period)
+                observationPoints.push_back(j);
             }
             if (time_macro_list.isParameter("Values")) {
               obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
+              Teuchos::Array<double> values = time_macro_list.get<Teuchos::Array<double> >("Values");
+              observationPoints.insert( observationPoints.end(), values.begin(), values.end() );
             }
             obs_list.sublist(i->first).remove("Time Macro");
           }
@@ -306,9 +362,18 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
       }
     }
   }
+  // Sort the array of observation points and remove any identical ones
+  std::sort( observationPoints.begin(), observationPoints.end() );
+  // Remove points that are too close together
+  const double epsilon = 1E-6;
+  Teuchos::Array<double>::iterator it = 
+      std::remove_if( observationPoints.begin()+1, observationPoints.end(), 
+          bind(compareEpsilon<double>, _1, epsilon) );
+  observationPoints.resize( it - observationPoints.begin() );
+  obs_list.set<Teuchos::Array<double> >("Observation Times", observationPoints);
+  
   return obs_list;
 }
-
 
 
 Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist ) 
@@ -416,6 +481,10 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist )
     Teuchos::ParameterList exe_sublist = plist->sublist("Execution Control");
 
     mpc_list.sublist("Time Integration Mode") = exe_sublist.sublist("Time Integration Mode");
+    
+    if (exe_sublist.isSublist("Time Period Control")) {
+      mpc_list.sublist("Time Period Control") = exe_sublist.sublist("Time Period Control");
+    }
 
     // now interpret the modes
     if ( exe_sublist.isParameter("Transport Model") ) {
@@ -593,9 +662,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
 
         Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
         // set some reasonable defaults...
-        time_integrator.set<int>("Nonlinear solver max iterations", 6);
-        time_integrator.set<int>("NKA max vectors", 5);
-        time_integrator.set<int>("Maximum number of BDF tries", 10);
+        time_integrator.set<int>("Nonlinear solver max iterations", 10);
+        time_integrator.set<int>("NKA max vectors", 10);
+        time_integrator.set<int>("Maximum number of BDF tries", 20);
         time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
         time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
         time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
@@ -997,8 +1066,12 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist )
           sublist.set<Teuchos::Array<double> >("gradient", ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value"));
           sublist.set<Teuchos::Array<double> >("reference coordinate", ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate"));
           sublist.set<double>("reference value", ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value"));
-        } else {
-          Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, or IC: Linear Pressure."));
+        } else if (ic_for_region->isSublist("IC: File Pressure")) {
+	  Teuchos::ParameterList& sublist = stt_mat.sublist("file pressure");
+	  sublist.set<std::string>("file name", ic_for_region->sublist("IC: File Pressure").get<std::string>("File"));
+	  sublist.set<std::string>("label", ic_for_region->sublist("IC: File Pressure").get<std::string>("Label"));
+	} else {
+          Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, IC: Linear Pressure, or IC: File Pressure."));
         }
 
         // write the initial conditions for saturation, since this is not a primary variable, this is not required
@@ -1055,6 +1128,7 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist )
 
   return stt_list;
 }
+
 
 
 Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) 

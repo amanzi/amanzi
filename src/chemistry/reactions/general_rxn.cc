@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <iostream>
+#include <iomanip>
 
 #include "block.hh"
 
@@ -167,7 +168,7 @@ void GeneralRxn::addContributionToJacobian(
 
 void GeneralRxn::display(void) const {
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << stoichiometry_[i] << " " << species_names_[i];
+    std::cout << stoichiometry_.at(i) << " " << species_names_.at(i);
     if (i < species_names_.size() - 1) {
       std::cout << " + ";
     }
@@ -176,6 +177,64 @@ void GeneralRxn::display(void) const {
   std::cout << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
   std::cout << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
 }  // end display()
+
+void GeneralRxn::Display(void) const {
+  // convention for this reaction is that reactants have negative
+  // stoichiometries, products have positive stoichiometries....
+  // write them in standard chemistry notation by printing -stoich
+
+
+  // write the overall reaction
+  // reactants:
+  std::cout << std::setw(6);
+  for (unsigned int i = 0; i < species_names_.size(); i++) {
+    if (stoichiometry_.at(i) < 0) { 
+      std::cout << -stoichiometry_.at(i) << " " << species_names_.at(i);
+      if (i < forward_species_ids_.size() - 1) {
+        std::cout << " + ";
+      }
+    }
+  }
+
+  std::cout << " <---> ";
+  // products
+  for (unsigned int i = 0; i < species_names_.size(); i++) {
+    if (stoichiometry_.at(i) > 0) { 
+      std::cout << stoichiometry_.at(i) << " " << species_names_.at(i);
+      if (i < species_names_.size() - 1) {
+        std::cout << " + ";
+      }
+    }
+  }
+  std::cout << std::endl;
+  // write the forward rate expression....
+  std::cout << std::setw(12) << "    R_f = "
+            << std::scientific << this->kf_ << std::fixed;
+  if (forward_species_ids_.size() > 0 && this->kf_ > 0.0) {
+    std::cout << " * ";
+
+    for (unsigned int i = 0; i < forward_species_ids_.size(); i++) {
+      std::cout << "a_(" << species_names_[i] << ")^("
+                << -stoichiometry_[i] << ")";
+      if (i < forward_species_ids_.size() - 1) {
+        std::cout << " * ";
+      }
+    }
+  }
+  std::cout << std::endl << std::setw(12) << "    R_b = "
+            << std::scientific << this->kb_ << std::fixed;
+  if (backward_species_ids_.size() > 0 && this->kb_ > 0.0) {
+    std::cout << " * ";
+    for (unsigned int i = 0; i < backward_species_ids_.size(); i++) {
+      std::cout << "a_(" << species_names_[i] << ")^("
+                << -stoichiometry_[i] << ")";
+      if (i < backward_species_ids_.size() - 1) {
+        std::cout << " * ";
+      }
+    }
+  }
+
+}  // end Display()
 
 }  // namespace chemistry
 }  // namespace amanzi

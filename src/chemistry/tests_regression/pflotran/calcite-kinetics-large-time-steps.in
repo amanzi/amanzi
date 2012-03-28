@@ -1,0 +1,119 @@
+:Description: Batch carbonate equilibrium speciation reaction
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    H+
+    HCO3-
+    Ca++
+  /
+  SECONDARY_SPECIES
+    OH-
+    CO3--
+    CO2(aq)
+    CaOH+
+    CaHCO3+
+    CaCO3(aq)
+  /
+  MINERALS
+    Calcite
+  /
+  MINERAL_KINETICS
+    Calcite
+      RATE_CONSTANT 1.d-13
+    /
+  /
+  DATABASE ./calcite.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS TIMESTEP
+END
+
+:=========================== solver options ===================================
+TIMESTEPPER
+  TS_ACCELERATION 8
+/
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  ORIGIN 0.d0 0.d0 0.d0
+  NXYZ 1 1 1
+  BOUNDS
+    0.d0 1.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+END
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.5d0
+/
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION all
+  AT_CELL_CENTER
+/
+
+:=========================== output options ===================================
+OUTPUT
+  PERIODIC_OBSERVATION TIMESTEP 1
+/
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 12 mo
+  INITIAL_TIMESTEP_SIZE 30.d0 d
+  MAXIMUM_TIMESTEP_SIZE 30.d0 d
+/
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    1.d0 1.d0 1.d0
+  /
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE zero_gradient
+  CONSTRAINT_LIST
+    0.d0 initial
+  /
+END
+
+
+:=========================== constraints ======================================
+CONSTRAINT initial
+  CONCENTRATIONS
+    H+     -2.d-5     T
+    HCO3-  1.d-3      T
+    Ca++   1.d-4      T
+  /
+  MINERALS
+    Calcite  0.2 1.0
+  /
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+

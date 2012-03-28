@@ -237,6 +237,16 @@ int main(int argc, char** argv) {
                                &output_interval);
         break;
       }
+      case 86: {
+        thermo_database_file = "general.bgd";
+        activity_model_name = ac::ActivityModelFactory::unit;
+        components.total.push_back(1.0e-4);   // A(aq)
+        components.total.push_back(2.0e-5);  // B(aq)
+        delta_time = 0.1 * 24.0 * 3600.0;     // 0.1 days
+        num_time_steps = 50.0 * 24.0 * 3600.0 / delta_time;  // run to 50 days
+        output_interval = 5;                  // plot every 5 steps
+        break;
+      }
       default: {
         std::cout << "Invalid test number specified on command line. "
                   << "try using the \'-h\' option." << std::endl;
@@ -282,13 +292,13 @@ int main(int argc, char** argv) {
       if (num_time_steps != 0) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
-        chem->DisplayTotalColumns(0.0, components.total);
+        chem->DisplayTotalColumns(0.0, components);
         // parameters.max_iterations = 2;
         for (int time_step = 0; time_step < num_time_steps; time_step++) {
           chem->ReactionStep(&components, parameters, delta_time);
           if ((time_step + 1) % output_interval == 0) {
             chem->DisplayTotalColumns((time_step + 1) * delta_time,
-                                      components.total);
+                                      components);
           }
           if (verbosity >= ac::kDebugNewtonSolver) {
             ac::Beaker::SolverStatus status = chem->status();

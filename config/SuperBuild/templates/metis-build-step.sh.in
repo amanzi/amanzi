@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build
+export CC=@CMAKE_C_COMPILER@
+export CFLAGS='@Amanzi_COMMON_CFLAGS@'
+
+# METIS recommends running with the make configure target
+cd @METIS_source_dir@
+make 
+
+exit $?

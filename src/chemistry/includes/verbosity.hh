@@ -27,6 +27,7 @@ static const std::string kTerseName("terse");
 static const std::string kVerboseName("verbose");
 static const std::string kDebugName("debug");
 static const std::string kDebugBeakerName("debug_beaker");
+static const std::string kDebugInputFileName("debug_input_file");
 
 typedef std::map<std::string, Verbosity> VerbosityMap;
 

@@ -7,7 +7,8 @@ TESTS = \
 	carbonate-debye-huckel \
 	ca-carbonate-unit \
 	ca-carbonate-debye-huckel \
-	calcite
+	calcite \
+	general
 
 #
 # tests
@@ -44,7 +45,10 @@ calcite :
 	mv pflotran.out $@.pfout 
 	@echo 
 
-
+general :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
 
 #
 # clean - Clean up the directory.

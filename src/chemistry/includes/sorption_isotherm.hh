@@ -4,6 +4,8 @@
 
 // Base class for sorption isotherms
 
+#include <string>
+
 #include<species.hh>
 
 namespace amanzi {
@@ -11,11 +13,22 @@ namespace chemistry {
 
 class SorptionIsotherm {
  public:
-  SorptionIsotherm();
+  SorptionIsotherm(const std::string name);
   virtual~SorptionIsotherm();
 
   virtual double Evaluate(const Species& primarySpecies) = 0;
   virtual double EvaluateDerivative(const Species& primarySpecies) = 0;
+
+  virtual void Display(void) const = 0;
+
+  std::string name(void) const {
+    return name_;
+  }
+
+ protected:
+
+ private:
+  std::string name_;
 
 }; // SorptionIsotherm
 

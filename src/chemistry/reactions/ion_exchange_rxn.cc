@@ -211,7 +211,7 @@ void IonExchangeRxn::DisplayComplexes(void) const {
 }  // end DisplayComplexes()
 
 void IonExchangeRxn::Display(void) const {
-  DisplaySite();
+  //DisplaySite();
   DisplayComplexes();
 }  // end Display()
 

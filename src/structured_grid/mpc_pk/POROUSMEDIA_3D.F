@@ -2347,19 +2347,24 @@ c      res = res + \nabla vel at boundary
 c    ----------------------------------------------------------
 c  
       subroutine FORT_RICHARD_VELBC(rg,DIMS(rg),
+     &     ux,DIMS(ux),uy,DIMS(uy),uz,DIMS(uz),
      &     lo,hi,domlo,domhi,dx,
-     &     inflow_bc_lo,inflow_bc_hi,
-     &     inflow_vel_lo,inflow_vel_hi, mult)
+     &     inflow_bc_lo,inflow_bc_hi, mult)
 
       implicit none
       
       integer DIMDEC(rg)
+      integer DIMDEC(ux)
+      integer DIMDEC(uy)
+      integer DIMDEC(uz)
       integer lo(SDIM),hi(SDIM)
       integer domlo(SDIM), domhi(SDIM)
       integer inflow_bc_lo(SDIM),inflow_bc_hi(SDIM)
-      REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
       REAL_T  dx(SDIM)
       REAL_T  rg(DIMV(rg))
+      REAL_T  ux(DIMV(ux))
+      REAL_T  uy(DIMV(uy))
+      REAL_T  uz(DIMV(uz))
       REAL_T  mult
       
       integer i, j, k
@@ -2367,42 +2372,42 @@ c
       if (lo(1) .eq. domlo(1) .and. inflow_bc_lo(1) .eq. 1) then
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
-               rg(lo(1),j,k) = rg(lo(1),j,k) - mult*inflow_vel_lo(1)/dx(1)
+               rg(lo(1),j,k) = rg(lo(1),j,k) - mult*ux(lo(1),j,k)/dx(1)
             end do
          end do
       end if
       if (hi(1) .eq. domhi(1) .and. inflow_bc_hi(1) .eq. 1) then
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
-               rg(hi(1),j,k) = rg(hi(1),j,k) + mult*inflow_vel_hi(1)/dx(1)
+               rg(hi(1),j,k) = rg(hi(1),j,k) + mult*ux(hi(1)+1,j,k)/dx(1)
             end do
          end do
       end if
       if (lo(2) .eq. domlo(2) .and. inflow_bc_lo(2) .eq. 1) then
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
-               rg(i,lo(2),k) = rg(i,lo(2),k) - mult*inflow_vel_lo(2)/dx(2)
+               rg(i,lo(2),k) = rg(i,lo(2),k) - mult*uy(i,lo(2),k)/dx(2)
            end do
         end do
       end if
       if (hi(2) .eq. domhi(2) .and. inflow_bc_hi(2) .eq. 1) then
          do k = lo(3),hi(3)
             do i = lo(1),hi(1)
-               rg(i,hi(2),k) = rg(i,hi(2),k) + mult*inflow_vel_hi(2)/dx(2)
+               rg(i,hi(2),k) = rg(i,hi(2),k) + mult*uy(i,hi(2)+1,k)/dx(2)
             end do
          end do
       end if
       if (lo(3) .eq. domlo(3) .and. inflow_bc_lo(3) .eq. 1) then
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
-               rg(i,j,lo(3)) = rg(i,j,lo(3)) - mult*inflow_vel_lo(3)/dx(3)
+               rg(i,j,lo(3)) = rg(i,j,lo(3)) - mult*uz(i,j,lo(3))/dx(3)
             end do
          end do
          end if
       if (hi(3) .eq. domhi(3) .and. inflow_bc_hi(3) .eq. 1) then
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
-               rg(i,j,hi(3)) = rg(i,j,hi(3)) + mult*inflow_vel_hi(3)/dx(3)
+               rg(i,j,hi(3)) = rg(i,j,hi(3)) + mult*uz(i,j,hi(3)+1)/dx(3)
             end do
          end do
       end if
