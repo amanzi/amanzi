@@ -61,6 +61,8 @@ class HDF5_MPI {
   void setConnLength(int ConnLength) {ConnLength_ = ConnLength;}
   int Iteration() { return Iteration_;}
   void setIteration(int Iteration) {Iteration_ = Iteration;}
+  double Time() { return Time_;}
+  void setTime(double Time) {Time_ = Time;}
 
   Teuchos::XMLObject xmlVisit() { return xmlVisit_; }
   Teuchos::XMLObject xmlStep() { return xmlStep_; }
@@ -80,6 +82,7 @@ class HDF5_MPI {
 
   // Write attribute to HDF5 data file.
   void writeAttrReal(double value, const std::string attrname);
+  void writeAttrReal(double value, const std::string attrname, std::string h5path);
   void writeAttrInt(int value, const std::string attrname);
   void writeAttrString(const std::string value, const std::string attrname);
   void readAttrReal(double &value, const std::string attrname);
@@ -153,6 +156,7 @@ class HDF5_MPI {
   int NumElems_;
   int ConnLength_;
   int Iteration_;
+  double Time_;
   int SpaceDim_;
 
   // Mesh information
