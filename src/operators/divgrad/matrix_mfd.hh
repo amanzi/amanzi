@@ -65,6 +65,7 @@ public:
 
   // access to data for updating manually
   std::vector<double>& Acc_cells() { return Acc_cells_; }
+  std::vector<double>& Fc_cells() { return Fc_cells_; }
   Teuchos::RCP<const Epetra_Vector> Acc() { return Acc_; }
 
   // main computational methods
