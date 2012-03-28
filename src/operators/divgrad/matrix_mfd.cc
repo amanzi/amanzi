@@ -303,6 +303,7 @@ void MatrixMFD::AssembleGlobalMatrices() {
   (*Aff_).GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
+  rhs_->ViewComponent("face", true)->PutScalar(0.0);
   for (int c=0; c != ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
