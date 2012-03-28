@@ -68,14 +68,14 @@ AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
   advection_->set_num_dofs(1);
 
   // operator for the advection_diffusion terms
-  Teuchos::ParameterList mfd_plist = energy_plist_.sublist("AdvectionDiffusion");
+  Teuchos::ParameterList mfd_plist = energy_plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->mesh()));
   matrix_->SetSymmetryProperty(true);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner
   // NOTE: may want to allow these to be the same/different?
-  Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("AdvectionDiffusion PC");
+  Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("Diffusion PC");
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->mesh()));
   preconditioner_->SetSymmetryProperty(true);
   preconditioner_->SymbolicAssembleGlobalMatrices();

@@ -102,7 +102,7 @@ private:
   void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
   void AddAdvection_(const Teuchos::RCP<State> S,
                      const Teuchos::RCP<CompositeVector> f, bool negate);
-  void ApplyConduction_(const Teuchos::RCP<State> S, const Teuchos::RCP<CompositeVector> f);
+  void ApplyDiffusion_(const Teuchos::RCP<State> S, const Teuchos::RCP<CompositeVector> f);
 
   // methods for applying/using the discretization/operators
   void UpdateBoundaryConditions_();
