@@ -8,14 +8,14 @@ Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
 #include "Epetra_Vector.h"
-#include "diffusion.hh"
+#include "advection_diffusion.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-// Diffusion is a BDFFnBase
+// AdvectionDiffusion is a BDFFnBase
 // computes the non-linear functional f = f(t,u,udot)
-void Diffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void AdvectionDiffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
@@ -36,9 +36,9 @@ void Diffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   Teuchos::RCP<CompositeVector> res = f->data();
   res->PutScalar(0.0);
 
-  // conduction term, implicit
-  ApplyConduction_(S_next_, res);
-  std::cout << "  res (after conduction): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  // diffusion term, implicit
+  ApplyDiffusion_(S_next_, res);
+  std::cout << "  res (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
@@ -51,7 +51,7 @@ void Diffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 };
 
 // applies preconditioner to u and returns the result in Pu
-void Diffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void AdvectionDiffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  u: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
   // preconditioner for accumulation only:
@@ -64,7 +64,7 @@ void Diffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector
 };
 
 // computes a norm on u-du and returns the result
-double Diffusion::enorm(Teuchos::RCP<const TreeVector> u,
+double AdvectionDiffusion::enorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
   Teuchos::RCP<const Epetra_MultiVector> temp_vec = u->data()->ViewComponent("cell", false);
@@ -92,7 +92,7 @@ double Diffusion::enorm(Teuchos::RCP<const TreeVector> u,
 };
 
 // updates the preconditioner
-void Diffusion::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_); // not sure why this isn't getting found? --etc
 

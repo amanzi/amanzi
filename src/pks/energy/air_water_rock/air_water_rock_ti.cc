@@ -20,54 +20,45 @@ void AirWaterRock::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_ol
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
 
+  Teuchos::RCP<CompositeVector> u = u_new->data();
+  std::cout << "Residual calculation:" << std::endl;
+  std::cout << "  u: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+
   // pointer-copy temperature into states and update any auxilary data
   solution_to_state(u_old, S_inter_);
   solution_to_state(u_new, S_next_);
   UpdateSecondaryVariables_(S_inter_);
   UpdateSecondaryVariables_(S_next_);
 
+  // update boundary conditions
   bc_temperature_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_();
 
-  // get access to the solution
+  // zero out residual
   Teuchos::RCP<CompositeVector> res = f->data();
   res->PutScalar(0.0);
 
-  std::cout << "residual before: " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
-
-  // conduction term, implicit
-  ApplyConduction_(S_next_, res);
-  std::cout << "residual after diffusion: " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
-
-  // source term?
+  // diffusion term, implicit
+  ApplyDiffusion_(S_next_, res);
+  std::cout << "  res (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
+  std::cout << "  res (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 
   // advection term, explicit
-  //advection_->set_bcs(bcs_advection_, bcs_advection_dofs_);
-  //AddAdvection_(S_inter_, res, true);
-
-  std::cout << "residual after: " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  advection_->set_bcs(bcs_advection_, bcs_advection_dofs_);
+  AddAdvection_(S_inter_, res, true);
+  std::cout << "  res (after advection): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 };
 
 // applies preconditioner to u and returns the result in Pu
 void AirWaterRock::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  std::cout << "before precon: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
-  //  preconditioner_->ApplyInverse(*u->data(), Pu->data());
-
-  Teuchos::RCP<const CompositeVector> udat = u->data();
-  Teuchos::RCP<CompositeVector> pudat = Pu->data();
-
-  Teuchos::RCP<const Epetra_Vector> Acc = preconditioner_->Acc();
-
-  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=ncells; ++c) {
-    (*pudat)("cell",0,c) = (*udat)("cell",0,c)/(*Acc)[c];
-  }
-
-  std::cout << "after precon: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
+  std::cout << "Precon application:" << std::endl;
+  std::cout << "  u: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
+  preconditioner_->ApplyInverse(*u->data(), Pu->data());
+  std::cout << "  Pu: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
 };
 
 // computes a norm on u-du and returns the result
@@ -122,8 +113,10 @@ void AirWaterRock::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   preconditioner_->CreateMFDrhsVectors();
 
   // update with accumulation terms
-  Teuchos::RCP<const CompositeVector> temp =
+  Teuchos::RCP<const CompositeVector> temp1 =
     S_next_->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> temp0 =
+    S_inter_->GetFieldData("temperature");
 
   Teuchos::RCP<const CompositeVector> poro =
     S_next_->GetFieldData("porosity");
@@ -157,9 +150,10 @@ void AirWaterRock::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
     S_next_->GetScalarData("density_rock");
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
+  std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
   int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
-    double T = (*temp)("cell",0,c);
+    double T = (*temp1)("cell",0,c);
     double phi = (*poro)("cell",0,c);
     double du_liq_dT = internal_energy_liquid_model_->DInternalEnergyDT(T);
     double du_gas_dT = internal_energy_gas_model_->DInternalEnergyDT(T, (*mol_frac_gas)("cell",0,c));
@@ -173,6 +167,7 @@ void AirWaterRock::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
                      (1-phi) * factor_rock) * (*cell_volume)(c);
 
     Acc_cells[c] += factor/h;
+    Fc_cells[c] += factor/h * (*temp0)("cell",0,c);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

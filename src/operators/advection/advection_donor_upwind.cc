@@ -63,7 +63,7 @@ void AdvectionDonorUpwind::Apply() {
     }
   }
 
-  // put boundary conditions in faces
+  // put boundary fluxes in faces
   for (int n=0; n != bcs_->size(); ++n) {
     int i = (*bcs_dof_)[n];
     for (BoundaryFunction::Iterator bc=(*bcs_)[n]->begin(); bc != (*bcs_)[n]->end(); ++bc) {

@@ -1,4 +1,4 @@
-1;2305;0c# -*- mode: cmake -*-
+# -*- mode: cmake -*-
 
 #
 #  ATS
@@ -14,6 +14,6 @@ add_subdirectory(constitutive_relations)
 # PKs
 add_subdirectory(constant_temperature)
 add_subdirectory(advection_diffusion)
-#add_subdirectory(air_water_rock)
+add_subdirectory(air_water_rock)
 
 

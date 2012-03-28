@@ -182,7 +182,7 @@ void AirWaterRock::AddAdvection_(const Teuchos::RCP<State> S,
   }
 };
 
-void AirWaterRock::ApplyConduction_(const Teuchos::RCP<State> S,
+void AirWaterRock::ApplyDiffusion_(const Teuchos::RCP<State> S,
           const Teuchos::RCP<CompositeVector> f) {
   // compute the stiffness matrix at the new time
   Teuchos::RCP<const CompositeVector> temp =
