@@ -17,7 +17,7 @@
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
 
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
 #include "omp.h"
 #endif
 
@@ -1511,8 +1511,13 @@ void  PorousMedia::read_comp()
           }
           else if (ic_type == "zero_total_velocity")
           {
-	      Array<Real> vals(1);
-	      ppr.get("inflow",vals[0]);
+	      Array<Real> vals(4);
+              Array<Real> times(1,0);
+              Array<std::string> forms;
+	      ppr.get("aqueous_vol_flux",vals[0]);
+              ppr.get("water_table_height",vals[1]);
+              Real aqueous_ref_pres = 0; ppr.query("val",vals[2]);
+              Real aqueous_pres_grad = 0; ppr.query("grad",vals[3]);
 	      ic_array.set(i,new RegionData(icname,ic_regions,ic_type,vals));
           }
           else {
@@ -2107,7 +2112,7 @@ void  PorousMedia::read_chem()
     {
 int tnum = 1;
 
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
 	tnum = omp_get_max_threads();
 #endif
         ParmParse pb("prob.amanzi");

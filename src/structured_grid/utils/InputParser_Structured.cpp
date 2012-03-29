@@ -1318,6 +1318,7 @@ namespace Amanzi {
             const std::string val_name="Reference Value";
             const std::string grad_name="Gradient Value";
             const std::string ref_name="Reference Coordinate";
+            //const std::string vel_name="Aqueous Volumetric Flux";
 
             Array<std::string> reqP, nullList;
             reqP.push_back(val_name);
@@ -1326,15 +1327,26 @@ namespace Amanzi {
                 reqP.push_back(grad_name);
                 reqP.push_back(ref_name);
             }
+            //PLoptions opt(fPLin,nullList,reqP,true,false);  
             PLoptions opt(fPLin,nullList,reqP,true,true);  
     
             fPLout.set<std::string>("type","hydrostatic");
+            //fPLout.set<std::string>("type","zero_total_velocity");
             fPLout.set<double>("val",fPLin.get<double>(val_name));
             if (Amanzi_type == "IC: Linear Pressure") {
-                fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
+                //fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
+                const Array<double>& grad = fPLin.get<Array<double> >(grad_name);
                 const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
                 int coord = water_table.size()-1;
-                fPLout.set<double>("water_table_height",water_table[coord]);                      
+                fPLout.set<double>("water_table_height",water_table[coord]); 
+                fPLout.set<double>("grad",grad[coord]);
+#if 0
+                double AqVolFlux = 0; 
+                if (fPLin.isParameter(vel_name)) {
+                    AqVolFlux = fPLin.get<double>(vel_name);
+                }
+                fPLout.set<double>("aqueous_vol_flux",AqVolFlux); 
+#endif
             }
         }
 
