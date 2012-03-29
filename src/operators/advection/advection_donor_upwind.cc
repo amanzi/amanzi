@@ -48,7 +48,6 @@ void AdvectionDonorUpwind::Apply() {
   double u;
   // collect fluxes in faces
   Teuchos::RCP<Epetra_MultiVector> faces = field_->ViewComponent("face",true);
-  faces->PutScalar(0.0);
 
   //  field_->ViewComponent("face")->PutScalar(0.0);
   for (int f=f_begin_; f != f_end_; ++f) {  // loop over master and slave faces
@@ -63,24 +62,9 @@ void AdvectionDonorUpwind::Apply() {
     }
   }
 
-  // put boundary fluxes in faces
-  for (int n=0; n != bcs_->size(); ++n) {
-    int i = (*bcs_dof_)[n];
-    for (BoundaryFunction::Iterator bc=(*bcs_)[n]->begin(); bc != (*bcs_)[n]->end(); ++bc) {
-      int f = bc->first;
-      int c2 = (*downwind_cell_)[f];
-
-      if (c2 >= 0) {
-        u = fabs((*flux_)(f));
-        (*field_)("face",i,f) = u * bc->second;
-      }
-    }
-  }
-
-
   field_->ViewComponent("cell")->PutScalar(0.0);
   // put fluxes in cell
-  for (int f=f_begin_; f != f_end_; ++f) {  // loop over master and slave faces
+  for (int f=f_begin_; f!=f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
