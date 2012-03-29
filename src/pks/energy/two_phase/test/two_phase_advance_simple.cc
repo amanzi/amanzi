@@ -10,7 +10,7 @@
 #include "Mesh_simple.hh"
 #include "state.hh"
 
-#include "air_water_rock.hh"
+#include "two_phase.hh"
 
 #include "energy_test_class.hh"
 
@@ -29,7 +29,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   // read parameter list
   Teuchos::ParameterList parameter_list;
-  string xmlFileName = "test/air_water_rock_advance_simple.xml";
+  string xmlFileName = "test/two_phase_advance_simple.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create an SIMPLE mesh framework

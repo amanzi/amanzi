@@ -16,7 +16,7 @@
 
 #include "Mesh.hh"
 #include "state.hh"
-#include "air_water_rock.hh"
+#include "two_phase.hh"
 
 using namespace Amanzi;
 
@@ -34,7 +34,7 @@ public:
   // data
   Teuchos::ParameterList parameter_list;
   Teuchos::RCP<State> S0, S1;
-  Teuchos::RCP<Energy::AirWaterRock> EPK;
+  Teuchos::RCP<Energy::TwoPhase> EPK;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   int num_components;
   double constant_value;

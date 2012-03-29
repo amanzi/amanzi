@@ -16,8 +16,10 @@ should eventually get smarter.
 // #include "DarcyPK.hh"
 // #include "RichardsPK.hh"
 // #include "PermafrostPK.hh"
+
 #include "constant_temperature.hh"
-#include "air_water_rock.hh"
+#include "advection_diffusion.hh"
+#include "two_phase.hh"
 
 #include "PK_Factory.hh"
 
@@ -40,8 +42,10 @@ Teuchos::RCP<PK> PK_Factory::create_pk(Teuchos::ParameterList plist,
   //   return Teuchos::rcp(new PermafrostPK(plist, S, soln));
   } else if (pk_type == "Constant Temperature") {
     return Teuchos::rcp(new Energy::ConstantTemperature(plist, S, soln));
-  } else if (pk_type == "Air Water Rock Energy") {
-    return Teuchos::rcp(new Energy::AirWaterRock(plist, S, soln));
+  } else if (pk_type == "Advection-diffusion of Temperature") {
+    return Teuchos::rcp(new Energy::AdvectionDiffusion(plist, S, soln));
+  } else if (pk_type == "Two-Phase Energy") {
+    return Teuchos::rcp(new Energy::TwoPhase(plist, S, soln));
   } else {
     Errors::Message message("PK_Factory: unknown PK model: "+pk_type);
     Exceptions::amanzi_throw(message);

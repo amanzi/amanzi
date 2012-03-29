@@ -32,14 +32,14 @@ us to the air-water system.
 namespace Amanzi {
 namespace Energy {
 
-class AirWaterRock : public PK, public BDFFnBase {
+class TwoPhase : public PK, public BDFFnBase {
 
 public:
 
-  AirWaterRock(Teuchos::ParameterList& plist, Teuchos::RCP<State>& S,
+  TwoPhase(Teuchos::ParameterList& plist, Teuchos::RCP<State>& S,
                       Teuchos::RCP<TreeVector>& solution);
 
-  // AirWaterRock is a PK
+  // TwoPhase is a PK
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::RCP<State>& S);
 
@@ -62,7 +62,7 @@ public:
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
 
 
-  // AirWaterRock is a BDFFnBase
+  // TwoPhase is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
   virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
