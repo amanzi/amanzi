@@ -6,7 +6,7 @@ namespace Transport {
 // Methods for the BDF integrator
 // -- residual
 void PassiveTracer::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
+        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
 
@@ -15,7 +15,7 @@ void PassiveTracer::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_o
   solution_to_state(u_new, S_next_);
 
   // get access to the solution
-  Teuchos::RCP<CompositeVector> res = f->data();
+  Teuchos::RCP<CompositeVector> res = g->data();
   res->PutScalar(0.0);
 
   // update bcs
@@ -25,7 +25,6 @@ void PassiveTracer::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_o
   AddAccumulation_(res);
 
   // advection term
-  advection_->set_bcs(bcs_, bcs_dof_);
   AddAdvection_(res);
 };
 
