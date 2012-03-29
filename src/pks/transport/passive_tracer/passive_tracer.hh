@@ -78,7 +78,7 @@ private:
   void process_parameter_list(const Teuchos::RCP<State>& S);
 
   void AddAccumulation_(Teuchos::RCP<CompositeVector> f);
-  void AddAdvection_(Teuchos::RCP<CompositeVector> f);
+  void AddAdvection_(Teuchos::RCP<CompositeVector> f, bool negate=false);
 
   // states
   double C_;

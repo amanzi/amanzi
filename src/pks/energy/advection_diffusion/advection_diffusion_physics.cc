@@ -42,35 +42,32 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
   field->PutScalar(0);
 
   // set the flux field as the darcy flux
-  Teuchos::RCP<const CompositeVector> darcy_flux =
-    S->GetFieldData("darcy_flux");
+  Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
   advection_->set_flux(darcy_flux);
 
   // put the advected quantity in cells
-  Teuchos::RCP<const CompositeVector> temp =
-    S->GetFieldData("temperature");
-
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=c_owned; ++c) {
-    (*field)("cell",0,c) = (*temp)("cell",0,c);
-  }
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  *field->ViewComponent("cell", false) = *temp->ViewComponent("cell", false);
 
   // put the boundary fluxes in faces -- assumes all Dirichlet BC in temperature!
   for (BoundaryFunction::Iterator bc = bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
+    // note that temp has the correct BC value in its face already, as it was
+    // solved from the previous timestep.
     (*field)("face",0,f) = (*temp)("face",0,f) * fabs((*darcy_flux)(f));
   }
 
   // apply the advection operator and add to residual
   advection_->Apply();
+  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
       (*g)("cell",c) -= (*field)("cell",c);
     }
   } else {
     for (int c=0; c!=c_owned; ++c) {
-      (*g)("cell",c) = (*field)("cell",c);
+      (*g)("cell",c) += (*field)("cell",c);
     }
   }
 };

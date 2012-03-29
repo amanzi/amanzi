@@ -39,7 +39,6 @@ PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
 
   // bcs
   bcs_ = Teuchos::rcp(new std::vector< Teuchos::RCP<BoundaryFunction> >);
-  bcs_dof_ = Teuchos::rcp(new std::vector<int>);
 };
 
 // initialize ICs
@@ -87,10 +86,7 @@ void PassiveTracer::process_parameter_list(const Teuchos::RCP<State>& S) {
   // populate the list of boundary influx functions
   int nBCs = BCs_list.get<int>("number of BCs");
   bcs_->clear();
-  bcs_dof_->clear();
   bcs_->reserve(nBCs);
-  bcs_dof_->reserve(nBCs);
-
 
   for (int n=0; n != nBCs; ++n) {
     char bc_char_name[10];
@@ -104,13 +100,12 @@ void PassiveTracer::process_parameter_list(const Teuchos::RCP<State>& S) {
     }
     Teuchos::ParameterList BC_list = BCs_list.sublist(bc_name);  // A single sublist.
 
-    bool flag_BCX = false;
-    int i = 0; // component, only one in passive tracer
+    int i = 0;
     char tcc_char_name[20];
-
     sprintf(tcc_char_name, "Component %d", i);
     string tcc_name(tcc_char_name);
 
+    bool flag_BCX = false;
     if (BC_list.isParameter(tcc_name)) {
       flag_BCX = true;
       std::vector<std::string> regions, functions;
@@ -127,13 +122,11 @@ void PassiveTracer::process_parameter_list(const Teuchos::RCP<State>& S) {
         forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
       }
 
-      Teuchos::RCP<Function> f;
-      f = Teuchos::rcp(new TabularFunction(times, values, forms));
-
+      Teuchos::RCP<Function> func;
+      func = Teuchos::rcp(new TabularFunction(times, values, forms));
       Teuchos::RCP<BoundaryFunction> bnd_fun = Teuchos::rcp(new BoundaryFunction(S->mesh()));
-      bnd_fun->Define(regions, f);
+      bnd_fun->Define(regions, func);
       bcs_->push_back(bnd_fun);
-      bcs_dof_->push_back(i);
     }
     if (!flag_BCX) {
       Errors::Message msg;

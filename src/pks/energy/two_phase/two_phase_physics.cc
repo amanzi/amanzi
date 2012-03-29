@@ -211,7 +211,7 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
     }
   } else {
     for (int c=0; c!=c_owned; ++c) {
-      (*g)("cell",c) = (*field)("cell",c);
+      (*g)("cell",c) += (*field)("cell",c);
     }
   }
 };
