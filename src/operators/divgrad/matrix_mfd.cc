@@ -162,7 +162,8 @@ void MatrixMFD::CreateMFDrhsVectors() {
 
 /* ******************************************************************
  *  Create work vectors for Apply-ing the operator from/to Epetra_Vectors
- * (Supervectors) instead of CompositeVectors -- for use with AztecOO
+ * (Supervectors) instead of CompositeVectors -- for use with AztecOO.
+ * This should likely only be called with a non-ghosted sample vector.
  ****************************************************************** */
 void MatrixMFD::InitializeSuperVecs(const CompositeVector& sample) {
   vector_x_ = Teuchos::rcp(new CompositeVector(sample));

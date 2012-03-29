@@ -51,7 +51,7 @@ AirWaterRock::AirWaterRock(Teuchos::ParameterList& plist,
 
   // -- liquid
   S->RequireField("internal_energy_liquid", "energy", names, locations, 1, true);
-  S->RequireField("specific_enthalpy_liquid", "energy", names, locations, 1, true);
+  S->RequireField("enthalpy_liquid", "energy", names, locations, 1, true);
 
   // -- rock assumed constant for now?
   S->RequireScalar("density_rock");
@@ -72,7 +72,7 @@ AirWaterRock::AirWaterRock(Teuchos::ParameterList& plist,
   S->RequireField("saturation_liquid", names, locations, 1, true);
   S->RequireField("saturation_gas", names, locations, 1, true);
   S->RequireField("darcy_flux", AmanziMesh::FACE, 1, true);
-  S->RequireField("pressure", names, locations, 1, true);
+  S->RequireField("pressure", names2, locations2, 1, true); // need pressure on faces for BC
   S->RequireField("cell_volume", names, locations, 1, true);
 
   // constitutive relations
@@ -97,12 +97,6 @@ AirWaterRock::AirWaterRock(Teuchos::ParameterList& plist,
   EnergyBCFactory bc_factory(S->mesh(), bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
-
-  bcs_advection_ = Teuchos::rcp(new std::vector< Teuchos::RCP<BoundaryFunction> >);
-  bcs_advection_dofs_ = Teuchos::rcp(new std::vector<int>);
-  bcs_advection_->resize(1);
-  (*bcs_advection_)[0] = bc_temperature_;
-  bcs_advection_dofs_->resize(1,0);
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
@@ -143,7 +137,7 @@ void AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
   S_ = S; // temporarily set the state, so we can get the number of cells
   UpdateSecondaryVariables_(S);
   UpdateThermalConductivity_(S);
-  UpdateSpecificEnthalpyLiquid_(S);
+  UpdateEnthalpyLiquid_(S);
   S_ = Teuchos::null;
 
   // initialize thermal conductivity
@@ -161,7 +155,7 @@ void AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
   S->GetRecord("internal_energy_gas","energy")->set_initialized();
   S->GetRecord("internal_energy_liquid","energy")->set_initialized();
   S->GetRecord("internal_energy_rock","energy")->set_initialized();
-  S->GetRecord("specific_enthalpy_liquid","energy")->set_initialized();
+  S->GetRecord("enthalpy_liquid","energy")->set_initialized();
 
   // initialize boundary conditions
   int nfaces = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);

@@ -32,7 +32,7 @@ void AirWaterRock::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
 
 };
 
-void AirWaterRock::UpdateSpecificEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
+void AirWaterRock::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
 
   Teuchos::RCP<const CompositeVector> dens_liq;
@@ -45,11 +45,11 @@ void AirWaterRock::UpdateSpecificEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> int_energy_liquid =
     S->GetFieldData("internal_energy_liquid");
 
-  Teuchos::RCP<CompositeVector> spec_enthalpy_liq =
-    S->GetFieldData("specific_enthalpy_liquid", "energy");
+  Teuchos::RCP<CompositeVector> enthalpy_liq =
+    S->GetFieldData("enthalpy_liquid", "energy");
 
   // update enthalpy of liquid
-  SpecificEnthalpyLiquid_(*int_energy_liquid, *pres, *dens_liq, spec_enthalpy_liq);
+  EnthalpyLiquid_(*int_energy_liquid, *pres, *dens_liq, enthalpy_liq);
 };
 
 void AirWaterRock::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
@@ -63,7 +63,7 @@ void AirWaterRock::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
   ThermalConductivity_(*poro, *sat_liq, thermal_conductivity);
 };
 
-void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
+void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   Teuchos::RCP<const CompositeVector> poro0 =
     S_inter_->GetFieldData("porosity");
   Teuchos::RCP<const CompositeVector> poro1 =
@@ -146,44 +146,78 @@ void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
                       (1-(*poro0)(c)) * (edens_rock0)) * (*cell_volume0)(c);
 
     // add the time derivative of energy density to the residual
-    (*f)("cell",0,c) += (energy1 - energy0)/dt;
+    (*g)("cell",0,c) += (energy1 - energy0)/dt;
   }
 };
 
 void AirWaterRock::AddAdvection_(const Teuchos::RCP<State> S,
-          const Teuchos::RCP<CompositeVector> f, bool negate) {
-  advection_->set_flux(S->GetFieldData("darcy_flux"));
+        const Teuchos::RCP<CompositeVector> g, bool negate) {
+
   Teuchos::RCP<CompositeVector> field = advection_->field();
+  field->PutScalar(0);
 
-  // stuff density_liquid * enthalpy_liquid into the field cells
-  Teuchos::RCP<const CompositeVector> density_liq =
-    S->GetFieldData("density_liquid");
+  // set the flux field as the darcy flux
+  Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
+  advection_->set_flux(darcy_flux);
 
-  UpdateSpecificEnthalpyLiquid_(S);
-  Teuchos::RCP<const CompositeVector> enthalpy_liq =
-    S->GetFieldData("specific_enthalpy_liquid");
+  // put the advected quantity in cells
+  UpdateEnthalpyLiquid_(S);
+  Teuchos::RCP<const CompositeVector> enthalpy_liq = S->GetFieldData("enthalpy_liquid");
 
-  field->ViewComponent("cell")->PutScalar(0);
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
-    (*field)("cell",0,c) = (*density_liq)("cell",0,c)*(*enthalpy_liq)("cell",0,c);
+    (*field)("cell",0,c) = (*enthalpy_liq)("cell",0,c);
+  }
+
+  // put the boundary fluxes in faces -- assumes all Dirichlet BC in temperature!
+  // NOTE this boundary flux is in enthalpy, while the BC is temperature.
+  // MANY assumptions are coming in to play here... many more than I like.
+  // h = n(T,p) * u_l(T) + p_l, and we are using:
+  //  - p_l is assumed to be a mimetic discretization, and therefore has p on faces
+  //  - u_l is calculated correctly using the boundary data
+  //  - n(T,P) is the molar density of the inward _cell_, not calculated from
+  //           T,p on the face as it ought to be, as the EOS is currently in
+  //           the flow PK.
+  Teuchos::RCP<const CompositeVector> dens_liq;
+  if (internal_energy_liquid_model_->IsMolarBasis()) {
+    dens_liq = S->GetFieldData("molar_density_liquid");
+  } else {
+    dens_liq = S->GetFieldData("density_liquid");
+  }
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+
+  for (BoundaryFunction::Iterator bc = bc_temperature_->begin();
+       bc!=bc_temperature_->end(); ++bc) {
+    int f = bc->first;
+    double T = bc->second;
+    double int_energy = internal_energy_liquid_model_->InternalEnergy(T);
+
+    AmanziMesh::Entity_ID_List cells;
+    S->mesh()->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    for (int i=0; i!=cells.size(); ++i) {
+      int c = cells[i];
+      if (c >= 0) { // only the inward cell is > 0
+        double enthalpy = (*dens_liq)("cell",0,c)*int_energy + (*pres)("face",0,f);
+        (*field)("face",0,f) = enthalpy * fabs((*darcy_flux)(f));
+      }
+    }
   }
 
   // apply the advection operator and add to residual
   advection_->Apply();
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
-      (*f)("cell",c) -= (*field)("cell",c);
+      (*g)("cell",c) -= (*field)("cell",c);
     }
   } else {
     for (int c=0; c!=c_owned; ++c) {
-      (*f)("cell",c) = (*field)("cell",c);
+      (*g)("cell",c) = (*field)("cell",c);
     }
   }
 };
 
 void AirWaterRock::ApplyDiffusion_(const Teuchos::RCP<State> S,
-          const Teuchos::RCP<CompositeVector> f) {
+          const Teuchos::RCP<CompositeVector> g) {
   // compute the stiffness matrix at the new time
   Teuchos::RCP<const CompositeVector> temp =
     S->GetFieldData("temperature");
@@ -202,7 +236,7 @@ void AirWaterRock::ApplyDiffusion_(const Teuchos::RCP<State> S,
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
-  matrix_->ComputeNegativeResidual(*temp, f);
+  matrix_->ComputeNegativeResidual(*temp, g);
 };
 
 void AirWaterRock::InternalEnergyGas_(const CompositeVector& temp,
@@ -236,14 +270,14 @@ void AirWaterRock::InternalEnergyRock_(const CompositeVector& temp,
   }
 };
 
-void AirWaterRock::SpecificEnthalpyLiquid_(const CompositeVector& int_energy_liquid,
+void AirWaterRock::EnthalpyLiquid_(const CompositeVector& int_energy_liquid,
         const CompositeVector& pres, const CompositeVector& dens_liq,
-        const Teuchos::RCP<CompositeVector>& spec_enthalpy_liq) {
+        const Teuchos::RCP<CompositeVector>& enthalpy_liq) {
 
   // just a single model for now -- ignore blocks
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*spec_enthalpy_liq)("cell",0,c) = dens_liq("cell",0,c)*int_energy_liquid("cell",0,c)
+    (*enthalpy_liq)("cell",0,c) = dens_liq("cell",0,c)*int_energy_liquid("cell",0,c)
                                               + pres("cell",0,c);
   }
 };
