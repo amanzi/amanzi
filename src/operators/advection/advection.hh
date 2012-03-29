@@ -35,19 +35,12 @@ public:
 
   Teuchos::RCP<CompositeVector> field() { return field_; }
 
-  virtual void set_bcs(const Teuchos::RCP< std::vector<Teuchos::RCP<BoundaryFunction> > > bcs,
-                       const Teuchos::RCP< std::vector<int> > bcs_dof) {
-    bcs_ = bcs; bcs_dof_ = bcs_dof;
-  }
-
   virtual void Apply() = 0;
 
 protected:
   int num_dofs_;
   Teuchos::RCP<const CompositeVector> flux_;
   Teuchos::RCP<CompositeVector> field_;
-  Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_;
-  Teuchos::RCP< std::vector<int> > bcs_dof_;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList advect_plist_;

@@ -12,7 +12,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
+void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   Teuchos::RCP<const CompositeVector> temp0 =
     S_inter_->GetFieldData("temperature");
   Teuchos::RCP<const CompositeVector> temp1 =
@@ -30,41 +30,53 @@ void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> f) {
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     // add the time derivative of energy density to the residual
-    (*f)("cell",0,c) += ((*temp1)("cell",0,c)*(*cell_volume1)(c)
+    (*g)("cell",0,c) += ((*temp1)("cell",0,c)*(*cell_volume1)(c)
                          - (*temp0)("cell",0,c)*(*cell_volume0)(c))/dt;
   }
 };
 
 void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
-          const Teuchos::RCP<CompositeVector> f, bool negate) {
-  advection_->set_flux(S->GetFieldData("darcy_flux"));
-  Teuchos::RCP<CompositeVector> field = advection_->field();
+          const Teuchos::RCP<CompositeVector> g, bool negate) {
 
-  // stuff density_liquid * enthalpy_liquid into the field cells
+  Teuchos::RCP<CompositeVector> field = advection_->field();
+  field->PutScalar(0);
+
+  // set the flux field as the darcy flux
+  Teuchos::RCP<const CompositeVector> darcy_flux =
+    S->GetFieldData("darcy_flux");
+  advection_->set_flux(darcy_flux);
+
+  // put the advected quantity in cells
   Teuchos::RCP<const CompositeVector> temp =
     S->GetFieldData("temperature");
 
-  field->ViewComponent("cell")->PutScalar(0);
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     (*field)("cell",0,c) = (*temp)("cell",0,c);
+  }
+
+  // put the boundary fluxes in faces -- assumes all Dirichlet BC in temperature!
+  for (BoundaryFunction::Iterator bc = bc_temperature_->begin();
+       bc!=bc_temperature_->end(); ++bc) {
+    int f = bc->first;
+    (*field)("face",0,f) = (*temp)("face",0,f) * fabs((*darcy_flux)(f));
   }
 
   // apply the advection operator and add to residual
   advection_->Apply();
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
-      (*f)("cell",c) -= (*field)("cell",c);
+      (*g)("cell",c) -= (*field)("cell",c);
     }
   } else {
     for (int c=0; c!=c_owned; ++c) {
-      (*f)("cell",c) = (*field)("cell",c);
+      (*g)("cell",c) = (*field)("cell",c);
     }
   }
 };
 
 void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
-          const Teuchos::RCP<CompositeVector> f) {
+          const Teuchos::RCP<CompositeVector> g) {
   // compute the stiffness matrix at the new time
   Teuchos::RCP<const CompositeVector> temp =
     S->GetFieldData("temperature");
@@ -82,7 +94,7 @@ void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
-  matrix_->ComputeNegativeResidual(*temp, f);
+  matrix_->ComputeNegativeResidual(*temp, g);
 };
 
 } //namespace Energy

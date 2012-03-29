@@ -97,11 +97,6 @@ private:
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
 
-  // this is stupid and duplicates work, but currently advection and advection_diffusion
-  // expect BCs differently
-  Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_advection_;
-  Teuchos::RCP< std::vector< int > > bcs_advection_dofs_;
-
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;

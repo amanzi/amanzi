@@ -55,12 +55,6 @@ AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
-  bcs_advection_ = Teuchos::rcp(new std::vector< Teuchos::RCP<BoundaryFunction> >);
-  bcs_advection_dofs_ = Teuchos::rcp(new std::vector<int>);
-  bcs_advection_->resize(1);
-  (*bcs_advection_)[0] = bc_temperature_;
-  bcs_advection_dofs_->resize(1,0);
-
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = energy_plist_.sublist("Advection");
