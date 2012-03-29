@@ -1633,7 +1633,7 @@ c :: ------------------------------------------------------------
 
                bx(i,j,k,2)   = (-dldx(1)*(-multx(1)*(pc(i,j,k)-pc(i-1,j,k))/dx(1)) -
      &              ldx(1)*(multx(1)*dpcdn(i-1,j,k)/dx(1)))/dx(1)
-               bx(i+1,j,k,1) = (dldx(2)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) -
+               bx(i,j,k,1) = (dldx(2)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) -
      &              ldx(2)*(multx(2)*dpcdn(i+1,j,k)/dx(1)))/dx(1)
                bx(i,j,k,3)   = (dldx(4)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) - 
      &              dldx(3)*(-multx(1)*(pc(i,j,k)-pc(i-1,j,k))/dx(1)) +
@@ -1641,7 +1641,7 @@ c :: ------------------------------------------------------------
                
                by(i,j,k,2)   = (-dldy(1)*(-multy(1)*(pc(i,j,k)-pc(i,j-1,k))/dx(2)) -
      &              ldy(1)*(multy(1)*dpcdn(i,j-1,k)/dx(2)))/dx(2)
-               by(i,j+1,k,1) = (dldy(2)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) -
+               by(i,j,k,1) = (dldy(2)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) -
      &              ldy(2)*(multy(2)*dpcdn(i,j+1,k)/dx(2)))/dx(2)
                by(i,j,k,3)   = (dldy(4)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) - 
      &              dldy(3)*(-multy(1)*(pc(i,j,k)-pc(i,j-1,k))/dx(2) - grav) +
@@ -1649,7 +1649,7 @@ c :: ------------------------------------------------------------
 
                bz(i,j,k,2)   = (-dldz(1)*(-multz(1)*(pc(i,j,k)-pc(i,j,k-1))/dx(3) - grav) -
      &              ldz(1)*(multz(1)*dpcdn(i,j,k-1)/dx(3)))/dx(3)
-               bz(i,j+1,k,1) = (dldz(2)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) -
+               bz(i,j,k,1) = (dldz(2)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) -
      &              ldz(2)*(multz(2)*dpcdn(i,j,k+1)/dx(3)))/dx(3)
                bz(i,j,k,3)   = (dldz(4)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) - 
      &              dldz(3)*(-multz(1)*(pc(i,j,k)-pc(i,j,k-1))/dx(3) - grav) +
@@ -1964,15 +1964,15 @@ c              z-direction
      &                 ldz(1)*(-multz(1)*(pcn(2)-pcn(1))/dx(3) - grav))/dx(3)         
                end do
                
-               bx(i,j,k,2)   = (rgtmpx(1) - rgx)/dcx(1)
-               bx(i+1,j,k,1) = (rgtmpx(3) - rgx)/dcx(3)
-               bx(i,j,k,3)   = (rgtmpx(2) - rgx)/dcx(2)
-               by(i,j,k,2)   = (rgtmpy(1) - rgy)/dcy(1)
-               by(i,j+1,k,1) = (rgtmpy(3) - rgy)/dcy(3)
-               by(i,j,k,3)   = (rgtmpy(2) - rgy)/dcy(2)
-               bz(i,j,k,2)   = (rgtmpz(1) - rgz)/dcz(1)
-               bz(i,j,k+1,1) = (rgtmpz(3) - rgz)/dcz(3)
-               bz(i,j,k,3)   = (rgtmpz(2) - rgz)/dcz(2)
+               bx(i,j,k,2) = (rgtmpx(1) - rgx)/dcx(1)
+               bx(i,j,k,1) = (rgtmpx(3) - rgx)/dcx(3)
+               bx(i,j,k,3) = (rgtmpx(2) - rgx)/dcx(2)
+               by(i,j,k,2) = (rgtmpy(1) - rgy)/dcy(1)
+               by(i,j,k,1) = (rgtmpy(3) - rgy)/dcy(3)
+               by(i,j,k,3) = (rgtmpy(2) - rgy)/dcy(2)
+               bz(i,j,k,2) = (rgtmpz(1) - rgz)/dcz(1)
+               bz(i,j,k,1) = (rgtmpz(3) - rgz)/dcz(3)
+               bz(i,j,k,3) = (rgtmpz(2) - rgz)/dcz(2)
             end do
          end do
       end do
@@ -2260,15 +2260,15 @@ c              z-direction
      &                 ldz(1)*(-multz(1)*(pcn(2)-pcn(1))/dx(3) - grav))/dx(3)         
                end do
                
-               bx(i,j,k,2)   = (rgtmpx(1) - rgx)/dcx(1)
-               bx(i+1,j,k,1) = (rgtmpx(3) - rgx)/dcx(3)
-               bx(i,j,k,3)   = (rgtmpx(2) - rgx)/dcx(2)
-               by(i,j,k,2)   = (rgtmpy(1) - rgy)/dcy(1)
-               by(i,j+1,k,1) = (rgtmpy(3) - rgy)/dcy(3)
-               by(i,j,k,3)   = (rgtmpy(2) - rgy)/dcy(2)
-               bz(i,j,k,2)   = (rgtmpz(1) - rgz)/dcz(1)
-               bz(i,j,k+1,1) = (rgtmpz(3) - rgz)/dcz(3)
-               bz(i,j,k,3)   = (rgtmpz(2) - rgz)/dcz(2)
+               bx(i,j,k,2) = (rgtmpx(1) - rgx)/dcx(1)
+               bx(i,j,k,1) = (rgtmpx(3) - rgx)/dcx(3)
+               bx(i,j,k,3) = (rgtmpx(2) - rgx)/dcx(2)
+               by(i,j,k,2) = (rgtmpy(1) - rgy)/dcy(1)
+               by(i,j,k,1) = (rgtmpy(3) - rgy)/dcy(3)
+               by(i,j,k,3) = (rgtmpy(2) - rgy)/dcy(2)
+               bz(i,j,k,2) = (rgtmpz(1) - rgz)/dcz(1)
+               bz(i,j,k,1) = (rgtmpz(3) - rgz)/dcz(3)
+               bz(i,j,k,3) = (rgtmpz(2) - rgz)/dcz(2)
 
             end do
          end do

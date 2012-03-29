@@ -1424,7 +1424,7 @@ c :: ------------------------------------------------------------
 
             bx(i,j,2)   = (-dldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)) -
      &           ldx(1)*(multx(1)*dpcdn(i-1,j)/dx(1)))/dx(1)
-            bx(i+1,j,1) = (dldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
+            bx(i,j,1) = (dldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
      &           ldx(2)*(multx(2)*dpcdn(i+1,j)/dx(1)))/dx(1)
             bx(i,j,3)   = (dldx(4)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) - 
      &           dldx(3)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)) +
@@ -1432,7 +1432,7 @@ c :: ------------------------------------------------------------
             
             by(i,j,2)   = (-dldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav) -
      &           ldy(1)*(multy(1)*dpcdn(i,j-1)/dx(2)))/dx(2)
-            by(i,j+1,1) = (dldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) -
+            by(i,j,1) = (dldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) -
      &           ldy(2)*(multy(2)*dpcdn(i,j+1)/dx(2)))/dx(2)
             by(i,j,3)   = (dldy(4)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) - 
      &           dldy(3)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav) +
@@ -1671,12 +1671,12 @@ c           y-direction
      &           ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2) - grav))/dx(2)                
             end do
 
-            bx(i,j,2)   = (rgtmpx(1) - rgx)/dcx(1)
-            bx(i+1,j,1) = (rgtmpx(3) - rgx)/dcx(3)
-            bx(i,j,3)   = (rgtmpx(2) - rgx)/dcx(2)
-            by(i,j,2)   = (rgtmpy(1) - rgy)/dcy(1)
-            by(i,j+1,1) = (rgtmpy(3) - rgy)/dcy(3)
-            by(i,j,3)   = (rgtmpy(2) - rgy)/dcy(2)
+            bx(i,j,2) = (rgtmpx(1) - rgx)/dcx(1)
+            bx(i,j,1) = (rgtmpx(3) - rgx)/dcx(3)
+            bx(i,j,3) = (rgtmpx(2) - rgx)/dcx(2)
+            by(i,j,2) = (rgtmpy(1) - rgy)/dcy(1)
+            by(i,j,1) = (rgtmpy(3) - rgy)/dcy(3)
+            by(i,j,3) = (rgtmpy(2) - rgy)/dcy(2)
 
          end do
       end do
@@ -1892,12 +1892,12 @@ c           y-direction
 
             end do
 
-            bx(i,j,2)   = (rgtmpx(1) - rgx)/dcx(1)
-            bx(i+1,j,1) = (rgtmpx(3) - rgx)/dcx(3)
-            bx(i,j,3)   = (rgtmpx(2) - rgx)/dcx(2)
-            by(i,j,2)   = (rgtmpy(1) - rgy)/dcy(1)
-            by(i,j+1,1) = (rgtmpy(3) - rgy)/dcy(3) 
-            by(i,j,3)   = (rgtmpy(2) - rgy)/dcy(2)
+            bx(i,j,2) = (rgtmpx(1) - rgx)/dcx(1)
+            bx(i,j,1) = (rgtmpx(3) - rgx)/dcx(3)
+            bx(i,j,3) = (rgtmpx(2) - rgx)/dcx(2)
+            by(i,j,2) = (rgtmpy(1) - rgy)/dcy(1)
+            by(i,j,1) = (rgtmpy(3) - rgy)/dcy(3) 
+            by(i,j,3) = (rgtmpy(2) - rgy)/dcy(2)
          end do
       end do
 

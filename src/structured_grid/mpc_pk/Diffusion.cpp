@@ -1248,11 +1248,12 @@ Diffusion::richard_iter (Real                   dt,
   Real rhsp1_norm = Rhsp1.norm2(0);
   Real alphak = 1.0;
   int iter = 0;
+  Real steplength_reduction_factor = 0.1;
   while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
     {
       Rhsp1.setVal(0.);
-      alphak = 0.1*alphak;
-      Soln.mult(0.1);
+      Soln.mult(steplength_reduction_factor);
+      alphak *= steplength_reduction_factor;
       MultiFab::Copy(Stmp,S_new,nc,0,1,1);
       MultiFab::Add(Stmp,Soln,0,0,1,0);
       pm_level->calcCapillary(&pctmp,Stmp);
@@ -1263,7 +1264,7 @@ Diffusion::richard_iter (Real                   dt,
       MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
       residual_richard(visc_op,dt*density[0],gravity,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
       rhsp1_norm = Rhsp1.norm2(0);
-      iter += 1;
+      iter++;
     }
 
   MultiFab::Copy(S_new,Stmp,0,nc,1,0);
@@ -1409,6 +1410,7 @@ Diffusion::richard_composite_iter (Real                      dt,
       for (int dir=0;dir<BL_SPACEDIM;dir++)
 	tmp_betatmp[dir] = &betatmp[dir][lev];
       pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
+      pctmp[lev].mult(-1);
       MultiFab lambda(bav[lev],pm->ncomps,1);
       pm->calcLambda(&lambda,*Stmp[lev]);
       pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
@@ -1422,13 +1424,13 @@ Diffusion::richard_composite_iter (Real                      dt,
   Real rhsp1_norm = (*Rhsp1[0]).norm2(0);
   Real alphak = 1.0;
   int iter = 0;
+  Real steplength_reduction_factor = 0.1;
   while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
     {
         for (int lev=0; lev<nlevs; lev++)
 	  {
 	    (*Rhsp1[lev]).setVal(0.);
-	    alphak = 0.1*alphak;
-	    (*Soln[lev]).mult(0.1);
+	    (*Soln[lev]).mult(steplength_reduction_factor);
 	    MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
 	    MultiFab::Copy(*Stmp[lev],S,nc,0,1,1);
 	    MultiFab::Add(*Stmp[lev],*Soln[lev],0,0,1,0);
@@ -1443,6 +1445,7 @@ Diffusion::richard_composite_iter (Real                      dt,
 	    MultiFab lambda(bav[lev],pm->ncomps,1);
 	    pm->calcLambda(&lambda,*Stmp[lev]);
 	    pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
+            pctmp[lev].mult(-1);
 	    pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
 	  }
 	mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
@@ -1450,6 +1453,8 @@ Diffusion::richard_composite_iter (Real                      dt,
 			 Rhsp1,pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
 
 	rhsp1_norm = (*Rhsp1[0]).norm2(0);
+        alphak *= steplength_reduction_factor;
+        iter++;
     }
 
   for (int lev=0; lev<nlevs;lev++)
@@ -1751,13 +1756,14 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   Real rhsp1_norm = (*Rhsp1[0]).norm2(0);
   Real alphak = 1.0;
   int iter = 0;
+  Real steplength_reduction_factor = 0.1;
   while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
     {
         for (int lev=0; lev<nlevs; lev++)
 	  {
 	    (*Rhsp1[lev]).setVal(0.);
-	    alphak = 0.1*alphak;
-	    (*Soln[lev]).mult(0.1);
+	    (*Soln[lev]).mult(steplength_reduction_factor);
+            alphak *= steplength_reduction_factor;
 	    MultiFab& P = parent->getLevel(lev).get_new_data(Press_Type);
 	    MultiFab::Copy(*Ptmp[lev],P,nc,0,1,1);
 	    MultiFab::Add(*Ptmp[lev],*Soln[lev],0,0,1,0);
@@ -1779,6 +1785,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 			 Rhsp1,pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
 
 	rhsp1_norm = (*Rhsp1[0]).norm2(0);
+        alphak = 0.1*alphak;
+        iter++;
     }
 
   for (int lev=0; lev<nlevs;lev++)
