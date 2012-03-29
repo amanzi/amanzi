@@ -11,13 +11,13 @@ Author: Ethan Coon
 #include "advection_factory.hh"
 #include "energy_bc_factory.hh"
 
-#include "air_water_rock.hh"
+#include "two_phase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
 
-AirWaterRock::AirWaterRock(Teuchos::ParameterList& plist,
+TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
         Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& solution) :
     energy_plist_(plist) {
 
@@ -121,7 +121,7 @@ AirWaterRock::AirWaterRock(Teuchos::ParameterList& plist,
 };
 
 // -- Initialize owned (dependent) variables.
-void AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
+void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
 
   // initial timestep size
   dt_ = energy_plist_.get<double>("Initial time step", 1.);
@@ -190,25 +190,25 @@ void AirWaterRock::initialize(const Teuchos::RCP<State>& S) {
 };
 
 // -- transfer operators -- ONLY COPIES POINTERS
-void AirWaterRock::state_to_solution(const Teuchos::RCP<State>& S,
+void TwoPhase::state_to_solution(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& solution) {
   //Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
   solution->set_data(S->GetFieldData("temperature", "energy"));
 };
 
-void AirWaterRock::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
+void TwoPhase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
   //Teuchos::RCP<CompositeVector> temp = solution->data();
   S->SetData("temperature", "energy", solution->data());
 };
 
   // -- Choose a time step compatible with physics.
-double AirWaterRock::get_dt() {
+double TwoPhase::get_dt() {
   return dt_;
 };
 
 // -- Advance from state S0 to state S1 at time S0.time + dt.
-bool AirWaterRock::advance(double dt) {
+bool TwoPhase::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
   // take the bdf timestep
@@ -218,7 +218,7 @@ bool AirWaterRock::advance(double dt) {
   return false;
 };
 
-void AirWaterRock::UpdateBoundaryConditions_() {
+void TwoPhase::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::MFD_BC_NULL;
     bc_values_[n] = 0.0;
@@ -238,7 +238,7 @@ void AirWaterRock::UpdateBoundaryConditions_() {
   }
 };
 
-void AirWaterRock::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
+void TwoPhase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
   int nfaces = S_next_->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {

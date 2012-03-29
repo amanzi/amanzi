@@ -7,12 +7,12 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include "air_water_rock.hh"
+#include "two_phase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-void AirWaterRock::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
+void TwoPhase::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
   // get needed variables
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
   Teuchos::RCP<const CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas");
@@ -32,7 +32,7 @@ void AirWaterRock::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
 
 };
 
-void AirWaterRock::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
+void TwoPhase::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
 
   Teuchos::RCP<const CompositeVector> dens_liq;
@@ -52,7 +52,7 @@ void AirWaterRock::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
   EnthalpyLiquid_(*int_energy_liquid, *pres, *dens_liq, enthalpy_liq);
 };
 
-void AirWaterRock::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
+void TwoPhase::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> poro =
     S->GetFieldData("porosity");
   Teuchos::RCP<const CompositeVector> sat_liq =
@@ -63,7 +63,7 @@ void AirWaterRock::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
   ThermalConductivity_(*poro, *sat_liq, thermal_conductivity);
 };
 
-void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
+void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   Teuchos::RCP<const CompositeVector> poro0 =
     S_inter_->GetFieldData("porosity");
   Teuchos::RCP<const CompositeVector> poro1 =
@@ -150,7 +150,7 @@ void AirWaterRock::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   }
 };
 
-void AirWaterRock::AddAdvection_(const Teuchos::RCP<State> S,
+void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
         const Teuchos::RCP<CompositeVector> g, bool negate) {
 
   Teuchos::RCP<CompositeVector> field = advection_->field();
@@ -216,7 +216,7 @@ void AirWaterRock::AddAdvection_(const Teuchos::RCP<State> S,
   }
 };
 
-void AirWaterRock::ApplyDiffusion_(const Teuchos::RCP<State> S,
+void TwoPhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
           const Teuchos::RCP<CompositeVector> g) {
   // compute the stiffness matrix at the new time
   Teuchos::RCP<const CompositeVector> temp =
@@ -239,7 +239,7 @@ void AirWaterRock::ApplyDiffusion_(const Teuchos::RCP<State> S,
   matrix_->ComputeNegativeResidual(*temp, g);
 };
 
-void AirWaterRock::InternalEnergyGas_(const CompositeVector& temp,
+void TwoPhase::InternalEnergyGas_(const CompositeVector& temp,
         const CompositeVector& mol_frac_gas,
         const Teuchos::RCP<CompositeVector>& int_energy_gas) {
   // just a single model for now -- ignore blocks
@@ -250,7 +250,7 @@ void AirWaterRock::InternalEnergyGas_(const CompositeVector& temp,
   }
 };
 
-void AirWaterRock::InternalEnergyLiquid_(const CompositeVector& temp,
+void TwoPhase::InternalEnergyLiquid_(const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_liquid) {
   // just a single model for now -- ignore blocks
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -260,7 +260,7 @@ void AirWaterRock::InternalEnergyLiquid_(const CompositeVector& temp,
   }
 };
 
-void AirWaterRock::InternalEnergyRock_(const CompositeVector& temp,
+void TwoPhase::InternalEnergyRock_(const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_rock) {
   // just a single model for now -- ignore blocks
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -270,7 +270,7 @@ void AirWaterRock::InternalEnergyRock_(const CompositeVector& temp,
   }
 };
 
-void AirWaterRock::EnthalpyLiquid_(const CompositeVector& int_energy_liquid,
+void TwoPhase::EnthalpyLiquid_(const CompositeVector& int_energy_liquid,
         const CompositeVector& pres, const CompositeVector& dens_liq,
         const Teuchos::RCP<CompositeVector>& enthalpy_liq) {
 
@@ -282,7 +282,7 @@ void AirWaterRock::EnthalpyLiquid_(const CompositeVector& int_energy_liquid,
   }
 };
 
-void AirWaterRock::ThermalConductivity_(const CompositeVector& porosity,
+void TwoPhase::ThermalConductivity_(const CompositeVector& porosity,
         const CompositeVector& sat_liq,
         const Teuchos::RCP<CompositeVector>& thermal_conductivity) {
 

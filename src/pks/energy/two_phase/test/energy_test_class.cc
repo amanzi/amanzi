@@ -14,7 +14,7 @@ EnergyTest::EnergyTest(Teuchos::ParameterList& plist_,
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector("solution"));
 
   // create the PK
-  EPK = Teuchos::rcp(new Energy::AirWaterRock(energy_plist, S0, soln));
+  EPK = Teuchos::rcp(new Energy::TwoPhase(energy_plist, S0, soln));
 }
 
 void EnergyTest::initialize() {
