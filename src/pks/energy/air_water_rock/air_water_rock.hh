@@ -86,9 +86,9 @@ private:
   void InternalEnergyRock_(const CompositeVector& temp,
                             const Teuchos::RCP<CompositeVector>& int_energy_rock);
 
-  void SpecificEnthalpyLiquid_(const CompositeVector& int_energy_liquid,
+  void EnthalpyLiquid_(const CompositeVector& int_energy_liquid,
           const CompositeVector& pres, const CompositeVector& mol_dens_liq,
-          const Teuchos::RCP<CompositeVector>& spec_enthalpy_liq);
+          const Teuchos::RCP<CompositeVector>& enthalpy_liq);
 
   void ThermalConductivity_(const CompositeVector& porosity,
                            const CompositeVector& saturation_liquid,
@@ -97,7 +97,7 @@ private:
   // helper methods for calling the above methods
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
   void UpdateThermalConductivity_(const Teuchos::RCP<State>& S);
-  void UpdateSpecificEnthalpyLiquid_(const Teuchos::RCP<State>& S);
+  void UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S);
 
   void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
   void AddAdvection_(const Teuchos::RCP<State> S,
@@ -117,11 +117,6 @@ private:
   Teuchos::RCP<BoundaryFunction> bc_flux_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
-
-  // this is stupid and duplicates work, but currently advection and diffusion
-  // expect BCs differently
-  Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_advection_;
-  Teuchos::RCP< std::vector< int > > bcs_advection_dofs_;
 
   // constitutive relations
   Teuchos::RCP<EnergyRelations::TwophaseThermalConductivity> thermal_conductivity_model_;

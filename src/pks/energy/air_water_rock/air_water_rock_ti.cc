@@ -14,9 +14,9 @@ namespace Amanzi {
 namespace Energy {
 
 // AirWaterRock is a BDFFnBase
-// computes the non-linear functional f = f(t,u,udot)
+// computes the non-linear functional g = g(t,u,udot)
 void AirWaterRock::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                 Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
+                       Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
 
@@ -36,7 +36,7 @@ void AirWaterRock::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_ol
   UpdateBoundaryConditions_();
 
   // zero out residual
-  Teuchos::RCP<CompositeVector> res = f->data();
+  Teuchos::RCP<CompositeVector> res = g->data();
   res->PutScalar(0.0);
 
   // diffusion term, implicit
@@ -48,7 +48,6 @@ void AirWaterRock::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_ol
   std::cout << "  res (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 
   // advection term, explicit
-  advection_->set_bcs(bcs_advection_, bcs_advection_dofs_);
   AddAdvection_(S_inter_, res, true);
   std::cout << "  res (after advection): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 };
