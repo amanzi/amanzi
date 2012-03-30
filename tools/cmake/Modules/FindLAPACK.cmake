@@ -63,6 +63,36 @@ macro(Check_Lapack_Libraries LIBRARIES _prefix _name _flags _list _blas _threads
 # N.B. _prefix is the prefix applied to the names of all cached variables that
 # are generated internally and marked advanced by this macro.
 
+# Define the default search paths and find suffixes -- lpritch
+if ( WIN32 )
+
+  set(BLA_DEFAULT_SEARCH_PATHS 
+      ENV LIB)
+  set(BLA_DEFAULT_SUFFIXES ".lib;.all")  
+
+elseif ( APPLE )
+
+  set(BLA_DEFAULT_SEARCH_PATHS 
+      /usr/local
+      /usr/lib
+      /usr/local/lib64
+      /usr/lib64
+      ENV DYLD_LIBRARY_PATH)
+  set(BLA_DEFAULT_SUFFIXES ".lib;.dll")  
+
+elseif (UNIX)
+
+  set(BLA_DEFAULT_SEARCH_PATHS 
+      /usr/local
+      /usr/lib
+      /usr/local/lib64
+      /usr/lib64
+      ENV LD_LIBRARY_PATH)
+  set(BLA_DEFAULT_SUFFIXES ".a;.so")  
+
+endif()
+
+
 set(_libraries_work TRUE)
 set(${LIBRARIES})
 set(_combined_name)
@@ -70,38 +100,54 @@ foreach(_library ${_list})
   set(_combined_name ${_combined_name}_${_library})
 
   if(_libraries_work)
-  IF (WIN32)
-    if(BLA_STATIC)
-      set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib;.dll")
-    endif(BLA_STATIC)
+    if ( BLA_VENDOR_PATH )
+        print_variable(BLA_VENDOR_PATH)
+        print_variable(_library)
+        find_library(${_prefix}_${_library}_LIBRARY
+	             NAMES ${_library}
+                     PATHS ${BLA_VENDOR_PATH}
+		     NO_DEFAULT_PATHS)
+        print_variable(${_prefix}_${_library}_LIBRARY)
+    endif()
+    
     find_library(${_prefix}_${_library}_LIBRARY
-    NAMES ${_library}
-    PATHS ENV LIB
-    )
-  ENDIF (WIN32)
+                 NAMES ${_library}
+		 PATHS ${BLA_DEFAULT_SEARCH_PATHS})
+               
 
-  if(APPLE)
-    if(BLA_STATIC)
-      set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.so;.dylib")
-    endif(BLA_STATIC)
-    find_library(${_prefix}_${_library}_LIBRARY
-    NAMES ${_library}
-    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV DYLD_LIBRARY_PATH
-    )
-    else(APPLE)
-    if(BLA_STATIC)
-     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.so")
-    endif(BLA_STATIC)
-    find_library(${_prefix}_${_library}_LIBRARY
-    NAMES ${_library}
-    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV LD_LIBRARY_PATH
-    )
-    endif(APPLE)
 
-    mark_as_advanced(${_prefix}_${_library}_LIBRARY)
-    set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
-    set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
-  endif(_libraries_work)
+#TESTING  IF (WIN32)
+#TESTING    if(BLA_STATIC)
+#TESTING      set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib;.dll")
+#TESTING    endif(BLA_STATIC)
+#TESTING    find_library(${_prefix}_${_library}_LIBRARY
+#TESTING    NAMES ${_library}
+#TESTING    PATHS ENV LIB
+#TESTING    )
+#TESTING  ENDIF (WIN32)
+#TESTING
+#TESTING  if(APPLE)
+#TESTING    if(BLA_STATIC)
+#TESTING      set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.so;.dylib")
+#TESTING    endif(BLA_STATIC)
+#TESTING    find_library(${_prefix}_${_library}_LIBRARY
+#TESTING    NAMES ${_library}
+#TESTING    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV DYLD_LIBRARY_PATH
+#TESTING    )
+#TESTING    else(APPLE)
+#TESTING    if(BLA_STATIC)
+#TESTING     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.so")
+#TESTING    endif(BLA_STATIC)
+#TESTING    find_library(${_prefix}_${_library}_LIBRARY
+#TESTING    NAMES ${_library}
+#TESTING    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV LD_LIBRARY_PATH
+#TESTING    )
+#TESTING    endif(APPLE)
+
+            mark_as_advanced(${_prefix}_${_library}_LIBRARY)
+            set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
+            set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
+   endif(_libraries_work)
 endforeach(_library ${_list})
 
 if(_libraries_work)
@@ -163,6 +209,21 @@ if(BLAS_FOUND)
     )
   endif(NOT LAPACK_LIBRARIES)
  endif (BLA_VENDOR STREQUAL "ACML" OR BLA_VENDOR STREQUAL "All")
+
+#acml_mp lapack
+ if (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
+  if(NOT LAPACK_LIBRARIES)
+   check_lapack_libraries(
+    LAPACK_LIBRARIES
+    LAPACK
+    cheev
+    ""
+    "acml_mp"
+    ""
+    ""
+    )
+  endif(NOT LAPACK_LIBRARIES)
+ endif (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
 
 # Apple LAPACK library?
 if (BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")

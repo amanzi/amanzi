@@ -112,7 +112,7 @@ macro(Check_Fortran_Libraries LIBRARIES _prefix _name _flags _list _threads)
 # N.B. _prefix is the prefix applied to the names of all cached variables that
 # are generated internally and marked advanced by this macro.
 
-# Define the default search paths and find suffixes
+# Define the default search paths and find suffixes -- lpritch
 if ( WIN32 )
 
   set(BLA_DEFAULT_SEARCH_PATHS 
@@ -361,6 +361,20 @@ if (BLA_VENDOR STREQUAL "ACML" OR BLA_VENDOR STREQUAL "All")
   )
  endif(NOT BLAS_LIBRARIES)
 endif (BLA_VENDOR STREQUAL "ACML" OR BLA_VENDOR STREQUAL "All")
+
+#BLAS in acml_mp library?
+if (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
+ if(NOT BLAS_LIBRARIES)
+  check_fortran_libraries(
+  BLAS_LIBRARIES
+  BLAS
+  sgemm
+  ""
+  "acml_mp"
+  ""
+  )
+ endif(NOT BLAS_LIBRARIES)
+endif (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
 
 # Apple BLAS library?
 if (BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")
