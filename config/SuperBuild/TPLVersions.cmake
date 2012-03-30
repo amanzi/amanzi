@@ -159,7 +159,15 @@ set(MSTK_VERSION_PATCH rc2)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM       d2acd6da234e580b8d389224f3b2b9b1) 
+set(MSTK_MD5_SUM        d2acd6da234e580b8d389224f3b2b9b1) 
+
+#
+# TPL: MOAB
+#
+set(MOAB_VERSION        r4276)
+set(MOAB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(MOAB_ARCHIVE_FILE   MOAB-${MOAB_VERSION}.tar.gz)
+set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e) 
 
 #
 # TPL: Trilinos

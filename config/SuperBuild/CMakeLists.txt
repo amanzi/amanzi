@@ -107,7 +107,7 @@ option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
 
 option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
-set(ENABLE_MOAB_Mesh FALSE)
+option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
 # OpenMP Search
 option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
@@ -314,6 +314,14 @@ if ( ENABLE_MSTK_Mesh )
             -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
             -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
             -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+endif()
+
+# MOAB
+if ( ENABLE_MOAB_Mesh )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+             -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
+	     -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
 
 # Trilinos  
