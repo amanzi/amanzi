@@ -20,10 +20,11 @@ namespace BDF2 {
 
     // computes a norm on u-du and returns the result 
     virtual double enorm(const Epetra_Vector& u, const Epetra_Vector& du) = 0;
+    virtual void update_norm(double rtol, double atol) = 0;
 
     // updates the preconditioner
     virtual void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc) = 0;
-   
+
     // check the admissibility of a solution
     // override with the actual admissibility check
     virtual bool is_admissible(const Epetra_Vector& up) { return true; }

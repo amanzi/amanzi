@@ -59,6 +59,7 @@ struct BDF1State {
   double    hlimit;       // maximum allowed time step
   double    elimit;
   double    ntol;         // nonlinear solver error tolerance (relative to 1)
+  double    atol, rtol;   // parameters that define the norm to be used in the model evaluator
   BDF2::SolutionHistory* uhist; // solution history structure
 
   // performance counters
