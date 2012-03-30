@@ -134,11 +134,9 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   }
 
   // update secondary variables for IC i/o
-  S_ = S; // temporarily set the state, so we can get the number of cells
   UpdateSecondaryVariables_(S);
   UpdateThermalConductivity_(S);
   UpdateEnthalpyLiquid_(S);
-  S_ = Teuchos::null;
 
   // initialize thermal conductivity
   Teuchos::RCP<CompositeVector> thermal_conductivity =
