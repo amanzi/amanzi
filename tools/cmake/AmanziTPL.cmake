@@ -215,8 +215,6 @@ set_feature_info(MOAB_Mesh
                  "A Mesh-Oriented datABase"
                  )
 if (ENABLE_MOAB_Mesh)
-    set(MOAB_NEEDS_NetCDF True)
-    set(MOAB_NEEDS_HDF5   True)
     find_package(MOAB REQUIRED)
 endif()
 
