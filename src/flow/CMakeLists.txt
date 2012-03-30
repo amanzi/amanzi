@@ -130,6 +130,10 @@ if (BUILD_TESTS)
         add_executable(flow_richards_2D test/Main.cc test/flow_richards_2D.cpp)
         target_link_libraries(flow_richards_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(flow_richards_2D flow_richards_2D KIND unit)
+
+        add_executable(flow_richards_seepage test/Main.cc test/flow_richards_seepage.cpp)
+        target_link_libraries(flow_richards_seepage ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_richards_seepage flow_richards_seepage KIND unit)
     endif()
 
     # Test: 3D Richards

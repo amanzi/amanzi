@@ -107,13 +107,68 @@ solution for convergence study. An example of van Genuchten model specification 
 Boundary conditions are defined in sublist `"boundary conditions`". Four types of boundary 
 conditions are supported;
 
-* `"pressure`" [list] Dirichlet boundary condition, the pressure is prescribed on defined regions. 
+* `"pressure`" [list] Dirichlet boundary condition, a pressure is prescribed on a region. 
 
-* `"mass flux`" [list]
+* `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a region.
+  this is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
+  boundary condition is used implicitly.
 
-* `"static head`" [list]
+* `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a region.
 
-* `"seepage face`" [list]
+* `"seepage face`" [list] Seepage face boundary condition, a dynamic combination of the `"pressure`" and 
+  `"mass flux`" boundary conditions on a region. 
+  The atmospheric pressure is prescribed if internal pressure is higher. Otherwise, the outward mass flux is prescribed. 
+
+The following example includes all four types of boundary conditions. The boundary of a square domain 
+is split into six pieces:
+
+.. code-block:: xml
+
+     <ParameterList name="boundary conditions">
+       <ParameterList name="pressure">
+         <ParameterList name="BC 0">
+           <Parameter name="regions" type="Array string" value="{West side Top, East side Top}"/>
+           <ParameterList name="boundary pressure">
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="101325.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="mass flux">
+         <ParameterList name="BC 1">
+           <Parameter name="regions" type="Array string" value="{North side, South side}"/>
+           <ParameterList name="outward mass flux">
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="0.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="static head">
+         <ParameterList name="BC 2">
+           <Parameter name="regions" type="Array string" value="{West side Bottom}"/>
+           <ParameterList name="water table elevation">
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="10.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="seepage face">
+         <ParameterList name="BC 3">
+           <Parameter name="regions" type="Array string" value="{East side Bottom}"/>
+           <ParameterList name="outward mass flux">
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="1.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
 
 
 Transport
