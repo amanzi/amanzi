@@ -7,7 +7,7 @@ class vanGenuchtenModel : public WaterRetentionBaseModel {
   
 public:
   vanGenuchtenModel(std::string region_, double m_, double alpha_, 
-		    double sr_, double p_atm_);
+		    double sr_, double p_atm_, double pc_transition_ = 0.0);
 
   
   // overridden from WaterRetentionBaseModel
@@ -21,13 +21,13 @@ public:
   double pressure(double saturation);
 
 private:
-  double quadr_fn(double x, double p_ct, double f_pc_t);
-
   const double m;     // van Genuchten m
   double n;           // van Genuchten n
   const double alpha; // van Genuchten alpha 
   double p_atm;       // atmospheric pressure
   const double sr;    // van Genuchten effective saturation
+
+  const double pc_transition; // transition capilary pressure for k_rel smoothing
 
 };
 
