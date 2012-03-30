@@ -61,7 +61,7 @@ AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
   advection_ = advection_factory.create(advect_plist, S->mesh());
   advection_->set_num_dofs(1);
 
-  // operator for the advection_diffusion terms
+  // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = energy_plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->mesh()));
   matrix_->SetSymmetryProperty(true);
