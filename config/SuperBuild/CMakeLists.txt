@@ -434,6 +434,7 @@ if ( BUILD_Amanzi )
 		  ${UnitTest_BUILD_TARGET}
 		  ${Boost_BUILD_TARGET}
 		  ${MSTK_BUILD_TARGET}
+		  ${MOAB_BUILD_TARGET}
 		  ${CGNS_BUILD_TARGET}
 		  ${CCSE_BUILD_TARGET}
 		  ${Trilinos_BUILD_TARGET})
