@@ -83,13 +83,47 @@ State
 Flow
 ====
 
-Flow sublist includes only one sublist, either `"Darcy Problem`" or `"Richars Problem`".
-The second sublist contains all objects of the first one.
+Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richars Problem`".
+Structure of both sublists is similar; however, the second one contains more objects than the first one.
 
-Sublist `"Water retention models`"
+User defined water retention models in sublist `"Water retention models`". It contains as many sublists, 
+e.g. `"Model 1`", `"Model 2`", etc, as there are different soils. 
+These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
+inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
+The available models are `"van Genuchten`" and `"fake`". The later is used to set up an analytical
+solution for convergence study. An example of van Genuchten model specification is:
+
+.. code-block:: xml
+
+    <ParameterList name="Model 1">
+       <Parameter name="Region" type="string" value="Top Half"/>
+       <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+       <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
+       <Parameter name="van Genuchten m" type="double" value="0.28571"/>
+       <Parameter name="van Genuchten residual saturation" type="double" value="0.103"/>
+    </ParameterList>
+
+
+Boundary conditions are defined in sublist `"boundary conditions`". Four types of boundary 
+conditions are supported;
+
+* `"pressure`" [list] Dirichlet boundary condition, the pressure is prescribed on defined regions. 
+
+* `"mass flux`" [list]
+
+* `"static head`" [list]
+
+* `"seepage face`" [list]
+
 
 Transport
 =========
+
+Solvers
+=======
+
+Preconditioners
+===============
 
 Mesh
 ====
