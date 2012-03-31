@@ -14,11 +14,12 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Setup fundamental parameters for this model.                                            
+* Setup fundamental parameters for this model.
+* Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
 WRM_vanGenuchten::WRM_vanGenuchten(
-   std::string region_, double m_, double alpha_, double sr_) :
-   m(m_), alpha(alpha_), sr(sr_)
+   std::string region_, double m_, double alpha_, double sr_, double pc0_) :
+   m(m_), alpha(alpha_), sr(sr_), pc0(pc0_)
 {
   n = 1.0 / (1.0 - m);
   set_region(region_);
@@ -26,15 +27,27 @@ WRM_vanGenuchten::WRM_vanGenuchten(
  
 
 /* ******************************************************************
-* Relative permeability formula: input is capillary pressure pc.                                        
+* Relative permeability formula: input is capillary pressure pc.
+* The original curve is regulized on interval (0, pc0) using the 
+* Hermite interpolant of order 3.       
 ****************************************************************** */
 double WRM_vanGenuchten::k_relative(double pc)
 {
   if (pc > 0.0) {
     double se = pow(1.0 + pow(alpha*pc, n), -m);
     return sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m), m), 2.0);
-  } else {
+  } else if (pc <= 0.0) {
     return 1.0;
+  } else {
+    double se_pc0, se_pc1, f_pc0, f_pc1, fab;
+    se_pc0 = pow(1.0 + pow(alpha*pc0, n), -m);
+    f_pc0 = sqrt(se_pc0) * pow(1.0 - pow(1.0 - pow(se_pc0, 1.0/m), m), 2);
+    fab = (f_pc0 - 1.0) / pc0;
+
+    se_pc1 = pow(1.0 + pow(alpha * (pc0 + 1.0), n), -m);
+    f_pc1 = sqrt(se_pc1) * pow(1.0 - pow(1.0 - pow(se_pc1, 1.0/m), m), 2);
+
+    return 1.0 + pc*pc * fab/pc0 + pc*pc * (pc-pc0) * (f_pc1-f_pc0-2*fab) / (pc0*pc0);
   }
 }
 

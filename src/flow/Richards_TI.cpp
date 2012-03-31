@@ -77,7 +77,6 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
   ierr = 0;
 }
 
-
 /* ******************************************************************
 * Check difference du between the predicted and converged solutions.                                                 
 ****************************************************************** */

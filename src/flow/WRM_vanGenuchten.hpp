@@ -15,7 +15,7 @@ namespace AmanziFlow {
 
 class WRM_vanGenuchten : public WaterRetentionModel {
  public:
-  WRM_vanGenuchten(std::string region_, double m_, double alpha_, double sr_);
+  WRM_vanGenuchten(std::string region_, double m_, double alpha_, double sr_, double pc0_ = 0.0);
   ~WRM_vanGenuchten() {};
   
   // required methods from the base class
@@ -30,6 +30,8 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   double n; 
   const double alpha; 
   const double sr;  // van Genuchten residual saturation
+
+  const double pc0;  // regularization threshold
 };
 
 }  // namespace AmanziFlow

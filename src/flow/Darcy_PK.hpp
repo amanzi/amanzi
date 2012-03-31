@@ -47,6 +47,7 @@ class Darcy_PK : public Flow_PK {
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu) {};
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du) { return 0.0; }
   void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc) {};
+  void update_norm(double rtol, double atol) {};
 
   // other main methods
   void processParameterList();

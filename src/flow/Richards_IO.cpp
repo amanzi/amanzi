@@ -87,8 +87,9 @@ void Richards_PK::processParameterList()
         double vG_m = wrm_list.get<double>("van Genuchten m");
         double vG_alpha = wrm_list.get<double>("van Genuchten alpha");
         double vG_sr = wrm_list.get<double>("van Genuchten residual saturation");
+        double vG_pc0 = wrm_list.get<double>("regularization interval", 0.0);
 	      
-        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr));
+        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr, vG_pc0));
       } 
       else if (wrm_list.get<string>("Water retention model") == "fake") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
