@@ -84,14 +84,14 @@ Flow
 ====
 
 Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richars Problem`".
-Structure of both sublists is similar; however, the second one contains more objects than the first one.
+Structure of both sublists is quite similar. We make necessary comments on differences.
 
-User defined water retention models in sublist `"Water retention models`". It contains as many sublists, 
+User defines water retention models in sublist `"Water retention models`". It contains as many sublists, 
 e.g. `"Model 1`", `"Model 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
 inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
 The available models are `"van Genuchten`" and `"fake`". The later is used to set up an analytical
-solution for convergence study. An example of van Genuchten model specification is:
+solution for convergence study. An example of the van Genuchten model specification is:
 
 .. code-block:: xml
 
@@ -105,12 +105,12 @@ solution for convergence study. An example of van Genuchten model specification 
 
 
 Boundary conditions are defined in sublist `"boundary conditions`". Four types of boundary 
-conditions are supported;
+conditions are supported:
 
 * `"pressure`" [list] Dirichlet boundary condition, a pressure is prescribed on a region. 
 
 * `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a region.
-  this is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
+  This is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
   boundary condition is used implicitly.
 
 * `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a region.
@@ -120,7 +120,8 @@ conditions are supported;
   The atmospheric pressure is prescribed if internal pressure is higher. Otherwise, the outward mass flux is prescribed. 
 
 The following example includes all four types of boundary conditions. The boundary of a square domain 
-is split into six pieces:
+is split into six pieces. Constant finction is used for simplicity and can be replaced by any
+of the other available functions:
 
 .. code-block:: xml
 
@@ -170,15 +171,101 @@ is split into six pieces:
        </ParameterList>
      </ParameterList>
 
+The external sources (e.g. wells) are supported only in sublist `"Darcy Problems`". The structure
+of sublist `"source terms`" follows the specification of boundary conditions. 
+Again, constant functions can be replaced by any of the available time-functions:
+
+.. code-block:: xml
+
+     <ParameterList name="source terms">
+       <ParameterList name="SRC 0">
+         <Parameter name="regions" type="Array string" value="{Well east}"/>
+         <ParameterList name="sink">
+           <ParameterList name="function-constant">
+             <Parameter name="value" type="double" value="-0.1"/>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="SRC 1">
+         <Parameter name="regions" type="Array string" value="{Well west}"/>
+         <ParameterList name="sink">
+           <ParameterList name="function-constant">
+             <Parameter name="value" type="double" value="-0.2"/>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+
+The remaining `"Flow`" parameters are
+
+* `"Atmospheric pressure`" [double] defines the atmosperic pressure, [Pa].
+
+* `"Relative permeability method`" [string] defines a method for calculating relative
+  premeability. The available self-explanatory options `"Upwind with gravity`",
+  `"Upwind with Darcy flux`", `"Arithmetic mean`" and `"Cell centered`". the first three
+  calculate the relative permeability on mesh interfaces.
+
 
 Transport
 =========
 
+The boundary conditions sublist mimics specification of the boundary conditions in `"Flow`".
+Its structure is slightly simple, which is unnecessary and be replaced in the future. 
+For the advective transport, the boundary conditions must be specified on inflow parts of the
+boundary. If no value is prescribed through the XML input, the zero inlux boundary condition
+is used. Note that the boundary condition is set up separately for each component:
+
+.. code-block:: xml
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="2"/>
+      <ParameterList name="BC 0">
+        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
+      </ParameterList>  
+
+      <ParameterList name="BC 1">
+        <Parameter name="Component 1" type="Array double" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
+        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
+      </ParameterList>  
+    </ParameterList>  
+
+The remaining `"Transport`" parameters are:
+
+* `"CFL`" [double] time step limiter, a number less than 1 with default of 1.
+   
+* `"spatial discretization order`" [int] the order of the spatial discretization, either
+  1 or 2. The default is 1. 
+  
+* `"temporal discretization order`" [int] the order of temporar discretization, either
+  1 or 2. The default is 1.
+
+* `"verbosity level`" [int] controls volume of output information.
+
+
+The `"Transport`" parameters useful for developers are:
+
+* `"enable internal tests`" [string] various internal tests will be executed during
+  the run time. The default value is `no`.
+   
+* `"internal tests tolerance`" [double] tolerance for internal tests such as the 
+  divergence-free condition. The defult value is 1e-6.
+
+
 Solvers
 =======
 
+Version 2 of the native input spec introduces this sublist.
+
 Preconditioners
 ===============
+
+Version 2 of the native input spec introduces this sublist.
 
 Mesh
 ====
