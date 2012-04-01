@@ -373,7 +373,7 @@ void MPC::cycle_driver () {
       }
 
       // take the mpc time step as the min of all suggested time steps 
-      mpc_dT = std::min( std::min( std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT );
+      mpc_dT = std::min(std::min(std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT);
 
       // make sure we hit the observation times exactly
       if (observation_times_.size()>0) {
@@ -394,7 +394,7 @@ void MPC::cycle_driver () {
       }
 
       // take the mpc time step as the min of the last limiter and itself 
-      mpc_dT = std::min( mpc_dT, limiter_dT );
+      mpc_dT = std::min(mpc_dT, limiter_dT);
 
       // figure out who limits the time step
       if (mpc_dT == flow_dT) {
@@ -485,7 +485,7 @@ void MPC::cycle_driver () {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-	*out << std::setprecision(14);
+	*out << std::setprecision(4);
         *out << "Cycle = " << iter;
         *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
         *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);

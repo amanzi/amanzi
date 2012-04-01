@@ -178,6 +178,52 @@ void Richards_PK::derivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
   } 
 }
 
+
+/* ******************************************************************
+* Clip pressure using pressure threshold.
+****************************************************************** */
+void Richards_PK::clipHydrostaticPressure(const double pmin, Epetra_Vector& p)
+{
+  for (int mb=0; mb<WRM.size(); mb++) {
+    std::string region = WRM[mb]->region();
+    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    std::vector<unsigned int> block(ncells);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+      
+    double pc = atm_pressure - pmin;
+    double s0 = WRM[mb]->saturation(pc);
+
+    std::vector<unsigned int>::iterator i;
+    for (i=block.begin(); i!=block.end(); i++) {
+      if (p[*i] < pmin) p[*i] = s0;
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Clip pressure using constant saturation.
+****************************************************************** */
+void Richards_PK::clipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& p)
+{
+  for (int mb=0; mb<WRM.size(); mb++) {
+    std::string region = WRM[mb]->region();
+    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    std::vector<unsigned int> block(ncells);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+      
+    std::vector<unsigned int>::iterator i;
+    for (i=block.begin(); i!=block.end(); i++) {
+      if (p[*i] < pmin) {
+        double pc = WRM[mb]->capillaryPressure(s0);
+        p[*i] = atm_pressure - pc;
+      }
+    }
+  }
+}
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

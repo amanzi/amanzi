@@ -82,6 +82,10 @@ class Richards_PK : public Flow_PK {
 
   void deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
 
+  void initializePressureHydrostatic(const double T, Epetra_Vector& u);
+  void clipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
+  void clipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
+
   // control methods
   void resetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
   void print_statistics() const;
@@ -110,23 +114,23 @@ class Richards_PK : public Flow_PK {
   AztecOO* solver;  // Linear solver data
   Matrix_MFD* matrix;
   Matrix_MFD* preconditioner;
-  int max_itrs;
   double convergence_tol;
 
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
 
-  int method_sss;  // Parameters for steady-state solution
+  int ti_method_sss;  // Parameters for steady-state solution
   int num_itrs_sss, max_itrs_sss;
   double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
 
-  int method_trs;  // Parameters for transient solution
+  int ti_method_trs;  // Parameters for transient solution
   double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;
 
   double absolute_tol, relative_tol;  // Generic parameters (sss or trs)
+  int ti_method, num_itrs, max_itrs;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

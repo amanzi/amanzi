@@ -67,8 +67,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   bdf2_dae = NULL;
   bdf1_dae = NULL;
 
-  method_sss = FLOW_STEADY_STATE_BDF1;
-  method_trs = FLOW_TRANSIENT_BDF2;
+  ti_method_sss = FLOW_STEADY_STATE_BDF1;  // time integration (TI) parameters
+  ti_method_trs = FLOW_TRANSIENT_BDF2;
   num_itrs_trs = 0;
 
   absolute_tol_sss = absolute_tol_trs = 1.0; 
@@ -171,9 +171,13 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+     std::printf("Initializing Steady State Flow: T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+  }
+
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
-  if (method_sss == FLOW_STEADY_STATE_BDF2) {
+  if (ti_method_sss == FLOW_STEADY_STATE_BDF2) {
     preconditioner = new Matrix_MFD(FS, *super_map_);
     preconditioner->setSymmetryProperty(is_matrix_symmetric);
     preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
@@ -185,7 +189,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
   } 
-  else if (method_sss == FLOW_STEADY_STATE_BDF1) {
+  else if (ti_method_sss == FLOW_STEADY_STATE_BDF1) {
     preconditioner = new Matrix_MFD(FS, *super_map_);
     preconditioner->setSymmetryProperty(is_matrix_symmetric);
     preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
@@ -205,10 +209,29 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
   }
 
+  // (re)initialize pressure and saturation
+  Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& water_saturation = FS->ref_water_saturation();
+
+  double pmin = atm_pressure;
+  initializePressureHydrostatic(T0, *solution);
+  clipHydrostaticPressure(pmin, 0.6, *solution);
+  for (int c=0; c<ncells_owned; c++) pressure[c] = (*solution_cells)[c];
+
+  deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  deriveSaturationFromPressure(pressure, water_saturation);
+
   absolute_tol = absolute_tol_sss;
   relative_tol = relative_tol_sss;
 
-  set_time(T0, dT0);  // overrides data in input file (lipnikov@lanl.gov)
+  set_time(T0, dT0);  // overrides data provided in the input file
+  ti_method = ti_method_sss;
+  num_itrs = num_itrs_sss;
+
+  //DEBUG
+  //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS);
+  //advanceToSteadyState();
+  //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
 }
 
 
@@ -219,9 +242,12 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+     std::printf("Initializing Transient Flow: T(sec)=%9.4e dT(sec)=%9.4e\n", T0, dT0);
+  }
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
-  if (method_trs == FLOW_TRANSIENT_BDF2) {
+  if (ti_method_trs == FLOW_TRANSIENT_BDF2) {
     if (preconditioner == matrix) {
       preconditioner = new Matrix_MFD(FS, *super_map_);
       preconditioner->setSymmetryProperty(is_matrix_symmetric);
@@ -237,7 +263,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
     bdf2_dae->setParameterList(bdf2_list);
     num_itrs_trs = 0; 
   }
-  else if (method_trs == FLOW_TRANSIENT_BDF1) {
+  else if (ti_method_trs == FLOW_TRANSIENT_BDF1) {
     if (preconditioner == matrix) {
       preconditioner = new Matrix_MFD(FS, *super_map_);
       preconditioner->setSymmetryProperty(is_matrix_symmetric);
@@ -267,7 +293,9 @@ void Richards_PK::InitTransient(double T0, double dT0)
   dT = dT0_trs;
   T_internal = T0_trs;
 
-  set_time(T0, dT0);
+  set_time(T0, dT0);  // overrides data in input file
+  ti_method = ti_method_trs;
+  num_itrs = num_itrs_trs;
 }
 
 
@@ -281,18 +309,18 @@ int Richards_PK::advance(double dT_MPC)
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
   dT = dT_MPC;
 
-  if (num_itrs_trs == 0) {  // set-up internal clock
+  if (num_itrs == 0) {  // set-up internal clock
     double T_physical = FS->get_time();
     T_internal = (standalone_mode) ? T_internal : T_physical;
   }
 
   double time = T_internal;
-  if (num_itrs_trs == 0) {  // initialization
+  if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     computeUDot(time, *solution, udot);
-    if (method_trs == FLOW_TRANSIENT_BDF2) {
+    if (ti_method == FLOW_TRANSIENT_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
-    } else if (method_trs == FLOW_TRANSIENT_BDF1) {
+    } else if (ti_method == FLOW_TRANSIENT_BDF1) {
       bdf1_dae->set_initial_state(time, *solution, udot);
     }
 
@@ -301,13 +329,13 @@ int Richards_PK::advance(double dT_MPC)
   }
 
   double dTnext;
-  if (method_trs == FLOW_TRANSIENT_BDF2) {
+  if (ti_method == FLOW_TRANSIENT_BDF2) {
     bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
     T_internal = bdf2_dae->most_recent_time();
-  } else if (method_trs == FLOW_TRANSIENT_BDF1) {
+  } else if (ti_method == FLOW_TRANSIENT_BDF1) {
     bdf1_dae->bdf1_step(dT, *solution, dTnext);
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
@@ -342,7 +370,10 @@ void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
   for (int c=0; c<nfaces_owned; c++) flux[c] /= rho;
 
   //DEBUG
-  writeGMVfile(FS_MPC);
+  //if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  //   std::printf("Commited flow state for transport: see flow.gmv\n");
+  //}
+  //writeGMVfile(FS_MPC);
 }
 
 
@@ -483,6 +514,54 @@ void Richards_PK::addTimeDerivative_MFD(
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
+}
+
+
+/* ******************************************************************
+* Initialize saturated pressure solutions using boundary conditions 
+* at time Tp.
+* WARNING: data in vectors Krel and rhs are destroyed.
+****************************************************************** */
+void Richards_PK::initializePressureHydrostatic(const double Tp, Epetra_Vector& u)
+{  
+  if (solver == NULL) solver = new AztecOO;
+
+  // update boundary conditions
+  bc_pressure->Compute(Tp);
+  bc_head->Compute(Tp);
+  bc_flux->Compute(Tp);
+  bc_seepage->Compute(Tp);
+  updateBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage, 
+      *solution_cells, atm_pressure, 
+      bc_markers, bc_values);
+
+  // work-around limited support for tensors
+  setAbsolutePermeabilityTensor(K);
+  for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+  Krel_faces->PutScalar(1.0);
+
+  // calculate and assemble elemental stifness matrices
+  preconditioner->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+  preconditioner->createMFDrhsVectors();
+  addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+  preconditioner->applyBoundaryConditions(bc_markers, bc_values);
+  preconditioner->assembleGlobalMatrices();
+  preconditioner->computeSchurComplement(bc_markers, bc_values);
+  preconditioner->update_ML_preconditioner();
+
+  // solve symmetric problem
+  solver->SetUserOperator(preconditioner);
+  solver->SetPrecOperator(preconditioner);
+  solver->SetAztecOption(AZ_solver, AZ_cg);
+  solver->SetAztecOption(AZ_output, AZ_none);
+
+  rhs = preconditioner->get_rhs();
+  solver->SetRHS(&*rhs);
+
+  u.PutScalar(0.0);
+  solver->SetLHS(&u);
+  solver->Iterate(1000, 1e-10);
 }
 
 

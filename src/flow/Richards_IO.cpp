@@ -103,15 +103,15 @@ void Richards_PK::processParameterList()
   if (rp_list.isSublist("Steady state solution")) {
     Teuchos::ParameterList& sss_list = rp_list.sublist("Steady state solution");
 
-    method_name = sss_list.get<string>("method", "Picard");
-    if (method_name == "Picard") {
-      method_sss = AmanziFlow::FLOW_STEADY_STATE_PICARD;
-    } else if (method_name == "backward Euler") {
-      method_sss = AmanziFlow::FLOW_STEADY_STATE_BACKWARD_EULER;
-    } else if (method_name == "BDF1") {
-      method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF1; 
-    } else if (method_name == "BDF2") {
-      method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
+    string ti_method_name = sss_list.get<string>("method", "Picard");
+    if (ti_method_name == "Picard") {
+      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_PICARD;
+    } else if (ti_method_name == "backward Euler") {
+      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BACKWARD_EULER;
+    } else if (ti_method_name == "BDF1") {
+      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF1; 
+    } else if (ti_method_name == "BDF2") {
+      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
     }
 
     Teuchos::ParameterList& err_list = sss_list.sublist("Error control");
@@ -137,13 +137,13 @@ void Richards_PK::processParameterList()
   if (rp_list.isSublist("Transient solution")) {
     Teuchos::ParameterList& trs_list = rp_list.sublist("Transient solution");
 
-    method_name = trs_list.get<string>("method", "BDF2");
-    if (method_name == "backward Euler") {
-      method_trs = AmanziFlow::FLOW_TRANSIENT_BACKWARD_EULER;
-    } else if (method_name == "BDF1") {
-      method_trs = AmanziFlow::FLOW_TRANSIENT_BDF1; 
+    string ti_method_name = trs_list.get<string>("method", "BDF2");
+    if (ti_method_name == "backward Euler") {
+      ti_method_trs = AmanziFlow::FLOW_TRANSIENT_BACKWARD_EULER;
+    } else if (ti_method_name == "BDF1") {
+      ti_method_trs = AmanziFlow::FLOW_TRANSIENT_BDF1; 
     } else if (method_name == "BDF2") {
-      method_trs = AmanziFlow::FLOW_TRANSIENT_BDF2; 
+      ti_method_trs = AmanziFlow::FLOW_TRANSIENT_BDF2; 
     }
 
     Teuchos::ParameterList& err_list = trs_list.sublist("Error control");

@@ -96,7 +96,7 @@
 
       <ParameterList name="Steady state solution">
         <Parameter name="method" type="string" value="backward Euler"/>
-        <Parameter name="Verbosity level" type="string" value="medium"/>
+        <Parameter name="Verbosity level" type="string" value="low"/>
 
         <ParameterList name="Error control">
           <Parameter name="Absolute error tolerance" type="double" value="1.0"/>
