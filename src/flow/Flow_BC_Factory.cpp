@@ -84,7 +84,7 @@ BoundaryFunction* FlowBCFactory::createSeepageFace() const
 {
   BoundaryFunction* bc = new BoundaryFunction(mesh_);
   try {
-    processSeepageFaceList(params_->sublist("seepage"), bc);
+    processSeepageFaceList(params_->sublist("seepage face"), bc);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"seepage face\" sublist error: " << msg.what();
