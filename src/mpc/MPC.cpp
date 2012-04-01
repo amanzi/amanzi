@@ -141,7 +141,6 @@ void MPC::mpc_init() {
       throw std::exception();
     }
     FPK->InitPK();
-    FPK->InitSteadyState(0.0, 1e-5);
   }
   // done creating auxilary state objects and  process models
 
