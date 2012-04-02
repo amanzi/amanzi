@@ -94,7 +94,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
         double vG_alpha_ = wrmlist.get<double>("van Genuchten alpha");
         double vG_sr_ = wrmlist.get<double>("van Genuchten residual saturation");
 	      
-        WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_, vG_sr_,p_atm_,500.0));
+        WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_, vG_sr_,p_atm_,100.0));
       }
       iblock++;
     }
