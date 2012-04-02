@@ -16,18 +16,22 @@
 TRUE=1
 FALSE=0
 
+# Script directory
+bootstrap_dir=$(cd $(dirname "$0");pwd)
+amanzi_source_dir=$(cd ${bootstrap_dir}/..;pwd)
+
 # ASCEM Web address
 ascem_protocol=https
 ascem_site='software.lanl.gov/ascem'
 ascem_tpl_site="${ascem_site}/tpls"
 
-# Default root install prefix
-dflt_prefix=$HOME/amanzi
+# Default root install and build prefix
+dflt_install_prefix=$HOME/amanzi
+dflt_build_prefix=`pwd`
 
 # Source and build directories
-amanzi_source_dir=$(cd $(dirname "$0");pwd)
-amanzi_build_dir="${amanzi_source_dir}/build"
-amanzi_install_prefix="${dflt_prefix}"
+amanzi_build_dir="${dflt_build_prefix}/amanzi-build"
+amanzi_install_prefix="${dflt_install_prefix}"
 
 # Mercurial
 hg_binary=`which hg`
@@ -58,9 +62,9 @@ mpi_root_dir=
 tpl_config_file=
 
 # TPL build parameters
-tpl_build_dir=${amanzi_build_dir}/TPL_BUILD
+tpl_build_dir="${dflt_build_prefix}/TPL_BUILD"
 tpl_download_dir=${tpl_build_dir}/Downloads
-tpl_install_prefix=${dflt_prefix}
+tpl_install_prefix=${dflt_install_prefix}/tpls
 
 # ---------------------------------------------------------------------------- #
 #
@@ -162,7 +166,7 @@ Configuration:
 
   --tpl-config-file=FILE  define a CMake TPL configuration file. If this
                           option is selected, '"$0"' will NOT build the TPLs.
-			  
+  
 
 Tool definitions:
 
@@ -182,7 +186,7 @@ Tool definitions:
 Directory and file names: 
 
   --prefix=PREFIX                install ALL files in tree rooted at PREFIX
-                                 ['"${dflt_prefix}"']
+                                 ['"${dflt_install_prefix}"']
 
   --amanzi-install-prefix=DIR    install Amanzi in tree rooted at DIR
                                  ['"${amanzi_install_prefix}"']
@@ -243,69 +247,75 @@ function parse_argv()
 
       -h|--h|--help)
                 print_usage
-		exit_now 0
-		;;
+                exit_now 0
+                ;;
 
       --prefix=*)
                  prefix=`parse_option_with_equal ${opt} 'prefix'`
-		 ;;
+                 ;;
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal ${opt} 'parallel'`
-		 ;;
+                 ;;
 
       --with-c-compiler=*)
                  build_c_compiler=`parse_option_with_equal ${opt} 'with-c-compiler'`
-		 ;;
+                 ;;
 
       --with-cxx-compiler=*)
                  build_cxx_compiler=`parse_option_with_equal ${opt} 'with-cxx-compiler'`
-		 ;;
+                 ;;
 
       --with-fort-compiler=*)
                  build_fort_compiler=`parse_option_with_equal ${opt} 'with-fort-compiler'`
-		 ;;
+                 ;;
 
       --with-cmake=*)
                  cmake_binary=`parse_option_with_equal ${opt} 'with-cmake'`
-		 ;;
+                 ;;
 
       --with-hg=*)
                  hg_binary=`parse_option_with_equal ${opt} 'with-hg'`
-		 ;;
+                 ;;
 
       --with-curl=*)
                  curl_binary=`parse_option_with_equal ${opt} 'with-curl'`
-		 ;;
+                 ;;
 
       --with-mpi=*)
-                 mpi_root_dir=`parse_option_with_equal ${opt} 'with-mpi'`
-		 ;;
+                 error_message "--with-mpi is not supported at this time"
+		 exit_now 20
+                 #mpi_root_dir=`parse_option_with_equal ${opt} 'with-mpi'`
+                 ;;
 
       --amanzi-build-dir=*)
                  amanzi_build_dir=`parse_option_with_equal ${opt} 'amanzi-build-dir'`
-		 ;;
+                  ;;
 
       --amanzi-install-prefix=*)
                  amanzi_install_prefix=`parse_option_with_equal ${opt} 'amanzi-install-prefix'`
-		 ;;
+                 ;;
 
       --tpl-install-prefix=*)
                  tpl_install_prefix=`parse_option_with_equal ${opt} 'tpl-install-prefix'`
-		 ;;
+                 ;;
 
       --tpl-build-dir=*)
                  tpl_build_dir=`parse_option_with_equal ${opt} 'tpl-build-dir'`
-		 ;;
+                 ;;
 
       --tpl-download-dir=*)
                  tpl_download_dir=`parse_option_with_equal ${opt} 'tpl-download-dir'`
-		 ;;
+                 ;;
+      
+      --tpl-config-file=*)
+                 tpl_config_file=`parse_option_with_equal ${opt} 'tpl-config-file'`
+                 ;;
 
-		 *)
-		   error_message "'${opt}' is an unknown option"
-		   exit_now 20
-		   ;;
+       *)
+                 error_message "'${opt}' is an unknown option"
+                 exit_now 20
+                 ;;
       esac
 
       i=$[$i+1]
@@ -640,10 +650,11 @@ if [ -z "${tpl_config_file}" ]; then
   cd ${tpl_build_dir}
   ${cmake_binary} \
                 -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-		-DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-		-DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
-		-DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
-		${tpl_build_src_dir}
+                -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+                -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+                -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
+                ${tpl_build_src_dir}
+
   if [ $? -ne 0 ]; then
     error_message "Failed to configure TPL build"
     exit_now 30
@@ -671,6 +682,7 @@ if [ -z "${tpl_config_file}" ]; then
   cd ${pwd_save}
 
   status_message "TPL build complete"
+  status_message "For future Amanzi builds use ${tpl_config_file}"
 
 else 
 
@@ -684,40 +696,35 @@ fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
-#DEBUG# Amanzi Configure
-#DEBUGpwd_save=`pwd`
-#DEBUG
-#DEBUGcd ${amanzi_build_dir}
-#DEBUG${cmake_binary} \
-#DEBUG              -C ${tpl_config_file} \
-#DEBUG	      -D CMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
-#DEBUG	      ${amanzi_source_dir}
-#DEBUG
-#DEBUGif [ $? -ne 0 ]; then
-#DEBUG  error_message "Failed to configure Amanzi"
-#DEBUG  exit_now 50
-#DEBUGfi
-#DEBUGstatus_message "Amanzi configure complete"
-#DEBUG
-#DEBUG# Amanzi Build
-#DEBUGmake -j ${parallel_jobs}
-#DEBUGif [ $? -ne 0 ]; then
-#DEBUG  error_message "Failed to build Amanzi"
-#DEBUG  exit_now 50
-#DEBUGfi
-#DEBUGstatus_message "Amanzi build complete"
-#DEBUG
-#DEBUG# Amanzi Install
-#DEBUGmake install
-#DEBUGif [ $? -ne 0 ]; then
-#DEBUG  error_message "Failed to install Amanzi"
-#DEBUG  exit_now 50
-#DEBUGfi
-#DEBUGstatus_message "Amanzi install complete"
-#DEBUG
-#DEBUGcd $pwd_save
-#DEBUG
-#DEBUG
+# Amanzi Configure
+cd ${amanzi_build_dir}
+${cmake_binary} \
+              -C ${tpl_config_file} \
+              -D CMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
+	      -D ENABLE_Strucutured:BOOL=OFF \
+              ${amanzi_source_dir}
+
+if [ $? -ne 0 ]; then
+  error_message "Failed to configure Amanzi"
+  exit_now 50
+fi
+status_message "Amanzi configure complete"
+
+# Amanzi Build
+make -j ${parallel_jobs}
+if [ $? -ne 0 ]; then
+  error_message "Failed to build Amanzi"
+  exit_now 50
+fi
+status_message "Amanzi build complete"
+
+# Amanzi Install
+make install
+if [ $? -ne 0 ]; then
+  error_message "Failed to install Amanzi"
+  exit_now 50
+fi
+status_message "Amanzi install complete"
 
 status_message "Bootstrap complete"
 

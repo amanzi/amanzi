@@ -107,7 +107,7 @@ option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
 
 option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
-set(ENABLE_MOAB_Mesh FALSE)
+option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
 # OpenMP Search
 option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
@@ -134,7 +134,7 @@ option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 if ( NOT MPI_EXEC )
   find_program(MPI_EXEC
                NAMES mpirun mpiexec aprun
-               HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX
+               HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX ENV MPI_HOME ENV MPIHOME
                )
 endif()
 
@@ -316,6 +316,14 @@ if ( ENABLE_MSTK_Mesh )
             -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
+# MOAB
+if ( ENABLE_MOAB_Mesh )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+             -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
+	     -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
+endif()
+
 # Trilinos  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
@@ -426,6 +434,7 @@ if ( BUILD_Amanzi )
 		  ${UnitTest_BUILD_TARGET}
 		  ${Boost_BUILD_TARGET}
 		  ${MSTK_BUILD_TARGET}
+		  ${MOAB_BUILD_TARGET}
 		  ${CGNS_BUILD_TARGET}
 		  ${CCSE_BUILD_TARGET}
 		  ${Trilinos_BUILD_TARGET})

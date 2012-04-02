@@ -56,6 +56,7 @@ private:
   
   BDF2::Dae* time_stepper;
   BDF1Dae* steady_time_stepper;
+  BDF1Dae* transient_time_stepper;
   
   Epetra_Vector *solution;   // full cell/face solution
   Epetra_Vector *pressure_cells;   // cell pressures

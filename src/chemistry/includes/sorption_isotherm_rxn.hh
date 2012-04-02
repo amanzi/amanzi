@@ -32,6 +32,10 @@ class SorptionIsothermRxn {
                                Block* dtotal);
   void Display(void) const;
 
+  void CleanMemory(void) {
+    delete isotherm_;
+  }
+
  protected:
 
  private:

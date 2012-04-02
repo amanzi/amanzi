@@ -476,24 +476,24 @@ void MPC::cycle_driver () {
 
       // first advance flow
       if (flow_enabled) {
-	if (ti_mode == STEADY || (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch)) { 	
-	  bool redo(false);
-	  do {
-	    redo = false;
-	    try {
+	bool redo(false);
+	do {
+	  redo = false;
+	  try {
+	    if (ti_mode == STEADY || (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch)) { 	
 	      FPK->advance_steady(mpc_dT);
+	    } else {
+	      FPK->advance_transient(mpc_dT);
 	    }
-	    catch (int itr) {
-	      mpc_dT = 0.5*mpc_dT;
-	      redo = true;
-	      tslimiter = FLOW_LIMITS;
-	      *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
-	    }
-	  } while (redo);
-	} else {
-	  FPK->advance_transient(mpc_dT);
-	}
-        FPK->commit_new_saturation(FS);
+	  }
+	  catch (int itr) {
+	    mpc_dT = 0.5*mpc_dT;
+	    redo = true;
+	    tslimiter = FLOW_LIMITS;
+	    *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
+	  }
+	} while (redo);
+	FPK->commit_new_saturation(FS);
       }
 
       // =============================================================

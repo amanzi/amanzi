@@ -8,7 +8,7 @@ define_external_project_args(Trilinos
                              TARGET trilinos
                              DEPENDS NetCDF ExodusII Boost)
 
-# --- Define the configuration parameters			   
+# --- Define the configuration parameters   
 
 #  - Trilinos Package Configuration
 
@@ -70,6 +70,7 @@ if ( BLAS_LIBRARIES )
               "-DTPL_ENABLE_BLAS:BOOL=TRUE")
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_BLAS_LIBRARIES:FILEPATH=${BLAS_LIBRARIES}")
+  message(STATUS "Trilinos BLAS libraries: ${BLAS_LIBRARIES}")    
 endif()            
  
 # LAPACK
@@ -177,13 +178,13 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
                     URL          ${Trilinos_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${Trilinos_MD5_SUM}                  # md5sum of the archive file
-		    # -- Patch
-		    PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
+                    # -- Patch
+                    PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
-		    CMAKE_ARGS    ${Trilinos_CMAKE_LANG_ARGS} 
-		                  ${Trilinos_CMAKE_ARGS}
-				  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                    CMAKE_ARGS    ${Trilinos_CMAKE_LANG_ARGS} 
+                                  ${Trilinos_CMAKE_ARGS}
+                                 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make

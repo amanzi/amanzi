@@ -37,43 +37,20 @@ Region::setVal(FArrayBox&         fab,
   BL_ASSERT(ncomp-scomp <= nval);
 
   Array<Real> x(BL_SPACEDIM);
-  const int* lo = fab.loVect();
-  const int* hi = fab.hiVect();
-#if (BL_SPACEDIM == 2)	
-  for (int iy=lo[1]; iy<hi[1]+1; iy++) 
-  {
-      x[1] = std::min(std::max(domlo[1],domlo[1]+dx[1]*(iy+0.5)),domhi[1]);
-      for (int ix=lo[0]; ix<hi[0]+1; ix++) 
+  const Box& box = fab.box();
+  const IntVect& se = box.smallEnd();
+  const IntVect& be = box.bigEnd();
+  for (IntVect idx=se; idx<=be; box.next(idx)) {
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+          x[d] = std::min(std::max(domlo[d],domlo[d]+dx[d]*(idx[d]+0.5)),domhi[d]);
+      }
+      if (inregion(x))
       {
-          x[0] = std::min(std::max(domlo[0],domlo[0]+dx[0]*(ix+0.5)),domhi[0]);
-	  if (inregion(x))
-          {
-              for (int n=scomp; n<ncomp;n++) {
-                  fab(IntVect(ix,iy),n) = val[n-scomp];
-              }
+          for (int n=scomp; n<ncomp;n++) {
+              fab(idx,n) = val[n-scomp];
           }
       }
   }
-#else
-  for (int iz=lo[2]; iz<hi[2]+1; iz++) 
-  {
-      x[2] = std::min(std::max(domlo[2],domlo[2]+dx[2]*(iz+0.5)),domhi[2]);
-      for (int iy=lo[1]; iy<hi[1]+1; iy++) 
-      {
-          x[1] = std::min(std::max(domlo[1],domlo[1]+dx[1]*(iy+0.5)),domhi[1]);
-          for (int ix=lo[0]; ix<hi[0]+1; ix++) 
-          {
-              x[0] = std::min(std::max(domlo[0],domlo[0]+dx[0]*(ix+0.5)),domhi[0]);
-              if (inregion(x))
-              {
-                  for (int n=scomp; n<ncomp;n++) {
-                      fab(IntVect(ix,iy),n) = val[n-scomp];
-                  }
-              }
-          }
-      }
-  }
-#endif
 }
 
 
@@ -84,40 +61,7 @@ Region::setVal(FArrayBox&  fab,
                const Real* dx, 
                int         ng) const
 {
-  Array<Real> x(BL_SPACEDIM);
-
-  const int* lo = fab.loVect();
-  const int* hi = fab.hiVect();
-
-#if (BL_SPACEDIM == 2)	
-  for (int iy=lo[1]; iy<hi[1]+1; iy++) 
-    {
-      x[1] = dx[1]*(iy+0.5);
-      for (int ix=lo[0]; ix<hi[0]+1; ix++) 
-	{
-	  x[0] = dx[0]*(ix+0.5);
-	  if (inregion(x)) {
-	    fab(IntVect(ix,iy),idx) = val;
-          }
-	}
-    }
-#else
-  for (int iz=lo[2]; iz<hi[2]+1; iz++) 
-    {
-      x[2] = dx[2]*(iz+0.5);
-      for (int iy=lo[1]; iy<hi[1]+1; iy++) 
-	{
-	  x[1] = dx[1]*(iy+0.5);
-	  for (int ix=lo[0]; ix<hi[0]+1; ix++) 
-	    {
-	      x[0] = dx[0]*(ix+0.5);
-	      if (inregion(x)) {
-		fab(IntVect(ix,iy,iz),idx) = val;
-              }		
-	    }
-	}
-    }
-#endif
+    setVal(fab,Array<Real>(1,val),dx,ng,idx,1);
 }
 
 bool 

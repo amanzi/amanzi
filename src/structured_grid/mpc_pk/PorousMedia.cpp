@@ -21,7 +21,7 @@
 #include <POROUSMEDIA_F.H>
 #include <VISCOPERATOR_F.H>
 
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
 #include "omp.h"
 #endif
 
@@ -816,6 +816,8 @@ PorousMedia::restart (Amr&          papa,
   if (grids == papa.getLevel(level).boxArray())
     is_grid_changed_after_regrid = false;
 
+  // Set up boundary condition work
+  setup_bound_desc();
 }
 
 void
@@ -963,6 +965,33 @@ PorousMedia::initData ()
                           model != model_list["single-phase-solid"]);
                 int nc = 1;
 		Array<Real> vals = ic();
+
+#if 0
+                // ... in progress
+                BL_ASSERT(vals.size()>=4);
+
+                Real darcy_flux = vals[0];
+                Real water_table_height = vals[1];
+                Real aqueous_ref_pres = vals[2];
+                Real aqueous_pres_grad = vals[3];
+
+                Real gravloc = aqueous_pres_grad/(-density[0]);
+
+                // First guess for pressure is linear
+		FORT_HYDRO_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), 
+				    density.dataPtr(),&ncomps, 
+				    dx, vals.dataPtr(), &gravloc);
+                pdat.plus(aqueous_ref_pres);
+
+                // Set the constant phase velocity
+                u_mac_curr[0][mfi].setVal(0);
+                u_mac_curr[BL_SPACEDIM-1][mfi].setVal(vals[0]);
+
+
+                // Init to fully saturated...solve
+                sdat.setVal(density[0],0);
+#endif
+                
                 FArrayBox& kdat = (*kr_coef)[mfi];
                 FArrayBox& kpdat = (*kappa)[mfi];
                 const int n_kr_coef = kr_coef->nComp();
@@ -999,7 +1028,7 @@ PorousMedia::initData ()
 		}
 	    }
 	}
-
+        
         if (ntracers > 0)
         {		
             for (int iTracer=0; iTracer<ntracers; ++iTracer)
@@ -2607,7 +2636,7 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
 
 bool
 PorousMedia::get_inflow_velocity(const Orientation& face,
-                                 FArrayBox&         ccBndFab,
+                                 FArrayBox&         ccBndFab,\
                                  Real               time)
 {
     bool ret = false;
@@ -2631,11 +2660,6 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
                 ret = true;
 		Array<Real> inflow_tmp = face_bc(time);
 		Real inflow_vel = inflow_tmp[0];
-		// repeat of bc setup in PM_setup, leading to wrong sign.
-                //if (face.isHigh()) {
-                //    inflow_vel = -inflow_vel; // Convert from "inward" to signed
-		// }
-
                 const PArray<Region>& regions = face_bc.Regions();
                 for (int j=0; j<regions.size(); ++j)
                 {
@@ -2643,7 +2667,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
                 }
             }
 	}
-    }      
+    }    
     return ret;
 }
 
@@ -3814,7 +3838,7 @@ PorousMedia::strang_chem (MultiFab&  state,
     // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
     //
     int tnum = 1;
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
     tnum = omp_get_max_threads();
 #endif
 
@@ -3905,13 +3929,13 @@ PorousMedia::strang_chem (MultiFab&  state,
 
 #elif (BL_SPACEDIM == 3)
 
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic,1) 
 #endif
         for (int iz = lo[2]; iz<=hi[2]; iz++)
         {		
             int threadid = 0;
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
             threadid = omp_get_thread_num();
 #endif
             amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
@@ -4577,7 +4601,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
 
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_update()");
-  BL_ASSERT(nphases == 2);
+  BL_ASSERT(nphases == 1);
   BL_ASSERT(have_capillary == 1);
 
   const Real strt_time = ParallelDescriptor::second();
@@ -4606,7 +4630,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   MultiFab res_fix(grids,1,0);
   res_fix.setVal(0.);
   calc_richard_velbc(res_fix,u_mac);
- 
+
   // Newton method.
   // initialization
   int do_upwind = 1;
@@ -4696,7 +4720,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
       }
   }
   */
-    
+
   diffusion->removeFluxBoxesLevel(cmp_pcp1);
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
   diffusion->removeFluxBoxesLevel(fluxSC);
@@ -4999,7 +5023,7 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
 					    do_upwind,&err_nwt); 
 
 	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration " << itr_nwt 
+	    std::cout << "Newton iteration (n) " << itr_nwt 
 		      << " : Error = "       << err_nwt << "\n"; 
 	  
 	  for (int lev=0; lev<nlevs; lev++)
@@ -5052,7 +5076,7 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
 					      do_upwind,&err_nwt); 
 
 	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration " << itr_nwt 
+	    std::cout << "Newton iteration (p) " << itr_nwt 
 		      << " : Error = "       << err_nwt << "\n"; 
 	  
 	  for (int lev=0; lev<nlevs; lev++)

@@ -54,11 +54,23 @@ else()
   set(NetCDF_netcdf4_opts --disable-netcdf-4)
 endif() 
 
-# Build CPPFLAGS string. Pick up the CMAKE_BUILD_TYPE flags
+# Build compiler flag strings for C, C++ and Fortran
 include(BuildWhitespaceString)
-build_whitespace_string(netcdf_cppflags 
+build_whitespace_string(netcdf_cflags 
                         -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CFLAGS} )
 
+build_whitespace_string(netcdf_cxxflags 
+                        -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CXXFLAGS} )
+
+set(cpp_flags_list
+    -I${TPL_INSTALL_PREFIX}/include
+    ${Amanzi_COMMON_CFLAGS}
+    ${Amanzi_COMMON_CXXFLAGS})
+list(REMOVE_DUPLICATES cpp_flags_list)
+build_whitespace_string(netcdf_cppflags ${cpp_flags_list})
+
+build_whitespace_string(netcdf_fcflags 
+                        ${Amanzi_COMMON_FCFLAGS} )
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     DEPENDS   ${NetCDF_PACKAGE_DEPENDS}             # Package dependency target
@@ -80,9 +92,12 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                                                 --disable-dap
                                                 --disable-shared
                                                 CC=${CMAKE_C_COMPILER}
+                                                CFLAGS=${netcdf_cflags}
                                                 CXX=${CMAKE_CXX_COMPILER}
-                                                FC=${CMAKE_Fortran_COMPILER}
+                                                CXXFLAGS=${netcdf_cxxflags}
                                                 CPPFLAGS=${netcdf_cppflags}
+                                                FC=${CMAKE_Fortran_COMPILER}
+                                                FCFLAGS=${netcdf_fcflags}
                                                 LDFLAGS=-L<INSTALL_DIR>/lib
                     # -- Build
                     BINARY_DIR        ${NetCDF_build_dir}           # Build directory 

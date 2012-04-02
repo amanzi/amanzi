@@ -8,12 +8,13 @@ namespace amanzi {
 namespace chemistry {
 
 SorptionIsothermLinear::SorptionIsothermLinear()
-    : SorptionIsotherm(),
+    : SorptionIsotherm("linear"),
       KD_(0.) {
 }  // end SorptionIsothermLinear() constructor
 
 SorptionIsothermLinear::SorptionIsothermLinear(const double KD)
-    : KD_(KD) {
+    : SorptionIsotherm("linear"),
+      KD_(KD) {
 }  // end SorptionIsothermLinear() constructor
 
 SorptionIsothermLinear::~SorptionIsothermLinear() {

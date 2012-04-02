@@ -94,7 +94,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
         double vG_alpha_ = wrmlist.get<double>("van Genuchten alpha");
         double vG_sr_ = wrmlist.get<double>("van Genuchten residual saturation");
 	      
-        WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_, vG_sr_,p_atm_));
+        WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_, vG_sr_,p_atm_,100.0));
       }
       iblock++;
     }
@@ -457,8 +457,9 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
 
   // add the time derivative to the diagonal
   Epetra_Vector celldiag(CellMap(false));
+
   dSofP(Pcell_own, celldiag);
- 
+
   // get the porosity
   const Epetra_Vector& phi = FS->get_porosity();
 

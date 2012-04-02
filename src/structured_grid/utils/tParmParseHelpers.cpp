@@ -10,7 +10,7 @@
 #include "ccse-mpi.H"
 #include "Array.H"
 
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
 #include "omp.h"
 #endif
 

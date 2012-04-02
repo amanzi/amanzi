@@ -806,20 +806,20 @@ void Chemistry_PK::advance(
       chem_->DisplayTotalColumnHeaders();
       std::cout << "\nFailed Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_.total);
-      std::cout << "  Free Ion Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_.free_ion);
-      std::cout << "  Total Sorbed Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_.total_sorbed);
+      chem_->DisplayTotalColumns(current_time_, beaker_components_);
+      // std::cout << "  Free Ion Concentrations" << std::endl;
+      // chem_->DisplayTotalColumns(current_time_, beaker_components_);
+      // std::cout << "  Total Sorbed Concentrations" << std::endl;
+      // chem_->DisplayTotalColumns(current_time_, beaker_components_);
       // #ifdef GLENN_DEBUG
       // TODO(bandre): these cause an exception if called when the above copy is missing
       std::cout << "\nPrevious Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total);
-      std::cout << "  Free Ion Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.free_ion);
-      std::cout << "  Total Sorbed Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total_sorbed);
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_);
+      // std::cout << "  Free Ion Concentrations" << std::endl;
+      // chem_->DisplayTotalColumns(current_time_, beaker_components_copy_);
+      // std::cout << "  Total Sorbed Concentrations" << std::endl;
+      // chem_->DisplayTotalColumns(current_time_, beaker_components_copy_);
       // #endif
       std::cout << std::endl;
       Exceptions::amanzi_throw(geochem_error);
@@ -853,7 +853,7 @@ void Chemistry_PK::advance(
     // dumping the values of the final cell. not very helpful by itself,
     // but can be move up into the loops....
     chem_->DisplayTotalColumnHeaders();
-    chem_->DisplayTotalColumns(current_time_, beaker_components_.total);
+    chem_->DisplayTotalColumns(current_time_, beaker_components_);
   }
 }  // end advance()
 
@@ -877,7 +877,7 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
     chem_->Speciate(beaker_components_, beaker_parameters_);
     chem_->DisplayResults();
     chem_->DisplayTotalColumnHeaders();
-    chem_->DisplayTotalColumns(saved_time_, beaker_components_.total);
+    chem_->DisplayTotalColumns(saved_time_, beaker_components_);
   }
 }  // end commit_state()
 

@@ -40,7 +40,7 @@ static const std::string kOutputIntervalParam("output_interval");
 
 static const std::string kTotalSection("total");
 static const std::string kMineralSection("mineral");
-static const std::string kSorbedSection("sorbed");
+static const std::string kSorbedSection("total_sorbed");
 static const std::string kFreeIonSection("free_ion");
 static const std::string kIonExchangeSection("ion_exchange");
 

@@ -52,15 +52,17 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   //paramList_->validateParameters(*this->getValidParameters());
 
   // read the parameter list and initialize the class
-  state.mitr = paramList_->get<int>("steady limit iterations");
-  state.maxitr = paramList_->get<int>("steady max iterations"); 
-  state.minitr = paramList_->get<int>("steady min iterations");
-  state.ntol = paramList_->get<double>("steady nonlinear tolerance");
-  state.hred = paramList_->get<double>("steady time step reduction factor");
-  state.hinc = paramList_->get<double>("steady time step increase factor");
-  state.hlimit = paramList_->get<double>("steady max time step");
+  state.mitr = paramList_->get<int>("limit iterations");
+  state.maxitr = paramList_->get<int>("max iterations"); 
+  state.minitr = paramList_->get<int>("min iterations");
+  state.ntol = paramList_->get<double>("nonlinear tolerance");
+  state.hred = paramList_->get<double>("time step reduction factor");
+  state.hinc = paramList_->get<double>("time step increase factor");
+  state.hlimit = paramList_->get<double>("max time step");
+  state.atol = paramList_->get<double>("error abs tol");
+  state.rtol = paramList_->get<double>("error rel tol");
 
-  state.maxpclag = paramList_->get<int>("steady max preconditioner lag iterations");
+  state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
 
   // sanity check
   if ( ! ((state.minitr < state.maxitr) && (state.maxitr < state.mitr) )) {
@@ -112,38 +114,46 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
   using Teuchos::tuple;
   static RCP<const ParameterList> validParams;
   if (is_null(validParams)) {
-    RCP<ParameterList>  pl = Teuchos::rcp(new ParameterList("steady time integrator"));
-    Teuchos::setIntParameter("steady max iterations",
+    RCP<ParameterList>  pl = Teuchos::rcp(new ParameterList("time integrator"));
+    Teuchos::setIntParameter("max iterations",
                              5,
                              "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced.",
                              &*pl);
-    Teuchos::setIntParameter("steady min iterations",
+    Teuchos::setIntParameter("min iterations",
                              2,
                              "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.",
                              &*pl);
-    Teuchos::setIntParameter("steady limit iterations",
+    Teuchos::setIntParameter("limit iterations",
                              12,
                              "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated.",
                              &*pl);
-    Teuchos::setDoubleParameter("steady nonlinear tolerance",
+    Teuchos::setDoubleParameter("nonlinear tolerance",
                                 0.1,
                                 "The tolerance for the nonlinear solver during the steady state computation.",
                                 &*pl);
-    Teuchos::setDoubleParameter("steady time step reduction factor",
+    Teuchos::setDoubleParameter("time step reduction factor",
                                 0.5,
                                 "When time step reduction is necessary during the steady calculation, use this factor.",
                                 &*pl);
-    Teuchos::setDoubleParameter("steady time step increase factor",
+    Teuchos::setDoubleParameter("time step increase factor",
                              1.2,
                              "When time step increase is possible during the steady calculation, use this factor.",
                              &*pl);
-    Teuchos::setDoubleParameter("steady max time step",
+    Teuchos::setDoubleParameter("max time step",
                               1.0,
                               "The maximum allowed time step.",
                               &*pl);
-    Teuchos::setIntParameter("steady max preconditioner lag iterations",
+    Teuchos::setIntParameter("max preconditioner lag iterations",
                               1,
                               "The maximum number of time steps that the preconditioner is allowed to be lagged.",
+                              &*pl);
+    Teuchos::setDoubleParameter("error abs tol",
+                              1.0,
+                              "Absolute error prefactor.",
+                              &*pl);
+    Teuchos::setDoubleParameter("error rel tol",
+                              1.0,
+                              "Relative error prefactor.",
                               &*pl);
     Teuchos::setupVerboseObjectSublist(&*pl);
     validParams = pl;
@@ -200,6 +210,8 @@ void BDF1Dae::set_initial_state(const double t, const Epetra_Vector& x, const Ep
   state.seq = 0;
   state.usable_pc = false;
   state.pclagcount = 0;
+
+  fn.update_norm(state.rtol,state.atol);
 }
 
 
@@ -254,20 +266,20 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     state.pclagcount = 0;
   }
   
-  if (!state.usable_pc) {
-    // update the preconditioner (we use the predicted solution at the end of the time step)
-    state.updpc_calls++;
-    state.pclagcount++;
-    int errc = 0;
+  // if (!state.usable_pc) {
+  //   // update the preconditioner (we use the predicted solution at the end of the time step)
+  //   state.updpc_calls++;
+  //   state.pclagcount++;
+  //   int errc = 0;
 
-    fn.update_precon (tnew, up, h, errc);
-    if (errc != 0) {
-      std::string msg = "BDF1 failed: error while updating the preconditioner.";
-      Errors::Message m(msg);
-      Exceptions::amanzi_throw(m);        
-    }
-    state.usable_pc = true;
-  }
+  //   fn.update_precon (tnew, up, h, errc);
+  //   if (errc != 0) {
+  //     std::string msg = "BDF1 failed: error while updating the preconditioner.";
+  //     Errors::Message m(msg);
+  //     Exceptions::amanzi_throw(m);        
+  //   }
+  //   state.usable_pc = true;
+  // }
 
   //  Solve the nonlinear BCE system.
   u = up; // Initial solution guess is the predictor.
@@ -323,6 +335,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       }
       throw itr;
     }
+
+    int errc(0);
+    if (itr%state.maxpclag==0) fn.update_precon (t, u, h, errc);
 
     itr++;
 

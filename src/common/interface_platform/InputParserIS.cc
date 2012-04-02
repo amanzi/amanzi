@@ -681,40 +681,75 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 
         // set paramters for the steady state time integrator
         Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady time integrator");
+
+	bool have_unstructured_algorithm_sublist(false);
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
           if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
-            Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-	    steady_time_integrator.set<int>("steady max iterations", num_list.get<int>("steady max iterations",10));
-	    steady_time_integrator.set<int>("steady min iterations", num_list.get<int>("steady min iterations",5));
-            steady_time_integrator.set<int>("steady limit iterations", num_list.get<int>("steady limit iterations",20));
-            steady_time_integrator.set<double>("steady nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
-            steady_time_integrator.set<double>("steady time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
-            steady_time_integrator.set<double>("steady time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
-	    steady_time_integrator.set<double>("steady max time step", num_list.get<double>("steady max time step",1.0e+8));
-	    steady_time_integrator.set<int>("steady max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
-          } else {
-            // set some probably not so good defaults for the steady computation
-            steady_time_integrator.set<int>("steady max iterations",10);
-            steady_time_integrator.set<int>("steady min iterations",5);
-            steady_time_integrator.set<int>("steady limit iterations",20);
-            steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
-            steady_time_integrator.set<double>("steady time step reduction factor",0.8);
-            steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	    steady_time_integrator.set<double>("steady max time step", 1.0e+8);
-	    steady_time_integrator.set<int>("steady max preconditioner lag iterations", 5);
-          }
-        } else {
-          // set some probably not so good defaults for the steady computation
-          steady_time_integrator.set<int>("steady max iterations",10);
-          steady_time_integrator.set<int>("steady min iterations",5);
-          steady_time_integrator.set<int>("steady limit iterations",20);
-          steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
-          steady_time_integrator.set<double>("steady time step reduction factor",0.8);
-          steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	  steady_time_integrator.set<double>("steady max time step", 1.0e+8);
-	  steady_time_integrator.set<int>("steady max preconditioner lag iterations", 5);
-        }
+	    have_unstructured_algorithm_sublist = true;
+	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    steady_time_integrator.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
+	    steady_time_integrator.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
+            steady_time_integrator.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
+            steady_time_integrator.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
+            steady_time_integrator.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
+            steady_time_integrator.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
+	    steady_time_integrator.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
+	    steady_time_integrator.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
+	    steady_time_integrator.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
+	    steady_time_integrator.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
+         } 
+	}
+	if (have_unstructured_algorithm_sublist == false) {
+	  // set some probably not so good defaults for the steady computation
+	  steady_time_integrator.set<int>("max iterations",10);
+	  steady_time_integrator.set<int>("min iterations",5);
+	  steady_time_integrator.set<int>("limit iterations",20);
+	  steady_time_integrator.set<double>("nonlinear tolerance",1.0);
+	  steady_time_integrator.set<double>("time step reduction factor",0.8);
+	  steady_time_integrator.set<double>("time step increase factor",1.2);
+	  steady_time_integrator.set<double>("max time step", 1.0e+8);
+	  steady_time_integrator.set<int>("max preconditioner lag iterations", 5);
+	  steady_time_integrator.set<double>("error abs tol", 1.0);
+	  steady_time_integrator.set<double>("error rel tol", 0.0);	    
+	}
+
+        // set paramters for the steady state time integrator
+        Teuchos::ParameterList& transient_time_integrator = richards_problem.sublist("transient time integrator");
+
+	have_unstructured_algorithm_sublist = false;
+        if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+          if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	    have_unstructured_algorithm_sublist = true;
+	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    transient_time_integrator.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
+	    transient_time_integrator.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
+            transient_time_integrator.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
+            transient_time_integrator.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
+            transient_time_integrator.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
+            transient_time_integrator.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
+	    transient_time_integrator.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
+	    transient_time_integrator.set<int>("max preconditioner lag iterations", num_list.get<int>("transient max preconditioner lag iterations",5));
+	    transient_time_integrator.set<double>("error abs tol", num_list.get<double>("transient error abs tol",1.0));
+	    transient_time_integrator.set<double>("error rel tol", num_list.get<double>("transient error rel tol",0.0));
+         } 
+	}
+	if (have_unstructured_algorithm_sublist == false) {
+	  // set some probably not so good defaults for the steady computation
+	  transient_time_integrator.set<int>("max iterations",10);
+	  transient_time_integrator.set<int>("min iterations",5);
+	  transient_time_integrator.set<int>("limit iterations",20);
+	  transient_time_integrator.set<double>("nonlinear tolerance",1.0);
+	  transient_time_integrator.set<double>("time step reduction factor",0.8);
+	  transient_time_integrator.set<double>("time step increase factor",1.2);
+	  transient_time_integrator.set<double>("max time step", 1.0e+8);
+	  transient_time_integrator.set<int>("max preconditioner lag iterations", 5);
+	  transient_time_integrator.set<double>("error abs tol", 1.0);
+	  transient_time_integrator.set<double>("error rel tol", 0.0);	    
+	}
+
+
         steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
         // insert the water retention models sublist
         Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models");

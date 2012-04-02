@@ -2,7 +2,7 @@
 #include <ccse-mpi.H>
 #include <EventCoord.H>
 
-#ifdef BL_USE_OMP
+#ifdef _OPENMP
 #include "omp.h"
 #endif
 

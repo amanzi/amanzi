@@ -48,23 +48,24 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_,
   Teuchos::ParameterList &rme_list = rp_list.sublist("Richards model evaluator");
   RME = new RichardsModelEvaluator(problem, rme_list, problem->Map(), FS);  
 
-  // then the BDF2 solver
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
+  // // then the BDF2 solver
+  // Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
+  // time_stepper = new BDF2::Dae(*RME, problem->Map());
+  // time_stepper->setParameterList(bdf2_list_p);
 
-  time_stepper = new BDF2::Dae(*RME, problem->Map());
-  time_stepper->setParameterList(bdf2_list_p);
 
-
-  // then the BDF1 solver
-  Teuchos::RCP<Teuchos::ParameterList> bdf1_list_p(new Teuchos::ParameterList(rp_list.sublist("steady time integrator")));
-
+  // then the steady solver
+  Teuchos::RCP<Teuchos::ParameterList> steady_list_p(new Teuchos::ParameterList(rp_list.sublist("steady time integrator")));
   steady_time_stepper = new Amanzi::BDF1Dae(*RME, problem->Map());
-
-  steady_time_stepper->setParameterList(bdf1_list_p);
+  steady_time_stepper->setParameterList(steady_list_p);
+  
+  // then the transient solver
+  Teuchos::RCP<Teuchos::ParameterList> transient_list_p(new Teuchos::ParameterList(rp_list.sublist("transient time integrator")));
+  transient_time_stepper = new Amanzi::BDF1Dae(*RME, problem->Map());
+  transient_time_stepper->setParameterList(transient_list_p);  
   
   // initialize the water saturation for vis
   GetSaturation( FS->get_water_saturation() );
-
 };
 
 
@@ -138,11 +139,11 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
   Epetra_Vector udot(problem->Map());
   problem->compute_udot(t0, *solution, udot);
   
-  time_stepper->set_initial_state(t0, *solution, udot);
+  transient_time_stepper->set_initial_state(t0, *solution, udot);
   
   int errc;
-  RME->update_precon(t0, *solution, h, errc);
-  RME->update_norm(0.001,1.0);
+  //RME->update_precon(t0, *solution, *solution, h, errc);
+  //RME->update_norm(0.001,1.0); -- this is now called within the time integrator setup
   steady_mode = false;
 }
 
@@ -161,66 +162,29 @@ int Transient_Richards_PK::init_steady(double t0, double h_)
   steady_time_stepper->set_initial_state(t0, *solution, udot);
   
   int errc;
-  RME->update_precon(t0, *solution, h, errc);
-  RME->update_norm(0.0, 1.0); // we run the steady calculation with just an absolute norm
+  //RME->update_precon(t0, *solution, *solution, h, errc);
+  // RME->update_norm(0.0, 1.0); -- tis is now called within the time integrator setup
 
   steady_mode = true;
 }
 
 int Transient_Richards_PK::advance_transient(double h) 
 {
-  //using Teuchos::OSTab;
-  //Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  //Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-
   // Set problem parameters
   problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
   problem->set_flow_state(FS);
 
-  time_stepper->bdf2_step(h,0.0,*solution,hnext);
-  //time_stepper->commit_solution(h,*solution);  
-
-  //time_stepper->write_bdf2_stepping_statistics();
-
-  
-  //FS->get_pressure() = *pressure_cells;
-  //FS->get_prev_water_saturation() = FS->get_water_saturation();
-  //GetSaturation( FS->get_water_saturation() );
-
-  //double l1_error;
-  //problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  //if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
-  //  *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
- // }
+  transient_time_stepper->bdf1_step(h,*solution,hnext);
 }
 
 
 int Transient_Richards_PK::advance_steady(double h) 
 {
-  //using Teuchos::OSTab;
-  //Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  //Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-
   // Set problem parameters
   problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
   problem->set_flow_state(FS);
 
   steady_time_stepper->bdf1_step(h,*solution,hnext);
-  //steady_time_stepper->commit_solution(h,*solution);  
-
-  //steady_time_stepper->write_bdf1_stepping_statistics();
-
-  //FS->get_pressure() = *pressure_cells;
-  //FS->get_prev_water_saturation() = FS->get_water_saturation();
-  //GetSaturation( FS->get_water_saturation() );  
-
-  //double l1_error;
-  //problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  //if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ) {
-  //  *out << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
- // }
 }
 
 
@@ -248,8 +212,8 @@ void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS, double h)
     steady_time_stepper->commit_solution(h,*solution);  
     steady_time_stepper->write_bdf1_stepping_statistics();
   } else {
-    time_stepper->commit_solution(h,*solution);  
-    time_stepper->write_bdf2_stepping_statistics();
+    transient_time_stepper->commit_solution(h,*solution);  
+    transient_time_stepper->write_bdf1_stepping_statistics();
   }
 
 

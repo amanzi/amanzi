@@ -122,16 +122,6 @@ namespace Amanzi {
             geometry_eps = 1.e-6*max_size;
 
             const ParameterList& eclist = parameter_list.sublist("Execution Control");
-            int bfactor = 2;
-            if (eclist.isSublist("amr"))
-                if (eclist.sublist("amr").isParameter("blocking_factor"))
-                    bfactor = eclist.sublist("amr").get<int>("blocking_factor");
-     
-            for (int i=0;i<ndim;i++) {
-                if (n_cell[i]%bfactor > 0) {
-                    MyAbort("Number of Cells must be divisible by blocking_factor = " + bfactor);
-                }
-            }
 
             ParameterList& alist = struc_list.sublist("amr");
             alist.set("n_cell",n_cell);
@@ -282,8 +272,7 @@ namespace Amanzi {
                     prob_out_list.set("do_simple",2);
                 }
             }
-            else if (t_list.isSublist(transient_str) 
-                     || t_list.isSublist(init_to_steady_str) )
+            else if (t_list.isSublist(transient_str))
             {
                 const ParameterList& tran_list = t_list.sublist(transient_str);
                 reqP.clear(); reqL.clear();
@@ -319,7 +308,7 @@ namespace Amanzi {
                         dt_max = tran_list.get<double>(Max_Time_Step_Size_str);
                     }
                     else if (ToptP[i] == Max_Step_str) {
-                        step_max = tran_list.get<double>(Max_Step_str);
+                        step_max = tran_list.get<int>(Max_Step_str);
                     }
                     else {
                         MyAbort("Unrecognized option under \""+transient_str+"\": \""+ToptP[i]+"\"" );
@@ -380,7 +369,7 @@ namespace Amanzi {
             int regrid_int_DEF = 2;
             Array<int> regrid_int(num_levels,regrid_int_DEF);
             int blocking_factor_DEF = 8;
-            Array<int> blocking_factor(max_level,blocking_factor_DEF);
+            Array<int> blocking_factor(num_levels,blocking_factor_DEF);
             int n_err_buf_DEF = 1;
             Array<int> n_err_buf(max_level,n_err_buf_DEF);
             int max_grid_DEF = (ndim==2 ? 128  :  32);
@@ -515,7 +504,6 @@ namespace Amanzi {
                                 }
                             }
 
-                            
                             std::string n_err_buf_str = "Number Error Buffer Cells";
                             int n_err_buf_DEF = 1;
                             n_err_buf.resize(max_level+1,n_err_buf_DEF);
@@ -647,6 +635,21 @@ namespace Amanzi {
                 }
             }
                     
+            Array<int> n_cell = amr_out_list.get<Array<int> >("n_cell");
+            for (int i=0;i<blocking_factor.size();i++) {
+                
+                for (int n=0;n<ndim;n++) {
+                    if (n_cell[n]%blocking_factor[i] > 0) {
+                        std::stringstream buf;
+                        for (int j=0;j<blocking_factor.size();j++) {
+                            buf << blocking_factor[j] << " ";
+                        }
+                        std::string m; buf >> m;
+                        MyAbort("Number of Cells must be divisible by blocking_factor = " + m);
+                    }
+                }
+            }
+                            
             amr_out_list.set<int>("max_level",max_level);
             amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
             amr_out_list.set<Array<int> >("regrid_int",regrid_int);
@@ -1315,6 +1318,7 @@ namespace Amanzi {
             const std::string val_name="Reference Value";
             const std::string grad_name="Gradient Value";
             const std::string ref_name="Reference Coordinate";
+            //const std::string vel_name="Aqueous Volumetric Flux";
 
             Array<std::string> reqP, nullList;
             reqP.push_back(val_name);
@@ -1323,15 +1327,26 @@ namespace Amanzi {
                 reqP.push_back(grad_name);
                 reqP.push_back(ref_name);
             }
+            //PLoptions opt(fPLin,nullList,reqP,true,false);  
             PLoptions opt(fPLin,nullList,reqP,true,true);  
     
             fPLout.set<std::string>("type","hydrostatic");
+            //fPLout.set<std::string>("type","zero_total_velocity");
             fPLout.set<double>("val",fPLin.get<double>(val_name));
             if (Amanzi_type == "IC: Linear Pressure") {
-                fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
+                //fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
+                const Array<double>& grad = fPLin.get<Array<double> >(grad_name);
                 const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
                 int coord = water_table.size()-1;
-                fPLout.set<double>("water_table_height",water_table[coord]);                      
+                fPLout.set<double>("water_table_height",water_table[coord]); 
+                fPLout.set<double>("grad",grad[coord]);
+#if 0
+                double AqVolFlux = 0; 
+                if (fPLin.isParameter(vel_name)) {
+                    AqVolFlux = fPLin.get<double>(vel_name);
+                }
+                fPLout.set<double>("aqueous_vol_flux",AqVolFlux); 
+#endif
             }
         }
 
@@ -2405,13 +2420,16 @@ namespace Amanzi {
         
             // observation
             Array<std::string> arrayobs;
-            const ParameterList& olist = rlist.sublist("Observation Data");
+            std::string obs_str = "Observation Data";
+            const ParameterList& olist = rlist.sublist(obs_str);
             ParameterList sublist;
-            for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {
+            std::string obs_file_str = "Observation Output Filename";
+            std::string obs_file="observation.out";
+            for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {                
                 std::string label = olist.name(i);
-                std::string _label = underscore(label);
                 const ParameterEntry& entry = olist.getEntry(label);
                 if (entry.isList()) {
+                    std::string _label = underscore(label);
                     const ParameterList& rslist = olist.sublist(label);
                     std::string functional = rslist.get<std::string>("Functional");
                     std::string region_name = rslist.get<std::string>("Region");
@@ -2442,39 +2460,30 @@ namespace Amanzi {
                         sublist.set("time_macro",timeMacro);
                     }
 	  
-                    Array<std::string> arrayvariables;
-                    Array<std::string> variables = rslist.get<Array<std::string> >("Variables");
-                    if (variables.size()!=1) {
-                        std::cerr << "Currently must provide a single Variable per observation" << std::endl;
-                            throw std::exception();                        
+                    const std::string& variable = rslist.get<std::string>("Variable");
+                    std::string _variable = underscore(variable);
+                    bool found = false;
+                    for (int k=0; k<user_derive_list.size() && !found; ++k) {
+                        if (_variable == user_derive_list[k]) {
+                            found = true;
+                        }
                     }
-                    for (int j=0; j<variables.size(); ++j) {
-                        std::string _variable = underscore(variables[j]);
-                        bool found = false;
-                        for (int k=0; k<user_derive_list.size() && !found; ++k) {
-                            if (_variable == user_derive_list[k]) {
-                                found = true;
-                            }
-                        }
-                        if (found) {
-                            arrayvariables.push_back(_variable);
-                        } else 
-                        {
-                            std::cerr << variables[j] 
-                                      << " is not a valid derive variable name. Must be on of: ";
-                            for (int k=0; k<user_derive_list.size() && !found; ++k) {
-                                std::cerr << "\"" << user_derive_list[k] << "\" ";
-                            }
-                            std::cerr << std::endl;
-                            throw std::exception();
-                        }
-
+                    if (!found) {
+                        MyAbort(variable + " is not a valid derive variable name");
                     }
 
-                    sublist.set<std::string>("field",arrayvariables[0]);
+                    sublist.set<std::string>("field",_variable);
 
                     obs_list.set(_label,sublist);
                     arrayobs.push_back(_label);
+                }
+                else {
+                    if (label == obs_file_str) {
+                        obs_file = underscore(olist.get<std::string>(obs_file_str));
+                    }
+                    else {
+                        MyAbort("Unrecognized option under \""+obs_str+"\": \""+label+"\"" );
+                    }
                 }
             }
             obs_list.set("observation",arrayobs);
@@ -2564,7 +2573,7 @@ Execution Control
        Maximum Time Step Change (change_max)
        Initial Time Step Multiplier (init_shrink)
        Maximum Time Step Size (dt_max)
-       Maximum cycle Number (max_step)
+       Maximum Cycle Number (max_step)
      Initialize To Steady
 
   Verbosity

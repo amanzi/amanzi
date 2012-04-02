@@ -8,14 +8,15 @@ namespace amanzi {
 namespace chemistry {
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir()
-    : SorptionIsotherm(),
+    : SorptionIsotherm("langmuir"),
       K_(0.), 
       b_(0.) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir(const double K, 
                                                    const double b)
-    : K_(K), 
+    : SorptionIsotherm("langmuir"),
+      K_(K), 
       b_(b) {
 }  // end SorptionIsothermLangmuir() constructor
 

@@ -10,7 +10,7 @@ nc_max_var_dims=8
 
 # Search for netcdf.h and netcdf_base.h files
 # netcdf_base.h file was removed in version 4.1.3
-header_list=`find @NETCDF_source_dir@  -name netcdf.h -or -name netcdf_base.h`
+header_list=`find @NetCDF_source_dir@  -name netcdf.h -or -name netcdf_base.h`
 
 for header in ${header_list}
 do

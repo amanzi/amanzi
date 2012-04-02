@@ -295,6 +295,7 @@ void HDF5_MPI::createTimestep(const double time, const int iteration) {
     xmlStep_ = tmp;
   }
   setIteration(iteration);
+  setTime(time);
 }
 
 void HDF5_MPI::endTimestep() {
@@ -380,6 +381,49 @@ void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
   status = H5Pclose(acc_tpl1);
   status = H5Fclose(file);
 }
+
+  void HDF5_MPI::writeAttrReal(double value, const std::string attrname, std::string h5path)
+  {
+    
+    hid_t file, dataset, fid, dataspace_id, attribute_id;
+    hsize_t dims;
+    herr_t status;
+    char *DSpath = new char [h5path.size()+1];
+    
+    strcpy(DSpath,h5path.c_str());
+    /* Setup dataspace */
+    dims = 1;
+    dataspace_id = H5Screate_simple(1, &dims, NULL);
+    
+    /* Open the file */
+    hid_t acc_tpl1 = H5Pcreate (H5P_FILE_ACCESS);
+    herr_t ret = H5Pset_fapl_mpio(acc_tpl1, viz_comm_.Comm(), info_);
+    file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
+    if (file < 0) {
+      Errors::Message message("HDF5_MPI::writeAttrReal2 - error opening data file to write attribute");
+      Exceptions::amanzi_throw(message);
+    }
+    
+    dataset = H5Dopen(file, DSpath, H5P_DEFAULT);
+    if (dataset < 0) {
+      Errors::Message message("HDF5_MPI::writeAttrReal2 - error opening dataset in file to write attribute");
+      Exceptions::amanzi_throw(message);
+    }
+    
+    /* Create a dataset attribute. */
+    attribute_id = H5Acreate (dataset, attrname.c_str(), H5T_NATIVE_DOUBLE, 
+                              dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+    
+    /* Write the attribute data. */
+    status = H5Awrite(attribute_id, H5T_NATIVE_DOUBLE, &value);
+    
+    /* Close everything. */
+    status = H5Dclose(dataset);
+    status = H5Aclose(attribute_id);  
+    status = H5Sclose(dataspace_id);  
+    status = H5Pclose(acc_tpl1);
+    status = H5Fclose(file);
+  }
   
 void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
 {
@@ -591,10 +635,14 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
   parallelIO_close_file(file, &IOgroup_);
 
   // TODO(barker): add error handling: can't write
-  if (TrackXdmf() && viz_comm_.MyPID() == 0) {
-    // TODO(barker): get grid node, node.addChild(addXdmfAttribute)
-    Teuchos::XMLObject node = findMeshNode_(xmlStep());
-    node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
+  if (TrackXdmf() ) {
+    // write the time value as an attribute to this dataset
+    writeAttrReal(Time(), "Time", h5path.str());
+    if (viz_comm_.MyPID() == 0) {
+      // TODO(barker): get grid node, node.addChild(addXdmfAttribute)
+      Teuchos::XMLObject node = findMeshNode_(xmlStep());
+      node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
+    }
   }
 }
   
