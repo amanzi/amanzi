@@ -229,7 +229,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   num_itrs = num_itrs_sss;
 
   //DEBUG
-  //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS);
+  //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
   //advanceToSteadyState();
   //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
 }
@@ -373,7 +373,7 @@ void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
   //if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
   //   std::printf("Commited flow state for transport: see flow.gmv\n");
   //}
-  //writeGMVfile(FS_MPC);
+  writeGMVfile(FS_MPC);
 }
 
 
