@@ -101,15 +101,15 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Steady state solution">
+      <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="Direct solve"/>
         <Parameter name="Discretization method hint" type="string" value="none"/>
         <Parameter name="Verbosity level" type="string" value="medium"/>
 
-        <ParameterList name="Linear solvers"> 
-          <Parameter name="Iterative method" type="string" value="CGS"/>
-          <Parameter name="Error tolerance" type="double" value="1e-14"/>
-          <Parameter name="Maximal number of iterations" type="int" value="100"/>
+        <ParameterList name="linear solver"> 
+          <Parameter name="iterative method" type="string" value="CGS"/>
+          <Parameter name="error tolerance" type="double" value="1e-14"/>
+          <Parameter name="maximal number of iterations" type="int" value="100"/>
         </ParameterList>
       </ParameterList>
 

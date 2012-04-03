@@ -88,31 +88,31 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Steady state solution">
+      <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="backward Euler"/>
         <Parameter name="Verbosity level" type="string" value="medium"/>
 
-        <ParameterList name="Error control">
-          <Parameter name="Absolute error tolerance" type="double" value="0.1"/>
-          <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="Convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="Maximal number of iterations" type="int" value="200"/>
+        <ParameterList name="error control">
+          <Parameter name="absolute error tolerance" type="double" value="0.1"/>
+          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
+          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
+          <Parameter name="maximal number of iterations" type="int" value="200"/>
         </ParameterList>
 
-        <ParameterList name="Time control">
-          <Parameter name="Start pseudo time" type="double" value="0.0"/>
-          <Parameter name="End pseudo time" type="double" value="1e+11"/>
-          <Parameter name="Initial time step" type="double" value="1e+8"/>
-          <Parameter name="Maximal time step" type="double" value="1e+11"/>
+        <ParameterList name="time control">
+          <Parameter name="start pseudo time" type="double" value="0.0"/>
+          <Parameter name="end pseudo time" type="double" value="1e+11"/>
+          <Parameter name="initial time step" type="double" value="1e+8"/>
+          <Parameter name="maximal time step" type="double" value="1e+11"/>
         </ParameterList>
 
-        <ParameterList name="Linear solvers"> 
-          <Parameter name="Iterative method" type="string" value="CGS"/>
-          <Parameter name="Error tolerance" type="double" value="1e-12"/>
-          <Parameter name="Maximal number of iterations" type="int" value="200"/>
+        <ParameterList name="linear solver"> 
+          <Parameter name="iterative method" type="string" value="CGS"/>
+          <Parameter name="error tolerance" type="double" value="1e-12"/>
+          <Parameter name="maximal number of iterations" type="int" value="200"/>
         </ParameterList>
 
-        <ParameterList name="Nonlinear solvers">
+        <ParameterList name="nonlinear solver BDF2">
           <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
           <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
           <Parameter name="NKA max vectors" type="int" value="5"/>

@@ -184,7 +184,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     preconditioner->init_ML_preconditioner(ML_list); 
 
     // Create the BDF2 time integrator
-    Teuchos::ParameterList solver_list = rp_list.sublist("Steady state solution").sublist("Nonlinear solvers");
+    Teuchos::ParameterList solver_list = rp_list.sublist("steady state time integrator").sublist("nonlinear solver BDF2");
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
@@ -196,7 +196,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     preconditioner->init_ML_preconditioner(ML_list); 
 
     // Create the BDF1 time integrator
-    Teuchos::ParameterList solver_list = rp_list.sublist("Steady state solution").sublist("Nonlinear solvers");
+    Teuchos::ParameterList solver_list = rp_list.sublist("steady state time integrator").sublist("nonlinear solver BDF1");
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
@@ -257,7 +257,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
     // Reset the BDF2 time integrator
     if (bdf2_dae != NULL) delete bdf2_dae;  // the only way to reset it
 
-    Teuchos::ParameterList solver_list = rp_list.sublist("Transient solution").sublist("Nonlinear solvers");
+    Teuchos::ParameterList solver_list = rp_list.sublist("transient time integrator").sublist("nonlinear solver BDF2");
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
@@ -273,7 +273,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
     // Reset the BDF1 time integrator
     if (bdf1_dae != NULL) delete bdf1_dae;  // the only way to reset it
 
-    Teuchos::ParameterList solver_list = rp_list.sublist("Transient solution").sublist("Nonlinear solvers");
+    Teuchos::ParameterList solver_list = rp_list.sublist("transient time integrator").sublist("nonlinear solver BDF1");
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);

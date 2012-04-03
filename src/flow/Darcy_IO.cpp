@@ -55,12 +55,12 @@ void Darcy_PK::processParameterList()
   double T_physical = FS->get_time();
   T_internal = (standalone_mode) ? T_internal : T_physical;
 
-  // Steady state solution
-  Teuchos::ParameterList& sss_list = dp_list.sublist("Steady state solution");
-  Teuchos::ParameterList& solver_list = sss_list.sublist("Linear solvers");
+  // Time integrator for period I, temporary called steady state time integrator
+  Teuchos::ParameterList& sss_list = dp_list.sublist("steady state time integrator");
+  Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
 
-  max_itrs_sss = solver_list.get<int>("Maximal number of iterations", 100);
-  convergence_tol_sss = solver_list.get<double>("Error tolerance", 1e-12);
+  max_itrs_sss = solver_list.get<int>("maximal number of iterations", 100);
+  convergence_tol_sss = solver_list.get<double>("error tolerance", 1e-12);
 
   string method_name = sss_list.get<string>("Discretization method hint", "monotone");
   if (method_name == "monotone") {

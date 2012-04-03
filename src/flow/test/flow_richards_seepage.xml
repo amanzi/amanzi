@@ -81,37 +81,42 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Steady state solution">
+      <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="Picard"/>
         <Parameter name="Verbosity level" type="string" value="medium"/>
 
-        <ParameterList name="Error control">
-          <Parameter name="Absolute error tolerance" type="double" value="10.0"/>
-          <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="Convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="Maximal number of iterations" type="int" value="4000"/>
+        <ParameterList name="error control">
+          <Parameter name="absolute error tolerance" type="double" value="10.0"/>
+          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
+          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
+          <Parameter name="maximal number of iterations" type="int" value="4000"/>
         </ParameterList>
 
-        <ParameterList name="Time control">
-          <Parameter name="Start pseudo time" type="double" value="0.0"/>
-          <Parameter name="End pseudo time" type="double" value="1.0e+10"/>
-          <Parameter name="Initial time step" type="double" value="0.1"/>
-          <Parameter name="Maximal time step" type="double" value="1.0e+8"/>
+        <ParameterList name="time control">
+          <Parameter name="start time" type="double" value="0.0"/>
+          <Parameter name="end time" type="double" value="1.0e+10"/>
+          <Parameter name="initial time step" type="double" value="0.1"/>
+          <Parameter name="maximal time step" type="double" value="1.0e+8"/>
         </ParameterList>
 
-        <ParameterList name="Linear solvers"> 
-          <Parameter name="Iterative method" type="string" value="CGS"/>
-          <Parameter name="Error tolerance" type="double" value="1e-12"/>
-          <Parameter name="Maximal number of iterations" type="int" value="200"/>
+        <ParameterList name="linear solver"> 
+          <Parameter name="iterative method" type="string" value="CGS"/>
+          <Parameter name="error tolerance" type="double" value="1e-12"/>
+          <Parameter name="maximal number of iterations" type="int" value="200"/>
         </ParameterList>
 
-        <ParameterList name="Nonlinear solvers">
+        <ParameterList name="nonlinear solver BDF2">
           <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
           <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
           <Parameter name="NKA max vectors" type="int" value="5"/>
           <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
           <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-          <!-- for the moment, we need different lists for BDF1 and BDF2 
+          <ParameterList name="VerboseObject">
+            <Parameter name="Verbosity Level" type="string" value="medium"/>
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="nonlinear solver BDF1">
           <Parameter name="steady max iterations" type="int" value="20"/>
           <Parameter name="steady min iterations" type="int" value="7"/>
           <Parameter name="steady limit iterations" type="int" value="30"/>
@@ -120,14 +125,13 @@
           <Parameter name="steady time step increase factor" type="double" value="2.0"/>
           <Parameter name="steady max time step" type="double" value="1.0e+8"/>
           <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
-          -->
           <ParameterList name="VerboseObject">
             <Parameter name="Verbosity Level" type="string" value="medium"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Transient solution">
+      <ParameterList name="transient time integrator">
       <!-- Is not used for this test -->
       </ParameterList>
 

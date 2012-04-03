@@ -650,62 +650,133 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
 
       } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
-        richards_problem.set<bool>("Upwind relative permeability", true);
+        richards_problem.set<std::string>("Relative permeability method", "Upwind with gravity");
         // this one should come from the input file...
         richards_problem.set<double>("Atmospheric pressure", 101325.0);
 
-        Teuchos::ParameterList& richards_model_evaluator = richards_problem.sublist("Richards model evaluator");
+        // create sublists for the steady state time integrator
+        Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady state time integrator");
+        Teuchos::ParameterList& sti_error_control = steady_time_integrator.sublist("error control");
+        Teuchos::ParameterList& sti_time_control = steady_time_integrator.sublist("time control");
+        Teuchos::ParameterList& sti_linear_solver = steady_time_integrator.sublist("linear solver");
+        Teuchos::ParameterList& sti_nonlinear_bdf2 = steady_time_integrator.sublist("nonlinear solver BDF2");
+        Teuchos::ParameterList& sti_nonlinear_bdf1 = steady_time_integrator.sublist("nonlinear solver BDF1");
+
         // set some reasonable defaults...
-        richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
-        richards_model_evaluator.set<double>("Relative error tolerance",0.0);
-        richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        steady_time_integrator.set<std::string>("Verbosity level", "low");
+        steady_time_integrator.set<std::string>("method","BDF1");
 
-        Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
-        // set some reasonable defaults...
-        time_integrator.set<int>("Nonlinear solver max iterations", 10);
-        time_integrator.set<int>("NKA max vectors", 10);
-        time_integrator.set<int>("Maximum number of BDF tries", 20);
-        time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
-        time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
-        time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        sti_error_control.set<double>("absolute error tolerance",1.0);
+        sti_error_control.set<double>("relative error tolerance",0.0);
+        sti_error_control.set<double>("convergence tolerance",1e-12);
+        sti_error_control.set<int>("maximal number of iterations",400);
 
+        sti_time_control.set<double>("start time",0.0);
+        sti_time_control.set<double>("end time",1e+10);
+        sti_time_control.set<double>("initial time step",1e-7);
+        sti_time_control.set<double>("maximal time step",1e+7);
 
-        // set paramters for the steady state time integrator
-        Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady time integrator");
+        sti_linear_solver.set<std::string>("iterative method","CGS");
+        sti_linear_solver.set<double>("error tolerance",1e-14);
+        sti_linear_solver.set<int>("maximal number of iterations",100);
+
+        sti_nonlinear_bdf2.set<int>("Nonlinear solver max iterations", 10);
+        sti_nonlinear_bdf2.set<int>("NKA max vectors", 10);
+        sti_nonlinear_bdf2.set<int>("Maximum number of BDF tries", 20);
+        sti_nonlinear_bdf2.set<double>("Nonlinear solver tolerance", 0.01);
+        sti_nonlinear_bdf2.set<double>("NKA drop tolerance", 5.0e-2);
+        sti_nonlinear_bdf2.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        sti_nonlinear_bdf1.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+
+	bool have_unstructured_algorithm_sublist(false);
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
           if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+            have_unstructured_algorithm_sublist = true;
             Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-	    steady_time_integrator.set<int>("steady max iterations", num_list.get<int>("steady max iterations",10));
-	    steady_time_integrator.set<int>("steady min iterations", num_list.get<int>("steady min iterations",5));
-            steady_time_integrator.set<int>("steady limit iterations", num_list.get<int>("steady limit iterations",20));
-            steady_time_integrator.set<double>("steady nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
-            steady_time_integrator.set<double>("steady time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
-            steady_time_integrator.set<double>("steady time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
-	    steady_time_integrator.set<double>("steady max time step", num_list.get<double>("steady max time step",1.0e+8));
-	    steady_time_integrator.set<int>("steady max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
-          } else {
+	    sti_nonlinear_bdf1.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
+	    sti_nonlinear_bdf1.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
+            sti_nonlinear_bdf1.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
+            sti_nonlinear_bdf1.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
+            sti_nonlinear_bdf1.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
+            sti_nonlinear_bdf1.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
+	    sti_nonlinear_bdf1.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
+	    sti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
+	    sti_nonlinear_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
+	    sti_nonlinear_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
+         } 
+	}
+	if (have_unstructured_algorithm_sublist == false) {
             // set some probably not so good defaults for the steady computation
-            steady_time_integrator.set<int>("steady max iterations",10);
-            steady_time_integrator.set<int>("steady min iterations",5);
-            steady_time_integrator.set<int>("steady limit iterations",20);
-            steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
-            steady_time_integrator.set<double>("steady time step reduction factor",0.8);
-            steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	    steady_time_integrator.set<double>("steady max time step", 1.0e+8);
-	    steady_time_integrator.set<int>("steady max preconditioner lag iterations", 5);
-          }
-        } else {
-          // set some probably not so good defaults for the steady computation
-          steady_time_integrator.set<int>("steady max iterations",10);
-          steady_time_integrator.set<int>("steady min iterations",5);
-          steady_time_integrator.set<int>("steady limit iterations",20);
-          steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
-          steady_time_integrator.set<double>("steady time step reduction factor",0.8);
-          steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	  steady_time_integrator.set<double>("steady max time step", 1.0e+8);
-	  steady_time_integrator.set<int>("steady max preconditioner lag iterations", 5);
+	  sti_nonlinear_bdf1.set<int>("max iterations",10);
+	  sti_nonlinear_bdf1.set<int>("min iterations",5);
+	  sti_nonlinear_bdf1.set<int>("limit iterations",20);
+	  sti_nonlinear_bdf1.set<double>("nonlinear tolerance",1.0);
+	  sti_nonlinear_bdf1.set<double>("time step reduction factor",0.8);
+	  sti_nonlinear_bdf1.set<double>("time step increase factor",1.2);
+	  sti_nonlinear_bdf1.set<double>("max time step", 1.0e+8);
+	  sti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", 5);
+	  sti_nonlinear_bdf1.set<double>("error abs tol", 1.0);
+	  sti_nonlinear_bdf1.set<double>("error rel tol", 0.0);	    
         }
-        steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+
+        // crerate sublists for the transient time integrator
+        Teuchos::ParameterList& transient_time_integrator = richards_problem.sublist("transient time integrator");
+        Teuchos::ParameterList& tti_error_control = transient_time_integrator.sublist("error control");
+        Teuchos::ParameterList& tti_time_control = transient_time_integrator.sublist("time control");
+        Teuchos::ParameterList& tti_linear_solver = transient_time_integrator.sublist("linear solver");
+        Teuchos::ParameterList& tti_nonlinear_bdf2 = transient_time_integrator.sublist("nonlinear solver BDF2");
+        Teuchos::ParameterList& tti_nonlinear_bdf1 = transient_time_integrator.sublist("nonlinear solver BDF1");
+
+        // set some reasonable defaults...
+        transient_time_integrator.set<std::string>("Verbosity level", "low");
+        transient_time_integrator.set<std::string>("method","BDF1");
+
+        tti_error_control.set<double>("absolute error tolerance",1.0);
+        tti_error_control.set<double>("relative error tolerance",0.0);
+        tti_error_control.set<double>("convergence tolerance",1e-12);
+        tti_error_control.set<int>("maximal number of iterations",400);
+
+        tti_linear_solver.set<std::string>("iterative method","CGS");
+        tti_linear_solver.set<double>("error tolerance",1e-14);
+        tti_linear_solver.set<int>("maximal number of iterations",100);
+
+        tti_time_control.set<double>("start time",0.0);
+        tti_time_control.set<double>("end time",1e+10);
+        tti_time_control.set<double>("initial time step",1e-7);
+        tti_time_control.set<double>("maximal time step",1e+7);
+
+        tti_nonlinear_bdf1.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+
+	have_unstructured_algorithm_sublist = false;
+        if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+          if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	    have_unstructured_algorithm_sublist = true;
+	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    tti_nonlinear_bdf1.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
+	    tti_nonlinear_bdf1.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
+            tti_nonlinear_bdf1.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
+            tti_nonlinear_bdf1.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
+            tti_nonlinear_bdf1.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
+            tti_nonlinear_bdf1.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
+	    tti_nonlinear_bdf1.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
+	    tti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", num_list.get<int>("transient max preconditioner lag iterations",5));
+	    tti_nonlinear_bdf1.set<double>("error abs tol", num_list.get<double>("transient error abs tol",1.0));
+	    tti_nonlinear_bdf1.set<double>("error rel tol", num_list.get<double>("transient error rel tol",0.0));
+         } 
+	}
+	if (have_unstructured_algorithm_sublist == false) {
+          // set some probably not so good defaults for the steady computation
+	  tti_nonlinear_bdf1.set<int>("max iterations",10);
+	  tti_nonlinear_bdf1.set<int>("min iterations",5);
+	  tti_nonlinear_bdf1.set<int>("limit iterations",20);
+	  tti_nonlinear_bdf1.set<double>("nonlinear tolerance",1.0);
+	  tti_nonlinear_bdf1.set<double>("time step reduction factor",0.8);
+	  tti_nonlinear_bdf1.set<double>("time step increase factor",1.2);
+	  tti_nonlinear_bdf1.set<double>("max time step", 1.0e+8);
+	  tti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", 5);
+	  tti_nonlinear_bdf1.set<double>("error abs tol", 1.0);
+	  tti_nonlinear_bdf1.set<double>("error rel tol", 0.0);	    
+        }
 
         // insert the water retention models sublist
         Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models");

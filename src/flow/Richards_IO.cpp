@@ -99,9 +99,9 @@ void Richards_PK::processParameterList()
     }
   }
 
-  // Steady state solution
-  if (rp_list.isSublist("Steady state solution")) {
-    Teuchos::ParameterList& sss_list = rp_list.sublist("Steady state solution");
+  // Time integrator for period I, temporary called steady state time integrator
+  if (rp_list.isSublist("steady state time integrator")) {
+    Teuchos::ParameterList& sss_list = rp_list.sublist("steady state time integrator");
 
     string ti_method_name = sss_list.get<string>("method", "Picard");
     if (ti_method_name == "Picard") {
@@ -114,28 +114,28 @@ void Richards_PK::processParameterList()
       ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
     }
 
-    Teuchos::ParameterList& err_list = sss_list.sublist("Error control");
-    absolute_tol_sss = err_list.get<double>("Absolute error tolerance", 1.0);
-    relative_tol_sss = err_list.get<double>("Relative error tolerance", 1e-5); 
-    convergence_tol_sss = err_list.get<double>("Convergence tolerance", AmanziFlow::FLOW_STEADY_STATE_TOLERANCE);
-    max_itrs_sss = err_list.get<int>("Maximal number of iterations", AmanziFlow::FLOW_STEADY_STATE_MAX_ITERATIONS);
+    Teuchos::ParameterList& err_list = sss_list.sublist("error control");
+    absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
+    relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5); 
+    convergence_tol_sss = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_STEADY_STATE_TOLERANCE);
+    max_itrs_sss = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_STEADY_STATE_MAX_ITERATIONS);
 
-    Teuchos::ParameterList& time_list = sss_list.sublist("Time control");
-    T0_sss = time_list.get<double>("Start pseudo time", -1e+9);
-    T1_sss = time_list.get<double>("End pseudo time", 0.0);
-    dT0_sss = time_list.get<double>("Initial time step", AmanziFlow::FLOW_STEADY_STATE_INITIAL_DT);
-    dTmax_sss = time_list.get<double>("Maximal time step", dT0_sss);
+    Teuchos::ParameterList& time_list = sss_list.sublist("time control");
+    T0_sss = time_list.get<double>("start time", -1e+9);
+    T1_sss = time_list.get<double>("end time", 0.0);
+    dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_STEADY_STATE_INITIAL_DT);
+    dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);
 
-    Teuchos::ParameterList& solver_list = sss_list.sublist("Linear solvers");
-    max_itrs = solver_list.get<int>("Maximal number of iterations", 100);
-    convergence_tol = solver_list.get<double>("Error tolerance", 1e-12);
+    Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
+    max_itrs = solver_list.get<int>("maximal number of iterations", 100);
+    convergence_tol = solver_list.get<double>("error tolerance", 1e-12);
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("FLOW: no sublist for steady-state calculation was provided\n");
   }
 
   // Transient solution
-  if (rp_list.isSublist("Transient solution")) {
-    Teuchos::ParameterList& trs_list = rp_list.sublist("Transient solution");
+  if (rp_list.isSublist("transient time integrator")) {
+    Teuchos::ParameterList& trs_list = rp_list.sublist("transient time integrator");
 
     string ti_method_name = trs_list.get<string>("method", "BDF2");
     if (ti_method_name == "backward Euler") {
@@ -146,17 +146,17 @@ void Richards_PK::processParameterList()
       ti_method_trs = AmanziFlow::FLOW_TRANSIENT_BDF2; 
     }
 
-    Teuchos::ParameterList& err_list = trs_list.sublist("Error control");
-    absolute_tol_trs = err_list.get<double>("Absolute error tolerance", 1.0);
-    relative_tol_trs = err_list.get<double>("Relative error tolerance", 1e-5); 
-    convergence_tol_trs = err_list.get<double>("Convergence tolerance", AmanziFlow::FLOW_STEADY_STATE_TOLERANCE);
-    max_itrs_trs = err_list.get<int>("Maximal number of iterations", AmanziFlow::FLOW_STEADY_STATE_MAX_ITERATIONS);
+    Teuchos::ParameterList& err_list = trs_list.sublist("error control");
+    absolute_tol_trs = err_list.get<double>("absolute error tolerance", 1.0);
+    relative_tol_trs = err_list.get<double>("relative error tolerance", 1e-5); 
+    convergence_tol_trs = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_STEADY_STATE_TOLERANCE);
+    max_itrs_trs = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_STEADY_STATE_MAX_ITERATIONS);
 
-    Teuchos::ParameterList& time_list = trs_list.sublist("Time control");
-    T0_trs = time_list.get<double>("Start time", 0.0);
-    T1_trs = time_list.get<double>("End time", 0.0);
-    dT0_trs = time_list.get<double>("Initial time step", AmanziFlow::FLOW_STEADY_STATE_INITIAL_DT);
-    dTmax_trs = time_list.get<double>("Maximal time step", dT0_trs);
+    Teuchos::ParameterList& time_list = trs_list.sublist("time control");
+    T0_trs = time_list.get<double>("start time", 0.0);
+    T1_trs = time_list.get<double>("end time", 0.0);
+    dT0_trs = time_list.get<double>("initial time step", AmanziFlow::FLOW_STEADY_STATE_INITIAL_DT);
+    dTmax_trs = time_list.get<double>("maximal time step", dT0_trs);
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("FLOW: no sublist for transient calculation was provided\n");
   }
