@@ -67,8 +67,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   bdf2_dae = NULL;
   bdf1_dae = NULL;
 
-  ti_method_sss = FLOW_STEADY_STATE_BDF1;  // time integration (TI) parameters
-  ti_method_trs = FLOW_TRANSIENT_BDF2;
+  ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
+  ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
   num_itrs_trs = 0;
 
   absolute_tol_sss = absolute_tol_trs = 1.0; 
@@ -177,7 +177,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
-  if (ti_method_sss == FLOW_STEADY_STATE_BDF2) {
+  if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
     preconditioner = new Matrix_MFD(FS, *super_map_);
     preconditioner->setSymmetryProperty(is_matrix_symmetric);
     preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
@@ -185,13 +185,14 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
     // Create the BDF2 time integrator
     Teuchos::ParameterList solver_list = rp_list.sublist("steady state time integrator").sublist("nonlinear solver BDF2");
-    solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+    if (solver_list.isSublist("VerboseObject"))
+       solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
   } 
-  else if (ti_method_sss == FLOW_STEADY_STATE_BDF1) {
+  else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
     preconditioner = new Matrix_MFD(FS, *super_map_);
     preconditioner->setSymmetryProperty(is_matrix_symmetric);
     preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
@@ -199,7 +200,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
     // Create the BDF1 time integrator
     Teuchos::ParameterList solver_list = rp_list.sublist("steady state time integrator").sublist("nonlinear solver BDF1");
-    solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+    if (solver_list.isSublist("VerboseObject"))
+        solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
@@ -251,7 +253,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
   }
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
-  if (ti_method_trs == FLOW_TRANSIENT_BDF2) {
+  if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
     if (preconditioner == matrix) {
       preconditioner = new Matrix_MFD(FS, *super_map_);
       preconditioner->setSymmetryProperty(is_matrix_symmetric);
@@ -259,17 +261,18 @@ void Richards_PK::InitTransient(double T0, double dT0)
       preconditioner->init_ML_preconditioner(ML_list); 
     } 
     // Reset the BDF2 time integrator
-    if (bdf2_dae != NULL) delete bdf2_dae;  // the only way to reset it
+    if (bdf2_dae != NULL) delete bdf2_dae;  // the only way to reset it is to delete it
 
     Teuchos::ParameterList solver_list = rp_list.sublist("transient time integrator").sublist("nonlinear solver BDF2");
-    solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+    if (solver_list.isSublist("VerboseObject"))
+        solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
     num_itrs_trs = 0; 
   }
-  else if (ti_method_trs == FLOW_TRANSIENT_BDF1) {
+  else if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF1) {
     if (preconditioner == matrix) {
       preconditioner = new Matrix_MFD(FS, *super_map_);
       preconditioner->setSymmetryProperty(is_matrix_symmetric);
@@ -277,10 +280,11 @@ void Richards_PK::InitTransient(double T0, double dT0)
       preconditioner->init_ML_preconditioner(ML_list); 
     } 
     // Reset the BDF1 time integrator
-    if (bdf1_dae != NULL) delete bdf1_dae;  // the only way to reset it
+    if (bdf1_dae != NULL) delete bdf1_dae;  // the only way to reset it is to delete it
 
     Teuchos::ParameterList solver_list = rp_list.sublist("transient time integrator").sublist("nonlinear solver BDF1");
-    solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+    if (solver_list.isSublist("VerboseObject"))
+        solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     bdf1_dae = new BDF1Dae(*this, *super_map_);
@@ -326,9 +330,9 @@ int Richards_PK::advance(double dT_MPC)
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     computeUDot(time, *solution, udot);
-    if (ti_method == FLOW_TRANSIENT_BDF2) {
+    if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
-    } else if (ti_method == FLOW_TRANSIENT_BDF1) {
+    } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       bdf1_dae->set_initial_state(time, *solution, udot);
     }
 
@@ -337,13 +341,13 @@ int Richards_PK::advance(double dT_MPC)
   }
 
   double dTnext;
-  if (ti_method == FLOW_TRANSIENT_BDF2) {
+  if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
     T_internal = bdf2_dae->most_recent_time();
-  } else if (ti_method == FLOW_TRANSIENT_BDF1) {
+  } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     bdf1_dae->bdf1_step(dT, *solution, dTnext);
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();

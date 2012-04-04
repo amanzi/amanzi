@@ -43,7 +43,7 @@ void Darcy_PK::processParameterList()
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
-  atm_pressure = dp_list.get<double>("Atmospheric pressure");
+  atm_pressure = dp_list.get<double>("atmospheric pressure");
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list.sublist("boundary conditions", true));
@@ -84,10 +84,10 @@ void Darcy_PK::processParameterList()
   max_itrs_sss = solver_list.get<int>("maximal number of iterations", 100);
   convergence_tol_sss = solver_list.get<double>("error tolerance", 1e-12);
 
-  string method_name = sss_list.get<string>("Discretization method hint", "monotone");
-  if (method_name == "monotone") {
+  string mfd3d_method_name = sss_list.get<string>("Discretization method hint", "monotone");
+  if (mfd3d_method_name == "monotone") {
     mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (method_name == "none") {
+  } else if (mfd3d_method_name == "none") {
     mfd3d_method = FLOW_MFD3D_POLYHEDRA;
   }
 }

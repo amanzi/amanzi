@@ -62,7 +62,7 @@
         <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
-      <Parameter name="Atmospheric pressure" type="double" value="101325"/>
+      <Parameter name="atmospheric pressure" type="double" value="101325"/>
       <ParameterList name="Diffusion Preconditioner">
         <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="0"/>

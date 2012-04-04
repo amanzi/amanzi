@@ -15,9 +15,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-//#include "MSTK_types.h"
 #include "Mesh_MSTK.hh"
-#include "MeshAudit.hh"
+//#include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
 #include "State.hpp"

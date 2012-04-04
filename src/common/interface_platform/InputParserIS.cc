@@ -653,7 +653,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
         richards_problem.set<std::string>("Relative permeability method", "Upwind with gravity");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-        richards_problem.set<double>("Atmospheric pressure", 101325.0);
+        richards_problem.set<double>("atmospheric pressure", 101325.0);
 
         // create sublists for the steady state time integrator
         Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady state time integrator");

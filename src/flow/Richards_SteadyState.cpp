@@ -30,13 +30,13 @@ int Richards_PK::advanceToSteadyState()
 
   // start iterations
   int ierr = 0;
-  if (ti_method_sss == FLOW_STEADY_STATE_PICARD) {
+  if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
     ierr = advanceSteadyState_Picard();
-  } else if (ti_method_sss == FLOW_STEADY_STATE_BACKWARD_EULER) {
+  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
     ierr = advanceSteadyState_BackwardEuler();
-  } else if (ti_method_sss == FLOW_STEADY_STATE_BDF1) {
+  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
     ierr = advanceSteadyState_BDF1();
-  } else if (ti_method_sss == FLOW_STEADY_STATE_BDF2) {
+  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
     ierr = advanceSteadyState_BDF2();
   }
 

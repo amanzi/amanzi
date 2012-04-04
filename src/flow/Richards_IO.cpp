@@ -56,7 +56,7 @@ void Richards_PK::processParameterList()
   }
 
   // Miscaleneous
-  atm_pressure = rp_list.get<double>("Atmospheric pressure");
+  atm_pressure = rp_list.get<double>("atmospheric pressure");
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> 
@@ -91,7 +91,8 @@ void Richards_PK::processParameterList()
     if (vG_list.isSublist(vG_list.name(i))) {
       nblocks++;
     } else {
-      Errors::Message msg("Water retention models sublist contains an entry that is not a sublist.");
+      Errors::Message msg;
+      msg << "Richards Problem: water retention model contains an entry that is not a sublist.";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -117,6 +118,11 @@ void Richards_PK::processParameterList()
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
         WRM[iblock] = Teuchos::rcp(new WRM_fake(region));
       }
+      else {
+        Errors::Message msg;
+        msg << "Richards Problem: unknown water retention model.";
+        Exceptions::amanzi_throw(msg);
+      }
       iblock++;
     }
   }
@@ -127,14 +133,19 @@ void Richards_PK::processParameterList()
 
     string ti_method_name = sss_list.get<string>("method", "Picard");
     if (ti_method_name == "Picard") {
-      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_PICARD;
+      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
     } else if (ti_method_name == "backward Euler") {
-      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BACKWARD_EULER;
+      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
     } else if (ti_method_name == "BDF1") {
-      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF1; 
+      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1; 
     } else if (ti_method_name == "BDF2") {
-      ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
+      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2; 
+    } else {
+      Errors::Message msg;
+      msg << "Richards Problem: steady state defines an unknown time integration method.";
+      Exceptions::amanzi_throw(msg);
     }
+
 
     Teuchos::ParameterList& err_list = sss_list.sublist("error control");
     absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
@@ -145,14 +156,14 @@ void Richards_PK::processParameterList()
     Teuchos::ParameterList& time_list = sss_list.sublist("time control");
     T0_sss = time_list.get<double>("start time", -1e+9);
     T1_sss = time_list.get<double>("end time", 0.0);
-    dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_STEADY_STATE_INITIAL_DT);
+    dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
     dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);
 
     Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
     max_itrs = solver_list.get<int>("maximal number of iterations", 100);
     convergence_tol = solver_list.get<double>("error tolerance", 1e-12);
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("FLOW: no sublist for steady-state calculation was provided\n");
+    printf("Richards Problem: there is no sublist for steady-state calculations.\n");
   }
 
   // Transient solution
@@ -161,11 +172,15 @@ void Richards_PK::processParameterList()
 
     string ti_method_name = trs_list.get<string>("method", "BDF2");
     if (ti_method_name == "backward Euler") {
-      ti_method_trs = AmanziFlow::FLOW_TRANSIENT_BACKWARD_EULER;
+      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
     } else if (ti_method_name == "BDF1") {
-      ti_method_trs = AmanziFlow::FLOW_TRANSIENT_BDF1; 
+      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1; 
     } else if (method_name == "BDF2") {
-      ti_method_trs = AmanziFlow::FLOW_TRANSIENT_BDF2; 
+      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2; 
+    } else {
+      Errors::Message msg;
+      msg << "Richards Problem: transient sublist defines an unknown time integration method.";
+      Exceptions::amanzi_throw(msg);
     }
 
     Teuchos::ParameterList& err_list = trs_list.sublist("error control");
@@ -177,10 +192,10 @@ void Richards_PK::processParameterList()
     Teuchos::ParameterList& time_list = trs_list.sublist("time control");
     T0_trs = time_list.get<double>("start time", 0.0);
     T1_trs = time_list.get<double>("end time", 0.0);
-    dT0_trs = time_list.get<double>("initial time step", AmanziFlow::FLOW_STEADY_STATE_INITIAL_DT);
+    dT0_trs = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
     dTmax_trs = time_list.get<double>("maximal time step", dT0_trs);
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("FLOW: no sublist for transient calculation was provided\n");
+    printf("Richards Problem: there is no sublist for transient calculations.\n");
   }
 }
 
