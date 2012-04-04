@@ -16,6 +16,11 @@
 TRUE=1
 FALSE=0
 
+# Known compiler lists
+known_c_compilers="mpicc cc gcc icc"
+known_cxx_compilers="mpiCC mpicxx CC g++ icpc"
+known_fortran_compilers="mpif90 ftn gfortran ifort"
+
 # Script directory
 bootstrap_dir=$(cd $(dirname "$0");pwd)
 amanzi_source_dir=$(cd ${bootstrap_dir}/..;pwd)
@@ -237,12 +242,13 @@ Directories:
 function parse_argv()
 {
   argv=( "$@" )
+  echo "${argv[1]}"
   last=$(( ${#argv[@]} - 1 ))
   i=0
   while [ $i -le ${last} ]
   do
     opt=${argv[$i]}
-    #echo "i: ${i} opt=$opt last: $last"
+    echo "i: ${i} opt=$opt last: $last"
     case ${opt} in
 
       -h|--h|--help)
@@ -283,9 +289,7 @@ function parse_argv()
                  ;;
 
       --with-mpi=*)
-                 error_message "--with-mpi is not supported at this time"
-		 exit_now 20
-                 #mpi_root_dir=`parse_option_with_equal ${opt} 'with-mpi'`
+                 mpi_root_dir=`parse_option_with_equal ${opt} 'with-mpi'`
                  ;;
 
       --amanzi-build-dir=*)
@@ -502,15 +506,66 @@ function ascem_hg_clone
   fi
 }
 
+# MPI Check
+function check_mpi_root
+{
+  if [ -z "${mpi_root_dir}" ]; then
+
+    #mpi_root_env="${MPIROOT} ${MPI_ROOT} ${MPIHOME} ${MPI_HOME} ${MPI_PREFIX}"
+    mpi_root_env="${MPI_PREFIX} ${DUH}"
+    for env_try in ${mpi_root_env}; do
+      if [ -e "${env_try}" ]; then
+	mpi_root_dir="${env_try}"
+	status_message "Located MPI installation in ${mpi_root_dir}"
+	break
+      fi
+    done
+
+  else
+
+    if [ ! -e "${mpi_root_dir}" ] ; then
+      error_message "MPI root directory ${mpi_root_dir} does not exist"
+      exit_now 30
+    fi
+
+  fi
+}
 
 # Compiler functions
 function define_c_compiler
 {
   if [ -z "${build_c_compiler}" ]; then
-    error_message "Please define a C compiler"
-    exit_now 10
+ 
+    status_message "Searching for a C compiler"
+
+    # build a list to search
+    c_search_list=
+    if [ -n "${mpi_root_dir}" ]; then
+      c_search_list="${mpi_root_dir}/bin/mpicc"
+    fi
+    
+    if [ -n "${CC}" ]; then 
+      c_search_list="${c_search_list} ${CC}"
+    fi
+
+    c_search_list="${c_search_list} ${known_c_compilers}"
+    for c_try in ${c_search_list}; do
+      status_message "Searching for ${c_try}"
+      full_c_try=`which ${c_try} 2>/dev/null`
+      if [ -e "${full_c_try}" ]; then
+        build_c_compiler="${full_c_try}"
+        break
+      fi
+    done
+
+    if [ -z "${build_c_compiler}" ]; then
+      error_message "Failed to locate a C compiler. Please use the --with-c-compiler option."
+      exit_now 30
+    fi
+
   fi
 
+  status_message "Build with C compiler: ${build_c_compiler}"
   export CC=${build_c_compiler}
 
 }
@@ -518,35 +573,79 @@ function define_c_compiler
 function define_cxx_compiler
 {
   if [ -z "${build_cxx_compiler}" ]; then
-    error_message "Please define a C++ compiler"
-    exit_now 10
+ 
+    status_message "Searching for a C++ compiler"
+
+    # build a list to search
+    cxx_search_list=
+    if [ -n "${mpi_root_dir}" ]; then
+      cxx_search_list="${mpi_root_dir}/bin/mpiCC"
+      cxx_search_list="${mpi_root_dir}/bin/mpicxx ${cxx_search_list}"
+    fi
+    
+    if [ -n "${CXX}" ]; then 
+      cxx_search_list="${cxx_search_list} ${CXX}"
+    fi
+
+    cxx_search_list="${cxx_search_list} ${known_cxx_compilers}"
+    for cxx_try in ${cxx_search_list}; do
+      status_message "Searching for ${cxx_try}"
+      full_cxx_try=`which ${cxx_try} 2>/dev/null`
+      if [ -e "${full_cxx_try}" ]; then
+        build_cxx_compiler="${full_cxx_try}"
+        break
+      fi
+    done
+
+    if [ -z "${build_cxx_compiler}" ]; then
+      error_message "Failed to locate a C++ compiler. Please use the --with-cxx-compiler option."
+      exit_now 30
+    fi
+
   fi
 
+  status_message "Build with C++ compiler: ${build_cxx_compiler}"
   export CXX=${build_cxx_compiler}
 
 }
 
 function define_fort_compiler
 {
+   if [ -z "${build_fort_compiler}" ]; then
+ 
+    status_message "Searching for a C++ compiler"
 
-  if [ -z "${build_fort_compiler}" ]; then
-    error_message "Please define a Fortran compiler"
-    exit_now 10
+    # build a list to search
+    fort_search_list=
+    if [ -n "${mpi_root_dir}" ]; then
+      fort_search_list="${mpi_root_dir}/bin/mpif90"
+    fi
+    
+    if [ -n "${FC}" ]; then 
+      fort_search_list="${fort_search_list} ${FC}"
+    fi
+
+    fort_search_list="${fort_search_list} ${known_fort_compilers}"
+    for fort_try in ${fort_search_list}; do
+      status_message "Searching for ${fort_try}"
+      full_fort_try=`which ${fort_try} 2>/dev/null`
+      if [ -e "${full_fort_try}" ]; then
+        build_fort_compiler="${full_fort_try}"
+        break
+      fi
+    done
+
+    if [ -z "${build_fort_compiler}" ]; then
+      error_message "Failed to locate a Fortran compiler. Please use the --with-fort-compiler option."
+      exit_now 30
+    fi
+
   fi
 
+  status_message "Build with Fortran compiler: ${build_fort_compiler}"
   export FC=${build_fort_compiler}
 
 }
-
-function define_mpi_cc_compiler
-{
-  if [ ! -z "${mpi_root_dir}" ]; then
-    error_message "MPI Root option is not supported at this time."
-    exit_now 10
-  fi
-}
-
-    
 
 function check_compilers
 {
@@ -554,8 +653,6 @@ function check_compilers
   define_c_compiler
   define_cxx_compiler
   define_fort_compiler
-
-  define_mpi_cc_compiler
 
   status_message "Compiler Check complete"
 
@@ -629,6 +726,9 @@ parse_argv "${array[@]}"
 
 # Create the directories
 define_build_directories
+
+# Check the MPI root value 
+check_mpi_root
 
 # Define the compilers
 check_compilers
