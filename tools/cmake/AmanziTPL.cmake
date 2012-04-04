@@ -18,11 +18,11 @@ include(PrintVariable)
 ##############################################################################
 # MPI
 ##############################################################################
-check_mpi_source_compiles(MPI_WRAPPER_IN_USE)
+check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 
 if ( NOT MPI_WRAPPERS_IN_USE )
   message(WARNING "At this time, Amanzi must be compiled with MPI wrappers."
-                  "Build will likely fail. Please define CMAKE_*_COMPILER"
+                  " Build will likely fail. Please define CMAKE_*_COMPILER"
 		  " parameters as MPI compiler wrappers and re-run cmake.")
 endif()
 
