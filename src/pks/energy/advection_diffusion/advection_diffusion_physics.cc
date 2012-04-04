@@ -87,7 +87,7 @@ void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
   }
 
   // calculate the div-grad operator, apply it to temperature, and add to residual
-  matrix_->CreateMFDstiffnessMatrices(Ke_, *thermal_conductivity);
+  matrix_->CreateMFDstiffnessMatrices(Ke_);
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();

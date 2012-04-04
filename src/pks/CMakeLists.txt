@@ -8,7 +8,7 @@
 #add_subdirectory(mpc)
 add_subdirectory(energy)
 add_subdirectory(transport)
-#add_subdirectory(flow)
+add_subdirectory(flow)
 
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)

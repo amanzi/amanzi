@@ -41,9 +41,7 @@ AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
   solution_ = solution;
 
   // -- parameters
-  // get conductivity on both cells and faces, to enable potential upwinding
-  // and make it easier to work with matrix_mfd
-  S->RequireField("thermal_conductivity", "energy", names2, locations2, 1, true);
+  S->RequireField("thermal_conductivity", "energy", AmanziMesh::CELL, 1, true);
 
   // independent variables (not owned by this pk)
   S->RequireField("darcy_flux", AmanziMesh::FACE, 1, true);
@@ -91,15 +89,13 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   }
 
   // initialize thermal conductivity
+  Teuchos::RCP<CompositeVector> thermal_conductivity =
+    S->GetFieldData("thermal_conductivity", "energy");
   if (energy_plist_.isParameter("Constant thermal_conductivity")) {
     double K = energy_plist_.get<double>("Constant thermal_conductivity");
-    S->GetFieldData("thermal_conductivity", "energy")->ViewComponent("cell")->PutScalar(K);
+    thermal_conductivity->ViewComponent("cell")->PutScalar(K);
     S->GetRecord("thermal_conductivity", "energy")->set_initialized();
   }
-
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S->GetFieldData("thermal_conductivity","energy");
-  thermal_conductivity->ViewComponent("face")->PutScalar(1.0);
   int size = thermal_conductivity->ViewComponent("cell",false)->MyLength();
   Ke_.resize(size);
   for (int c=0; c!=size; ++c) {

@@ -56,11 +56,7 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   // -- rock assumed constant for now?
   S->RequireScalar("density_rock");
   S->RequireField("internal_energy_rock", "energy", names, locations, 1, true);
-
-  // -- parameters
-  // get conductivity on both cells and faces, to enable potential upwinding
-  // and make it easier to work with matrix_mfd
-  S->RequireField("thermal_conductivity", "energy", names2, locations2, 1, true);
+  S->RequireField("thermal_conductivity", "energy", names, locations, 1, true);
 
   // independent variables (not owned by this pk)
   S->RequireField("porosity", names, locations, 1, true);
@@ -73,7 +69,6 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   S->RequireField("saturation_gas", names, locations, 1, true);
   S->RequireField("darcy_flux", AmanziMesh::FACE, 1, true);
   S->RequireField("pressure", names2, locations2, 1, true); // need pressure on faces for BC
-  S->RequireField("cell_volume", names, locations, 1, true);
 
   // constitutive relations
   Teuchos::ParameterList tcm_plist = energy_plist_.sublist("Thermal Conductivity Model");
@@ -141,7 +136,6 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   // initialize thermal conductivity
   Teuchos::RCP<CompositeVector> thermal_conductivity =
     S->GetFieldData("thermal_conductivity","energy");
-  thermal_conductivity->ViewComponent("face")->PutScalar(1.0);
   int size = thermal_conductivity->ViewComponent("cell",false)->MyLength();
   Ke_.resize(size);
   for (int c=0; c!=size; ++c) {

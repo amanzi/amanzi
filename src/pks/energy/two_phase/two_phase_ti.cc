@@ -108,14 +108,12 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  preconditioner_->CreateMFDstiffnessMatrices(Ke_, *thermal_conductivity);
+  preconditioner_->CreateMFDstiffnessMatrices(Ke_);
   preconditioner_->CreateMFDrhsVectors();
 
   // update with accumulation terms
-  Teuchos::RCP<const CompositeVector> temp1 =
+  Teuchos::RCP<const CompositeVector> temp =
     S_next_->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> temp0 =
-    S_inter_->GetFieldData("temperature");
 
   Teuchos::RCP<const CompositeVector> poro =
     S_next_->GetFieldData("porosity");
@@ -152,7 +150,15 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
   int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
-    double T = (*temp1)("cell",0,c);
+    // accumulation term is d/dt ( phi * (s_g*n_g*u_g + s_l*n_l*u_l) + (1-phi)*rho_r*u_r
+    // note: s_g, s_l do not depend upon T
+    // note: CURRENTLY IGNORING the density dependence in temperature in this
+    //       preconditioner.  This is idiodic, but due to poor design on my
+    //       part we don't have access to the equations of state here.  This
+    //       must be fixed, but need to figure out a new paradigm for this
+    //       sort of thing. -- etc
+    // note: also assumes phi does not depend on temperature.
+    double T = (*temp)("cell",0,c);
     double phi = (*poro)("cell",0,c);
     double du_liq_dT = internal_energy_liquid_model_->DInternalEnergyDT(T);
     double du_gas_dT = internal_energy_gas_model_->DInternalEnergyDT(T, (*mol_frac_gas)("cell",0,c));
@@ -166,7 +172,7 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
                      (1-phi) * factor_rock) * (*cell_volume)(c);
 
     Acc_cells[c] += factor/h;
-    Fc_cells[c] += factor/h * (*temp0)("cell",0,c);
+    Fc_cells[c] += factor/h * T;
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

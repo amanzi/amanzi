@@ -108,7 +108,7 @@ void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> 
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  preconditioner_->CreateMFDstiffnessMatrices(Ke_, *thermal_conductivity);
+  preconditioner_->CreateMFDstiffnessMatrices(Ke_);
   preconditioner_->CreateMFDrhsVectors();
 
   // update with accumulation terms
