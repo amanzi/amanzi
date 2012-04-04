@@ -511,8 +511,7 @@ function check_mpi_root
 {
   if [ -z "${mpi_root_dir}" ]; then
 
-    #mpi_root_env="${MPIROOT} ${MPI_ROOT} ${MPIHOME} ${MPI_HOME} ${MPI_PREFIX}"
-    mpi_root_env="${MPI_PREFIX} ${DUH}"
+    mpi_root_env="${MPIROOT} ${MPI_ROOT} ${MPIHOME} ${MPI_HOME} ${MPI_PREFIX}"
     for env_try in ${mpi_root_env}; do
       if [ -e "${env_try}" ]; then
 	mpi_root_dir="${env_try}"
