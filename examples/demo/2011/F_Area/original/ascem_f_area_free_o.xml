@@ -1,6 +1,5 @@
        <ParameterList name="Main">
-
-         <Parameter name="Amanzi input format version" type="string" value="0.9.2"/>       
+         <Parameter name="Amanzi input format version" type="string" value="0.9.2"/>
 
          <ParameterList name="General Description">
            <Parameter name="Model ID" type="string" value="Transient Richards"/>
@@ -13,7 +12,6 @@
 
 
          <!-- Execution control -->
-       
           <ParameterList name="Execution Control">
   	     <Parameter name="Flow Model" type="string" value="Richards"/>
 	     <Parameter name="Transport Model" type="string" value="On"/> 

@@ -74,7 +74,7 @@ const int FLOW_MAX_EDGES = 60;  // be calculated in Init().
 
 const int FLOW_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
 
-const int FLOW_VERBOSITY_NULL = 0;
+const int FLOW_VERBOSITY_NONE = 0;
 const int FLOW_VERBOSITY_LOW = 1;
 const int FLOW_VERBOSITY_MEDIUM = 2;
 const int FLOW_VERBOSITY_HIGH = 3;

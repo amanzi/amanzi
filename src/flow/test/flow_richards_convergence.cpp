@@ -122,7 +122,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     RPK->InitPK();  // setup the problem
     RPK->InitSteadyState(0.0, 1e-8);
     if (n == 40) RPK->print_statistics();
-    RPK->set_verbosity(FLOW_VERBOSITY_NULL);
+    RPK->set_verbosity(FLOW_VERBOSITY_NONE);
 
     RPK->advanceToSteadyState();
     RPK->commitStateForTransport(FS);

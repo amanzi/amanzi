@@ -18,11 +18,33 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Richards_PK::processParameterList()
 {
+  // create verbosity list if it does not exist
+  if (!rp_list.isSublist("VerboseObject")) {
+    Teuchos::ParameterList verbosity_list;
+    verbosity_list.set<std::string>("Verbosity Level", "none");
+    rp_list.set("VerboseObject", verbosity_list);
+  }
+
+  // extract verbosity level
+  Teuchos::ParameterList verbosity_list = rp_list.get<Teuchos::ParameterList>("VerboseObject");
+  std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
+  if (verbosity_name == "none") {
+    verbosity = FLOW_VERBOSITY_NONE;
+  } else if (verbosity_name == "low") {
+    verbosity = FLOW_VERBOSITY_LOW;
+  } else if (verbosity_name == "medium") {
+    verbosity = FLOW_VERBOSITY_MEDIUM;
+  } else if (verbosity_name == "high") {
+    verbosity = FLOW_VERBOSITY_HIGH;
+  } else if (verbosity_name == "extreme") {
+    verbosity = FLOW_VERBOSITY_EXTREME;
+  }
+
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
   // Relative permeability method
-  string method_name = rp_list.get<string>("Relative permeability method", "Upwind with gravity");
+  std::string method_name = rp_list.get<string>("Relative permeability method", "Upwind with gravity");
   if (method_name == "Upwind with gravity") {
     Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (method_name == "Cell centered") {

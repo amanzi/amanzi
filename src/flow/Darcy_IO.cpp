@@ -18,6 +18,28 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Darcy_PK::processParameterList()
 {
+  // create verbosity list if it does not exist
+  if (!dp_list.isSublist("VerboseObject")) {
+    Teuchos::ParameterList verbosity_list;
+    verbosity_list.set<std::string>("Verbosity Level", "none");
+    dp_list.set("VerboseObject", verbosity_list);
+  }
+
+  // extract verbosity level
+  Teuchos::ParameterList verbosity_list = dp_list.get<Teuchos::ParameterList>("VerboseObject");
+  std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
+  if (verbosity_name == "none") {
+    verbosity = FLOW_VERBOSITY_NONE;
+  } else if (verbosity_name == "low") {
+    verbosity = FLOW_VERBOSITY_LOW;
+  } else if (verbosity_name == "medium") {
+    verbosity = FLOW_VERBOSITY_MEDIUM;
+  } else if (verbosity_name == "high") {
+    verbosity = FLOW_VERBOSITY_HIGH;
+  } else if (verbosity_name == "extreme") {
+    verbosity = FLOW_VERBOSITY_EXTREME;
+  }
+
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 

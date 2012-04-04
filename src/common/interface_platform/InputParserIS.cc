@@ -652,6 +652,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<std::string>("Relative permeability method", "Upwind with gravity");
         // this one should come from the input file...
+        richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         richards_problem.set<double>("Atmospheric pressure", 101325.0);
 
         // create sublists for the steady state time integrator
@@ -663,7 +664,6 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
         Teuchos::ParameterList& sti_nonlinear_bdf1 = steady_time_integrator.sublist("nonlinear solver BDF1");
 
         // set some reasonable defaults...
-        steady_time_integrator.set<std::string>("Verbosity level", "low");
         steady_time_integrator.set<std::string>("method","BDF1");
 
         sti_error_control.set<double>("absolute error tolerance",1.0);
@@ -685,8 +685,6 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
         sti_nonlinear_bdf2.set<int>("Maximum number of BDF tries", 20);
         sti_nonlinear_bdf2.set<double>("Nonlinear solver tolerance", 0.01);
         sti_nonlinear_bdf2.set<double>("NKA drop tolerance", 5.0e-2);
-        sti_nonlinear_bdf2.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-        sti_nonlinear_bdf1.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
 	bool have_unstructured_algorithm_sublist(false);
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
@@ -728,7 +726,6 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
         Teuchos::ParameterList& tti_nonlinear_bdf1 = transient_time_integrator.sublist("nonlinear solver BDF1");
 
         // set some reasonable defaults...
-        transient_time_integrator.set<std::string>("Verbosity level", "low");
         transient_time_integrator.set<std::string>("method","BDF1");
 
         tti_error_control.set<double>("absolute error tolerance",1.0);
@@ -744,8 +741,6 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
         tti_time_control.set<double>("end time",1e+10);
         tti_time_control.set<double>("initial time step",1e-7);
         tti_time_control.set<double>("maximal time step",1e+7);
-
-        tti_nonlinear_bdf1.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
 	have_unstructured_algorithm_sublist = false;
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {

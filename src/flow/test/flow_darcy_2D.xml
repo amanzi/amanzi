@@ -59,6 +59,10 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
+
       <Parameter name="Atmospheric pressure" type="double" value="0.0"/>
       <ParameterList name="Diffusion Preconditioner">
         <ParameterList name="ML Parameters">
@@ -83,7 +87,6 @@
 
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="backward Euler"/>
-        <Parameter name="Verbosity level" type="string" value="medium"/>
 
         <ParameterList name="error control">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
@@ -111,9 +114,6 @@
           <Parameter name="NKA max vectors" type="int" value="5"/>
           <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
           <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
 

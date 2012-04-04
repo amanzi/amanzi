@@ -79,6 +79,10 @@
   input deks for other flow tests -->
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
+
       <Parameter name="Atmospheric pressure" type="double" value="1"/>
       <ParameterList name="Diffusion Preconditioner">
           <ParameterList name="ML Parameters">
@@ -104,7 +108,6 @@
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="Direct solve"/>
         <Parameter name="Discretization method hint" type="string" value="none"/>
-        <Parameter name="Verbosity level" type="string" value="medium"/>
 
         <ParameterList name="linear solver"> 
           <Parameter name="iterative method" type="string" value="CGS"/>
