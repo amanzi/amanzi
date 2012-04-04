@@ -7,6 +7,7 @@
 include(FeatureSummary)
 
 # Amanzi CMake modules see <root source>/tools/cmake
+include(CheckMPISourceCompiles)
 include(PrintVariable)
 
 
@@ -14,7 +15,16 @@ include(PrintVariable)
 # ------------------------ Required Libraries -------------------------------#
 ##############################################################################
 
+##############################################################################
+# MPI
+##############################################################################
+check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 
+if ( NOT MPI_WRAPPERS_IN_USE )
+  message(WARNING "At this time, Amanzi must be compiled with MPI wrappers."
+                  " Build will likely fail. Please define CMAKE_*_COMPILER"
+		  " parameters as MPI compiler wrappers and re-run cmake.")
+endif()
 
 ##############################################################################
 # Boost

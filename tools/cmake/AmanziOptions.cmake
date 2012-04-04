@@ -67,6 +67,12 @@ if (ENABLE_TESTS)
     set(BUILD_TESTS 1)
 endif()    
 
+# Some platforms require all binaries linking to MPI
+# only run through the MPIEXEC binary
+option(TESTS_REQUIRE_MPIEXEC "Run all tests with the MPIEXEC binary" FALSE)
+
+# Need this option if the PATH environment does not include '.'
+option(TESTS_REQUIRE_FULLPATH "Append full path to test binaries" FALSE)
 
 
 

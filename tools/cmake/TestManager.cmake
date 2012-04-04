@@ -15,7 +15,7 @@ function (_REGISTER_TEST test_name test_exec test_args nprocs is_parallel mpi_ar
   endif()
 
   foreach(nproc ${nprocs})
-    if ((${nproc} GREATER 1) OR "${is_parallel}")
+      if ((${nproc} GREATER 1) OR "${is_parallel}" OR "${TESTS_REQUIRE_MPIEXEC}")
       _add_parallel_test(${test_name} ${test_exec} "${test_args}" ${nproc} "${mpi_args}")
       _add_test_labels(${test_name} "PARALLEL")
     else()
@@ -135,6 +135,15 @@ function(ADD_AMANZI_TEST test_name test_exec)
   
   separate_arguments(global_mpi_args UNIX_COMMAND "${MPI_EXEC_ARGS}")
   list(APPEND mpi_args ${global_mpi_args})
+
+  # Append current CMAKE_CURRENT_BINARY_DIR if full path names are required
+  if ( TESTS_REQUIRE_FULLPATH )
+      if ( NOT ("${test_exec}" MATCHES "^/") )
+        set(_tmp      "${CMAKE_CURRENT_BINARY_DIR}/${test_exec}")
+        set(test_exec "${_tmp}")
+      endif()  
+  endif()
+
 
   _register_test("${test_name}" "${test_exec}" "${test_args}" "${nprocs}" "${is_parallel}" "${mpi_args}")
 
