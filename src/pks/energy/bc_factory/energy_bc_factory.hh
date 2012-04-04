@@ -65,8 +65,8 @@ is the vector (t, x, y, z).
 
 ------------------------------------------------------------------------- */
 
-#ifndef ENERGY_BC_FACTORY_HH_
-#define ENERGY_BC_FACTORY_HH_
+#ifndef _ENERGY_BC_FACTORY_HH_
+#define _ENERGY_BC_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

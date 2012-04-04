@@ -74,7 +74,7 @@ public:
 
   void CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
   void CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
-          const CompositeVector& K_faces);
+          const Teuchos::RCP<const CompositeVector>& K_faces=Teuchos::null);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
           const Epetra_Vector& new_scale);
   void CreateMFDrhsVectors();

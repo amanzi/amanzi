@@ -5,7 +5,9 @@
 #    Flow PK class
 #
 
-add_subdirectory(Darcy)
-add_subdirectory(Richards)
-add_subdirectory(permafrost)
+add_subdirectory(constitutive_relations)
+add_subdirectory(bc_factory)
+#add_subdirectory(Darcy)
+add_subdirectory(richards)
+#add_subdirectory(permafrost)
 

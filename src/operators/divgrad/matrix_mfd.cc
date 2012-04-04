@@ -61,7 +61,7 @@ void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
 void MatrixMFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
-        const CompositeVector& K_faces) {
+        const Teuchos::RCP<const CompositeVector>& K_faces) {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
@@ -91,8 +91,10 @@ void MatrixMFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
       mfd.darcy_mass_inverse(c, K[c], Bff);
     }
 
-    for (int n=0; n != nfaces; ++n)
-      for (int m=0; m != nfaces; ++m) Bff(m, n) *= K_faces("face",faces[m]);
+    if (K_faces != Teuchos::null) {
+      for (int n=0; n != nfaces; ++n)
+        for (int m=0; m != nfaces; ++m) Bff(m, n) *= (*K_faces)("face",faces[m]);
+    }
 
     double matsum = 0.0;  // elimination of mass matrix
     for (int n=0; n != nfaces; ++n) {
