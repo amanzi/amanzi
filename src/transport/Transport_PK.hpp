@@ -87,7 +87,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   // primary members
   int InitPK();
   double calculate_transport_dT();
-  void advance(double dT);
+  void advance(double dT, int subcycling = 0);
   void commitState(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
 
   void check_divergence_property();
