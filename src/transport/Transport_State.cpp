@@ -11,7 +11,9 @@
 namespace Amanzi {
 namespace AmanziTransport {
 
-/* **************************************************************** */
+/* *******************************************************************
+* Create Flow state from a state.                     
+******************************************************************* */
 Transport_State::Transport_State(State& S)
 {
   total_component_concentration = S.get_total_component_concentration();
@@ -27,12 +29,12 @@ Transport_State::Transport_State(State& S)
 
 
 /* *******************************************************************
- * mode = CopyPointers (default) a trivial copy of the given state           
- * mode = ViewMemory   creates the transport from internal one   
- *                     as the MPC expected                     
- * mode = CopyMemory   creates internal transport state based on 
- *                     ovelapped mesh maps                       
- * **************************************************************** */
+* mode = CopyPointers (default) a trivial copy of the given state           
+* mode = ViewMemory   creates the transport from internal one   
+*                     as the MPC expected                     
+* mode = CopyMemory   creates internal transport state based on 
+*                     ovelapped mesh maps                       
+******************************************************************* */
 Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 {
   if (mode == CopyPointers) {
@@ -89,10 +91,12 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 
 
 /* *******************************************************************
- * Routine imports a short multivector to a parallel overlaping vector.
- ****************************************************************** */
+* Routine imports a short multivector to a parallel overlaping vector.
+* No parallel communications are performed if target_is_parallel = 0.
+******************************************************************* */
 void Transport_State::copymemory_multivector(Epetra_MultiVector& source, 
-                                             Epetra_MultiVector& target)
+                                             Epetra_MultiVector& target,
+                                             int target_is_parallel)
 {
   const Epetra_BlockMap& source_cmap = source.Map();
   const Epetra_BlockMap& target_cmap = target.Map();
@@ -109,21 +113,23 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
   }
 
 #ifdef HAVE_MPI
-  if (cmax_s > cmax_t) {
-    Errors::Message msg;
-    msg << "Source map (in copy_multivector) is larger than target map.\n";
-    Exceptions::amanzi_throw(msg);
-  }
+  if (target_is_parallel) {
+    if (cmax_s > cmax_t) {
+      Errors::Message msg;
+      msg << "Source map (in copy_multivector) is larger than target map.\n";
+      Exceptions::amanzi_throw(msg);
+    }
 
-  Epetra_Import importer(target_cmap, source_cmap);
-  target.Import(source, importer, Insert);
+    Epetra_Import importer(target_cmap, source_cmap);
+    target.Import(source, importer, Insert);
+  }
 #endif
 }
 
 
 /* *******************************************************************
- * Routine imports a short vector to a parallel overlaping vector.                
- ****************************************************************** */
+* Routine imports a short vector to a parallel overlaping vector.                
+******************************************************************* */
 void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& target)
 {
   const Epetra_BlockMap& source_fmap = source.Map();
@@ -151,8 +157,8 @@ void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& ta
 
 
 /* *******************************************************************
- * Copy data in ghost positions for a vector.              
- ****************************************************************** */
+* Copy data in ghost positions for a vector.              
+******************************************************************* */
 void Transport_State::distribute_cell_vector(Epetra_Vector& v)
 {
 #ifdef HAVE_MPI
@@ -170,8 +176,8 @@ void Transport_State::distribute_cell_vector(Epetra_Vector& v)
 
 
 /* *******************************************************************
- * Copy data in ghost positions for a multivector.              
- ****************************************************************** */
+* Copy data in ghost positions for a multivector.              
+******************************************************************* */
 void Transport_State::distribute_cell_multivector(Epetra_MultiVector& v)
 {
 #ifdef HAVE_MPI
@@ -185,6 +191,22 @@ void Transport_State::distribute_cell_multivector(Epetra_MultiVector& v)
 
   v.Import(vv, importer, Insert);
 #endif
+}
+
+
+/* *******************************************************************
+* Interpolate linearly in time between two states v0 and v1. The time 
+* is measuared relative to state v0; so that v1 is at time dT. The
+* interpolated data are at time dT_int.            
+******************************************************************* */
+void Transport_State::interpolateCellVector(
+    const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int) 
+{
+  int ncells = mesh_maps->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  double a = dT_int / dT;
+  double b = 1.0 - a;
+  for (int c=0; c<ncells; c++) v_int[c] = v0[c] * b + v1[c] * a;
 }
 
 

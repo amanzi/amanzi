@@ -107,7 +107,7 @@ int Transport_PK::InitPK()
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));  // The maps include both owned and ghosts
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
 
-  // advection block installation
+  // advection block initialization
   current_component_ = -1;  // default value may be useful in the future
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
   component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -115,13 +115,16 @@ int Transport_PK::InitPK()
   component_local_min_.resize(cmax_owned + 1);
   component_local_max_.resize(cmax_owned + 1);
 
+  ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap));
+  ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap));
+
   //advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   lifting.reset_field(mesh_, component_);
   lifting.Init();
 
-  // dispersivity block installation
+  // dispersivity block initialization
   if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
     harmonic_points.resize(number_wghost_faces);
     for (int f=fmin; f<=fmax; f++) harmonic_points[f].init(dim);
@@ -218,21 +221,50 @@ double Transport_PK::calculate_transport_dT()
 
 
 /* ******************************************************************* 
- * MPC will call this function to advance the transport state    
- ****************************************************************** */
+* MPC will call this function to advance the transport state.
+* Efficient subcycling requires to calculate an intermediate state of
+* saturation only once, which leads to a leap-frog-type algorithm.     
+******************************************************************* */
 void Transport_PK::advance(double dT_MPC, int subcycling)
 {
+  Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
+  Epetra_MultiVector& tcc_next = TS_nextBIG->ref_total_component_concentration();
+
+  const Epetra_Vector& ws_prev = TS->ref_prev_water_saturation();
+  const Epetra_Vector& ws = TS->ref_water_saturation();
+
   T_physical = TS->get_time();
-
   double dT_total = 0.0, dT_cycle;
-  dT_cycle = (subcycling && dT < dT_MPC) ? dT : dT_MPC;
 
-  int ncycles = 0;
+  if (subcycling && dT < dT_MPC) {
+    dT_cycle = dT;
+    *ws_subcycle_start = ws_prev;
+  } else {
+    dT_cycle = dT_MPC;
+    water_saturation_start = TS->get_prev_water_saturation();
+    water_saturation_end = TS->get_water_saturation();
+  }
+
+  int ncycles = 0, swap = 1;
   while (dT_total < dT_MPC) {
     double time = (standalone_mode) ? T_internal : T_physical;
     for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
  
     T_internal += dT_cycle;
+    dT_total += dT_cycle;
+
+    if (subcycling && dT < dT_MPC) {
+      if (swap) {  // Initial water saturation is in 'start'.
+        water_saturation_start = ws_subcycle_start;
+        water_saturation_end = ws_subcycle_end;
+        TS->interpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_end);
+      } else {  // Initial water saturation is in 'end'.
+        water_saturation_start = ws_subcycle_end;
+        water_saturation_end = ws_subcycle_start;
+        TS->interpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_start);
+      }
+      swap = 1 - swap;
+    }
 
     if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
       advance_donor_upwind(dT_cycle);
@@ -240,7 +272,9 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
       advance_second_order_upwind(dT_cycle);
     }
 
-    dT_total += dT_cycle;
+    if (subcycling && dT < dT_MPC)  // rotate the concentrations
+        TS->copymemory_multivector(tcc_next, tcc, 1);
+
     dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
     ncycles++;
   }

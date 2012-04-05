@@ -184,6 +184,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
+  Teuchos::RCP<Epetra_Vector> water_saturation_start;  // data for subcycling 
+  Teuchos::RCP<Epetra_Vector> water_saturation_end;
+  Teuchos::RCP<Epetra_Vector> ws_subcycle_start;  // ws = water saturation 
+  Teuchos::RCP<Epetra_Vector> ws_subcycle_end;
+
   int advection_limiter;  // data for limiters
   int current_component_;
   Teuchos::RCP<Epetra_Vector> component_, component_next_;

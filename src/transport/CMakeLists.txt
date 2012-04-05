@@ -107,6 +107,10 @@ if ( BUILD_TESTS )
         target_link_libraries(transport_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_2D transport_2D KIND unit)
 
+        add_executable(transport_subcycling test/Main.cc test/transport_subcycling.cpp)
+        target_link_libraries(transport_subcycling ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_subcycling transport_subcycling KIND unit)
+
         add_executable(transport_2D_long test/Main.cc test/transport_2D_long.cpp)
         target_link_libraries(transport_2D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_2D_long transport_2D_long KIND unit)
