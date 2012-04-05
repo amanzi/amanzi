@@ -87,6 +87,7 @@
 
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="backward Euler"/>
+        <Parameter name="initialize with darcy" type="string" value="yes"/>
 
         <ParameterList name="error control">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>

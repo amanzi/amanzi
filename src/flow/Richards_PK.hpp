@@ -123,6 +123,7 @@ class Richards_PK : public Flow_PK {
   int num_itrs_sss, max_itrs_sss;
   double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
+  int initialize_with_darcy;
 
   int ti_method_trs;  // Parameters for transient solution
   double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;

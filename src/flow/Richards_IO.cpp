@@ -136,6 +136,8 @@ void Richards_PK::processParameterList()
       ti_method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
     }
 
+    initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
+
     Teuchos::ParameterList& err_list = sss_list.sublist("error control");
     absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
     relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5); 
