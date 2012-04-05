@@ -73,6 +73,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
 
   absolute_tol_sss = absolute_tol_trs = 1.0; 
   relative_tol_sss = relative_tol_trs = 1e-5;
+  initialize_with_darcy = 0;
 
   mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
   Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
@@ -219,10 +220,14 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
-  double pmin = atm_pressure;
-  initializePressureHydrostatic(T0, *solution);
-  clipHydrostaticPressure(pmin, 0.6, *solution);
-  for (int c=0; c<ncells_owned; c++) pressure[c] = (*solution_cells)[c];
+  if (initialize_with_darcy) {
+    double pmin = atm_pressure;
+    initializePressureHydrostatic(T0, *solution);
+    clipHydrostaticPressure(pmin, 0.6, *solution);
+    pressure = *solution_cells;
+  } else {
+    *solution_cells = pressure;
+  }
 
   deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   deriveSaturationFromPressure(pressure, water_saturation);

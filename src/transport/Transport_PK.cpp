@@ -220,23 +220,33 @@ double Transport_PK::calculate_transport_dT()
 /* ******************************************************************* 
  * MPC will call this function to advance the transport state    
  ****************************************************************** */
-void Transport_PK::advance(double dT_MPC)
+void Transport_PK::advance(double dT_MPC, int subcycling)
 {
   T_physical = TS->get_time();
 
-  double time = (standalone_mode) ? T_internal : T_physical;
-  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
- 
-  T_internal += dT_MPC;
+  double dT_total = 0.0, dT_cycle;
+  dT_cycle = (subcycling && dT < dT_MPC) ? dT : dT_MPC;
 
-  if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
-    advance_donor_upwind(dT_MPC);
-  } else if (spatial_disc_order == 2) {
-    advance_second_order_upwind(dT_MPC);
+  int ncycles = 0;
+  while (dT_total < dT_MPC) {
+    double time = (standalone_mode) ? T_internal : T_physical;
+    for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
+ 
+    T_internal += dT_cycle;
+
+    if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
+      advance_donor_upwind(dT_cycle);
+    } else if (spatial_disc_order == 2) {
+      advance_second_order_upwind(dT_cycle);
+    }
+
+    dT_total += dT_cycle;
+    dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
+    ncycles++;
   }
 
-  // DEBUG
-  writeGMVfile(TS_nextMPC);
+  //DEBUG
+  //writeGMVfile(TS_nextMPC);
 }
 
 

@@ -146,6 +146,7 @@ void Richards_PK::processParameterList()
       Exceptions::amanzi_throw(msg);
     }
 
+    initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
 
     Teuchos::ParameterList& err_list = sss_list.sublist("error control");
     absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
