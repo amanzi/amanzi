@@ -150,8 +150,8 @@ void Richards_PK::processParameterList()
     Teuchos::ParameterList& err_list = sss_list.sublist("error control");
     absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
     relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5); 
-    convergence_tol_sss = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_STEADY_STATE_TOLERANCE);
-    max_itrs_sss = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_STEADY_STATE_MAX_ITERATIONS);
+    convergence_tol_sss = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
+    max_itrs_sss = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
 
     Teuchos::ParameterList& time_list = sss_list.sublist("time control");
     T0_sss = time_list.get<double>("start time", -1e+9);
@@ -186,8 +186,8 @@ void Richards_PK::processParameterList()
     Teuchos::ParameterList& err_list = trs_list.sublist("error control");
     absolute_tol_trs = err_list.get<double>("absolute error tolerance", 1.0);
     relative_tol_trs = err_list.get<double>("relative error tolerance", 1e-5); 
-    convergence_tol_trs = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_STEADY_STATE_TOLERANCE);
-    max_itrs_trs = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_STEADY_STATE_MAX_ITERATIONS);
+    convergence_tol_trs = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
+    max_itrs_trs = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
 
     Teuchos::ParameterList& time_list = trs_list.sublist("time control");
     T0_trs = time_list.get<double>("start time", 0.0);

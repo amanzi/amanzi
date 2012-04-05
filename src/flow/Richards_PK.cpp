@@ -123,7 +123,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
   rhs = matrix->get_rhs();  // import rhs from the matrix 
 
-  // Get some solver parameters from the flow parameter list.
+  // Get solver parameters from the flow parameter list.
   processParameterList();
 
   // Process boundary data
