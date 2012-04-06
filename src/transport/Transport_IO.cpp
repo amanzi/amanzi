@@ -22,12 +22,34 @@ namespace AmanziTransport {
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Transport_PK::process_parameter_list()
+void Transport_PK::processParameterList()
 {
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
-
   Teuchos::ParameterList transport_list;
   transport_list = parameter_list;
+
+  // create verbosity list if it does not exist
+  if (!transport_list.isSublist("VerboseObject")) {
+    Teuchos::ParameterList verbosity_list;
+    verbosity_list.set<std::string>("Verbosity Level", "none");
+    transport_list.set("VerboseObject", verbosity_list);
+  }
+
+  // extract verbosity level
+  Teuchos::ParameterList verbosity_list = transport_list.get<Teuchos::ParameterList>("VerboseObject");
+  std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
+  if (verbosity_name == "none") {
+    verbosity = TRANSPORT_VERBOSITY_NONE;
+  } else if (verbosity_name == "low") {
+    verbosity = TRANSPORT_VERBOSITY_LOW;
+  } else if (verbosity_name == "medium") {
+    verbosity = TRANSPORT_VERBOSITY_MEDIUM;
+  } else if (verbosity_name == "high") {
+    verbosity = TRANSPORT_VERBOSITY_HIGH;
+  } else if (verbosity_name == "extreme") {
+    verbosity = TRANSPORT_VERBOSITY_EXTREME;
+  }
+
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
   // global transport parameters
   cfl = transport_list.get<double>("CFL", 1.0);
@@ -79,7 +101,6 @@ void Transport_PK::process_parameter_list()
   }  
    
   // control parameter
-  verbosity_level = transport_list.get<int>("verbosity level", 0);
   internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";
   tests_tolerance = transport_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dT_debug = transport_list.get<double>("maximal time step", TRANSPORT_LARGE_TIME_STEP);
@@ -152,13 +173,13 @@ void Transport_PK::process_parameter_list()
 /* ************************************************************* */
 /* Printing information about Transport status                   */
 /* ************************************************************* */
-void Transport_PK::print_statistics() const
+void Transport_PK::printStatistics() const
 {
-  if (!MyPID && verbosity_level > 0) {
+  if (!MyPID && verbosity > TRANSPORT_VERBOSITY_NONE) {
     cout << "Transport PK: CFL = " << cfl << endl;
     cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Total number of components = " << number_components << endl;
-    cout << "    Verbosity level = " << verbosity_level << endl;
+    cout << "    Verbosity level = " << verbosity << endl;
     cout << "    Spatial/temporal discretication orders = " << spatial_disc_order 
          << " " << temporal_disc_order << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;

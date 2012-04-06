@@ -57,7 +57,7 @@ TEST(ADVANCE_WITH_STK) {
   TPK.set_standalone_mode(true);
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();
+  double dT = TPK.calculateTransportDt();
   TPK.advance(dT);
 
   // printing cell concentration  
@@ -68,7 +68,7 @@ TEST(ADVANCE_WITH_STK) {
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
   for (i=0; i<50; i++) {
-    dT = TPK.calculate_transport_dT();
+    dT = TPK.calculateTransportDt();
     TPK.advance(dT);
     T += dT;
 

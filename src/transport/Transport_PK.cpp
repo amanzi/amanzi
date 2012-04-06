@@ -42,7 +42,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   TS = Teuchos::rcp(new Transport_State(*TS_MPC));
 
   dT = dT_debug = T_internal = 0.0;
-  verbosity_level = 0;
+  verbosity = TRANSPORT_VERBOSITY_HIGH;
   internal_tests = 0;
   dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
@@ -102,7 +102,7 @@ int Transport_PK::InitPK()
   face_importer = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
  
-  process_parameter_list();
+  processParameterList();
 
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));  // The maps include both owned and ghosts
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
@@ -140,7 +140,7 @@ int Transport_PK::InitPK()
   double time = T_internal;
   for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
 
-  check_influx_bc();
+  checkInfluxBC();
 
   return 0;
 }
@@ -156,7 +156,7 @@ int Transport_PK::InitPK()
  * takes into account sinks and sources but preserves only positivity
  * of an advected mass.
  ****************************************************************** */
-double Transport_PK::calculate_transport_dT()
+double Transport_PK::calculateTransportDt()
 {
   // flow could not be available at initialization, copy it again 
   if (status == TRANSPORT_NULL) {
@@ -164,14 +164,14 @@ double Transport_PK::calculate_transport_dT()
                                TS_nextBIG->ref_total_component_concentration());
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
-    if (internal_tests) check_divergence_property();
-    identify_upwind_cells();
+    if (internal_tests) checkDivergenceProperty();
+    identifyUpwindCells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
   } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
-    identify_upwind_cells();
+    identifyUpwindCells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
   }
@@ -267,9 +267,9 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
     }
 
     if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
-      advance_donor_upwind(dT_cycle);
+      advanceDonorUpwind(dT_cycle);
     } else if (spatial_disc_order == 2) {
-      advance_second_order_upwind(dT_cycle);
+      advanceSecondOrderUpwind(dT_cycle);
     }
 
     if (subcycling && dT < dT_MPC)  // rotate the concentrations
@@ -292,7 +292,7 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
  * Data flow: loop over components C and for each C apply the 
  * second-order RK method. 
  ****************************************************************** */
-void Transport_PK::advance_second_order_upwind(double dT_MPC)
+void Transport_PK::advanceSecondOrderUpwind(double dT_MPC)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_MPC;  // overwrite the transport step
@@ -341,7 +341,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
 
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
-    check_GEDproperty(*tcc_nextMPC);
+    checkGEDproperty(*tcc_nextMPC);
   }
 
   status = TRANSPORT_STATE_COMPLETE;
@@ -352,7 +352,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
 /* ******************************************************************* 
  * A simple first-order transport method 
  ****************************************************************** */
-void Transport_PK::advance_donor_upwind(double dT_MPC)
+void Transport_PK::advanceDonorUpwind(double dT_MPC)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_MPC;  // overwrite the transport step
@@ -431,7 +431,7 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
 
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
-    check_GEDproperty(*tcc_nextMPC);
+    checkGEDproperty(*tcc_nextMPC);
   }
 
   status = TRANSPORT_STATE_COMPLETE;
@@ -442,7 +442,7 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
  * Calculate a dispersive tensor the from Darcy fluxes. The flux is
  * assumed to be scaled by face area.
  ****************************************************************** */
-void Transport_PK::calculate_dispersion_tensor() 
+void Transport_PK::calculateDispersionTensor() 
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
@@ -501,9 +501,9 @@ void Transport_PK::calculate_dispersion_tensor()
 /* *******************************************************************
  * Collect time-dependent boundary data in face-based arrays.                               
  ****************************************************************** */
-void Transport_PK::extract_boundary_conditions(const int component,
-                                               std::vector<int>& bc_face_id,
-                                               std::vector<double>& bc_face_value) 
+void Transport_PK::extractBoundaryConditions(const int component,
+                                             std::vector<int>& bc_face_id,
+                                             std::vector<double>& bc_face_value) 
 {
   bc_face_id.assign(number_wghost_faces, 0);
 
@@ -523,10 +523,10 @@ void Transport_PK::extract_boundary_conditions(const int component,
  * Calculate field values at harmonic points. For harmonic points on
  * domain boundary, we use Dirichlet boundary values.
  ****************************************************************** */
-void Transport_PK::populate_harmonic_points_values(int component,
-                                                   Teuchos::RCP<Epetra_MultiVector> tcc,
-                                                   std::vector<int>& bc_face_id,
-                                                   std::vector<double>& bc_face_values)
+void Transport_PK::populateHarmonicPointsValues(int component,
+                                                Teuchos::RCP<Epetra_MultiVector> tcc,
+                                                std::vector<int>& bc_face_id,
+                                                std::vector<double>& bc_face_values)
 {
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List cells;
@@ -556,11 +556,11 @@ void Transport_PK::populate_harmonic_points_values(int component,
 /* *******************************************************************
  * Calculate and add dispersive fluxes of the conservative quantatity.
  ****************************************************************** */
-void Transport_PK::add_dispersive_fluxes(int component,
-                                         Teuchos::RCP<Epetra_MultiVector> tcc,
-                                         std::vector<int>& bc_face_id,
-                                         std::vector<double>& bc_face_values,
-                                         Teuchos::RCP<Epetra_MultiVector> tcc_next)
+void Transport_PK::addDispersiveFluxes(int component,
+                                       Teuchos::RCP<Epetra_MultiVector> tcc,
+                                       std::vector<int>& bc_face_id,
+                                       std::vector<double>& bc_face_values,
+                                       Teuchos::RCP<Epetra_MultiVector> tcc_next)
 {
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List nodes, faces;
@@ -607,7 +607,7 @@ void Transport_PK::add_dispersive_fluxes(int component,
  * Identify flux direction based on orientation of the face normal 
  * and sign of the  Darcy velocity.                               
  ****************************************************************** */
-void Transport_PK::identify_upwind_cells()
+void Transport_PK::identifyUpwindCells()
 {
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
  

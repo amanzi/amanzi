@@ -74,7 +74,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.set_standalone_mode(true);
-  TPK.print_statistics();
+  TPK.printStatistics();
  
   /* advance the transport state */
   int iter, k;
@@ -87,7 +87,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   iter = 0;
   bool flag = true;
   while (T < 0.3) {
-    double dT = TPK.calculate_transport_dT();
+    double dT = TPK.calculateTransportDt();
     TPK.advance(dT);
     T += dT;
     iter++;

@@ -76,8 +76,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     TPK.InitPK();
     TPK.set_standalone_mode(true);
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
-    if (nx == 20) TPK.print_statistics();
-    TPK.verbosity_level = 0;
+    if (nx == 20) TPK.printStatistics();
+    TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
  
     // advance the state
     int i, k, iter = 0;
@@ -88,7 +88,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
     while (T < T1) {
-      double dT = std::min(TPK.calculate_transport_dT(), T1 - T);
+      double dT = std::min(TPK.calculateTransportDt(), T1 - T);
       TPK.advance(dT);
       T += dT;
 
@@ -160,8 +160,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
     TPK.InitPK();
-    if (nx == 10) TPK.print_statistics();
-    TPK.verbosity_level = 0;
+    if (nx == 10) TPK.printStatistics();
+    TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
 
     // advance the state
@@ -173,17 +173,17 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
     double dT, dT0;
-    if (nx==10) dT0 = TPK.calculate_transport_dT();
+    if (nx==10) dT0 = TPK.calculateTransportDt();
     else dT0 /= 2;
 
     while (T < T1) {
-      dT = std::min(TPK.calculate_transport_dT(), T1 - T);
+      dT = std::min(TPK.calculateTransportDt(), T1 - T);
       dT = std::min(dT, dT0);
 
       TPK.advance(dT);
       T += dT;
       if (TPK.internal_tests) {
-        TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+        TPK.checkTracerBounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
       }
 
       *tcc = *tcc_next;

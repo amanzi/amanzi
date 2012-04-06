@@ -70,7 +70,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.set_standalone_mode(true);
-  TPK.print_statistics();
+  TPK.printStatistics();
 
   /* advance the state */
   int iter, k;
@@ -83,7 +83,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
   iter = 0;
   while (T < 1.0) {
     // imitation of a small time step relative to flow time step
-    double dT = TPK.calculate_transport_dT();  
+    double dT = TPK.calculateTransportDt();  
     double dT_MPC = dT * 7.7;
 
     TPK.advance(dT_MPC, 1);

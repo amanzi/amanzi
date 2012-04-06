@@ -64,7 +64,7 @@ TEST(ADVANCE_WITH_MSTK) {
   TPK.InitPK();
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();
+  double dT = TPK.calculateTransportDt();
   TPK.advance(dT);
 
   // printing cell concentration 
@@ -76,7 +76,7 @@ TEST(ADVANCE_WITH_MSTK) {
 
   int iter = 0;
   while(T < 1.2) {
-    dT = TPK.calculate_transport_dT();
+    dT = TPK.calculateTransportDt();
     TPK.advance(dT);
     T += dT;
  

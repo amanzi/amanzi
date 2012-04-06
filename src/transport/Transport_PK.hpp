@@ -72,6 +72,12 @@ const int TRANSPORT_LIMITER_TENSORIAL = 2;
 const int TRANSPORT_LIMITER_KUZMIN = 3;
 const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
+const int TRANSPORT_VERBOSITY_NONE = 0;
+const int TRANSPORT_VERBOSITY_LOW = 1;
+const int TRANSPORT_VERBOSITY_MEDIUM = 2;
+const int TRANSPORT_VERBOSITY_HIGH = 3;
+const int TRANSPORT_VERBOSITY_EXTREME = 4;
+
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
@@ -86,18 +92,18 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // primary members
   int InitPK();
-  double calculate_transport_dT();
+  double calculateTransportDt();
   void advance(double dT, int subcycling = 0);
   void commitState(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
 
-  void check_divergence_property();
-  void check_GEDproperty(Epetra_MultiVector& tracer) const; 
-  void check_tracer_bounds(Epetra_MultiVector& tracer, 
-                           int component,
-                           double lower_bound,
-                           double upper_bound,
-                           double tol = 0.0) const;
-  void check_influx_bc() const;
+  void checkDivergenceProperty();
+  void checkGEDproperty(Epetra_MultiVector& tracer) const; 
+  void checkTracerBounds(Epetra_MultiVector& tracer, 
+                         int component,
+                         double lower_bound,
+                         double upper_bound,
+                         double tol = 0.0) const;
+  void checkInfluxBC() const;
 
   // access members  
   Teuchos::RCP<Transport_State> get_transport_state() { return TS; }
@@ -110,14 +116,14 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // control members
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
-  void print_statistics() const;
+  void printStatistics() const;
   void writeGMVfile(Teuchos::RCP<Transport_State> TS) const;
  
  private:
   // advection routines
-  void advance_donor_upwind(double dT);
-  void advance_second_order_upwind(double dT);
-  void advance_arbitrary_order_upwind(double dT);
+  void advanceDonorUpwind(double dT);
+  void advanceSecondOrderUpwind(double dT);
+  void advanceArbitraryOrderUpwind(double dT);
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   void limiterBarthJespersen(const int component,
@@ -133,36 +139,36 @@ class Transport_PK : public Explicit_TI::fnBase {
                      Teuchos::RCP<Epetra_Vector> scalar_field, 
                      Teuchos::RCP<Epetra_MultiVector> gradient);
 
-  void calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
-                                   AmanziGeometry::Point& normal_new,
-                                   double& L22normal_new, 
-                                   AmanziGeometry::Point& direction);
+  void calculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
+                                 AmanziGeometry::Point& normal_new,
+                                 double& L22normal_new, 
+                                 AmanziGeometry::Point& direction);
 
-  void apply_directional_limiter(AmanziGeometry::Point& normal, 
-                                 AmanziGeometry::Point& p,
-                                 AmanziGeometry::Point& direction, 
-                                 AmanziGeometry::Point& gradient);
+  void applyDirectionalLimiter(AmanziGeometry::Point& normal, 
+                               AmanziGeometry::Point& p,
+                               AmanziGeometry::Point& direction, 
+                               AmanziGeometry::Point& gradient);
 
-  void process_parameter_list();
-  void identify_upwind_cells();
+  void processParameterList();
+  void identifyUpwindCells();
 
   const Teuchos::RCP<Epetra_IntVector>& get_upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& get_downwind_cell() { return downwind_cell_; }  
 
   // dispersion routines
-  void calculate_dispersion_tensor();
-  void extract_boundary_conditions(const int component,
-                                   std::vector<int>& bc_face_id,
-                                   std::vector<double>& bc_face_value);
-  void populate_harmonic_points_values(int component,
-                                       Teuchos::RCP<Epetra_MultiVector> tcc,
-                                       std::vector<int>& bc_face_id,
-                                       std::vector<double>& bc_face_values);
-  void add_dispersive_fluxes(int component,
-                             Teuchos::RCP<Epetra_MultiVector> tcc,
-                             std::vector<int>& bc_face_id,
-                             std::vector<double>& bc_face_values,
-                             Teuchos::RCP<Epetra_MultiVector> tcc_next);
+  void calculateDispersionTensor();
+  void extractBoundaryConditions(const int component,
+                                 std::vector<int>& bc_face_id,
+                                 std::vector<double>& bc_face_value);
+  void populateHarmonicPointsValues(int component,
+                                    Teuchos::RCP<Epetra_MultiVector> tcc,
+                                    std::vector<int>& bc_face_id,
+                                    std::vector<double>& bc_face_values);
+  void addDispersiveFluxes(int component,
+                           Teuchos::RCP<Epetra_MultiVector> tcc,
+                           std::vector<int>& bc_face_id,
+                           std::vector<double>& bc_face_values,
+                           Teuchos::RCP<Epetra_MultiVector> tcc_next);
 
  public:
   std::vector<double> calculate_accumulated_influx();
@@ -171,7 +177,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
-  int verbosity_level, internal_tests;  // output information
+  int verbosity, internal_tests;  // output information
   double tests_tolerance;
 
  private:

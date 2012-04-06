@@ -18,7 +18,7 @@ namespace AmanziTransport {
 /* *******************************************************************
  * Routine verifies that the velocity field is divergence free                 
  ****************************************************************** */
-void Transport_PK::check_divergence_property()
+void Transport_PK::checkDivergenceProperty()
 {
   int i, c, f;
   double div, u, umax, error_max, error_avg;
@@ -62,7 +62,7 @@ void Transport_PK::check_divergence_property()
       flag = 1;
     }
 
-    if (flag && verbosity_level > 1) {
+    if (flag && verbosity > TRANSPORT_VERBOSITY_LOW) {
       cout << "    MyPID = " << MyPID << endl;
       cout << "    cell  = " << c << endl;
       cout << "    divergence = " << div << endl;
@@ -74,7 +74,7 @@ void Transport_PK::check_divergence_property()
   }
   error_avg /= (cmax_owned + 1);
 
-  if (verbosity_level > 3) {
+  if (verbosity > TRANSPORT_VERBOSITY_HIGH) {
 #ifdef HAVE_MPI
     double global_max;
     const Epetra_Comm& comm = darcy_flux.Comm(); 
@@ -94,7 +94,7 @@ void Transport_PK::check_divergence_property()
 /* *******************************************************************
  * Check for completeness of influx boundary conditions.                        
  ****************************************************************** */
-void Transport_PK::check_influx_bc() const
+void Transport_PK::checkInfluxBC() const
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   std::vector<int> influx_face(fmax + 1);
@@ -133,7 +133,7 @@ void Transport_PK::check_influx_bc() const
 /* *******************************************************************
  * Check that global extrema diminished                          
  ****************************************************************** */
-void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
+void Transport_PK::checkGEDproperty(Epetra_MultiVector& tracer) const
 { 
   int i, num_components = tracer.NumVectors();
   double tr_min[num_components];
@@ -164,11 +164,11 @@ void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
 /* *******************************************************************
  * Check that the tracer is between 0 and 1.                        
  ****************************************************************** */
-void Transport_PK::check_tracer_bounds(Epetra_MultiVector& tracer, 
-                                       int component,
-                                       double lower_bound,
-                                       double upper_bound,
-                                       double tol) const
+void Transport_PK::checkTracerBounds(Epetra_MultiVector& tracer, 
+                                     int component,
+                                     double lower_bound,
+                                     double upper_bound,
+                                     double tol) const
 { 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
 

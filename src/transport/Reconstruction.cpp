@@ -85,8 +85,8 @@ void Reconstruction::calculateCellGradient()
     }
 
     // improve robustness w.r.t degenerate matrices
-    double det = calculate_matrix_determinant(matrix);
-    double norm = calculate_matrix_norm(matrix);
+    double det = calculateMatrixDeterminant(matrix);
+    double norm = calculateMatrixNorm(matrix);
 
     if (det < pow(norm, 1.0/dim)) {
       norm *= RECONSTRUCTION_MATRIX_CORRECTION;
@@ -178,7 +178,7 @@ void Reconstruction::populateLeastSquareSystem(AmanziGeometry::Point& centroid,
 /* ******************************************************************
  * Optimized linear algebra: norm, determinant, etc
 ****************************************************************** */
-double Reconstruction::calculate_matrix_norm(Teuchos::SerialDenseMatrix<int, double>& matrix)
+double Reconstruction::calculateMatrixNorm(Teuchos::SerialDenseMatrix<int, double>& matrix)
 {
   double a = 0.0;
   for (int i=0; i<dim; i++) {
@@ -187,7 +187,7 @@ double Reconstruction::calculate_matrix_norm(Teuchos::SerialDenseMatrix<int, dou
   return a;
 }
 
-double Reconstruction::calculate_matrix_determinant(Teuchos::SerialDenseMatrix<int, double>& matrix)
+double Reconstruction::calculateMatrixDeterminant(Teuchos::SerialDenseMatrix<int, double>& matrix)
 {
   double a = 0.0;
   if (dim == 2) {
@@ -204,7 +204,7 @@ double Reconstruction::calculate_matrix_determinant(Teuchos::SerialDenseMatrix<i
   return a;
 }
 
-int Reconstruction::find_minimal_diagonal_entry(Teuchos::SerialDenseMatrix<int, double>& matrix)
+int Reconstruction::findMinimalDiagonalEntry(Teuchos::SerialDenseMatrix<int, double>& matrix)
 {
   double a = matrix(0,0);  // We assume that matrix is SPD.
   int k = 0;

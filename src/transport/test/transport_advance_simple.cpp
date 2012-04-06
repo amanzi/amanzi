@@ -78,7 +78,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.set_standalone_mode(true);
-  TPK.print_statistics();
+  TPK.printStatistics();
 
   // advance the state
   int iter, k;
@@ -90,7 +90,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   iter = 0;
   while (T < 1.0) {
-    double dT = TPK.calculate_transport_dT();
+    double dT = TPK.calculateTransportDt();
     TPK.advance(dT);
     T += dT;
     iter++;

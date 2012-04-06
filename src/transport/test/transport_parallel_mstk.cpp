@@ -58,10 +58,10 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.set_standalone_mode(true);
-  TPK.print_statistics();
+  TPK.printStatistics();
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();
+  double dT = TPK.calculateTransportDt();
   TPK.advance(dT);
 
   // printing cell concentration
@@ -74,7 +74,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   iter = 0;
   while(T < 1.0) {
-    dT = TPK.calculate_transport_dT();
+    dT = TPK.calculateTransportDt();
     TPK.advance(dT);
     T += dT;
     iter++;

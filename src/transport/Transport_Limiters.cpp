@@ -59,16 +59,16 @@ void Transport_PK::limiterTensorial(const int component,
         // check if umin <= u1f <= umax
         if (u1f < umin) {
           normal_new = xcf - xc;
-          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
  
           p = ((umin - u1) / sqrt(L22normal_new)) * direction;
-          apply_directional_limiter(normal_new, p, direction, gradient_c1);
+          applyDirectionalLimiter(normal_new, p, direction, gradient_c1);
         } else if (u1f > umax) {
           normal_new = xcf - xc;
-          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
  
           p = ((umax - u1) / sqrt(L22normal_new)) * direction;
-          apply_directional_limiter(normal_new, p, direction, gradient_c1);
+          applyDirectionalLimiter(normal_new, p, direction, gradient_c1);
         }
       }
       if (normals.size() == 0) break;  // No limiters were imposed. 
@@ -120,11 +120,11 @@ void Transport_PK::limiterTensorial(const int component,
  
           if (u2f < umin) {
             p = ((umin - u2) / L22(direction)) * direction;
-            apply_directional_limiter(direction, p, direction, gradient_c2);
+            applyDirectionalLimiter(direction, p, direction, gradient_c2);
           }
           else if (u2f > umax) {
             p = ((umax - u2) / L22(direction)) * direction;
-            apply_directional_limiter(direction, p, direction, gradient_c2);
+            applyDirectionalLimiter(direction, p, direction, gradient_c2);
           }
 
           for (int i=0; i<dim; i++) (*gradient)[i][c2] = gradient_c2[i]; 
@@ -406,16 +406,16 @@ void Transport_PK::limiterKuzmin(const int component,
         // check if umin <= up <= umax
         if (up < umin) {
           normal_new = xp - xc;
-          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
  
           p = ((umin - up) / sqrt(L22normal_new)) * direction;
-          apply_directional_limiter(normal_new, p, direction, gradient_c);
+          applyDirectionalLimiter(normal_new, p, direction, gradient_c);
         } else if (up > umax) {
           normal_new = xp - xc;
-          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
  
           p = ((umax - up) / sqrt(L22normal_new)) * direction;
-          apply_directional_limiter(normal_new, p, direction, gradient_c);
+          applyDirectionalLimiter(normal_new, p, direction, gradient_c);
         }
       }
       if (normals.size() == 0) break;  // No limiters were imposed. 
@@ -498,10 +498,10 @@ void Transport_PK::limiterKuzmin(const int component,
  * Descent direction is obtained by orthogonalizing normal direction
  * 'normal_new' to previous normals. A few exceptions are analyzed.  
  ****************************************************************** */
-void Transport_PK::calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
-                                               AmanziGeometry::Point& normal_new,
-                                               double& L22normal_new, 
-                                               AmanziGeometry::Point& direction)
+void Transport_PK::calculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
+                                             AmanziGeometry::Point& normal_new,
+                                             double& L22normal_new, 
+                                             AmanziGeometry::Point& direction)
 {
   L22normal_new = L22(normal_new);
   normal_new /= sqrt(L22normal_new);
@@ -534,10 +534,10 @@ void Transport_PK::calculate_descent_direction(std::vector<AmanziGeometry::Point
 /* *******************************************************************
  * Routine projects gradient on a plane defined by normal and point p.
  ****************************************************************** */
-void Transport_PK::apply_directional_limiter(AmanziGeometry::Point& normal, 
-                                             AmanziGeometry::Point& p,
-                                             AmanziGeometry::Point& direction, 
-                                             AmanziGeometry::Point& gradient)
+void Transport_PK::applyDirectionalLimiter(AmanziGeometry::Point& normal, 
+                                           AmanziGeometry::Point& p,
+                                           AmanziGeometry::Point& direction, 
+                                           AmanziGeometry::Point& gradient)
 {
   double a = ((p - gradient) * normal) / (direction * normal); 
   gradient += a * direction;

@@ -68,7 +68,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   TPK.set_standalone_mode(true);
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();  
+  double dT = TPK.calculateTransportDt();  
   TPK.advance(dT);
 
   // printing cell concentration
@@ -81,7 +81,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
 
   iter = 0;
   while(T < 1.0) {
-    dT = TPK.calculate_transport_dT();
+    dT = TPK.calculateTransportDt();
     TPK.advance(dT);
     T += dT;
     iter++;
