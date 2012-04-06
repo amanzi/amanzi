@@ -168,7 +168,7 @@ void Richards::DensityGas_(const Teuchos::RCP<State>& S,
   for (int c=0; c!=c_owned; ++c) {
     double p_sat = eos_gas_->SaturatedVaporPressure(temp("cell",0,c));
     (*mol_frac_gas)("cell",0,c) = p_sat/p_atm;
-    double Mv = eos_gas_->MolarMass((*mol_frac_gas)("cell",0,c));
+    double Mv = eos_gas_->molar_mass((*mol_frac_gas)("cell",0,c));
     double n = eos_gas_->MolarDensity(temp("cell",0,c), pres("cell",0,c));
     (*dens_gas)("cell",0,c) = Mv*n;
     (*mol_dens_gas)("cell",0,c) = n;

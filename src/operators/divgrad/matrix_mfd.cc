@@ -36,7 +36,7 @@ void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
   std::vector<int> dirs;
 
   Aff_cells_.clear();
-  for (int c=0; c != K.size(); ++c) {
+  for (int c=0; c!=K.size(); ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -73,7 +73,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
   Acc_cells_.clear();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -91,15 +91,15 @@ void MatrixMFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
       mfd.darcy_mass_inverse(c, K[c], Bff);
     }
 
-    if (K_faces != Teuchos::null) {
-      for (int n=0; n != nfaces; ++n)
-        for (int m=0; m != nfaces; ++m) Bff(m, n) *= (*K_faces)("face",faces[m]);
+    if (K_faces!=Teuchos::null) {
+      for (int n=0; n!=nfaces; ++n)
+        for (int m=0; m!=nfaces; ++m) Bff(m, n) *= (*K_faces)("face",faces[m]);
     }
 
     double matsum = 0.0;  // elimination of mass matrix
-    for (int n=0; n != nfaces; ++n) {
+    for (int n=0; n!=nfaces; ++n) {
       double rowsum = 0.0, colsum = 0.0;
-      for (int m=0; m != nfaces; ++m) {
+      for (int m=0; m!=nfaces; ++m) {
         colsum += Bff(m, n);
         rowsum += Bff(n, m);
       }
@@ -123,7 +123,7 @@ void MatrixMFD::RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
         const Epetra_Vector& new_scale) {
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells_[c];
     Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
 
@@ -150,7 +150,7 @@ void MatrixMFD::CreateMFDrhsVectors() {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -183,7 +183,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -194,10 +194,10 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
     Epetra_SerialDenseVector& Ff = Ff_cells_[c];
     double& Fc = Fc_cells_[c];
 
-    for (int n=0; n != nfaces; ++n) {
+    for (int n=0; n!=nfaces; ++n) {
       int f=faces[n];
       if (bc_markers[f] == MFD_BC_DIRICHLET) {
-        for (int m=0; m != nfaces; ++m) {
+        for (int m=0; m!=nfaces; ++m) {
           Ff[m] -= Bff(m, n) * bc_values[f];
           Bff(n, m) = Bff(m, n) = 0.0;
         }
@@ -234,11 +234,11 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   int faces_GID[MFD_MAX_FACES];
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    for (int n=0; n != nfaces; ++n) {
+    for (int n=0; n!=nfaces; ++n) {
       faces_LID[n] = faces[n];
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
@@ -288,11 +288,11 @@ void MatrixMFD::AssembleGlobalMatrices() {
   int faces_GID[MFD_MAX_FACES];
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    for (int n=0; n != nfaces; ++n) {
+    for (int n=0; n!=nfaces; ++n) {
       faces_LID[n] = faces[n];
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
@@ -307,13 +307,13 @@ void MatrixMFD::AssembleGlobalMatrices() {
 
   // We repeat some of the loops for code clarity.
   rhs_->ViewComponent("face", true)->PutScalar(0.0);
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     (*rhs_)("cell",c) = Fc_cells_[c];
 
-    for (int n=0; n != nfaces; ++n) {
+    for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
       (*rhs_)("face",f) += Ff_cells_[c][n];
     }
@@ -333,7 +333,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
   std::vector<int> dirs;
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces_LID, &dirs);
     int nfaces = faces_LID.size();
     Epetra_SerialDenseMatrix Schur(nfaces, nfaces);
@@ -341,22 +341,22 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
     Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
     Epetra_SerialDenseVector& Bfc = Afc_cells_[c];
 
-    for (int n=0; n != nfaces; ++n) {
-      for (int m=0; m != nfaces; ++m) {
+    for (int n=0; n!=nfaces; ++n) {
+      for (int m=0; m!=nfaces; ++m) {
         Schur(n, m) = Aff_cells_[c](n, m) - Bfc[n] * Bcf[m] / (*Acc_)[c];
       }
     }
 
-    for (int n=0; n != nfaces; ++n) {  // Symbolic boundary conditions
+    for (int n=0; n!=nfaces; ++n) {  // Symbolic boundary conditions
       int f=faces_LID[n];
       if (bc_markers[f] == MFD_BC_DIRICHLET) {
-        for (int m=0; m != nfaces; ++m) Schur(n, m) = Schur(m, n) = 0.0;
+        for (int m=0; m!=nfaces; ++m) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }
     }
 
     Epetra_IntSerialDenseVector faces_GID(nfaces);
-    for (int n=0; n != nfaces; ++n) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
+    for (int n=0; n!=nfaces; ++n) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
     (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
   }
   (*Sff_).GlobalAssemble();
@@ -508,21 +508,21 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   std::vector<int> flag(solution.ViewComponent("face", true)->MyLength(), 0);
 
-  for (int c=0; c != ncells; ++c) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     dp.resize(nfaces);
-    for (int n=0; n != nfaces; ++n) {
+    for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
       dp[n] = solution("cell", c) - solution("face", f);
     }
 
-    for (int n=0; n != nfaces; ++n) {
+    for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
       if (f < nfaces_owned && !flag[f]) {
         double s = 0.0;
-        for (int m=0; m != nfaces; ++m) s += Aff_cells_[c](n, m) * dp[m];
+        for (int m=0; m!=nfaces; ++m) s += Aff_cells_[c](n, m) * dp[m];
         (*flux)(f) = s * dirs[n];
         flag[f] = 1;
       }
@@ -548,22 +548,22 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
   std::vector<int> dirs;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c != ncells_owned; ++c) {
+  for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    for (int i=0; i != dim; ++i) rhs_cell[i] = 0.0;
+    for (int i=0; i!=dim; ++i) rhs_cell[i] = 0.0;
     matrix.putScalar(0.0);
 
-    for (int n=0; n != nfaces; ++n) {  // populate least-square matrix
+    for (int n=0; n!=nfaces; ++n) {  // populate least-square matrix
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double area = mesh_->face_area(f);
 
-      for (int i=0; i != dim; ++i) {
+      for (int i=0; i!=dim; ++i) {
         rhs_cell[i] += normal[i] * flux(f);
         matrix(i,i) += normal[i] * normal[i];
-        for (int j=i+1; j != dim; ++j) {
+        for (int j=i+1; j!=dim; ++j) {
           matrix(j,i) = matrix(i,j) += normal[i] * normal[j];
         }
       }
@@ -572,7 +572,7 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
     int info;
     lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
 
-    for (int i=0; i<dim; i++) (*velocity)(i,c) = rhs_cell[i];
+    for (int i=0; i!=dim; ++i) (*velocity)(i,c) = rhs_cell[i];
   }
 }
 

@@ -7,23 +7,23 @@
    Self-registering factory for EOS implementations.
    ------------------------------------------------------------------------- */
 
-#ifndef _PK_FLOW_EOS_FACTORY_HH_
-#define _PK_FLOW_EOS_FACTORY_HH_
+#ifndef _PK_FLOW_EOS_VAPOR_PRESSURE_MODEL_FACTORY_HH_
+#define _PK_FLOW_EOS_VAPOR_PRESSURE_MODEL_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "eos.hh"
+#include "vapor_pressure_model.hh"
 #include "factory.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class EOSFactory : public Utils::Factory<EOS> {
+class VaporPressureModelFactory : public Utils::Factory<VaporPressureModel> {
 
 public:
-  Teuchos::RCP<EOS> createEOS(Teuchos::ParameterList& plist);
+  Teuchos::RCP<VaporPressureModel> createVaporPressureModel(Teuchos::ParameterList& plist);
 };
 
 } // namespace
