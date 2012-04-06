@@ -17,6 +17,9 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+// registry of method
+Utils::RegisteredFactory<EOS,EOSWater> EOSWater::factory_("liquid water");
+
 EOSWater::EOSWater(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist),
 

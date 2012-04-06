@@ -23,7 +23,7 @@
 #include "bdf_time_integrator.hh"
 
 #include "wrm_van_genuchten.hh"
-#include "eos_water.hh"
+#include "eos.hh"
 #include "eos_vapor_in_gas.hh"
 
 namespace Amanzi {
@@ -45,7 +45,7 @@ public:
   virtual void initialize(const Teuchos::RCP<State>& S);
 
   // -- Choose a time step compatible with physics.
-  virtual double get_dT() {
+  virtual double get_dt() {
     return dt_;
   }
 
@@ -66,8 +66,8 @@ public:
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
-  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) = 0;
+  void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
@@ -100,14 +100,13 @@ private:
 
   // -- rel perm calculation for fluxes
   void CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<State>& S,
-          const CompositeVector& pres, const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
-  void CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State>& S,
-          const CompositeVector& pres, const CompositeVector& flux,
           const CompositeVector& rel_perm_cells,
           const Teuchos::RCP<CompositeVector>& rel_perm_faces);
+  void CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State>& S,
+          const CompositeVector& flux, const CompositeVector& rel_perm_cells,
+          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
   void CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP<State>& S,
-          const CompositeVector& pres, const CompositeVector& rel_perm_cells,
+          const CompositeVector& rel_perm_cells,
           const Teuchos::RCP<CompositeVector>& rel_perm_faces);
 
   // physical methods
@@ -168,7 +167,7 @@ private:
   std::vector<WhetStone::Tensor> K_;  // tensor of absolute permeability
 
   // constitutive relations
-  Teuchos::RCP<FlowRelations::EOSWater> eos_liquid_;
+  Teuchos::RCP<FlowRelations::EOS> eos_liquid_;
   Teuchos::RCP<FlowRelations::WRMVanGenuchten> wrm_;
   Teuchos::RCP<FlowRelations::EOSVaporInGas> eos_gas_;
 

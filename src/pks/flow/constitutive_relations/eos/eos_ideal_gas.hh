@@ -12,13 +12,14 @@
 #define _FLOWRELATIONS_EOS_IDEAL_GAS_HH_
 
 #include "Teuchos_ParameterList.hpp"
+#include "eos.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
 // Equation of State model
-class EOSIdealGas {
+class EOSIdealGas : public EOS {
 
 public:
   explicit EOSIdealGas(Teuchos::ParameterList& eos_plist);
@@ -31,10 +32,12 @@ public:
   virtual double DMolarDensityDT(double T, double p);
   virtual double DMolarDensityDp(double T, double p);
 
-  virtual double MolarMass() { return M_; }
+  virtual double molar_mass() { return M_; }
+
+  virtual double Viscosity(double T) {}
+  virtual double DViscosityDT(double T) {}
 
 protected:
-  virtual double Viscosity(double T); // undefined at this point -- make public when defined
   virtual void InitializeFromPlist_();
 
   Teuchos::ParameterList eos_plist_;

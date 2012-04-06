@@ -16,12 +16,15 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "factory.hh"
+#include "eos.hh"
+
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
 // Equation of State model
-class EOSWater {
+class EOSWater : public EOS {
 
 public:
   explicit EOSWater(Teuchos::ParameterList& eos_plist);
@@ -38,9 +41,10 @@ public:
 
   double molar_mass() { return M_; }
 
-protected:
+  double DViscosityDT(double T) {} // not implemented
+
+private:
   virtual void InitializeFromPlist_();
-  virtual double DViscosityDT(double T); // not yet implemented
 
   Teuchos::ParameterList eos_plist_;
   double M_;
@@ -59,6 +63,9 @@ protected:
 
   // -- temperature dependence of viscosity > T1
   const double kbv2_, kcv2_, kT1_;
+
+  static Utils::RegisteredFactory<EOS,EOSWater> factory_;
+
 };
 
 } // namespace
