@@ -972,7 +972,7 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double satura
     std::vector<unsigned int>::iterator j;
     for (j = block.begin(); j!=block.end(); j++) {
       (*pressure)[*j] = WRM[mb]->pressure(saturation);
-	  }
+    }
   }  
 }
 
