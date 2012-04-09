@@ -377,9 +377,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       ++divergence_count;
       
       // if it does not recover quickly, abort
-      if (divergence_count == 2) throw state.mitr+1;
-    } else {
-      divergence_count = 0;
+      if (divergence_count == 3) throw state.mitr+1;
     }
 
 
@@ -400,6 +398,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       if ((itr < state.minitr) || (itr > state.maxitr)) {
         throw itr;
       }
+
+      if (divergence_count > 0) throw state.maxitr+1;
+
       return;
     }
   }
