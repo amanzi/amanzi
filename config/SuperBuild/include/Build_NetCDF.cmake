@@ -91,13 +91,15 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                                                 ${NetCDF_netcdf4_opts} 
                                                 --disable-dap
                                                 --disable-shared
+						--disable-fortran
+						--disable-f90
+						--disable-f77
+						--disable-fortran-compiler-check
                                                 CC=${CMAKE_C_COMPILER}
                                                 CFLAGS=${netcdf_cflags}
                                                 CXX=${CMAKE_CXX_COMPILER}
                                                 CXXFLAGS=${netcdf_cxxflags}
                                                 CPPFLAGS=${netcdf_cppflags}
-                                                FC=${CMAKE_Fortran_COMPILER}
-                                                FCFLAGS=${netcdf_fcflags}
                                                 LDFLAGS=-L<INSTALL_DIR>/lib
                     # -- Build
                     BINARY_DIR        ${NetCDF_build_dir}           # Build directory 
