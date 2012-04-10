@@ -152,11 +152,6 @@ private:
   bool variable_abs_perm_;
   int Krel_method_;
 
-  // state variables
-  Teuchos::RCP<State> S_prev_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
-
   double dt_;
   double dt0_;
 

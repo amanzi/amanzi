@@ -76,6 +76,7 @@
 #ifndef _ATS_FACTORY_HH_
 #define _ATS_FACTORY_HH_
 
+#include <iostream>
 #include <map>
 #include <string>
 #include "Teuchos_ParameterList.hpp"
@@ -92,6 +93,12 @@ public:
   static TBase* CreateInstance(const std::string& s, Teuchos::ParameterList& plist) {
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
+      std::cout << "cannot get item of type: " << s << std::endl;
+
+      for (typename map_type::iterator iter=GetMap()->begin();
+           iter!=GetMap()->end(); ++iter) {
+        std::cout << "  option: " << iter->first << std::endl;
+      }
       return 0;
     }
     return iter->second(plist);
@@ -121,7 +128,16 @@ public:
   // case a name s is already in the map? (i.e. two implementations trying to
   // call themselves the same thing) --etc
   RegisteredFactory(const std::string& s) {
+    std::cout << "inserting option: " << s << std::endl;
+    for (typename Factory<TBase>::map_type::iterator iter=Factory<TBase>::GetMap()->begin();
+         iter!=Factory<TBase>::GetMap()->end(); ++iter) {
+      std::cout << "  before option: " << iter->first << std::endl;
+    }
     Factory<TBase>::GetMap()->insert(std::pair<std::string,TBase* (*)(Teuchos::ParameterList&)>(s, &CreateT<TBase,TDerived>));
+    for (typename Factory<TBase>::map_type::iterator iter=Factory<TBase>::GetMap()->begin();
+         iter!=Factory<TBase>::GetMap()->end(); ++iter) {
+      std::cout << "  after option: " << iter->first << std::endl;
+    }
   }
 };
 
