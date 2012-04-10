@@ -12,6 +12,8 @@
 #define _FLOWRELATIONS_EOS_IDEAL_GAS_HH_
 
 #include "Teuchos_ParameterList.hpp"
+
+#include "factory.hh"
 #include "eos.hh"
 
 namespace Amanzi {
@@ -43,6 +45,9 @@ protected:
   Teuchos::ParameterList eos_plist_;
   double R_;
   double M_;
+
+private:
+  static Utils::RegisteredFactory<EOS,EOSIdealGas> factory_;
 };
 
 } // namespace

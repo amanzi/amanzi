@@ -49,7 +49,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   S->RequireField("darcy_flux", "flow", AmanziMesh::FACE, 1, true);
   S->RequireField("darcy_velocity", "flow", AmanziMesh::CELL, 3, false);
 
-  S->RequireField("saturation_liquid", "flow", AmanziMesh::FACE, 1, true);
+  S->RequireField("saturation_liquid", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("density_liquid", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("molar_density_liquid", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("viscosity_liquid", "flow", AmanziMesh::CELL, 1, true);
@@ -64,8 +64,10 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   S->RequireScalar("atmospheric_pressure", "flow");
 
   // -- independent variables not owned by this PK
+  S->RequireField("porosity", AmanziMesh::CELL, 1, true);
   S->RequireField("cell_volume", AmanziMesh::CELL, 1, true);
   S->RequireField("temperature", AmanziMesh::CELL, 1, true);
+  S->RequireConstantVector("gravity", S->mesh()->space_dimension());
 
   // -- work vectors
   S->RequireField("rel_perm_faces", "flow", AmanziMesh::FACE, 1, true);
@@ -143,11 +145,14 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   S->GetRecord("saturation_liquid","flow")->set_initialized();
   S->GetRecord("saturation_gas","flow")->set_initialized();
   S->GetRecord("density_liquid","flow")->set_initialized();
+  S->GetRecord("viscosity_liquid","flow")->set_initialized();
   S->GetRecord("density_gas","flow")->set_initialized();
   S->GetRecord("molar_density_liquid","flow")->set_initialized();
   S->GetRecord("molar_density_gas","flow")->set_initialized();
   S->GetRecord("mol_frac_gas","flow")->set_initialized();
   S->GetRecord("relative_permeability","flow")->set_initialized();
+  S->GetRecord("darcy_flux", "flow")->set_initialized();
+  S->GetRecord("darcy_velocity", "flow")->set_initialized();
 
   S->GetFieldData("rel_perm_faces","flow")->PutScalar(1.0);
   S->GetRecord("rel_perm_faces","flow")->set_initialized();
@@ -235,8 +240,8 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   rel_perm->ScatterMasterToGhosted();
 
-  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData("density_liq");
-  Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liq");
+  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData("density_liquid");
+  Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
   Teuchos::RCP<CompositeVector> rel_perm_faces = S->GetFieldData("rel_perm_faces", "flow");
 
   if (Krel_method_ == FLOW_RELATIVE_PERM_CENTERED) {

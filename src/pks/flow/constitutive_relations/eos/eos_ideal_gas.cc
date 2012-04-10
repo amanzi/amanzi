@@ -14,6 +14,9 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+// registry of method
+Utils::RegisteredFactory<EOS,EOSIdealGas> EOSIdealGas::factory_("ideal gas");
+
 EOSIdealGas::EOSIdealGas(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {
   InitializeFromPlist_();
 };

@@ -88,12 +88,15 @@
       <ParameterList name="pressure">
         <ParameterList name="left side">
           <Parameter name="regions" type="Array string" value="{Left side, Bottom side, Right side, Top side}"/>
-          <ParameterList name="boundary temperature">
+          <ParameterList name="boundary pressure">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="101325.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="mass flux">
       </ParameterList>
     </ParameterList>
 
@@ -122,5 +125,7 @@
     <Parameter name="Constant porosity" type="double" value="0.3"/>
     <Parameter name="Constant permeability" type="double" value="1.e-8"/>
     <Parameter name="Constant temperature" type="double" value="293.15"/>
+    <Parameter name="atmospheric_pressure" type="double" value="101325.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.80665"/>
   </ParameterList>
 </ParameterList>
