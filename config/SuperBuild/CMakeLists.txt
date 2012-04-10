@@ -330,6 +330,10 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
            -DTrilinos_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
+# SEACAS
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
+
+
 # ############################################################################ #
 #  Final steps
 # ############################################################################ #
