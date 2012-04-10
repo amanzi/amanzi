@@ -64,6 +64,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
 
+
   // sanity check
   if ( ! ((state.minitr < state.maxitr) && (state.maxitr < state.mitr) )) {
     Errors::Message m("steady state paramters are wrong, we need min iterations < max iterations < limit iterations");
@@ -324,7 +325,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // update the preconditioner if necessary
     int errc(0);
-    if (itr%state.maxpclag==0) fn.update_precon (t, u, h, errc);
+    if (itr%(state.maxpclag+1)==0) fn.update_precon (t, u, h, errc);
 
     // iteration counter
     itr++;
