@@ -266,21 +266,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     state.pclagcount = 0;
   }
   
-  // if (!state.usable_pc) {
-  //   // update the preconditioner (we use the predicted solution at the end of the time step)
-  //   state.updpc_calls++;
-  //   state.pclagcount++;
-  //   int errc = 0;
-
-  //   fn.update_precon (tnew, up, h, errc);
-  //   if (errc != 0) {
-  //     std::string msg = "BDF1 failed: error while updating the preconditioner.";
-  //     Errors::Message m(msg);
-  //     Exceptions::amanzi_throw(m);        
-  //   }
-  //   state.usable_pc = true;
-  // }
-
   //  Solve the nonlinear BCE system.
   u = up; // Initial solution guess is the predictor.
   try {
@@ -324,7 +309,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
 
   double error(0.0);
-  double initial_error(0.0);
+  double du_norm(0.0), previous_du_norm(0.0);
+  int divergence_count(0);
 
   do {
 
@@ -336,32 +322,38 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       throw itr;
     }
 
+    // update the preconditioner if necessary
     int errc(0);
     if (itr%state.maxpclag==0) fn.update_precon (t, u, h, errc);
 
+    // iteration counter
     itr++;
 
-    // Evaluate the preconditioned nonlinear function.
+    // count the number of nonlinear function evaluations
     state.pcfun_calls++;
 
     // compute u_tmp = (u-u0)/h
     u_tmp = u;
     u_tmp.Update(-1.0/h,u0,1.0/h);
 
+    // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
-
+    
+    // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
 
-    // Accelerated correction.
+    // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f  = u_tmp;        // copy preconditioned functional into appropriate data type
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
 
+    // compute the accellerated correction
     fpa->nka_correction(nev_du, preconditioned_f);
 
-    du = nev_du.getEpetraVector();  // copy result into an Epetra_Vector.
+    // copy result into an Epetra_Vector.
+    du = nev_du.getEpetraVector();  
 
-    // Next solution iterate and error estimate.
-    // FORTRAN:  u  = u - du
+    // next solution iterate and error estimate.
+    //   u  = u - du
     u.Update(-1.0,du,1.0);
 
     // Check the solution iterate for admissibility.
@@ -371,19 +363,31 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       }
       throw std::string("solution iterate is inadmissible"); 
     }
+    
+    // make sure that we do not diverge and cause numerical overflow
+    // we use inf norms here
 
+    previous_du_norm = du_norm;
+    du.NormInf(&du_norm);
+
+    // *out << "Amanzi::MPC ERRORS " << du_norm << " " << previous_du_norm << " " << std::endl;
+
+    if (itr>1 && du_norm >= previous_du_norm) {
+      // the solver threatening to diverge
+      ++divergence_count;
+      
+      // if it does not recover quickly, abort
+      if (divergence_count == 3) throw state.mitr+1;
+    }
+
+
+    // compute error norm for the purpose of convergence testing, we use the
+    // norm provided in the model evaluator
     error = fn.enorm(u, du);
-    if (itr == 1) initial_error = error;
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;
     }
-
-    if (itr > 1 && error > initial_error*state.elimit ) {
-      // the solver threatening to diverge
-      throw state.mitr+1;
-    }
-
 
     // Check for convergence
     if (error < state.ntol)   {
@@ -394,6 +398,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       if ((itr < state.minitr) || (itr > state.maxitr)) {
         throw itr;
       }
+
+      if (divergence_count > 0) throw state.maxitr+1;
+
       return;
     }
   }
