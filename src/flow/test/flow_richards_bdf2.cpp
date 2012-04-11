@@ -17,6 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "Mesh_MSTK.hh"
 #include "Mesh_simple.hh"
 
 #include "State.hpp"
@@ -51,7 +52,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 80, comm, gm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 80, comm, gm)); 
   //MeshFactory factory(*comm);
   //ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   //std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));

@@ -114,6 +114,10 @@ if ( BUILD_TESTS )
         add_executable(transport_3D_long test/Main.cc test/transport_3D_long.cpp)
         target_link_libraries(transport_3D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_3D_long transport_3D_long KIND unit)
+
+        add_executable(transport_subcycling test/Main.cc test/transport_subcycling.cpp)
+        target_link_libraries(transport_subcycling ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_subcycling transport_subcycling KIND unit)
     endif()    
 
     if ( ENABLE_STK_Mesh )

@@ -15,6 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "errors.hh"
 #include "tabular-function.hh"
+#include "gmv_mesh.hh"
 
 #include "tensor.hpp"
 #include "mfd3d.hpp"
@@ -64,7 +65,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 ****************************************************************** */
 int Transport_PK::Init()
 {
-  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory) );  
+  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory));  
   TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, ViewMemory));
 
   const Epetra_Map& cmap = mesh_->cell_map(true);
@@ -108,7 +109,7 @@ int Transport_PK::Init()
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));  // The maps include both owned and ghosts
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
 
-  // advection block installation
+  // advection block initialization
   current_component_ = -1;  // default value may be useful in the future
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
   component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -116,13 +117,16 @@ int Transport_PK::Init()
   component_local_min_.resize(cmax_owned + 1);
   component_local_max_.resize(cmax_owned + 1);
 
+  ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap));
+  ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap));
+
   //advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   lifting.reset_field(mesh_, component_);
   lifting.Init();
 
-  // dispersivity block installation
+  // dispersivity block initialization
   if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
     harmonic_points.resize(number_wghost_faces);
     for (int f=fmin; f<=fmax; f++) harmonic_points[f].init(dim);
@@ -147,7 +151,12 @@ int Transport_PK::Init()
 /* *******************************************************************
  * Estimation of the time step based on T.Barth (Lecture Notes   
  * presented at VKI Lecture Series 1994-05, Theorem 4.2.2.       
- * Routine must be called every time we update a flow field      
+ * Routine must be called every time we update a flow field.
+ *
+ * Warning: Barth calculates influx, we calculate outflux. The methods
+ * are equivalent for divergence-free flows and gurantee EMP. Outflux 
+ * takes into account sinks and sources but preserves only positivity
+ * of an advected mass.
  ****************************************************************** */
 double Transport_PK::calculate_transport_dT()
 {
@@ -157,14 +166,13 @@ double Transport_PK::calculate_transport_dT()
                                TS_nextBIG->ref_total_component_concentration());
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
-    check_divergence_property();
+    if (internal_tests) check_divergence_property();
     identify_upwind_cells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
   } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
-    //check_divergence_property();
     identify_upwind_cells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
@@ -177,22 +185,22 @@ double Transport_PK::calculate_transport_dT()
   const Epetra_Map& fmap = mesh->face_map(true);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  std::vector<double> total_influx(number_wghost_cells, 0.0);
+  std::vector<double> total_outflux(number_wghost_cells, 0.0);
 
   for (f=fmin; f<=fmax; f++) {
-    c = (*downwind_cell_)[f];
-    if (c >= 0) total_influx[c] += fabs(darcy_flux[f]); 
+    c = (*upwind_cell_)[f];
+    if (c >= 0) total_outflux[c] += fabs(darcy_flux[f]); 
   }
 
   // loop over cells and calculate minimal dT
-  double influx, dT_cell; 
+  double outflux, dT_cell; 
   const Epetra_Vector& ws = TS->ref_water_saturation();
   const Epetra_Vector& phi = TS->ref_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
   for (c=cmin; c<=cmax_owned; c++) {
-    influx = total_influx[c];
-    if (influx) dT_cell = mesh->cell_volume(c) * phi[c] * ws[c] / influx;
+    outflux = total_outflux[c];
+    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * ws[c] / outflux;
 
     dT = std::min(dT, dT_cell);
   }
@@ -216,22 +224,66 @@ double Transport_PK::calculate_transport_dT()
 
 
 /* ******************************************************************* 
- * MPC will call this function to advance the transport state    
- ****************************************************************** */
-void Transport_PK::advance(double dT_MPC)
+* MPC will call this function to advance the transport state.
+* Efficient subcycling requires to calculate an intermediate state of
+* saturation only once, which leads to a leap-frog-type algorithm.     
+******************************************************************* */
+void Transport_PK::advance(double dT_MPC, int subcycling)
 {
-  T_physical = TS->get_time();
+  Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
+  Epetra_MultiVector& tcc_next = TS_nextBIG->ref_total_component_concentration();
 
+  const Epetra_Vector& ws_prev = TS->ref_prev_water_saturation();
+  const Epetra_Vector& ws = TS->ref_water_saturation();
+
+  T_physical = TS->get_time();
+  double dT_total = 0.0, dT_cycle;
+
+  if (subcycling && dT < dT_MPC) {
+    dT_cycle = dT;
+    *ws_subcycle_start = ws_prev;
+  } else {
+    dT_cycle = dT_MPC;
+    water_saturation_start = TS->get_prev_water_saturation();
+    water_saturation_end = TS->get_water_saturation();
+  }
+
+  int ncycles = 0, swap = 1;
+  while (dT_total < dT_MPC) {
   double time = (standalone_mode) ? T_internal : T_physical;
   for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
  
-  T_internal += dT_MPC;
+    T_internal += dT_cycle;
+    dT_total += dT_cycle;
+
+    if (subcycling && dT < dT_MPC) {
+      if (swap) {  // Initial water saturation is in 'start'.
+        water_saturation_start = ws_subcycle_start;
+        water_saturation_end = ws_subcycle_end;
+        TS->interpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_end);
+      } else {  // Initial water saturation is in 'end'.
+        water_saturation_start = ws_subcycle_end;
+        water_saturation_end = ws_subcycle_start;
+        TS->interpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_start);
+      }
+      swap = 1 - swap;
+    }
 
   if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
-    advance_donor_upwind(dT_MPC);
+      advance_donor_upwind(dT_cycle);
   } else if (spatial_disc_order == 2) {
-    advance_second_order_upwind(dT_MPC);
+      advance_second_order_upwind(dT_cycle);
+    }
+
+    if (subcycling && dT < dT_MPC)  // rotate the concentrations
+        TS->copymemory_multivector(tcc_next, tcc, 1);
+
+    dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
+    ncycles++;
   }
+
+  //DEBUG
+  //writeGMVfile(TS_nextMPC);
 }
 
 
@@ -347,7 +399,7 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
       for (int i=0; i<num_components; i++) {
         tcc_flux = dT * u * (*tcc)[i][c1];
         (*tcc_next)[i][c1] -= tcc_flux;
-      }
+       }
     } 
     else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
       for (int i=0; i<num_components; i++) {
@@ -367,7 +419,7 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
       if (c2 >= 0) {
         u = fabs(darcy_flux[f]);
         tcc_flux = dT * u * bc->second;
-        (*tcc_next)[i][c2] += tcc_flux; 
+        (*tcc_next)[i][c2] += tcc_flux;
       }
     }
   }
