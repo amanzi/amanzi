@@ -15,8 +15,10 @@
 namespace Amanzi {
 namespace Transport {
 
+RegisteredPKFactory<PassiveTracer> PassiveTracer::reg_("passive tracer transport");
+
 PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
-        Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& solution) :
+        const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
   transport_plist_(transport_plist) {
 
   // require fields for the state and solution

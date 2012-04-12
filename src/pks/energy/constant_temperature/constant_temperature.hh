@@ -31,6 +31,7 @@ Example usage:
 #include "state.hh"
 
 #include "PK.hh"
+#include "pk_factory.hh"
 #include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
 
@@ -42,8 +43,9 @@ class ConstantTemperature : public PK, public BDFFnBase {
 
 public:
 
-  ConstantTemperature(Teuchos::ParameterList& energy_plist, Teuchos::RCP<State>& S,
-               Teuchos::RCP<TreeVector>& solution);
+  ConstantTemperature(Teuchos::ParameterList& energy_plist,
+                      const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<TreeVector>& solution);
 
   // ConstantTemperature is a PK
   // -- Initialize owned (dependent) variables.
@@ -96,6 +98,9 @@ private:
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
   double atol_;
   double rtol_;
+
+  // factory registration
+  static RegisteredPKFactory<ConstantTemperature> reg_;
 };
 
 } // namespace

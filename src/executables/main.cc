@@ -66,25 +66,8 @@ int main(int argc, char *argv[])
   std::string framework = frameworkValidator->validateString(
           Teuchos::getParameter<std::string>(mesh_parameter_list,"Framework"));
 
-  Amanzi::Simulator* simulator = 0;
-
-  if (framework=="Structured") {
-#ifdef ENABLE_Structured
-    simulator = new AmanziStructuredGridSimulationDriver();
-#else
-    amanzi_throw(Errors::Message("Structured not supported in current build"));
-#endif
-  } else {
-#ifdef ENABLE_Unstructured
-    simulator = new AmanziUnstructuredGridSimulationDriver();
-#else
-    amanzi_throw(Errors::Message("Unstructured not supported in current build"));
-#endif
-  }
-
-  Amanzi::ObservationData output_observations;
-  Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list,
-          output_observations);
+  AmanziUnstructuredGridSimulationDriver* simulator = new AmanziUnstructuredGridSimulationDriver();
+  Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list);
 
   delete simulator;
   delete comm;

@@ -20,10 +20,9 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "State.hh"
-#include "TreeVector.hh"
-
-#include "MPC.hh"
+#include "state.hh"
+#include "tree_vector.hh"
+#include "mpc.hh"
 
 namespace Amanzi {
 
@@ -31,11 +30,13 @@ class WeakMPC : public MPC {
 
 public:
   WeakMPC(Teuchos::ParameterList& mpc_plist,
-          Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
+          const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln);
 
-  ~WeakMPC() {};
+  virtual bool advance(double dt);
 
-  bool advance(double dt);
+  // factory registration
+  static RegisteredPKFactory<WeakMPC> reg_;
+
 };
 } // close namespace Amanzi
 

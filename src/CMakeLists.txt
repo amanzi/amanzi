@@ -7,7 +7,7 @@ add_subdirectory(operators)
 add_subdirectory(pks)
 
 # top level coordinator
-#add_subdirectory(coordinator)
+add_subdirectory(coordinator)
 
 # main (from $AMANZI_HOME/src/common/standalone_simulation_coordinator
-#add_subdirectory(executables)
+add_subdirectory(executables)

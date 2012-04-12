@@ -26,8 +26,10 @@
 namespace Amanzi {
 namespace Energy {
 
+RegisteredPKFactory<ConstantTemperature> ConstantTemperature::reg_("constant temperature energy");
+
 ConstantTemperature::ConstantTemperature(Teuchos::ParameterList& energy_plist,
-        Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& solution) :
+        const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
   energy_plist_(energy_plist) {
 
   solution_ = solution;

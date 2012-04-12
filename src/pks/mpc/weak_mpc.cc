@@ -17,12 +17,14 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #include "errors.hh"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-#include "WeakMPC.hh"
+#include "weak_mpc.hh"
 
 namespace Amanzi {
 
+RegisteredPKFactory<WeakMPC> WeakMPC::reg_("weak MPC");
+
 WeakMPC::WeakMPC(Teuchos::ParameterList& mpc_plist,
-                 Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) :
+                 const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) :
     MPC::MPC(mpc_plist, S, soln) {};
 
 // Advance each sub-PK individually.

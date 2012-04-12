@@ -19,6 +19,7 @@
 #include "matrix_mfd.hh"
 
 #include "PK.hh"
+#include "pk_factory.hh"
 #include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
 
@@ -179,6 +180,9 @@ private:
   Teuchos::RCP<BoundaryFunction> bc_flux_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
+
+  // factory registration
+  static RegisteredPKFactory<Richards> reg_;
 };
 
 }  // namespace AmanziFlow

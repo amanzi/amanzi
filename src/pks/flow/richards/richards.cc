@@ -16,6 +16,8 @@ Authors: Neil Carlson (version 1)
 namespace Amanzi {
 namespace Flow {
 
+RegisteredPKFactory<Richards> Richards::reg_("richards flow");
+
 // constructor
 Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :

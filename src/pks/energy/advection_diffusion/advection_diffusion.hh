@@ -20,6 +20,7 @@ us to the air-water system.
 #include "state.hh"
 #include "tree_vector.hh"
 #include "PK.hh"
+#include "pk_factory.hh"
 #include "bdf_time_integrator.hh"
 #include "bdf_fn_base.hh"
 
@@ -36,8 +37,8 @@ class AdvectionDiffusion : public PK, public BDFFnBase {
 
 public:
 
-  AdvectionDiffusion(Teuchos::ParameterList& plist, Teuchos::RCP<State>& S,
-                      Teuchos::RCP<TreeVector>& solution);
+  AdvectionDiffusion(Teuchos::ParameterList& plist, const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<TreeVector>& solution);
 
   // AdvectionDiffusion is a PK
   // -- Initialize owned (dependent) variables.
@@ -107,6 +108,10 @@ private:
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
   double atol_;
   double rtol_;
+
+  // factory registration
+  static RegisteredPKFactory<AdvectionDiffusion> reg_;
+
 };
 
 } // namespace Energy
