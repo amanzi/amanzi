@@ -282,9 +282,9 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   // }
 
   //  Solve the nonlinear BCE system.
-  u = up; // Initial solution guess is the predictor.
+  u = up;  // Initial solution guess is the predictor.
   try {
-    solve_bce ( tnew, h, u0, u);
+    solve_bce(tnew, h, u0, u);
   }
   catch (int itr) { 
     // we end up in here either if the solver took too many iterations, 
@@ -293,10 +293,10 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
       hnext = std::min(state.hred * h, state.hlimit);
       state.usable_pc = false;
     } else if (itr < state.minitr) {
-      hnext = std::min( state.hinc * h, state.hlimit);
+      hnext = std::min(state.hinc * h, state.hlimit);
       state.usable_pc = false;
     } else if (itr > state.mitr) {
-      u = usav; // restore the original u
+      u = usav;  // restore the original u
       state.usable_pc = false;
       hnext = std::min(h, state.hlimit);
       throw itr;

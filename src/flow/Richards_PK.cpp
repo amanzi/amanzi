@@ -237,9 +237,10 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   set_time(T0, dT0);  // overrides data provided in the input file
   ti_method = ti_method_sss;
-  num_itrs = num_itrs_sss;
+  num_itrs = 0;
 
   //DEBUG
+  //advanceToSteadyState();
   //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
   //advanceToSteadyState();
   //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
@@ -275,7 +276,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
-    num_itrs_trs = 0; 
   }
   else if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF1) {
     if (preconditioner == matrix) {
@@ -294,7 +294,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
-    num_itrs_trs = 0; 
   }
   else if (solver == NULL) {
     preconditioner->init_ML_preconditioner(ML_list);
@@ -312,7 +311,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 
   set_time(T0, dT0);  // overrides data in input file
   ti_method = ti_method_trs;
-  num_itrs = num_itrs_trs;
+  num_itrs = 0;
 }
 
 
@@ -360,7 +359,7 @@ int Richards_PK::advance(double dT_MPC)
     T_internal = bdf1_dae->most_recent_time();
   }
   dT = dTnext;
-  num_itrs_trs++;
+  num_itrs++;
 
   flow_status_ = FLOW_NEXT_STATE_COMPLETE;
   return 0;

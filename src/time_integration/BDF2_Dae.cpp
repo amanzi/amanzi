@@ -149,7 +149,6 @@ namespace BDF2 {
     
     state.hmin = std::min<double>(h, state.hmin);
     state.hmax = std::max<double>(h, state.hmax);
-
   }
 
 
