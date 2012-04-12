@@ -5,21 +5,14 @@
 #    PK class
 #
 
-#add_subdirectory(mpc)
+# ATS include directories
+add_library(pk_factory pk_factory.cc)
+
+add_subdirectory(mpc)
 add_subdirectory(energy)
 add_subdirectory(transport)
 add_subdirectory(flow)
 
-# ATS include directories
-include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
-include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations)
-include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constant_temperature)
-include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
-include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
-include_directories(${ATS_SOURCE_DIR}/src/pks/energy/advection_diffusion)
-include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
-
-add_library(pks PK_Factory.cc)
 
 
 

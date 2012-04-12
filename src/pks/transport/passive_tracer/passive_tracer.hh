@@ -23,6 +23,7 @@ simple passive tracer transport
 #include "advection.hh"
 #include "boundary-function.hh"
 
+#include "pk_factory.hh"
 #include "PK.hh"
 #include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
@@ -35,8 +36,8 @@ class PassiveTracer : public PK, public BDFFnBase {
 
 public:
 
-  PassiveTracer(Teuchos::ParameterList& transport_plist, Teuchos::RCP<State>& S,
-               Teuchos::RCP<TreeVector>& solution);
+  PassiveTracer(Teuchos::ParameterList& transport_plist, const Teuchos::RCP<State>& S,
+                const Teuchos::RCP<TreeVector>& solution);
 
   // ConstantTemperature is a PK
   // -- Initialize owned (dependent) variables.
@@ -97,6 +98,9 @@ private:
   double cfl_;
   Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_;
   Teuchos::RCP< std::vector<int> > bcs_dof_;
+
+  // factory registration
+  static RegisteredPKFactory<PassiveTracer> reg_;
 };
 
 } // namespace

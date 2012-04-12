@@ -16,9 +16,10 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
+RegisteredPKFactory<AdvectionDiffusion> AdvectionDiffusion::reg_("advection-diffusion energy");
 
 AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
-        Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& solution) :
+        const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
     energy_plist_(plist) {
 
   // require fields

@@ -28,54 +28,46 @@ respective methods.
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
 
-#include "State.hh"
-#include "Vector.hh"
-#include "TreeVector.hh"
+#include "state.hh"
+#include "tree_vector.hh"
 
 #include "PK.hh"
-#include "PK_Factory.hh"
+#include "pk_factory.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
 
 class MPC : public PK {
 
 public:
   // all PK constructors must look like this
   MPC(Teuchos::ParameterList& mpc_plist,
-      Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& solution);
-
-  ~MPC() {};
+      const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution);
 
   // PK methods
   // -- calls all sub-PK initialize() methods
-  virtual void initialize(Teuchos::RCP<State>& S);
+  virtual void initialize(const Teuchos::RCP<State>& S);
 
   // transfer operators
-  virtual void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
-  virtual void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln,
-                                 Teuchos::RCP<TreeVector>& soln_dot);
-  virtual void solution_to_state(Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<State>& S);
-  virtual void solution_to_state(Teuchos::RCP<TreeVector>& soln,
-          Teuchos::RCP<TreeVector>& soln_dot, Teuchos::RCP<State>& S);
+  virtual void state_to_solution(const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<TreeVector>& soln);
+  virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
+          const Teuchos::RCP<State>& S);
 
   // -- min(get_dt()) for each sub-PK
   virtual double get_dt();
 
   // -- loops over sub-PKs
   virtual bool advance(double dt) = 0;
-  virtual void commit_state(double dt, Teuchos::RCP<State>& S);
-  virtual void calculate_diagnostics(Teuchos::RCP<State>& S);
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
 
   // set States
-  virtual void set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next);
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next);
 
 protected:
-  // PK container and factory
-  PK_Factory pk_factory_;
   std::vector< Teuchos::RCP<PK> > sub_pks_;
-
-  // misc setup information
   Teuchos::ParameterList mpc_plist_;
 };
 } // close namespace Amanzi

@@ -20,24 +20,23 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
 
-#include "TreeVector.hh"
-#include "State.hh"
+#include "tree_vector.hh"
+#include "state.hh"
 #include "PK.hh"
-#include "PK_Factory.hh"
+#include "pk_factory.hh"
 #include "ObservationData.H"
-#include "Unstructured_observations.hpp"
-#include "Vis.hpp"
+#include "unstructured_observations.hh"
+// #include "Vis.hpp"
 
 namespace Amanzi {
 
-class Coordinator : public Teuchos::VerboseObject<Coordinator> {
+class Coordinator {
 
 public:
-  Coordinator(Teuchos::ParameterList &parameter_list,
-              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps,
-              Epetra_MpiComm* comm,
-              Amanzi::ObservationData& output_observations);
-  ~Coordinator() {};
+  Coordinator(Teuchos::ParameterList parameter_list,
+              Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh,
+              Epetra_MpiComm* comm );
+              //              Amanzi::ObservationData& output_observations);
 
   // PK methods
   void initialize();
@@ -48,7 +47,6 @@ private:
   void read_parameter_list();
 
   // PK container and factory
-  PK_Factory pk_factory_;
   Teuchos::RCP<PK> pk_;
 
   // states
@@ -58,7 +56,7 @@ private:
 
   // misc setup information
   Teuchos::ParameterList parameter_list_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList coordinator_plist_;
 
   double T0_, T1_;
@@ -68,8 +66,8 @@ private:
   Epetra_MpiComm* comm_;
 
   // observations
-  Amanzi::ObservationData& output_observations_;
-  Amanzi::Unstructured_observations* observations_;
+  //  ObservationData& output_observations_;
+  //  Teuchos::RCP<UnstructuredObservations> observations_;
 
   // visualization
   Amanzi::Vis *visualization_;

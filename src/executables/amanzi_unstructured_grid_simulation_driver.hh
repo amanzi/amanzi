@@ -10,13 +10,12 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "ObservationData.H"
 #include "Simulator.H"
 
 struct AmanziUnstructuredGridSimulationDriver
-  : Amanzi::Simulator, public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>
+  : public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>
 {
-  virtual ReturnType Run (const MPI_Comm&               mpi_comm,
-                          Teuchos::ParameterList&       input_parameter_list,
-                          Amanzi::ObservationData&      output_observations);
+  virtual Amanzi::Simulator::ReturnType Run (const MPI_Comm&               mpi_comm,
+                          Teuchos::ParameterList&       input_parameter_list);
+
 };

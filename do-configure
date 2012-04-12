@@ -1,4 +1,6 @@
-#!/bin/sh
+export CXX=`which mpiCC`
+export CC=`which mpicc`
+export BOOST_ROOT=/usr
 
 AMANZI_INSTALL_DIR=${AMANZI_DIR}
 

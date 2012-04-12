@@ -29,8 +29,7 @@ Effectively stolen from Amanzi, with few modifications.
 #include "Teuchos_StrUtils.hpp"
 
 #include "MeshFactory.hh"
-#include "State.hh"
-#include "Coordinator.hh"
+#include "coordinator.hh"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -38,11 +37,8 @@ Effectively stolen from Amanzi, with few modifications.
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 #include "InputParser.H"
 
-Amanzi::Simulator::ReturnType
-AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
-                                             Teuchos::ParameterList& input_parameter_list,
-                                             Amanzi::ObservationData&      output_observations)
-{
+Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
+        Teuchos::ParameterList& input_parameter_list) {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -75,7 +71,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
       std::endl;
   }
 
-  Amanzi::AmanziMesh::MeshFactory factory(*comm);
+  Amanzi::AmanziMesh::MeshFactory factory(comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // select the mesh framework
@@ -156,7 +152,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   ASSERT(!mesh.is_null());
 
   // create the top level Coordinator
-  Amanzi::Coordinator coordinator(params_copy, mesh, comm, output_observations);
+  Amanzi::Coordinator coordinator(params_copy, mesh, comm);
 
   // run the simulation
   coordinator.cycle_driver();

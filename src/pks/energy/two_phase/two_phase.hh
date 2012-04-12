@@ -19,6 +19,7 @@ us to the air-water system.
 
 #include "state.hh"
 #include "tree_vector.hh"
+#include "pk_factory.hh"
 #include "PK.hh"
 #include "bdf_time_integrator.hh"
 #include "bdf_fn_base.hh"
@@ -36,8 +37,8 @@ class TwoPhase : public PK, public BDFFnBase {
 
 public:
 
-  TwoPhase(Teuchos::ParameterList& plist, Teuchos::RCP<State>& S,
-                      Teuchos::RCP<TreeVector>& solution);
+  TwoPhase(Teuchos::ParameterList& plist, const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<TreeVector>& solution);
 
   // TwoPhase is a PK
   // -- Initialize owned (dependent) variables.
@@ -134,6 +135,9 @@ private:
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
   double atol_;
   double rtol_;
+
+  // factory registration
+  static RegisteredPKFactory<TwoPhase> reg_;
 };
 
 } // namespace Energy
