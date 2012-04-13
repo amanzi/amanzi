@@ -344,8 +344,15 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT
                ${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}
                @ONLY)
 install( FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
-         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake
-       )
+         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake)
+
+# --- Create a Exodus split mesh script and add to the install target     
+set(SuperBuild_EXOSPLIT_SCRIPT splitexo)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_EXOSPLIT_SCRIPT}.sh.in
+               ${SuperBuild_BINARY_DIR}/${SuperBuild_EXOSPLIT_SCRIPT}
+               @ONLY)
+install(PROGRAMS "${SuperBuild_BINARY_DIR}/${SuperBuild_EXOSPLIT_SCRIPT}"             
+         DESTINATION ${TPL_INSTALL_PREFIX}/bin)
 
 #  --- Build the docs
 option(BUILD_DOCS "Build the SuperBuild documentation" FALSE)
