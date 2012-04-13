@@ -28,7 +28,7 @@ class Transport_State {
   ~Transport_State() {};
 
   // data management
-  void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target);
+  void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target, int target_is_parallel = 1);
   void copymemory_vector(Epetra_Vector& source, Epetra_Vector& target);
   void distribute_cell_vector(Epetra_Vector& v);
   void distribute_cell_multivector(Epetra_MultiVector& v);
@@ -52,6 +52,8 @@ class Transport_State {
   Epetra_Vector& ref_water_density() { return *water_density; }
 
   // miscaleneous
+  void interpolateCellVector(
+      const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int);
   double get_time() { return S_->get_time(); }
   
   // debug routines

@@ -35,7 +35,8 @@
 
 # This script requires the SEACAS utilities nem_slice and
 # nem_spread. SEACAS source can be obtained from
-# http://sourceforge.net/projects/seacas.  Set the enivronment
+# http://sourceforge.net/projects/seacas or built through
+# the SuperBuild TPL build. Once installed, set the environment
 # variable ACCESS to the path where SEACAS was installed.
 
 seacas=${ACCESS-/files0/ascem/src/seacas}

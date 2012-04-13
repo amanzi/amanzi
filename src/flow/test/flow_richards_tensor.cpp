@@ -50,7 +50,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
-  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0,0.0, 1.0,1.0,1.0, 2, 2, 2, comm, gm)); 
+  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0,0.0, 1.0,1.0,1.0, 2, 3, 5, comm, gm)); 
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -73,6 +73,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   // create the Richards Model Evaluator
   ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
   Amanzi::RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
+  RME.update_norm(1.0e-3, 1.0e-3);
 
   // create the time stepping object
   Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList);

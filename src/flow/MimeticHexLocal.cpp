@@ -44,19 +44,25 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
   Epetra_SerialDenseMatrix Mc(3,3); // corner mass matrix
   Epetra_SerialSymDenseMatrix Mc_sym_view(View, Mc.A(), Mc.LDA(), Mc.M());  // symmetric view of Mc
 
-  // Set the mass matrix to zero.
-  for (int j = 0; j < 6; j++)
-    for (int i = 0; i < 6; ++i)
-      matrix(i,j) = 0.0;
+  // Grab a pointer to the data
+  double* mp  = matrix.A();
+  double* Ncp = Nc.A();
+  double* Mcp = Mc.A();
+
+  int matrixNumRows = matrix.RowDim();
+  int matrixNumCols = matrix.ColDim();
+  
+  // Zero out the array
+  for (int i=(matrixNumRows*matrixNumCols)-1; i>=0; --i)
+    mp[i] = 0;
 
   // Accumulate the mass matrix contribution from each of the eight corners.
   for (int c = 0; c < 8; ++c) {
 
     // Gather the three face normals adjacent to the corner.
-    for (int j = 0; j < 3; ++j)
-      for (int k = 0; k < 3; ++k)
-	//Nc(k,j) = face_normal[CellTopology::HexCornerFace[c][j]][k];
-	Nc(k,j) = face_normal[AmanziMesh::HexCornerFace[c][j]][k];
+    for (int j = 0; j < 3; ++j)   //Col
+      for (int k = 0; k < 3; ++k) //Row
+	    Ncp[j*3 + k] = face_normal[AmanziMesh::HexCornerFace[c][j]][k];
 
     // Mc <-- Nc^T Nc
     Mc.Multiply('T', 'N', 1.0, Nc, Nc, 0.0);
@@ -68,13 +74,13 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
 
     // Scatter the corner mass matrix into the full cell mass matrix.
     double s = hvol * cwgt[c] / K;
-    for (int j = 0; j < 3; ++j) {   // loop over corner face cols
-      //int jj = CellTopology::HexCornerFace[c][j]; // the corresponding cell face index
-      int jj = AmanziMesh::HexCornerFace[c][j]; // the corresponding cell face index
-      for (int i = 0; i <3 ; ++i) {   // loop over corner face rows
-	//int ii = CellTopology::HexCornerFace[c][i]; // the corresponding cell face index
-	int ii = AmanziMesh::HexCornerFace[c][i]; // the corresponding cell face index
-        matrix(ii,jj) += s * Mc(i,j);
+    for (int j = 0; j < 3; ++j) {                 // loop over corner face cols
+      int jj = AmanziMesh::HexCornerFace[c][j];   // the corresponding cell face index
+      for (int i = 0; i < 3 ; ++i) {              // loop over corner face rows
+	    int ii = AmanziMesh::HexCornerFace[c][i]; // the corresponding cell face index
+	    assert(ii < matrixNumRows);
+	    assert(jj < matrixNumCols);
+        mp[jj*matrixNumRows + ii] += s * Mcp[j*3 + i];
       }
     }
   }
@@ -98,19 +104,25 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
   Epetra_SerialDenseMatrix Tc(3,3); // temporary corner matrix
   Epetra_SerialSymDenseMatrix Mc_sym_view(View, Mc.A(), Mc.LDA(), Mc.M());  // symmetric view of Mc
 
-  // Set the mass matrix to zero.
-  for (int j = 0; j < 6; j++)
-    for (int i = 0; i < 6; ++i)
-      matrix(i,j) = 0.0;
+  // Grab a pointer to the data
+  double* mp  = matrix.A();
+  double* Ncp = Nc.A();
+  double* Mcp = Mc.A();
+
+  int matrixNumRows = matrix.RowDim();
+  int matrixNumCols = matrix.ColDim();
+  
+  // Zero out the array
+  for (int i=(matrixNumRows*matrixNumCols)-1; i>=0; --i)
+    mp[i] = 0;
 
   // Accumulate the mass matrix contribution from each of the eight corners.
   for (int c = 0; c < 8; ++c) {
 
     // Gather the three face normals adjacent to the corner.
-    for (int j = 0; j < 3; ++j)
-      for (int k = 0; k < 3; ++k)
-	//Nc(k,j) = face_normal[CellTopology::HexCornerFace[c][j]][k];
-	Nc(k,j) = face_normal[AmanziMesh::HexCornerFace[c][j]][k];
+    for (int j = 0; j < 3; ++j)   // Col
+      for (int k = 0; k < 3; ++k) // Row
+	    Ncp[j*3 + k] = face_normal[AmanziMesh::HexCornerFace[c][j]][k];
 
     // Mc <-- Nc^T K Nc
     Tc.Multiply('L', 1.0, K, Nc, 0.0);
@@ -124,12 +136,12 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
     // Scatter the corner mass matrix into the full cell mass matrix.
     double s = hvol * cwgt[c];
     for (int j = 0; j < 3; ++j) {   // loop over corner face cols
-      //int jj = CellTopology::HexCornerFace[c][j]; // the corresponding cell face index
       int jj = AmanziMesh::HexCornerFace[c][j]; // the corresponding cell face index
       for (int i = 0; i <3 ; ++i) {   // loop over corner face rows
-	//int ii = CellTopology::HexCornerFace[c][i]; // the corresponding cell face index
-	int ii = AmanziMesh::HexCornerFace[c][i]; // the corresponding cell face index
-        matrix(ii,jj) += s * Mc(i,j);
+	    int ii = AmanziMesh::HexCornerFace[c][i]; // the corresponding cell face index
+	    assert(ii < matrixNumRows);
+	    assert(jj < matrixNumCols);
+        mp[jj*matrixNumRows + ii] += s * Mcp[j*3 + i];
       }
     }
   }
@@ -152,12 +164,14 @@ void MimeticHexLocal::diff_op(double coef,
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
+  
+  double* ap = aux1.A();
 
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
 
   for (int i = 0; i < 6; ++i)
-    aux1(i) = pface[i] - pcell;
+    ap[i] = pface[i] - pcell;
 
   Epetra_SerialDenseVector aux2(View, rface, 6);
 
@@ -175,12 +189,14 @@ void MimeticHexLocal::diff_op(double coef, double upwind_coef[],
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
+  
+  double* ap = aux1.A();
 
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
 
   for (int i = 0; i < 6; ++i)
-    aux1(i) = pface[i] - pcell;
+    ap[i] = pface[i] - pcell;
 
   Epetra_SerialDenseVector aux2(View, rface, 6);
   Minv.Multiply(false, aux1, aux2);
@@ -200,12 +216,14 @@ void MimeticHexLocal::diff_op(
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
+  
+  double* ap = aux1.A();
 
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
 
   for (int i = 0; i < 6; ++i)
-    aux1(i) = pface[i] - pcell;
+    ap[i] = pface[i] - pcell;
 
   Epetra_SerialDenseVector aux2(View, rface, 6);
   Minv.Multiply(false, aux1, aux2);
@@ -224,12 +242,14 @@ void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
+  
+  double* ap = aux1.A();
 
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
 
   for (int i = 0; i < 6; ++i)
-    aux1(i) = pface[i] - pcell;
+    ap[i] = pface[i] - pcell;
 
   Epetra_SerialDenseVector aux2(View, rface, 6);
 
@@ -247,12 +267,14 @@ void MimeticHexLocal::diff_op(double coef,
 {
   Epetra_SerialDenseVector aux(6);
   Epetra_SerialDenseMatrix Minv(6,6);
+  
+  double* ap = aux.A();
 
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
 
   for (int i = 0; i < 6; ++i)
-    aux(i) = pface[i] - pcell;
+    ap[i] = pface[i] - pcell;
 
   Minv.Multiply(false, aux, rface);
 
@@ -268,12 +290,14 @@ void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
 {
   Epetra_SerialDenseVector aux(6);
   Epetra_SerialDenseMatrix Minv(6,6);
+  
+  double* ap = aux.A();
 
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
 
   for (int i = 0; i < 6; ++i)
-    aux(i) = pface[i] - pcell;
+    ap[i] = pface[i] - pcell;
 
   Minv.Multiply(false, aux, rface);
 

@@ -5,7 +5,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
   Transport_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Transport_State> TS);
   double time_step = TPK.calculate_transport_dT();
-  TPK.advance( time_step);
+  TPK.advance(time_step);
 */
 
 #ifndef __Transport_PK_hpp__
@@ -84,7 +84,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // primary members
   double calculate_transport_dT();
-  void advance(double dT);
+  void advance(double dT, int subcycling = 0);
   void commit_state(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
 
   void check_divergence_property();
@@ -181,6 +181,11 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
+
+  Teuchos::RCP<Epetra_Vector> water_saturation_start;  // data for subcycling 
+  Teuchos::RCP<Epetra_Vector> water_saturation_end;
+  Teuchos::RCP<Epetra_Vector> ws_subcycle_start;  // ws = water saturation 
+  Teuchos::RCP<Epetra_Vector> ws_subcycle_end;
 
   int advection_limiter;  // data for limiters
   int current_component_;

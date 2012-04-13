@@ -110,6 +110,8 @@ void DiffusionMatrix::Compute(const std::vector<T> &K)
   std::vector<int> dirs;
   Epetra_IntSerialDenseVector g_indices(6);
   Epetra_SerialDenseMatrix minv(6,6);
+  
+  double* minvp = minv.A();
 
   // Symmetric system: Ensure Dfc_t_ is just an alias for Dcf_
   if (Dfc_t_ != Dcf_) {
@@ -128,13 +130,15 @@ void DiffusionMatrix::Compute(const std::vector<T> &K)
 
     // Get the cell face indices; we need both process-local and global indices.
     mesh_->cell_get_faces_and_dirs((unsigned int) j, &l_indices, &dirs, true);
-    for (int k = 0; k < 6; ++k) g_indices[k] = face_map_use.GID(l_indices[k]);
 
     double w[6];
     double matsum = 0.0;
     for (int k = 0; k < 6; ++k) {
+      g_indices[k] = face_map_use.GID(l_indices[k]);
+      
       double colsum = 0.0;
-      for (int i = 0; i < 6; ++i) colsum += minv(i,k);
+      for (int i = 0; i < 6; ++i) 
+        colsum += minvp[k*6 + i];
       w[k] = -colsum;
       matsum += colsum;
     }
@@ -159,6 +163,8 @@ void DiffusionMatrix::Compute(const std::vector<T> &K, const Epetra_Vector &K_up
   std::vector<int> dirs;
   Epetra_IntSerialDenseVector g_indices(6);
   Epetra_SerialDenseMatrix minv(6,6);
+  
+  double* minvp = minv.A();
 
   // Non-symmetric system: ensure Dfc_t_ is an independent matrix
   if (!Dfc_t_ || Dfc_t_ == Dcf_) Dfc_t_ = new Epetra_CrsMatrix(Copy, (*Dcf_).Graph());
@@ -174,11 +180,12 @@ void DiffusionMatrix::Compute(const std::vector<T> &K, const Epetra_Vector &K_up
 
     // Get the cell face indices; we need both process-local and global indices.
     mesh_->cell_get_faces_and_dirs((unsigned int) j, &l_indices, &dirs, true);
-    for (int k = 0; k < 6; ++k) g_indices[k] = face_map_use.GID(l_indices[k]);
 
     // Scale the rows of the cell face mass matrix inverse with the upwind coeffs.
     for (int k = 0; k < 6; ++k) {
-      for (int i = 0; i < 6; ++i) minv(k,i) *= K_upwind[l_indices[k]];
+      g_indices[k] = face_map_use.GID(l_indices[k]);
+      for (int i = 0; i < 6; ++i) 
+        minvp[i*6 + k] *= K_upwind[l_indices[k]];
     }
     
     double w_cf[6], w_fc[6];
@@ -186,8 +193,10 @@ void DiffusionMatrix::Compute(const std::vector<T> &K, const Epetra_Vector &K_up
     for (int k = 0; k < 6; ++k) {
       double colsum = 0.0;
       double rowsum = 0.0;
-      for (int i = 0; i < 6; ++i) colsum += minv(i,k);
-      for (int i = 0; i < 6; ++i) rowsum += minv(k,i);
+      for (int i = 0; i < 6; ++i) {
+        colsum += minvp[k*6 + i];
+        rowsum += minvp[i*6 + k];
+      }
       w_cf[k] = -colsum;
       w_fc[k] = -rowsum;
       matsum += colsum;
@@ -224,9 +233,11 @@ void DiffusionMatrix::ComputeFaceSchur()
     (*Dcf_).ExtractMyRowView(j, n, wcf, l_indices);
     (*Dfc_t_).ExtractMyRowView(j, n, wfc, l_indices); // note: same n, l_indices
     Epetra_SerialDenseMatrix update(n,n);
+    double* u = update.A();
+    
     for (int k = 0; k < n; ++k) {
       for (int i = 0; i < n; ++i) {
-        update(i,k) = -wfc[i]*(wcf[k]/(*Dcc_)[j]);
+        u[k*n + i] = -wfc[i]*(wcf[k]/(*Dcc_)[j]);
       }
     }
     Epetra_IntSerialDenseVector g_indices(n);
