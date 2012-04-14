@@ -15,9 +15,9 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Setup fundamental parameters for this model.                                            
 ****************************************************************** */
-WRM_fake::WRM_fake(std::string region_)
+WRM_fake::WRM_fake(const std::string region)
 {
-  set_region(region_);
+  set_region(region);
   alpha = 1.0;
   n = 2.0;
   m = 1.0;

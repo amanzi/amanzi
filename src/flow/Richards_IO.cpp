@@ -18,6 +18,8 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Richards_PK::processParameterList()
 {
+  Errors::Message msg;
+
   // create verbosity list if it does not exist
   if (!rp_list.isSublist("VerboseObject")) {
     Teuchos::ParameterList verbosity_list;
@@ -56,7 +58,12 @@ void Richards_PK::processParameterList()
   }
 
   // Miscaleneous
-  atm_pressure = rp_list.get<double>("atmospheric pressure");
+  if (rp_list.isParameter("atmospheric pressure")) {
+    atm_pressure = rp_list.get<double>("atmospheric pressure");
+  } else {
+    msg << "Richards Problem: no <atmospheric pressure> entry.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> 
@@ -81,8 +88,8 @@ void Richards_PK::processParameterList()
 
   // Create water retention models
   if (!rp_list.isSublist("Water retention models")) {
-    Errors::Message m("There is no Water retention models list");
-    Exceptions::amanzi_throw(m);
+    msg << "There is no Water retention models list";
+    Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList& vG_list = rp_list.sublist("Water retention models");
 
@@ -91,7 +98,6 @@ void Richards_PK::processParameterList()
     if (vG_list.isSublist(vG_list.name(i))) {
       nblocks++;
     } else {
-      Errors::Message msg;
       msg << "Richards Problem: water retention model contains an entry that is not a sublist.";
       Exceptions::amanzi_throw(msg);
     }
@@ -119,7 +125,6 @@ void Richards_PK::processParameterList()
         WRM[iblock] = Teuchos::rcp(new WRM_fake(region));
       }
       else {
-        Errors::Message msg;
         msg << "Richards Problem: unknown water retention model.";
         Exceptions::amanzi_throw(msg);
       }
@@ -141,33 +146,47 @@ void Richards_PK::processParameterList()
     } else if (ti_method_name == "BDF2") {
       ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2; 
     } else {
-      Errors::Message msg;
       msg << "Richards Problem: steady state defines an unknown time integration method.";
       Exceptions::amanzi_throw(msg);
     }
 
     initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
 
-    Teuchos::ParameterList& err_list = sss_list.sublist("error control");
-    absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
-    relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5); 
-    convergence_tol_sss = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
-    max_itrs_sss = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
+    if (sss_list.isSublist("error control")) {
+      Teuchos::ParameterList& err_list = sss_list.sublist("error control");
+      absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
+      relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5); 
+      convergence_tol_sss = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
+      max_itrs_sss = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
+    } else {
+      msg << "Richards Problem: steady state sublist has no <error control> sublist.";
+      Exceptions::amanzi_throw(msg);      
+    }
 
-    Teuchos::ParameterList& time_list = sss_list.sublist("time control");
-    T0_sss = time_list.get<double>("start time", -1e+9);
-    T1_sss = time_list.get<double>("end time", 0.0);
-    dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-    dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);
+    if (sss_list.isSublist("time control")) {
+      Teuchos::ParameterList& time_list = sss_list.sublist("time control");
+      T0_sss = time_list.get<double>("start time", -1e+9);
+      T1_sss = time_list.get<double>("end time", 0.0);
+      dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
+      dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);
+    } else {
+      msg << "Richards Problem: steady state time integrator has no <time control> sublist.";
+      Exceptions::amanzi_throw(msg);
+    }
 
-    Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
-    max_itrs = solver_list.get<int>("maximal number of iterations", 100);
-    convergence_tol = solver_list.get<double>("error tolerance", 1e-12);
+    if (sss_list.isSublist("linear solver")) {
+      Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
+      max_itrs = solver_list.get<int>("maximal number of iterations", 100);
+      convergence_tol = solver_list.get<double>("error tolerance", 1e-12);
+    } else {
+      msg << "Richards Problem: steady state time integrator has no <linear solver> sublist.";
+      Exceptions::amanzi_throw(msg);
+    }
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Richards Problem: there is no sublist for steady-state calculations.\n");
   }
 
-  // Transient solution
+  // Time integrator for period II, called transient time integrator
   if (rp_list.isSublist("transient time integrator")) {
     Teuchos::ParameterList& trs_list = rp_list.sublist("transient time integrator");
 
@@ -176,27 +195,36 @@ void Richards_PK::processParameterList()
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
     } else if (ti_method_name == "BDF1") {
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1; 
-    } else if (method_name == "BDF2") {
+    } else if (ti_method_name == "BDF2") {
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2; 
     } else {
-      Errors::Message msg;
       msg << "Richards Problem: transient sublist defines an unknown time integration method.";
       Exceptions::amanzi_throw(msg);
     }
 
-    Teuchos::ParameterList& err_list = trs_list.sublist("error control");
-    absolute_tol_trs = err_list.get<double>("absolute error tolerance", 1.0);
-    relative_tol_trs = err_list.get<double>("relative error tolerance", 1e-5); 
-    convergence_tol_trs = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
-    max_itrs_trs = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
+    if (trs_list.isSublist("error control")) {
+      Teuchos::ParameterList& err_list = trs_list.sublist("error control");
+      absolute_tol_trs = err_list.get<double>("absolute error tolerance", 1.0);
+      relative_tol_trs = err_list.get<double>("relative error tolerance", 1e-5); 
+      convergence_tol_trs = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
+      max_itrs_trs = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
+    } else {
+      msg << "Richards Problem: transient sublist has no <error control> sublist.";
+      Exceptions::amanzi_throw(msg);      
+    }
 
-    Teuchos::ParameterList& time_list = trs_list.sublist("time control");
-    T0_trs = time_list.get<double>("start time", 0.0);
-    T1_trs = time_list.get<double>("end time", 0.0);
-    dT0_trs = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-    dTmax_trs = time_list.get<double>("maximal time step", dT0_trs);
+    if (trs_list.isSublist("time control")) {
+      Teuchos::ParameterList& time_list = trs_list.sublist("time control");
+      T0_trs = time_list.get<double>("start time", 0.0);
+      T1_trs = time_list.get<double>("end time", 0.0);
+      dT0_trs = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
+      dTmax_trs = time_list.get<double>("maximal time step", dT0_trs);
+    } else {
+      msg << "Richards Problem: transient sublist has no <time control> sublist.";
+      Exceptions::amanzi_throw(msg);
+    }
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("Richards Problem: there is no sublist for transient calculations.\n");
+    printf("Warning: Richards Problem has no sublist <transient time integration>.\n");
   }
 }
 
@@ -208,12 +236,13 @@ void Richards_PK::print_statistics() const
 {
   if (!MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;
-    cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
-    cout << "    Verbosity level = " << verbosity << endl;
-    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
-    cout << "    Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
+    cout << "  Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
+    cout << "  Verbosity level = " << verbosity << endl;
+    cout << "  Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+    cout << "  Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
   }
 }
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

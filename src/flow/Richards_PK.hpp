@@ -158,6 +158,9 @@ class Richards_PK : public Flow_PK {
   int mfd3d_method;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
+
+ private:
+  void operator=(const Richards_PK& RPK);
 };
 
 }  // namespace AmanziFlow

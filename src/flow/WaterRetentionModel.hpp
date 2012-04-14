@@ -21,11 +21,11 @@ class WaterRetentionModel {
   virtual double capillaryPressure(double s) = 0;
   virtual double residualSaturation() = 0;
   
-  const std::string region() { return reg; };
+  const std::string region() { return region_; };
 
  protected:
-  void set_region( const std::string region_ ) { reg = region_; };
-  std::string reg;
+  void set_region(std::string region) { region_ = region; };
+  std::string region_;
 };
 
 }  // namespace AmanziFlow

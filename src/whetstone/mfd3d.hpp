@@ -39,7 +39,7 @@ const int WHETSTONE_ELEMENTAL_MATRIX_WRONG = 1;
 
 class MFD3D { 
  public:
-  MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh) { mesh_ = mesh; };
+  explicit MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh) { mesh_ = mesh; };
   ~MFD3D() {};
 
   // primary methods

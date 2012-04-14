@@ -15,7 +15,7 @@ namespace AmanziFlow {
 
 class WRM_vanGenuchten : public WaterRetentionModel {
  public:
-  WRM_vanGenuchten(std::string region_, double m_, double alpha_, double sr_, double pc0_ = 0.0);
+  explicit WRM_vanGenuchten(std::string region, double m_, double alpha_, double sr_, double pc0_ = 0.0);
   ~WRM_vanGenuchten() {};
   
   // required methods from the base class

@@ -118,10 +118,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="transient time integrator">
-      <!-- Is not used for this test -->
-      </ParameterList>
-
       <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="Water retention models">

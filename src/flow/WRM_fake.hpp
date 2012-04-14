@@ -19,7 +19,7 @@ namespace AmanziFlow {
 
 class WRM_fake : public WaterRetentionModel {
  public:
-  WRM_fake(std::string region_);
+  explicit WRM_fake(std::string region);
   ~WRM_fake() {};
   
   // required methods from the base class

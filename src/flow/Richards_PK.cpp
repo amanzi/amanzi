@@ -403,7 +403,7 @@ void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
   //if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
   //   std::printf("Commited flow state for transport: see flow.gmv\n");
   //}
-  writeGMVfile(FS_MPC);
+  //writeGMVfile(FS_MPC);
 }
 
 

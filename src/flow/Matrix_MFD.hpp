@@ -109,6 +109,9 @@ class Matrix_MFD : public Epetra_Operator {
 
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
+
+ private:
+  void operator=(const Matrix_MFD& matrix);
 };
 
 }  // namespace AmanziFlow

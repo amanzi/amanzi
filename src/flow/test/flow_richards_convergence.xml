@@ -130,9 +130,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="transient time integrator">
-      </ParameterList>
-
       <Parameter name="Relative permeability method" type="string" value="Cell centered"/>
 
       <ParameterList name="Water retention models">

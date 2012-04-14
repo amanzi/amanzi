@@ -18,11 +18,11 @@ namespace AmanziFlow {
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
 WRM_vanGenuchten::WRM_vanGenuchten(
-   std::string region_, double m_, double alpha_, double sr_, double pc0_) :
+   std::string region, double m_, double alpha_, double sr_, double pc0_) :
    m(m_), alpha(alpha_), sr(sr_), pc0(pc0_)
 {
   n = 1.0 / (1.0 - m);
-  set_region(region_);
+  set_region(region);
 }
  
 
