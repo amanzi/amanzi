@@ -2722,7 +2722,7 @@ Diffusion::getOp (int                   comp,
   }
 
   MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
-  mgt_solver.set_maxorder(2);
+  mgt_solver.set_maxorder(max_order);
     
   return mgt_solver;
 }

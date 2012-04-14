@@ -467,6 +467,11 @@ extern "C" {
 #endif
 			const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 			const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
+			const Real* kpx, ARLIM_P(kpxlo), ARLIM_P(kpxhi),
+			const Real* kpy, ARLIM_P(kpylo), ARLIM_P(kpyhi),
+#if (BL_SPACEDIM == 3)
+			const Real* kpz, ARLIM_P(kpzlo), ARLIM_P(kpzhi),
+#endif
 			const int* lo, const int* hi,
 			const int* domlo, const int* domhi, 
 			const Real* dx, const int* bc);   

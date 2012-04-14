@@ -986,6 +986,63 @@ c     first find the minimum for vT = 0
       end if
       end
 #endif
+
+      subroutine FORT_FIND_INV_RFLUX(sol,vel,gstar,muval,
+     &     ncomps,kr_type,kr_coef)
+c     given the inflow velocity, find the saturation based on richard's equation 
+
+      implicit none
+
+      integer ncomps,kr_type,n
+      REAL_T  sol,muval(ncomps)
+      REAL_T  vel,gstar,kr_coef
+
+      REAL_T ld(ncomps),rtmp(ncomps),mtmp(ncomps),srestmp
+      REAL_T s1,s2,stmp(ncomps),f1,f2,ftmp
+      REAL_T, parameter :: eps = 1.0d-14
+
+      mtmp(1) = muval(1)
+      rtmp(1) = one
+
+      s1 = zero
+      s2 = zero
+      f2 = 1e20
+      srestmp = zero
+
+      stmp(1) = zero
+      s1 = zero
+      call  get_ld(ld,stmp,rtmp,mtmp,ncomps,kr_type,kr_coef,srestmp)
+      f1 = vel - ld(1)*gstar
+
+      stmp(1) = one
+      s2 = one
+      call  get_ld(ld,stmp,rtmp,mtmp,ncomps,kr_type,kr_coef,srestmp)
+      f2 = vel - ld(1)*gstar
+
+      if (sign(one,f1)-sign(one,f2) .ne. zero) then
+         do n = 1,100
+            stmp(1) = half*(s1+s2)
+            call get_ld(ld,stmp,rtmp,mtmp,ncomps,kr_type,kr_coef,srestmp)
+            ftmp = vel-ld(1)*gstar
+
+            if (ftmp*f1 .lt. zero) then
+               f2 = ftmp
+               s2 = stmp(1)
+            elseif (ftmp*f2 .lt. zero) then
+               f1 = ftmp
+               s1 = stmp(1)
+            endif
+
+            if (dabs(s1-s2) .lt. eps) then
+               goto 80
+            endif
+         enddo
+      endif
+
+ 80   sol = half*(s1+s2)
+
+      end
+
 c ::: ----------------------------------------------------------
 c ::: Get component index and component count
 c ::: ----------------------------------------------------------
