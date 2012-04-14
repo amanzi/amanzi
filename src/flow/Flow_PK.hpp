@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+This is the Flow component of the Amanzi code. 
 License: BSD
 Authors: Neil Carlson (version 1) 
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 Usage: 
   Flow_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Flow_State> FS);
-  double time_step = FPK.calculate_flow_dT();
-  FPK.advance(time_step);
+  double time_step = FPK.calculateFlowDt();
+  FPK.advance(any_dT);
 */
 
 #ifndef __FLOW_PK_HPP__

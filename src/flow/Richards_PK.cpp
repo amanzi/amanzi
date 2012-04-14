@@ -174,6 +174,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
      std::printf("Initializing Steady State Flow: T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+     if (initialize_with_darcy)
+         std::printf("Initializing Steady State Flow with a clipped Darcy pressure\n");
   }
 
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
