@@ -332,7 +332,7 @@ void MPC::cycle_driver () {
       }
       
       if (flow_enabled && flow_model == "Richards")  {
-	flow_dT = FPK->calculate_flow_dT();
+	flow_dT = FPK->calculateFlowDt();
 
         // adjust the time step, so that we exactly hit the switchover time
         if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {

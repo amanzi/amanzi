@@ -242,8 +242,6 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   //DEBUG
   //advanceToSteadyState();
   //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
-  //advanceToSteadyState();
-  //commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
 }
 
 
@@ -315,6 +313,16 @@ void Richards_PK::InitTransient(double T0, double dT0)
 }
 
 
+/* ******************************************************************
+* this routine avoid limitations of MPC by bumping the time step.                                          
+****************************************************************** */
+double Richards_PK::calculateFlowDt()
+{ 
+  if(ti_method == FLOW_TIME_INTEGRATION_PICARD) dT *= 1e+4;
+  return dT;
+}
+
+
 /* ******************************************************************* 
 * Performs one time step of size dT_MPC either for steady-state or 
 * transient calculations.
@@ -338,6 +346,8 @@ int Richards_PK::advance(double dT_MPC)
       bdf2_dae->set_initial_state(time, *solution, udot);
     } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       bdf1_dae->set_initial_state(time, *solution, udot);
+    } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
+      advanceToSteadyState();
     }
 
     int ierr;
@@ -357,6 +367,8 @@ int Richards_PK::advance(double dT_MPC)
     bdf1_dae->write_bdf1_stepping_statistics();
 
     T_internal = bdf1_dae->most_recent_time();
+  } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
+    dTnext = dT;
   }
   dT = dTnext;
   num_itrs++;
