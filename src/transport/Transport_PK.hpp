@@ -110,8 +110,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> get_transport_state_next() { return TS_nextMPC; }
   Transport_State& ref_transport_state_next() { return *TS_nextBIG; }
 
-  inline double get_transport_dT() { return dT; }
-  inline double get_cfl() { return cfl; }
+  inline double cfl() { return cfl_; }
   inline int get_transport_status() { return status; }
 
   // control members
@@ -214,7 +213,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> harmonic_points_value;
   std::vector<WhetStone::Tensor> dispersion_tensor;
 
-  double cfl, dT, dT_debug, T_internal, T_physical;  
+  double cfl_, dT, dT_debug, T_internal, T_physical;  
   int number_components; 
   int status;
   bool standalone_mode;  // If it is true the internal time will be used.

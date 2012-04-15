@@ -106,7 +106,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   solver->SetAztecOption(AZ_solver, AZ_cg);
 
   // Get parameters from the flow parameter list.
-  processParameterList();
+  ProcessParameterList();
 
   // Process boundary data
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -165,12 +165,12 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 * does not depend on time. The boundary conditions are calculated
 * only once, during the initialization step.                                                
 ****************************************************************** */
-int Darcy_PK::advanceToSteadyState()
+int Darcy_PK::AdvanceToSteadyState()
 {
   solver->SetAztecOption(AZ_output, AZ_none);
 
   // work-around limited support for tensors
-  setAbsolutePermeabilityTensor(K);
+  SetAbsolutePermeabilityTensor(K);
   for (int c=0; c<K.size(); c++) K[c] *= rho_ / mu_;
 
   // calculate and assemble elemental stifness matrices
@@ -204,7 +204,7 @@ int Darcy_PK::advanceToSteadyState()
 * Performs one time step of size dT. The boundary conditions are 
 * calculated only once, during the initialization step.  
 ******************************************************************* */
-int Darcy_PK::advance(double dT_MPC) 
+int Darcy_PK::Advance(double dT_MPC) 
 {
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
 
@@ -229,14 +229,14 @@ int Darcy_PK::advance(double dT_MPC)
       bc_markers, bc_values);
 
   // work-around limited support for tensors
-  setAbsolutePermeabilityTensor(K);
+  SetAbsolutePermeabilityTensor(K);
   for (int c=0; c<K.size(); c++) K[c] *= rho_ / mu_;
 
   // calculate and assemble elemental stifness matrices
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
-  addTimeDerivativeSpecificStorage(*solution_cells, dT, matrix);
+  AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   matrix->computeSchurComplement(bc_markers, bc_values);
@@ -264,7 +264,7 @@ int Darcy_PK::advance(double dT_MPC)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
+void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 {  
   FS_MPC->ref_pressure() = *solution_cells;
 
@@ -283,7 +283,7 @@ void Darcy_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
 /* ******************************************************************
 *  Temporary convertion from double to tensor.                                               
 ****************************************************************** */
-void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
+void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
   const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
   const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
@@ -305,7 +305,7 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 * Adds time derivative to cell-based part of MFD algebraic system.
 * Specific storage at the moment is 1.                                              
 ****************************************************************** */
-void Darcy_PK::addTimeDerivativeSpecificStorage(
+void Darcy_PK::AddTimeDerivativeSpecificStorage(
    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
   const Epetra_Vector& specific_storage = FS->ref_specific_storage();
@@ -325,7 +325,7 @@ void Darcy_PK::addTimeDerivativeSpecificStorage(
 /* ******************************************************************
 * A wrapper for a similar matrix call.  
 ****************************************************************** */
-void Darcy_PK::deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) 
+void Darcy_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) 
 {
   matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
 }
@@ -334,7 +334,7 @@ void Darcy_PK::deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector
 /* ******************************************************************
 * Printing information about Flow status.                                                     
 ****************************************************************** */
-void Darcy_PK::print_statistics() const
+void Darcy_PK::PrintStatistics() const
 {
   if (!MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;

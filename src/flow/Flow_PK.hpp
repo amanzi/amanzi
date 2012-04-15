@@ -91,13 +91,13 @@ class Flow_PK : public BDF2::fnBase {
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
 
-  virtual double calculateFlowDt() = 0;
-  virtual int advance(double dT) = 0; 
-  virtual int advanceToSteadyState() = 0;
+  virtual double CalculateFlowDt() = 0;
+  virtual int Advance(double dT) = 0; 
+  virtual int AdvanceToSteadyState() = 0;
 
-  virtual void commitState(Teuchos::RCP<Flow_State> FS) = 0;
-  virtual void commitStateForTransport(Teuchos::RCP<Flow_State> FS) = 0;
-  virtual void deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
+  virtual void CommitState(Teuchos::RCP<Flow_State> FS) = 0;
+  virtual void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) = 0;
+  virtual void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
 
   // boundary condition members
   void updateBoundaryConditions(

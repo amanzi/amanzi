@@ -13,7 +13,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Defines relative permeability ONLY for cells.                                               
 ****************************************************************** */
-void Richards_PK::calculateRelativePermeabilityCell(const Epetra_Vector& p)
+void Richards_PK::CalculateRelativePermeabilityCell(const Epetra_Vector& p)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -34,20 +34,20 @@ void Richards_PK::calculateRelativePermeabilityCell(const Epetra_Vector& p)
 /* ******************************************************************
 * Wrapper for various ways to define relative permeability of faces.
 ****************************************************************** */
-void Richards_PK::calculateRelativePermeabilityFace(const Epetra_Vector& p)
+void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
 {
-  calculateRelativePermeabilityCell(p);  // populates cell-based permeabilities
+  CalculateRelativePermeabilityCell(p);  // populates cell-based permeabilities
   FS->copyMasterCell2GhostCell(*Krel_cells);
 
   if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
-    calculateRelativePermeabilityUpwindGravity(p);
+    CalculateRelativePermeabilityUpwindGravity(p);
   } 
   else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     Epetra_Vector& flux = FS->ref_darcy_flux();
-    calculateRelativePermeabilityUpwindFlux(p, flux);
+    CalculateRelativePermeabilityUpwindFlux(p, flux);
   } 
   else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-    calculateRelativePermeabilityArithmeticMean(p);
+    CalculateRelativePermeabilityArithmeticMean(p);
   }
 }
 
@@ -55,7 +55,7 @@ void Richards_PK::calculateRelativePermeabilityFace(const Epetra_Vector& p)
 /* ******************************************************************
 * Defines upwinded relative permeabilities for faces using gravity. 
 ****************************************************************** */
-void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
+void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -79,7 +79,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
 /* ******************************************************************
 * Defines upwinded relative permeabilities for faces using a given flux. 
 ****************************************************************** */
-void Richards_PK::calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, 
+void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, 
                                                           const Epetra_Vector& flux)
 {
   AmanziMesh::Entity_ID_List faces;
@@ -101,7 +101,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
 /* ******************************************************************
 * Defines relative permeabilities for faces via arithmetic averaging. 
 ****************************************************************** */
-void Richards_PK::calculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p)
+void Richards_PK::CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p)
 {
   AmanziMesh::Entity_ID_List cells;
 
@@ -119,7 +119,7 @@ void Richards_PK::calculateRelativePermeabilityArithmeticMean(const Epetra_Vecto
 /* ******************************************************************
 * Use analytical formula for derivative dS/dP.                                               
 ****************************************************************** */
-void Richards_PK::derivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
+void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -140,7 +140,7 @@ void Richards_PK::derivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 /* ******************************************************************
 * Convertion p -> s.                                               
 ****************************************************************** */
-void Richards_PK::deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s)
+void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -161,7 +161,7 @@ void Richards_PK::deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
 /* ******************************************************************
 * Convertion s -> p.                                               
 ****************************************************************** */
-void Richards_PK::derivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p)
+void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -182,7 +182,7 @@ void Richards_PK::derivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
 /* ******************************************************************
 * Clip pressure using pressure threshold.
 ****************************************************************** */
-void Richards_PK::clipHydrostaticPressure(const double pmin, Epetra_Vector& p)
+void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -205,7 +205,7 @@ void Richards_PK::clipHydrostaticPressure(const double pmin, Epetra_Vector& p)
 /* ******************************************************************
 * Clip pressure using constant saturation.
 ****************************************************************** */
-void Richards_PK::clipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& p)
+void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& p)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();

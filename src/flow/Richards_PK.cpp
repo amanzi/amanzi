@@ -125,7 +125,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   rhs = matrix->get_rhs();  // import rhs from the matrix 
 
   // Get solver parameters from the flow parameter list.
-  processParameterList();
+  ProcessParameterList();
 
   // Process boundary data
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -224,15 +224,15 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   if (initialize_with_darcy) {
     double pmin = atm_pressure;
-    initializePressureHydrostatic(T0, *solution);
-    clipHydrostaticPressure(pmin, 0.6, *solution);
+    InitializePressureHydrostatic(T0, *solution);
+    ClipHydrostaticPressure(pmin, 0.6, *solution);
     pressure = *solution_cells;
   } else {
     *solution_cells = pressure;
   }
 
-  deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-  deriveSaturationFromPressure(pressure, water_saturation);
+  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  DeriveSaturationFromPressure(pressure, water_saturation);
 
   absolute_tol = absolute_tol_sss;
   relative_tol = relative_tol_sss;
@@ -318,7 +318,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 /* ******************************************************************
 * this routine avoid limitations of MPC by bumping the time step.                                          
 ****************************************************************** */
-double Richards_PK::calculateFlowDt()
+double Richards_PK::CalculateFlowDt()
 { 
   if(ti_method == FLOW_TIME_INTEGRATION_PICARD) dT *= 1e+4;
   return dT;
@@ -330,7 +330,7 @@ double Richards_PK::calculateFlowDt()
 * transient calculations.
 * Warning: BDF2 and BDF1 will merge eventually.
 ******************************************************************* */
-int Richards_PK::advance(double dT_MPC) 
+int Richards_PK::Advance(double dT_MPC) 
 {
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
   dT = dT_MPC;
@@ -343,13 +343,13 @@ int Richards_PK::advance(double dT_MPC)
   double time = T_internal;
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
-    computeUDot(time, *solution, udot);
+    ComputeUDot(time, *solution, udot);
     if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
     } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       bdf1_dae->set_initial_state(time, *solution, udot);
     } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
-      advanceToSteadyState();
+      AdvanceToSteadyState();
     }
 
     int ierr;
@@ -384,14 +384,14 @@ int Richards_PK::advance(double dT_MPC)
 * Transfer part of the internal data needed by transport to the 
 * flow state FS_MPC. MPC may request to populate the original state FS. 
 ****************************************************************** */
-void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC) 
+void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC) 
 {
   Epetra_Vector& pressure = FS_MPC->ref_pressure();
   pressure = *solution_cells;
 
   Epetra_Vector& water_saturation = FS_MPC->ref_water_saturation();
   FS_MPC->ref_prev_water_saturation() = water_saturation;
-  deriveSaturationFromPressure(pressure, water_saturation);
+  DeriveSaturationFromPressure(pressure, water_saturation);
 
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
@@ -411,14 +411,14 @@ void Richards_PK::commitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
 * Transfer internal data to flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Richards_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
+void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
   //Epetra_Vector& pressure = FS_MPC->ref_pressure();
   //pressure = *solution_cells;
 
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
-  deriveDarcyVelocity(flux, velocity);
+  DeriveDarcyVelocity(flux, velocity);
 }
 
 
@@ -426,7 +426,7 @@ void Richards_PK::commitState(Teuchos::RCP<Flow_State> FS_MPC)
 * BDF methods need a good initial guess.
 * This method gives a less smoother solution than in Flow 1.0.
 ****************************************************************** */
-void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells; 
 
@@ -446,10 +446,10 @@ void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Ep
 /* ******************************************************************
 * Estimate du/dt from the pressure equations, du/dt = g - A*u.
 ****************************************************************** */
-double Richards_PK::computeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
+double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   double norm_udot;
-  computePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
+  ComputePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
   norm_udot = matrix->computeResidual(u, udot);
 
   Epetra_Vector* udot_faces = FS->createFaceView(udot);
@@ -463,18 +463,18 @@ double Richards_PK::computeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
 * Gathers together routines to compute MFD matrices Axx(u) and 
 * preconditioner Sff(u) using internal time step dT.                             
 ****************************************************************** */
-void Richards_PK::computePreconditionerMFD(
+void Richards_PK::ComputePreconditionerMFD(
     const Epetra_Vector& u, Matrix_MFD* matrix, double Tp, double dTp, bool flag_update_ML)
 {
   // setup absolute and compute relative permeabilities
   Epetra_Vector* u_cells = FS->createCellView(u);
 
-  setAbsolutePermeabilityTensor(K);
+  SetAbsolutePermeabilityTensor(K);
   if (!is_matrix_symmetric) {  // Define K and Krel_faces
-    calculateRelativePermeabilityFace(*u_cells);
+    CalculateRelativePermeabilityFace(*u_cells);
     for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
   } else {  // Define K and Krel_cells, Krel_faces is always one
-    calculateRelativePermeabilityCell(*u_cells);
+    CalculateRelativePermeabilityCell(*u_cells);
     for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
   }
 
@@ -492,7 +492,7 @@ void Richards_PK::computePreconditionerMFD(
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
-  if (flag_update_ML) addTimeDerivative_MFD(*u_cells, dTp, matrix);
+  if (flag_update_ML) AddTimeDerivative_MFD(*u_cells, dTp, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   if (flag_update_ML) {
@@ -505,7 +505,7 @@ void Richards_PK::computePreconditionerMFD(
 /* ******************************************************************
 * Temporary convertion from double to tensor.                                               
 ****************************************************************** */
-void Richards_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
+void Richards_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
   const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
   const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
@@ -526,11 +526,11 @@ void Richards_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& 
 /* ******************************************************************
 * Adds time derivative to cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
-void Richards_PK::addTimeDerivative_MFD(
+void Richards_PK::AddTimeDerivative_MFD(
     Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
   Epetra_Vector dSdP(mesh_->cell_map(false));
-  derivedSdP(pressure_cells, dSdP);
+  DerivedSdP(pressure_cells, dSdP);
  
   const Epetra_Vector& phi = FS->ref_porosity();
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
@@ -552,7 +552,7 @@ void Richards_PK::addTimeDerivative_MFD(
 * at time Tp.
 * WARNING: data in vectors Krel and rhs are destroyed.
 ****************************************************************** */
-void Richards_PK::initializePressureHydrostatic(const double Tp, Epetra_Vector& u)
+void Richards_PK::InitializePressureHydrostatic(const double Tp, Epetra_Vector& u)
 {  
   if (solver == NULL) solver = new AztecOO;
 
@@ -567,7 +567,7 @@ void Richards_PK::initializePressureHydrostatic(const double Tp, Epetra_Vector& 
       bc_markers, bc_values);
 
   // work-around limited support for tensors
-  setAbsolutePermeabilityTensor(K);
+  SetAbsolutePermeabilityTensor(K);
   for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
   Krel_faces->PutScalar(1.0);
 
@@ -598,7 +598,7 @@ void Richards_PK::initializePressureHydrostatic(const double Tp, Epetra_Vector& 
 /* ******************************************************************
 * A wrapper for a similar matrix call.
 ****************************************************************** */
-void Richards_PK::deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) 
+void Richards_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) 
 {
   matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
 }

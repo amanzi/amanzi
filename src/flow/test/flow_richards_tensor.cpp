@@ -80,8 +80,8 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   cout << "K=" << K << "  gravity=" << g << endl;
   cout << "grad(p)=" << v0 << endl;
 
-  RPK->advanceToSteadyState();
-  RPK->commitStateForTransport(FS);
+  RPK->AdvanceToSteadyState();
+  RPK->CommitStateForTransport(FS);
 
   // check accuracy
   Epetra_Vector& pressure = FS->ref_pressure();

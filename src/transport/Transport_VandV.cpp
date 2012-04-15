@@ -23,7 +23,7 @@ void Transport_PK::checkDivergenceProperty()
   int i, c, f;
   double div, u, umax, error_max, error_avg;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
   Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
   error_max = error_avg = 0.0;
@@ -170,7 +170,7 @@ void Transport_PK::checkTracerBounds(Epetra_MultiVector& tracer,
                                      double upper_bound,
                                      double tol) const
 { 
-  Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
 
   for (int c=cmin; c<cmax_owned; c++) {
     double value = tracer[component][c];

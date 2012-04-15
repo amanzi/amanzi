@@ -37,7 +37,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   status = TRANSPORT_NULL;
 
   parameter_list = parameter_list_MPC;
-  number_components = TS_MPC->get_total_component_concentration()->NumVectors();
+  number_components = TS_MPC->total_component_concentration()->NumVectors();
 
   TS = Teuchos::rcp(new Transport_State(*TS_MPC));
 
@@ -48,7 +48,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   MyPID = 0;
-  mesh_ = TS->get_mesh_maps();
+  mesh_ = TS->mesh();
   dim = mesh_->space_dimension();
 
   standalone_mode = false;
@@ -178,7 +178,7 @@ double Transport_PK::calculateTransportDt()
   // loop over faces and accumulate upwinding fluxes
   int  i, f, c, c1;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
   const Epetra_Map& fmap = mesh->face_map(true);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
@@ -215,7 +215,7 @@ double Transport_PK::calculateTransportDt()
   // incorporate developers and CFL constraints
   dT = std::min(dT, dT_debug);
 
-  dT *= cfl;
+  dT *= cfl_;
   return dT;
 }
 
@@ -241,8 +241,8 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
     *ws_subcycle_start = ws_prev;
   } else {
     dT_cycle = dT_MPC;
-    water_saturation_start = TS->get_prev_water_saturation();
-    water_saturation_end = TS->get_water_saturation();
+    water_saturation_start = TS->prev_water_saturation();
+    water_saturation_end = TS->water_saturation();
   }
 
   int ncycles = 0, swap = 1;
@@ -302,8 +302,8 @@ void Transport_PK::advanceSecondOrderUpwind(double dT_MPC)
   const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
  
-  Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->get_total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
  
   // define time integration method
   Explicit_TI::RK::method_t ti_method = Explicit_TI::RK::forward_euler;  
@@ -340,7 +340,7 @@ void Transport_PK::advanceSecondOrderUpwind(double dT_MPC)
   }
 
   if (internal_tests) {
-    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
+    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
     checkGEDproperty(*tcc_nextMPC);
   }
 
@@ -362,8 +362,8 @@ void Transport_PK::advanceDonorUpwind(double dT_MPC)
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
 
   // populating next state of concentrations
-  Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->get_total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
   TS_nextBIG->copymemory_multivector(*tcc, *tcc_next);
 
   // prepare conservative state in master and slave cells 
@@ -430,7 +430,7 @@ void Transport_PK::advanceDonorUpwind(double dT_MPC)
   }
 
   if (internal_tests) {
-    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
+    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
     checkGEDproperty(*tcc_nextMPC);
   }
 
@@ -609,8 +609,8 @@ void Transport_PK::addDispersiveFluxes(int component,
  ****************************************************************** */
 void Transport_PK::identifyUpwindCells()
 {
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
- 
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+
   for (int f=fmin; f<=fmax; f++) {
     (*upwind_cell_)[f] = -1;  // negative value is indicator of a boundary
     (*downwind_cell_)[f] = -1;

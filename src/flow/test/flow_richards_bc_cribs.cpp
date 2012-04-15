@@ -67,17 +67,17 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
-  RPK->print_statistics();
+  RPK->PrintStatistics();
 
   // solve the problem
   S.set_time(0.0);
-  RPK->advanceToSteadyState();
-  RPK->commitStateForTransport(FS);
+  RPK->AdvanceToSteadyState();
+  RPK->CommitStateForTransport(FS);
 
   // derive dependent variable
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector  saturation(pressure);
-  RPK->deriveSaturationFromPressure(pressure, saturation); 
+  RPK->DeriveSaturationFromPressure(pressure, saturation); 
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();

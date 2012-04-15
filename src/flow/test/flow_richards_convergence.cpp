@@ -121,11 +121,11 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     RPK->InitPK();  // setup the problem
     RPK->InitSteadyState(0.0, 1e-8);
-    if (n == 40) RPK->print_statistics();
+    if (n == 40) RPK->PrintStatistics();
     RPK->set_verbosity(FLOW_VERBOSITY_NONE);
 
-    RPK->advanceToSteadyState();
-    RPK->commitStateForTransport(FS);
+    RPK->AdvanceToSteadyState();
+    RPK->CommitStateForTransport(FS);
 
     double pressure_err, flux_err, div_err;  // error checks
     pressure_err = calculatePressureCellError(mesh, FS->ref_pressure());

@@ -36,13 +36,13 @@ class Darcy_PK : public Flow_PK {
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
-  double calculateFlowDt() { return dT; }
-  int advance(double dT); 
-  int advanceToSteadyState();
+  double CalculateFlowDt() { return dT; }
+  int Advance(double dT); 
+  int AdvanceToSteadyState();
 
-  void commitState(Teuchos::RCP<Flow_State> FS);
-  void commitStateForTransport(Teuchos::RCP<Flow_State> FS) {};
-  void deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
+  void CommitState(Teuchos::RCP<Flow_State> FS);
+  void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) {};
+  void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   // methods required for time integration
   void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0) {};
@@ -52,14 +52,14 @@ class Darcy_PK : public Flow_PK {
   void update_norm(double rtol, double atol) {};
 
   // other main methods
-  void processParameterList();
-  void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
+  void ProcessParameterList();
+  void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
 
-  void addTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
 
   // control methods
-  void print_statistics() const;
-  void resetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list = dp_list_new; }
+  void PrintStatistics() const;
+  void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list = dp_list_new; }
 
   // access methods
   Epetra_Vector& ref_solution_faces() { return *solution_faces; }

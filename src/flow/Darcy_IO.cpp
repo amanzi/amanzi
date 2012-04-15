@@ -16,7 +16,7 @@ namespace AmanziFlow {
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Darcy_PK::processParameterList()
+void Darcy_PK::ProcessParameterList()
 {
   // create verbosity list if it does not exist
   if (!dp_list.isSublist("VerboseObject")) {

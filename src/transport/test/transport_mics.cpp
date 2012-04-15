@@ -62,7 +62,7 @@ TEST(CONSTRUCTOR) {
   TPK.InitPK();
   TPK.printStatistics();
 
-  double cfl = TPK.get_cfl();
+  double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);
  
   delete comm;

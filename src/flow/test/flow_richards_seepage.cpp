@@ -64,8 +64,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   RPK->InitSteadyState(0.0, 1e-8);
 
   // solve the steady-state problem
-  RPK->advanceToSteadyState();
-  RPK->commitStateForTransport(FS);
+  RPK->AdvanceToSteadyState();
+  RPK->CommitStateForTransport(FS);
  
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

@@ -332,7 +332,7 @@ void MPC::cycle_driver () {
       }
       
       if (flow_enabled && flow_model == "Richards")  {
-	flow_dT = FPK->calculateFlowDt();
+	flow_dT = FPK->CalculateFlowDt();
 
         // adjust the time step, so that we exactly hit the switchover time
         if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
@@ -341,7 +341,7 @@ void MPC::cycle_driver () {
         }
 
         // make sure we hit any of the reset times exactly (not in steady mode)
-        if (ti_mode != STEADY &&   S->get_time() >= Tswitch) {
+        if (ti_mode != STEADY && S->get_time() >= Tswitch) {
           if (reset_times_.size() > 0) {
 	    // first we find the next reset time
 	    int next_time_index(-1);
@@ -450,7 +450,7 @@ void MPC::cycle_driver () {
         do {
           redo = false;
           try {
-            FPK->advance(mpc_dT);
+            FPK->Advance(mpc_dT);
           } 
           catch (int itr) {
             mpc_dT = 0.5*mpc_dT;
@@ -459,7 +459,7 @@ void MPC::cycle_driver () {
             *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
           }
         } while (redo);
-        FPK->commitStateForTransport(FS);
+        FPK->CommitStateForTransport(FS);
       }
 
 
@@ -500,7 +500,7 @@ void MPC::cycle_driver () {
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
             Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
-            *total_component_concentration_star = *TS_next->get_total_component_concentration();
+            *total_component_concentration_star = *TS_next->total_component_concentration();
           } else {
             Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
             Exceptions::amanzi_throw(message);
@@ -534,7 +534,7 @@ void MPC::cycle_driver () {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      FPK->commitState(FS);
+      FPK->CommitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) TPK->commitState(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);

@@ -78,8 +78,8 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
   double T = 0.0;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
 
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   bool flag = true;

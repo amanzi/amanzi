@@ -12,7 +12,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 *  Wrapper for advance to steady-state routines.                                                    
 ****************************************************************** */
-int Richards_PK::advanceToSteadyState()
+int Richards_PK::AdvanceToSteadyState()
 {
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
 
@@ -21,23 +21,23 @@ int Richards_PK::advanceToSteadyState()
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
   double pmin = atm_pressure;
-  initializePressureHydrostatic(0.0, *solution);
-  clipHydrostaticPressure(pmin, 0.6, *solution);
+  InitializePressureHydrostatic(0.0, *solution);
+  ClipHydrostaticPressure(pmin, 0.6, *solution);
   for (int c=0; c<ncells_owned; c++) pressure[c] = (*solution_cells)[c];
 
-  deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-  deriveSaturationFromPressure(pressure, water_saturation);
+  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  DeriveSaturationFromPressure(pressure, water_saturation);
 
   // start iterations
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
-    ierr = advanceSteadyState_Picard();
+    ierr = AdvanceSteadyState_Picard();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
-    ierr = advanceSteadyState_BackwardEuler();
+    ierr = AdvanceSteadyState_BackwardEuler();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
-    ierr = advanceSteadyState_BDF1();
+    ierr = AdvanceSteadyState_BDF1();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    ierr = advanceSteadyState_BDF2();
+    ierr = AdvanceSteadyState_BDF2();
   }
 
   if (ierr == 0) flow_status_ = FLOW_STEADY_STATE_COMPLETE;
@@ -48,7 +48,7 @@ int Richards_PK::advanceToSteadyState()
 /* ******************************************************************* 
 * Performs one time step of size dT using first-order time integrator.
 ******************************************************************* */
-int Richards_PK::advanceSteadyState_BDF1() 
+int Richards_PK::AdvanceSteadyState_BDF1() 
 {
   T_internal = T0_sss;
   dT = dT0_sss;
@@ -58,7 +58,7 @@ int Richards_PK::advanceSteadyState_BDF1()
   while (itrs < max_itrs_sss && T_internal < T1_sss) {
     if (itrs == 0) {  // initialization of BDF1
       Epetra_Vector udot(*super_map_);
-      computeUDot(T0_sss, *solution, udot);
+      ComputeUDot(T0_sss, *solution, udot);
       bdf1_dae->set_initial_state(T0_sss, *solution, udot);
 
       int ierr;
@@ -90,7 +90,7 @@ int Richards_PK::advanceSteadyState_BDF1()
 /* ******************************************************************* 
 * Performs one time step of size dT using second-order time integrator.
 ******************************************************************* */
-int Richards_PK::advanceSteadyState_BDF2() 
+int Richards_PK::AdvanceSteadyState_BDF2() 
 {
   T_internal = T0_sss;
   dT = dT0_sss;
@@ -100,7 +100,7 @@ int Richards_PK::advanceSteadyState_BDF2()
   while (itrs < max_itrs_sss && T_internal < T1_sss) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
-      computeUDot(T0_sss, *solution, udot);
+      ComputeUDot(T0_sss, *solution, udot);
       bdf2_dae->set_initial_state(T0_sss, *solution, udot);
 
       int ierr;
@@ -134,7 +134,7 @@ int Richards_PK::advanceSteadyState_BDF2()
 * relative permeabilities do not depend explicitly on time.
 * This is the experimental method.                                                 
 ****************************************************************** */
-int Richards_PK::advanceSteadyState_Picard()
+int Richards_PK::AdvanceSteadyState_Picard()
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
@@ -147,13 +147,13 @@ int Richards_PK::advanceSteadyState_Picard()
   double L2norm, L2error = 1.0;
 
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
-    setAbsolutePermeabilityTensor(K);
+    SetAbsolutePermeabilityTensor(K);
 
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
-      calculateRelativePermeabilityFace(*solution_cells);
+      CalculateRelativePermeabilityFace(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
-      calculateRelativePermeabilityCell(*solution_cells);
+      CalculateRelativePermeabilityCell(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
     }
 

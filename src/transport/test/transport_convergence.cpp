@@ -84,8 +84,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     double T = 0.0, T1 = 1.0;
 
     RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-    RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-    RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+    RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+    RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
     while (T < T1) {
       double dT = std::min(TPK.calculateTransportDt(), T1 - T);
@@ -169,8 +169,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     double T = 0.0, T1 = 2.0;
 
     RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-    RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-    RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+    RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+    RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
     double dT, dT0;
     if (nx==10) dT0 = TPK.calculateTransportDt();

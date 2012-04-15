@@ -40,19 +40,19 @@ class Richards_PK : public Flow_PK {
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
-  double calculateFlowDt();
-  int advance(double dT_MPC); 
-  int advanceToSteadyState();
+  double CalculateFlowDt();
+  int Advance(double dT_MPC); 
+  int AdvanceToSteadyState();
 
-  void commitState(Teuchos::RCP<Flow_State> FS);
-  void commitStateForTransport(Teuchos::RCP<Flow_State> FS);
-  void deriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
+  void CommitState(Teuchos::RCP<Flow_State> FS);
+  void CommitStateForTransport(Teuchos::RCP<Flow_State> FS);
+  void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
-  int advanceSteadyState_Picard();
-  int advanceSteadyState_BackwardEuler();
-  int advanceSteadyState_ForwardEuler();
-  int advanceSteadyState_BDF1();
-  int advanceSteadyState_BDF2();
+  int AdvanceSteadyState_Picard();
+  int AdvanceSteadyState_BackwardEuler();
+  int AdvanceSteadyState_ForwardEuler();
+  int AdvanceSteadyState_BDF1();
+  int AdvanceSteadyState_BDF2();
  
   // methods required for time integration
   void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
@@ -62,35 +62,35 @@ class Richards_PK : public Flow_PK {
   void update_norm(double rtol, double atol) {};
 
   // other main methods
-  void processParameterList();
-  void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-  void calculateRelativePermeabilityCell(const Epetra_Vector& p);
-  void calculateRelativePermeabilityFace(const Epetra_Vector& p);
-  void calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
-  void calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
-  void calculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
+  void ProcessParameterList();
+  void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
+  void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
+  void CalculateRelativePermeabilityFace(const Epetra_Vector& p);
+  void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
+  void CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
+  void CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
 
-  void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
-  void addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
 
-  double computeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void computePreconditionerMFD(
+  double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
+  void ComputePreconditionerMFD(
       const Epetra_Vector &u, Matrix_MFD* matrix, double Tp, double dTp, bool flag_update_ML);
-  double errorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew);
+  double ErrorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
-  void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
-  void deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
-  void derivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
+  void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
+  void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
+  void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
 
-  void deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
+  void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
 
-  void initializePressureHydrostatic(const double T, Epetra_Vector& u);
-  void clipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
-  void clipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
+  void InitializePressureHydrostatic(const double T, Epetra_Vector& u);
+  void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
+  void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
   // control methods
-  void resetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
-  void print_statistics() const;
+  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
+  void PrintStatistics() const;
   
   // access methods
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }

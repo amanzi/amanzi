@@ -74,8 +74,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   // transient solution
   double dT = 0.1;
   for (int n=0; n<10; n++) {
-    DPK->advance(dT); 
-    DPK->commitState(FS);
+    DPK->Advance(dT); 
+    DPK->CommitState(FS);
  
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

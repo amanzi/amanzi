@@ -14,7 +14,7 @@ namespace AmanziFlow {
 * permeabilities do not depend explicitly on time.
 * WARNING: temporary replacement for missing BDF1 time integrator.                                                    
 ****************************************************************** */
-int Richards_PK::advanceSteadyState_BackwardEuler()
+int Richards_PK::AdvanceSteadyState_BackwardEuler()
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
@@ -28,13 +28,13 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
-    setAbsolutePermeabilityTensor(K);
+    SetAbsolutePermeabilityTensor(K);
 
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
-      calculateRelativePermeabilityFace(*solution_cells);
+      CalculateRelativePermeabilityFace(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
-      calculateRelativePermeabilityCell(*solution_cells);
+      CalculateRelativePermeabilityCell(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
     }
 
@@ -53,7 +53,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    addTimeDerivative_MFDfake(*solution_cells, dT, matrix);
+    AddTimeDerivative_MFDfake(*solution_cells, dT, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
     matrix->computeSchurComplement(bc_markers, bc_values);
@@ -71,7 +71,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
 
     // error estimates
     double sol_norm = FS->normLpCell(solution_new, 2.0);
-    L2error = errorSolutionDiff(solution_old, solution_new);
+    L2error = ErrorSolutionDiff(solution_old, solution_new);
 
     if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess. 
       dT /= 10;
@@ -107,7 +107,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
 * Calculates steady-state solution assuming that abosolute and relative
 * permeabilities do not depend explicitly on time.                                                    
 ****************************************************************** */
-int Richards_PK::advanceSteadyState_ForwardEuler()
+int Richards_PK::AdvanceSteadyState_ForwardEuler()
 {
   Epetra_Vector solution_new(*solution);
 
@@ -117,13 +117,13 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
   int itrs = 0;
   double L2error = 1.0;
   while (L2error > convergence_tol_sss) {
-    setAbsolutePermeabilityTensor(K);
+    SetAbsolutePermeabilityTensor(K);
 
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
-      calculateRelativePermeabilityFace(*solution_cells);
+      CalculateRelativePermeabilityFace(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
-      calculateRelativePermeabilityCell(*solution_cells);
+      CalculateRelativePermeabilityCell(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
     }
 
@@ -164,7 +164,7 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
 /* ******************************************************************
 * Adds time derivative to cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
-void Richards_PK::addTimeDerivative_MFDfake(
+void Richards_PK::AddTimeDerivative_MFDfake(
    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
@@ -182,7 +182,7 @@ void Richards_PK::addTimeDerivative_MFDfake(
 /* ******************************************************************
 * Check difference between solutions at times T and T+dT.                                                 
 ****************************************************************** */
-double Richards_PK::errorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew)
+double Richards_PK::ErrorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew)
 {
   double error_norm = 0.0; 
   for (int n=0; n<ncells_owned; n++) {

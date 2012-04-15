@@ -49,10 +49,10 @@ void Transport_PK::processParameterList()
     verbosity = TRANSPORT_VERBOSITY_EXTREME;
   }
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
 
   // global transport parameters
-  cfl = transport_list.get<double>("CFL", 1.0);
+  cfl_ = transport_list.get<double>("CFL", 1.0);
 
   spatial_disc_order = transport_list.get<int>("spatial discretization order", 1);
   if (spatial_disc_order < 1 || spatial_disc_order > 2) spatial_disc_order = 1;
@@ -176,7 +176,7 @@ void Transport_PK::processParameterList()
 void Transport_PK::printStatistics() const
 {
   if (!MyPID && verbosity > TRANSPORT_VERBOSITY_NONE) {
-    cout << "Transport PK: CFL = " << cfl << endl;
+    cout << "Transport PK: CFL = " << cfl_ << endl;
     cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Total number of components = " << number_components << endl;
     cout << "    Verbosity level = " << verbosity << endl;
@@ -193,7 +193,7 @@ void Transport_PK::printStatistics() const
 **************************************************************** */
 void Transport_PK::writeGMVfile(Teuchos::RCP<Transport_State> TS) const
 {
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
   Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
 
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");

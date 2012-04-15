@@ -16,7 +16,7 @@ namespace AmanziFlow {
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Richards_PK::processParameterList()
+void Richards_PK::ProcessParameterList()
 {
   Errors::Message msg;
 
@@ -232,7 +232,7 @@ void Richards_PK::processParameterList()
 /* ****************************************************************
 * Printing information about Flow status 
 **************************************************************** */
-void Richards_PK::print_statistics() const
+void Richards_PK::PrintStatistics() const
 {
   if (!MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;

@@ -165,7 +165,7 @@ class DarcyProblem {
 
     Epetra_Vector& flux = DPK->flow_state()->ref_darcy_flux();
     Epetra_MultiVector velocity(mesh->cell_map(false), dim);
-    DPK->deriveDarcyVelocity(flux, velocity);
+    DPK->DeriveDarcyVelocity(flux, velocity);
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -197,11 +197,11 @@ SUITE(Darcy_PK) {
 
     regions[0] = string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    DPK->resetParameterList(dp_list);
+    DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advanceToSteadyState();
-    DPK->commitState(DPK->flow_state());
+    DPK->AdvanceToSteadyState();
+    DPK->CommitState(DPK->flow_state());
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(errorP < 1.0e-8);
@@ -234,11 +234,11 @@ SUITE(Darcy_PK) {
 
     regions[0] = string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    DPK->resetParameterList(dp_list);
+    DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advanceToSteadyState();
-    DPK->commitState(DPK->flow_state());
+    DPK->AdvanceToSteadyState();
+    DPK->CommitState(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
@@ -265,11 +265,11 @@ SUITE(Darcy_PK) {
 
     regions[0] = string("Bottom side");
     createBClist("static head", "BC 2", regions, 0.25);
-    DPK->resetParameterList(dp_list);
+    DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advanceToSteadyState();
-    DPK->commitState(DPK->flow_state());
+    DPK->AdvanceToSteadyState();
+    DPK->CommitState(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(error < 1.0e-8);
@@ -299,11 +299,11 @@ SUITE(Darcy_Velocity) {
 
     regions[0] = string("Bottom side");
     createBClist("static head", "BC 2", regions, 0.25);
-    DPK->resetParameterList(dp_list);
+    DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
-    DPK->advanceToSteadyState();
-    DPK->commitState(DPK->flow_state());
+    DPK->AdvanceToSteadyState();
+    DPK->CommitState(DPK->flow_state());
 
     double error = calculateDarcyVelocityError(velocity);
     CHECK(error < 1.0e-8);
