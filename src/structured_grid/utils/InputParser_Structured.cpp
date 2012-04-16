@@ -158,9 +158,13 @@ namespace Amanzi {
         void process_expert_options(const ParameterList& pl,
                                     ParameterList&       out_pl)
         {
-	  for (ParameterList::ConstIterator it=pl.begin(); it!=pl.end(); ++it) {
-	    const std::string& name = pl.name(it);
-	    out_pl.setEntry(name,pl.getEntry(name));
+	  const std::string expert_str = "Expert Settings";
+	  if (pl.isSublist(expert_str)) {
+	    const ParameterList& expert_list = pl.sublist(expert_str);
+	    for (ParameterList::ConstIterator it=expert_list.begin(); it!=expert_list.end(); ++it) {
+	      const std::string& name = expert_list.name(it);
+	      out_pl.setEntry(name,expert_list.getEntry(name));
+	    }
 	  }
         }
 
