@@ -1,9 +1,17 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Authors: Neil Carlson (nnc@lanl.gov), 
          Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+#include <set>
+#include <string>
 
 #include "WRM_vanGenuchten.hpp"
 #include "WRM_fake.hpp"
@@ -66,7 +74,7 @@ void Richards_PK::ProcessParameterList()
   }
 
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> 
+  Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list.sublist("boundary conditions", true)));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
@@ -75,7 +83,7 @@ void Richards_PK::ProcessParameterList()
   bc_flux = bc_factory.createMassFlux();
   bc_seepage = bc_factory.createSeepageFace();
 
-  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
+  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);
 
   double T_physical = FS->get_time();  // set-up internal clock
   T_internal = (standalone_mode) ? T_internal : T_physical;
@@ -104,7 +112,7 @@ void Richards_PK::ProcessParameterList()
   }
 
   WRM.resize(nblocks);
-  
+
   int iblock = 0;
   for (Teuchos::ParameterList::ConstIterator i = vG_list.begin(); i != vG_list.end(); i++) {
     if (vG_list.isSublist(vG_list.name(i))) {
@@ -117,14 +125,14 @@ void Richards_PK::ProcessParameterList()
         double vG_alpha = wrm_list.get<double>("van Genuchten alpha");
         double vG_sr = wrm_list.get<double>("van Genuchten residual saturation");
         double vG_pc0 = wrm_list.get<double>("regularization interval", 0.0);
-	      
+
         WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr, vG_pc0));
-      } 
-      else if (wrm_list.get<string>("Water retention model") == "fake") {
+
+      } else if (wrm_list.get<string>("Water retention model") == "fake") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
         WRM[iblock] = Teuchos::rcp(new WRM_fake(region));
-      }
-      else {
+
+      } else {
         msg << "Richards Problem: unknown water retention model.";
         Exceptions::amanzi_throw(msg);
       }
@@ -142,9 +150,9 @@ void Richards_PK::ProcessParameterList()
     } else if (ti_method_name == "backward Euler") {
       ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
     } else if (ti_method_name == "BDF1") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1; 
+      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
     } else if (ti_method_name == "BDF2") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2; 
+      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
     } else {
       msg << "Richards Problem: steady state defines an unknown time integration method.";
       Exceptions::amanzi_throw(msg);
@@ -155,12 +163,12 @@ void Richards_PK::ProcessParameterList()
     if (sss_list.isSublist("error control")) {
       Teuchos::ParameterList& err_list = sss_list.sublist("error control");
       absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
-      relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5); 
+      relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5);
       convergence_tol_sss = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
       max_itrs_sss = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
     } else {
       msg << "Richards Problem: steady state sublist has no <error control> sublist.";
-      Exceptions::amanzi_throw(msg);      
+      Exceptions::amanzi_throw(msg);
     }
 
     if (sss_list.isSublist("time control")) {
@@ -194,9 +202,9 @@ void Richards_PK::ProcessParameterList()
     if (ti_method_name == "backward Euler") {
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
     } else if (ti_method_name == "BDF1") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1; 
+      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
     } else if (ti_method_name == "BDF2") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2; 
+      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
     } else {
       msg << "Richards Problem: transient sublist defines an unknown time integration method.";
       Exceptions::amanzi_throw(msg);
@@ -205,12 +213,12 @@ void Richards_PK::ProcessParameterList()
     if (trs_list.isSublist("error control")) {
       Teuchos::ParameterList& err_list = trs_list.sublist("error control");
       absolute_tol_trs = err_list.get<double>("absolute error tolerance", 1.0);
-      relative_tol_trs = err_list.get<double>("relative error tolerance", 1e-5); 
+      relative_tol_trs = err_list.get<double>("relative error tolerance", 1e-5);
       convergence_tol_trs = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
       max_itrs_trs = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
     } else {
       msg << "Richards Problem: transient sublist has no <error control> sublist.";
-      Exceptions::amanzi_throw(msg);      
+      Exceptions::amanzi_throw(msg);
     }
 
     if (trs_list.isSublist("time control")) {

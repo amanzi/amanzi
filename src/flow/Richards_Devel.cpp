@@ -1,8 +1,16 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+#include <algorithm>
+#include <vector>
 
 #include "Richards_PK.hpp"
 
@@ -32,10 +40,10 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
 
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
       CalculateRelativePermeabilityCell(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
+      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
     }
 
     // update boundary conditions
@@ -46,7 +54,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     bc_seepage->Compute(time);
     updateBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_cells, atm_pressure, 
+        *solution_cells, atm_pressure,
         bc_markers, bc_values);
 
     // create algebraic problem (matrix = preconditioner)
@@ -63,7 +71,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     rhs = matrix->get_rhs();
     Epetra_Vector b(*rhs);
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
-    solver->SetLHS(&*solution);  // initial solution guess 
+    solver->SetLHS(&*solution);  // initial solution guess
 
     solver->Iterate(max_itrs, convergence_tol);
     int num_itrs = solver->NumIters();
@@ -73,20 +81,20 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     double sol_norm = FS->normLpCell(solution_new, 2.0);
     L2error = ErrorSolutionDiff(solution_old, solution_new);
 
-    if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess. 
+    if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess.
       dT /= 10;
       solution_new = solution_old;
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Fail:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n", 
+        std::printf("Fail:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
             itrs, L2error, sol_norm, residual, num_itrs, T_internal, dT);
       }
       ifail++;
-    } else { 
+    } else {
       T_internal += dT;
       solution_old = solution_new;
 
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n", 
+        std::printf("Step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
             itrs, L2error, sol_norm, residual, num_itrs, T_internal, dT);
       }
 
@@ -121,10 +129,10 @@ int Richards_PK::AdvanceSteadyState_ForwardEuler()
 
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
       CalculateRelativePermeabilityCell(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
+      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
     }
 
     // create algebraic problem
@@ -141,16 +149,16 @@ int Richards_PK::AdvanceSteadyState_ForwardEuler()
 
     // error estimates
     double sol_error = 0.0, sol_norm = 0.0;
-    for (int n=0; n<solution->MyLength(); n++) {
+    for (int n = 0; n < solution->MyLength(); n++) {
       sol_error += std::pow(solution_new[n] - (*solution)[n], 2.0);
       sol_norm += std::pow(solution_new[n], 2.0);
     }
     sol_error = sqrt(sol_error / sol_norm);
     sol_norm = sqrt(sol_norm);
- 
+
     *solution = solution_new;
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Time step:%6d   Pressure(diff=%9.4e, sol=%9.4e, res=%9.4e)  time=%8.3e\n", 
+      std::printf("Time step:%6d   Pressure(diff=%9.4e, sol=%9.4e, res=%9.4e)  time=%8.3e\n",
           itrs, sol_error, sol_norm, L2error, T_internal);
     }
 
@@ -165,12 +173,12 @@ int Richards_PK::AdvanceSteadyState_ForwardEuler()
 * Adds time derivative to cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
 void Richards_PK::AddTimeDerivative_MFDfake(
-   Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
+    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
 
-  for (int c=0; c<ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = volume / dT_prec;
     Acc_cells[c] += factor;
@@ -184,8 +192,8 @@ void Richards_PK::AddTimeDerivative_MFDfake(
 ****************************************************************** */
 double Richards_PK::ErrorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew)
 {
-  double error_norm = 0.0; 
-  for (int n=0; n<ncells_owned; n++) {
+  double error_norm = 0.0;
+  for (int n = 0; n < ncells_owned; n++) {
     double tmp = abs(uold[n] - unew[n]) / (absolute_tol_sss + relative_tol_sss * abs(uold[n]));
     error_norm = std::max<double>(error_norm, tmp);
   }
@@ -193,7 +201,7 @@ double Richards_PK::ErrorSolutionDiff(const Epetra_Vector& uold, const Epetra_Ve
   // find the global maximum
 #ifdef HAVE_MPI
   double buf = error_norm;
-  //MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  // MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   uold.Comm().MaxAll(&buf, &error_norm, 1);
 #endif
   return  error_norm;

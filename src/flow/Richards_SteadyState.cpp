@@ -1,8 +1,16 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+#include <algorithm>
+#include <vector>
 
 #include "Richards_PK.hpp"
 
@@ -54,7 +62,7 @@ int Richards_PK::AdvanceToSteadyState()
 /* ******************************************************************* 
 * Performs one time step of size dT using first-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceSteadyState_BDF1() 
+int Richards_PK::AdvanceSteadyState_BDF1()
 {
   T_internal = T0_sss;
   dT = dT0_sss;
@@ -77,7 +85,7 @@ int Richards_PK::AdvanceSteadyState_BDF1()
     bdf1_dae->write_bdf1_stepping_statistics();
 
     T_internal = bdf1_dae->most_recent_time();
-    dT = dTnext; 
+    dT = dTnext;
     itrs++;
 
     double Tdiff = T1_sss - T_internal;
@@ -96,7 +104,7 @@ int Richards_PK::AdvanceSteadyState_BDF1()
 /* ******************************************************************* 
 * Performs one time step of size dT using second-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceSteadyState_BDF2() 
+int Richards_PK::AdvanceSteadyState_BDF2()
 {
   T_internal = T0_sss;
   dT = dT0_sss;
@@ -119,7 +127,7 @@ int Richards_PK::AdvanceSteadyState_BDF2()
     bdf2_dae->write_bdf2_stepping_statistics();
 
     T_internal = bdf2_dae->most_recent_time();
-    dT = dTnext; 
+    dT = dTnext;
     itrs++;
 
     double Tdiff = T1_sss - T_internal;
@@ -157,10 +165,10 @@ int Richards_PK::AdvanceSteadyState_Picard()
 
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
       CalculateRelativePermeabilityCell(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
+      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
     }
 
     // create algebraic problem (matrix = preconditioner)
@@ -182,7 +190,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
     // call AztecOO solver
     Epetra_Vector b(*rhs);
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
-    solver->SetLHS(&*solution);  // initial solution guess 
+    solver->SetLHS(&*solution);  // initial solution guess
 
     solver->Iterate(max_itrs, convergence_tol);
     int num_itrs = solver->NumIters();
@@ -190,19 +198,19 @@ int Richards_PK::AdvanceSteadyState_Picard()
 
     // update relaxation
     double relaxation = 0.2;
-    for (int c=0; c<ncells_owned; c++) {
+    for (int c = 0; c < ncells_owned; c++) {
       double diff = fabs(solution_new[c] - solution_old[c]);
       double umax = std::max(fabs(solution_new[c]), fabs(solution_old[c]));
       if (diff > 5e-3 * umax) relaxation = std::min(relaxation, 5e-3 * umax / diff);
     }
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n", 
+      std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n",
           itrs, L2error, L2norm, relaxation, linear_residual, num_itrs);
     }
 
     int ndof = ncells_owned + nfaces_owned;
-    for (int c=0; c<ndof; c++) {
+    for (int c = 0; c < ndof; c++) {
       solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
       solution_old[c] = solution_new[c];
     }

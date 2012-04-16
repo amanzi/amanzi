@@ -83,7 +83,7 @@ State
 Flow
 ====
 
-Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richars Problem`".
+Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richards Problem`".
 Structure of both sublists is quite similar. We make necessary comments on differences.
 
 User defines water retention models in sublist `"Water retention models`". It contains as many sublists, 
@@ -206,6 +206,16 @@ The remaining `"Flow`" parameters are
   `"Upwind with Darcy flux`", `"Arithmetic mean`" and `"Cell centered`". the first three
   calculate the relative permeability on mesh interfaces.
 
+* `"VerboseObject`" [list] defines default verbosity level for the process kernel.
+  If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
+  Here is an example:
+
+.. code-block:: xml
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
+
 
 Transport
 =========
@@ -245,7 +255,9 @@ The remaining `"Transport`" parameters are:
 * `"temporal discretization order`" [int] the order of temporar discretization, either
   1 or 2. The default is 1.
 
-* `"verbosity level`" [int] controls volume of output information.
+* `"VerboseObject`" [list] defines default verbosity level for the process kernel.
+  If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
+  See an example under `"Flow`".
 
 
 The `"Transport`" parameters useful for developers are:

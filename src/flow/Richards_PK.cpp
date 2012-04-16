@@ -1,9 +1,16 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Authors: Neil Carlson (nnc@lanl.gov), 
          Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+#include <vector>
 
 #include "Epetra_IntVector.h"
 #include "Teuchos_ParameterList.hpp"
@@ -20,7 +27,6 @@ Authors: Neil Carlson (nnc@lanl.gov),
 #include "boundary_function.hh"
 #include "Richards_PK.hpp"
 
-
 namespace Amanzi {
 namespace AmanziFlow {
 
@@ -33,7 +39,12 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   Flow_PK::Init(FS_MPC);
 
   FS = FS_MPC;
-  rp_list = flow_list.sublist("Richards Problem");
+  if (flow_list.isSublist("Richards Problem")) {
+    rp_list = flow_list.sublist("Richards Problem");
+  } else {
+    Errors::Message msg("Flow does not have <Richards Problem> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
 
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
@@ -45,10 +56,10 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   rho = *(FS->fluid_density());
   mu = *(FS->fluid_viscosity());
   gravity_.init(dim);
-  for (int k=0; k<dim; k++) gravity_[k] = (*(FS->gravity()))[k];
+  for (int k = 0; k < dim; k++) gravity_[k] = (*(FS->gravity()))[k];
 
 #ifdef HAVE_MPI
-  const Epetra_Comm& comm = mesh_->cell_map(false).Comm(); 
+  const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
   MyPID = comm.MyPID();
 
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
@@ -71,7 +82,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
   num_itrs_trs = 0;
 
-  absolute_tol_sss = absolute_tol_trs = 1.0; 
+  absolute_tol_sss = absolute_tol_trs = 1.0;
   relative_tol_sss = relative_tol_trs = 1e-5;
   initialize_with_darcy = 0;
 
@@ -88,12 +99,12 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
 /* ******************************************************************
 * Clean memory.
 ****************************************************************** */
-Richards_PK::~Richards_PK() 
-{ 
-  delete super_map_; 
-  if (solver) delete solver; 
+Richards_PK::~Richards_PK()
+{
+  delete super_map_;
+  if (solver) delete solver;
   if (matrix == preconditioner) {
-    delete matrix; 
+    delete matrix;
   } else {
     delete matrix;
     delete preconditioner;
@@ -111,18 +122,22 @@ Richards_PK::~Richards_PK()
 ****************************************************************** */
 void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 {
-  if (matrix_ == NULL) matrix = new Matrix_MFD(FS, *super_map_);
-  else matrix = matrix_;
+  if (matrix_ == NULL)
+    matrix = new Matrix_MFD(FS, *super_map_);
+  else
+    matrix = matrix_;
 
-  if (preconditioner_ == NULL) preconditioner = matrix;
-  else preconditioner = preconditioner_;
+  if (preconditioner_ == NULL)
+    preconditioner = matrix;
+  else
+    preconditioner = preconditioner_;
 
   // Create the solution (pressure) vector.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->createCellView(*solution));
   solution_faces = Teuchos::rcp(FS->createFaceView(*solution));
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  rhs = matrix->get_rhs();  // import rhs from the matrix 
+  rhs = matrix->get_rhs();  // import rhs from the matrix
 
   // Get solver parameters from the flow parameter list.
   ProcessParameterList();
@@ -141,8 +156,8 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_head->Compute(time);
   bc_seepage->Compute(time);
   updateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, 
-      *solution_cells, atm_pressure, 
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *solution_cells, atm_pressure,
       bc_markers, bc_values);
 
   // Process other fundamental structures
@@ -154,7 +169,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   // Allocate data for relative permeability
   const Epetra_Map& cmap = mesh_->cell_map(true);
   const Epetra_Map& fmap = mesh_->face_map(true);
- 
+
   Krel_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap));
 
@@ -181,10 +196,10 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    preconditioner = new Matrix_MFD(FS, *super_map_);
+    preconditioner = new Matrix_MFD(FS, *super_map_);  // We need separate memory for preconditioner and matrix.
     preconditioner->setSymmetryProperty(is_matrix_symmetric);
     preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
-    preconditioner->init_ML_preconditioner(ML_list); 
+    preconditioner->init_ML_preconditioner(ML_list);
 
     // Create the BDF2 time integrator
     Teuchos::ParameterList solver_list = rp_list.sublist("steady state time integrator").sublist("nonlinear solver BDF2");
@@ -194,8 +209,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
-  } 
-  else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
+
+  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
     preconditioner = new Matrix_MFD(FS, *super_map_);
     preconditioner->setSymmetryProperty(is_matrix_symmetric);
     preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
@@ -209,9 +224,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
-  }
-  else {
-    preconditioner->init_ML_preconditioner(ML_list);  // preconditioner = matrix in this case.
+
+  } else {  // We will use common memory for the preconditioner and matrix (methods: Picard).
+    preconditioner->init_ML_preconditioner(ML_list);
     solver = new AztecOO;
     solver->SetUserOperator(matrix);
     solver->SetPrecOperator(preconditioner);
@@ -264,10 +279,10 @@ void Richards_PK::InitTransient(double T0, double dT0)
       preconditioner = new Matrix_MFD(FS, *super_map_);
       preconditioner->setSymmetryProperty(is_matrix_symmetric);
       preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
-      preconditioner->init_ML_preconditioner(ML_list); 
-    } 
+      preconditioner->init_ML_preconditioner(ML_list);
+    }
     // Reset the BDF2 time integrator
-    if (bdf2_dae != NULL) delete bdf2_dae;  // the only way to reset it is to delete it
+    if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset it is to delete it.
 
     Teuchos::ParameterList solver_list = rp_list.sublist("transient time integrator").sublist("nonlinear solver BDF2");
     if (solver_list.isSublist("VerboseObject"))
@@ -294,8 +309,8 @@ void Richards_PK::InitTransient(double T0, double dT0)
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
-  }
-  else if (solver == NULL) {
+
+  } else if (solver == NULL) {
     preconditioner->init_ML_preconditioner(ML_list);
     solver = new AztecOO;
     solver->SetUserOperator(matrix);
@@ -434,7 +449,7 @@ void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Ep
     cells.clear();
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
- 
+
     double face_value = 0.0;
     for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
 
@@ -531,7 +546,7 @@ void Richards_PK::AddTimeDerivative_MFD(
 {
   Epetra_Vector dSdP(mesh_->cell_map(false));
   DerivedSdP(pressure_cells, dSdP);
- 
+
   const Epetra_Vector& phi = FS->ref_porosity();
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
@@ -554,7 +569,7 @@ void Richards_PK::AddTimeDerivative_MFD(
 ****************************************************************** */
 void Richards_PK::InitializePressureHydrostatic(const double Tp, Epetra_Vector& u)
 {
-  if (solver == NULL) solver = new AztecOO;
+  AztecOO* solver_tmp = new AztecOO;
 
   // update boundary conditions
   bc_pressure->Compute(Tp);
@@ -581,17 +596,19 @@ void Richards_PK::InitializePressureHydrostatic(const double Tp, Epetra_Vector& 
   preconditioner->update_ML_preconditioner();
 
   // solve symmetric problem
-  solver->SetUserOperator(preconditioner);
-  solver->SetPrecOperator(preconditioner);
-  solver->SetAztecOption(AZ_solver, AZ_cg);
-  solver->SetAztecOption(AZ_output, AZ_none);
+  solver_tmp->SetUserOperator(preconditioner);
+  solver_tmp->SetPrecOperator(preconditioner);
+  solver_tmp->SetAztecOption(AZ_solver, AZ_cg);
+  solver_tmp->SetAztecOption(AZ_output, AZ_none);
 
   rhs = preconditioner->get_rhs();
-  solver->SetRHS(&*rhs);
+  solver_tmp->SetRHS(&*rhs);
 
   u.PutScalar(0.0);
-  solver->SetLHS(&u);
-  solver->Iterate(1000, 1e-10);
+  solver_tmp->SetLHS(&u);
+  solver_tmp->Iterate(1000, 1e-8);
+
+  delete solver_tmp;
 }
 
 
