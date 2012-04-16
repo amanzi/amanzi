@@ -111,6 +111,8 @@ void Richards::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> sat_liq = S->GetFieldData("saturation_liquid", "flow");
   Teuchos::RCP<CompositeVector> rel_perm = S->GetFieldData("relative_permeability", "flow");
 
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", "flow");
+
   // calculate liquid properties
   DensityLiquid_(S, *temp, *pres, dens_liq, mol_dens_liq);
   ViscosityLiquid_(S, *temp, visc_liq);
@@ -223,7 +225,7 @@ void Richards::AddGravityFluxesToOperator_(const Teuchos::RCP<State>& S,
   std::vector<Epetra_SerialDenseVector>& Ff_cells = matrix->Ff_cells();
   std::vector<double>& Fc_cells = matrix->Fc_cells();
 
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -260,11 +262,11 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int f_used = S_->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int f_owned = S_->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_used = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   std::vector<bool> done(f_used, false);
 
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();

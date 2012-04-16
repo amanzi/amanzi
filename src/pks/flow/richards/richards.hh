@@ -126,25 +126,32 @@ private:
   // -- update secondary variables from primary variables T,p
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
 
-  void DensityLiquid_(const Teuchos::RCP<State>& S, const CompositeVector& temp,
+  void DensityLiquid_(const Teuchos::RCP<State>& S,
+                      const CompositeVector& temp,
                       const CompositeVector& pres,
                       const Teuchos::RCP<CompositeVector>& dens_liq,
                       const Teuchos::RCP<CompositeVector>& mol_dens_liq);
 
-  void ViscosityLiquid_(const Teuchos::RCP<State>& S, const CompositeVector& temp,
+  void ViscosityLiquid_(const Teuchos::RCP<State>& S,
+                        const CompositeVector& temp,
                         const Teuchos::RCP<CompositeVector>& visc_liq);
 
-  void DensityGas_(const Teuchos::RCP<State>& S, const CompositeVector& temp,
-                   const CompositeVector& pres, const double& p_atm,
+  void DensityGas_(const Teuchos::RCP<State>& S,
+                   const CompositeVector& temp,
+                   const CompositeVector& pres,
+                   const double& p_atm,
                    const Teuchos::RCP<CompositeVector>& mol_frac_gas,
                    const Teuchos::RCP<CompositeVector>& dens_gas,
                    const Teuchos::RCP<CompositeVector>& mol_dens_gas);
 
-  void Saturation_(const Teuchos::RCP<State>& S, const CompositeVector& pres,
-                   const double& p_atm, const Teuchos::RCP<CompositeVector>& sat_liq);
+  void Saturation_(const Teuchos::RCP<State>& S,
+                   const CompositeVector& pres,
+                   const double& p_atm,
+                   const Teuchos::RCP<CompositeVector>& sat_liq);
 
   void RelativePermeability_(const Teuchos::RCP<State>& S,
-                             const CompositeVector& pres, const double& p_atm,
+                             const CompositeVector& pres,
+                             const double& p_atm,
                              const Teuchos::RCP<CompositeVector>& rel_perm);
 
 private:

@@ -18,7 +18,6 @@ namespace Energy {
 
 RegisteredPKFactory<TwoPhase> TwoPhase::reg_("two-phase energy");
 
-
 TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
     energy_plist_(plist) {
@@ -130,21 +129,8 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
     S->GetRecord("temperature", "energy")->set_initialized();
   }
 
-  // update secondary variables for IC i/o
-  UpdateSecondaryVariables_(S);
-  UpdateThermalConductivity_(S);
-  UpdateEnthalpyLiquid_(S);
-
-  // initialize thermal conductivity
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S->GetFieldData("thermal_conductivity","energy");
-  int size = thermal_conductivity->ViewComponent("cell",false)->MyLength();
-  Ke_.resize(size);
-  for (int c=0; c!=size; ++c) {
-    Ke_[c].init(S->mesh()->space_dimension(),1);
-  }
-
-  // declare secondary variables initialized
+  // declare secondary variables initialized, as they get done in a call to
+  // commit_state
   S->GetRecord("thermal_conductivity","energy")->set_initialized();
   S->GetRecord("internal_energy_gas","energy")->set_initialized();
   S->GetRecord("internal_energy_liquid","energy")->set_initialized();
@@ -156,10 +142,13 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
-  double time = S->time();
-  bc_temperature_->Compute(time);
-  bc_flux_->Compute(time);
-  UpdateBoundaryConditions_();
+
+  // initialize thermal conductivity
+  int ncells = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  Ke_.resize(ncells);
+  for (int c=0; c!=ncells; ++c) {
+    Ke_[c].init(S->mesh()->space_dimension(),1);
+  }
 
   // initialize the timesteppper
   state_to_solution(S, solution_);
@@ -181,6 +170,14 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
     // -- set initial state
     time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
   }
+};
+
+// -- Commit any secondary (dependent) variables.
+void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  // update secondary variables for IC i/o
+  UpdateSecondaryVariables_(S);
+  UpdateThermalConductivity_(S);
+  UpdateEnthalpyLiquid_(S);
 };
 
 // -- transfer operators -- ONLY COPIES POINTERS
@@ -205,10 +202,11 @@ double TwoPhase::get_dt() {
 bool TwoPhase::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
-  // take the bdf timestep
+  // take a bdf timestep, and ensure it did not try to subcycle
   double h = dt;
-  time_stepper_->time_step(h, solution_);
-  time_stepper_->commit_solution(h, solution_);
+  dt_ = time_stepper_->time_step(h, solution_);
+  if (h != dt) return true;
+  time_stepper_->commit_solution(dt, solution_);
   return false;
 };
 

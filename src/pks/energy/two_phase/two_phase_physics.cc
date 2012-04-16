@@ -26,10 +26,9 @@ void TwoPhase::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
     S->GetFieldData("internal_energy_rock", "energy");
 
   // update secondary variables
-  InternalEnergyGas_(*temp, *mol_frac_gas, int_energy_gas);
-  InternalEnergyLiquid_(*temp, int_energy_liquid);
-  InternalEnergyRock_(*temp, int_energy_rock);
-
+  InternalEnergyGas_(S, *temp, *mol_frac_gas, int_energy_gas);
+  InternalEnergyLiquid_(S, *temp, int_energy_liquid);
+  InternalEnergyRock_(S, *temp, int_energy_rock);
 };
 
 void TwoPhase::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
@@ -49,7 +48,7 @@ void TwoPhase::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
     S->GetFieldData("enthalpy_liquid", "energy");
 
   // update enthalpy of liquid
-  EnthalpyLiquid_(*int_energy_liquid, *pres, *dens_liq, enthalpy_liq);
+  EnthalpyLiquid_(S, *int_energy_liquid, *pres, *dens_liq, enthalpy_liq);
 };
 
 void TwoPhase::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
@@ -60,7 +59,7 @@ void TwoPhase::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> thermal_conductivity =
     S->GetFieldData("thermal_conductivity", "energy");
 
-  ThermalConductivity_(*poro, *sat_liq, thermal_conductivity);
+  ThermalConductivity_(S, *poro, *sat_liq, thermal_conductivity);
 };
 
 void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
@@ -126,7 +125,7 @@ void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
 
   // NOTE: gas and liquid are done in a ?? basis, but rock is done in a mass basis
 
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S_next_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     // calculte the energy density at the old and new times
     double edens_liq1 = (*density_liq1)(c) * (*sat_liq1)(c) *
@@ -164,7 +163,7 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
   UpdateEnthalpyLiquid_(S);
   Teuchos::RCP<const CompositeVector> enthalpy_liq = S->GetFieldData("enthalpy_liquid");
 
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     (*field)("cell",0,c) = (*enthalpy_liq)("cell",0,c);
   }
@@ -239,55 +238,60 @@ void TwoPhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
   matrix_->ComputeNegativeResidual(*temp, g);
 };
 
-void TwoPhase::InternalEnergyGas_(const CompositeVector& temp,
+void TwoPhase::InternalEnergyGas_(const Teuchos::RCP<State>& S,
+        const CompositeVector& temp,
         const CompositeVector& mol_frac_gas,
         const Teuchos::RCP<CompositeVector>& int_energy_gas) {
   // just a single model for now -- ignore blocks
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*int_energy_gas)("cell",0,c) = internal_energy_gas_model_->
       InternalEnergy(temp("cell",0,c), mol_frac_gas("cell",0,c));
   }
 };
 
-void TwoPhase::InternalEnergyLiquid_(const CompositeVector& temp,
+void TwoPhase::InternalEnergyLiquid_(const Teuchos::RCP<State>& S,
+        const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_liquid) {
   // just a single model for now -- ignore blocks
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*int_energy_liquid)("cell",0,c) = internal_energy_liquid_model_->
       InternalEnergy(temp("cell",0,c));
   }
 };
 
-void TwoPhase::InternalEnergyRock_(const CompositeVector& temp,
+void TwoPhase::InternalEnergyRock_(const Teuchos::RCP<State>& S,
+        const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_rock) {
   // just a single model for now -- ignore blocks
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*int_energy_rock)("cell",0,c) = internal_energy_rock_model_->
       InternalEnergy(temp("cell",0,c));
   }
 };
 
-void TwoPhase::EnthalpyLiquid_(const CompositeVector& int_energy_liquid,
+void TwoPhase::EnthalpyLiquid_(const Teuchos::RCP<State>& S,
+        const CompositeVector& int_energy_liquid,
         const CompositeVector& pres, const CompositeVector& dens_liq,
         const Teuchos::RCP<CompositeVector>& enthalpy_liq) {
 
   // just a single model for now -- ignore blocks
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*enthalpy_liq)("cell",0,c) = dens_liq("cell",0,c)*int_energy_liquid("cell",0,c)
                                               + pres("cell",0,c);
   }
 };
 
-void TwoPhase::ThermalConductivity_(const CompositeVector& porosity,
+void TwoPhase::ThermalConductivity_(const Teuchos::RCP<State>& S,
+        const CompositeVector& porosity,
         const CompositeVector& sat_liq,
         const Teuchos::RCP<CompositeVector>& thermal_conductivity) {
 
   // just a single model for now -- ignore blocks
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*thermal_conductivity)("cell",0,c) = thermal_conductivity_model_->
       CalculateConductivity(porosity("cell",0,c), sat_liq("cell",0,c));

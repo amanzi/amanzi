@@ -57,7 +57,7 @@ public:
   virtual bool advance(double dt);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // -- Calculate any diagnostics prior to doing vis
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
@@ -78,22 +78,31 @@ public:
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 private:
-  // methods for doing science
-  void InternalEnergyGas_(const CompositeVector& temp,
-                         const CompositeVector& mol_frac_gas,
-                         const Teuchos::RCP<CompositeVector>& int_energy_gas);
-  void InternalEnergyLiquid_(const CompositeVector& temp,
-                            const Teuchos::RCP<CompositeVector>& int_energy_liquid);
-  void InternalEnergyRock_(const CompositeVector& temp,
-                            const Teuchos::RCP<CompositeVector>& int_energy_rock);
+  // for now, several points of entry into the science, as I'm not sure where
+  // things will settle for a Phalanx-like system
+  void InternalEnergyGas_(const Teuchos::RCP<State>& S,
+                          const CompositeVector& temp,
+                          const CompositeVector& mol_frac_gas,
+                          const Teuchos::RCP<CompositeVector>& int_energy_gas);
 
-  void EnthalpyLiquid_(const CompositeVector& int_energy_liquid,
-          const CompositeVector& pres, const CompositeVector& mol_dens_liq,
-          const Teuchos::RCP<CompositeVector>& enthalpy_liq);
+  void InternalEnergyLiquid_(const Teuchos::RCP<State>& S,
+                             const CompositeVector& temp,
+                             const Teuchos::RCP<CompositeVector>& int_energy_liquid);
 
-  void ThermalConductivity_(const CompositeVector& porosity,
-                           const CompositeVector& saturation_liquid,
-                           const Teuchos::RCP<CompositeVector>& thermal_conductivity);
+  void InternalEnergyRock_(const Teuchos::RCP<State>& S,
+                           const CompositeVector& temp,
+                           const Teuchos::RCP<CompositeVector>& int_energy_rock);
+
+  void EnthalpyLiquid_(const Teuchos::RCP<State>& S,
+                       const CompositeVector& int_energy_liquid,
+                       const CompositeVector& pres,
+                       const CompositeVector& mol_dens_liq,
+                       const Teuchos::RCP<CompositeVector>& enthalpy_liq);
+
+  void ThermalConductivity_(const Teuchos::RCP<State>& S,
+                            const CompositeVector& porosity,
+                            const CompositeVector& saturation_liquid,
+                            const Teuchos::RCP<CompositeVector>& thermal_conductivity);
 
   // helper methods for calling the above methods
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);

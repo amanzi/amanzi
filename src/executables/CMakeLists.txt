@@ -2,41 +2,61 @@
 
 #
 #  ATS
-#    MPC class
+#    Executable
 #
 
-# This state library will move to a new location
-# once Markus has created the data manager.
-# I use global properties since all the PROJECT_NAME
-# variables in this directory are tied to the MPC.
-# These properties will be replaced with the appropriate
-# directory project name once it is moved.
-#
-# Library: state
-#
+MACRO(WHOLE_ARCHIVE inlib)
+  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
+ENDMACRO(WHOLE_ARCHIVE inlib)
+
+
 include_directories(${ATS_SOURCE_DIR}/src/data_structures)
 include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
-include_directories(${ATS_SOURCE_DIR}/src/pks/energy)
+
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
-set(pk_factory -Wl,--whole-archive pk_factory -Wl,--no-whole-archive)
+# wrap stuff in whole-archive for static stuff
+WHOLE_ARCHIVE(pk_factory)
+WHOLE_ARCHIVE(pk_energy_two_phase)
+WHOLE_ARCHIVE(pk_energy_advection_diffusion)
+WHOLE_ARCHIVE(pk_energy_constant_temperature)
+WHOLE_ARCHIVE(pk_energy_two_phase)
+WHOLE_ARCHIVE(pk_transport_passive_tracer)
+WHOLE_ARCHIVE(pk_flow_richards)
+WHOLE_ARCHIVE(mpc)
+
+WHOLE_ARCHIVE(flow_relations_eos)
 
 target_link_libraries(ats
                       coordinator
+                      ${mpc}
                       ${pk_factory}
-                      mpc
+                      ${pk_transport_passive_tracer}
+                      ${pk_energy_constant_temperature}
+                      ${pk_energy_advection_diffusion}
+                      ${pk_energy_two_phase}
+                      ${pk_flow_richards}
+                      energy_bc_factory
+                      energy_constitutive_relations
+                      flow_bc_factory
+                      ${flow_relations_eos}
+                      flow_relations_wrm
+                      advection
+                      divgrad
+                      amanzi_whetstone
                       amanzi_solvers
                       amanzi_time_integration
                       amanzi_mesh
+                      amanzi_mesh_functions
                       amanzi_cell_geometry
                       amanzi_mesh_factory
                       amanzi_input
-                      amanzi_output
                       amanzi_interface
+                      amanzi_output
                       amanzi_stk_mesh
                       amanzi_state
                       )
