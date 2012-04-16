@@ -20,13 +20,19 @@ int Richards_PK::AdvanceToSteadyState()
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
-  double pmin = atm_pressure;
-  InitializePressureHydrostatic(0.0, *solution);
-  ClipHydrostaticPressure(pmin, 0.6, *solution);
-  for (int c=0; c<ncells_owned; c++) pressure[c] = (*solution_cells)[c];
+  /* Initialization must be done in routine InitSteadyState(). 
+  if (initialize_with_darcy) {
+    double pmin = atm_pressure;
+    InitializePressureHydrostatic(0.0, *solution);
+    ClipHydrostaticPressure(pmin, 0.6, *solution);
+    for (int c=0; c<ncells_owned; c++) pressure[c] = (*solution_cells)[c];
+  } else {{
+    *solution_cells = pressure;
+  }
 
   DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   DeriveSaturationFromPressure(pressure, water_saturation);
+  */
 
   // start iterations
   int ierr = 0;
@@ -140,7 +146,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
-  if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_bicgstab);
+  if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
 
   int itrs = 0;
