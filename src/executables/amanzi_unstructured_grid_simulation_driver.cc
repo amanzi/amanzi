@@ -29,6 +29,8 @@ Effectively stolen from Amanzi, with few modifications.
 #include "Teuchos_StrUtils.hpp"
 
 #include "MeshFactory.hh"
+#include "Domain.hh"
+#include "GeometricModel.hh"
 #include "coordinator.hh"
 
 #include "errors.hh"
@@ -37,8 +39,8 @@ Effectively stolen from Amanzi, with few modifications.
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 #include "InputParser.H"
 
-Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
-        Teuchos::ParameterList& input_parameter_list) {
+Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
+        const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -57,7 +59,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(const 
   ParameterList params_copy;
   bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
   if (! native) {
-      params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
+    params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
   } else {
     params_copy = input_parameter_list;
   }
@@ -71,15 +73,38 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(const 
       std::endl;
   }
 
+  // ------  domain and geometric model  ------
+  Teuchos::ParameterList domain_params = params_copy.sublist("Domain");
+  unsigned int spdim = domain_params.get<int>("Spatial Dimension");
+  Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
+
+  // Under the simulation domain we have different geometric
+  // models. We can also have free geometric regions not associated
+  // with a geometric model.
+
+  // For now create one geometric model from all the regions in the spec
+  Teuchos::ParameterList reg_params = params_copy.sublist("Regions");
+
+  Amanzi::AmanziGeometry::GeometricModelPtr
+    geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+
+  // Add the geometric model to the domain
+  simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
+
+  // If we had geometric models and free regions coexisting then we would 
+  // create the free regions here and add them to the simulation domain
+  // Nothing to do for now
+
+  // ------ mesh ------
   Amanzi::AmanziMesh::MeshFactory factory(comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // select the mesh framework
-  Teuchos::ParameterList mesh_parameter_list = params_copy.sublist("Mesh");
+  Teuchos::ParameterList mesh_plist = params_copy.sublist("Mesh");
 
   int ierr = 0;
   try {
-    std::string framework = mesh_parameter_list.get<string>("Framework");
+    std::string framework = mesh_plist.get<string>("Framework");
     Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
     if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
       prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
@@ -110,43 +135,64 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(const 
     return Amanzi::Simulator::FAIL;
   }
 
-  // make mesh
-  std::string file("");
-  try {
-    file = mesh_parameter_list.get<string>("Read");
-  } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
-    // do nothing, this means that the "Read" parameter was not there
-  }
+  // Create the mesh
+  std::string file(""), format("");
 
-  if (!file.empty()) {
-    // make mesh from file
+  if (mesh_plist.isSublist("Read Mesh File")) {
+    // try to read mesh from file
+    Teuchos::ParameterList read_params = mesh_plist.sublist("Read Mesh File");
+
+    if (read_params.isParameter("File")) {
+      file = read_params.get<string>("File");
+    } else {
+      std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
+      throw std::exception();
+    }
+
+    if (read_params.isParameter("Format")) {
+      // Is the format one that we can read?
+      format = read_params.get<string>("Format");
+      if (format != "Exodus II") {
+        std::cerr << "Can only read files in Exodus II format" << std::endl;
+        throw std::exception();
+      }
+    } else {
+      std::cerr << "Must specify Format parameter for Read option under Mesh" << std::endl;
+      throw std::exception();
+    }
+
+    if (!file.empty()) {
+      ierr = 0;
+      try {
+        // create the mesh from the file
+        mesh = factory.create(file, geom_model_ptr);
+      } catch (const std::exception& e) {
+        std::cerr << rank << ": error: " << e.what() << std::endl;
+        ierr++;
+      }
+
+      comm->SumAll(&ierr, &aerr, 1);
+      if (aerr > 0) return Amanzi::Simulator::FAIL;
+    }
+  } else if (mesh_plist.isSublist("Generate Mesh")) {
+    // try to generate the mesh from data in plist
+    Teuchos::ParameterList gen_params = mesh_plist.sublist("Generate Mesh");
     ierr = 0;
+
     try {
-      mesh = factory.create(file);
+      mesh = factory.create(gen_params, geom_model_ptr);
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
       ierr++;
     }
 
     comm->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) {
-      return Amanzi::Simulator::FAIL;
-    }
+    if (aerr > 0) return Amanzi::Simulator::FAIL;
+
   } else {
-    // generate mesh from parameter list
-    ierr = 0;
-    try {
-      mesh = factory(mesh_parameter_list.sublist("Generate"));
-    } catch (const std::exception& e) {
-      std::cerr << rank << ": error: " << e.what() << std::endl;
-      ierr++;
-    }
-
-    comm->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) {
-      return Amanzi::Simulator::FAIL;
-    }
-
+    std::cerr << rank << ": error: "
+              << "Neither Read nor Generate options specified for mesh" << std::endl;
+    throw std::exception();
   }
 
   ASSERT(!mesh.is_null());

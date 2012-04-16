@@ -76,27 +76,29 @@ void Coordinator::initialize() {
   // initialize the process kernels (which should initialize all dependent variables)
   pk_->initialize(S_);
 
+  // commit state to get secondary variables intiailized
+  pk_->commit_state(0.0, S_);
+
   // Check that all fields have now been initialized or die.
   S_->CheckAllInitialized();
 }
 
 void Coordinator::read_parameter_list() {
-  T0_ = coordinator_plist_.get<double>("Start Time");
-  T1_ = coordinator_plist_.get<double>("End Time");
+  t0_ = coordinator_plist_.get<double>("Start Time");
+  t1_ = coordinator_plist_.get<double>("End Time");
+  max_dt_ = coordinator_plist_.get<double>("Max Time Step Size", 1.0e99);
+  min_dt_ = coordinator_plist_.get<double>("Min Time Step Size", 1.0e-17);
   end_cycle_ = coordinator_plist_.get<int>("End Cycle",-1);
 }
 
 void Coordinator::cycle_driver () {
-  // start at time T=T0, iteration 0;
-  S_->set_time(T0_);
-  int iter = 0;
-  S_->set_cycle(iter);
 
-  // initialize the state.  In a flow steady-state problem,
-  // this should include advancing flow to steady state
-  // (which should be done by flow_pk->initialize_state(S)
+  // start at time t = t0 and initialize the state.  In a flow steady-state
+  // problem, this should include advancing flow to steady state (which should
+  // be done by flow_pk->initialize_state(S)
+  S_->set_time(t0_);
   initialize();
-  S_->set_time(T0_); // in case steady state solve changed this
+  S_->set_time(t0_); // in case steady state solve changed this
 
   // make observations
   //  observations_->MakeObservations(*S_);
@@ -109,45 +111,63 @@ void Coordinator::cycle_driver () {
   S_next_ = Teuchos::rcp(new State(*S_));
 
   // set the states in the PKs
-  Teuchos::RCP<const State> cS = S_; // cast as const as passing non-const to const
-                                     // not possible under the RCP
-  pk_->set_states(cS, S_next_, S_next_);
+  Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
+  pk_->set_states(cS, S_, S_next_);
 
   // iterate process kernels
-  double mpc_dT;
-  bool fail = 0;
-  while (  (S_->time() <= T1_)  &&   ((end_cycle_ == -1) || (iter <= end_cycle_)) ) {
-    mpc_dT = pk_->get_dt();
+  double dt;
+  bool fail = false;
+  int iter = 0;
+  while ((S_->time() < t1_) && ((end_cycle_ == -1) || (iter <= end_cycle_))) {
+    dt = pk_->get_dt();
+
+    // check if the step size has gotten too small
+    if (dt < min_dt_) {
+      Errors::Message message("Coordinator: error, timestep too small");
+      Exceptions::amanzi_throw(message);
+    }
+
+    // cap the max step size
+    if (dt > max_dt_) {
+      dt = max_dt_;
+    }
+
+    // check if we are within reach of a vis step, restart step, or end of
+    // simulation, and adjust timestep appropriately
+    if (S_->time() + dt > t1_) {
+      dt = t1_ - S_->time();
+    }
 
     std::cout << "Cycle = " << iter;
     std::cout << ",  Time = "<< S_->time() / (60*60*24);
-    std::cout << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
+    std::cout << ",  dt = " << dt / (60*60*24)  << std::endl;
 
     // advance
-    fail = pk_->advance(mpc_dT);
-    if (fail) {
-      Errors::Message message("Coordinator: error advancing time");
-      Exceptions::amanzi_throw(message);
-    } else {
-      // update the time in the state object
-      S_->advance_time(mpc_dT);
-
-      // we're done with this time step, copy the state
-      *S_ = *S_next_;
+    fail = pk_->advance(dt);
+    if (!fail) {
+      // update the new state with the new solution
+      pk_->solution_to_state(soln_, S_next_);
+      pk_->commit_state(dt, S_next_);
 
       // advance the iteration count
       ++iter;
-      S_->set_cycle(iter);
 
       // make observations
-      //      observations_->MakeObservations(*S_);
+      //      observations_->MakeObservations(*S_next_);
 
       // write visualization if requested
-      // S_->WriteVis(*visualization_);
+      // S_
+      // S_next_->WriteVis(*visualization_);
 
       // write restart dump if requested
-      // restart->dump_state(*S);
-    } // if fail
+      // restart->dump_state(*S_next_);
+
+      // we're done with this time step, copy the state
+      *S_ = *S_next_;
+    } else {
+      // Failed the timestep.  Do nothing, the timestep sizes have been
+      // updated, so we can try again.
+    }
   } // while not finished
 
   // dump observations

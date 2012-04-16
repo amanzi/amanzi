@@ -21,13 +21,11 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   S_next_->set_time(t_new);
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
-  std::cout << "Residual calculation:" << std::endl;
-  std::cout << "  u: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+  std::cout << "Two-Phase Residual calculation:" << std::endl;
+  std::cout << "  T: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
 
   // pointer-copy temperature into states and update any auxilary data
-  solution_to_state(u_old, S_inter_);
   solution_to_state(u_new, S_next_);
-  UpdateSecondaryVariables_(S_inter_);
   UpdateSecondaryVariables_(S_next_);
 
   // update boundary conditions
@@ -55,9 +53,9 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 // applies preconditioner to u and returns the result in Pu
 void TwoPhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
-  std::cout << "  u: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
+  std::cout << "  T: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
-  std::cout << "  Pu: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
+  std::cout << "  PC*T: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
 };
 
 // computes a norm on u-du and returns the result

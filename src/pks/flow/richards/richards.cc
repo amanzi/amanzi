@@ -56,7 +56,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   S->RequireField("molar_density_liquid", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("viscosity_liquid", "flow", AmanziMesh::CELL, 1, true);
 
-  S->RequireField("saturation_gas", "flow", AmanziMesh::FACE, 1, true);
+  S->RequireField("saturation_gas", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("density_gas", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("mol_frac_gas", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("molar_density_gas", "flow", AmanziMesh::CELL, 1, true);
@@ -140,10 +140,14 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
     S->GetRecord("pressure", "flow")->set_initialized();
   }
 
-  // update secondary variables for IC
-  UpdateSecondaryVariables_(S);
 
-  // declare secondary variables initialized
+  // initialize boundary conditions
+  int nfaces = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
+  bc_values_.resize(nfaces, 0.0);
+
+  // declare secondary variables initialized, as they will be done by
+  // the commit_state call
   S->GetRecord("saturation_liquid","flow")->set_initialized();
   S->GetRecord("saturation_gas","flow")->set_initialized();
   S->GetRecord("density_liquid","flow")->set_initialized();
@@ -156,19 +160,10 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   S->GetRecord("darcy_flux", "flow")->set_initialized();
   S->GetRecord("darcy_velocity", "flow")->set_initialized();
 
+  // rel perm is special -- if the mode is symmetric, it needs to be
+  // initialized to 1
   S->GetFieldData("rel_perm_faces","flow")->PutScalar(1.0);
   S->GetRecord("rel_perm_faces","flow")->set_initialized();
-
-  // initialize boundary conditions
-  int nfaces = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
-  bc_values_.resize(nfaces, 0.0);
-
-  double time = S->time();
-  bc_pressure_->Compute(time);
-  //bc_head_->Compute(time);
-  bc_flux_->Compute(time);
-  UpdateBoundaryConditions_();
 
   // initialize the timesteppper
   state_to_solution(S, solution_);
@@ -192,11 +187,13 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   }
 };
 
+
 // Pointer copy of state to solution
 void Richards::state_to_solution(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& solution) {
   solution->set_data(S->GetFieldData("pressure", "flow"));
 };
+
 
 // Pointer copy concentration fields from solution vector into state.  Used within
 // compute_f() of strong couplers to set the current iterate in the state for
@@ -206,19 +203,43 @@ void Richards::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
   S->SetData("pressure", "flow", solution->data());
 };
 
+
 // -- Advance from state S0 to state S1 at time S0.time + dt.
 bool Richards::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
-  // take the bdf timestep
+  // take a bdf timestep, and ensure it did not try to subcycle
   double h = dt;
-  time_stepper_->time_step(h, solution_);
+  dt_ = time_stepper_->time_step(h, solution_);
+  if (h != dt) return true;
   time_stepper_->commit_solution(h, solution_);
   return false;
 };
 
+
 // -- commit the state... not sure how/when this gets used
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  // update secondary variables for IC
+  UpdateSecondaryVariables_(S);
+
+  // update the BCs
+  double time = S->time();
+  bc_pressure_->Compute(time);
+  //bc_head_->Compute(time);
+  bc_flux_->Compute(time);
+  UpdateBoundaryConditions_();
+
+  // update the operator
+  UpdatePermeabilityData_(S);
+  Teuchos::RCP<const CompositeVector> rel_perm_faces =
+    S->GetFieldData("rel_perm_faces", "flow");
+
+  matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
+  matrix_->CreateMFDrhsVectors();
+  AddGravityFluxesToOperator_(S, matrix_);
+  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  matrix_->AssembleGlobalMatrices();
+
   // update the flux
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", "flow");
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");

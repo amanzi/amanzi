@@ -19,10 +19,12 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
 
-  // pointer-copy temperature into states and update any auxilary data
-  solution_to_state(u_old, S_inter_);
+  Teuchos::RCP<CompositeVector> u = u_new->data();
+  std::cout << "Richards Residual calculation:" << std::endl;
+  std::cout << "  p: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+
+  // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
-  UpdateSecondaryVariables_(S_inter_);
   UpdateSecondaryVariables_(S_next_);
 
   // update boundary conditions
@@ -37,9 +39,11 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
+  std::cout << "  res (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
+  std::cout << "  res (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
 };
 
 /* ******************************************************************
@@ -47,9 +51,9 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 ****************************************************************** */
 void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
-  std::cout << "  u: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
+  std::cout << "  p: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
-  std::cout << "  Pu: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
+  std::cout << "  PC*p: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
 };
 
 

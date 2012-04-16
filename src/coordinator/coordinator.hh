@@ -59,7 +59,8 @@ private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList coordinator_plist_;
 
-  double T0_, T1_;
+  double t0_, t1_;
+  double max_dt_, min_dt_;
   int end_cycle_;
 
   // Epetra communicator

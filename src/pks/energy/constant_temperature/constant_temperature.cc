@@ -128,6 +128,10 @@ void ConstantTemperature::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<
   *Pu = *u;
 };
 
+void ConstantTemperature::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+  // do nothing
+};
+
 // computes a norm on u-du and returns the result
 double ConstantTemperature::enorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
