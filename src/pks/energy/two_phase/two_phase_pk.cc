@@ -202,13 +202,24 @@ double TwoPhase::get_dt() {
 bool TwoPhase::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
-  // take a bdf timestep, and ensure it did not try to subcycle
+  // take a bdf timestep
   double h = dt;
-  dt_ = time_stepper_->time_step(h, solution_);
-  if (h != dt) return true;
-  time_stepper_->commit_solution(dt, solution_);
+  try {
+    dt_ = time_stepper_->time_step(h, solution_);
+  } catch (Exceptions::Amanzi_exception &error) {
+    if (error.what() == "BDF time step failed") {
+      // try halving the timestep
+      dt_ = dt_/2.0;
+      return true;
+    } else {
+      throw error;
+    }
+  }
+
+  time_stepper_->commit_solution(h, solution_);
   return false;
 };
+
 
 void TwoPhase::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
