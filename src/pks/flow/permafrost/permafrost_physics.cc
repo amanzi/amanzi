@@ -275,7 +275,7 @@ void Permafrost::FrozenSaturation_(const Teuchos::RCP<State>& S,
         const CompositeVector& n_ice,
         const Teuchos::RCP<CompositeVector>& sat_star) {
   // This would have to be fixed for multiple pc models
-  CompositeVector* dens_ice;
+  const CompositeVector* dens_ice;
   if (pc_ice_liq_model_->IsMolarBasis()) {
     dens_ice = &n_ice;
   } else {
@@ -293,7 +293,7 @@ void Permafrost::FrozenSaturation_(const Teuchos::RCP<State>& S,
 
     for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
       // use a pc model to evaluate the ice pressure
-      double pc_ice_liq_model_->CapillaryPressure(temp("cell",0,c), (*dens_ice)("cell",0,c));
+      double pc_ice_liq = pc_ice_liq_model_->CapillaryPressure(temp("cell",0,*c), (*dens_ice)("cell",0,*c));
 
       // use the wrm to evaluate saturation on each cell in the region
       (*sat_star)("cell",0,*c) = (*wrm)->second->saturation(pc_ice_liq);

@@ -27,7 +27,7 @@
 #include "wrm.hh"
 #include "eos.hh"
 #include "eos_vapor_in_gas.hh"
-#include "pc_ice_liquid.hh"
+#include "pc_ice_water.hh"
 
 namespace Amanzi {
 namespace Flow {
