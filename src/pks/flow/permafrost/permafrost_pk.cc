@@ -50,7 +50,7 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
 
   // -- secondary variables
   S->RequireField("darcy_flux", "flow", AmanziMesh::FACE, 1, true);
-  S->RequireField("darcy_velocity", "flow", AmanziMesh::CELL, 3, false)
+  S->RequireField("darcy_velocity", "flow", AmanziMesh::CELL, 3, false);
 
   S->RequireField("saturation_liquid", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("density_liquid", "flow", AmanziMesh::CELL, 1, true);
@@ -88,33 +88,40 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   for (int c=0; c!=c_owned; ++c) K_[c].init(S->mesh()->space_dimension(),1);
 
   // constitutive relations
+  FlowRelations::EOSFactory eos_factory;
+
   // -- liquid eos
   Teuchos::ParameterList water_eos_plist = flow_plist_.sublist("Water EOS");
-  FlowRelations::EOSFactory eos_factory;
   eos_liquid_ = eos_factory.createEOS(water_eos_plist);
 
   // -- ice eos
   Teuchos::ParameterList ice_eos_plist = flow_plist_.sublist("Ice EOS");
-  FlowRelations::EOSFactory eos_factory;
   eos_ice_ = eos_factory.createEOS(ice_eos_plist);
 
   // -- gas eos
   Teuchos::ParameterList eos_gas_plist = flow_plist_.sublist("Vapor and Gas EOS");
+  // EOSVaporInGas has a different interface than EOS; these sorts of
+  // EOS need a factory/etc too.
   eos_gas_ = Teuchos::rcp(new FlowRelations::EOSVaporInGas(eos_gas_plist));
 
-  // -- water retention models
-  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Models");
+  // -- pc_il model.  cap pressure for ice-water interfaces are a
+  // -- function of temperature.  See notes eqn: 9ish?
+  Teuchos::ParameterList pc_il_plist = flow_plist_.sublist("Capillary Pressure Ice-Liquid");
+  pc_ice_liq_model_ = Teuchos::rpc(new FlowRelations::PCIceWater(pc_il_plist));
+
+  // -- frozen water retention models
+  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Frozen Water Retention Models");
   // count the number of region-model pairs
   int wrm_count = 0;
   for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
     if (wrm_plist.isSublist(wrm_plist.name(i))) {
       wrm_count++;
     } else {
-      std::string message("Permafrost: water retention model contains an entry that is not a sublist.");
+      std::string message("Permafrost: frozen water retention model list contains an entry that is not a sublist.");
       Exceptions::amanzi_throw(message);
     }
   }
-  wrm_.resize(wrm_count);
+  wrm_ice_liq_.resize(wrm_count);
 
   // instantiate the region-model pairs
   FlowRelations::WRMFactory wrm_factory;
@@ -122,7 +129,30 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
     Teuchos::ParameterList wrm_region_list = wrm_plist.sublist(wrm_plist.name(i));
     std::string region = wrm_region_list.get<std::string>("Region");
-    wrm_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
+    wrm_ice_liq_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
+    iblock++;
+  }
+
+  // -- un-frozen water retention models
+  wrm_plist = flow_plist_.sublist("Unfrozen Water Retention Models");
+  // count the number of region-model pairs
+  wrm_count = 0;
+  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
+    if (wrm_plist.isSublist(wrm_plist.name(i))) {
+      wrm_count++;
+    } else {
+      std::string message("Permafrost: frozen water retention model list contains an entry that is not a sublist.");
+      Exceptions::amanzi_throw(message);
+    }
+  }
+  wrm_liq_gas_.resize(wrm_count);
+
+  // instantiate the region-model pairs
+  iblock = 0;
+  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
+    Teuchos::ParameterList wrm_region_list = wrm_plist.sublist(wrm_plist.name(i));
+    std::string region = wrm_region_list.get<std::string>("Region");
+    wrm_liq_gas_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
     iblock++;
   }
 

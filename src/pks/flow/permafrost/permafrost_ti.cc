@@ -170,8 +170,9 @@ void Permafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     // + n_i  * d(sat_i)/dp + n_l * d(sat_l)/dp + omega_g * n_g * d(sat_g)/dp
     // not obvious... requires derivation from A,B, etc, and specific to dA/dp = 0
     result += (*sat_liq)(c) * -(*dsat_star_gl)(c)/(*sat_star_gl)(c)/(*sat_star_gl)(c)
-      * ((*n_ice)(c)*(*sat_ice)(c) + (*n_liq)(c)*(*sat_liq)(c) + (*n_gas)(c)*(*omega_g)(c)
-         + (*n_gas)(c)*(*omega_g)(c)*(*sat_gas)(c));
+      * ((*n_ice)(c)*(*sat_ice)(c) + (*n_liq)(c)*(*sat_liq)(c)
+         + (*n_gas)(c)*(*mol_frac_gas)(c)
+         + (*n_gas)(c)*(*mol_frac_gas)(c)*(*sat_gas)(c));
 
     Acc_cells[c] += phi * result * (*cell_volume)(c) / h;
     Fc_cells[c] += phi * result * (*cell_volume)(c) / h * p;
