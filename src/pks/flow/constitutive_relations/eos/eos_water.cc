@@ -50,7 +50,7 @@ double EOSWater::MassDensity(double T, double p) {
 
 double EOSWater::DMassDensityDT(double T, double p) {
   double dT = T - kT0_;
-  double rho1bar = kb_ + (kc_ + kd_*dT)*dT;
+  double rho1bar = kb_ + (2.0*kc_ + 3.0*kd_*dT)*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
 
 };
