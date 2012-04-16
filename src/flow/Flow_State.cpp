@@ -4,6 +4,9 @@ License: BSD
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include <string>
+#include <vector>
+
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
@@ -40,13 +43,13 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   darcy_velocity_ = Teuchos::rcp(new Epetra_MultiVector(fmap, dim));
 
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
-  for (int i=0; i<3; i++) (*gravity_)[i] = 0.0;
+  for (int i = 0; i < 3; i++) (*gravity_)[i] = 0.0;
 
   specific_storage_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   mesh_ = mesh;
 
-  S_ = NULL;  
+  S_ = NULL;
 }
 
 
@@ -68,7 +71,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   darcy_velocity_ = S->get_darcy_velocity();
 
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
-  for (int i=0; i<3; i++) (*gravity_)[i] = (*(S->get_gravity()))[i];
+  for (int i = 0; i < 3; i++) (*gravity_)[i] = (*(S->get_gravity()))[i];
 
   specific_storage_ = S->get_specific_storage();
 
@@ -93,7 +96,7 @@ Flow_State::Flow_State(State& S)
   darcy_velocity_ = S.get_darcy_velocity();
 
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
-  for (int i=0; i<3; i++) (*gravity_)[i] = (*(S.get_gravity()))[i];
+  for (int i = 0; i < 3; i++) (*gravity_)[i] = (*(S.get_gravity()))[i];
 
   specific_storage_ = S.get_specific_storage();
 
@@ -126,8 +129,8 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     specific_storage_ = FS.specific_storage();
 
     mesh_ = FS.mesh();
-  } 
-  else if (mode == CopyMemory ) {
+
+  } else if (mode == CopyMemory) {
     vertical_permeability_ = FS.vertical_permeability();
     horizontal_permeability_ = FS.horizontal_permeability();
     porosity_ = FS.porosity();
@@ -219,7 +222,7 @@ double Flow_State::normLpCell(const Epetra_Vector& v1, double p)
   int ncells = (mesh_->cell_map(false)).NumMyElements();
 
   double Lp_norm, Lp = 0.0;
-  for (int c=0; c<ncells; c++) {
+  for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
     Lp += volume * pow(v1[c], p);
   }
@@ -237,7 +240,7 @@ double Flow_State::normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, 
   int ncells = (mesh_->cell_map(false)).NumMyElements();
 
   double Lp_norm, Lp = 0.0;
-  for (int c=0; c<ncells; c++) {
+  for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
     Lp += volume * pow(v1[c] * v2[c], p);
   }
@@ -308,7 +311,7 @@ void Flow_State::set_pressure_hydrostatic(double z0, double p0)
   double rho = *fluid_density_;
   double g = (*gravity_)[dim - 1];
 
-  for (int c=0; c<ncells; c++) {
+  for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     (*pressure_)[c] = p0 + rho * g * (xc[dim - 1] - z0);
   }
@@ -329,8 +332,8 @@ void Flow_State::set_permeability(double Kh, double Kv, const string region)
   std::vector<unsigned int> block;
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   int ncells = block.size();
-      
-  for (int i=0; i<ncells; i++) {
+
+  for (int i = 0; i < ncells; i++) {
     int c = block[i];
     (*horizontal_permeability_)[c] = Kh;
     (*vertical_permeability_)[c] = Kv;
@@ -353,7 +356,7 @@ void Flow_State::set_specific_storage(double ss)
 void Flow_State::set_gravity(double g)
 {
   int dim = mesh_->space_dimension();
-  for (int i=0; i<dim-1; i++) (*gravity_)[i] = 0.0;
+  for (int i = 0; i < dim-1; i++) (*gravity_)[i] = 0.0;
   (*gravity_)[dim-1] = g;
 }
 

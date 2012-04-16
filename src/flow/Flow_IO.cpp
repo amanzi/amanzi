@@ -40,7 +40,7 @@ void Flow_PK::print_statistics() const
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
-  
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

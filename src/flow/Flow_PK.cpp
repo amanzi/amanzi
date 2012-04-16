@@ -5,6 +5,9 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
+#include <string>
+#include <vector>
+
 #include "Teuchos_ParameterList.hpp"
 
 #include "Mesh.hh"
@@ -47,7 +50,7 @@ Epetra_Map* Flow_PK::createSuperMap()
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
-  
+
   int ndof = ncells_owned + nfaces_owned;
   int ndof_global_cell = cmap.NumGlobalElements();
   int ndof_global = ndof_global_cell + fmap.NumGlobalElements();
@@ -56,7 +59,7 @@ Epetra_Map* Flow_PK::createSuperMap()
   cmap.MyGlobalElements(&(gids[0]));
   fmap.MyGlobalElements(&(gids[ncells_owned]));
 
-  for (int f=0; f<nfaces_owned; f++) gids[ncells_owned + f] += ndof_global_cell;
+  for (int f = 0; f < nfaces_owned; f++) gids[ncells_owned + f] += ndof_global_cell;
   Epetra_Map* map = new Epetra_Map(ndof_global, ndof, gids, 0, cmap.Comm());
 
   delete [] gids;
@@ -68,39 +71,39 @@ Epetra_Map* Flow_PK::createSuperMap()
 * Add a boundary marker to used faces.                                          
 ****************************************************************** */
 void Flow_PK::updateBoundaryConditions(
-    BoundaryFunction* bc_pressure, BoundaryFunction* bc_head, 
+    BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_cells, const double atm_pressure,
     std::vector<int>& bc_markers, std::vector<double>& bc_values)
 {
-  for (int n=0; n<bc_markers.size(); n++) {
+  for (int n = 0; n < bc_markers.size(); n++) {
     bc_markers[n] = FLOW_BC_FACE_NULL;
     bc_values[n] = 0.0;
   }
 
   Amanzi::Iterator bc;
-  for (bc=bc_pressure->begin(); bc!=bc_pressure->end(); ++bc) {
+  for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_PRESSURE;
     bc_values[f] = bc->second;
   }
 
-  for (bc=bc_head->begin(); bc!=bc_head->end(); ++bc) {
-    int f = bc->first;    
+  for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
+    int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_HEAD;
     bc_values[f] = bc->second;
   }
 
-  for (bc=bc_flux->begin(); bc!=bc_flux->end(); ++bc) {
-    int f = bc->first;    
+  for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
+    int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_FLUX;
     bc_values[f] = bc->second;
   }
 
   AmanziMesh::Entity_ID_List cells;
-  for (bc=bc_seepage->begin(); bc!=bc_seepage->end(); ++bc) {
+  for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells); 
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
     int c = cells[0];  // Assume that face and cell are on the same processor.
 
     if (pressure_cells[c] < atm_pressure) {
@@ -122,8 +125,8 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
                                       Epetra_Vector& pressure_faces)
 {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f=0; f<nfaces; f++) {
-    if (bc_markers[f] == FLOW_BC_FACE_PRESSURE || 
+  for (int f = 0; f < nfaces; f++) {
+    if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
         bc_markers[f] == FLOW_BC_FACE_HEAD) {
       pressure_faces[f] = bc_values[f];
     }
@@ -136,10 +139,10 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
 * boundary conditions.                                          
 ****************************************************************** */
 void Flow_PK::addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
-{  
+{
   Amanzi::Iterator src;
-  for (src=src_sink->begin(); src!=src_sink->end(); ++src) {
-    int c = src->first; 
+  for (src = src_sink->begin(); src != src_sink->end(); ++src) {
+    int c = src->first;
     rhs[c] += mesh_->cell_volume(c) * src->second;
   }
 }
@@ -149,25 +152,25 @@ void Flow_PK::addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 * Routine updates elemental discretization matrices and must be 
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
-void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
+void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
                                    const Epetra_Vector& Krel_faces,
                                    Matrix_MFD* matrix)
 {
   double rho = FS->ref_fluid_density();
-  AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
+  AmanziGeometry::Point gravity(dim);
+  for (int k = 0; k < dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  for (int c=0; c<ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
     double& Fc = matrix->get_Fc_cells()[c];
 
-    for (int n=0; n<nfaces; n++) {
+    for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
@@ -182,27 +185,27 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 /* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
+void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
                                          const Epetra_Vector& Krel_faces,
                                          Epetra_Vector& darcy_mass_flux)
 {
   double rho = FS->ref_fluid_density();
-  AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
+  AmanziGeometry::Point gravity(dim);
+  for (int k = 0; k < dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
 
-  for (int c=0; c<ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    for (int n=0; n<nfaces; n++) {
+    for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      if (f<nfaces_owned && !flag[f]) {
+      if (f < nfaces_owned && !flag[f]) {
         darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
         flag[f] = 1;
       }
@@ -218,22 +221,24 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 ******************************************************************* */
 void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
 {
-  for (int f=0; f<nfaces_owned; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     upwind_cell[f] = -1;  // negative value is indicator of a boundary
     downwind_cell[f] = -1;
   }
 
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  AmanziMesh::Entity_ID_List faces; 
+  AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
-  for (int c=0; c<ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
-    for (int i=0; i<faces.size(); i++) {
+    for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if (darcy_flux[f] * fdirs[i] >= 0) upwind_cell[f] = c; 
-      else downwind_cell[f] = c; 
+      if (darcy_flux[f] * fdirs[i] >= 0)
+        upwind_cell[f] = c;
+      else
+        downwind_cell[f] = c;
     }
   }
 }

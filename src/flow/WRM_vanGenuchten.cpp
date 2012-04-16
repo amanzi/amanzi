@@ -1,12 +1,13 @@
 /*
 This is the flow component of the Amanzi code. 
+Copyright: LANL
 License: BSD
 Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <cmath>
-#include <iostream>
+#include <string>
 
 #include "WRM_vanGenuchten.hpp"
 
@@ -18,13 +19,13 @@ namespace AmanziFlow {
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
 WRM_vanGenuchten::WRM_vanGenuchten(
-   std::string region, double m_, double alpha_, double sr_, double pc0_) :
-   m(m_), alpha(alpha_), sr(sr_), pc0(pc0_)
+    std::string region, double m_, double alpha_, double sr_, double pc0_)
+    : m(m_), alpha(alpha_), sr(sr_), pc0(pc0_)
 {
   n = 1.0 / (1.0 - m);
   set_region(region);
 }
- 
+
 
 /* ******************************************************************
 * Relative permeability formula: input is capillary pressure pc.
@@ -75,7 +76,7 @@ double WRM_vanGenuchten::d_saturation(double pc)
   } else {
     return 0.0;
   }
-}  
+}
 
 
 /* ******************************************************************

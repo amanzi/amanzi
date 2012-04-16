@@ -5,6 +5,9 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
+#include <string>
+#include <set>
+
 #include "Flow_BC_Factory.hpp"
 #include "Flow_Source_Factory.hpp"
 #include "Darcy_PK.hpp"
@@ -54,7 +57,7 @@ void Darcy_PK::ProcessParameterList()
   bc_flux = bc_factory.createMassFlux();
   bc_seepage = bc_factory.createSeepageFace();
 
-  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
+  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);
 
   double time = T_internal;
   bc_pressure->Compute(time);
@@ -64,7 +67,7 @@ void Darcy_PK::ProcessParameterList()
 
   // Create the source object if any
   if (dp_list.isSublist("source terms")) {
-    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list.sublist("source terms", true));  
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
 

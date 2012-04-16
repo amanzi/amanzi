@@ -5,6 +5,9 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
+#include <vector>
+#include <string>
+
 #include "function-factory.hh"
 #include "errors.hh"
 
@@ -117,7 +120,7 @@ void FlowBCFactory::processPressureList(Teuchos::ParameterList& list,
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else { // ERROR -- parameter is not a sublist
+    } else {
       Errors::Message m;
       m << "parameter \"" << name.c_str() << "\" is not a sublist";
       Exceptions::amanzi_throw(m);
@@ -345,7 +348,7 @@ void FlowBCFactory::processSeepageFaceList(Teuchos::ParameterList& list,
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else { // ERROR -- parameter is not a sublist
+    } else {  // ERROR -- parameter is not a sublist
       Errors::Message m;
       m << "parameter \"" << name.c_str() << "\" is not a sublist";
       Exceptions::amanzi_throw(m);

@@ -4,6 +4,9 @@ License: BSD
 Authors: Konstantin Lipnikov (version 2)  (lipnikov@lanl.gov)
 */
 
+#include <string>
+#include <vector>
+
 #include "function-factory.hh"
 #include "errors.hh"
 

@@ -5,6 +5,8 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
+#include <vector>
+
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 
@@ -36,15 +38,15 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> F
 
   // Create the combined cell/face DoF map.
   super_map_ = createSuperMap();
- 
+
   // Other fundamental physical quantaties
   rho_ = *(FS->fluid_density());
-  mu_ = *(FS->fluid_viscosity()); 
+  mu_ = *(FS->fluid_viscosity());
   gravity_.init(dim);
-  for (int k=0; k<dim; k++) gravity_[k] = (*(FS->gravity()))[k];
+  for (int k = 0; k < dim; k++) gravity_[k] = (*(FS->gravity()))[k];
 
 #ifdef HAVE_MPI
-  const  Epetra_Comm& comm = mesh_->cell_map(false).Comm(); 
+  const  Epetra_Comm& comm = mesh_->cell_map(false).Comm();
   MyPID = comm.MyPID();
 
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
@@ -67,12 +69,12 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> F
 /* ******************************************************************
 * Clean memory.
 ****************************************************************** */
-Darcy_PK::~Darcy_PK() 
-{ 
-  delete super_map_; 
-  delete solver; 
+Darcy_PK::~Darcy_PK()
+{
+  delete super_map_;
+  delete solver;
   if (matrix == preconditioner) {
-    delete matrix; 
+    delete matrix;
   } else {
     delete matrix;
     delete preconditioner;
@@ -80,7 +82,7 @@ Darcy_PK::~Darcy_PK()
   delete bc_pressure;
   delete bc_head;
   delete bc_flux;
-  delete bc_seepage; 
+  delete bc_seepage;
 }
 
 
@@ -89,11 +91,15 @@ Darcy_PK::~Darcy_PK()
 ****************************************************************** */
 void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 {
-  if (matrix_ == NULL) matrix = new Matrix_MFD(FS, *super_map_);
-  else matrix = matrix_;
+  if (matrix_ == NULL)
+    matrix = new Matrix_MFD(FS, *super_map_);
+  else
+    matrix = matrix_;
 
-  if (preconditioner_ == NULL) preconditioner = matrix;
-  else preconditioner = preconditioner_;
+  if (preconditioner_ == NULL)
+    preconditioner = matrix;
+  else
+    preconditioner = preconditioner_;
 
   // Create the solution vectors.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
@@ -122,8 +128,8 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
   updateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, 
-      *solution_cells, atm_pressure, 
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *solution_cells, atm_pressure,
       bc_markers, bc_values);
 
   // Process other fundamental structures
@@ -133,7 +139,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Allocate data for relative permeability (for consistency).
   Krel_faces = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
-  Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov) 
+  Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
 
   // Preconditioner
   Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
@@ -171,7 +177,7 @@ int Darcy_PK::AdvanceToSteadyState()
 
   // work-around limited support for tensors
   SetAbsolutePermeabilityTensor(K);
-  for (int c=0; c<K.size(); c++) K[c] *= rho_ / mu_;
+  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
 
   // calculate and assemble elemental stifness matrices
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
@@ -185,7 +191,7 @@ int Darcy_PK::AdvanceToSteadyState()
   rhs = matrix->get_rhs();
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
-  solver->SetLHS(&*solution);  // initial solution guess 
+  solver->SetLHS(&*solution);  // initial solution guess
 
   solver->Iterate(max_itrs_sss, convergence_tol_sss);
   num_itrs_sss = solver->NumIters();
@@ -224,13 +230,13 @@ int Darcy_PK::Advance(double dT_MPC)
   if (src_sink != NULL) src_sink->Compute(time);
 
   updateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, 
-      *solution_cells, atm_pressure, 
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *solution_cells, atm_pressure,
       bc_markers, bc_values);
 
   // work-around limited support for tensors
   SetAbsolutePermeabilityTensor(K);
-  for (int c=0; c<K.size(); c++) K[c] *= rho_ / mu_;
+  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
 
   // calculate and assemble elemental stifness matrices
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
@@ -247,7 +253,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
-  solver->SetLHS(&*solution);  // initial solution guess 
+  solver->SetLHS(&*solution);  // initial solution guess
 
   solver->Iterate(max_itrs_sss, convergence_tol_sss);
   num_itrs_sss = solver->NumIters();
@@ -265,7 +271,7 @@ int Darcy_PK::Advance(double dT_MPC)
 * to populate the original state FS. 
 ****************************************************************** */
 void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
-{  
+{
   FS_MPC->ref_pressure() = *solution_cells;
 
   // calculate darcy mass flux
@@ -273,10 +279,10 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
-  for (int c=0; c<nfaces_owned; c++) flux[c] /= rho_;
+  for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 
-  //DEBUG
-  writeGMVfile(FS_MPC);
+  // DEBUG
+  // writeGMVfile(FS_MPC);
 }
 
 
@@ -288,13 +294,13 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
   const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
   const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
 
-  for (int c=0; c<K.size(); c++) {
+  for (int c = 0; c < K.size(); c++) {
     if (vertical_permeability[c] == horizontal_permeability[c]) {
       K[c].init(dim, 1);
       K[c](0, 0) = vertical_permeability[c];
     } else {
       K[c].init(dim, 2);
-      for (int i=0; i<dim-1; i++) K[c](i, i) = horizontal_permeability[c];
+      for (int i = 0; i < dim-1; i++) K[c](i, i) = horizontal_permeability[c];
       K[c](dim-1, dim-1) = vertical_permeability[c];
     }
   }
@@ -306,14 +312,14 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 * Specific storage at the moment is 1.                                              
 ****************************************************************** */
 void Darcy_PK::AddTimeDerivativeSpecificStorage(
-   Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
+    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
   const Epetra_Vector& specific_storage = FS->ref_specific_storage();
 
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
 
-  for (int c=0; c<ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = volume / dT_prec * specific_storage[c];
     Acc_cells[c] += factor;
@@ -325,7 +331,7 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
 /* ******************************************************************
 * A wrapper for a similar matrix call.  
 ****************************************************************** */
-void Darcy_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) 
+void Darcy_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity)
 {
   matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
 }
