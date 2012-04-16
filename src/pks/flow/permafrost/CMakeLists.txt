@@ -1,25 +1,32 @@
 # -*- mode: cmake -*-
+MACRO(WHOLE_ARCHIVE inlib)
+  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
+ENDMACRO(WHOLE_ARCHIVE inlib)
 
-#
-#  ATS
-#    Flow PK class
-#
-
-# ATS include directories
-include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow/utils/eos)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow/utils/saturation_curves)
+include_directories(${ATS_SOURCE_DIR}/src/factory)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/bc_factory)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/eos)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
+include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+add_library(pk_flow_permafrost permafrost.cc permafrost_ti.cc permafrost_physics.cc)
 
-# This state library will move to a new location
-# once Markus has created the data manager.
-# I use global properties since all the PROJECT_NAME
-# variables in this directory are tied to the MPC.
-# These properties will be replaced with the appropriate
-# directory project name once it is moved.
-#
-# Library: state
-#
-add_library(permafrost PermafrostProblem.cc PermafrostModelEvaluator.cc Permafrost_PK.cc)
+# shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
+WHOLE_ARCHIVE(flow_relations_eos)
+WHOLE_ARCHIVE(flow_relations_wrm)
+WHOLE_ARCHIVE(pk_factory)
 
+if ( BUILD_TESTS )
+    # Add UnitTest includes
+    set(amanzi_libs geometry mesh mesh_audit simple_mesh state whetstone mesh_functions)
+
+    include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
+
+    include_directories(${ATS_SOURCE_DIR}/src/pks/flow/permafrost)
+
+    # Test: miscaleneous transport routines
+    add_executable(permafrost_test test/Main.cc test/flow_test_class.cc test/permafrost_advance_simple.cc)
+    target_link_libraries(permafrost_test ${pk_factory} pk_flow_permafrost flow_bc_factory ${flow_relations_eos} ${flow_relations_wrm} divgrad amanzi_solvers amanzi_time_integration amanzi_whetstone amanzi_mesh amanzi_cell_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state amanzi_data_structures ${Amanzi_TPL_UnitTest_LIBRARIES})
+
+endif()
 
