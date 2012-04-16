@@ -107,7 +107,7 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   // -- pc_il model.  cap pressure for ice-water interfaces are a
   // -- function of temperature.  See notes eqn: 9ish?
   Teuchos::ParameterList pc_il_plist = flow_plist_.sublist("Capillary Pressure Ice-Liquid");
-  pc_ice_liq_model_ = Teuchos::rpc(new FlowRelations::PCIceWater(pc_il_plist));
+  pc_ice_liq_model_ = Teuchos::rcp(new FlowRelations::PCIceWater(pc_il_plist));
 
   // -- frozen water retention models
   Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Frozen Water Retention Models");
