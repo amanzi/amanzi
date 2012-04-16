@@ -71,7 +71,7 @@ private:
   //  Teuchos::RCP<UnstructuredObservations> observations_;
 
   // visualization
-  Amanzi::Vis *visualization_;
+  //Amanzi::Vis *visualization_;
 };
 
 } // close namespace Amanzi
