@@ -33,8 +33,13 @@ void Coordinator::coordinator_init() {
   read_parameter_list();
 
   // create the state object
-  Teuchos::ParameterList state_parameter_list = parameter_list_.sublist("State");
-  S_ = Teuchos::rcp(new State( state_parameter_list, mesh_));
+  Teuchos::ParameterList state_plist = parameter_list_.sublist("State");
+  S_ = Teuchos::rcp(new State(state_plist, mesh_));
+
+  // vis for the state
+  Teuchos::ParameterList vis_plist = parameter_list_.sublist("Visualization");
+  visualization_ = Teuchos::rcp(new Visualization(vis_plist, comm_));
+  visualization_->create_files(*mesh_);
 
   // create the top level PK
   Teuchos::ParameterList pks_list = parameter_list_.sublist("PKs");
@@ -57,16 +62,6 @@ void Coordinator::coordinator_init() {
   // Teuchos::ParameterList observation_plist = parameter_list_.sublist("Observation");
   // observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
   //         output_observations_));
-
-//   // create the visualization object
-//   if (parameter_list_.isSublist("Visualization Data")) {
-//       Teuchos::ParameterList vis_parameter_list =
-//         parameter_list_.sublist("Visualization Data");
-//       visualization_ = new Amanzi::Vis(vis_parameter_list, comm_);
-//       visualization_->create_files(*mesh_);
-//   } else {
-//     visualization_ = new Amanzi::Vis();
-//   }
 }
 
 void Coordinator::initialize() {
@@ -97,14 +92,16 @@ void Coordinator::cycle_driver () {
   // problem, this should include advancing flow to steady state (which should
   // be done by flow_pk->initialize_state(S)
   S_->set_time(t0_);
+  S_->set_cycle(0);
   initialize();
   S_->set_time(t0_); // in case steady state solve changed this
+  S_->set_cycle(0);
 
   // make observations
   //  observations_->MakeObservations(*S_);
 
   // write visualization if requested at IC
-  //  S_->WriteVis(*visualization_);
+  S_->WriteVis(visualization_);
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -117,8 +114,7 @@ void Coordinator::cycle_driver () {
   // iterate process kernels
   double dt;
   bool fail = false;
-  int iter = 0;
-  while ((S_->time() < t1_) && ((end_cycle_ == -1) || (iter <= end_cycle_))) {
+  while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
     dt = pk_->get_dt();
 
     // check if the step size has gotten too small
@@ -138,26 +134,27 @@ void Coordinator::cycle_driver () {
       dt = t1_ - S_->time();
     }
 
-    std::cout << "Cycle = " << iter;
-    std::cout << ",  Time = "<< S_->time() / (60*60*24);
-    std::cout << ",  dt = " << dt / (60*60*24)  << std::endl;
+    std::cout << "Cycle = " << S_->cycle();
+    std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
+    std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
 
     // advance
+    S_next_->advance_time(dt);
     fail = pk_->advance(dt);
+
     if (!fail) {
       // update the new state with the new solution
       pk_->solution_to_state(soln_, S_next_);
       pk_->commit_state(dt, S_next_);
 
       // advance the iteration count
-      ++iter;
+      S_next_->advance_cycle();
 
       // make observations
       //      observations_->MakeObservations(*S_next_);
 
       // write visualization if requested
-      // S_
-      // S_next_->WriteVis(*visualization_);
+      S_next_->WriteVis(visualization_);
 
       // write restart dump if requested
       // restart->dump_state(*S_next_);
@@ -165,8 +162,9 @@ void Coordinator::cycle_driver () {
       // we're done with this time step, copy the state
       *S_ = *S_next_;
     } else {
-      // Failed the timestep.  Do nothing, the timestep sizes have been
-      // updated, so we can try again.
+      // Failed the timestep.  The timestep sizes have been updated, so we can
+      // try again.
+      *S_next_ = *S_;
     }
   } // while not finished
 
