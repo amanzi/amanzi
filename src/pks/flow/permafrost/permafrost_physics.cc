@@ -141,7 +141,7 @@ void Permafrost::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
   DensityGas_(S, *temp, *pres, *p_atm, mol_frac_gas, dens_gas, mol_dens_gas);
 
   // calculate saturations using WRM
-  Saturation_(S, *pres, *p_atm, sat_ice, sat_liq, sat_gas);
+  UpdateSaturation_(S);
 
   // update abs perm if needed
   if (variable_abs_perm_) {
@@ -218,22 +218,22 @@ void Permafrost::UpdateSaturation_(const Teuchos::RCP<State>& S) {
 
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
-    // see notes
-    double A = 1.0/(*sat_ice)("cell",0,c)
-    double B = 1.0/(*sat_liq)("cell",0,c)
+    // see notes, eqn 10?
+    double A = 1.0/(*sat_ice)("cell",0,c);
+    double B = 1.0/(*sat_liq)("cell",0,c);
 
-    double sat_liq = 1.0/( A + B - 1.0);
-    double sat_gas = sat_liq * (B - 1.0);
+    double s_liq = 1.0/( A + B - 1.0);
+    double s_gas = s_liq * (B - 1.0);
 
-    (*sat_ice)("cell",0,c) = 1.0 - sat_liq - sat_gas;
-    (*sat_liq)("cell",0,c) = sat_liq;
-    (*sat_gas)("cell",0,c) = sat_gas;
+    (*sat_ice)("cell",0,c) = 1.0 - s_liq - s_gas;
+    (*sat_liq)("cell",0,c) = s_liq;
+    (*sat_gas)("cell",0,c) = s_gas;
   }
 };
 
 void Permafrost::UnfrozenSaturation_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
-        const Teuchos::RCP<CompositeVector>& sat_liq) {
+        const Teuchos::RCP<CompositeVector>& sat_star) {
   // loop over region/wrm pairs
   for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_liq_gas_.begin();
        wrm!=wrm_liq_gas_.end(); ++wrm) {
@@ -245,14 +245,14 @@ void Permafrost::UnfrozenSaturation_(const Teuchos::RCP<State>& S,
 
     // use the wrm to evaluate saturation on each cell in the region
     for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      (*sat_liq)("cell",0,*c) = (*wrm)->second->saturation(p_atm - pres("cell",0,*c));
+      (*sat_star)("cell",0,*c) = (*wrm)->second->saturation(p_atm - pres("cell",0,*c));
     }
   }
 };
 
 void Permafrost::DUnfrozenSaturationDp_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
-        const Teuchos::RCP<CompositeVector>& dsat_liq) {
+        const Teuchos::RCP<CompositeVector>& dsat_star) {
   // loop over region/wrm pairs
   for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_liq_gas_.begin();
        wrm!=wrm_liq_gas_.end(); ++wrm) {
@@ -264,7 +264,7 @@ void Permafrost::DUnfrozenSaturationDp_(const Teuchos::RCP<State>& S,
 
     // use the wrm to evaluate saturation on each cell in the region
     for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      (*dsat_liq)("cell",0,*c) = -(*wrm)->second->d_saturation(p_atm - pres("cell",0,*c));
+      (*dsat_star)("cell",0,*c) = -(*wrm)->second->d_saturation(p_atm - pres("cell",0,*c));
     }
   }
 };
@@ -273,9 +273,9 @@ void Permafrost::FrozenSaturation_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const CompositeVector& rho_ice,
         const CompositeVector& n_ice,
-        const Teuchos::RCP<CompositeVector>& sat_ice) {
+        const Teuchos::RCP<CompositeVector>& sat_star) {
   // This would have to be fixed for multiple pc models
-  CompositeVector* dens_ice =;
+  CompositeVector* dens_ice;
   if (pc_ice_liq_model_->IsMolarBasis()) {
     dens_ice = &n_ice;
   } else {
@@ -296,7 +296,7 @@ void Permafrost::FrozenSaturation_(const Teuchos::RCP<State>& S,
       double pc_ice_liq_model_->CapillaryPressure(temp("cell",0,c), (*dens_ice)("cell",0,c));
 
       // use the wrm to evaluate saturation on each cell in the region
-      (*sat_ice)("cell",0,*c) = (*wrm)->second->saturation(pc_ice_liq);
+      (*sat_star)("cell",0,*c) = (*wrm)->second->saturation(pc_ice_liq);
     }
   }
 };

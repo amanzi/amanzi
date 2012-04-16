@@ -27,6 +27,7 @@
 #include "wrm.hh"
 #include "eos.hh"
 #include "eos_vapor_in_gas.hh"
+#include "pc_ice_liquid.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -124,6 +125,7 @@ private:
 
   // -- update secondary variables from primary variables T,p
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
+  void UpdateSaturation_(const Teuchos::RCP<State>& S);
 
   void DensityLiquid_(const Teuchos::RCP<State>& S,
                       const CompositeVector& temp,
@@ -149,17 +151,21 @@ private:
                    const Teuchos::RCP<CompositeVector>& dens_gas,
                    const Teuchos::RCP<CompositeVector>& mol_dens_gas);
 
-  void Saturation_(const Teuchos::RCP<State>& S,
-                   const CompositeVector& pres,
-                   const double& p_atm,
-                   const Teuchos::RCP<CompositeVector>& sat_ice,
-                   const Teuchos::RCP<CompositeVector>& sat_liq,
-                   const Teuchos::RCP<CompositeVector>& sat_gas);
+  void FrozenSaturation_(const Teuchos::RCP<State>& S,
+                         const CompositeVector& temp,
+                         const CompositeVector& rho_ice,
+                         const CompositeVector& n_ice,
+                         const Teuchos::RCP<CompositeVector>& sat_star);
 
-  void DSaturationDp_(const Teuchos::RCP<State>& S,
-                      const CompositeVector& pres,
-                      const double& p_atm,
-                      const Teuchos::RCP<CompositeVector>& dsat_liq);
+  void UnfrozenSaturation_(const Teuchos::RCP<State>& S,
+                           const CompositeVector& pres,
+                           const double& p_atm,
+                           const Teuchos::RCP<CompositeVector>& sat_star);
+
+  void DUnfrozenSaturationDp_(const Teuchos::RCP<State>& S,
+          const CompositeVector& pres,
+          const double& p_atm,
+          const Teuchos::RCP<CompositeVector>& dsat_star);
 
   void RelativePermeability_(const Teuchos::RCP<State>& S,
                              const CompositeVector& pres,
@@ -190,6 +196,10 @@ private:
   typedef std::pair< std::string, Teuchos::RCP<FlowRelations::WRM> > WRMRegionPair;
   std::vector< Teuchos::RCP<WRMRegionPair> > wrm_ice_liq_;
   std::vector< Teuchos::RCP<WRMRegionPair> > wrm_liq_gas_;
+
+  // ice-liquid capillary pressure model, may be different in ice wedges?
+  // for now, just a single one...
+  Teuchos::RCP<FlowRelations::PCIceWater> pc_ice_liq_model_;
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
