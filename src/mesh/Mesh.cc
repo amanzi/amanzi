@@ -1,5 +1,7 @@
+#include "Geometry.hh"
+#include "dbc.hh"
+
 #include "Mesh.hh"
-#include <Geometry.hh>
 
 using namespace std;
 
@@ -9,148 +11,258 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
-int Mesh::precompute_geometric_quantities() const {
-  int ncells;
-  double volume, area, len;
+int Mesh::compute_geometric_quantities() const {
 
-  ncells = num_entities(CELL,USED);
+  int ncells = num_entities(CELL,USED);
+
+  for (int i = 0; i < ncells; i++) {
+    double volume;
+    AmanziGeometry::Point centroid(spacedim);
+
+    compute_cell_geometry(i,&volume,&centroid);
+
+    cell_volumes.push_back(volume);
+    cell_centroids.push_back(centroid);
+  }
+  
+  
+  int nfaces = num_entities(FACE,USED);
+
+  for (int i = 0; i < nfaces; i++) {
+    double area;
+    AmanziGeometry::Point centroid(spacedim), normal(spacedim);
+    
+    compute_face_geometry(i,&area,&centroid,&normal);
+  
+    face_areas.push_back(area);
+    face_centroids.push_back(centroid);
+    face_normals.push_back(normal);
+  }
+
+  geometry_precomputed = true;
+
+} // Mesh::precompute_geometric_quantities
+
+
+
+int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume, AmanziGeometry::Point *centroid) const {
+
 
   if (celldim == 3) {
-    AmanziGeometry::Point centroid(spacedim), normal(spacedim);
-    std::vector<AmanziGeometry::Point> ccoords;
 
-    for (int i = 0; i < ncells; i++) {
-
-      // 3D Elements with possibly curved faces
-      // We have to build a description of the element topology
-      // and send it into the polyhedron volume and centroid
-      // calculation routine
-
-      int nf;
-      std::vector<Entity_ID> faces;
-      std::vector<unsigned int> nfnodes;
-      std::vector<int> fdirs;
-      std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
-
-      cell_get_faces_and_dirs(i,&faces,&fdirs);
-
-      nf = faces.size();
-
-      for (int j = 0; j < nf; j++) {
-
-        face_get_coordinates(faces[j],&fcoords);
-        nfnodes.push_back(fcoords.size());
-
-        if (fdirs[j] == 1) {
-          for (int k = 0; k < nfnodes[j]; k++)
-            cfcoords.push_back(fcoords[k]);
-        }
-        else {
-          for (int k = nfnodes[j]-1; k >=0; k--)
-            cfcoords.push_back(fcoords[k]);
-        }
+    // 3D Elements with possibly curved faces
+    // We have to build a description of the element topology
+    // and send it into the polyhedron volume and centroid
+    // calculation routine
+    
+    std::vector<Entity_ID> faces;
+    std::vector<unsigned int> nfnodes;
+    std::vector<int> fdirs;
+    std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
+    
+    cell_get_faces_and_dirs(cellid,&faces,&fdirs);
+  
+    int nf = faces.size();
+  
+    for (int j = 0; j < nf; j++) {
+      
+      face_get_coordinates(faces[j],&fcoords);
+      nfnodes.push_back(fcoords.size());
+      
+      if (fdirs[j] == 1) {
+        for (int k = 0; k < nfnodes[j]; k++)
+          cfcoords.push_back(fcoords[k]);
       }
-
-      cell_get_coordinates(i,&ccoords);
-
-      AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
-                                               cfcoords,&volume,
-                                               &centroid);
-      cell_volumes.push_back(volume);
-      cell_centroids.push_back(centroid);
+      else {
+        for (int k = nfnodes[j]-1; k >=0; k--)
+          cfcoords.push_back(fcoords[k]);
+      }
     }
+    
+    cell_get_coordinates(cellid,&ccoords);
+    
+    AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
+                                             cfcoords,volume,
+                                             centroid);
+    return 1;
+  }
+  else if (celldim == 2) {
 
-    int nfaces = num_entities(FACE,USED);
-    std::vector<AmanziGeometry::Point> fcoords;
+    std::vector<AmanziGeometry::Point> ccoords;
+    
+    cell_get_coordinates(cellid,&ccoords);
+    
+    AmanziGeometry::polygon_get_area_centroid(ccoords,volume,centroid);
 
-    for (int i = 0; i < nfaces; i++) {
-      face_get_coordinates(i,&fcoords);
+    return 1;
+  }
 
-      AmanziGeometry::polygon_get_area_centroid(fcoords,&area,&centroid);
-      face_areas.push_back(area);
-      face_centroids.push_back(centroid);
+  return 0;
+} // Mesh::compute_cell_geometry
 
-      normal = AmanziGeometry::polygon_get_normal(fcoords);
-      normal *= area;
-      face_normals.push_back(normal);
-    }
+
+int Mesh::compute_face_geometry(const Entity_ID faceid, double *area, AmanziGeometry::Point *centroid, AmanziGeometry::Point *normal) const {
+
+  AmanziGeometry::Point_List fcoords;
+
+  if (celldim == 3) {
+
+    // 3D Elements with possibly curved faces
+    // We have to build a description of the element topology
+    // and send it into the polyhedron volume and centroid
+    // calculation routine
+
+    face_get_coordinates(faceid,&fcoords);
+      
+    AmanziGeometry::polygon_get_area_centroid(fcoords,area,centroid);
+      
+    *normal = AmanziGeometry::polygon_get_normal(fcoords);
+    *normal *= *area;
+
+    return 1;
   }
   else if (celldim == 2) {
 
     if (spacedim == 2) {   // 2D mesh
 
-      AmanziGeometry::Point centroid(2);
-      std::vector<AmanziGeometry::Point> ccoords;
+      face_get_coordinates(faceid,&fcoords);
 
-      for (int i = 0; i < ncells; i++) {
-        cell_get_coordinates(i,&ccoords);
+      AmanziGeometry::Point evec = fcoords[1]-fcoords[0];
+      *area = sqrt(evec*evec);
+      
+      *centroid = 0.5*(fcoords[0]+fcoords[1]);
+      
+      *normal = AmanziGeometry::Point(evec[1],-evec[0]);
 
-        AmanziGeometry::polygon_get_area_centroid(ccoords,&volume,&centroid);
-        cell_volumes.push_back(volume); // yes, area stored as a volume
-        cell_centroids.push_back(centroid);
-      }
-
-      int nfaces = num_entities(FACE,USED);
-      std::vector<AmanziGeometry::Point> fcoords;
-      AmanziGeometry::Point evec(2), normal(2);
-
-      for (int i = 0; i < nfaces; i++) {
-        face_get_coordinates(i,&fcoords);
-
-        evec = fcoords[1]-fcoords[0];
-        area = sqrt(evec*evec);
-        face_areas.push_back(area);
-
-        centroid = 0.5*(fcoords[0]+fcoords[1]);
-        face_centroids.push_back(centroid);
-
-        normal = AmanziGeometry::Point(evec[1],-evec[0]);
-        face_normals.push_back(normal);
-      }
-
+      return 1;
     }
     else {  // Surface mesh - cells are 2D, coordinates are 3D
-
-      AmanziGeometry::Point centroid(3);
-      int ncells = num_entities(CELL,USED);
-      std::vector<AmanziGeometry::Point> ccoords;
-
-      for (int i = 0; i < ncells; i++) {
-        cell_get_coordinates(i,&ccoords);
-
-        AmanziGeometry::polygon_get_area_centroid(ccoords,&volume,&centroid);
-        cell_volumes.push_back(volume); // yes, area stored as a volume
-        cell_centroids.push_back(centroid);
-      }
 
       // edge normals are ambiguous for surface mesh
       // So we won't compute them
 
-      int nfaces = num_entities(FACE,USED);
-      std::vector<AmanziGeometry::Point> fcoords;
-      AmanziGeometry::Point evec(3), normal(3);
+      face_get_coordinates(faceid,&fcoords);
 
-      for (int i = 0; i < nfaces; i++) {
-        face_get_coordinates(i,&fcoords);
+      AmanziGeometry::Point evec = fcoords[1]-fcoords[0];
+      *area = sqrt(evec*evec);
 
-        evec = fcoords[1]-fcoords[0];
-        area = sqrt(evec*evec);
-        face_areas.push_back(area);
+      *centroid = 0.5*(fcoords[0]+fcoords[1]);
 
-        centroid = 0.5*(fcoords[0]+fcoords[1]);
-        face_centroids.push_back(centroid);
-
-      }
-
+      return 1;
     }
 
   }
 
-  geometry_precomputed = true;
+  return 0;
 
-  return 1;
+} // Mesh::compute_face_geometry
 
-} // Mesh::precompute_geometric_quantities
+
+
+// Volume/Area of cell
+
+double Mesh::cell_volume (const Entity_ID cellid, const bool recompute) const {
+
+  if (!geometry_precomputed) {
+    compute_geometric_quantities();
+    return cell_volumes[cellid];
+  }
+  else {
+    if (recompute) {
+      double volume;
+      AmanziGeometry::Point centroid(spacedim);
+      compute_cell_geometry(cellid, &volume, &centroid);
+      return volume;
+    }
+    else
+      return cell_volumes[cellid];
+  }
+}
+  
+// Area/length of face
+  
+double Mesh::face_area(const Entity_ID faceid, const bool recompute) const {
+
+  if (!geometry_precomputed) {
+    compute_geometric_quantities();
+    return face_areas[faceid];
+  }
+  else {
+    if (recompute) {
+      double area;
+      AmanziGeometry::Point centroid(spacedim), normal(spacedim);
+      compute_face_geometry(faceid, &area, &centroid, &normal);
+      return area;
+    }
+    else
+      return face_areas[faceid];
+  }
+}
+  
+
+// Centroid of cell
+
+AmanziGeometry::Point Mesh::cell_centroid (const Entity_ID cellid, const bool recompute) const {
+
+  if (!geometry_precomputed) {
+    compute_geometric_quantities();
+    return cell_centroids[cellid];
+  }
+  else {
+    if (recompute) {
+      double volume;
+      AmanziGeometry::Point centroid(spacedim);
+      compute_cell_geometry(cellid, &volume, &centroid);
+      return centroid;
+    }
+    else
+      return cell_centroids[cellid];
+  }
+  
+}
+
+// Centroid of face
+
+AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool recompute) const {
+
+  if (!geometry_precomputed) {
+    compute_geometric_quantities();
+    return face_centroids[faceid];
+  }
+  else {
+    if (recompute) {
+      double area;
+      AmanziGeometry::Point centroid(spacedim), normal(spacedim);
+      compute_face_geometry(faceid, &area, &centroid, &normal);
+      return area;
+    }
+    else
+      return face_centroids[faceid];
+  }
+  
+}
+
+// Normal to face
+// The vector is normalized and then weighted by the area of the face
+
+AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute) const {
+
+  if (!geometry_precomputed) {
+    compute_geometric_quantities();
+    return face_normals[faceid];
+  }
+  else {
+    if (recompute) {
+      double area;
+      AmanziGeometry::Point centroid(spacedim), normal(spacedim);
+      compute_face_geometry(faceid, &area, &centroid, &normal);
+      return area;
+    }
+    else
+      return face_normals[faceid];
+  }
+  
+}
 
 
 
@@ -232,7 +344,6 @@ bool Mesh::valid_set_id(unsigned int id, Entity_kind kind) const
     }
   }
   
-  return false;
 }
 
 
@@ -278,7 +389,6 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
     }
   }
   
-  return false;
 }
 
 
@@ -650,8 +760,112 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     return AmanziGeometry::point_in_polygon(p,ccoords);
     
   }
-  
-  return false;
+}
+
+
+// Deform the mesh according to a given set of new node positions
+// If keep_valid is true, the routine will cut back node displacement
+// if the cells connected to a moved node become invalid
+
+int Mesh::deform (const Entity_ID_List nodeids,
+                  const AmanziGeometry::Point_List new_positions,
+                  const bool keep_valid,
+                  AmanziGeometry::Point_List *final_positions) {
+
+  int status = 1;
+
+  ASSERT(nodeids.size() == new_positions.size());
+  ASSERT(final_positions != NULL);
+
+  final_positions->clear();
+
+
+  // Once we start moving nodes around, the precomputed/cached
+  // geometric quantities are no longer valid. So any geometric calls
+  // must use the "recompute=true" option until the end of this routine
+  // where we once again call compute_geometric_quantities 
+
+  int nn = nodeids.size();
+
+  bool done_outer = false; 
+  int iter = 0, maxiter = 5;
+
+  while (!done_outer) {
+    double totdisp2 = 0.0;
+
+    for (int j = 0; j < nn; j++) {
+      Entity_ID node = nodeids[j];
+      
+      AmanziGeometry::Point oldcoords, newcoords, dispvec;
+      Entity_ID_List cells;
+      
+      node_get_coordinates(node,&oldcoords);
+      dispvec = new_positions[j]-oldcoords;
+      
+      node_get_cells(node,USED,&cells);
+      int nc = cells.size();
+      
+      double mult = 1.0;
+      bool done = false;
+      bool allvalid = true;
+      
+      while (!done) {
+        
+        newcoords = oldcoords + mult*dispvec;
+        
+        node_set_coordinates(node,newcoords);
+        
+        if (keep_valid) { // check if the cells remain valid
+          allvalid = true;
+          for (int k = 0; k < nc; k++)
+            if (cell_volume(cells[k],true) < 0.0) {
+              allvalid = false;
+              break;
+          }
+        }
+        
+        if (allvalid)
+          done = true;
+        else {
+          if (mult < 1.0e-5)
+            done = true;
+          mult = mult/2.0;
+        }
+      } // while (!done)
+      
+      if (!allvalid) { // could not move the node even a bit
+        status = 0;    // perhaps the mesh was invalid to start?
+        node_set_coordinates(node,oldcoords);
+      }
+      else {
+        AmanziGeometry::Point actual_dispvec = newcoords - oldcoords;
+        totdisp2 += L22(actual_dispvec);
+      }
+    } // for (j = 0; j < nn; j++) 
+
+    if (totdisp2 < 1.0e-12)
+      done_outer = 1;
+
+    if (++iter == maxiter)
+      break;
+  } // while (!done_outer)
+
+
+  for (int j = 0; j < nn; j++) {
+    Entity_ID node = nodeids[j];
+    
+    AmanziGeometry::Point newcoords;
+
+    node_get_coordinates(node,&newcoords);
+    final_positions->push_back(newcoords);
+  }
+
+
+  // recompute all geometric quantities
+
+  compute_geometric_quantities();
+
+  return status;
 }
 
 } // close namespace AmanziMesh

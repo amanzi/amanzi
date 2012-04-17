@@ -28,13 +28,23 @@ class Mesh
 
   unsigned int celldim, spacedim;
   mutable bool geometry_precomputed;
-  int precompute_geometric_quantities() const;
   mutable std::vector<double> cell_volumes, face_areas;
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normals;
   AmanziGeometry::GeometricModelPtr geometric_model_;
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
+
+
+  int compute_geometric_quantities() const;
+  int compute_cell_geometry(const Entity_ID cellid, 
+                            double *volume, 
+                            AmanziGeometry::Point *centroid) const;
+  int compute_face_geometry(const Entity_ID faceid, 
+                            double *area, 
+                            AmanziGeometry::Point *centroid, 
+                            AmanziGeometry::Point *normal) const;
+
 
  protected:
 
@@ -322,13 +332,6 @@ class Mesh
                              std::vector<AmanziGeometry::Point> *ccoords) const = 0;
 
 
-  // Set Node coordinates to new location
-
-  virtual
-  void node_set_coordinates (const Entity_ID nodeid,
-                             const double *coords) = 0;
-
-
   // Mesh entity geometry
   //--------------
   //
@@ -336,46 +339,24 @@ class Mesh
 
   // Volume/Area of cell
 
-  inline
-  double cell_volume (const Entity_ID cellid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return cell_volumes[cellid];
-  }
+  double cell_volume (const Entity_ID cellid, const bool recompute=false) const;
 
   // Area/length of face
 
-  inline
-  double face_area(const Entity_ID faceid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return face_areas[faceid];
-  }
-
+  double face_area(const Entity_ID faceid, const bool recompute=false) const;
 
   // Centroid of cell
 
-  inline
-  AmanziGeometry::Point& cell_centroid (const Entity_ID cellid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return cell_centroids[cellid];
-  }
+  AmanziGeometry::Point cell_centroid (const Entity_ID cellid, const bool recompute=false) const;
 
   // Centroid of face
 
-  inline
-  AmanziGeometry::Point& face_centroid (const Entity_ID faceid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return face_centroids[faceid];
-  }
+  AmanziGeometry::Point face_centroid (const Entity_ID faceid, const bool recompute=false) const;
 
   // Normal to face
   // The vector is normalized and then weighted by the area of the face
 
-  inline
-  AmanziGeometry::Point& face_normal (const Entity_ID faceid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return face_normals[faceid];
-  }
-
+  AmanziGeometry::Point face_normal (const Entity_ID faceid, const bool recompute=false) const;
 
   // Point in cell
 
@@ -383,6 +364,33 @@ class Mesh
                       const Entity_ID cellid) const;
 
 
+  //
+  // Mesh modification
+  //-------------------
+
+  // Set coordinates of node
+
+  virtual
+  void node_set_coordinates (const Entity_ID nodeid,
+                             const AmanziGeometry::Point ncoord) = 0;
+
+
+  virtual
+  void node_set_coordinates (const Entity_ID nodeid,
+                             const double *ncoord) = 0;
+
+
+
+  // Deform the mesh by moving given nodes to given coordinates
+  // If the flag keep_valid is true, then the nodes are moved
+  // only as much as possible without making the mesh invalid
+  // The final positions of the nodes is returned in final_positions
+
+
+  int deform (const Entity_ID_List nodeids,
+              const AmanziGeometry::Point_List new_positions,
+              const bool keep_valid,
+              AmanziGeometry::Point_List *final_positions);
 
   //
   // Epetra maps
