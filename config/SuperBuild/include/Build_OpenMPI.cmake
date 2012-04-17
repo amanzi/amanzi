@@ -51,7 +51,8 @@ ExternalProject_Add(${OpenMPI_BUILD_TARGET}
                     ${OpenMPI_logging_args})
 
 # --- Define variables pointing to compiler wrappers and parallel run commond
-set(MPI_C_COMPILER       ${TPL_INSTALL_PREFIX}/bin/mpicc)
-set(MPI_CXX_COMPILER     ${TPL_INSTALL_PREFIX}/bin/mpicxx)
-set(MPI_Fortran_COMPILER ${TPL_INSTALL_PREFIX}/bin/mpif90)
-set(MPIEXEC              ${TPL_INSTALL_PREFIX}/bin/mpirun)
+set(MPI_C_COMPILER        ${TPL_INSTALL_PREFIX}/bin/mpicc)
+set(MPI_CXX_COMPILER      ${TPL_INSTALL_PREFIX}/bin/mpicxx)
+set(MPI_Fortran_COMPILER  ${TPL_INSTALL_PREFIX}/bin/mpif90)
+set(MPIEXEC               ${TPL_INSTALL_PREFIX}/bin/mpirun)
+set(MPI_EXEC              ${TPL_INSTALL_PREFIX}/bin/mpirun)

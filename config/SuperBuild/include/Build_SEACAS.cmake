@@ -39,19 +39,19 @@ set(seacas_netcdf_libraries
 # The CMake cache args
 set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_INSTALL_PREFIX:FILEPATH=<INSTALL_DIR>
-		    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
-		    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                    -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-		    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                    -DCMAKE_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-		    -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                    -DCMAKE_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=-L${TPL_INSTALL_PREFIX}/lib
-		    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
-		    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
-		    -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
-		    -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
-		    -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
+                    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
+                    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
+                    -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
+                    -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
+                    -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
                     )
 
 # --- Add external project build and tie to the SEACAS build target

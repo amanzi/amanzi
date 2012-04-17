@@ -146,7 +146,9 @@ set(Trilinos_CMAKE_ARGS
 # - Final language ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                   ${Amanzi_CMAKE_CXX_COMPILER_ARGS})
+                   -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                   ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                   -DCMAKE_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER})
 
 #  --- Define the Trilinos patch step
 

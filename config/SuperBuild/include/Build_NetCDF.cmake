@@ -80,7 +80,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${NetCDF_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${NetCDF_MD5_SUM}                # md5sum of the archive file
-		    # -- Patch 
+                    # -- Patch 
                     PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${NetCDF_source_dir}           # Source directory
@@ -91,13 +91,13 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                                                 ${NetCDF_netcdf4_opts} 
                                                 --disable-dap
                                                 --disable-shared
-						--disable-fortran
-						--disable-f90
-						--disable-f77
-						--disable-fortran-compiler-check
-                                                CC=${CMAKE_C_COMPILER}
+                                                --disable-fortran
+                                                --disable-f90
+                                                --disable-f77
+                                                --disable-fortran-compiler-check
+                                                CC=${MPI_C_COMPILER}
                                                 CFLAGS=${netcdf_cflags}
-                                                CXX=${CMAKE_CXX_COMPILER}
+                                                CXX=${MPI_CXX_COMPILER}
                                                 CXXFLAGS=${netcdf_cxxflags}
                                                 CPPFLAGS=${netcdf_cppflags}
                                                 LDFLAGS=-L<INSTALL_DIR>/lib

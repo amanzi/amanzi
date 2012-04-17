@@ -20,16 +20,16 @@ build_whitespace_string(moab_cflags
 build_whitespace_string(moab_cxxflags 
                         -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CXXFLAGS} )
 
-# Build the LDFLAGS string		      
+# Build the LDFLAGS string      
 build_whitespace_string(moab_ldflags
                         -L<INSTALL_DIR>/lib
-			-L${TPL_INSTALL_PREFIX}/lib
-			-lnetcdf
-			-L${TPL_INSTALL_PREFIX}/lib
-			-lhdf5_hl
-			-lhdf5
-			-L${TPL_INSTALL_PREFIX}/lib
-			-lz)
+                        -L${TPL_INSTALL_PREFIX}/lib
+                        -lnetcdf
+                        -L${TPL_INSTALL_PREFIX}/lib
+                        -lhdf5_hl
+                        -lhdf5
+                        -L${TPL_INSTALL_PREFIX}/lib
+                        -lz)
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${MOAB_BUILD_TARGET}
@@ -46,12 +46,12 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                                     <SOURCE_DIR>/configure
                                                 --prefix=<INSTALL_DIR>
                                                 --disable-fortran
-						--with-mpi
-						--with-hdf5=${TPL_INSTALL_PREFIX}
+                                                --with-mpi
+                                                --with-hdf5=${TPL_INSTALL_PREFIX}
                                                 --with-netcdf=${TPL_INSTALL_PREFIX}
-                                                CC=${CMAKE_C_COMPILER}
+                                                CC=${MPI_C_COMPILER}
                                                 CFLAGS=${moab_cflags}
-                                                CXX=${CMAKE_CXX_COMPILER}
+                                                CXX=${MPI_CXX_COMPILER}
                                                 CFLAGS=${moab_cxxflags}
                                                 LDFLAGS=${moab_ldflags}
                     # -- Build

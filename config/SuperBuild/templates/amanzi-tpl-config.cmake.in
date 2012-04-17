@@ -6,9 +6,9 @@
 # --------------------------------------------------------------------------- #
 
 # Compiler Definitions
-set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER@ CACHE FILEPATH "SuperBuild C Compiler" )
-set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER@ CACHE FILEPATH "SuperBuild C++ Compiler" )
-set(CMAKE_Fortran_COMPILER @CMAKE_Fortran_COMPILER@ CACHE FILEPATH "SuperBuild Fortran Compiler")
+set(CMAKE_C_COMPILER   @MPI_C_COMPILER@ CACHE FILEPATH "SuperBuild C Compiler" )
+set(CMAKE_CXX_COMPILER @MPI_CXX_COMPILER@ CACHE FILEPATH "SuperBuild C++ Compiler" )
+set(CMAKE_Fortran_COMPILER @MPI_Fortran_COMPILER@ CACHE FILEPATH "SuperBuild Fortran Compiler")
 
 # MPI Definitions
 set(MPI_EXEC @MPI_EXEC@ CACHE FILEPATH "MPI executable to launch parallel tests")

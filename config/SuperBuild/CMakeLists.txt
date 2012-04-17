@@ -129,6 +129,17 @@ option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 # ############################################################################ #
 # MPI Configuration
 # ############################################################################ #
+include(CheckMPISourceCompiles)
+check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
+
+# Set MPI_*_COMPILER variables if wrappers are detected
+# The Build_OpenMPI.cmake file will be added to the build and define
+# these variables.
+if ( MPI_WRAPPERS_IN_USE )
+  set(MPI_C_COMPILER       ${CMAKE_C_COMPILER})
+  set(MPI_CXX_COMPILER     ${CMAKE_CXX_COMPILER})
+  set(MPI_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
+endif()  
 
 # MPI executable
 if ( NOT MPI_EXEC )
@@ -165,7 +176,6 @@ endif()
 
 # C language flags
 set(Amanzi_CMAKE_C_COMPILER_ARGS
-     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
      -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
      -DCMAKE_C_FLAGS_DEBUG:STRING=${CMAKE_C_FLAGS_DEBUG}
      -DCMAKE_C_FLAGS_MINSIZEREL:STRING=${CMAKE_C_FLAGS_MINSIZEREL}
@@ -174,7 +184,6 @@ set(Amanzi_CMAKE_C_COMPILER_ARGS
 
 # C++ language flags 
 set(Amanzi_CMAKE_CXX_COMPILER_ARGS
-     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
      -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
      -DCMAKE_CXX_FLAGS_DEBUG:STRING=${CMAKE_CXX_FLAGS_DEBUG}
      -DCMAKE_CXX_FLAGS_MINSIZEREL:STRING=${CMAKE_CXX_FLAGS_MINSIZEREL}
@@ -183,7 +192,6 @@ set(Amanzi_CMAKE_CXX_COMPILER_ARGS
 
 # Fortran language flags    
 set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
-     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
      -DCMAKE_Fortran_FLAGS:STRING=${CMAKE_Fortran_FLAGS}
      -DCMAKE_Fortran_FLAGS_DEBUG:STRING=${CMAKE_Fortran_FLAGS_DEBUG}
      -DCMAKE_Fortran_FLAGS_MINSIZEREL:STRING=${CMAKE_Fortran_FLAGS_MINSIZEREL}
@@ -239,6 +247,11 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
+
+# MPI
+if ( NOT MPI_WRAPPERS_IN_USE )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
+endif()
 
 # ZLIB
 include(${SuperBuild_BUILD_FILES_DIR}/Build_zlib.cmake) 
@@ -440,15 +453,15 @@ if ( BUILD_Amanzi )
 
   set(Amanzi_DEPENDS 
                   ${ExodusII_BUILD_TARGET}
-		  ${HDF5_BUILD_TARGET}
-		  ${ASCEMIO_BUILD_TARGET}
-		  ${UnitTest_BUILD_TARGET}
-		  ${Boost_BUILD_TARGET}
-		  ${MSTK_BUILD_TARGET}
-		  ${MOAB_BUILD_TARGET}
-		  ${CGNS_BUILD_TARGET}
-		  ${CCSE_BUILD_TARGET}
-		  ${Trilinos_BUILD_TARGET})
+		          ${HDF5_BUILD_TARGET}
+		          ${ASCEMIO_BUILD_TARGET}
+		          ${UnitTest_BUILD_TARGET}
+		          ${Boost_BUILD_TARGET}
+		          ${MSTK_BUILD_TARGET}
+		          ${MOAB_BUILD_TARGET}
+		          ${CGNS_BUILD_TARGET}
+		          ${CCSE_BUILD_TARGET}
+		          ${Trilinos_BUILD_TARGET})
 
   if ( ENABLE_Structured )
     list(APPEND Amanzi_DEPENDS ${CCSE_BUILD_TARGET})
@@ -461,9 +474,12 @@ if ( BUILD_Amanzi )
                       UPDATE_COMMAND ""
                       CMAKE_ARGS
 		                ${Amanzi_CMAKE_ARGS}
-				${Amanzi_CMAKE_C_COMPILER_ARGS}
-				${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-				${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                      INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
+				        ${Amanzi_CMAKE_C_COMPILER_ARGS}
+                        -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+			         	${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                        -DCMAKE_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+				        ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                        -DCMAKE_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
+                       INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
 endif()        
                
