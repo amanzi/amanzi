@@ -77,3 +77,50 @@ endif(ENABLE_MSTK_Mesh)
 
 add_subdirectory(mesh_factory)
 
+
+if (BUILD_TESTS)
+
+    # Include dirs for test
+    include_directories(${MESH_SOURCE_DIR})
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${GEOMETRY_SOURCE_DIR})
+    include_directories(${Epetra_INCLUDE_DIRS})
+
+    # Add UnitTest ExodusII include directories
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Need to copy files for the tests 
+    if (NOT (${MESH_SOURCE_DIR} EQUAL ${MESH_BINARY_DIR}))
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        copy_directory ${MESH_SOURCE_DIR}/test ${MESH_BINARY_DIR}/test) 
+    endif()
+
+
+    # Test: mstk_mesh
+    add_executable(test_deform
+                   test/Main.cc 
+                   test/test_deform.cc)
+
+    target_link_libraries(test_deform geometry simple_mesh mesh_factory ${UnitTest_LIBRARIES})
+
+
+    # STK (Trilinos Package)
+    if (ENABLE_STK_Mesh)
+      target_link_libraries(test_deform stk_mesh)
+    endif(ENABLE_STK_Mesh)    
+
+    # MOAB Mesh framework
+    if (ENABLE_MOAB_Mesh)
+      target_link_libraries(test_deform moab_mesh)
+    endif(ENABLE_MOAB_Mesh)    
+    
+    # MSTK Mesh framework
+    if (ENABLE_MSTK_Mesh)
+      target_link_libraries(test_deform mstk_mesh)
+    endif(ENABLE_MSTK_Mesh)    
+
+
+    add_amanzi_test(mesh test_deform KIND unit)
+
+endif()
+  
