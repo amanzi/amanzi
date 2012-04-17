@@ -304,9 +304,13 @@ Usage:
 
    * [U] `"transient error abs tol"` [double] See `"transient error rel tol"`.
 
-   * [U] `"ML smoother type`" [string] the smoother to be used by ML, valud paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`".
+   * [U] `"ML smoother type`" [string] The smoother to be used by ML, valid paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`".
 
-   * [U] `"ML aggregation threshold`" [double] this parameter influences the coarsening strategy of ML. The default is 0.0, which is a good choice for regular meshes. For meshes that have high aspect ratio cells, it is worth trying to set this parameter to something positive, but small, for example 0.0001.
+   * [U] `"ML aggregation threshold`" [double] This parameter influences the coarsening strategy of ML. The default is 0.0, which is a good choice for regular meshes. For meshes that have high aspect ratio cells, it is worth trying to set this parameter to something positive, but small, for example 0.0001.
+
+   * [U] `"ML smoother sweeps`" [int] The smoother will be called this many times before and after the coarse grid correction in the multilevel algorithm. (The default is 3.)
+
+   * [U] `"ML cycle applications`" [int] This is the number of V-cycles that are performed in each preconditioner invocation. (The default is 2).
 
   If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
