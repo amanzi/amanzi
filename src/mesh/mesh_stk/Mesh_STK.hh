@@ -290,6 +290,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // Modify the coordinates of a node
   void node_set_coordinates (const Entity_ID nodeid, const double *coords);
 
+  void node_set_coordinates (const Entity_ID nodeid, const AmanziGeometry::Point coords);
+
   //
   // Epetra maps
   //------------

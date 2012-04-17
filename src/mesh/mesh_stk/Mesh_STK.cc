@@ -632,6 +632,20 @@ Mesh_STK::node_set_coordinates(const Entity_ID nodeid, const double *coords)
   mesh_->set_coordinates(gid, coords);
 }
 
+void
+Mesh_STK::node_set_coordinates(const Entity_ID nodeid, 
+                               const AmanziGeometry::Point coords)
+{
+  stk::mesh::EntityId gid(this->GID(nodeid, NODE));
+  gid++;                                // need 1-based for stk::mesh
+
+  double coordarray[3] = {0.0,0.0,0.0};
+  for (int i = 0; i < Mesh::space_dimension(); i++)
+    coordarray[i] = coords[i];
+
+  mesh_->set_coordinates(gid, coordarray);
+}
+
 
 // -------------------------------------------------------------
 // Mesh_STK::cell_epetra_map
