@@ -502,6 +502,22 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
     } else {
       Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
     }
+    
+    // detect whether transport subcycling is on
+    if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+      if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	if (ncp_list.isParameter("transport subcycling")) {
+	  mpc_list.set<bool>("transport subcycling",ncp_list.get<bool>("transport subcycling"));
+	} else {
+	  mpc_list.set<bool>("transport subcycling", false);
+	}
+      } else {
+	mpc_list.set<bool>("transport subcycling", false);
+      }
+    } else {
+      mpc_list.set<bool>("transport subcycling", false);
+    }
 
 
     if ( exe_sublist.isParameter("Flow Model") ) {
@@ -550,18 +566,24 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
     if ( plist->sublist("Execution Control").isParameter("Transport Model") ) {
       if ( plist->sublist("Execution Control").get<std::string>("Transport Model") == "On" ) {
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-          Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
-          if (ncp_list.isParameter("Transport Integration Algorithm")) {
-            std::string tia = ncp_list.get<std::string>("Transport Integration Algorithm");
-            if ( tia == "Explicit First-Order" ) {
-              trp_list.set<int>("discretization order",1);
-            } else if ( tia == "Explicit Second-Order" ) {
-              trp_list.set<int>("discretization order",2);
-            }
-          }
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	    Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    if (ncp_list.isParameter("Transport Integration Algorithm")) {
+	      std::string tia = ncp_list.get<std::string>("Transport Integration Algorithm");
+	      if ( tia == "Explicit First-Order" ) {
+		trp_list.set<int>("discretization order",1);
+	      } else if ( tia == "Explicit Second-Order" ) {
+		trp_list.set<int>("discretization order",2);
+	      }
+	    } else {
+	      trp_list.set<int>("discretization order",1);
+	    }
+	  } else {
+	    trp_list.set<int>("discretization order",1);
+	  }
         } else {
-          trp_list.set<int>("discretization order",2);
-        }
+	  trp_list.set<int>("discretization order",1);
+	}
       }
 
       // continue to set some reasonable defaults

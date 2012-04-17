@@ -35,7 +35,9 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
     parameter_list(parameter_list_),
     mesh_maps(mesh_maps_),
     comm(comm_),
-    output_observations(output_observations_) {
+    output_observations(output_observations_),
+    transport_subcycling(0)
+{
   mpc_init();
 }
 
@@ -128,6 +130,14 @@ void MPC::mpc_init() {
 
     Teuchos::ParameterList transport_parameter_list =
         parameter_list.sublist("Transport");
+
+    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling",false);
+    
+    if (subcycling) { 
+      transport_subcycling = 1;
+    } else {
+      transport_subcycling = 0;
+    }
 
     TPK = Teuchos::rcp( new AmanziTransport::Transport_PK(transport_parameter_list, TS) );
   }
@@ -529,7 +539,7 @@ void MPC::cycle_driver () {
       // then advance transport
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          TPK->advance( mpc_dT );
+          TPK->advance( mpc_dT, transport_subcycling );
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
             Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
