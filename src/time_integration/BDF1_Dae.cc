@@ -353,9 +353,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // copy result into an Epetra_Vector.
     du = nev_du.getEpetraVector();  
 
-    // next solution iterate and error estimate.
-    //   u  = u - du
-    u.Update(-1.0,du,1.0);
 
     // Check the solution iterate for admissibility.
     if ( ! fn.is_admissible(u) ) { // iterate is bad; bail.
@@ -371,16 +368,29 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     previous_du_norm = du_norm;
     du.NormInf(&du_norm);
 
-    // *out << "Amanzi::MPC ERRORS " << du_norm << " " << previous_du_norm << " " << std::endl;
+    // protect against floating point overflow
+    if (itr>1 && du_norm > 1000.0 * previous_du_norm) {
+      *out << "Nonlinear solver is threatening to overflow, cutting current time step." << std::endl;
+      throw state.mitr+1;
+    }
 
+    // protect against divergencve of the nonlinear solver
     if (itr>1 && du_norm >= previous_du_norm) {
       // the solver threatening to diverge
       ++divergence_count;
-      
+
       // if it does not recover quickly, abort
-      if (divergence_count == 3) throw state.mitr+1;
+      if (divergence_count == 3) {
+	*out << "Nonlinear solver is starting to diverge, cutting current time step." << std::endl;
+	throw state.mitr+1;
+      }
+    } else {
+      divergence_count = 0;
     }
 
+    // next solution iterate and error estimate.
+    //   u  = u - du
+    u.Update(-1.0,du,1.0);
 
     // compute error norm for the purpose of convergence testing, we use the
     // norm provided in the model evaluator

@@ -304,6 +304,10 @@ Usage:
 
    * [U] `"transient error abs tol"` [double] See `"transient error rel tol"`.
 
+   * [U] `"ML smoother type`" [string] the smoother to be used by ML, valud paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`".
+
+   * [U] `"ML aggregation threshold`" [double] this parameter influences the coarsening strategy of ML. The default is 0.0, which is a good choice for regular meshes. For meshes that have high aspect ratio cells, it is worth trying to set this parameter to something positive, but small, for example 0.0001.
+
   If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
   * [S] `"Basic Algorithm Settings`" [list] Additional controls for details of the structured-grid algorithm. Optional.

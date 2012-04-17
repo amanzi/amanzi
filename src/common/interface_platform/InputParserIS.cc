@@ -847,6 +847,23 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
 
 Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList dpc_list;
+  
+  double aggthr(0.0);
+  std::string smthtyp("Jacobi");
+
+  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+      Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+      if (ncp_list.isParameter("ML aggregation threshold")) {
+        aggthr = ncp_list.get<double>("ML aggregation threshold");
+      } 
+      if (ncp_list.isParameter("ML smoother type")) {
+        smthtyp = ncp_list.get<std::string>("ML smoother type");
+      }
+    }
+  }
+
+
 
   Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
   ml_list.set<int>("ML output", 0);
@@ -855,13 +872,13 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
   ml_list.set<int>("cycle applications", 2);
   ml_list.set<std::string>("aggregation: type", "Uncoupled-MIS");
   ml_list.set<double>("aggregation: damping factor", 1.33333);
-  ml_list.set<double>("aggregation: threshold", 0.0);
+  ml_list.set<double>("aggregation: threshold", aggthr);
   ml_list.set<std::string>("eigen-analysis: type","cg");
   ml_list.set<int>("eigen-analysis: iterations", 10);
   ml_list.set<int>("smoother: sweeps", 3);
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("smoother: pre or post", "both");
-  ml_list.set<std::string>("smoother: type", "Jacobi");
+  ml_list.set<std::string>("smoother: type", smthtyp);
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("coarse: type", "Amesos-KLU");
   ml_list.set<int>("coarse: max size", 256);
