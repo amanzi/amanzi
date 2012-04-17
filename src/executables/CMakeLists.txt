@@ -163,6 +163,14 @@ endif()
 #endif()
 
 #
+# Binary: verify_mesh
+#
+add_executable(verify_deform verify_deform.cc)
+target_link_libraries(verify_deform mesh_factory mesh ${amanzi_mesh_libs}
+                      output ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+add_install_binary(verify_deform)		     
+
+#
 #
 #
 add_install_shellscript(splitexo.sh)
