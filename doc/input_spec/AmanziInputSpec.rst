@@ -262,6 +262,8 @@ Usage:
 
    * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
+   * [U] `"transport subcycling`" [bool] turn transport subcycling on or off. The default is false (ie. subcycling is off).
+
    * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. 
 
    * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`.
@@ -752,6 +754,8 @@ The following models are currently supported for capillary pressure (Section 3.3
  * [SU] `"m`" [double] to specify m in Equation 3.7.
 
  * [SU only Mualem] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
+
+ * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing. 
 
 Example:
 
