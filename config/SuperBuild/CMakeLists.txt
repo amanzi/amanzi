@@ -139,6 +139,10 @@ if ( MPI_WRAPPERS_IN_USE )
   set(MPI_C_COMPILER       ${CMAKE_C_COMPILER})
   set(MPI_CXX_COMPILER     ${CMAKE_CXX_COMPILER})
   set(MPI_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
+else()
+  message(WARNING "The CMAKE_*_COMPILER definitions are not MPI compiler wrappers."
+                  " The build will likely fail. Building without these wrappers is "
+                  "not supported at this time.")  
 endif()  
 
 # MPI executable
@@ -250,7 +254,7 @@ set(Amanzi_TPL_CMAKE_ARGS)
 
 # MPI
 if ( NOT MPI_WRAPPERS_IN_USE )
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
+  #include(${SuperBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
 endif()
 
 # ZLIB
