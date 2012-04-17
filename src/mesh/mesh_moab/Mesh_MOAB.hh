@@ -367,6 +367,8 @@ public:
     
   // Modify the coordinates of a node
 
+  void node_set_coordinates (const Entity_ID nodeid, const AmanziGeometry::Point coords);
+
   void node_set_coordinates (const Entity_ID nodeid, const double *coords);
 
     

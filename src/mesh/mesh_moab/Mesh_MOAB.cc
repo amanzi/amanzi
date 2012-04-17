@@ -1449,6 +1449,23 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 
 }
 
+void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
+                                     const AmanziGeometry::Point coords) {
+  MBEntityHandle v = vtx_id_to_handle[nodeid];
+
+  double coordarray[3] = {0.0,0.0,0.0};
+
+  for (int i = 0; i < spacedim; i++)
+    coordarray[i] = coords[i];
+
+  int result = mbcore->set_coords(&v, 1, coordarray);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Problem setting node coordinates" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
+}
+
 
 
 
