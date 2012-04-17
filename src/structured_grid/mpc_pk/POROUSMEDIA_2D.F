@@ -1989,7 +1989,6 @@ c
       REAL_T  mult
       
       integer i, j
-c      print *, inflow_bc_lo, inflow_bc_hi
       if (lo(1) .eq. domlo(1) .and. inflow_bc_lo(1) .eq. 1) then
            do j = lo(2),hi(2)
               rg(lo(1),j) = rg(lo(1),j) - mult*ux(lo(1),j)/dx(1)
@@ -2136,6 +2135,7 @@ c
 c :: ------------------------------------------------------------    
       subroutine FORT_UPHASE_P(ux,DIMS(ux),uy,DIMS(uy),
      &     lbd,DIMS(lbd),p,DIMS(p),
+     &     kpx,DIMS(kpx),kpy,DIMS(kpy),
      &     lo,hi,domlo,domhi,dx,bc)
 
       implicit none
@@ -2145,6 +2145,7 @@ c :: ------------------------------------------------------------
       integer DIMDEC(ux)
       integer DIMDEC(uy)
       integer DIMDEC(p)
+      integer DIMDEC(kpx), DIMDEC(kpy)
       integer DIMDEC(lbd)
       integer lo(SDIM),hi(SDIM)
       integer domlo(SDIM), domhi(SDIM)
@@ -2154,6 +2155,7 @@ c :: ------------------------------------------------------------
       REAL_T  uy(DIMV(uy))
       REAL_T  p(DIMV(p))
       REAL_T  lbd(DIMV(lbd),ncomps)
+      REAL_T  kpx(DIMV(kpx)),kpy(DIMV(kpy)) 
       integer do_upwind
       integer i, j
       REAL_T  grav, mult, ld, dp
@@ -2190,7 +2192,7 @@ c
                end if
             end if
 
-            ux(i,j) = ux(i,j) + ld*mult*dp
+            ux(i,j) = ux(i,j) + kpx(i,j)*ld*mult*dp
 
          end do
       end do
@@ -2221,8 +2223,7 @@ c
                end if
             end if
 
-            uy(i,j) = uy(i,j) - ld*(mult*(p(i,j)-p(i,j-1))/dx(2) - grav)  
-
+            uy(i,j) = uy(i,j) - kpy(i,j)*ld*(mult*(p(i,j)-p(i,j-1))/dx(2) - grav)  
          end do
       end do
 
@@ -2484,27 +2485,29 @@ c ::: ------------------------------------------------------------------
       REAL_T  vtot, gstar, sol
 
       vtot  = zero
-      do j = ARG_L2(rho), ARG_H2(rho)
-         do i = ARG_L1(rho), ARG_H1(rho)
+      do j = ARG_L2(rho)+1, ARG_H2(rho)-1
+         do i = ARG_L1(rho)+1, ARG_H1(rho)-1
             l_kr_type = nint(krcoef(i,j,1))
             l_kr_coef = krcoef(i,j,2)
             l_sat_res = krcoef(i,j,3)
 
             if (ncomps == 1) then
                gstar = -kappa(i,j)*rhoval(1)*grav
+               call FORT_FIND_INV_RFLUX(sol,inflow_vel,gstar,muval,
+     &              ncomps,l_kr_type,l_kr_coef)
             else
                gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
+               call FORT_FIND_INV_FLUX(sol,inflow_vel,nc,vtot,gstar,muval,
+     &              ncomps,l_kr_type,l_kr_coef)
             end if
 
-            call FORT_FIND_INV_FLUX(sol,inflow_vel,nc,vtot,gstar,muval,
-     &           ncomps,l_kr_type,l_kr_coef)
 
             sol = sol*(1.0-l_sat_res)+l_sat_res
             
-            rho(i,j,1) = rhoval(1)*sol
+            rho(i,j,1) = max(rho(i,j,1),rhoval(1)*sol)
 
             if (ncomps > 1) then
-               rho(i,j,2) = rhoval(2)*(1.0-sol)
+               rho(i,j,2) = min(rho(i,j,2),rhoval(2)*(1.0-sol))
             endif
 
          end do

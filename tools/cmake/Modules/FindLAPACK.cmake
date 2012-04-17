@@ -153,7 +153,7 @@ endforeach(_library ${_list})
 if(_libraries_work)
   # Test this combination of libraries.
   if(UNIX AND BLA_STATIC)
-    set(CMAKE_REQUIRED_LIBRARIES ${_flags} "-Wl,--start-group ${${LIBRARIES}} ${_blas};-Wl,--end-group" ${_threads})
+    set(CMAKE_REQUIRED_LIBRARIES ${_flags} "-Wl,--start-group ${${LIBRARIES}} ${_blas} -Wl,--end-group" ${_threads})
   else(UNIX AND BLA_STATIC)
     set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_blas} ${_threads})
   endif(UNIX AND BLA_STATIC)
@@ -219,6 +219,23 @@ if(BLAS_FOUND)
     cheev
     ""
     "acml_mp"
+    ""
+    ""
+    )
+  endif(NOT LAPACK_LIBRARIES)
+ endif (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
+
+ #LibSci lapack
+ if (BLA_VENDOR STREQUAL "LibSci" OR BLA_VENDOR STREQUAL "All")
+  if(NOT LAPACK_LIBRARIES)
+   string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} compiler_id_lc)   
+   set(library_names "sci_${compiler_id_lc}")
+   check_lapack_libraries(
+    LAPACK_LIBRARIES
+    LAPACK
+    cheev
+    ""
+    "${library_names}"
     ""
     ""
     )

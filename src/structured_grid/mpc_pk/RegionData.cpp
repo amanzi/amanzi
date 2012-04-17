@@ -96,3 +96,12 @@ ArrayRegionData::operator() (Real time) const
     return newVals;
 };
 
+Array<Real>
+ArrayRegionData::time() const
+{
+  
+  Array<Real> newVals;
+  if (funcs.size()>0)
+      newVals = funcs[0].x_;
+  return newVals;
+};

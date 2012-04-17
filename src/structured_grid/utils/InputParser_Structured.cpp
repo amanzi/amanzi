@@ -158,14 +158,14 @@ namespace Amanzi {
         void process_expert_options(const ParameterList& pl,
                                     ParameterList&       out_pl)
         {
-            const std::string expert_str = "Expert Settings";
-            if (pl.isSublist(expert_str)) {
-                const ParameterList& expert_list = pl.sublist(expert_str);
-                for (ParameterList::ConstIterator it=expert_list.begin(); it!=expert_list.end(); ++it) {
-                    const std::string& name = expert_list.name(it);
-                    out_pl.setEntry(name,expert_list.getEntry(name));
-                }
-            }
+	  const std::string expert_str = "Expert Settings";
+	  if (pl.isSublist(expert_str)) {
+	    const ParameterList& expert_list = pl.sublist(expert_str);
+	    for (ParameterList::ConstIterator it=expert_list.begin(); it!=expert_list.end(); ++it) {
+	      const std::string& name = expert_list.name(it);
+	      out_pl.setEntry(name,expert_list.getEntry(name));
+	    }
+	  }
         }
 
 
@@ -350,8 +350,8 @@ namespace Amanzi {
             //
             // Basic Algorithm Defaults
             //
-            double visc_abs_tol = 1.e-16; prob_out_list.set<double>("visc_abs_tol",visc_abs_tol);
-            double visc_tol = 1.e-14; prob_out_list.set<double>("visc_tol",visc_tol);
+            double visc_abs_tol = 1.e-12; prob_out_list.set<double>("visc_abs_tol",visc_abs_tol);
+            double visc_tol = 1.e-6; prob_out_list.set<double>("visc_tol",visc_tol);
 
             //
             // Verbosity Default
@@ -1334,7 +1334,6 @@ namespace Amanzi {
             //fPLout.set<std::string>("type","zero_total_velocity");
             fPLout.set<double>("val",fPLin.get<double>(val_name));
             if (Amanzi_type == "IC: Linear Pressure") {
-                //fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
                 const Array<double>& grad = fPLin.get<Array<double> >(grad_name);
                 const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
                 int coord = water_table.size()-1;
@@ -1349,6 +1348,40 @@ namespace Amanzi {
 #endif
             }
         }
+
+        void convert_ICFlow(const ParameterList& fPLin,
+			    const std::string&   Amanzi_type,
+			    ParameterList&       fPLout)
+        {
+	    const std::string phase_name="Phase";
+            const std::string val_name="Reference Value";
+            const std::string grad_name="Gradient Value";
+            const std::string ref_name="Reference Coordinate";
+            const std::string vel_name="Aqueous Volumetric Flux";
+
+            Array<std::string> reqP, nullList;
+            reqP.push_back(val_name);
+            if (Amanzi_type == "IC: Flow") {
+	        reqP.push_back(phase_name);
+                reqP.push_back(grad_name);
+                reqP.push_back(ref_name);
+		reqP.push_back(vel_name);
+            }
+            PLoptions opt(fPLin,nullList,reqP,true,true);  
+    
+            fPLout.set<std::string>("type","zero_total_velocity");
+            fPLout.set<double>("val",fPLin.get<double>(val_name));
+            if (Amanzi_type == "IC: Flow") {
+                const Array<double>& grad = fPLin.get<Array<double> >(grad_name);
+                const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
+		double AqVolFlux = fPLin.get<double>(vel_name);
+                int coord = water_table.size()-1;
+                fPLout.set<double>("water_table_height",water_table[coord]); 
+                fPLout.set<double>("grad",grad[coord]);
+                fPLout.set<double>("aqueous_vol_flux",AqVolFlux); 
+            }
+        }
+
 
         void convert_ICHydrostatic(const ParameterList& fPLin,
                                    const std::string&   Amanzi_type,
@@ -1441,6 +1474,10 @@ namespace Amanzi {
                 else if ( Amanzi_type == "IC: Hydrostatic" )
                 {
                     convert_ICHydrostatic(fPLin,Amanzi_type,fPLout);
+                }
+                else if ( Amanzi_type == "IC: Flow" )
+                {
+		     convert_ICFlow(fPLin,Amanzi_type,fPLout);
                 }
                 else {
                     std::cerr << "Unsupported IC: " << Amanzi_type << std::endl;

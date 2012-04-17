@@ -69,6 +69,8 @@ BCRec     PorousMedia::pres_bc;
 MacProj*  PorousMedia::mac_projector = 0;
 Godunov*  PorousMedia::godunov       = 0;
 static int do_n = true;
+static double richard_time;
+static double richard_time_min = 1.e6;
 
 PM_Error_Value::PM_Error_Value (Real min_time, Real max_time, int max_level, 
                                 const PArray<Region>& regions)
@@ -991,9 +993,17 @@ PorousMedia::initData ()
                 // Init to fully saturated...solve
                 sdat.setVal(density[0],0);
 #endif
+
+                FArrayBox& cdat = (*cpl_coef)[mfi];
+                const int n_cpl_coef = cpl_coef->nComp();
+                DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
+                FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
+                           density.dataPtr(),&ncomps, 
+                           c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
+                           dx, &vals[1], &gravity);
                 
                 FArrayBox& kdat = (*kr_coef)[mfi];
-                FArrayBox& kpdat = (*kappa)[mfi];
+                FArrayBox& kpdat = kpedge[BL_SPACEDIM-1][mfi];
                 const int n_kr_coef = kr_coef->nComp();
                 DEF_CLIMITS(kdat,k_ptr,k_lo,k_hi);
                 DEF_CLIMITS(kpdat,kp_ptr,kp_lo,kp_hi);
@@ -1701,11 +1711,8 @@ PorousMedia::advance (Real time,
     //
     if (verbose) check_sum();
     
-    //predictDT(u_macG_curr);
-    
     //
     // Clean up after the predicted value at t^n+1.
-    // Estimate new timestep from umac cfl.
     //
     advance_cleanup(dt,iteration,ncycle);
   }
@@ -2158,13 +2165,19 @@ PorousMedia::advance_richard (Real time,
   // predict the next time step. 
   Real dt_nwt = dt; 
   predictDT(u_macG_trac);
-  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 4 && dt_nwt < richard_max_dt)
-    dt_nwt = dt_nwt*1.1;
-  else if (curr_nwt_iter > 5)
-    dt_nwt = dt_nwt*0.75;
-  else if (curr_nwt_iter < 2) 
-    dt_nwt = dt_nwt*1.1;
-  richard_iter = curr_nwt_iter;
+  if (curr_nwt_iter < 10) 
+    dt_nwt *= change_max;
+  //if (richard_time < 3.0*richard_time_min)
+  //{
+  //  dt_nwt = dt_nwt*change_max;
+      //if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 4 && dt_nwt < richard_max_dt)
+      //	dt_nwt = dt_nwt*1.1;
+      //else if (curr_nwt_iter > 5)
+      //	dt_nwt = dt_nwt*0.75;
+      //else if (curr_nwt_iter < 2) 
+      //	dt_nwt = dt_nwt*1.1;
+      //richard_iter = curr_nwt_iter;
+  //}
   dt_eig = std::min(dt_eig,dt_nwt); 
 }
 
@@ -2205,7 +2218,7 @@ PorousMedia::advance_multilevel_richard (Real time,
       // predict the next time step. 
       Real dt_nwt = dt; 
       fine_lev.predictDT(fine_lev.u_macG_trac);
-  
+      std::cout << "RICHARD TIME MULTILEVEL" << richard_time << " " << richard_time_min << std::endl;
       if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 4 && dt_nwt < richard_max_dt)
 	dt_nwt = dt_nwt*1.1;
       else if (curr_nwt_iter > 5 )
@@ -2903,12 +2916,22 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
       const int* lbdhi   = (*lbd)[i].hiVect();
       const Real* lbddat = (*lbd)[i].dataPtr();
 
+      const int* kx_lo  = kpedge[0][i].loVect();
+      const int* kx_hi  = kpedge[0][i].hiVect();
+      const Real* kxdat = kpedge[0][i].dataPtr();
+
+      const int* ky_lo  = kpedge[1][i].loVect();
+      const int* ky_hi  = kpedge[1][i].hiVect();
+      const Real* kydat = kpedge[1][i].dataPtr();
+
       Array<int> bc = getBCArray(Press_Type,i,0,1);
 #if (BL_SPACEDIM == 2)	
       FORT_UPHASE_P (updat,ARLIM(uplo),ARLIM(uphi),
 		     vpdat,ARLIM(vplo),ARLIM(vphi),
 		     lbddat,ARLIM(lbdlo),ARLIM(lbdhi),
 		     pdat,ARLIM(plo),ARLIM(phi),
+		     kxdat,ARLIM(kx_lo),ARLIM(kx_hi),
+		     kydat,ARLIM(ky_lo),ARLIM(ky_hi),
 		     lo,hi,domain_lo,domain_hi,dx,bc.dataPtr());
 
 #elif (BL_SPACEDIM == 3)
@@ -2916,14 +2939,23 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
       const int* wplo  = az_mac.loVect();
       const int* wphi  = az_mac.hiVect();
       const Real* wpdat = u_phase[2][i].dataPtr();
+
+      const int* kz_lo  = kpedge[2][i].loVect();
+      const int* kz_hi  = kpedge[2][i].hiVect();
+      const Real* kzdat = kpedge[2][i].dataPtr();
+
       FORT_UPHASE_P (updat,ARLIM(uplo),ARLIM(uphi),
 		     vpdat,ARLIM(vplo),ARLIM(vphi),
 		     wpdat,ARLIM(wplo),ARLIM(wphi),
 		     lbddat,ARLIM(lbdlo),ARLIM(lbdhi),
 		     pdat,ARLIM(plo),ARLIM(phi),
+		     kxdat,ARLIM(kx_lo),ARLIM(kx_hi),
+		     kydat,ARLIM(ky_lo),ARLIM(ky_hi),
+		     kzdat,ARLIM(kz_lo),ARLIM(kz_hi),
 		     lo,hi,domain_lo,domain_hi,dx,bc.dataPtr());
 #endif
     }
+
 
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
@@ -2941,12 +2973,6 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
       }
   }
 
-  // multiply by kedge
-  for (int dir = 0; dir < BL_SPACEDIM; dir++)
-    {
-      for (MFIter ecMfi(u_phase[dir]); ecMfi.isValid(); ++ecMfi)
-	u_phase[dir][ecMfi].mult(kpedge[dir][ecMfi],0,0,1);
-    }
 }
 
 // =========================================
@@ -4732,6 +4758,8 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
 
       ParallelDescriptor::ReduceRealMax(run_time,IOProc);
 
+      
+
       if (ParallelDescriptor::IOProcessor())
         std::cout << "PorousMedia::richard_update(): time: " 
 		  << run_time << '\n';
@@ -4773,8 +4801,6 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
     }
   diffusion->set_rho(&sat_res_mf);
 
-  //do_n = true;
-
   MultiFab& S_new = get_new_data(State_Type);
   MultiFab& P_new = get_new_data(Press_Type);
   MultiFab* alpha = new MultiFab(grids,1,1);
@@ -4795,7 +4821,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = 20;
-  Real max_err_nwt = 1e-8;
+  Real max_err_nwt = 1e-6;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   FillStateBndry(pcTime,State_Type,0,ncomps);
@@ -4913,14 +4939,19 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   delete alpha;
   diffusion->removeFluxBoxesLevel(cmp_pcp1);
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
-  diffusion->removeFluxBoxesLevel(fluxSC);
-    
-  if (verbose > 1)
-    {
-      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-      Real      run_time = ParallelDescriptor::second() - strt_time;
+  diffusion->removeFluxBoxesLevel(fluxSC);    
 
+ 
+  Real run_time = ParallelDescriptor::second() - strt_time;
+  richard_time = run_time;
+  ParallelDescriptor::ReduceRealMax(richard_time);
+  richard_time_min = std::min(richard_time_min,richard_time);
+  
+  if (verbose > 1)
+    { 
+      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       ParallelDescriptor::ReduceRealMax(run_time,IOProc);
+
 
       if (ParallelDescriptor::IOProcessor())
         std::cout << "PorousMedia::richard_update(): time: " 
@@ -5836,6 +5867,8 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
         if (cfl>0) {
             estdt = cfl * dt_eig;
         }
+	else
+	  estdt = dt_eig;
     } 
   else 
     {
@@ -5893,7 +5926,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
       estdt = std::min(richard_max_dt,estdt);
   }  
 #endif
-
+  
   return estdt;
 }
 
@@ -6107,7 +6140,7 @@ PorousMedia::computeNewDt (int                   finest_level,
     }
 
   // 
-  // Limit by max_dt
+  // Limit by max_dt: redundant?
   //
 #ifdef MG_USE_FBOXLIB
   if (model == model_list["richard"]) {
@@ -6115,6 +6148,33 @@ PorousMedia::computeNewDt (int                   finest_level,
   }  
 #endif
 
+  //
+  // Adjust time step if there is abrupt change in inflow condition
+  //
+  bool change_inflow = false;
+  for (int i=0; i<bc_array.size(); ++i) {
+    const RegionData& face_bc = bc_array[i];
+    if (face_bc.Type() == "zero_total_velocity") {
+      Array<Real> inflow_curr_time = face_bc(cur_time);
+      Array<Real> inflow_next_time = face_bc(cur_time+dt_0);
+      if (std::abs(inflow_curr_time[0] - inflow_next_time[0]) > 1.e-15) 
+	{
+	  Array<Real> timelist = bc_array[i].time();
+	  for (int j=0;j<timelist.size();j++)
+	    {
+	      Real dtime = timelist[j]-cur_time ;
+	      if (dtime > 0 && dtime < dt_0)
+		dt_0 = std::min(dtime,dt_0);
+	    }
+	  change_inflow = true;
+	}	  
+    }
+
+  if (change_inflow)
+    {
+      if (dt_0 > 1.e3) dt_0 *=0.99;
+    }
+    }
   n_factor = 1;
   for (int i = 0; i <= max_level; i++)
     {
@@ -9022,6 +9082,8 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			      rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
 			      &deps, &do_upwind);
 	  else
+	    {
+	      deps = 1.e-8;
 	    FORT_RICHARD_NJAC2(dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
 			       dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
 #if(BL_SPACEDIM==3)
@@ -9046,6 +9108,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			       lo, hi, domlo, domhi, dx, bc.dataPtr(), 
 			       rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
 			       &deps, &do_upwind);
+	    }
 	}
     }
 }
@@ -9657,7 +9720,6 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
 		  face_bc.apply(sdat,dx,0,ncomps,time);
 		}
 	    }
-
             Box ovlp = bndBox & fab.box();
             if (ovlp.ok()) {
                 fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
@@ -9692,7 +9754,6 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time)
                     const RegionData& face_tbc = tbc_array[n][face_bc_idxs[i]];
                     face_tbc.apply(sdat,dx,0,ntracers,time);
                 }
-                
                 Box ovlp = bndBox & fab.box();
                 if (ovlp.ok()) {
                     fab.copy(sdat,ovlp,0,ovlp,0,1);

@@ -149,16 +149,15 @@ endif()
 set(_libraries_work TRUE)
 set(${LIBRARIES})
 set(_combined_name)
-print_variable(_list)
 foreach(_library ${_list})
 
+  print_variable(_library)  
   set(_combined_name ${_combined_name}_${_library})
 
   if(_libraries_work)
 
     if ( BLA_VENDOR_PATH )
       print_variable(BLA_VENDOR_PATH)
-      print_variable(_library)
       find_library(${_prefix}_${_library}_LIBRARY
 	           NAMES ${_library}
 		   PATHS ${BLA_VENDOR_PATH}
@@ -204,17 +203,20 @@ foreach(_library ${_list})
 
     mark_as_advanced(${_prefix}_${_library}_LIBRARY)
     set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
+    print_variable(${LIBRARIES})
     set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
   endif(_libraries_work)
 endforeach(_library ${_list})
 if(_libraries_work)
+    print_variable(_libraries_owrk)
   # Test this combination of libraries.
   set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_threads})
-#  message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
+  message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
   check_fortran_function_exists(${_name} ${_prefix}${_combined_name}_WORKS)
   set(CMAKE_REQUIRED_LIBRARIES)
   mark_as_advanced(${_prefix}${_combined_name}_WORKS)
   set(_libraries_work ${${_prefix}${_combined_name}_WORKS})
+    print_variable(_libraries_work)
 endif(_libraries_work)
 if(NOT _libraries_work)
   set(${LIBRARIES} FALSE)
@@ -375,6 +377,22 @@ if (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
   )
  endif(NOT BLAS_LIBRARIES)
 endif (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
+
+#BLAS in libsci library?
+if (BLA_VENDOR STREQUAL "LibSci" OR BLA_VENDOR STREQUAL "All")
+ if(NOT BLAS_LIBRARIES)
+     string(TOLOWER ${CMAKE_Fortran_COMPILER_ID}  compiler_id_lc)
+  set(library_names "sci_${compiler_id_lc}")
+  check_fortran_libraries(
+  BLAS_LIBRARIES
+  BLAS
+  sgemm
+  ""
+  "${library_names}" 
+  ""
+  )
+ endif(NOT BLAS_LIBRARIES)
+endif (BLA_VENDOR STREQUAL "LibSci" OR BLA_VENDOR STREQUAL "All")
 
 # Apple BLAS library?
 if (BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")

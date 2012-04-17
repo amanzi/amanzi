@@ -21,6 +21,7 @@ public:
     std::string Type() const {return type;}
     std::string Label() const {return label;}
     virtual Array<Real> operator() (Real time=0) const {return vals;}
+    virtual Array<Real> time() const {return vals;}
 
     virtual void apply(FArrayBox&  fab, 
                        const Real* dx, 
@@ -57,6 +58,8 @@ public:
                     const std::string&       typeStr,
                     int                      nComp);
     
+    virtual Array<Real> time() const;
+
     virtual Array<Real> operator() (Real time=0) const;
 
 protected:
