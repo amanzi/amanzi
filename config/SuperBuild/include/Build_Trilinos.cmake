@@ -151,17 +151,19 @@ set(Trilinos_CMAKE_LANG_ARGS
 #  --- Define the Trilinos patch step
 
 # Trilinos needs a patch for GNU versions > 4.6
-set(Trilinos_PATCH_COMMAND)
-option(ENABLE_Trilinos_Patch "Enable the patch step for the Trilinos build" OFF)
 if ( CMAKE_CXX_COMPILER_VERSION )
-  if (     ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-       AND (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER "4.6" ) )
-     message(STATUS "Trilinos requires a patch when using"
-                    " GNU ${CMAKE_CXX_COMPILER_VERSION}")
-     set(ENABLE_Trilinos_Patch ON)
+  if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
+    if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
+      set(ENABLE_Trilinos_PATCH OFF)
+    else()
+      message(STATUS "Trilinos requires a patch when using"
+                     " GNU ${CMAKE_CXX_COMPILER_VERSION}")
+      set(ENABLE_Trilinos_PATCH ON)
+    endif()
   endif()
 endif()  
 
+set(Trilinos_PATCH_COMMAND)
 if (ENABLE_Trilinos_Patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                ${Trilinos_prefix_dir}/trilinos-patch-step.sh
