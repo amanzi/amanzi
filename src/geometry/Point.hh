@@ -84,7 +84,7 @@ class Point {
     return pq;
   }
   
-  /* miscaleneous */
+  /* miscellaneous */
   friend double L22( const Point& p) { return p*p; }
   friend double norm(const Point& p) { return sqrt(p*p); }
   
@@ -95,6 +95,9 @@ class Point {
   }
   
 }; // end class Point
+
+typedef std::vector<Point> Point_List;
+
   
 } // end namespace AmanziGeometry
 
