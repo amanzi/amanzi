@@ -794,6 +794,11 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
     double alpha = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("alpha");
     double Sr = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("Sr");
     double m = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("m");
+    double krel_smooth = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("krel smoothing interval", 0.0);
+    if (krel_smooth<0.0) {
+      Exceptions::amanzi_throw(Errors::Message("If krel smoothing interval is specified it must be positive."));      
+    }
+
 
     // now get the assigned regions
     Teuchos::Array<std::string> regions = matprop_list.sublist(i->first).get<Teuchos::Array<std::string> >("Assigned Regions");
@@ -810,7 +815,7 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
       wrm_sublist.set<double>("van Genuchten m", m);
       wrm_sublist.set<double>("van Genuchten alpha",alpha);
       wrm_sublist.set<double>("van Genuchten residual saturation", Sr);
-
+      wrm_sublist.set<double>("van Genuchten krel smoothing interval", krel_smooth);
     }
 
   }
