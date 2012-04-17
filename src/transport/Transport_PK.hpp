@@ -223,9 +223,9 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 
-  int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
-  int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
-  int vmin, vmax;
+  int cmax_owned, cmax, number_owned_cells, number_wghost_cells;
+  int fmax_owned, fmax, number_owned_faces, number_wghost_faces;
+  int vmax;
  
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   int dim;

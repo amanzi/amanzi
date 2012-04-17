@@ -1,3 +1,16 @@
+/*
+This is the transport component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
+Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+#include <algorithm>
+
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
@@ -45,9 +58,9 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
     prev_water_saturation_ = S.prev_water_saturation();
     water_density_ = S.water_density();
     mesh_ = S.mesh();
-  }
-  else if (mode == CopyMemory ) { 
-    porosity_ = S.porosity(); 
+
+  } else if (mode == CopyMemory) {
+    porosity_ = S.porosity();
     water_saturation_ = S.water_saturation();
     prev_water_saturation_ = S.prev_water_saturation();
     water_density_ = S.water_density();
@@ -61,15 +74,14 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 
     total_component_concentration_ = Teuchos::rcp(new Epetra_MultiVector(cmap, number_vectors));
     darcy_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
-    
+
     copymemory_multivector(S.ref_total_component_concentration(), *total_component_concentration_);
     copymemory_vector(S.ref_darcy_flux(), *darcy_flux_);
-  }
 
-  else if (mode == ViewMemory) {
-    porosity_ = S.porosity(); 
-    water_saturation_ = S.water_saturation(); 
-    prev_water_saturation_ = S.prev_water_saturation(); 
+  } else if (mode == ViewMemory) {
+    porosity_ = S.porosity();
+    water_saturation_ = S.water_saturation();
+    prev_water_saturation_ = S.prev_water_saturation();
     water_density_ = S.water_density();
     mesh_ = S.mesh();
 
@@ -79,11 +91,11 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
     const Epetra_Map& fmap = mesh_->face_map(false);
 
     Epetra_Vector& df = S.ref_darcy_flux();
-    df.ExtractView(&data_df);     
+    df.ExtractView(&data_df);
     darcy_flux_ = Teuchos::rcp(new Epetra_Vector(View, fmap, data_df));
-    
+
     Epetra_MultiVector & tcc = S.ref_total_component_concentration();
-    tcc.ExtractView(&data_tcc);     
+    tcc.ExtractView(&data_tcc);
     total_component_concentration_ = Teuchos::rcp(new Epetra_MultiVector(View, cmap, data_tcc, tcc.NumVectors()));
   }
   S_ = S.S_;
@@ -94,7 +106,7 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 * Routine imports a short multivector to a parallel overlaping vector.
 * No parallel communications are performed if target_is_parallel = 0.
 ******************************************************************* */
-void Transport_State::copymemory_multivector(Epetra_MultiVector& source, 
+void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
                                              Epetra_MultiVector& target,
                                              int target_is_parallel)
 {
@@ -108,8 +120,8 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
   cmax = std::min(cmax_s, cmax_t);
 
   int number_vectors = source.NumVectors();
-  for (int c=cmin; c<=cmax; c++) {
-    for (int i=0; i<number_vectors; i++) target[i][c] = source[i][c];
+  for (int c = cmin; c <= cmax; c++) {
+    for (int i = 0; i < number_vectors; i++) target[i][c] = source[i][c];
   }
 
 #ifdef HAVE_MPI
@@ -141,7 +153,7 @@ void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& ta
   fmax_t = target_fmap.MaxLID();
   fmax   = std::min(fmax_s, fmax_t);
 
-  for (int f=fmin; f<=fmax; f++) target[f] = source[f];
+  for (int f = fmin; f <= fmax; f++) target[f] = source[f];
 
 #ifdef HAVE_MPI
   if (fmax_s > fmax_t)  {
@@ -200,13 +212,13 @@ void Transport_State::distribute_cell_multivector(Epetra_MultiVector& v)
 * interpolated data are at time dT_int.            
 ******************************************************************* */
 void Transport_State::interpolateCellVector(
-    const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int) 
+    const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int)
 {
   int ncells = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   double a = dT_int / dT;
   double b = 1.0 - a;
-  for (int c=0; c<ncells; c++) v_int[c] = v0[c] * b + v1[c] * a;
+  for (int c = 0; c < ncells; c++) v_int[c] = v0[c] * b + v1[c] * a;
 }
 
 
@@ -217,8 +229,8 @@ void Transport_State::analytic_darcy_flux(const AmanziGeometry::Point& u)
 {
   const Epetra_BlockMap& fmap = (*darcy_flux_).Map();
 
-  for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) { 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);    
+  for (int f = fmap.MinLID(); f <= fmap.MaxLID(); f++) {
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     (*darcy_flux_)[f] = u * normal;
   }
 }
@@ -227,7 +239,7 @@ void Transport_State::analytic_darcy_flux(
 {
   const Epetra_BlockMap& fmap = (*darcy_flux_).Map();
 
-  for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) { 
+  for (int f = fmap.MinLID(); f <= fmap.MaxLID(); f++) {
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const AmanziGeometry::Point& fc = mesh_->face_centroid(f);
     (*darcy_flux_)[f] = f_vel(fc, t) * normal;
@@ -242,8 +254,8 @@ void Transport_State::analytic_total_component_concentration(double f(const Aman
 {
   const Epetra_BlockMap& cmap = (*total_component_concentration_).Map();
 
-  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);    
+  for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     (*total_component_concentration_)[0][c] = f(xc, t);
   }
 }
@@ -251,7 +263,7 @@ void Transport_State::analytic_total_component_concentration(double tcc)
 {
   const Epetra_BlockMap& cmap = (*total_component_concentration_).Map();
 
-  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
+  for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
     (*total_component_concentration_)[0][c] = tcc;
   }
 }
@@ -266,16 +278,16 @@ void Transport_State::error_total_component_concentration(
   const Epetra_BlockMap& cmap = (*total_component_concentration_).Map();
 
   *L1 = *L2 = 0.0;
-  for (c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
+  for (c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    d = (*total_component_concentration_)[0][c] - f(xc, t); 
+    d = (*total_component_concentration_)[0][c] - f(xc, t);
 
     double volume = mesh_->cell_volume(c);
     *L1 += fabs(d) * volume;
     *L2 += d * d * volume;
   }
 
-  *L2 = sqrt( *L2 );
+  *L2 = sqrt(*L2);
 }
 
 
@@ -286,7 +298,7 @@ void Transport_State::analytic_porosity(double phi)
 {
   const Epetra_BlockMap& cmap = (*porosity_).Map();
 
-  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
+  for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
     (*porosity_)[c] = phi;  // default is 0.2
   }
 }
@@ -299,8 +311,8 @@ void Transport_State::analytic_water_saturation(double ws)
 {
   const Epetra_BlockMap& cmap = (*water_saturation_).Map();
 
-  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
-    (*water_saturation_)[c] = ws;  // default is 1.0 
+  for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
+    (*water_saturation_)[c] = ws;  // default is 1.0
     (*prev_water_saturation_)[c] = ws;
   }
 }
@@ -313,7 +325,7 @@ void Transport_State::analytic_water_density(double wd)
 {
   const Epetra_BlockMap& cmap = (*water_density_).Map();
 
-  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
+  for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
     (*water_density_)[c] = wd;  // default is 1000.0
   }
 }

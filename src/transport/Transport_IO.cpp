@@ -1,9 +1,16 @@
 /*
 This is the transport component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include <set>
+#include <string>
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
@@ -60,7 +67,7 @@ void Transport_PK::processParameterList()
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
   string dispersivity_name = transport_list.get<string>("dispersivity model", "isotropic");
-  if (dispersivity_name == "isotropic") { 
+  if (dispersivity_name == "isotropic") {
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC;
   } else if (dispersivity_name == "Bear") {
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_BEAR;
@@ -69,7 +76,7 @@ void Transport_PK::processParameterList()
   } else {
     Errors::Message msg;
     msg << "Dispersivity model is wrong (isotropic, Bear, Lichtner)." << "\n";
-    Exceptions::amanzi_throw(msg);    
+    Exceptions::amanzi_throw(msg);
   }
 
   dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
@@ -85,7 +92,7 @@ void Transport_PK::processParameterList()
   } else {
     Errors::Message msg;
     msg << "Advection limiter is wrong (BarthJespersen, Tensorial, Kuzmin)." << "\n";
-    Exceptions::amanzi_throw(msg);    
+    Exceptions::amanzi_throw(msg);
   }
 
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
@@ -98,25 +105,25 @@ void Transport_PK::processParameterList()
     Errors::Message msg;
     msg << "Flow mode is wrong (steady-state, transient)." << "\n";
     Exceptions::amanzi_throw(msg);
-  }  
-   
+  }
+
   // control parameter
   internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";
   tests_tolerance = transport_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dT_debug = transport_list.get<double>("maximal time step", TRANSPORT_LARGE_TIME_STEP);
- 
+
   // extract list of lists of boundary conditions
   Teuchos::ParameterList BCs_list;
   BCs_list = transport_list.get<Teuchos::ParameterList>("Transport BCs");
- 
+
   // populate the list of boundary influx functions
   int nBCs = BCs_list.get<int>("number of BCs");
   bcs.clear();
   bcs_tcc_index.clear();
 
-  for (int n=0; n<nBCs; n++) {
+  for (int n = 0; n < nBCs; n++) {
     char bc_char_name[10];
-    
+
     sprintf(bc_char_name, "BC %d", n);
     string bc_name(bc_char_name);
 
@@ -125,17 +132,17 @@ void Transport_PK::processParameterList()
       msg << "Boundary condition with name " << bc_char_name << " does not exist" << "\n";
       Exceptions::amanzi_throw(msg);
     }
-    Teuchos::ParameterList BC_list = BCs_list.sublist(bc_name);  // A single sublist. 
- 
+    Teuchos::ParameterList BC_list = BCs_list.sublist(bc_name);  // A single sublist.
+
     bool flag_BCX = false;
-    for (int i=0; i<number_components; i++) {
+    for (int i = 0; i < number_components; i++) {
       char tcc_char_name[20];
 
       sprintf(tcc_char_name, "Component %d", i);
       string tcc_name(tcc_char_name);
 
       if (BC_list.isParameter(tcc_name)) {
-        flag_BCX = true; 
+        flag_BCX = true;
         std::vector<std::string> regions, functions;
         std::vector<double> times, values;
 
@@ -146,7 +153,7 @@ void Transport_PK::processParameterList()
 
         int nfunctions = functions.size();  // convert strings to forms
         std::vector<TabularFunction::Form> forms(functions.size());
-        for (int k=0; k<nfunctions; k++) {
+        for (int k = 0; k < nfunctions; k++) {
           forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
         }
 
@@ -166,7 +173,7 @@ void Transport_PK::processParameterList()
       Exceptions::amanzi_throw(msg);
     }
   }
-  //print_statistics();
+  // print_statistics();
 }
 
 
@@ -180,7 +187,7 @@ void Transport_PK::printStatistics() const
     cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Total number of components = " << number_components << endl;
     cout << "    Verbosity level = " << verbosity << endl;
-    cout << "    Spatial/temporal discretication orders = " << spatial_disc_order 
+    cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
          << " " << temporal_disc_order << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
     cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen or Kuzmin(experimental)") << endl;
@@ -202,7 +209,7 @@ void Transport_PK::writeGMVfile(Teuchos::RCP<Transport_State> TS) const
   GMV::write_cell_data(TS->ref_water_saturation(), "saturation");
   GMV::close_data_file();
 }
- 
+
 }  // namespace AmanziTransport
 }  // namespace Amanzi
 

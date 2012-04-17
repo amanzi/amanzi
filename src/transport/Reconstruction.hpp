@@ -71,7 +71,7 @@ class Reconstruction {
   Teuchos::RCP<Epetra_Vector> scalar_field_;  // scalar cell-centered field
   Teuchos::RCP<Epetra_MultiVector> gradient_;
 
-  int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
+  int cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
 
   Teuchos::SerialDenseMatrix<int, double> matrix;
