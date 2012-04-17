@@ -261,6 +261,8 @@ public:
     
   // Modify the coordinates of a node
 
+  void node_set_coordinates (const Entity_ID nodeid, const AmanziGeometry::Point coords);
+
   void node_set_coordinates (const Entity_ID nodeid, const double *coords);
 
     
@@ -357,9 +359,7 @@ private:
   std::vector<int> cell_to_face_dirs_;
   std::vector<unsigned int> cell_to_node_;
   std::vector<unsigned int> face_to_node_;
-                                           // special bcos we may label one of the cells
-  std::vector<int> face_to_cell_;          // as -1 to indicate that there is no cell on 
-                                           // that side of the face
+  std::vector<unsigned int> face_to_cell_;
   std::vector<unsigned int> node_to_face_;
   std::vector<unsigned int> node_to_cell_;
 
