@@ -14,9 +14,24 @@ if (${ADJUST_POLICY})
 endif()
 
 # ############################################################################ #
+# Compiler Definition Warnings
+# ############################################################################ #
+if ( NOT CMAKE_C_COMPILER )
+  message(WARNING "C compiler not specified. CMake will guess!")
+endif()
+
+if ( NOT CMAKE_CXX_COMPILER )
+  message(WARNING "C++ compiler not specified. CMake will guess!")
+endif()
+
+if ( NOT CMAKE_Fortran_COMPILER )
+  message(WARNING "Fortran compiler not specified. CMake will guess!")
+endif()
+
+# ############################################################################ #
 # Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
 # ############################################################################ #
-project(SuperBuild)
+project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -45,26 +60,14 @@ set(SuperBuild_TEMPLATE_FILES_DIR "${SuperBuild_SOURCE_DIR}/templates")
 # ############################################################################ #
 # Compiler checks
 # ############################################################################ #
-if ( NOT CMAKE_C_COMPILER )
-  message(WARNING "C compiler not specified. CMake will guess!")
-endif()
-enable_language(C)
-
-if ( NOT CMAKE_CXX_COMPILER )
-  message(WARNING "C++ compiler not specified. CMake will guess!")
-endif()
-enable_language(CXX)
-
-if ( NOT CMAKE_Fortran_COMPILER )
-  message(WARNING "Fortran compiler not specified. CMake will guess!")
-endif()
-enable_language(Fortran)
-
 include(FortranCInterface)
 FortranCInterface_VERIFY()
 
 include(DefineCompilerVersion)
 define_compiler_version()
+
+include(CheckMPISourceCompiles)
+check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 
 # ############################################################################ #
 # Build options
