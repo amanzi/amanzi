@@ -49,7 +49,7 @@ hg_binary=`which hg`
 curl_binary=`which curl`
 
 # CMake
-cmake_binary=
+cmake_binary=`which cmake`
 cmake_version=2.8.7
 cmake_url=http://www.cmake.org/files/v2.8
 cmake_archive_file=cmake-${cmake_version}.tar.gz
@@ -199,7 +199,7 @@ Tool definitions:
   --with-cxx-compiler=FILE   FILE is the C++ compiler
   --with-fort-compiler=FILE  FILE is the Fortran compiler
 
-  --with-cmake=FILE          FILE is the CMake binary ['"${cmake_binary}"']
+  --with-cmake[=FILE]        FILE is the CMake binary ['"${cmake_binary}"'] without FILE builds CMake
   --with-hg=FILE             FILE is the Mercurial binary ['"${hg_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
@@ -302,6 +302,10 @@ function parse_argv()
 
       --with-cmake=*)
                  cmake_binary=`parse_option_with_equal ${opt} 'with-cmake'`
+                 ;;
+
+      --with-cmake)
+                 cmake_binary=
                  ;;
 
       --with-hg=*)
@@ -700,11 +704,12 @@ function check_tools
 
   # Check CMake
   if [ -z "${cmake_binary}" ]; then 
+    status_message "CMake not defined. Will build"
     build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
   fi
   if [ ! -e "${cmake_binary}" ]; then
-    error_message "CMake binary ${cmake_binary} does not exist"
-    exit_now 30
+    error_message "CMake binary does not exist. Will build."
+    build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
   fi
 
   status_message "Tool check complete"
