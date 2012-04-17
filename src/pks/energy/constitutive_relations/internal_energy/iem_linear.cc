@@ -31,7 +31,7 @@ double IEMLinear::InternalEnergy(double temp) {
 };
 
 void IEMLinear::InitializeFromPlist_() {
-  if (plist_.isParameter("Heat capacity [J/kg-mol]")) {
+  if (plist_.isParameter("Heat capacity [J/kg-K]")) {
     Cv_ = plist_.get<double>("Heat capacity [J/kg-K]");
     molar_basis_ = false;
   } else {
