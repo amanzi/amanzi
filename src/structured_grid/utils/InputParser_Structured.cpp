@@ -445,7 +445,7 @@ namespace Amanzi {
                             if (num_levels < 1) {
                                 MyAbort("Must have at least 1 AMR level");
                             }
-                            int max_level = num_levels - 1;
+                            max_level = num_levels - 1;
 
                             std::string ref_ratio_str = "Refinement Ratio";
                             ref_ratio.resize(max_level,2);
@@ -607,11 +607,11 @@ namespace Amanzi {
                                     }
 
                                     std::string maxLev_str = "Maximum Refinement Level";
-                                    int max_level = 0;
+                                    int this_max_level = max_level;
                                     if (ref_list.isParameter(maxLev_str)) {
-                                        max_level = ref_list.get<int>(maxLev_str);
+                                        this_max_level = ref_list.get<int>(maxLev_str);
                                     }
-                                    ref_out_list.set<int>("max_level",max_level);
+                                    ref_out_list.set<int>("max_level",this_max_level);
 
                                     ref_out_list.set<Array<std::string> >(
                                         "regions",underscore(ref_list.get<Array<std::string> >(regName_str)));
