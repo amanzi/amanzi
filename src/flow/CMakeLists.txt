@@ -108,7 +108,7 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_bc_factory flow_bc_factory KIND unit)
  
     # Test: flow-richards
-    if (ENABLE_CGNS)
+    if ( ENABLE_CGNS AND ENABLE_MSTK_Mesh )
 	set(amanzi_libs geometry mesh mesh_audit simple_mesh mesh_factory state flow whetstone solvers output ${HDF5_LIBRARIES})
 
         add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
