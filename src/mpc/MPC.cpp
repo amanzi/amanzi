@@ -98,13 +98,13 @@ void MPC::mpc_init() {
     *out << std::endl;
   }
 
-  if (transport_enabled || flow_enabled || chemistry_enabled) {
+  // if (transport_enabled || flow_enabled || chemistry_enabled) {
     Teuchos::ParameterList state_parameter_list =
         parameter_list.sublist("State");
 
     // create the state object
     S = Teuchos::rcp( new State( state_parameter_list, mesh_maps) );
-  }
+  // }
 
   // create auxilary state objects for the process models
   // chemistry...
@@ -272,10 +272,10 @@ void MPC::cycle_driver () {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-  if (transport_enabled || flow_enabled || chemistry_enabled) {
+  //if (transport_enabled || flow_enabled || chemistry_enabled) {
     // start at time T=T0;
     S->set_time(T0);
-  }
+  //}
 
   if (chemistry_enabled) {
     try {
@@ -318,7 +318,8 @@ void MPC::cycle_driver () {
     // write visualization data for timestep if requested
     S->write_vis(*visualization, &(*aux), auxnames);
   } else {
-    S->write_vis(*visualization);
+    // always write the initial visualization dump
+    S->write_vis(*visualization, true);
   }
 
   // write a restart dump if requested (determined in dump_state)
@@ -620,16 +621,13 @@ void MPC::cycle_driver () {
       restart->dump_state(*S, force);
     }
     
+    // some final output
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+      *out << "Cycle = " << iter;
+      *out << ",  Time(years) = "<< S->get_time()/ (365.25*60*60*24);
+      *out << std::endl;
+    }
   }
-
-  // some final output
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
-  {
-    *out << "Cycle = " << iter;
-    *out << ",  Time(years) = "<< S->get_time()/ (365.25*60*60*24);
-    *out << std::endl;
-  }
-
 
 }
 
