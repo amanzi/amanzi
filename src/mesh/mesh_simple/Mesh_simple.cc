@@ -571,11 +571,15 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
                                       const double *ncoord)
 {
   unsigned int offset = 3*local_node_id;
+  int spdim = Mesh::space_dimension();
 
   ASSERT(ncoord != NULL);
   
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
-  std::copy(&(ncoord[0]),&(ncoord[2]),destination_begin);
+  for (int i = 0; i < spdim; i++) {
+    *destination_begin = ncoord[i];
+    destination_begin++;
+  }
 }
 
 void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
@@ -589,7 +593,10 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
   for (int i = 0; i < spdim; i++)
     coordarray[i] = ncoord[i];
 
-  std::copy(&(coordarray[0]),&(coordarray[spdim-1]),destination_begin);
+  for (int i = 0; i < spdim; i++) {
+    *destination_begin = ncoord[i];
+    destination_begin++;
+  }
 }
 
 
