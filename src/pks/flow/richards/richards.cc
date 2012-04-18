@@ -7,9 +7,10 @@ Authors: Neil Carlson (version 1)
          Ethan Coon (ATS version) (ecoon@lanl.gov)
 */
 
-#include "bdf2_time_integrator.hh"
+#include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 #include "eos_factory.hh"
+#include "wrm_factory.hh"
 
 #include "richards.hh"
 
@@ -69,7 +70,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   S->RequireField("porosity", AmanziMesh::CELL, 1, true);
   S->RequireField("cell_volume", AmanziMesh::CELL, 1, true);
   S->RequireField("temperature", AmanziMesh::CELL, 1, true);
-  S->RequireConstantVector("gravity", S->mesh()->space_dimension());
+  S->RequireGravity();
 
   // -- work vectors
   S->RequireField("rel_perm_faces", "flow", AmanziMesh::FACE, 1, true);
@@ -90,7 +91,8 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   eos_gas_ = Teuchos::rcp(new FlowRelations::EOSVaporInGas(eos_gas_plist));
 
   Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Model");
-  wrm_ = Teuchos::rcp(new FlowRelations::WRMVanGenuchten(wrm_plist));
+  FlowRelations::WRMFactory wrm_factory;
+  wrm_ = wrm_factory.createWRM(wrm_plist);
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
@@ -129,22 +131,16 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
 
 // -- Initialize owned (dependent) variables.
 void Richards::initialize(const Teuchos::RCP<State>& S) {
-
   // initial timestep size
   dt_ = flow_plist_.get<double>("Initial time step", 1.);
-
-  // initialize pressure?
-  if (flow_plist_.isParameter("Constant pressure")) {
-    double p = flow_plist_.get<double>("Constant pressure");
-    S->GetFieldData("pressure", "flow")->PutScalar(p);
-    S->GetRecord("pressure", "flow")->set_initialized();
-  }
-
 
   // initialize boundary conditions
   int nfaces = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
+
+  // update face pressures as a hint?
+  DeriveFaceValuesFromCellValues_(S, S->GetFieldData("pressure", "flow"));
 
   // declare secondary variables initialized, as they will be done by
   // the commit_state call
@@ -174,16 +170,17 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
     rtol_ = flow_plist_.get<double>("Relative error tolerance",1e-5);
 
     // -- instantiate time stepper
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
+    Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(flow_plist_.sublist("Time integrator")));
-    time_stepper_ = Teuchos::rcp(new BDF2TimeIntegrator(this, bdf2_plist_p, solution_));
+    time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf1_plist_p, solution_));
+    time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
-    time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
+    time_stepper_->set_initial_state(0.0, solution_, solution_dot);
   }
 };
 
@@ -213,9 +210,10 @@ bool Richards::advance(double dt) {
   try {
     dt_ = time_stepper_->time_step(h, solution_);
   } catch (Exceptions::Amanzi_exception &error) {
-    if (error.what() == "BDF time step failed") {
-      // try halving the timestep
-      dt_ = dt_/2.0;
+    std::cout << "Timestepper called error: " << error.what() << std::endl;
+    if (error.what() == std::string("BDF time step failed")) {
+      // try cutting the timestep
+      dt_ = dt_*time_step_reduction_factor_;
       return true;
     } else {
       throw error;
@@ -246,7 +244,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
   matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxesToOperator_(S, matrix_);
+  AddGravityFluxes_(S, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
@@ -273,14 +271,14 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   rel_perm->ScatterMasterToGhosted();
 
-  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData("density_liquid");
+  Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
   Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
   Teuchos::RCP<CompositeVector> rel_perm_faces = S->GetFieldData("rel_perm_faces", "flow");
 
   if (Krel_method_ == FLOW_RELATIVE_PERM_CENTERED) {
     // symmetric method, no faces needed
     for (int c=0; c!=K_.size(); ++c) {
-      K_[c] *= (*rel_perm)(c) * (*dens)(c) / (*visc)(c);
+      K_[c] *= (*rel_perm)(c) * (*n_liq)(c) / (*visc)(c);
     }
   } else {
     // faces needed
@@ -295,7 +293,7 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
     }
     // update K with just rho/mu
     for (int c=0; c!=K_.size(); ++c) {
-      K_[c] *= (*dens)(c) / (*visc)(c);
+      K_[c] *= (*n_liq)(c) / (*visc)(c);
     }
   }
 };
@@ -376,12 +374,29 @@ void Richards::CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP<S
   }
 }
 
+void Richards::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
+        const Teuchos::RCP<CompositeVector>& pres) {
+  AmanziMesh::Entity_ID_List cells;
+
+  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f=0; f!=f_owned; ++f) {
+    cells.clear();
+    S->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += (*pres)("cell",0,cells[n]);
+    }
+    (*pres)("face",0,f) = face_value / ncells;
+  }
+};
 
 /* ******************************************************************
  * Add a boundary marker to used faces.
  ****************************************************************** */
 void Richards::UpdateBoundaryConditions_() {
-  for (int n=0; n<bc_markers_.size(); n++) {
+  for (int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::MFD_BC_NULL;
     bc_values_[n] = 0.0;
   }

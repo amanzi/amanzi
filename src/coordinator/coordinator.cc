@@ -73,6 +73,7 @@ void Coordinator::initialize() {
 
   // commit state to get secondary variables intiailized
   pk_->commit_state(0.0, S_);
+  pk_->calculate_diagnostics(S_);
 
   // Check that all fields have now been initialized or die.
   S_->CheckAllInitialized();
@@ -81,8 +82,33 @@ void Coordinator::initialize() {
 void Coordinator::read_parameter_list() {
   t0_ = coordinator_plist_.get<double>("Start Time");
   t1_ = coordinator_plist_.get<double>("End Time");
+  string t0_units = coordinator_plist_.get<string>("Start Time Units", "s");
+  string t1_units = coordinator_plist_.get<string>("End Time Units", "s");
+
+  if (t0_units == "s") {
+    // internal units in s
+  } else if (t0_units == "d") { // days
+    t0_ = t0_ * 24.0*3600.0;
+  } else if (t0_units == "yr") { // years
+    t0_ = t0_ * 365.25*24.0*3600.0;
+  } else {
+    Errors::Message message("Coordinator: error, invalid start time units");
+    Exceptions::amanzi_throw(message);
+  }
+
+  if (t1_units == "s") {
+    // internal units in s
+  } else if (t1_units == "d") { // days
+    t1_ = t1_ * 24.0*3600.0;
+  } else if (t1_units == "yr") { // years
+    t1_ = t1_ * 365.25*24.0*3600.0;
+  } else {
+    Errors::Message message("Coordinator: error, invalid end time units");
+    Exceptions::amanzi_throw(message);
+  }
+
   max_dt_ = coordinator_plist_.get<double>("Max Time Step Size", 1.0e99);
-  min_dt_ = coordinator_plist_.get<double>("Min Time Step Size", 1.0e-17);
+  min_dt_ = coordinator_plist_.get<double>("Min Time Step Size", 1.0e-12);
   end_cycle_ = coordinator_plist_.get<int>("End Cycle",-1);
 }
 
@@ -101,7 +127,7 @@ void Coordinator::cycle_driver () {
   //  observations_->MakeObservations(*S_);
 
   // write visualization if requested at IC
-  S_->WriteVis(visualization_);
+  //  S_->WriteVis(visualization_);
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -154,6 +180,8 @@ void Coordinator::cycle_driver () {
       //      observations_->MakeObservations(*S_next_);
 
       // write visualization if requested
+      // this needs to be fixed...
+      pk_->calculate_diagnostics(S_next_);
       S_next_->WriteVis(visualization_);
 
       // write restart dump if requested
@@ -167,6 +195,11 @@ void Coordinator::cycle_driver () {
       *S_next_ = *S_;
     }
   } // while not finished
+
+  // force visualization at the end of simulation
+  S_next_->advance_cycle(); // hackery to make the vis stop whining
+  pk_->calculate_diagnostics(S_next_);
+  S_next_->WriteVis(visualization_, true);
 
   // dump observations
   //  output_observations_.print(std::cout);

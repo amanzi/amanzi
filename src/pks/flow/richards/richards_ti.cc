@@ -21,7 +21,8 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
   std::cout << "Richards Residual calculation:" << std::endl;
-  std::cout << "  p: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+  std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
+  std::cout << "  p1: " << (*u)("cell",0,99) << " " << (*u)("face",0,497) << std::endl;
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -39,11 +40,13 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
-  std::cout << "  res (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
-  std::cout << "  res (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 };
 
 /* ******************************************************************
@@ -51,9 +54,11 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 ****************************************************************** */
 void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
-  std::cout << "  p: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
+  std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
+  std::cout << "  p1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
-  std::cout << "  PC*p: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
+  std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
+  std::cout << "  PC*p1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,497) << std::endl;
 };
 
 
@@ -91,15 +96,11 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
 * Compute new preconditioner B(p, dT_prec).
 ****************************************************************** */
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+  std::cout << "Precon update at t = " << t << std::endl;
   // update state with the solution up.
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_);
   UpdateSecondaryVariables_(S_next_);
-
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S_next_);
-  Teuchos::RCP<const CompositeVector> rel_perm_faces =
-    S_next_->GetFieldData("rel_perm_faces");
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -107,9 +108,14 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
+  // update the rel perm according to the scheme of choice
+  UpdatePermeabilityData_(S_next_);
+  Teuchos::RCP<const CompositeVector> rel_perm_faces =
+    S_next_->GetFieldData("rel_perm_faces");
+
   preconditioner_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
   preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxesToOperator_(S_next_, preconditioner_);
+  AddGravityFluxes_(S_next_, preconditioner_);
 
   // update with accumulation terms
   Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("pressure");
@@ -148,10 +154,10 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
     // + (n_l - omega_g * n_g) * d(sat_l)/d(p_c) * d(p_c)/dp
     result += -((*n_liq)(c) - (*mol_frac_gas)(c)*(*n_gas)(c))
-      * wrm_->d_saturation((*p_atm) - p);
+                * wrm_->d_saturation((*p_atm) - p);
 
-    Acc_cells[c] += result * (*cell_volume)(c) / h;
-    Fc_cells[c] += result * (*cell_volume)(c) / h * p;
+    Acc_cells[c] += phi * result * (*cell_volume)(c) / h;
+    Fc_cells[c] += phi * result * (*cell_volume)(c) / h * p;
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

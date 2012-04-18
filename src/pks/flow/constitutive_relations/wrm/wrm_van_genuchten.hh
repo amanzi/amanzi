@@ -11,12 +11,14 @@
 #define _FLOWRELATIONS_WRM_VAN_GENUCHTEN_
 
 #include "Teuchos_ParameterList.hpp"
+#include "wrm.hh"
+#include "factory.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class WRMVanGenuchten {
+class WRMVanGenuchten : public WRM {
 
 public:
   explicit WRMVanGenuchten(Teuchos::ParameterList& wrm_plist);
@@ -42,6 +44,8 @@ public:
 
   // the following is for smoothing the saturation and k_relative curves
   double pc_transition_; // we smooth curves in the interval [0, pc_transition]
+
+  static Utils::RegisteredFactory<WRM,WRMVanGenuchten> factory_;
 };
 
 } //namespace

@@ -6,7 +6,7 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Internal energy model for gas, relative to water @237.15K
+Internal energy model for water_vapor, relative to water @237.15K
 
 See ATS process model documentation's permafrost physical properties
 documentation for details.
@@ -14,8 +14,8 @@ documentation for details.
 UNITS: J/mol
 ------------------------------------------------------------------------- */
 
-#ifndef INTERNAL_ENERGY_GAS_
-#define INTERNAL_ENERGY_GAS_
+#ifndef INTERNAL_ENERGY_WATER_VAPOR_
+#define INTERNAL_ENERGY_WATER_VAPOR_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -23,10 +23,10 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class InternalEnergyGas {
+class InternalEnergyWaterVapor {
 
 public:
-  InternalEnergyGas(Teuchos::ParameterList& plist);
+  InternalEnergyWaterVapor(Teuchos::ParameterList& plist);
 
   bool IsMolarBasis() { return molar_basis_; }
 

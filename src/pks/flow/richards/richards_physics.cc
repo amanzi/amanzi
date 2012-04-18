@@ -25,7 +25,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxesToOperator_(S, matrix_);
+  AddGravityFluxes_(S, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
@@ -133,7 +133,7 @@ void Richards::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
   }
 
   // calculate rel perm using WRM
-  RelativePermeability_(S, *sat_liq, *p_atm, rel_perm);
+  RelativePermeability_(S, *pres, *p_atm, rel_perm);
 };
 
 void Richards::DensityLiquid_(const Teuchos::RCP<State>& S,
@@ -210,7 +210,7 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
  * Routine updates elemental discretization matrices and must be
  * called before applying boundary conditions and global assembling.
  ****************************************************************** */
-void Richards::AddGravityFluxesToOperator_(const Teuchos::RCP<State>& S,
+void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<Operators::MatrixMFD>& matrix) {
 
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
@@ -222,16 +222,14 @@ void Richards::AddGravityFluxesToOperator_(const Teuchos::RCP<State>& S,
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  std::vector<Epetra_SerialDenseVector>& Ff_cells = matrix->Ff_cells();
-  std::vector<double>& Fc_cells = matrix->Fc_cells();
 
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Epetra_SerialDenseVector& Ff = Ff_cells[c];
-    double& Fc = Fc_cells[c];
+    Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+    double& Fc = matrix->Fc_cells()[c];
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];

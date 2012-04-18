@@ -10,6 +10,7 @@ Author: Ethan Coon
 #include "bdf2_time_integrator.hh"
 #include "advection_factory.hh"
 #include "energy_bc_factory.hh"
+#include "thermal_conductivity_factory.hh"
 
 #include "two_phase.hh"
 
@@ -73,12 +74,12 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
 
   // constitutive relations
   Teuchos::ParameterList tcm_plist = energy_plist_.sublist("Thermal Conductivity Model");
-  thermal_conductivity_model_ =
-    Teuchos::rcp(new EnergyRelations::TwophaseThermalConductivity(tcm_plist));
+  EnergyRelations::ThermalConductivityTwoPhaseFactory tc_factory;
+  thermal_conductivity_model_ = tc_factory.createThermalConductivityModel(tcm_plist);
 
   Teuchos::ParameterList ieg_plist = energy_plist_.sublist("Internal Energy Gas Model");
   internal_energy_gas_model_ =
-    Teuchos::rcp(new EnergyRelations::InternalEnergyGas(ieg_plist));
+    Teuchos::rcp(new EnergyRelations::InternalEnergyWaterVapor(ieg_plist));
 
   Teuchos::ParameterList iel_plist = energy_plist_.sublist("Internal Energy Liquid Model");
   internal_energy_liquid_model_ =

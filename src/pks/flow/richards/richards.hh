@@ -23,7 +23,7 @@
 #include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
 
-#include "wrm_van_genuchten.hh"
+#include "wrm.hh"
 #include "eos.hh"
 #include "eos_vapor_in_gas.hh"
 
@@ -85,6 +85,10 @@ private:
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& temperature);
 
+  // bdf needs help
+  void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
+                                       const Teuchos::RCP<CompositeVector>& pres);
+
   // computational/convenience methods
   void DeriveDarcyFlux_(const CompositeVector& pressure,
                         const Teuchos::RCP<CompositeVector>& flux);
@@ -118,7 +122,7 @@ private:
   void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
 
   // -- gravity contributions
-  void AddGravityFluxesToOperator_(const Teuchos::RCP<State>& S,
+  void AddGravityFluxes_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<Operators::MatrixMFD>& matrix);
   void AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& darcy_mass_flux);
@@ -171,7 +175,7 @@ private:
 
   // constitutive relations
   Teuchos::RCP<FlowRelations::EOS> eos_liquid_;
-  Teuchos::RCP<FlowRelations::WRMVanGenuchten> wrm_;
+  Teuchos::RCP<FlowRelations::WRM> wrm_;
   Teuchos::RCP<FlowRelations::EOSVaporInGas> eos_gas_;
 
   // mathematical operators
@@ -180,6 +184,7 @@ private:
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
   double atol_;
   double rtol_;
+  double time_step_reduction_factor_;
 
   // boundary condition data
   Teuchos::RCP<BoundaryFunction> bc_pressure_;

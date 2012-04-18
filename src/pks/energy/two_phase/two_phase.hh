@@ -24,9 +24,9 @@ us to the air-water system.
 #include "bdf_time_integrator.hh"
 #include "bdf_fn_base.hh"
 
-#include "twophase_thermal_conductivity.hh"
+#include "thermal_conductivity_twophase.hh"
 #include "internal_energy_linear.hh"
-#include "internal_energy_gas.hh"
+#include "internal_energy_water_vapor.hh"
 #include "advection.hh"
 #include "matrix_mfd.hh"
 
@@ -129,8 +129,8 @@ private:
   std::vector<double> bc_values_;
 
   // constitutive relations
-  Teuchos::RCP<EnergyRelations::TwophaseThermalConductivity> thermal_conductivity_model_;
-  Teuchos::RCP<EnergyRelations::InternalEnergyGas> internal_energy_gas_model_;
+  Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhase> thermal_conductivity_model_;
+  Teuchos::RCP<EnergyRelations::InternalEnergyWaterVapor> internal_energy_gas_model_;
   Teuchos::RCP<EnergyRelations::InternalEnergyLinear> internal_energy_liquid_model_;
   Teuchos::RCP<EnergyRelations::InternalEnergyLinear> internal_energy_rock_model_;
 

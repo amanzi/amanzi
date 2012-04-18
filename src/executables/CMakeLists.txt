@@ -27,9 +27,11 @@ WHOLE_ARCHIVE(pk_energy_constant_temperature)
 WHOLE_ARCHIVE(pk_energy_two_phase)
 WHOLE_ARCHIVE(pk_transport_passive_tracer)
 WHOLE_ARCHIVE(pk_flow_richards)
+WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(mpc)
 
 WHOLE_ARCHIVE(flow_relations_eos)
+WHOLE_ARCHIVE(flow_relations_wrm)
 
 target_link_libraries(ats
                       coordinator
@@ -41,10 +43,11 @@ target_link_libraries(ats
                       ${pk_energy_two_phase}
                       ${pk_flow_richards}
                       energy_bc_factory
-                      energy_constitutive_relations
+                      ${energy_relations_thermal_conductivity}
+                      energy_relations_internal_energy
                       flow_bc_factory
                       ${flow_relations_eos}
-                      flow_relations_wrm
+                      ${flow_relations_wrm}
                       advection
                       divgrad
                       amanzi_whetstone
