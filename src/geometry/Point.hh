@@ -2,6 +2,7 @@
 #define   __POINT_HXX
 
 #include  <iostream>
+#include  <vector>
 #include  <math.h>
 
 
