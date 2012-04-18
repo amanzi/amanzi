@@ -98,7 +98,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (flux[n] * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
+      if (flux[f] * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
       else if (bc_markers[f] != FLOW_BC_FACE_NULL) (*Krel_faces)[f] = (*Krel_cells)[c];
     }
   }
