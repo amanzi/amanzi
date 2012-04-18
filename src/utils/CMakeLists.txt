@@ -21,7 +21,14 @@ include(PrintVariable)
 # through these variables.
 project(ATK)
 
-set(atk_inc_files Utils.hh)
+set(atk_inc_files Utils.hh
+                  Timer.hh
+)
+
+add_library(atk Timer.cc
+)
+
+add_install_library(atk)
 
 #
 # Install Targets

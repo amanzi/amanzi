@@ -41,7 +41,7 @@ set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIB
 list(REVERSE time_integration_tpl_libs)
 list(REMOVE_DUPLICATES time_integration_tpl_libs)
 list(REVERSE time_integration_tpl_libs)
-target_link_libraries(time_integration error_handling solvers ${time_integration_tpl_libs})
+target_link_libraries(time_integration error_handling solvers ${time_integration_tpl_libs} atk)
 
 #
 # Install Targets
