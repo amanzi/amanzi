@@ -24,9 +24,6 @@ us to the air-water system.
 #include "bdf_time_integrator.hh"
 #include "bdf_fn_base.hh"
 
-#include "twophase_thermal_conductivity.hh"
-#include "internal_energy_linear.hh"
-#include "internal_energy_gas.hh"
 #include "advection.hh"
 #include "matrix_mfd.hh"
 

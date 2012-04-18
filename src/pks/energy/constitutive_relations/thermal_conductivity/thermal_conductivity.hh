@@ -6,19 +6,13 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Simple model of two-phase thermal conductivity, based upon:
-
-- Interpolation between saturated and dry conductivities via a Kersten number.
-- Power-law Kersten number.
-- Emperical fit for dry conductivity.
-
-See ATS process model documentation's permafrost model for details.
+Base of a Thermal Conductivity relation.
 
 UNITS: ????
 ------------------------------------------------------------------------- */
 
-#ifndef TWOPHASE_THERMAL_CONDUCTIVITY_HH_
-#define TWOPHASE_THERMAL_CONDUCTIVITY_HH_
+#ifndef PK_ENERGY_RELATIONS_THERMAL_CONDUCTIVITY_HH_
+#define PK_ENERGY_RELATIONS_THERMAL_CONDUCTIVITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 

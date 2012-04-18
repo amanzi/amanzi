@@ -2,7 +2,8 @@
 
 #
 #  ATS
-#    Flow PK class
+#    Energy PK class
 #
 
-add_library(energy_constitutive_relations twophase_thermal_conductivity.cc internal_energy_gas.cc internal_energy_linear.cc)
+add_subdirectory(internal_energy)
+add_subdirectory(thermal_conductivity)

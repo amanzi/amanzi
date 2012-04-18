@@ -13,6 +13,8 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+Utils::RegisteredFactory<WRM,WRMVanGenuchten> WRMVanGenuchten::factory_("van Genuchten");
+
 /* ******************************************************************
  * Setup fundamental parameters for this model.
  ****************************************************************** */
@@ -63,7 +65,7 @@ double WRMVanGenuchten::saturation(double pc) {
  ****************************************************************** */
 double WRMVanGenuchten::d_saturation(double pc) {
   if (pc > 0.0) {
-    return m_*n_ * pow(1.0 + pow(alpha_*pc, n_), -m_-1.0) * pow(alpha_*pc, n_-1) * alpha_ * (1.0 - sr_);
+    return -m_*n_ * pow(1.0 + pow(alpha_*pc, n_), -m_-1.0) * pow(alpha_*pc, n_-1) * alpha_ * (1.0 - sr_);
   } else {
     return 0.0;
   }
