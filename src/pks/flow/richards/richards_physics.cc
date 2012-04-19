@@ -180,20 +180,61 @@ void Richards::DensityGas_(const Teuchos::RCP<State>& S,
 void Richards::Saturation_(const Teuchos::RCP<State>& S,
                            const CompositeVector& pres, const double& p_atm,
                            const Teuchos::RCP<CompositeVector>& sat_liq) {
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=c_owned; ++c) {
-    (*sat_liq)("cell",0,c) = wrm_->saturation(p_atm - pres("cell",0,c));
+  // loop over region/wrm pairs
+  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
+       wrm!=wrm_.end(); ++wrm) {
+    // get the owned cells in that region
+    std::string region = (*wrm)->first;
+    int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+    std::vector<unsigned int> cells(ncells);
+    S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+    // use the wrm to evaluate saturation on each cell in the region
+    for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      (*sat_liq)("cell",0,*c) = (*wrm)->second->saturation(p_atm - pres("cell",0,*c));
+    }
+  }
+};
+
+void Richards::DSaturationDp_(const Teuchos::RCP<State>& S,
+        const CompositeVector& pres, const double& p_atm,
+        const Teuchos::RCP<CompositeVector>& dsat_liq) {
+  // loop over region/wrm pairs
+  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
+       wrm!=wrm_.end(); ++wrm) {
+    // get the owned cells in that region
+    std::string region = (*wrm)->first;
+    int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+    std::vector<unsigned int> cells(ncells);
+    S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+    // use the wrm to evaluate saturation on each cell in the region
+    for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      (*dsat_liq)("cell",0,*c) = -(*wrm)->second->d_saturation(p_atm - pres("cell",0,*c));
+    }
   }
 };
 
 void Richards::RelativePermeability_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
         const Teuchos::RCP<CompositeVector>& rel_perm) {
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=c_owned; ++c) {
-    (*rel_perm)("cell",0,c) = wrm_->k_relative(p_atm - pres("cell",0,c));
+
+  // loop over region/wrm pairs
+  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
+       wrm!=wrm_.end(); ++wrm) {
+    // get the owned cells in that region
+    std::string region = (*wrm)->first;
+    int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+    std::vector<unsigned int> cells(ncells);
+    S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+    // use the wrm to evaluate saturation on each cell in the region
+    for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      (*rel_perm)("cell",0,*c) = (*wrm)->second->k_relative(p_atm - pres("cell",0,*c));
+    }
   }
 };
+
 
 /* ******************************************************************
  * Converts absolute perm to tensor

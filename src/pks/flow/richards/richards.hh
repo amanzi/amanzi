@@ -153,6 +153,11 @@ private:
                    const double& p_atm,
                    const Teuchos::RCP<CompositeVector>& sat_liq);
 
+  void DSaturationDp_(const Teuchos::RCP<State>& S,
+                      const CompositeVector& pres,
+                      const double& p_atm,
+                      const Teuchos::RCP<CompositeVector>& dsat_liq);
+
   void RelativePermeability_(const Teuchos::RCP<State>& S,
                              const CompositeVector& pres,
                              const double& p_atm,
@@ -175,8 +180,11 @@ private:
 
   // constitutive relations
   Teuchos::RCP<FlowRelations::EOS> eos_liquid_;
-  Teuchos::RCP<FlowRelations::WRM> wrm_;
   Teuchos::RCP<FlowRelations::EOSVaporInGas> eos_gas_;
+
+  // wrms specified on a region-basis
+  typedef std::pair< std::string, Teuchos::RCP<FlowRelations::WRM> > WRMRegionPair;
+  std::vector< Teuchos::RCP<WRMRegionPair> > wrm_;
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
