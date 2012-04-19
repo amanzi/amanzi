@@ -54,8 +54,9 @@ endforeach()
 option(ENABLE_BLA_Search "Search for BLAS/LAPACK libraries" OFF)
 if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
-      message(STATUS "Search all possible BLAS vendor types")
+      set(BLA_VENDOR All)
     endif()
+    message(STATUS "Searching BLAS libraries vendor - ${BLA_VENDOR}")
     find_package(BLAS)
     if (NOT BLAS_FOUND )
       message(FATAL_ERROR "Failed to locate BLAS libraries."
@@ -76,8 +77,9 @@ endif()
 # LAPACK
 if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
-      message(STATUS "Search all possible BLAS vendor types")
+      set(BLA_VENDOR All)
     endif()
+    message(STATUS "Searching LAPACK libraries vendor - ${BLA_VENDOR}")
     find_package(LAPACK)
     if ( NOT LAPACK_FOUND )
       message(FATAL_ERROR "Failed to locate LAPACK libraries."
@@ -90,6 +92,7 @@ endif()
 if ( LAPACK_LIBRARIES )
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_LAPACK_LIBRARIES:FILEPATH=${LAPACK_LIBRARIES}")
+            message(STATUS "Trilinos LAPACK libraries: ${LAPACK_LIBRARIES}")    
 endif()
 
 # Boost
