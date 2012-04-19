@@ -50,6 +50,7 @@ if ( ENABLE_Unstructured )
   include_directories(${MPC_SOURCE_DIR})
   include_directories(${EXO_SOURCE_DIR})
   include_directories(${EXEC_SOURCE_DIR})
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 
   link_directories(${EXEC_SOURCE_DIR})
 

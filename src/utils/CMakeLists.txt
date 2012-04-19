@@ -23,9 +23,11 @@ project(ATK)
 
 set(atk_inc_files Utils.hh
                   Timer.hh
+                  TimerManager.hh
 )
 
 add_library(atk Timer.cc
+                TimerManager.cc
 )
 
 add_install_library(atk)
