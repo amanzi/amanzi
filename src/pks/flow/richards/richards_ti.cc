@@ -136,6 +136,10 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
   int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  Teuchos::RCP<CompositeVector> dsat_liq = Teuchos::rcp(new CompositeVector(*sat_liq));
+  DSaturationDp_(S_next_, *pres, *p_atm, dsat_liq);
+
   for (int c=0; c!=ncells; ++c) {
     // many terms here...
     // accumulation term is d/dt ( phi * (omega_g*n_g*s_g + n_l*s_l) )
@@ -153,8 +157,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     result += (*sat_liq)(c) * eos_liquid_->DMolarDensityDp(T,p);
 
     // + (n_l - omega_g * n_g) * d(sat_l)/d(p_c) * d(p_c)/dp
-    result += -((*n_liq)(c) - (*mol_frac_gas)(c)*(*n_gas)(c))
-                * wrm_->d_saturation((*p_atm) - p);
+    result += ((*n_liq)(c) - (*mol_frac_gas)(c)*(*n_gas)(c)) * (*dsat_liq)(c);
 
     Acc_cells[c] += phi * result * (*cell_volume)(c) / h;
     Fc_cells[c] += phi * result * (*cell_volume)(c) / h * p;

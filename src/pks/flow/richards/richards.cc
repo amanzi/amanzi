@@ -83,16 +83,38 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   for (int c=0; c!=c_owned; ++c) K_[c].init(S->mesh()->space_dimension(),1);
 
   // constitutive relations
+  // -- liquid eos
   Teuchos::ParameterList water_eos_plist = flow_plist_.sublist("Water EOS");
   FlowRelations::EOSFactory eos_factory;
   eos_liquid_ = eos_factory.createEOS(water_eos_plist);
 
+  // -- gas eos
   Teuchos::ParameterList eos_gas_plist = flow_plist_.sublist("Vapor and Gas EOS");
   eos_gas_ = Teuchos::rcp(new FlowRelations::EOSVaporInGas(eos_gas_plist));
 
-  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Model");
+  // -- water retention models
+  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Models");
+  // count the number of region-model pairs
+  int wrm_count;
+  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
+    if (wrm_plist.isSublist(wrm_plist.name(i))) {
+      wrm_count++;
+    } else {
+      std::string message("Richards: water retention model contains an entry that is not a sublist.");
+      Exceptions::amanzi_throw(message);
+    }
+  }
+  wrm_.resize(wrm_count);
+
+  // instantiate the region-model pairs
   FlowRelations::WRMFactory wrm_factory;
-  wrm_ = wrm_factory.createWRM(wrm_plist);
+  int iblock = 0;
+  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
+    Teuchos::ParameterList wrm_region_list = wrm_plist.sublist(wrm_plist.name(i));
+    std::string region = wrm_region_list.get<std::string>("Region");
+    wrm_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
+    iblock++;
+  }
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
@@ -109,7 +131,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // Relative permeability method
-  string method_name = mfd_plist.get<string>("Relative permeability method", "Upwind with gravity");
+  string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
   if (method_name == "Upwind with gravity") {
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (method_name == "Cell centered") {
