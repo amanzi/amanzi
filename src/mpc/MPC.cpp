@@ -33,7 +33,9 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
     parameter_list(parameter_list_),
     mesh_maps(mesh_maps_),
     comm(comm_),
-    output_observations(output_observations_) {
+    output_observations(output_observations_),
+    transport_subcycling(0)
+{
   mpc_init();
 }
 
@@ -81,15 +83,9 @@ void MPC::mpc_init() {
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     *out << "The following process kernels are enabled: ";
 
-    if (flow_enabled) {
-      *out << "Flow ";
-    }
-    if (transport_enabled) {
-      *out << "Transport ";
-    }
-    if (chemistry_enabled) {
-      *out << "Chemistry ";
-    }
+    if (flow_enabled) *out << "Flow ";
+    if (transport_enabled) *out << "Transport ";
+    if (chemistry_enabled) *out << "Chemistry ";
     *out << std::endl;
   }
 
@@ -121,6 +117,9 @@ void MPC::mpc_init() {
 
     Teuchos::ParameterList transport_parameter_list =
         parameter_list.sublist("Transport");
+
+    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling",false);
+    transport_subcycling = (subcycling) ? 1 : 0;
 
     TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
     TPK->InitPK();
@@ -277,8 +276,7 @@ void MPC::cycle_driver () {
     }
   }
 
-  // set the iteration counter to zero
-  int iter = 0;
+  int iter = 0;  // set the iteration counter to zero
   S->set_cycle(iter);
 
   // read the checkpoint file as requested
@@ -295,7 +293,8 @@ void MPC::cycle_driver () {
     // write visualization data for timestep if requested
     S->write_vis(*visualization, &(*aux), auxnames);
   } else {
-    S->write_vis(*visualization);
+    // always write the initial visualization dump
+    S->write_vis(*visualization, true);
   }
 
   // write a restart dump if requested (determined in dump_state)
@@ -496,7 +495,7 @@ void MPC::cycle_driver () {
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          TPK->advance(mpc_dT);
+          TPK->advance(mpc_dT, transport_subcycling);
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
             Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
@@ -549,12 +548,12 @@ void MPC::cycle_driver () {
 
       // write visualization if requested
       bool force(false);
-      if ( abs(S->get_time() - T1) < 1e-7) { 
+      if (abs(S->get_time() - T1) < 1e-7) { 
 	force = true;
       }
 
-      if ( ti_mode == INIT_TO_STEADY ) 
-        if ( abs(S->get_time() - Tswitch) < 1e-7 ) {
+      if (ti_mode == INIT_TO_STEADY) 
+        if (abs(S->get_time() - Tswitch) < 1e-7) {
           force = true;
         }
 

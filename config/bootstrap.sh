@@ -16,6 +16,10 @@
 TRUE=1
 FALSE=0
 
+# System information
+system_name=`uname`
+system_arch=`uname -m`
+
 # Known compiler lists
 known_c_compilers="mpicc cc gcc icc"
 known_cxx_compilers="mpiCC mpicxx CC g++ icpc"
@@ -45,7 +49,7 @@ hg_binary=`which hg`
 curl_binary=`which curl`
 
 # CMake
-cmake_binary=
+cmake_binary=`which cmake`
 cmake_version=2.8.7
 cmake_url=http://www.cmake.org/files/v2.8
 cmake_archive_file=cmake-${cmake_version}.tar.gz
@@ -71,6 +75,9 @@ tpl_build_dir="${dflt_build_prefix}/TPL_BUILD"
 tpl_download_dir=${tpl_build_dir}/Downloads
 tpl_install_prefix=${dflt_install_prefix}/tpls
 
+# Color output display
+no_color=$FALSE
+
 # ---------------------------------------------------------------------------- #
 #
 # Begin Functions
@@ -84,20 +91,31 @@ function status_message()
 {
 
   local GREEN='32m'
-  echo -n "[`date`]"
-  echo -e "\033[$GREEN $1\033[m"
+  if [ "${no_color}" -eq "${TRUE}" ]; then
+    echo "[`date`] $1"
+  else
+    echo "[`date`] \033[$GREEN $1\033[m"
+  fi  
 
 }
 function error_message()
 {
   local RED='31m'
-  echo -e "Amanzi Bootstrap ERROR:\033[$RED $1\033[m"
+  if [ "${no_color}" -eq "${TRUE}" ]; then
+    echo "Amanzi Bootstrap ERROR: $1" 1>&2
+  else  
+    echo "Amanzi Bootstrap ERROR:\033[$RED $1\033[m" 1>&2 
+  fi
 }
 
 function warn_message()
 {
   local PINK='35m'
-  echo -e "Amanzi Bootstrap Warning:\033[$PINK $1\033[m"
+  if [ "${no_color}" -eq "${TRUE}" ]; then
+    echo "Amanzi Bootstrap Warning: $1" 1>&2
+  else  
+    echo "Amanzi Bootstrap Warning:\033[$PINK $1\033[m" 1>&2
+  fi
 }
 
 function fatal_message()
@@ -169,6 +187,8 @@ Configuration:
   --parallel=n            build in parallel, where n is
                           number of maximum make jobs ['"${parallel_jobs}"']
 
+  --no-color              deactivate color-coded status output ['"${no_color}"']                        
+
   --tpl-config-file=FILE  define a CMake TPL configuration file. If this
                           option is selected, '"$0"' will NOT build the TPLs.
   
@@ -179,7 +199,7 @@ Tool definitions:
   --with-cxx-compiler=FILE   FILE is the C++ compiler
   --with-fort-compiler=FILE  FILE is the Fortran compiler
 
-  --with-cmake=FILE          FILE is the CMake binary ['"${cmake_binary}"']
+  --with-cmake[=FILE]        FILE is the CMake binary ['"${cmake_binary}"'] without FILE builds CMake
   --with-hg=FILE             FILE is the Mercurial binary ['"${hg_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
@@ -248,7 +268,7 @@ function parse_argv()
   while [ $i -le ${last} ]
   do
     opt=${argv[$i]}
-    echo "i: ${i} opt=$opt last: $last"
+    #echo "i: ${i} opt=$opt last: $last"
     case ${opt} in
 
       -h|--h|--help)
@@ -262,6 +282,10 @@ function parse_argv()
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal ${opt} 'parallel'`
+                 ;;
+
+      --no-color)
+                 no_color=${TRUE}
                  ;;
 
       --with-c-compiler=*)
@@ -278,6 +302,10 @@ function parse_argv()
 
       --with-cmake=*)
                  cmake_binary=`parse_option_with_equal ${opt} 'with-cmake'`
+                 ;;
+
+      --with-cmake)
+                 cmake_binary=
                  ;;
 
       --with-hg=*)
@@ -612,7 +640,7 @@ function define_fort_compiler
 {
    if [ -z "${build_fort_compiler}" ]; then
  
-    status_message "Searching for a C++ compiler"
+    status_message "Searching for a Fortran compiler"
 
     # build a list to search
     fort_search_list=
@@ -676,11 +704,12 @@ function check_tools
 
   # Check CMake
   if [ -z "${cmake_binary}" ]; then 
+    status_message "CMake not defined. Will build"
     build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
   fi
   if [ ! -e "${cmake_binary}" ]; then
-    error_message "CMake binary ${cmake_binary} does not exist"
-    exit_now 30
+    error_message "CMake binary does not exist. Will build."
+    build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
   fi
 
   status_message "Tool check complete"

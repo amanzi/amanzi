@@ -63,7 +63,9 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   
   bool steady, init_to_steady;
   bool flow_enabled, transport_enabled, chemistry_enabled;
-    
+
+  int transport_subcycling; 
+   
   std::string flow_model;
     
   // restart from checkpoint file

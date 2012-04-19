@@ -21,7 +21,7 @@ set(ENABLE_Unstructured @ENABLE_Unstructured@ CACHE BOOL "Enable unstructured me
 
 set(ENABLE_STK_Mesh @ENABLE_STK_Mesh@ CACHE BOOL "Enable STK Unstructured Mesh Toolkit")
 set(ENABLE_MSTK_Mesh @ENABLE_MSTK_Mesh@ CACHE BOOL "Enable MSTK Unstructured Mesh Toolkit")
-set(ENABLE_MOAB_Mesh FALSE CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
+set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
 
 
 # --------------------------------------------------------------------------- #
@@ -66,6 +66,9 @@ set(ExodusII_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ExodusII installation prefix")
 # MSTK
 set(MSTK_INCLUDE_DIR @MSTK_INCLUDE_DIR@ CACHE PATH "MSTK include installation path")
 set(MSTK_LIBRARY_DIR @MSTK_LIBRARY_DIR@ CACHE PATH "MSTK include installation path")
+
+# MOAB
+set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
 
 # Trilinos  
 set(Trilinos_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
