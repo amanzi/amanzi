@@ -56,13 +56,10 @@ void MPC::mpc_init() {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-
-
   mpc_parameter_list =  parameter_list.sublist("MPC");
 
   reset_times_.resize(0);
   reset_times_dt_.resize(0);
-  observation_times_.resize(0);
   
   read_parameter_list();
 
@@ -73,7 +70,21 @@ void MPC::mpc_init() {
       observation_times_ = parameter_list.sublist("Observation Data").get<Teuchos::Array<double> >("Observation Times");    
     }
   }
-
+  // now we need to get the visualization times from the visualization data list
+  visualization_times_.resize(0);
+  if (parameter_list.isSublist("Visualization Data")) {
+    if (parameter_list.sublist("Visualization Data").isParameter("Visualization Times")) {
+      visualization_times_ = parameter_list.sublist("Visualization Data").get<Teuchos::Array<double> >("Visualization Times");    
+    }
+  }
+  // We will combine the visualization times and the observation times lists, sort and remove duplicates.
+  waypoint_times_.resize(observation_times_.size()+visualization_times_.size());
+  std::copy(observation_times_.begin(), observation_times_.end(), waypoint_times_.begin());
+  std::copy(visualization_times_.begin(), visualization_times_.end(), waypoint_times_.begin()+observation_times_.size());
+  std::inplace_merge(waypoint_times_.begin(), waypoint_times_.begin()+observation_times_.size(), waypoint_times_.end());
+  Teuchos::Array<double>::iterator it = std::unique( waypoint_times_.begin(), waypoint_times_.end() );
+  waypoint_times_.resize( it - waypoint_times_.begin() );
+  
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
   transport_enabled =
@@ -410,22 +421,22 @@ void MPC::cycle_driver () {
       // take the mpc time step as the min of all suggested time steps 
       mpc_dT = std::min( std::min( std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT );
 
-      // make sure we hit the observation times exactly
-      if (observation_times_.size()>0) {
-	int next_time_index(-1);
-	for (int ii=0; ii<observation_times_.size(); ii++) {
-	  if (S->get_time() < observation_times_[ii]) {
-	    next_time_index = ii;
-	    break;
-	  }	  
-	}
-	if (next_time_index >= 0) {
-	  // now we are trying to hit the next reset time exactly
-	  if (S->get_time()+2*mpc_dT > observation_times_[next_time_index]) {
-	    limiter_dT = time_step_limiter(S->get_time(), mpc_dT, observation_times_[next_time_index]);
-	    tslimiter = MPC_LIMITS;
-	  }	  
-	}
+      // make sure we hit the waypoint times exactly
+      if (waypoint_times_.size()>0) {
+        int next_time_index(-1);
+	    for (int ii=0; ii<waypoint_times_.size(); ii++) {
+	      if (S->get_time() < waypoint_times_[ii]) {
+	        next_time_index = ii;
+	        break;
+	      }	  
+	    }
+	    if (next_time_index >= 0) {
+	      // now we are trying to hit the next reset time exactly
+	      if (S->get_time()+2*mpc_dT > waypoint_times_[next_time_index]) {
+	        limiter_dT = time_step_limiter(S->get_time(), mpc_dT, waypoint_times_[next_time_index]);
+	        tslimiter = MPC_LIMITS;
+	      }	  
+	    }
       }
 
       // take the mpc time step as the min of the last limiter and itself 
