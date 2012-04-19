@@ -40,7 +40,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(
 ****************************************************************** */
 double WRM_vanGenuchten::k_relative(double pc)
 {
-  if (pc > 0.0) {
+  if (pc > pc0) {
     double se = pow(1.0 + pow(alpha*pc, n), -m);
     return sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m), m), 2.0);
   } else if (pc <= 0.0) {

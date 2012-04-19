@@ -282,7 +282,7 @@ void MPC::cycle_driver () {
   // read the checkpoint file as requested
   if (restart_requested == true) {
     // re-initialize the state object
-    restart->read_state( *S, restart_from_filename );
+    restart->read_state(*S, restart_from_filename);
     iter = S->get_cycle();
   }
 
