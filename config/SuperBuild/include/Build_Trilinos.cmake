@@ -51,8 +51,8 @@ foreach (var ${MPI_CMAKE_ARGS} )
 endforeach() 
 
 # BLAS
-option(ENABLE_BLAS_Search "Search for BLAS libraries" OFF)
-if (ENABLE_BLAS_Search)
+option(ENABLE_BLA_Search "Search for BLAS/LAPACK libraries" OFF)
+if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
       message(STATUS "Search all possible BLAS vendor types")
     endif()
@@ -60,8 +60,8 @@ if (ENABLE_BLAS_Search)
     if (NOT BLAS_FOUND )
       message(FATAL_ERROR "Failed to locate BLAS libraries."
                           "Define BLAS libraries with"
-  "\n-DBLAS_LIBRARIES:STRING=....\n"
-  "and re-run cmake")
+                          "\n-DBLAS_LIBRARIES:STRING=....\n"
+                          "and re-run cmake")
     endif()      
 endif()
 
@@ -74,7 +74,7 @@ if ( BLAS_LIBRARIES )
 endif()            
  
 # LAPACK
-if (ENABLE_BLAS_Search)
+if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
       message(STATUS "Search all possible BLAS vendor types")
     endif()
@@ -82,14 +82,14 @@ if (ENABLE_BLAS_Search)
     if ( NOT LAPACK_FOUND )
       message(FATAL_ERROR "Failed to locate LAPACK libraries."
                           "Define LAPACK libraries with"
-  "\n-DLAPACK_LIBRARIES:STRING=....\n"
-  "and re-run cmake")
+                          "\n-DLAPACK_LIBRARIES:STRING=....\n"
+                          "and re-run cmake")
     endif()
 endif()
 
 if ( LAPACK_LIBRARIES )
   list(APPEND Trilinos_CMAKE_TPL_ARGS
-    "-DTPL_LAPACK_LIBRARIES:FILEPATH=${LAPACK_LIBRARIES}")
+              "-DTPL_LAPACK_LIBRARIES:FILEPATH=${LAPACK_LIBRARIES}")
 endif()
 
 # Boost

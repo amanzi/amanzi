@@ -100,49 +100,17 @@ foreach(_library ${_list})
   set(_combined_name ${_combined_name}_${_library})
 
   if(_libraries_work)
-    if ( BLA_VENDOR_PATH )
-        print_variable(BLA_VENDOR_PATH)
-        print_variable(_library)
+    if ( BLA_VENDOR_DIRS )
         find_library(${_prefix}_${_library}_LIBRARY
-	             NAMES ${_library}
-                     PATHS ${BLA_VENDOR_PATH}
-		     NO_DEFAULT_PATHS)
-        print_variable(${_prefix}_${_library}_LIBRARY)
+                     NAMES ${_library}
+                     PATHS "${BLA_VENDOR_DIRS}"
+                     NO_DEFAULT_PATHS)
     endif()
     
     find_library(${_prefix}_${_library}_LIBRARY
                  NAMES ${_library}
-		 PATHS ${BLA_DEFAULT_SEARCH_PATHS})
+                 PATHS ${BLA_DEFAULT_SEARCH_PATHS})
                
-
-
-#TESTING  IF (WIN32)
-#TESTING    if(BLA_STATIC)
-#TESTING      set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib;.dll")
-#TESTING    endif(BLA_STATIC)
-#TESTING    find_library(${_prefix}_${_library}_LIBRARY
-#TESTING    NAMES ${_library}
-#TESTING    PATHS ENV LIB
-#TESTING    )
-#TESTING  ENDIF (WIN32)
-#TESTING
-#TESTING  if(APPLE)
-#TESTING    if(BLA_STATIC)
-#TESTING      set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.so;.dylib")
-#TESTING    endif(BLA_STATIC)
-#TESTING    find_library(${_prefix}_${_library}_LIBRARY
-#TESTING    NAMES ${_library}
-#TESTING    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV DYLD_LIBRARY_PATH
-#TESTING    )
-#TESTING    else(APPLE)
-#TESTING    if(BLA_STATIC)
-#TESTING     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.so")
-#TESTING    endif(BLA_STATIC)
-#TESTING    find_library(${_prefix}_${_library}_LIBRARY
-#TESTING    NAMES ${_library}
-#TESTING    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV LD_LIBRARY_PATH
-#TESTING    )
-#TESTING    endif(APPLE)
 
             mark_as_advanced(${_prefix}_${_library}_LIBRARY)
             set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
