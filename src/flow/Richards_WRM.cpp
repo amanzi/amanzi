@@ -138,7 +138,7 @@ void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
     std::vector<unsigned int>::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[*i];
-      ds[*i] = WRM[mb]->d_saturation(pc);
+      ds[*i] = -WRM[mb]->dSdPc(pc);  // Negative sign indicates that dSdP = -dSdPc.
     }
   }
 }

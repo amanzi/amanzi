@@ -119,6 +119,20 @@ void Flow_PK::updateBoundaryConditions(
       bc_values[f] = atm_pressure;
     }
   }
+
+  // mark missing boundary conditions as zero flux conditions
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_markers[f] == FLOW_BC_FACE_NULL) {
+      cells.clear();
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      if (ncells == 1) {
+        bc_markers[f] = FLOW_BC_FACE_FLUX;
+        bc_values[f] = 0.0;
+      }
+    }
+  } 
 }
 
 

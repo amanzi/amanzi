@@ -28,6 +28,8 @@ WRM_vanGenuchten::WRM_vanGenuchten(
 {
   n = 1.0 / (1.0 - m);
   set_region(region);
+
+  factor_dSdPc = -m * n * alpha * (1.0 - sr);
 }
 
 
@@ -71,12 +73,16 @@ double WRM_vanGenuchten::saturation(double pc)
 
 
 /* ******************************************************************
-* Derivative of the saturation formula w.r.t. capillary pressure.                                         
+* Derivative of the saturation formula w.r.t. capillary pressure.
+* Warning: remember that dSdP = -dSdPc.                                        
 ****************************************************************** */
-double WRM_vanGenuchten::d_saturation(double pc)
+double WRM_vanGenuchten::dSdPc(double pc)
 {
   if (pc > 0.0) {
-    return m*n * pow(1.0 + pow(alpha*pc, n), -m-1.0) * pow(alpha*pc, n-1) * alpha * (1.0 - sr);
+    double alpha_pc = alpha*pc;
+    double x = pow(alpha_pc, n-1.0);
+    double y = x * alpha_pc;
+    return pow(1.0 + y, -m-1.0) * x * factor_dSdPc;
   } else {
     return 0.0;
   }

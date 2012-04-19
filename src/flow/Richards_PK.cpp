@@ -440,6 +440,9 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 /* ******************************************************************
 * BDF methods need a good initial guess.
 * This method gives a less smoother solution than in Flow 1.0.
+* WARNING: Each owned face must have at least one owned cell. 
+* Probability that this assumption is violated is close to zero. 
+* Even when it happens, the code will not crash.
 ****************************************************************** */
 void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
 {
@@ -447,13 +450,16 @@ void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Ep
 
   for (int f = 0; f < nfaces_owned; f++) {
     cells.clear();
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
     int ncells = cells.size();
 
-    double face_value = 0.0;
-    for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
-
-    ufaces[f] = face_value / ncells;
+    if (ncells > 0) {
+      double face_value = 0.0;
+      for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
+      ufaces[f] = face_value / ncells;
+    } else {
+      ufaces[f] = atm_pressure;
+    }
   }
 }
 
@@ -539,7 +545,7 @@ void Richards_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& 
 
 
 /* ******************************************************************
-* Adds time derivative to cell-based part of MFD algebraic system.                                               
+* Adds time derivative to the cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
 void Richards_PK::AddTimeDerivative_MFD(
     Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)

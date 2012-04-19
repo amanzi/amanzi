@@ -56,7 +56,7 @@ double WRM_fake::saturation(double pc)
 /* ******************************************************************
 * Verify (lipnikov@lanl.gov).                                         
 ****************************************************************** */
-double WRM_fake::d_saturation(double pc)
+double WRM_fake::dSdPc(double pc)
 {
   if (pc < 0.0)
     return 1.0;

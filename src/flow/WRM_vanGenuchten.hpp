@@ -1,6 +1,11 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
@@ -21,7 +26,7 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   // required methods from the base class
   double k_relative(double pc);
   double saturation(double pc);
-  double d_saturation(double pc);  
+  double dSdPc(double pc);  
   double capillaryPressure(double saturation);
   double residualSaturation() { return sr; }
 
@@ -31,7 +36,8 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   const double alpha; 
   const double sr;  // van Genuchten residual saturation
 
-  const double pc0;  // regularization threshold
+  const double pc0;  // regularization threshold (ususally 0 to 500 Pa)
+  double factor_dSdPc;  // frequently used constant
 };
 
 }  // namespace AmanziFlow
