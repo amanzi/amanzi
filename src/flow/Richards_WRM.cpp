@@ -69,7 +69,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
 
   Krel_faces->PutScalar(0.0);
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
