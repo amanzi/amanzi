@@ -599,16 +599,13 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
     }
 
 
-    // if ( plist->sublist("Execution control").isSublist("Restart from Checkpoint Data File") ) {
-    //   mpc_list.sublist("Restart from Checkpoint Data File") =
-    //       plist->sublist("Execution control").sublist("Restart from Checkpoint Data File");
-    // }
-
-
+    if ( plist->sublist("Execution control").isSublist("Restart from Checkpoint Data File") ) {
+      mpc_list.sublist("Restart from Checkpoint Data File") =
+          plist->sublist("Execution control").sublist("Restart from Checkpoint Data File");
+    }
   }
 
   mpc_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-
 
   return mpc_list;
 }
