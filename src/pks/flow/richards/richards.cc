@@ -266,7 +266,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     S->GetFieldData("darcy_flux", "flow");
 
   matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
-  matrix_->DeriveFlux(pres, darcy_flux);
+  matrix_->DeriveFlux(*pres, darcy_flux);
   AddGravityFluxesToVector_(S, darcy_flux);
 };
 
@@ -276,7 +276,7 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("darcy_velocity", "flow");
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("darcy_flux");
-  matrix_->DeriveCellVelocity(flux, velocity);
+  matrix_->DeriveCellVelocity(*flux, velocity);
 };
 
 

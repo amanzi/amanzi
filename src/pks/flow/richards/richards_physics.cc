@@ -315,8 +315,8 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
       const AmanziGeometry::Point& normal = S->mesh()->face_normal(f);
 
       if (f<f_owned && !done[f]) {
-        (*darcy_mass_flux)(f) += ((K_[c] * gravity) * normal)
-          * (*Krel)("faces",0,f) * (*rho)("cell",0,c);
+        (*darcy_flux)(f) += ((K_[c] * gravity) * normal)
+          * (*Krel)("face",0,f) * (*rho)("cell",0,c);
         done[f] = true;
       }
     }
