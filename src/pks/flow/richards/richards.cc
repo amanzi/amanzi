@@ -95,7 +95,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   // -- water retention models
   Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Models");
   // count the number of region-model pairs
-  int wrm_count;
+  int wrm_count = 0;
   for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
     if (wrm_plist.isSublist(wrm_plist.name(i))) {
       wrm_count++;
@@ -121,31 +121,33 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   FlowBCFactory bc_factory(S->mesh(), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
-  // head boundary conditions not yet implemented, as they depend on single density
+  // head boundary conditions not yet implemented, as they depend on constant density
   // bc_head_ = bc_factory.CreateStaticHead(0.0, 0.0, g);
-
-  // operator for the diffusion terms
-  Teuchos::ParameterList mfd_plist = flow_plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->mesh()));
-  matrix_->SetSymmetryProperty(true);
-  matrix_->SymbolicAssembleGlobalMatrices();
 
   // Relative permeability method
   string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
+  bool symmetric = false;
   if (method_name == "Upwind with gravity") {
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (method_name == "Cell centered") {
     Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
+    symmetric = true;
   } else if (method_name == "Upwind with Darcy flux") {
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (method_name == "Arithmetic mean") {
     Krel_method_ = FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
   }
 
+  // operator for the diffusion terms
+  Teuchos::ParameterList mfd_plist = flow_plist_.sublist("Diffusion");
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->mesh()));
+  matrix_->SetSymmetryProperty(symmetric);
+  matrix_->SymbolicAssembleGlobalMatrices();
+
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = flow_plist_.sublist("Diffusion PC");
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->mesh()));
-  preconditioner_->SetSymmetryProperty(true);
+  preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
   preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
@@ -202,7 +204,7 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
-    time_stepper_->set_initial_state(0.0, solution_, solution_dot);
+    time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
   }
 };
 
@@ -243,6 +245,8 @@ bool Richards::advance(double dt) {
   }
 
   time_stepper_->commit_solution(h, solution_);
+  solution_to_state(solution_, S_next_);
+  commit_state(h,S_next_);
   return false;
 };
 
@@ -252,28 +256,18 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // update secondary variables for IC
   UpdateSecondaryVariables_(S);
 
-  // update the BCs
-  double time = S->time();
-  bc_pressure_->Compute(time);
-  //bc_head_->Compute(time);
-  bc_flux_->Compute(time);
-  UpdateBoundaryConditions_();
-
-  // update the operator
+  // update the flux
   UpdatePermeabilityData_(S);
   Teuchos::RCP<const CompositeVector> rel_perm_faces =
-    S->GetFieldData("rel_perm_faces", "flow");
+    S->GetFieldData("rel_perm_faces");
+  Teuchos::RCP<const CompositeVector> pres =
+    S->GetFieldData("pressure");
+  Teuchos::RCP<CompositeVector> darcy_flux =
+    S->GetFieldData("darcy_flux", "flow");
 
   matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
-  matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_(S, matrix_);
-  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
-
-  // update the flux
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", "flow");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  DeriveDarcyFlux_(*pres, flux);
+  matrix_->DeriveFlux(pres, darcy_flux);
+  AddGravityFluxesToVector_(S, darcy_flux);
 };
 
 
@@ -282,7 +276,7 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("darcy_velocity", "flow");
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("darcy_flux");
-  DeriveDarcyVelocity_(*flux, velocity);
+  matrix_->DeriveCellVelocity(flux, velocity);
 };
 
 

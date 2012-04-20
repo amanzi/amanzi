@@ -22,7 +22,8 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
   std::cout << "Two-Phase Residual calculation:" << std::endl;
-  std::cout << "  T: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+  std::cout << "  T0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
+  std::cout << "  T1: " << (*u)("cell",0,99) << " " << (*u)("face",0,497) << std::endl;
 
   // pointer-copy temperature into states and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -39,23 +40,28 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // diffusion term, implicit
   ApplyDiffusion_(S_next_, res);
-  std::cout << "  res (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
-  std::cout << "  res (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 
   // advection term, explicit
   AddAdvection_(S_inter_, res, true);
-  std::cout << "  res (after advection): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res0 (after advection): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res1 (after advection): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 };
 
 // applies preconditioner to u and returns the result in Pu
 void TwoPhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
-  std::cout << "  T: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
+  std::cout << "  T0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
+  std::cout << "  T1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
-  std::cout << "  PC*T: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
+  std::cout << "  PC*T0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
+  std::cout << "  PC*T1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,497) << std::endl;
 };
 
 // computes a norm on u-du and returns the result

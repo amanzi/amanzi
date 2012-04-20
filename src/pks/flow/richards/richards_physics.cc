@@ -289,7 +289,7 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
  * Updates global Darcy vector calculated by a discretization method.
  ****************************************************************** */
 void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& darcy_mass_flux) {
+        const Teuchos::RCP<CompositeVector>& darcy_flux) {
 
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
@@ -321,18 +321,6 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
       }
     }
   }
-};
-
-
-void Richards::DeriveDarcyFlux_(const CompositeVector& pressure,
-        const Teuchos::RCP<CompositeVector>& flux) {
-  matrix_->DeriveFlux(pressure, flux);
-};
-
-
-void Richards::DeriveDarcyVelocity_(const CompositeVector& flux,
-        const Teuchos::RCP<CompositeVector>& velocity) {
-  matrix_->DeriveCellVelocity(flux, velocity);
 };
 
 } //namespace
