@@ -89,12 +89,6 @@ private:
   void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
                                        const Teuchos::RCP<CompositeVector>& pres);
 
-  // computational/convenience methods
-  void DeriveDarcyFlux_(const CompositeVector& pressure,
-                        const Teuchos::RCP<CompositeVector>& flux);
-  void DeriveDarcyVelocity_(const CompositeVector& flux,
-                            const Teuchos::RCP<CompositeVector>& velocity);
-
   // computational concerns in managing abs, rel perm
   // -- is abs perm changing?
   bool variable_abs_perm() { return variable_abs_perm_; }

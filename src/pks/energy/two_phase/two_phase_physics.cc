@@ -156,16 +156,33 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
   field->PutScalar(0);
 
   // set the flux field as the darcy flux
+  // NOTE: darcy_flux is a MOLAR flux by choice of the richards flow pk, i.e.
+  // [flux] =  mol/(m^2*s)
   Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
   advection_->set_flux(darcy_flux);
 
   // put the advected quantity in cells
   UpdateEnthalpyLiquid_(S);
   Teuchos::RCP<const CompositeVector> enthalpy_liq = S->GetFieldData("enthalpy_liquid");
+  Teuchos::RCP<const CompositeVector> dens_liq = S->GetFieldData("density_liquid");
+  Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
 
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=c_owned; ++c) {
-    (*field)("cell",0,c) = (*enthalpy_liq)("cell",0,c);
+  if (internal_energy_liquid_model_->IsMolarBasis()) {
+    // this is clean:
+    // if u is in units of J/mol, then the rate of change of energy [J/s] is given by:
+    // [flux * u * face_area] = mol/(m^2*s) * J/mol * m^2 = J/s
+    for (int c=0; c!=c_owned; ++c) {
+      (*field)("cell",0,c) = (*enthalpy_liq)("cell",0,c);
+    }
+  } else {
+    // this is ugly because the flux is in a molar basis:
+    // if u is in units of J/kg, then the rate of change of energy [J/s] is given by:
+    // [flux * rho/n * u * face_area] = mol/(m^2*s) * kg/mol * J/kg * m^2 = J/s
+    for (int c=0; c!=c_owned; ++c) {
+      (*field)("cell",0,c) = (*enthalpy_liq)("cell",0,c)
+                        * (*dens_liq)("cell",0,c) / (*n_liq)("cell",0,c);
+    }
   }
 
   // put the boundary fluxes in faces -- assumes all Dirichlet BC in temperature!
@@ -177,12 +194,6 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
   //  - n(T,P) is the molar density of the inward _cell_, not calculated from
   //           T,p on the face as it ought to be, as the EOS is currently in
   //           the flow PK.
-  Teuchos::RCP<const CompositeVector> dens_liq;
-  if (internal_energy_liquid_model_->IsMolarBasis()) {
-    dens_liq = S->GetFieldData("molar_density_liquid");
-  } else {
-    dens_liq = S->GetFieldData("density_liquid");
-  }
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
 
   for (BoundaryFunction::Iterator bc = bc_temperature_->begin();
@@ -196,7 +207,11 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
     for (int i=0; i!=cells.size(); ++i) {
       int c = cells[i];
       if (c >= 0) { // only the inward cell is > 0
-        double enthalpy = (*dens_liq)("cell",0,c)*int_energy + (*pres)("face",0,f);
+        double enthalpy = int_energy;
+        if (!internal_energy_liquid_model_->IsMolarBasis()) {
+          enthalpy *= (*dens_liq)("cell",0,c) / (*n_liq)("cell",0,c);
+        }
+        enthalpy += (*pres)("face",0,f)/(*n_liq)("cell",0,c);
         (*field)("face",0,f) = enthalpy * fabs((*darcy_flux)(f));
       }
     }
@@ -280,8 +295,8 @@ void TwoPhase::EnthalpyLiquid_(const Teuchos::RCP<State>& S,
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*enthalpy_liq)("cell",0,c) = dens_liq("cell",0,c)*int_energy_liquid("cell",0,c)
-                                              + pres("cell",0,c);
+    (*enthalpy_liq)("cell",0,c) = int_energy_liquid("cell",0,c)
+                              + pres("cell",0,c)/dens_liq("cell",0,c);
   }
 };
 

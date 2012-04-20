@@ -7,7 +7,7 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include "bdf2_time_integrator.hh"
+#include "bdf1_time_integrator.hh"
 #include "advection_factory.hh"
 #include "energy_bc_factory.hh"
 #include "thermal_conductivity_factory.hh"
@@ -34,49 +34,51 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   names2[1] = "face";
   subfield_names[0].resize(1); subfield_names[0][0] = "temperature";
   subfield_names[1].resize(1); subfield_names[1][0] = "temperature_lambda";
-
   S->RequireField("temperature", "energy", names2, locations2, 1, true);
-  S->GetRecord("temperature","energy")->set_io_vis(true);
   Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
   temp->set_subfield_names(subfield_names);
+
+  // update the tree-vector solution with flow's primary variable
   solution->set_data(temp);
   solution_ = solution;
 
   // secondary variables
-  std::vector<AmanziMesh::Entity_kind> locations(1);
-  std::vector<std::string> names(1);
-  locations[0] = AmanziMesh::CELL;
-  names[0] = "cell";
-
   // -- gas
-  S->RequireField("internal_energy_gas", "energy", names, locations, 1, true);
+  S->RequireField("internal_energy_gas", "energy", AmanziMesh::CELL, 1, true);
 
   // -- liquid
-  S->RequireField("internal_energy_liquid", "energy", names, locations, 1, true);
-  S->RequireField("enthalpy_liquid", "energy", names, locations, 1, true);
+  S->RequireField("internal_energy_liquid", "energy", AmanziMesh::CELL, 1, true);
+  S->RequireField("enthalpy_liquid", "energy", AmanziMesh::CELL, 1, true);
 
   // -- rock assumed constant for now?
   S->RequireScalar("density_rock");
-  S->RequireField("internal_energy_rock", "energy", names, locations, 1, true);
-  S->RequireField("thermal_conductivity", "energy", names, locations, 1, true);
+  S->RequireField("internal_energy_rock", "energy", AmanziMesh::CELL, 1, true);
+  S->RequireField("thermal_conductivity", "energy", AmanziMesh::CELL, 1, true);
 
   // independent variables (not owned by this pk)
-  S->RequireField("porosity", names, locations, 1, true);
-  S->RequireField("density_gas", names, locations, 1, true);
-  S->RequireField("density_liquid", names, locations, 1, true);
-  S->RequireField("molar_density_gas", names, locations, 1, true);
-  S->RequireField("molar_density_liquid", names, locations, 1, true);
-  S->RequireField("mol_frac_gas", names, locations, 1, true);
-  S->RequireField("saturation_liquid", names, locations, 1, true);
-  S->RequireField("saturation_gas", names, locations, 1, true);
+  S->RequireField("porosity", AmanziMesh::CELL, 1, true);
+  S->RequireField("density_gas", AmanziMesh::CELL, 1, true);
+  S->RequireField("density_liquid", AmanziMesh::CELL, 1, true);
+  S->RequireField("molar_density_gas", AmanziMesh::CELL, 1, true);
+  S->RequireField("molar_density_liquid", AmanziMesh::CELL, 1, true);
+  S->RequireField("mol_frac_gas", AmanziMesh::CELL, 1, true);
+  S->RequireField("saturation_liquid", AmanziMesh::CELL, 1, true);
+  S->RequireField("saturation_gas", AmanziMesh::CELL, 1, true);
   S->RequireField("darcy_flux", AmanziMesh::FACE, 1, true);
   S->RequireField("pressure", names2, locations2, 1, true); // need pressure on faces for BC
 
+  // abs conductivity tensor
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  Ke_.resize(c_owned);
+  for (int c=0; c!=c_owned; ++c) Ke_[c].init(S->mesh()->space_dimension(),1);
+
   // constitutive relations
+  // -- thermal conductivity
   Teuchos::ParameterList tcm_plist = energy_plist_.sublist("Thermal Conductivity Model");
   EnergyRelations::ThermalConductivityTwoPhaseFactory tc_factory;
   thermal_conductivity_model_ = tc_factory.createThermalConductivityModel(tcm_plist);
 
+  // -- internal energy models
   Teuchos::ParameterList ieg_plist = energy_plist_.sublist("Internal Energy Gas Model");
   internal_energy_gas_model_ =
     Teuchos::rcp(new EnergyRelations::InternalEnergyWaterVapor(ieg_plist));
@@ -102,16 +104,17 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   advection_->set_num_dofs(1);
 
   // operator for the diffusion terms
+  bool symmetric = true;
   Teuchos::ParameterList mfd_plist = energy_plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->mesh()));
-  matrix_->SetSymmetryProperty(true);
+  matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner
   // NOTE: may want to allow these to be the same/different?
   Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("Diffusion PC");
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->mesh()));
-  preconditioner_->SetSymmetryProperty(true);
+  preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
   preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
@@ -123,12 +126,13 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   // initial timestep size
   dt_ = energy_plist_.get<double>("Initial time step", 1.);
 
-  // constant initial temperature
-  if (energy_plist_.isParameter("Constant temperature")) {
-    double T = energy_plist_.get<double>("Constant temperature");
-    S->GetFieldData("temperature", "energy")->PutScalar(T);
-    S->GetRecord("temperature", "energy")->set_initialized();
-  }
+  // initialize boundary conditions
+  int nfaces = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
+  bc_values_.resize(nfaces, 0.0);
+
+  // update face temperatures as a hint?
+  DeriveFaceValuesFromCellValues_(S, S->GetFieldData("temperature", "energy"));
 
   // declare secondary variables initialized, as they get done in a call to
   // commit_state
@@ -137,19 +141,6 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   S->GetRecord("internal_energy_liquid","energy")->set_initialized();
   S->GetRecord("internal_energy_rock","energy")->set_initialized();
   S->GetRecord("enthalpy_liquid","energy")->set_initialized();
-
-  // initialize boundary conditions
-  int nfaces = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
-  bc_values_.resize(nfaces, 0.0);
-
-
-  // initialize thermal conductivity
-  int ncells = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  Ke_.resize(ncells);
-  for (int c=0; c!=ncells; ++c) {
-    Ke_[c].init(S->mesh()->space_dimension(),1);
-  }
 
   // initialize the timesteppper
   state_to_solution(S, solution_);
@@ -160,9 +151,10 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
     rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 
     // -- instantiate time stepper
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
+    Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
-    time_stepper_ = Teuchos::rcp(new BDF2TimeIntegrator(this, bdf2_plist_p, solution_));
+    time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf1_plist_p, solution_));
+    time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(*solution_));
@@ -208,9 +200,9 @@ bool TwoPhase::advance(double dt) {
   try {
     dt_ = time_stepper_->time_step(h, solution_);
   } catch (Exceptions::Amanzi_exception &error) {
-    if (error.what() == "BDF time step failed") {
-      // try halving the timestep
-      dt_ = dt_/2.0;
+    if (error.what() == std::string("BDF time step failed")) {
+      // try cutting the timestep
+      dt_ = dt_*time_step_reduction_factor_;
       return true;
     } else {
       throw error;
@@ -221,6 +213,23 @@ bool TwoPhase::advance(double dt) {
   return false;
 };
 
+void TwoPhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
+        const Teuchos::RCP<CompositeVector>& temp) {
+  AmanziMesh::Entity_ID_List cells;
+
+  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f=0; f!=f_owned; ++f) {
+    cells.clear();
+    S->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += (*temp)("cell",0,cells[n]);
+    }
+    (*temp)("face",0,f) = face_value / ncells;
+  }
+};
 
 void TwoPhase::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
