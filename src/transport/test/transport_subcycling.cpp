@@ -66,7 +66,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
   TS->analytic_water_density();
 
   /* initialize a transport process kernel from a transport state */
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.set_standalone_mode(true);
@@ -75,17 +75,17 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
   /* advance the state */
   int iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   while (T < 1.0) {
     // imitation of a small time step relative to flow time step
-    double dT = TPK.calculateTransportDt();  
+    double dT = TPK.CalculateTransportDt();  
     double dT_MPC = dT * 7.7;
 
-    TPK.advance(dT_MPC, 1);
+    TPK.Advance(dT_MPC, 1);
     T += dT_MPC;
     iter++;
 

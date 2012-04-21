@@ -76,15 +76,15 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   /* advance the state */
   int iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
 
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   while (T < 1.0) {
-    double dT = TPK.calculateTransportDt();
-    TPK.advance(dT);
+    double dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 

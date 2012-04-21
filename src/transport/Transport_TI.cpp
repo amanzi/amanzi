@@ -35,12 +35,12 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
 
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
-    limiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
+    LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
     lifting.applyLimiter(limiter_);
   } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
-    limiterTensorial(current_component_, component_rcp, gradient);
+    LimiterTensorial(current_component_, component_rcp, gradient);
   } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
-    limiterKuzmin(current_component_, component_rcp, gradient);
+    LimiterKuzmin(current_component_, component_rcp, gradient);
   }
 
   // ADVECTIVE FLUXES

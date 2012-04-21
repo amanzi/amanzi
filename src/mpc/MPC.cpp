@@ -363,7 +363,7 @@ void MPC::cycle_driver () {
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          transport_dT = TPK->calculateTransportDt();
+          transport_dT = TPK->CalculateTransportDt();
         }
         if (chemistry_enabled) {
           chemistry_dT = CPK->max_time_step();
@@ -495,10 +495,10 @@ void MPC::cycle_driver () {
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          TPK->advance(mpc_dT, transport_subcycling);
+          TPK->Advance(mpc_dT, transport_subcycling);
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
-            Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
+            Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
             *total_component_concentration_star = *TS_next->total_component_concentration();
           } else {
             Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
@@ -535,7 +535,7 @@ void MPC::cycle_driver () {
 
       FPK->CommitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
-        if (transport_enabled) TPK->commitState(TS);
+        if (transport_enabled) TPK->CommitState(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       }
 

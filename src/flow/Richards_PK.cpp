@@ -257,8 +257,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   num_itrs = 0;
 
   // DEBUG
-  // advanceToSteadyState();
-  // commitStateForTransport(FS); commitState(FS); writeGMVfile(FS); exit(0);
+  // AdvanceToSteadyState();
+  // CommitStateForTransport(FS); CommitState(FS); writeGMVfile(FS); exit(0);
 }
 
 

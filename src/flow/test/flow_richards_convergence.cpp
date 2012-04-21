@@ -1,11 +1,18 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#include <iostream>
 #include <cmath>
+#include <iostream>
+#include <string>
+#include <vector>
 
 #include "UnitTest++.h"
 
@@ -35,14 +42,16 @@ double calculatePressureCellError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& pressu
   double f2 = sqrt(g * k2 / cr - 1.0);
 
   double pressure_exact, error_L2 = 0.0;
-  for (int c=0; c<pressure.MyLength(); c++) {
+  for (int c = 0; c < pressure.MyLength(); c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);
 
     double z = xc[2];
-    if (z < -a) pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
-    else pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-//cout << z << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
+    if (z < -a)
+      pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
+    else
+      pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
+    // cout << z << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
     error_L2 += std::pow(pressure[c] - pressure_exact, 2.0) * volume;
   }
   return sqrt(error_L2);
@@ -59,9 +68,9 @@ double calculateDarcyFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flu
 
   int nfaces = darcy_flux.MyLength();
   double error_l2 = 0.0;
-  for (int f=0; f<nfaces; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
+  for (int f = 0; f < nfaces; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    // cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
     error_l2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
   }
   return sqrt(error_l2 / nfaces);
@@ -77,15 +86,15 @@ double calculateDarcyDivergenceError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& dar
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int c=0; c<ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
-      
+
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     double div = 0.0;
-    for (int i=0; i<nfaces; i++) {
+    for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       div += darcy_flux[f] * dirs[i];
     }
@@ -104,10 +113,10 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   string xmlFileName = "test/flow_richards_convergence.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  for (int n=40; n<321; n*=2) {
+  for (int n = 40; n < 321; n*=2) {
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-    Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-10.0, 1.0,1.0,0.0, 1,1,n, comm, gm)); 
+    Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, -10.0, 1.0, 1.0, 0.0, 1, 1, n, comm, gm));
 
     // create Richards process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -132,13 +141,13 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     flux_err = calculateDarcyFluxError(mesh, FS->ref_darcy_flux());
     div_err = calculateDarcyDivergenceError(mesh, FS->ref_darcy_flux());
 
-    if (n==80) CHECK(pressure_err < 5.0e-2 && flux_err < 5.0e-2);
-    printf("n=%3d itrs=%4d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n", 
+    if (n == 80) CHECK(pressure_err < 5.0e-2 && flux_err < 5.0e-2);
+    printf("n=%3d itrs=%4d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
         n, RPK->num_nonlinear_steps, pressure_err, flux_err, div_err);
 
-    delete RPK; 
-    delete S; 
+    delete RPK;
+    delete S;
   }
-  delete comm; 
+  delete comm;
 }
 

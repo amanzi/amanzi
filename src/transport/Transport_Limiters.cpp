@@ -21,7 +21,7 @@ namespace AmanziTransport {
  * Tensorial limiter limits the gradient directly, to avoid 
  * calculation of a 3x3 matrix.
  ****************************************************************** */
-void Transport_PK::limiterTensorial(const int component,
+void Transport_PK::LimiterTensorial(const int component,
                                     Teuchos::RCP<Epetra_Vector> scalar_field,
                                     Teuchos::RCP<Epetra_MultiVector> gradient)
 {
@@ -67,16 +67,16 @@ void Transport_PK::limiterTensorial(const int component,
         // check if umin <= u1f <= umax
         if (u1f < umin) {
           normal_new = xcf - xc;
-          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
+          CalculateDescentDirection(normals, normal_new, L22normal_new, direction);
 
           p = ((umin - u1) / sqrt(L22normal_new)) * direction;
-          applyDirectionalLimiter(normal_new, p, direction, gradient_c1);
+          ApplyDirectionalLimiter(normal_new, p, direction, gradient_c1);
         } else if (u1f > umax) {
           normal_new = xcf - xc;
-          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
+          CalculateDescentDirection(normals, normal_new, L22normal_new, direction);
 
           p = ((umax - u1) / sqrt(L22normal_new)) * direction;
-          applyDirectionalLimiter(normal_new, p, direction, gradient_c1);
+          ApplyDirectionalLimiter(normal_new, p, direction, gradient_c1);
         }
       }
       if (normals.size() == 0) break;  // No limiters were imposed.
@@ -128,11 +128,11 @@ void Transport_PK::limiterTensorial(const int component,
 
           if (u2f < umin) {
             p = ((umin - u2) / L22(direction)) * direction;
-            applyDirectionalLimiter(direction, p, direction, gradient_c2);
+            ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
 
           } else if (u2f > umax) {
             p = ((umax - u2) / L22(direction)) * direction;
-            applyDirectionalLimiter(direction, p, direction, gradient_c2);
+            ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
           }
 
           for (int i = 0; i < dim; i++) (*gradient)[i][c2] = gradient_c2[i];
@@ -191,7 +191,7 @@ void Transport_PK::limiterTensorial(const int component,
  * Second, it limits outflux values which gives factor 0.5 in the
  * time step estimate.
  ****************************************************************** */
-void Transport_PK::limiterBarthJespersen(const int component,
+void Transport_PK::LimiterBarthJespersen(const int component,
                                          Teuchos::RCP<Epetra_Vector> scalar_field,
                                          Teuchos::RCP<Epetra_MultiVector> gradient,
                                          Teuchos::RCP<Epetra_Vector> limiter)
@@ -338,7 +338,7 @@ void Transport_PK::limiterBarthJespersen(const int component,
 /* *******************************************************************
  * Kuzmin's limiter use all neighbors of a computational cell.  
  ****************************************************************** */
-void Transport_PK::limiterKuzmin(const int component,
+void Transport_PK::LimiterKuzmin(const int component,
                                  Teuchos::RCP<Epetra_Vector> scalar_field,
                                  Teuchos::RCP<Epetra_MultiVector> gradient)
 {
@@ -413,16 +413,16 @@ void Transport_PK::limiterKuzmin(const int component,
         // check if umin <= up <= umax
         if (up < umin) {
           normal_new = xp - xc;
-          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
+          CalculateDescentDirection(normals, normal_new, L22normal_new, direction);
 
           p = ((umin - up) / sqrt(L22normal_new)) * direction;
-          applyDirectionalLimiter(normal_new, p, direction, gradient_c);
+          ApplyDirectionalLimiter(normal_new, p, direction, gradient_c);
         } else if (up > umax) {
           normal_new = xp - xc;
-          calculateDescentDirection(normals, normal_new, L22normal_new, direction);
+          CalculateDescentDirection(normals, normal_new, L22normal_new, direction);
 
           p = ((umax - up) / sqrt(L22normal_new)) * direction;
-          applyDirectionalLimiter(normal_new, p, direction, gradient_c);
+          ApplyDirectionalLimiter(normal_new, p, direction, gradient_c);
         }
       }
       if (normals.size() == 0) break;  // No limiters were imposed.
@@ -507,7 +507,7 @@ void Transport_PK::limiterKuzmin(const int component,
  * Descent direction is obtained by orthogonalizing normal direction
  * 'normal_new' to previous normals. A few exceptions are analyzed.  
  ****************************************************************** */
-void Transport_PK::calculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
+void Transport_PK::CalculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
                                              AmanziGeometry::Point& normal_new,
                                              double& L22normal_new,
                                              AmanziGeometry::Point& direction)
@@ -543,7 +543,7 @@ void Transport_PK::calculateDescentDirection(std::vector<AmanziGeometry::Point>&
 /* *******************************************************************
  * Routine projects gradient on a plane defined by normal and point p.
  ****************************************************************** */
-void Transport_PK::applyDirectionalLimiter(AmanziGeometry::Point& normal,
+void Transport_PK::ApplyDirectionalLimiter(AmanziGeometry::Point& normal,
                                            AmanziGeometry::Point& p,
                                            AmanziGeometry::Point& direction,
                                            AmanziGeometry::Point& gradient)

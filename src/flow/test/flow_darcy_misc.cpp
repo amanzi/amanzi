@@ -1,10 +1,17 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "UnitTest++.h"
 
@@ -16,7 +23,6 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Mesh_MSTK.hh"
-//#include "Mesh_simple.hh"
 #include "Darcy_PK.hpp"
 
 
@@ -34,7 +40,7 @@ class DarcyProblem {
   AmanziFlow::Darcy_PK* DPK;
   int MyPID;
 
-  DarcyProblem() 
+  DarcyProblem()
   {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MyPID = comm->MyPID();
@@ -43,11 +49,11 @@ class DarcyProblem {
     string xmlFileName = "test/flow_darcy_misc.xml";
     updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-    // create an SIMPLE mesh framework 
+    // create an SIMPLE mesh framework
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-    //mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
-    mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", comm, gm)); 
+    // mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, -0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm, gm));
+    mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", comm, gm));
 
     // create Darcy process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -61,10 +67,15 @@ class DarcyProblem {
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
   }
 
-  ~DarcyProblem() { delete DPK; delete S; delete comm; }
+  ~DarcyProblem()
+  {
+    delete DPK;
+    delete S;
+    delete comm;
+  }
 
   void createBClist(
-      const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
+      const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value)
   {
     std::string func_list_name;
     if (type == "pressure") {
@@ -84,17 +95,17 @@ class DarcyProblem {
     Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
     function_list.set("value", value);
   }
-  
+
   double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient)
   {
     Epetra_Vector& pressure = DPK->flow_state()->ref_pressure();
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (int c=0; c<ncells; c++) {
+    for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-//if (MyPID==0) cout << c << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
+      // if (MyPID==0) cout << c << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(pressure[c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -106,7 +117,7 @@ class DarcyProblem {
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    for (int f=0; f<nfaces; f++) {
+    for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
       error_L2 += std::pow(solution_faces[f] - pressure_exact, 2.0);
@@ -120,9 +131,9 @@ class DarcyProblem {
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    for (int f=0; f<nfaces; f++) {
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
+    for (int f = 0; f < nfaces; f++) {
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      // cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
       error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
@@ -142,15 +153,15 @@ class DarcyProblem {
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-    for (int c=0; c<ncells_owned; c++) {
+    for (int c = 0; c < ncells_owned; c++) {
       AmanziMesh::Entity_ID_List faces;
       std::vector<int> dirs;
-      
+
       mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
       double div = 0.0;
-      for (int i=0; i<nfaces; i++) {
+      for (int i = 0; i < nfaces; i++) {
         int f = faces[i];
         div += darcy_flux_wghost[f] * dirs[i];
       }
@@ -169,8 +180,8 @@ class DarcyProblem {
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (int c=0; c<ncells; c++) {
-//cout << c << " " << velocity[0][c] << " " << velocity[2][c] << " exact=" << velocity_exact << endl;
+    for (int c = 0; c < ncells; c++) {
+      // cout << c << " " << velocity[0][c] << " " << velocity[2][c] << " exact=" << velocity_exact << endl;
       AmanziGeometry::Point velocity_num(velocity[0][c], velocity[1][c], velocity[2][c]);
       error_L2 += L22(velocity_num - velocity_exact);
     }
@@ -210,7 +221,7 @@ SUITE(Darcy_PK) {
     double errorU = calculateDarcyFluxError(velocity);
     CHECK(errorU < 1.0e-8);
     double errorDiv = calculateDarcyDivergenceError();
-    if (MyPID == 0) 
+    if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
   }
 

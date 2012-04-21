@@ -1,12 +1,18 @@
 /*
-The flow component of the Amanzi code, richards unit tests.
-License: BSD
+This is the flow component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "UnitTest++.h"
@@ -42,12 +48,12 @@ TEST(FLOW_3D_RICHARDS) {
   string xmlFileName = "test/flow_richards_3D.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  // create a mesh framework 
+  // create a mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
   ParameterList unstructured_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList mesh_list = unstructured_list.get<ParameterList>("Generate Mesh");
-  RCP<Mesh> mesh = rcp(new Mesh_STK(mesh_list, &comm, gm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_STK(mesh_list, &comm, gm));
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");

@@ -1,12 +1,18 @@
 /*
-The flow component of the Amanzi code, richards unit tests.
-License: BSD
+This is the flow component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "UnitTest++.h"
@@ -16,7 +22,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Mesh_MSTK.hh"
-//#include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
@@ -43,10 +48,10 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   string xmlFileName = "test/flow_richards_seepage.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  // create an SIMPLE mesh framework 
+  // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0, 100.0,50.0, 100,50, &comm, gm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0, 0.0, 100.0, 50.0, 100, 50, &comm, gm)); 
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
@@ -66,7 +71,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   // solve the steady-state problem
   RPK->AdvanceToSteadyState();
   RPK->CommitStateForTransport(FS);
- 
+
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
