@@ -1757,16 +1757,24 @@ int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMe
     }
   if (n == -1) return 0; // did not find it -- different faces
 
+  if (nn == 2) {
+    // These are edges in a 2D mesh
+    
+    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
+    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
 
-  for (i = 1; i < nn; ++i)
-    if (fnode1[(n+i)%nn] != fnode2[i]) break;
-  if (i == nn) return 1;  // they match
+  }
+  else {
+    for (i = 1; i < nn; ++i)
+      if (fnode1[(n+i)%nn] != fnode2[i]) break;
+    if (i == nn) return 1;  // they match
 
-  // Modify the permutation to reverse the orientation of fnode1.
-
-  for (i = 1; i < nn; ++i)
-    if (fnode1[(n-i+nn)%nn] != fnode2[i]) break;
-  if (i == nn) return -1;   // matched nodes but orientation is reversed
+    // Modify the permutation to reverse the orientation of fnode1.
+    
+    for (i = 1; i < nn; ++i)
+      if (fnode1[(n-i+nn)%nn] != fnode2[i]) break;
+    if (i == nn) return -1;   // matched nodes but orientation is reversed
+  }
 
   return 0; // different faces
 }
