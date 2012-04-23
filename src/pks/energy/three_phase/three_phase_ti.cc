@@ -8,14 +8,14 @@ Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
 #include "Epetra_Vector.h"
-#include "two_phase.hh"
+#include "three_phase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-// TwoPhase is a BDFFnBase
+// ThreePhase is a BDFFnBase
 // computes the non-linear functional g = g(t,u,udot)
-void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
@@ -55,7 +55,7 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 };
 
 // applies preconditioner to u and returns the result in Pu
-void TwoPhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void ThreePhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  T0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
   std::cout << "  T1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
@@ -65,7 +65,7 @@ void TwoPhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 };
 
 // computes a norm on u-du and returns the result
-double TwoPhase::enorm(Teuchos::RCP<const TreeVector> u,
+double ThreePhase::enorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
   Teuchos::RCP<const Epetra_MultiVector> temp_vec = u->data()->ViewComponent("cell", false);
@@ -93,7 +93,7 @@ double TwoPhase::enorm(Teuchos::RCP<const TreeVector> u,
 };
 
 // updates the preconditioner
-void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void ThreePhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_); // not sure why this isn't getting found? --etc
   UpdateSecondaryVariables_(S_next_);
@@ -122,6 +122,7 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<const CompositeVector> poro =
     S_next_->GetFieldData("porosity");
 
+  // gas data
   Teuchos::RCP<const CompositeVector> dens_gas;
   if (iem_gas_->IsMolarBasis()) {
     dens_gas = S_next_->GetFieldData("molar_density_gas");
@@ -130,23 +131,32 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   }
   Teuchos::RCP<const CompositeVector> mol_frac_gas =
     S_next_->GetFieldData("mol_frac_gas");
+  Teuchos::RCP<const CompositeVector> sat_gas =
+    S_next_->GetFieldData("saturation_gas");
 
-
+  // liquid data
   Teuchos::RCP<const CompositeVector> dens_liq;
   if (iem_liquid_->IsMolarBasis()) {
     dens_liq = S_next_->GetFieldData("molar_density_liquid");
   } else {
     dens_liq = S_next_->GetFieldData("density_liquid");
   }
-
   Teuchos::RCP<const CompositeVector> sat_liq =
     S_next_->GetFieldData("saturation_liquid");
-  Teuchos::RCP<const CompositeVector> sat_gas =
-    S_next_->GetFieldData("saturation_gas");
 
+  // ice data
+  Teuchos::RCP<const CompositeVector> dens_ice;
+  if (iem_ice_->IsMolarBasis()) {
+    dens_ice = S_next_->GetFieldData("molar_density_ice");
+  } else {
+    dens_ice = S_next_->GetFieldData("density_ice");
+  }
+  Teuchos::RCP<const CompositeVector> sat_ice =
+    S_next_->GetFieldData("saturation_ice");
+
+  // others
   Teuchos::RCP<const CompositeVector> cell_volume =
     S_next_->GetFieldData("cell_volume");
-
   Teuchos::RCP<const double> dens_rock =
     S_next_->GetScalarData("density_rock");
 
@@ -155,7 +165,7 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
     // accumulation term is d/dt ( phi * (s_g*n_g*u_g + s_l*n_l*u_l) + (1-phi)*rho_r*u_r
-    // note: s_g, s_l do not depend upon T
+    // note: CURRENTLY IGNORING the saturation dependence on temperature
     // note: CURRENTLY IGNORING the density dependence in temperature in this
     //       preconditioner.  This is idiodic, but due to poor design on my
     //       part we don't have access to the equations of state here.  This
@@ -164,15 +174,17 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     // note: also assumes phi does not depend on temperature.
     double T = (*temp)("cell",0,c);
     double phi = (*poro)("cell",0,c);
-    double du_liq_dT = iem_liquid_->DInternalEnergyDT(T);
     double du_gas_dT = iem_gas_->DInternalEnergyDT(T, (*mol_frac_gas)("cell",0,c));
+    double du_liq_dT = iem_liquid_->DInternalEnergyDT(T);
+    double du_ice_dT = iem_ice_->DInternalEnergyDT(T);
     double du_rock_dT = iem_rock_->DInternalEnergyDT(T);
 
     double factor_gas = (*dens_gas)(c)*(*sat_gas)(c)*du_gas_dT;
     double factor_liq = (*dens_liq)(c)*(*sat_liq)(c)*du_liq_dT;
+    double factor_ice = (*dens_ice)(c)*(*sat_ice)(c)*du_ice_dT;
     double factor_rock = (*dens_rock)*du_rock_dT;
 
-    double factor = (phi * (factor_gas + factor_liq) +
+    double factor = (phi * (factor_gas + factor_liq + factor_ice) +
                      (1-phi) * factor_rock) * (*cell_volume)(c);
 
     Acc_cells[c] += factor/h;

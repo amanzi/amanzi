@@ -7,62 +7,12 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include "two_phase.hh"
+#include "three_phase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-void TwoPhase::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
-  // get needed variables
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas");
-
-  // and the secondary variables to be calculated
-  Teuchos::RCP<CompositeVector> int_energy_gas =
-    S->GetFieldData("internal_energy_gas", "energy");
-  Teuchos::RCP<CompositeVector> int_energy_liquid =
-    S->GetFieldData("internal_energy_liquid", "energy");
-  Teuchos::RCP<CompositeVector> int_energy_rock =
-    S->GetFieldData("internal_energy_rock", "energy");
-
-  // update secondary variables
-  InternalEnergyGas_(S, *temp, *mol_frac_gas, int_energy_gas);
-  InternalEnergyLiquid_(S, *temp, int_energy_liquid);
-  InternalEnergyRock_(S, *temp, int_energy_rock);
-};
-
-void TwoPhase::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-
-  Teuchos::RCP<const CompositeVector> dens_liq;
-  if (iem_liquid_->IsMolarBasis()) {
-    dens_liq = S->GetFieldData("molar_density_liquid");
-  } else {
-    dens_liq = S->GetFieldData("density_liquid");
-  }
-
-  Teuchos::RCP<const CompositeVector> int_energy_liquid =
-    S->GetFieldData("internal_energy_liquid");
-
-  Teuchos::RCP<CompositeVector> enthalpy_liq =
-    S->GetFieldData("enthalpy_liquid", "energy");
-
-  // update enthalpy of liquid
-  EnthalpyLiquid_(S, *int_energy_liquid, *pres, *dens_liq, enthalpy_liq);
-};
-
-void TwoPhase::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> poro =
-    S->GetFieldData("porosity");
-  Teuchos::RCP<const CompositeVector> sat_liq =
-    S->GetFieldData("saturation_liquid");
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S->GetFieldData("thermal_conductivity", "energy");
-
-  ThermalConductivity_(S, *poro, *sat_liq, thermal_conductivity);
-};
-
-void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
+void ThreePhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   Teuchos::RCP<const CompositeVector> poro0 =
     S_inter_->GetFieldData("porosity");
   Teuchos::RCP<const CompositeVector> poro1 =
@@ -88,15 +38,30 @@ void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
     density_liq1 = S_next_->GetFieldData("density_liquid");
   }
 
+  Teuchos::RCP<const CompositeVector> density_ice0;
+  Teuchos::RCP<const CompositeVector> density_ice1;
+  if (iem_ice_->IsMolarBasis()) {
+    density_ice0 = S_inter_->GetFieldData("molar_density_ice");
+    density_ice1 = S_next_->GetFieldData("molar_density_ice");
+  } else {
+    density_ice0 = S_inter_->GetFieldData("density_ice");
+    density_ice1 = S_next_->GetFieldData("density_ice");
+  }
+  
+  Teuchos::RCP<const CompositeVector> sat_gas0 =
+    S_inter_->GetFieldData("saturation_gas");
+  Teuchos::RCP<const CompositeVector> sat_gas1 =
+    S_next_->GetFieldData("saturation_gas");
+
   Teuchos::RCP<const CompositeVector> sat_liq0 =
     S_inter_->GetFieldData("saturation_liquid");
   Teuchos::RCP<const CompositeVector> sat_liq1 =
     S_next_->GetFieldData("saturation_liquid");
 
-  Teuchos::RCP<const CompositeVector> sat_gas0 =
-    S_inter_->GetFieldData("saturation_gas");
-  Teuchos::RCP<const CompositeVector> sat_gas1 =
-    S_next_->GetFieldData("saturation_gas");
+  Teuchos::RCP<const CompositeVector> sat_ice0 =
+    S_inter_->GetFieldData("saturation_ice");
+  Teuchos::RCP<const CompositeVector> sat_ice1 =
+    S_next_->GetFieldData("saturation_ice");
 
   Teuchos::RCP<const CompositeVector> int_energy_gas0 =
     S_inter_->GetFieldData("internal_energy_gas");
@@ -107,6 +72,11 @@ void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
     S_inter_->GetFieldData("internal_energy_liquid");
   Teuchos::RCP<const CompositeVector> int_energy_liq1 =
     S_next_->GetFieldData("internal_energy_liquid");
+
+  Teuchos::RCP<const CompositeVector> int_energy_ice0 =
+    S_inter_->GetFieldData("internal_energy_ice");
+  Teuchos::RCP<const CompositeVector> int_energy_ice1 =
+    S_next_->GetFieldData("internal_energy_ice");
 
   Teuchos::RCP<const CompositeVector> int_energy_rock0 =
     S_inter_->GetFieldData("internal_energy_rock");
@@ -123,25 +93,29 @@ void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
 
   double dt = S_next_->time() - S_inter_->time();
 
-  // NOTE: gas and liquid are done in a ?? basis, but rock is done in a mass basis
+  // NOTE: gas, liquid, and ice are done in a ?? basis, but rock is done in a mass basis
 
   int c_owned = S_next_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    // calculte the energy density at the old and new times
-    double edens_liq1 = (*density_liq1)(c) * (*sat_liq1)(c) *
-      (*int_energy_liq1)(c);
+    // calculate the energy density at the old and new times
     double edens_gas1 = (*density_gas1)(c) * (*sat_gas1)(c) *
       (*int_energy_gas1)(c);
+    double edens_liq1 = (*density_liq1)(c) * (*sat_liq1)(c) *
+      (*int_energy_liq1)(c);
+    double edens_ice1 = (*density_ice1)(c) * (*sat_ice1)(c) *
+      (*int_energy_ice1)(c);
     double edens_rock1 = (*density_rock) * (*int_energy_rock1)(c);
-    double energy1 = ((*poro1)(c) * (edens_gas1 + edens_liq1) +
+    double energy1 = ((*poro1)(c) * (edens_gas1 + edens_liq1 + edens_ice1) +
                       (1-(*poro1)(c)) * (edens_rock1)) * (*cell_volume1)(c);
 
-    double edens_liq0 = (*density_liq0)(c) * (*sat_liq0)(c) *
-      (*int_energy_liq0)(c);
     double edens_gas0 = (*density_gas0)(c) * (*sat_gas0)(c) *
       (*int_energy_gas0)(c);
+    double edens_liq0 = (*density_liq0)(c) * (*sat_liq0)(c) *
+      (*int_energy_liq0)(c);
+    double edens_ice0 = (*density_ice0)(c) * (*sat_ice0)(c) *
+      (*int_energy_ice0)(c);
     double edens_rock0 = (*density_rock) * (*int_energy_rock0)(c);
-    double energy0 = ((*poro0)(c) * (edens_gas0 + edens_liq0) +
+    double energy0 = ((*poro0)(c) * (edens_gas0 + edens_liq0 + edens_ice0) +
                       (1-(*poro0)(c)) * (edens_rock0)) * (*cell_volume0)(c);
 
     // add the time derivative of energy density to the residual
@@ -149,7 +123,7 @@ void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   }
 };
 
-void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
+void ThreePhase::AddAdvection_(const Teuchos::RCP<State> S,
         const Teuchos::RCP<CompositeVector> g, bool negate) {
 
   Teuchos::RCP<CompositeVector> field = advection_->field();
@@ -230,7 +204,7 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
   }
 };
 
-void TwoPhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
+void ThreePhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
           const Teuchos::RCP<CompositeVector> g) {
   // compute the stiffness matrix at the new time
   Teuchos::RCP<const CompositeVector> temp =
@@ -253,7 +227,27 @@ void TwoPhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
   matrix_->ComputeNegativeResidual(*temp, g);
 };
 
-void TwoPhase::InternalEnergyGas_(const Teuchos::RCP<State>& S,
+
+void ThreePhase::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
+  // update secondary variables
+  UpdateInternalEnergyGas_(S);
+  UpdateInternalEnergyLiquid_(S);
+  UpdateInternalEnergyIce_(S);
+  UpdateInternalEnergyRock_(S);
+};
+
+
+void ThreePhase::UpdateInternalEnergyGas_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas");
+  Teuchos::RCP<CompositeVector> int_energy_gas =
+    S->GetFieldData("internal_energy_gas", "energy");
+
+  InternalEnergyGas_(S, *temp, *mol_frac_gas, int_energy_gas);
+};
+
+
+void ThreePhase::InternalEnergyGas_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const CompositeVector& mol_frac_gas,
         const Teuchos::RCP<CompositeVector>& int_energy_gas) {
@@ -265,18 +259,57 @@ void TwoPhase::InternalEnergyGas_(const Teuchos::RCP<State>& S,
   }
 };
 
-void TwoPhase::InternalEnergyLiquid_(const Teuchos::RCP<State>& S,
+
+void ThreePhase::UpdateInternalEnergyLiquid_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<CompositeVector> int_energy_liquid =
+    S->GetFieldData("internal_energy_liquid", "energy");
+
+  InternalEnergyLiquid_(S, *temp, int_energy_liquid);
+};
+
+
+void ThreePhase::InternalEnergyLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_liquid) {
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*int_energy_liquid)("cell",0,c) = iem_liquid_->
-      InternalEnergy(temp("cell",0,c));
+    (*int_energy_liquid)("cell",0,c) = iem_liquid_->InternalEnergy(temp("cell",0,c));
   }
 };
 
-void TwoPhase::InternalEnergyRock_(const Teuchos::RCP<State>& S,
+
+void ThreePhase::UpdateInternalEnergyIce_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<CompositeVector> int_energy_ice =
+    S->GetFieldData("internal_energy_ice", "energy");
+
+  InternalEnergyIce_(S, *temp, int_energy_ice);
+};
+
+
+void ThreePhase::InternalEnergyIce_(const Teuchos::RCP<State>& S,
+        const CompositeVector& temp,
+        const Teuchos::RCP<CompositeVector>& int_energy_ice) {
+  // just a single model for now -- ignore blocks
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c != c_owned; ++c) {
+    (*int_energy_ice)("cell",0,c) = iem_ice_->InternalEnergy(temp("cell",0,c));
+  }
+};
+
+
+void ThreePhase::UpdateInternalEnergyRock_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<CompositeVector> int_energy_rock =
+    S->GetFieldData("internal_energy_rock", "energy");
+
+  InternalEnergyLiquid_(S, *temp, int_energy_rock);
+};
+
+
+void ThreePhase::InternalEnergyRock_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_rock) {
   // just a single model for now -- ignore blocks
@@ -287,7 +320,29 @@ void TwoPhase::InternalEnergyRock_(const Teuchos::RCP<State>& S,
   }
 };
 
-void TwoPhase::EnthalpyLiquid_(const Teuchos::RCP<State>& S,
+
+void ThreePhase::UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+
+  Teuchos::RCP<const CompositeVector> dens_liq;
+  if (iem_liquid_->IsMolarBasis()) {
+    dens_liq = S->GetFieldData("molar_density_liquid");
+  } else {
+    dens_liq = S->GetFieldData("density_liquid");
+  }
+
+  Teuchos::RCP<const CompositeVector> int_energy_liquid =
+    S->GetFieldData("internal_energy_liquid");
+
+  Teuchos::RCP<CompositeVector> enthalpy_liq =
+    S->GetFieldData("enthalpy_liquid", "energy");
+
+  // update enthalpy of liquid
+  EnthalpyLiquid_(S, *int_energy_liquid, *pres, *dens_liq, enthalpy_liq);
+};
+
+
+void ThreePhase::EnthalpyLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& int_energy_liquid,
         const CompositeVector& pres, const CompositeVector& dens_liq,
         const Teuchos::RCP<CompositeVector>& enthalpy_liq) {
@@ -300,16 +355,32 @@ void TwoPhase::EnthalpyLiquid_(const Teuchos::RCP<State>& S,
   }
 };
 
-void TwoPhase::ThermalConductivity_(const Teuchos::RCP<State>& S,
+
+void ThreePhase::UpdateThermalConductivity_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> poro =
+    S->GetFieldData("porosity");
+  Teuchos::RCP<const CompositeVector> sat_liq =
+    S->GetFieldData("saturation_liquid");
+  Teuchos::RCP<const CompositeVector> sat_ice =
+    S->GetFieldData("saturation_ice");
+  Teuchos::RCP<CompositeVector> thermal_conductivity =
+    S->GetFieldData("thermal_conductivity", "energy");
+
+  ThermalConductivity_(S, *poro, *sat_liq, *sat_ice, thermal_conductivity);
+};
+
+
+void ThreePhase::ThermalConductivity_(const Teuchos::RCP<State>& S,
         const CompositeVector& porosity,
         const CompositeVector& sat_liq,
+        const CompositeVector& sat_ice,
         const Teuchos::RCP<CompositeVector>& thermal_conductivity) {
 
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*thermal_conductivity)("cell",0,c) = thermal_conductivity_model_->
-      CalculateConductivity(porosity("cell",0,c), sat_liq("cell",0,c));
+      CalculateConductivity(porosity("cell",0,c), sat_liq("cell",0,c), sat_ice("cell",0,c));
   }
 };
 

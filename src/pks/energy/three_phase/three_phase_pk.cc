@@ -10,17 +10,17 @@ Author: Ethan Coon
 #include "bdf1_time_integrator.hh"
 #include "advection_factory.hh"
 #include "energy_bc_factory.hh"
-#include "thermal_conductivity_twophase_factory.hh"
+#include "thermal_conductivity_threephase_factory.hh"
 #include "iem_factory.hh"
 
-#include "two_phase.hh"
+#include "three_phase.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<TwoPhase> TwoPhase::reg_("two-phase energy");
+RegisteredPKFactory<ThreePhase> ThreePhase::reg_("two-phase energy");
 
-TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
+ThreePhase::ThreePhase(Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
     energy_plist_(plist) {
 
@@ -76,18 +76,22 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   // constitutive relations
   // -- thermal conductivity
   Teuchos::ParameterList tcm_plist = energy_plist_.sublist("Thermal Conductivity Model");
-  EnergyRelations::ThermalConductivityTwoPhaseFactory tc_factory;
+  EnergyRelations::ThermalConductivityThreePhaseFactory tc_factory;
   thermal_conductivity_model_ = tc_factory.createThermalConductivityModel(tcm_plist);
 
   // -- internal energy models
   // -- water vapor requires a specialized model
   Teuchos::ParameterList ieg_plist = energy_plist_.sublist("Internal Energy Gas Model");
-  iem_gas_ = Teuchos::rcp(new EnergyRelations::InternalEnergyWaterVapor(ieg_plist));
+  iem_gas_ =
+    Teuchos::rcp(new EnergyRelations::InternalEnergyWaterVapor(ieg_plist));
 
   // -- other IEM come from factory
   EnergyRelations::IEMFactory iem_factory;
   Teuchos::ParameterList iel_plist = energy_plist_.sublist("Internal Energy Liquid Model");
   iem_liquid_ = iem_factory.createIEM(iel_plist);
+
+  Teuchos::ParameterList iei_plist = energy_plist_.sublist("Internal Energy Ice Model");
+  iem_ice_ = iem_factory.createIEM(iei_plist);
 
   Teuchos::ParameterList ier_plist = energy_plist_.sublist("Internal Energy Rock Model");
   iem_rock_ = iem_factory.createIEM(ier_plist);
@@ -122,7 +126,7 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
 };
 
 // -- Initialize owned (dependent) variables.
-void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
+void ThreePhase::initialize(const Teuchos::RCP<State>& S) {
 
   // initial timestep size
   dt_ = energy_plist_.get<double>("Initial time step", 1.);
@@ -167,7 +171,7 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
 };
 
 // -- Commit any secondary (dependent) variables.
-void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {
+void ThreePhase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // update secondary variables for IC i/o
   UpdateSecondaryVariables_(S);
   UpdateThermalConductivity_(S);
@@ -175,25 +179,25 @@ void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {
 };
 
 // -- transfer operators -- ONLY COPIES POINTERS
-void TwoPhase::state_to_solution(const Teuchos::RCP<State>& S,
+void ThreePhase::state_to_solution(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& solution) {
   //Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
   solution->set_data(S->GetFieldData("temperature", "energy"));
 };
 
-void TwoPhase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
+void ThreePhase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
   //Teuchos::RCP<CompositeVector> temp = solution->data();
   S->SetData("temperature", "energy", solution->data());
 };
 
   // -- Choose a time step compatible with physics.
-double TwoPhase::get_dt() {
+double ThreePhase::get_dt() {
   return dt_;
 };
 
 // -- Advance from state S0 to state S1 at time S0.time + dt.
-bool TwoPhase::advance(double dt) {
+bool ThreePhase::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
   // take a bdf timestep
@@ -214,7 +218,7 @@ bool TwoPhase::advance(double dt) {
   return false;
 };
 
-void TwoPhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
+void ThreePhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& temp) {
   AmanziMesh::Entity_ID_List cells;
 
@@ -232,7 +236,7 @@ void TwoPhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
   }
 };
 
-void TwoPhase::UpdateBoundaryConditions_() {
+void ThreePhase::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::MFD_BC_NULL;
     bc_values_[n] = 0.0;
@@ -252,7 +256,7 @@ void TwoPhase::UpdateBoundaryConditions_() {
   }
 };
 
-void TwoPhase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
+void ThreePhase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
   int nfaces = S_next_->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {

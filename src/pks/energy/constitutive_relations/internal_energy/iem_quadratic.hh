@@ -6,41 +6,53 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Linear internal energy model -- function of Cv and temperature
+Quadratic internal energy model -- function of Cv and temperature
 
 See ATS process model documentation's permafrost physical properties
 documentation for details.
 
-UNITS: J/{mol/kg}
+u = u0 + a(T - T_ref) + b(T - T_ref)^2 
+
+UNITS: J/{mol,kg}
 ------------------------------------------------------------------------- */
 
-#ifndef INTERNAL_ENERGY_LINEAR_
-#define INTERNAL_ENERGY_LINEAR_
+#ifndef AMANZI_ENERGYRELATIONS_IEM_QUADRATIC_
+#define AMANZI_ENERGYRELATIONS_IEM_QUADRATIC_
 
 #include "Teuchos_ParameterList.hpp"
+
+#include "internal_energy_model.hh"
+#include "factory.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class InternalEnergyLinear {
+class IEMQuadratic : public InternalEnergyModel {
 
 public:
-  InternalEnergyLinear(Teuchos::ParameterList& plist);
+  explicit IEMQuadratic(Teuchos::ParameterList& plist);
 
   bool IsMolarBasis() { return molar_basis_; }
 
   double InternalEnergy(double temp);
-  double DInternalEnergyDT(double temp) { return Cv_; }
+  double DInternalEnergyDT(double temp);
 
-protected:
+private:
   virtual void InitializeFromPlist_();
 
   Teuchos::ParameterList plist_;
 
-  double Cv_; // units: J/({mol/kg}-K)
-  double T_ref_; // units: K
+  double u0_;
+  double ka_;
+  double kb_;
+  double T0_; // units: K
   bool molar_basis_;
+
+private:  
+  // iem factor registration
+  static Utils::RegisteredFactory<InternalEnergyModel,IEMQuadratic> factory_;
+
 };
 
 }

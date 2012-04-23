@@ -7,8 +7,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_WRM_
-#define _FLOWRELATIONS_WRM_
+#ifndef AMANZI_FLOWRELATIONS_WRM_
+#define AMANZI_FLOWRELATIONS_WRM_
 
 #include "Teuchos_ParameterList.hpp"
 
