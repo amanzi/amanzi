@@ -17,7 +17,7 @@ namespace Flow {
 void Permafrost::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
 
-  // update the rel perm according to the scheme of choice
+  // update the rel perm on faces according to the scheme of choice
   UpdatePermeabilityData_(S);
   Teuchos::RCP<const CompositeVector> rel_perm_faces =
     S->GetFieldData("rel_perm_faces", "flow");
@@ -106,67 +106,62 @@ void Permafrost::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
  * Update secondary variables, calculated in various methods below.
  ****************************************************************** */
 void Permafrost::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
-  // get needed fields
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
-
-  Teuchos::RCP<CompositeVector> dens_liq = S->GetFieldData("density_liquid", "flow");
-  Teuchos::RCP<CompositeVector> mol_dens_liq = S->GetFieldData("molar_density_liquid", "flow");
-  Teuchos::RCP<CompositeVector> visc_liq = S->GetFieldData("viscosity_liquid", "flow");
-
-  Teuchos::RCP<CompositeVector> dens_ice = S->GetFieldData("density_ice", "flow");
-  Teuchos::RCP<CompositeVector> mol_dens_ice = S->GetFieldData("molar_density_ice", "flow");
-  Teuchos::RCP<CompositeVector> visc_ice = S->GetFieldData("viscosity_ice", "flow");
-
-  Teuchos::RCP<CompositeVector> dens_gas = S->GetFieldData("density_gas", "flow");
-  Teuchos::RCP<CompositeVector> mol_dens_gas = S->GetFieldData("molar_density_gas", "flow");
-  Teuchos::RCP<CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas", "flow");
-
-  Teuchos::RCP<CompositeVector> sat_gas = S->GetFieldData("saturation_gas", "flow");
-  Teuchos::RCP<CompositeVector> sat_liq = S->GetFieldData("saturation_liquid", "flow");
-  Teuchos::RCP<CompositeVector> sat_ice = S->GetFieldData("saturation_ice", "flow");
-  Teuchos::RCP<CompositeVector> rel_perm = S->GetFieldData("relative_permeability", "flow");
-
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", "flow");
-
   // calculate liquid properties
-  DensityLiquid_(S, *temp, *pres, dens_liq, mol_dens_liq);
-  ViscosityLiquid_(S, *temp, visc_liq);
+  UpdateDensityLiquid_(S);
+  UpdateViscosityLiquid_(S);
 
-  // calculate liquid properties
-  DensityIce_(S, *temp, *pres, dens_ice, mol_dens_ice);
+  // calculate ice properties
+  UpdateDensityIce_(S);
 
   // calculate molar fraction of vapor and density of gas
-  DensityGas_(S, *temp, *pres, *p_atm, mol_frac_gas, dens_gas, mol_dens_gas);
+  UpdateDensityGas_(S);
 
   // calculate saturations using WRM
   UpdateSaturation_(S);
 
   // update abs perm if needed
   if (variable_abs_perm_) {
-    // Teuchos::RCP<const CompositeVector> phi = S->GetFieldData("porosity");
-    // Teuchos::RCP<CompositeVector> abs_perm = S->GetFieldData("permeability", "flow");
-    // AbsolutePermeability_(*phi, abs_perm)
+    // UpdateAbsolutePermeability_(S);
   }
 
   // calculate rel perm using WRM
-  RelativePermeability_(S, *pres, *p_atm, rel_perm);
+  UpdateRelativePermeability_(S);
 };
+
+
+void Permafrost::UpdateDensityLiquid_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<CompositeVector> rho_liq = S->GetFieldData("density_liquid", "flow");
+  Teuchos::RCP<CompositeVector> n_liq =
+    S->GetFieldData("molar_density_liquid", "flow");
+
+  DensityLiquid_(S, *temp, *pres, rho_liq, n_liq);
+};
+
 
 void Permafrost::DensityLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp, const CompositeVector& pres,
-        const Teuchos::RCP<CompositeVector>& dens_liq,
-        const Teuchos::RCP<CompositeVector>& mol_dens_liq) {
+        const Teuchos::RCP<CompositeVector>& rho_liq,
+        const Teuchos::RCP<CompositeVector>& n_liq) {
 
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   double Mw = eos_liquid_->molar_mass();
   for (int c=0; c!=c_owned; ++c) {
     double rho = eos_liquid_->MassDensity(temp("cell",0,c), pres("cell",0,c));
-    (*dens_liq)("cell",0,c) = rho;
-    (*mol_dens_liq)("cell",0,c) = rho/Mw;
+    (*rho_liq)("cell",0,c) = rho;
+    (*n_liq)("cell",0,c) = rho/Mw;
   }
 };
+
+
+void Permafrost::UpdateViscosityLiquid_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<CompositeVector> visc_liq = S->GetFieldData("viscosity_liquid", "flow");
+
+  ViscosityLiquid_(S, *temp, visc_liq);
+};
+
 
 void Permafrost::ViscosityLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
@@ -177,12 +172,25 @@ void Permafrost::ViscosityLiquid_(const Teuchos::RCP<State>& S,
   }
 };
 
+
+void Permafrost::UpdateDensityGas_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<CompositeVector> rho_gas = S->GetFieldData("density_gas", "flow");
+  Teuchos::RCP<CompositeVector> n_gas = S->GetFieldData("molar_density_gas", "flow");
+  Teuchos::RCP<CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas", "flow");
+  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
+
+  DensityGas_(S, *temp, *pres, *p_atm, mol_frac_gas, rho_gas, n_gas);
+};
+
+
 void Permafrost::DensityGas_(const Teuchos::RCP<State>& S,
                            const CompositeVector& temp,
                            const CompositeVector& pres, const double& p_atm,
                            const Teuchos::RCP<CompositeVector>& mol_frac_gas,
-                           const Teuchos::RCP<CompositeVector>& dens_gas,
-                           const Teuchos::RCP<CompositeVector>& mol_dens_gas) {
+                           const Teuchos::RCP<CompositeVector>& rho_gas,
+                           const Teuchos::RCP<CompositeVector>& n_gas) {
 
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
@@ -190,10 +198,37 @@ void Permafrost::DensityGas_(const Teuchos::RCP<State>& S,
     (*mol_frac_gas)("cell",0,c) = p_sat/p_atm;
     double Mv = eos_gas_->molar_mass((*mol_frac_gas)("cell",0,c));
     double n = eos_gas_->MolarDensity(temp("cell",0,c), pres("cell",0,c));
-    (*dens_gas)("cell",0,c) = Mv*n;
-    (*mol_dens_gas)("cell",0,c) = n;
+    (*rho_gas)("cell",0,c) = Mv*n;
+    (*n_gas)("cell",0,c) = n;
   }
 };
+
+
+void Permafrost::UpdateDensityIce_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<CompositeVector> rho_ice = S->GetFieldData("density_ice", "flow");
+  Teuchos::RCP<CompositeVector> n_ice =
+    S->GetFieldData("molar_density_ice", "flow");
+
+  DensityIce_(S, *temp, *pres, rho_ice, n_ice);
+};
+
+
+void Permafrost::DensityIce_(const Teuchos::RCP<State>& S,
+        const CompositeVector& temp, const CompositeVector& pres,
+        const Teuchos::RCP<CompositeVector>& rho_ice,
+        const Teuchos::RCP<CompositeVector>& n_ice) {
+
+  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  double Mw = eos_ice_->molar_mass();
+  for (int c=0; c!=c_owned; ++c) {
+    double rho = eos_ice_->MassDensity(temp("cell",0,c), pres("cell",0,c));
+    (*rho_ice)("cell",0,c) = rho;
+    (*n_ice)("cell",0,c) = rho/Mw;
+  }
+};
+
 
 void Permafrost::UpdateSaturation_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
@@ -210,17 +245,17 @@ void Permafrost::UpdateSaturation_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> n_ice = S->GetFieldData("molar_density_ice");
   Teuchos::RCP<const CompositeVector> rho_ice = S->GetFieldData("density_ice");
 
-  // store frozen saturation S*_il(pc_il) in sat_ice, this is 1/A
+  // store frozen saturation S*(sig_gl/sig_il * pc_il) in sat_ice, this is 1/A
   FrozenSaturation_(S, *temp, *rho_ice, *n_ice, sat_ice);
 
-  // store unfrozen saturation S*_gl(pc_gl) in sat_liq, this is 1/B
-  UnfrozenSaturation_(S, *pres, *p_atm, sat_liq);
+  // store unfrozen saturation S*(pc_gl) in sat_gas, this is 1/B
+  UnfrozenSaturation_(S, *pres, *p_atm, sat_gas);
 
   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
-    // see notes, eqn 10?
+    // see notes, section 1.2.2
     double A = 1.0/(*sat_ice)("cell",0,c);
-    double B = 1.0/(*sat_liq)("cell",0,c);
+    double B = 1.0/(*sat_gas)("cell",0,c);
 
     double s_liq = 1.0/( A + B - 1.0);
     double s_gas = s_liq * (B - 1.0);
@@ -231,12 +266,13 @@ void Permafrost::UpdateSaturation_(const Teuchos::RCP<State>& S) {
   }
 };
 
+
 void Permafrost::UnfrozenSaturation_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
         const Teuchos::RCP<CompositeVector>& sat_star) {
   // loop over region/wrm pairs
-  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_liq_gas_.begin();
-       wrm!=wrm_liq_gas_.end(); ++wrm) {
+  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
+       wrm!=wrm_.end(); ++wrm) {
     // get the owned cells in that region
     std::string region = (*wrm)->first;
     int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -254,8 +290,8 @@ void Permafrost::DUnfrozenSaturationDp_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
         const Teuchos::RCP<CompositeVector>& dsat_star) {
   // loop over region/wrm pairs
-  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_liq_gas_.begin();
-       wrm!=wrm_liq_gas_.end(); ++wrm) {
+  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
+       wrm!=wrm_.end(); ++wrm) {
     // get the owned cells in that region
     std::string region = (*wrm)->first;
     int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -283,8 +319,8 @@ void Permafrost::FrozenSaturation_(const Teuchos::RCP<State>& S,
   }
 
   // loop over region/wrm pairs
-  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_ice_liq_.begin();
-       wrm!=wrm_ice_liq_.end(); ++wrm) {
+  for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
+       wrm!=wrm_.end(); ++wrm) {
     // get the owned cells in that region
     std::string region = (*wrm)->first;
     int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -292,17 +328,26 @@ void Permafrost::FrozenSaturation_(const Teuchos::RCP<State>& S,
     S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      // use a pc model to evaluate the ice pressure
-      double pc_ice_liq = pc_ice_liq_model_->CapillaryPressure(temp("cell",0,*c), (*dens_ice)("cell",0,*c));
+      // use a pc model to evaluate the ice pressure and then rescale it to
+      // the gas-liquid retention curve.  See notes eqns 6 and 9.
+      double pc_rescaled = pc_ice_liq_model_->CapillaryPressure(temp("cell",0,*c), (*dens_ice)("cell",0,*c));
 
       // use the wrm to evaluate saturation on each cell in the region
-      (*sat_star)("cell",0,*c) = (*wrm)->second->saturation(pc_ice_liq);
+      (*sat_star)("cell",0,*c) = (*wrm)->second->saturation(pc_rescaled);
     }
   }
 };
 
+
+void Permafrost::UpdateRelativePermeability_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> sat_liq = S->GetFieldData("saturation_liquid");
+  Teuchos::RCP<CompositeVector> rel_perm = S->GetFieldData("relative_permeability", "flow");
+  RelativePermeability_(S, *sat_liq, rel_perm);
+};
+
+  
 void Permafrost::RelativePermeability_(const Teuchos::RCP<State>& S,
-        const CompositeVector& pres, const double& p_atm,
+        const CompositeVector& sat_liq,
         const Teuchos::RCP<CompositeVector>& rel_perm) {
 
   // loop over region/wrm pairs
@@ -316,7 +361,8 @@ void Permafrost::RelativePermeability_(const Teuchos::RCP<State>& S,
 
     // use the wrm to evaluate saturation on each cell in the region
     for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      (*rel_perm)("cell",0,*c) = (*wrm)->second->k_relative(p_atm - pres("cell",0,*c));
+      double pc = (*wrm)->second->capillaryPressure(sat_liq("cell",0,*c));
+      (*rel_perm)("cell",0,*c) = (*wrm)->second->k_relative(pc);
     }
   }
 };
