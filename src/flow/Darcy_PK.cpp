@@ -144,6 +144,8 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   // Preconditioner
   Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
   preconditioner->init_ML_preconditioner(ML_list);
+
+  flow_status_ = FLOW_STATUS_INIT;
 };
 
 
@@ -154,6 +156,8 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
+
+  flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 }
 
 
@@ -163,6 +167,8 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   set_time(T0, dT0);
+
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }
 
 
@@ -202,6 +208,7 @@ int Darcy_PK::AdvanceToSteadyState()
               << "Norm of true residual = " << residual_sss << std::endl;
   }
 
+  flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
   return 0;
 }
 
@@ -212,8 +219,6 @@ int Darcy_PK::AdvanceToSteadyState()
 ******************************************************************* */
 int Darcy_PK::Advance(double dT_MPC) 
 {
-  flow_status_ = FLOW_NEXT_STATE_BEGIN;
-
   dT = dT_MPC;
   if (num_itrs_trs == 0) {  // set-up internal clock
     double T_physical = FS->get_time();
@@ -261,7 +266,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   num_itrs_trs++;
 
-  flow_status_ = FLOW_NEXT_STATE_COMPLETE;
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }
 

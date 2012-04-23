@@ -25,7 +25,7 @@ class WRM_fake : public WaterRetentionModel {
   // required methods from the base class
   double k_relative(double pc);
   double saturation(double pc);
-  double d_saturation(double pc);  
+  double dSdPc(double pc);  
   double capillaryPressure(double saturation);
   double residualSaturation() { return 0.0; }
 

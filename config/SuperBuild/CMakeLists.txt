@@ -14,9 +14,24 @@ if (${ADJUST_POLICY})
 endif()
 
 # ############################################################################ #
+# Compiler Definition Warnings
+# ############################################################################ #
+if ( NOT CMAKE_C_COMPILER )
+  message(WARNING "C compiler not specified. CMake will guess!")
+endif()
+
+if ( NOT CMAKE_CXX_COMPILER )
+  message(WARNING "C++ compiler not specified. CMake will guess!")
+endif()
+
+if ( NOT CMAKE_Fortran_COMPILER )
+  message(WARNING "Fortran compiler not specified. CMake will guess!")
+endif()
+
+# ############################################################################ #
 # Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
 # ############################################################################ #
-project(SuperBuild)
+project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -45,26 +60,14 @@ set(SuperBuild_TEMPLATE_FILES_DIR "${SuperBuild_SOURCE_DIR}/templates")
 # ############################################################################ #
 # Compiler checks
 # ############################################################################ #
-if ( NOT CMAKE_C_COMPILER )
-  message(WARNING "C compiler not specified. CMake will guess!")
-endif()
-enable_language(C)
-
-if ( NOT CMAKE_CXX_COMPILER )
-  message(WARNING "C++ compiler not specified. CMake will guess!")
-endif()
-enable_language(CXX)
-
-if ( NOT CMAKE_Fortran_COMPILER )
-  message(WARNING "Fortran compiler not specified. CMake will guess!")
-endif()
-enable_language(Fortran)
-
 include(FortranCInterface)
 FortranCInterface_VERIFY()
 
 include(DefineCompilerVersion)
 define_compiler_version()
+
+include(CheckMPISourceCompiles)
+check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 
 # ############################################################################ #
 # Build options
@@ -107,7 +110,7 @@ option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
 
 option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
-set(ENABLE_MOAB_Mesh FALSE)
+option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
 # OpenMP Search
 option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
@@ -316,11 +319,23 @@ if ( ENABLE_MSTK_Mesh )
             -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
+# MOAB
+if ( ENABLE_MOAB_Mesh )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+             -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
+	     -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
+endif()
+
 # Trilinos  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
            -DTrilinos_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# SEACAS
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
+
 
 # ############################################################################ #
 #  Final steps
@@ -332,8 +347,15 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT
                ${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}
                @ONLY)
 install( FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
-         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake
-       )
+         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake)
+
+# --- Create a Exodus split mesh script and add to the install target     
+set(SuperBuild_EXOSPLIT_SCRIPT splitexo)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_EXOSPLIT_SCRIPT}.sh.in
+               ${SuperBuild_BINARY_DIR}/${SuperBuild_EXOSPLIT_SCRIPT}
+               @ONLY)
+install(PROGRAMS "${SuperBuild_BINARY_DIR}/${SuperBuild_EXOSPLIT_SCRIPT}"             
+         DESTINATION ${TPL_INSTALL_PREFIX}/bin)
 
 #  --- Build the docs
 option(BUILD_DOCS "Build the SuperBuild documentation" FALSE)
@@ -426,6 +448,7 @@ if ( BUILD_Amanzi )
 		  ${UnitTest_BUILD_TARGET}
 		  ${Boost_BUILD_TARGET}
 		  ${MSTK_BUILD_TARGET}
+		  ${MOAB_BUILD_TARGET}
 		  ${CGNS_BUILD_TARGET}
 		  ${CCSE_BUILD_TARGET}
 		  ${Trilinos_BUILD_TARGET})

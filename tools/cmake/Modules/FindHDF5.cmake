@@ -439,7 +439,7 @@ else()
                    LOCATION ${_HDF5_Fortran_LIBRARY}
                    LINK_LANGUAGES "Fortran"
                    LINK_INTERFACE_LIBRARIES "${HDF5_C_TARGET}")
-      set(HDF5_Fortran_LIBRARY ${HDF_Fortran_TARGET})
+      set(HDF5_Fortran_LIBRARY ${HDF5_Fortran_TARGET})
     endif() 
       
     # Fortran HL Library
@@ -448,7 +448,7 @@ else()
                    LOCATION ${_HDF5_Fortran_HL_LIBRARY}
                    LINK_LANGUAGES "Fortran"
                    LINK_INTERFACE_LIBRARIES "${HDF5_Fortran_TARGET}")
-      set(HDF5_Fortran_LIBRARY ${HDF_Fortran_HL_TARGET})
+      set(HDF5_Fortran_LIBRARY ${HDF5_Fortran_HL_TARGET})
     endif()
 
     # Define the HDF5_<component>_LIBRARY to point to the target

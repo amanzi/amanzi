@@ -83,29 +83,29 @@ TEST(ADVANCE_WITH_SIMPLE) {
   // advance the state
   int iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   while (T < 1.0) {
-    double dT = TPK.calculateTransportDt();
-    TPK.advance(dT);
+    double dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 
     if (iter < 10) {
-      printf( "T=%6.2f  C_0(x):", T );
-      for( int k=0; k<15; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+      printf("T=%6.2f  C_0(x):", T);
+      for (int k = 0; k < 15; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
     }
 
-    for( int k=0; k<19; k++ ) 
-      CHECK( ((*tcc_next)[0][k] - (*tcc_next)[0][k+1]) > -1e-15 );
+    for(int k = 0; k < 19; k++) 
+      CHECK(((*tcc_next)[0][k] - (*tcc_next)[0][k+1]) > -1e-15);
 
     *tcc = *tcc_next;
   }
 
-  for (int k=0; k<20; k++)  // check that the final state is constant
+  for (int k = 0; k < 20; k++)  // check that the final state is constant
     CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
 
   delete comm;

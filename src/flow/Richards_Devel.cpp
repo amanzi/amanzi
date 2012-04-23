@@ -18,6 +18,101 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
+* Makes one Picard step during transient time integration.
+* This is the experimental method.                                                 
+****************************************************************** */
+int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
+{
+  Epetra_Vector solution_old(*solution);
+  Epetra_Vector solution_new(*solution);
+
+  Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->createCellView(solution_old));
+  Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->createCellView(solution_new));
+
+  if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
+  solver->SetAztecOption(AZ_output, AZ_none);
+
+  int itrs;
+  for (itrs = 0; itrs < 20; itrs++) {
+    SetAbsolutePermeabilityTensor(K);
+
+    if (!is_matrix_symmetric) {  // Define K and Krel_faces
+      CalculateRelativePermeabilityFace(*solution_old_cells);
+      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
+    } else {  // Define K and Krel_cells, Krel_faces is always one
+      CalculateRelativePermeabilityCell(*solution_old_cells);
+      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+    }
+
+    // update boundary conditions
+    double time = Tp + dTp;
+    bc_pressure->Compute(time);
+    bc_flux->Compute(time);
+    bc_head->Compute(time);
+    bc_seepage->Compute(time);
+    updateBoundaryConditions(
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_old_cells, atm_pressure,
+        bc_markers, bc_values);
+
+    // create algebraic problem (matrix = preconditioner)
+    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+    matrix->createMFDrhsVectors();
+    addGravityFluxes_MFD(K, *Krel_faces, matrix);
+    AddTimeDerivative_MFDpicard(*solution_cells, *solution_old_cells, dTp, matrix);
+    matrix->applyBoundaryConditions(bc_markers, bc_values);
+    matrix->assembleGlobalMatrices();
+    matrix->computeSchurComplement(bc_markers, bc_values);
+    matrix->update_ML_preconditioner();
+    rhs = matrix->get_rhs();
+
+    // call AztecOO solver
+    solver->SetRHS(&*rhs);  // AztecOO modifies the right-hand-side.
+    solution_new = solution_old;  // initial solution guess
+    solver->SetLHS(&solution_new);
+
+    solver->Iterate(max_itrs, convergence_tol);
+    int num_itrs = solver->NumIters();
+    double linear_residual = solver->TrueResidual();
+
+    int ndof = ncells_owned + nfaces_owned;
+    for (int c = 0; c < ndof; c++) {
+      solution_new[c] = (solution_old[c] + solution_new[c]) / 2;
+    }
+
+    // error analysis
+    double error = ErrorNorm(solution_old, solution_new);
+
+    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+      std::printf("Picard:%4d   Pressure(error=%9.4e)  solver(%8.3e, %4d)\n",
+          itrs, error, linear_residual, num_itrs);
+    }
+
+    if (error < 10.0) 
+      break;
+    else 
+      solution_old = solution_new;
+  }
+
+  if (itrs < 10) {
+    *solution = solution_new;
+    dTnext = dT * 1.25;
+    return itrs;
+  } else if (itrs < 15) {
+    *solution = solution_new;
+    dTnext = dT;
+    return itrs;
+  } else if (itrs < 19) {
+    *solution = solution_new;
+    dTnext = dT * 0.8;
+    *solution = solution_new;
+  }
+
+  throw itrs;
+}
+
+
+/* ******************************************************************
 * Calculates steady-state solution assuming that abosolute and relative
 * permeabilities do not depend explicitly on time.
 * WARNING: temporary replacement for missing BDF1 time integrator.                                                    
@@ -79,7 +174,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
 
     // error estimates
     double sol_norm = FS->normLpCell(solution_new, 2.0);
-    L2error = ErrorSolutionDiff(solution_old, solution_new);
+    L2error = ErrorNorm(solution_old, solution_new);
 
     if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess.
       dT /= 10;
@@ -112,60 +207,27 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
 
 
 /* ******************************************************************
-* Calculates steady-state solution assuming that abosolute and relative
-* permeabilities do not depend explicitly on time.                                                    
+* Adds time derivative to the cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
-int Richards_PK::AdvanceSteadyState_ForwardEuler()
+void Richards_PK::AddTimeDerivative_MFDpicard(
+    Epetra_Vector& pressure_cells, Epetra_Vector& pressure_cells_dSdP, 
+    double dT_prec, Matrix_MFD* matrix)
 {
-  Epetra_Vector solution_new(*solution);
+  Epetra_Vector dSdP(mesh_->cell_map(false));
+  DerivedSdP(pressure_cells_dSdP, dSdP);
 
-  T_internal = 0.0;
-  dT = 1.0;
+  const Epetra_Vector& phi = FS->ref_porosity();
+  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
+  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
 
-  int itrs = 0;
-  double L2error = 1.0;
-  while (L2error > convergence_tol_sss) {
-    SetAbsolutePermeabilityTensor(K);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-    if (!is_matrix_symmetric) {  // Define K and Krel_faces
-      CalculateRelativePermeabilityFace(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
-      CalculateRelativePermeabilityCell(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
-    }
-
-    // create algebraic problem
-    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
-
-    // calculate solution at ne time step
-    rhs = matrix->get_rhs();
-    L2error = matrix->computeResidual(*solution, solution_new);
-    solution_new.Update(1.0, *solution, dT);
-
-    // error estimates
-    double sol_error = 0.0, sol_norm = 0.0;
-    for (int n = 0; n < solution->MyLength(); n++) {
-      sol_error += std::pow(solution_new[n] - (*solution)[n], 2.0);
-      sol_norm += std::pow(solution_new[n], 2.0);
-    }
-    sol_error = sqrt(sol_error / sol_norm);
-    sol_norm = sqrt(sol_norm);
-
-    *solution = solution_new;
-    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Time step:%6d   Pressure(diff=%9.4e, sol=%9.4e, res=%9.4e)  time=%8.3e\n",
-          itrs, sol_error, sol_norm, L2error, T_internal);
-    }
-
-    T_internal += dT;
-    itrs++;
+  for (int c = 0; c < ncells; c++) {
+    double volume = mesh_->cell_volume(c);
+    double factor = rho * phi[c] * dSdP[c] * volume / dT_prec;
+    Acc_cells[c] += factor;
+    Fc_cells[c] += factor * pressure_cells[c];
   }
-  return 0;
 }
 
 
@@ -190,21 +252,19 @@ void Richards_PK::AddTimeDerivative_MFDfake(
 /* ******************************************************************
 * Check difference between solutions at times T and T+dT.                                                 
 ****************************************************************** */
-double Richards_PK::ErrorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew)
+double Richards_PK::ErrorNorm(const Epetra_Vector& uold, const Epetra_Vector& unew)
 {
   double error_norm = 0.0;
   for (int n = 0; n < ncells_owned; n++) {
-    double tmp = abs(uold[n] - unew[n]) / (absolute_tol_sss + relative_tol_sss * abs(uold[n]));
+    double tmp = abs(uold[n] - unew[n]) / (absolute_tol + relative_tol * abs(uold[n]));
     error_norm = std::max<double>(error_norm, tmp);
   }
 
-  // find the global maximum
 #ifdef HAVE_MPI
   double buf = error_norm;
-  // MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  uold.Comm().MaxAll(&buf, &error_norm, 1);
+  uold.Comm().MaxAll(&buf, &error_norm, 1);  // find the global maximum
 #endif
-  return  error_norm;
+  return error_norm;
 }
 
 }  // namespace AmanziFlow

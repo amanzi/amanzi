@@ -1,12 +1,18 @@
 /*
-The flow component of the Amanzi code, richards unit tests.
-License: BSD
+This is the flow component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "UnitTest++.h"
@@ -43,7 +49,7 @@ TEST(FLOW_3D_RICHARDS) {
   string xmlFileName = "test/flow_richards_bc_cribs.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  // create a mesh framework 
+  // create a mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
@@ -51,9 +57,9 @@ TEST(FLOW_3D_RICHARDS) {
   ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
   Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
-  //std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
-  //Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
-  //RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0, 64.5,103.2, 1,516, &comm, gm)); 
+  // std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
+  // Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
+  // RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0, 64.5,103.2, 1,516, &comm, gm));
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
@@ -77,7 +83,7 @@ TEST(FLOW_3D_RICHARDS) {
   // derive dependent variable
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector  saturation(pressure);
-  RPK->DeriveSaturationFromPressure(pressure, saturation); 
+  RPK->DeriveSaturationFromPressure(pressure, saturation);
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
@@ -88,7 +94,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   // check the pressure profile
   int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for( int c=0; c<ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
+  for (int c = 0; c < ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
 
   delete RPK;
 }

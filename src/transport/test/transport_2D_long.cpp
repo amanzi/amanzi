@@ -76,7 +76,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
   /* advance the transport state */
   int iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
 
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
@@ -84,8 +84,8 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
   iter = 0;
   bool flag = true;
   while (T < 0.3) {
-    double dT = TPK.calculateTransportDt();
-    TPK.advance(dT);
+    double dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 
@@ -104,7 +104,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
 
     *tcc = *tcc_next;
   }
-  TPK.checkTracerBounds(*tcc_next, 0, 0.0, 1.0, AmanziTransport::TRANSPORT_LIMITER_TOLERANCE);
+  TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, AmanziTransport::TRANSPORT_LIMITER_TOLERANCE);
  
   delete comm;
 }

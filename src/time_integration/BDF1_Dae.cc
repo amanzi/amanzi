@@ -327,7 +327,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   double initial_error(0.0);
 
   do {
-
     // Check for too many nonlinear iterations.
     if (itr > state.mitr) {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
@@ -337,7 +336,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
 
     int errc(0);
-    if (itr%state.maxpclag==0) fn.update_precon (t, u, h, errc);
+    if (itr%state.maxpclag == 0) {
+      state.updpc_calls++;
+      fn.update_precon(t, u, h, errc);
+    }
 
     itr++;
 
@@ -346,14 +348,14 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // compute u_tmp = (u-u0)/h
     u_tmp = u;
-    u_tmp.Update(-1.0/h,u0,1.0/h);
+    u_tmp.Update(-1.0/h, u0, 1.0/h);
 
     fn.fun(t, u, u_tmp, du, h);
 
     fn.precon(du, u_tmp);
 
     // Accelerated correction.
-    *preconditioned_f  = u_tmp;        // copy preconditioned functional into appropriate data type
+    *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
 
     fpa->nka_correction(nev_du, preconditioned_f);

@@ -33,7 +33,9 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
     parameter_list(parameter_list_),
     mesh_maps(mesh_maps_),
     comm(comm_),
-    output_observations(output_observations_) {
+    output_observations(output_observations_),
+    transport_subcycling(0)
+{
   mpc_init();
 }
 
@@ -81,15 +83,9 @@ void MPC::mpc_init() {
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     *out << "The following process kernels are enabled: ";
 
-    if (flow_enabled) {
-      *out << "Flow ";
-    }
-    if (transport_enabled) {
-      *out << "Transport ";
-    }
-    if (chemistry_enabled) {
-      *out << "Chemistry ";
-    }
+    if (flow_enabled) *out << "Flow ";
+    if (transport_enabled) *out << "Transport ";
+    if (chemistry_enabled) *out << "Chemistry ";
     *out << std::endl;
   }
 
@@ -121,6 +117,9 @@ void MPC::mpc_init() {
 
     Teuchos::ParameterList transport_parameter_list =
         parameter_list.sublist("Transport");
+
+    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling",false);
+    transport_subcycling = (subcycling) ? 1 : 0;
 
     TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
     TPK->InitPK();
@@ -277,14 +276,13 @@ void MPC::cycle_driver () {
     }
   }
 
-  // set the iteration counter to zero
-  int iter = 0;
+  int iter = 0;  // set the iteration counter to zero
   S->set_cycle(iter);
 
   // read the checkpoint file as requested
   if (restart_requested == true) {
     // re-initialize the state object
-    restart->read_state( *S, restart_from_filename );
+    restart->read_state(*S, restart_from_filename);
     iter = S->get_cycle();
   }
 
@@ -295,7 +293,8 @@ void MPC::cycle_driver () {
     // write visualization data for timestep if requested
     S->write_vis(*visualization, &(*aux), auxnames);
   } else {
-    S->write_vis(*visualization);
+    // always write the initial visualization dump
+    S->write_vis(*visualization, true);
   }
 
   // write a restart dump if requested (determined in dump_state)
@@ -364,7 +363,7 @@ void MPC::cycle_driver () {
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          transport_dT = TPK->calculateTransportDt();
+          transport_dT = TPK->CalculateTransportDt();
         }
         if (chemistry_enabled) {
           chemistry_dT = CPK->max_time_step();
@@ -443,7 +442,6 @@ void MPC::cycle_driver () {
 
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow
-
       // first advance flow
       if (flow_enabled) {
         bool redo(false);
@@ -462,10 +460,7 @@ void MPC::cycle_driver () {
         FPK->CommitStateForTransport(FS);
       }
 
-
-      // =============================================================
       // write some info about the time step we are about to take
-      
       // first determine what we will write about the time step limiter
       std::string limitstring("");
       switch (tslimiter) {
@@ -484,7 +479,7 @@ void MPC::cycle_driver () {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-	*out << std::setprecision(4);
+	*out << std::setprecision(6);
         *out << "Cycle = " << iter;
         *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
         *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);
@@ -496,10 +491,10 @@ void MPC::cycle_driver () {
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          TPK->advance(mpc_dT);
+          TPK->Advance(mpc_dT, transport_subcycling);
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
-            Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
+            Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
             *total_component_concentration_star = *TS_next->total_component_concentration();
           } else {
             Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
@@ -521,14 +516,13 @@ void MPC::cycle_driver () {
             Exceptions::amanzi_throw(message);
           }
         } else {
-          // commit total_component_concentration_star to the state and move on
           S->update_total_component_concentration(*total_component_concentration_star);
         }
       }
       
       // update the time in the state object
       S->advance_time(mpc_dT);
-      if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
+      if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
       // ===========================================================
       // we're done with this time step, commit the state
@@ -536,7 +530,7 @@ void MPC::cycle_driver () {
 
       FPK->CommitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
-        if (transport_enabled) TPK->commitState(TS);
+        if (transport_enabled) TPK->CommitState(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       }
 
@@ -549,12 +543,12 @@ void MPC::cycle_driver () {
 
       // write visualization if requested
       bool force(false);
-      if ( abs(S->get_time() - T1) < 1e-7) { 
+      if (abs(S->get_time() - T1) < 1e-7) { 
 	force = true;
       }
 
-      if ( ti_mode == INIT_TO_STEADY ) 
-        if ( abs(S->get_time() - Tswitch) < 1e-7 ) {
+      if (ti_mode == INIT_TO_STEADY) 
+        if (abs(S->get_time() - Tswitch) < 1e-7) {
           force = true;
         }
 
@@ -574,7 +568,7 @@ void MPC::cycle_driver () {
   }
 
   // some final output
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
   {
     *out << "Cycle = " << iter;
     *out << ",  Time(years) = "<< S->get_time()/ (365.25*60*60*24);
@@ -589,7 +583,7 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
 
   if (time_remaining < 0.0) {
     Errors::Message message("MPC: time step limiter logic error, T_end must be greater than T.");
-    Exceptions::amanzi_throw(message);    
+    Exceptions::amanzi_throw(message);
   }
 
   if (dT >= time_remaining) {
@@ -601,5 +595,5 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
   }
 }
 
-} // close namespace Amanzi
+}  // namespace Amanzi
 

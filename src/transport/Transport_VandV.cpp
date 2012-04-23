@@ -26,7 +26,7 @@ namespace AmanziTransport {
 /* *******************************************************************
  * Routine verifies that the velocity field is divergence free                 
  ****************************************************************** */
-void Transport_PK::checkDivergenceProperty()
+void Transport_PK::CheckDivergenceProperty()
 {
   int i, c, f;
   double div, u, umax, error_max, error_avg;
@@ -102,7 +102,7 @@ void Transport_PK::checkDivergenceProperty()
 /* *******************************************************************
  * Check for completeness of influx boundary conditions.                        
  ****************************************************************** */
-void Transport_PK::checkInfluxBC() const
+void Transport_PK::CheckInfluxBC() const
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   std::vector<int> influx_face(fmax + 1);
@@ -141,7 +141,7 @@ void Transport_PK::checkInfluxBC() const
 /* *******************************************************************
  * Check that global extrema diminished                          
  ****************************************************************** */
-void Transport_PK::checkGEDproperty(Epetra_MultiVector& tracer) const
+void Transport_PK::CheckGEDproperty(Epetra_MultiVector& tracer) const
 {
   int i, num_components = tracer.NumVectors();
   double tr_min[num_components];
@@ -172,7 +172,7 @@ void Transport_PK::checkGEDproperty(Epetra_MultiVector& tracer) const
 /* *******************************************************************
  * Check that the tracer is between 0 and 1.                        
  ****************************************************************** */
-void Transport_PK::checkTracerBounds(Epetra_MultiVector& tracer,
+void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
                                      int component,
                                      double lower_bound,
                                      double upper_bound,

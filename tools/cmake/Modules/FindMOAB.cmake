@@ -25,6 +25,7 @@ include(FindPackageHandleStandardArgs)
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
 include(AddPackageDependency)
+include(AddImportedLibrary)
 
 if ( MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )
 
@@ -115,13 +116,13 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
 
         if (EXISTS "${MOAB_LIBRARY_DIR}")
 
-            find_library(MOAB_LIBRARY
+            find_library(_MOAB_LIBRARY
                          NAMES ${moab_lib_names}
                          HINTS ${MOAB_LIBRARY_DIR}
                          NO_DEFAULT_PATH)
         else()
             message(SEND_ERROR "MOAB_LIBRARY_DIR=${MOAB_LIBRARY_DIR} does not exist")
-            set(MOAB_LIBRARY "MOAB_LIBRARY-NOTFOUND")
+            set(_MOAB_LIBRARY "_MOAB_LIBRARY-NOTFOUND")
         endif()
 
     else() 
@@ -131,7 +132,7 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
 
             if (EXISTS "${MOAB_DIR}" )
 
-                find_library(MOAB_LIBRARY
+                find_library(_MOAB_LIBRARY
                              NAMES ${moab_lib_names}
                              HINTS ${MOAB_DIR}
                              PATH_SUFFIXES ${moab_lib_suffixes}
@@ -139,13 +140,13 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
 
             else()
                  message(SEND_ERROR "MOAB_DIR=${MOAB_DIR} does not exist")
-                 set(MOABLIBRARY "MOAB_LIBRARY-NOTFOUND")
+                 set(_MOAB_LIBRARY "_MOAB_LIBRARY-NOTFOUND")
             endif()    
 
 
         else()
 
-            find_library(MOAB_LIBRARY
+            find_library(_MOAB_LIBRARY
                          NAMES ${moab_lib_names}
                          PATH_SUFFIXES ${moab_lib_suffixes})
 
@@ -153,7 +154,12 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
 
     endif()
 
-    if ( NOT MOAB_LIBRARY )
+    if ( _MOAB_LIBRARY )
+      set(MOAB_LIBRARY MOAB)
+      add_imported_library(${MOAB_LIBRARY}
+	                   LOCATION ${_MOAB_LIBRARY}
+			   LINK_LANGUAGES "C;CXX")
+    else()  			 
         message(SEND_ERROR "Can not locate MOAB library")
     endif()    
 
@@ -161,35 +167,32 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
     # Define prerequisite packages
     set(MOAB_INCLUDE_DIRS ${MOAB_INCLUDE_DIR})
     set(MOAB_LIBRARIES    ${MOAB_LIBRARY})
-    if (MOAB_NEEDS_NetCDF)
-        add_package_dependency(MOAB DEPENDS_ON NetCDF)
-    endif()
-    if(MOAB_NEEDS_HDF5)
-        add_package_dependency(MOAB DEPENDS_ON HDF5)
-    endif()    
 
+    # NetCDF
+    find_package(NetCDF QUIET REQUIRED)
+    set(MOAB_LINK_LIBRARIES ${NetCDF_LIBRARIES})
+    list(APPEND MOAB_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
 
+    # HDF5
+    find_package(HDF5 QUIET REQUIRED)
+    list(APPEND MOAB_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
+    list(APPEND MOAB_LINK_LIBRARIES "${HDF5_LIBRARIES}")
+
+    set_target_properties(${MOAB_LIBRARY} PROPERTIES
+                          IMPORTED_LINK_INTERFACE_LIBRARIES "${MOAB_LINK_LIBRARIES}")
    
 endif(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )    
 
 # Send useful message if everything is found
 find_package_handle_standard_args(MOAB DEFAULT_MSG
-  MOAB_LIBRARIES
-  MOAB_INCLUDE_DIRS)
-
-# find_package)handle)standard_args should set MOAB_FOUND but it does not!
-if ( MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
-    set(MOAB_FOUND TRUE)
-else()
-    set(MOAB_FOUND FALSE)
-endif()
-
-# Define the version
+                                  MOAB_INCLUDE_DIR
+                                  MOAB_LIBRARY)
 
 mark_as_advanced(
   MOAB_INCLUDE_DIR
   MOAB_INCLUDE_DIRS
   MOAB_LIBRARY
   MOAB_LIBRARIES
+  MOAB_LINK_LIBRARIES
   MOAB_LIBRARY_DIR
 )

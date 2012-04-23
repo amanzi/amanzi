@@ -51,25 +51,25 @@ TEST(ADVANCE_WITH_STK) {
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.set_standalone_mode(true);
 
   // advance the state
-  double dT = TPK.calculateTransportDt();
-  TPK.advance(dT);
+  double dT = TPK.CalculateTransportDt();
+  TPK.Advance(dT);
 
   // printing cell concentration  
   int i, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
-  for (i=0; i<50; i++) {
-    dT = TPK.calculateTransportDt();
-    TPK.advance(dT);
+  for (i = 0; i < 50; i++) {
+    dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
 
     if (i < 10) {

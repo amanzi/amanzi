@@ -499,6 +499,23 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist )
       Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
     }
 
+    // detect whether transport subcycling is on
+    if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+      if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+        Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+        if (ncp_list.isParameter("transport subcycling")) {
+          mpc_list.set<bool>("transport subcycling",ncp_list.get<bool>("transport subcycling"));
+        } else {
+          mpc_list.set<bool>("transport subcycling", false);
+        }
+      } else {
+        mpc_list.set<bool>("transport subcycling", false);
+      }
+    } else {
+      mpc_list.set<bool>("transport subcycling", false);
+    }
+
+
     if ( exe_sublist.isParameter("Flow Model") ) {
       if ( exe_sublist.get<std::string>("Flow Model") == "Off" ) {
         mpc_list.set<std::string>("disable Flow_PK", "yes");
@@ -796,6 +813,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist )
 }
 
 
+/* ******************************************************************
+* WRM sublist
+****************************************************************** */
 Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) 
 {
   Teuchos::ParameterList wrm_list;
@@ -818,6 +838,10 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist )
     double alpha = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("alpha");
     double Sr = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("Sr");
     double m = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("m");
+    double krel_smooth = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("krel smoothing interval", 0.0);
+    if (krel_smooth < 0.0) {
+      Exceptions::amanzi_throw(Errors::Message("If krel smoothing interval is specified it must be positive."));
+    }
 
     // now get the assigned regions
     Teuchos::Array<std::string> regions = matprop_list.sublist(i->first).get<Teuchos::Array<std::string> >("Assigned Regions");
@@ -834,6 +858,7 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist )
       wrm_sublist.set<double>("van Genuchten m", m);
       wrm_sublist.set<double>("van Genuchten alpha",alpha);
       wrm_sublist.set<double>("van Genuchten residual saturation", Sr);
+      wrm_sublist.set<double>("regularization interval", krel_smooth);
     }
   }
 
@@ -841,24 +866,50 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist )
 }
 
 
+/* ******************************************************************
+* DPC sublist
+****************************************************************** */
 Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) 
 {
   Teuchos::ParameterList dpc_list;
+
+  double aggthr(0.0);
+  std::string smthtyp("Jacobi");
+  int ncycles(2);
+  int nsmooth(3);
+
+  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+      Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+      if (ncp_list.isParameter("ML aggregation threshold")) {
+        aggthr = ncp_list.get<double>("ML aggregation threshold");
+      } 
+      if (ncp_list.isParameter("ML smoother type")) {
+        smthtyp = ncp_list.get<std::string>("ML smoother type");
+      }
+      if (ncp_list.isParameter("ML cycle applications")) {
+	ncycles = ncp_list.get<int>("ML cycle applications");
+      }
+      if (ncp_list.isParameter("ML smoother sweeps")) {
+	nsmooth = ncp_list.get<int>("ML smoother sweeps");
+      }      
+    }
+  }
 
   Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
   ml_list.set<int>("ML output", 0);
   ml_list.set<int>("max levels", 40);
   ml_list.set<std::string>("prec type","MGV");
-  ml_list.set<int>("cycle applications", 2);
+  ml_list.set<int>("cycle applications", ncycles);
   ml_list.set<std::string>("aggregation: type", "Uncoupled-MIS");
   ml_list.set<double>("aggregation: damping factor", 1.33333);
-  ml_list.set<double>("aggregation: threshold", 0.0);
+  ml_list.set<double>("aggregation: threshold", aggthr);
   ml_list.set<std::string>("eigen-analysis: type","cg");
   ml_list.set<int>("eigen-analysis: iterations", 10);
-  ml_list.set<int>("smoother: sweeps", 3);
+  ml_list.set<int>("smoother: sweeps", nsmooth);
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("smoother: pre or post", "both");
-  ml_list.set<std::string>("smoother: type", "Jacobi");
+  ml_list.set<std::string>("smoother: type", smthtyp);
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("coarse: type", "Amesos-KLU");
   ml_list.set<int>("coarse: max size", 256);

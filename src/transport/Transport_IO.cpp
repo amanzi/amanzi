@@ -29,7 +29,7 @@ namespace AmanziTransport {
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Transport_PK::processParameterList()
+void Transport_PK::ProcessParameterList()
 {
   Teuchos::ParameterList transport_list;
   transport_list = parameter_list;

@@ -1,6 +1,11 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Authors: Neil Carlson (version 1) 
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
@@ -50,9 +55,12 @@ class Richards_PK : public Flow_PK {
 
   int AdvanceSteadyState_Picard();
   int AdvanceSteadyState_BackwardEuler();
-  int AdvanceSteadyState_ForwardEuler();
   int AdvanceSteadyState_BDF1();
   int AdvanceSteadyState_BDF2();
+
+  // methods for experimental time integration
+  int PicardStep(double T, double dT, double& dTnext);
+  double ErrorNorm(const Epetra_Vector& uold, const Epetra_Vector& unew);
  
   // methods required for time integration
   void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
@@ -72,11 +80,12 @@ class Richards_PK : public Flow_PK {
 
   void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
   void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void AddTimeDerivative_MFDpicard(Epetra_Vector& pressure_cells, 
+                                   Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void ComputePreconditionerMFD(
-      const Epetra_Vector &u, Matrix_MFD* matrix, double Tp, double dTp, bool flag_update_ML);
-  double ErrorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew);
+  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, 
+                                double Tp, double dTp, bool flag_update_ML);
 
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
@@ -120,6 +129,7 @@ class Richards_PK : public Flow_PK {
 
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
+  int block_picard;
 
   int ti_method_sss;  // Parameters for steady-state solution
   int num_itrs_sss, max_itrs_sss;

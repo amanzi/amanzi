@@ -83,13 +83,13 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     int i, k, iter = 0;
     double T = 0.0, T1 = 1.0;
 
-    RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+    RCP<Transport_State> TS_next = TPK.transport_state_next();
     RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
     RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
     while (T < T1) {
-      double dT = std::min(TPK.calculateTransportDt(), T1 - T);
-      TPK.advance(dT);
+      double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
+      TPK.Advance(dT);
       T += dT;
 
       *tcc = *tcc_next;
@@ -168,22 +168,22 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     int i, k, iter = 0;
     double T = 0.0, T1 = 2.0;
 
-    RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+    RCP<Transport_State> TS_next = TPK.transport_state_next();
     RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
     RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
     double dT, dT0;
-    if (nx==10) dT0 = TPK.calculateTransportDt();
+    if (nx == 10) dT0 = TPK.CalculateTransportDt();
     else dT0 /= 2;
 
     while (T < T1) {
-      dT = std::min(TPK.calculateTransportDt(), T1 - T);
+      dT = std::min(TPK.CalculateTransportDt(), T1 - T);
       dT = std::min(dT, dT0);
 
-      TPK.advance(dT);
+      TPK.Advance(dT);
       T += dT;
       if (TPK.internal_tests) {
-        TPK.checkTracerBounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+        TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
       }
 
       *tcc = *tcc_next;

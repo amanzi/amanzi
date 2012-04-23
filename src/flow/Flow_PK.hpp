@@ -28,11 +28,12 @@ Usage:
 namespace Amanzi {
 namespace AmanziFlow {
 
-const int FLOW_NULL = 0;
-const int FLOW_INIT_COMPLETE = 1;
-const int FLOW_STEADY_STATE_COMPLETE = 2;
-const int FLOW_NEXT_STATE_BEGIN = 3;
-const int FLOW_NEXT_STATE_COMPLETE = 4;
+const int FLOW_STATUS_NULL = 0;  // used for internal debuging
+const int FLOW_STATUS_INIT = 2;
+const int FLOW_STATUS_STEADY_STATE_INIT = 4;
+const int FLOW_STATUS_STEADY_STATE_COMPLETE = 6;
+const int FLOW_STATUS_TRANSIENT_STATE_INIT = 8;
+const int FLOW_STATUS_TRANSIENT_STATE_COMPLETE = 10;
 
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
@@ -51,7 +52,8 @@ const double FLOW_TIME_INTEGRATION_TOLERANCE = 1e-6;
 const int FLOW_RELATIVE_PERM_CENTERED = 1; 
 const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 2; 
 const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
-const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4; 
+const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4;
+const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-10;
 
 const int FLOW_MFD3D_POLYHEDRA = 1;
 const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development

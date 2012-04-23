@@ -66,7 +66,7 @@
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
+        <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
       <Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
@@ -104,7 +104,7 @@
         <ParameterList name="time control">
           <Parameter name="start pseudo time" type="double" value="0.0"/>
           <Parameter name="end pseudo time" type="double" value="1e+11"/>
-          <Parameter name="initial time step" type="double" value="1e+8"/>
+          <Parameter name="initial time step" type="double" value="1e+2"/>
           <Parameter name="maximal time step" type="double" value="1e+11"/>
         </ParameterList>
 
@@ -204,7 +204,7 @@
     <Parameter name="Constant water saturation" type="double" value="1"/>
     <Parameter name="Gravity x" type="double" value="0"/>
     <Parameter name="Gravity y" type="double" value="0"/>
-    <Parameter name="Gravity z" type="double" value="-0.0"/>
+    <Parameter name="Gravity z" type="double" value="-1e-9"/> <!-- we need non-zero gravity -->
 
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Number of mesh blocks" type="int" value="2"/>

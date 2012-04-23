@@ -67,24 +67,35 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  for (int c = 0; c < ncells_owned; c++) {
+  Krel_faces->PutScalar(0.0);
+
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     AmanziGeometry::Point Kgravity = K[c] * gravity_;
+    double Kgravity_norm = norm(Kgravity);
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      if ((normal * Kgravity) * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
-      else if (bc_markers[f] != FLOW_BC_FACE_NULL) (*Krel_faces)[f] = (*Krel_cells)[c];
+      double cos_angle = (normal * Kgravity) * dirs[n] / (Kgravity_norm * mesh_->face_area(f));
+
+      if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
+        (*Krel_faces)[f] = (*Krel_cells)[c];  // The upwind face.
+      } else if (bc_markers[f] != FLOW_BC_FACE_NULL) {
+        (*Krel_faces)[f] = (*Krel_cells)[c];  // The boundary face.
+      } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
+        (*Krel_faces)[f] += (*Krel_cells)[c] / 2;  // Almost vertical face.
+      }
     }
   }
 }
 
 
 /* ******************************************************************
-* Defines upwinded relative permeabilities for faces using a given flux. 
+* Defines upwinded relative permeabilities for faces using a given flux.
+* WARNING: This is the experimental code. 
 ****************************************************************** */
 void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p,
                                                           const Epetra_Vector& flux)
@@ -92,14 +103,26 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
+  Krel_faces->PutScalar(0.0);
+
+  double max_flux;
+  flux.MaxValue(&max_flux);
+  double tol = FLOW_RELATIVE_PERM_TOLERANCE * max_flux;
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (flux[f] * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
-      else if (bc_markers[f] != FLOW_BC_FACE_NULL) (*Krel_faces)[f] = (*Krel_cells)[c];
+
+      if (flux[f] * dirs[n] > tol) {
+        (*Krel_faces)[f] = (*Krel_cells)[c];  // The upwind face.
+      } else if (bc_markers[f] != FLOW_BC_FACE_NULL) {
+        (*Krel_faces)[f] = (*Krel_cells)[c];  // The boundary face.
+      } else if (fabs(flux[f]) <= tol) { 
+        (*Krel_faces)[f] += (*Krel_cells)[c] / 2;  // Almost vertical face.
+      }
     }
   }
 }
@@ -138,7 +161,7 @@ void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
     std::vector<unsigned int>::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[*i];
-      ds[*i] = WRM[mb]->d_saturation(pc);
+      ds[*i] = -WRM[mb]->dSdPc(pc);  // Negative sign indicates that dSdP = -dSdPc.
     }
   }
 }

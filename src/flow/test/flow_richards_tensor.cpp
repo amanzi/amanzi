@@ -1,12 +1,18 @@
 /*
-The flow component of the Amanzi code, richards unit tests.
-License: BSD
+This is the flow component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "UnitTest++.h"
@@ -44,10 +50,10 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   string xmlFileName = "test/flow_richards_tensor.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  // create an SIMPLE mesh framework 
+  // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 2, 2, 2, comm, gm)); 
+  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm, gm));
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -73,7 +79,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   Point u0(1.0, 1.0, 1.0);
   Point v0(3);
 
-  for (int i=0; i<3; i++) v0[i] = -u0[i] / K[i];
+  for (int i = 0; i < 3; i++) v0[i] = -u0[i] / K[i];
   v0 *= mu / rho;
   v0 += g * rho;
   cout << "rho=" << rho << "  mu=" << mu << endl;
@@ -86,10 +92,10 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   // check accuracy
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
- 
+
   double err_p = 0.0, err_u = 0.0;
   int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c<ncells; c++) {
+  for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
     cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
@@ -98,20 +104,20 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   err_p = sqrt(err_p);
 
   int nfaces = mesh->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f=0; f<nfaces; f++) {
+  for (int f = 0; f < nfaces; f++) {
     const Point& xf = mesh->face_centroid(f);
     const Point normal = mesh->face_normal(f);
-  
+
     double p_exact = v0 * xf;
     double f_exact = u0 * normal / rho;
     err_u += pow(darcy_flux[f] - f_exact, 2.0);
-    //cout << f << " " << xf << "  flux_num=" << darcy_flux[f] << " f_ex=" << f_exact << endl;
+    // cout << f << " " << xf << "  flux_num=" << darcy_flux[f] << " f_ex=" << f_exact << endl;
   }
   err_u = sqrt(err_u);
 
   CHECK(err_p < 1e-8);
   CHECK(err_u < 1e-8);
- 
+
   delete comm;
   delete RPK;
   delete S;

@@ -16,6 +16,7 @@ message(STATUS "Build CCSE with space dimension ${CCSE_BL_SPACEDIM}")
 set(CCSE_CMAKE_CACHE_ARGS
                        
                        -DENABLE_Config_Report:BOOL=TRUE
+		       -DENABLE_MPI:BOOL=TRUE
                        -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
                        -DENABLE_TESTS:BOOL=FALSE
                        -DBL_PRECISION:STRING=DOUBLE

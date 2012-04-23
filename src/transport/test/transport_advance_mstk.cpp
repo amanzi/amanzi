@@ -64,20 +64,20 @@ TEST(ADVANCE_WITH_MSTK) {
   TPK.InitPK();
 
   // advance the state
-  double dT = TPK.calculateTransportDt();
-  TPK.advance(dT);
+  double dT = TPK.CalculateTransportDt();
+  TPK.Advance(dT);
 
   // printing cell concentration 
   int i, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   int iter = 0;
   while(T < 1.2) {
-    dT = TPK.calculateTransportDt();
-    TPK.advance(dT);
+    dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
  
     if (T < 0.4) {
