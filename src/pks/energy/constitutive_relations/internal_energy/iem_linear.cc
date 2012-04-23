@@ -8,30 +8,37 @@ Author: Ethan Coon
 
 Linear internal energy model -- function of Cv and temperature
 
-See ATS process model documentation's permafrost physical properties
-documentation for details.
+u = C * (T - T_ref)
 
 UNITS: J/{mol/kg}
 ------------------------------------------------------------------------- */
 
-#include "internal_energy_linear.hh"
+#include "iem_linear.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-InternalEnergyLinear::InternalEnergyLinear(Teuchos::ParameterList& plist) :
+Utils::RegisteredFactory<InternalEnergyModel,IEMLinear> IEMLinear::factory_("linear");
+
+IEMLinear::IEMLinear(Teuchos::ParameterList& plist) :
     plist_(plist) {
   InitializeFromPlist_();
 };
 
-double InternalEnergyLinear::InternalEnergy(double temp) {
+double IEMLinear::InternalEnergy(double temp) {
   return Cv_ * (temp - T_ref_);
 };
 
-void InternalEnergyLinear::InitializeFromPlist_() {
-  molar_basis_ = plist_.get<bool>("molar-basis", false);
-  Cv_ = plist_.get<double>("heat capacity [J/({kg/mol}-K)]");
+void IEMLinear::InitializeFromPlist_() {
+  if (plist_.isParameter("Heat capacity [J/kg-mol]")) {
+    Cv_ = plist_.get<double>("Heat capacity [J/kg-K]");
+    molar_basis_ = false;
+  } else {
+    Cv_ = plist_.get<double>("Heat capacity [J/mol-K]");
+    molar_basis_ = true;
+  }
+
   T_ref_ = plist_.get<double>("Reference temperature [K]", 273.15);
 };
 

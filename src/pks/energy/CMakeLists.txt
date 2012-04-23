@@ -15,5 +15,6 @@ add_subdirectory(constitutive_relations)
 add_subdirectory(constant_temperature)
 add_subdirectory(advection_diffusion)
 add_subdirectory(two_phase)
+add_subdirectory(three_phase)
 
 

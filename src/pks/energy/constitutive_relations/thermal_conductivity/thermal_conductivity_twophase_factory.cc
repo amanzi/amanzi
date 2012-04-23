@@ -8,7 +8,7 @@
    ------------------------------------------------------------------------- */
 
 #include <string>
-#include "thermal_conductivity_factory.hh"
+#include "thermal_conductivity_twophase_factory.hh"
 
 namespace Amanzi {
 namespace Energy {

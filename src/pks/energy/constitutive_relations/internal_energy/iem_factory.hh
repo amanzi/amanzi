@@ -7,23 +7,23 @@
    Self-registering factory for WRM implementations.
    ------------------------------------------------------------------------- */
 
-#ifndef _PK_FLOW_WRM_FACTORY_HH_
-#define _PK_FLOW_WRM_FACTORY_HH_
+#ifndef AMANZI_ENERGYRELATIONS_IEM_FACTORY_
+#define AMANZI_ENERGYRELATIONS_IEM_FACTORY_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "wrm.hh"
+#include "internal_energy_model.hh"
 #include "factory.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Energy {
+namespace EnergyRelations {
 
-class WRMFactory : public Utils::Factory<WRM> {
+class IEMFactory : public Utils::Factory<InternalEnergyModel> {
 
 public:
-  Teuchos::RCP<WRM> createWRM(Teuchos::ParameterList& plist);
+  Teuchos::RCP<InternalEnergyModel> createIEM(Teuchos::ParameterList& plist);
 };
 
 } // namespace
