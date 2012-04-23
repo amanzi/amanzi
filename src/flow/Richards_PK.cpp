@@ -77,6 +77,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   solver = NULL;
   bdf2_dae = NULL;
   bdf1_dae = NULL;
+  block_picard = 1;
 
   ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
   ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
@@ -176,7 +177,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   Krel_cells->PutScalar(1.0);  // we start with fully saturated media
   Krel_faces->PutScalar(1.0);
 
-  flow_status_ = FLOW_INIT_COMPLETE;
+  flow_status_ = FLOW_STATUS_INIT;
 }
 
 
@@ -255,6 +256,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   set_time(T0, dT0);  // overrides data provided in the input file
   ti_method = ti_method_sss;
   num_itrs = 0;
+  block_picard = 0;
+
+  flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 
   // DEBUG
   // AdvanceToSteadyState();
@@ -327,6 +331,9 @@ void Richards_PK::InitTransient(double T0, double dT0)
   set_time(T0, dT0);  // overrides data in input file
   ti_method = ti_method_trs;
   num_itrs = 0;
+  block_picard = 0;
+
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }
 
 
@@ -335,7 +342,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 ****************************************************************** */
 double Richards_PK::CalculateFlowDt()
 {
-  if (ti_method == FLOW_TIME_INTEGRATION_PICARD) dT *= 1e+4;
+  if (ti_method == FLOW_TIME_INTEGRATION_PICARD && block_picard == 1) dT *= 1e+4;
   return dT;
 }
 
@@ -347,7 +354,6 @@ double Richards_PK::CalculateFlowDt()
 ******************************************************************* */
 int Richards_PK::Advance(double dT_MPC)
 {
-  flow_status_ = FLOW_NEXT_STATE_BEGIN;
   dT = dT_MPC;
 
   if (num_itrs == 0) {  // set-up internal clock
@@ -361,10 +367,15 @@ int Richards_PK::Advance(double dT_MPC)
     ComputeUDot(time, *solution, udot);
     if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
+
     } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       bdf1_dae->set_initial_state(time, *solution, udot);
+
     } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
-      AdvanceToSteadyState();
+      if (flow_status_ == FLOW_STATUS_STEADY_STATE_INIT) {
+        AdvanceToSteadyState();
+        block_picard = 1;  // We will wait for transient initialization.
+      }
     }
 
     int ierr;
@@ -378,19 +389,25 @@ int Richards_PK::Advance(double dT_MPC)
     bdf2_dae->write_bdf2_stepping_statistics();
 
     T_internal = bdf2_dae->most_recent_time();
+
   } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     bdf1_dae->bdf1_step(dT, *solution, dTnext);
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
 
     T_internal = bdf1_dae->most_recent_time();
+
   } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
-    dTnext = dT;
+    if (block_picard == 0) {
+      PicardStep(time, dT, dTnext);  // Updates solution vector.
+    } else {
+      dTnext = dT;
+    }
   }
   dT = dTnext;
   num_itrs++;
 
-  flow_status_ = FLOW_NEXT_STATE_COMPLETE;
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }
 

@@ -30,7 +30,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 {
-  flow_status_ = FLOW_NULL;
+  flow_status_ = FLOW_STATUS_NULL;
 
   FS = Teuchos::rcp(new Flow_State(*FS_MPC));
   mesh_ = FS->mesh();

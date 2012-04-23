@@ -205,6 +205,8 @@ void Richards_PK::ProcessParameterList()
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
     } else if (ti_method_name == "BDF2") {
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+    } else if (ti_method_name == "Picard") {
+      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
     } else {
       msg << "Richards Problem: transient sublist defines an unknown time integration method.";
       Exceptions::amanzi_throw(msg);

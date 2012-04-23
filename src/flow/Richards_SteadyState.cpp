@@ -22,7 +22,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState()
 {
-  flow_status_ = FLOW_NEXT_STATE_BEGIN;
+  flow_status_++;  // indicates intermediate state
 
   // initialize pressure and saturation at T=0.
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -54,7 +54,7 @@ int Richards_PK::AdvanceToSteadyState()
     ierr = AdvanceSteadyState_BDF2();
   }
 
-  if (ierr == 0) flow_status_ = FLOW_STEADY_STATE_COMPLETE;
+  if (ierr == 0) flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
   return ierr;
 }
 

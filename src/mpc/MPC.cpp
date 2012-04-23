@@ -442,7 +442,6 @@ void MPC::cycle_driver () {
 
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow
-
       // first advance flow
       if (flow_enabled) {
         bool redo(false);
@@ -461,10 +460,7 @@ void MPC::cycle_driver () {
         FPK->CommitStateForTransport(FS);
       }
 
-
-      // =============================================================
       // write some info about the time step we are about to take
-      
       // first determine what we will write about the time step limiter
       std::string limitstring("");
       switch (tslimiter) {
@@ -483,7 +479,7 @@ void MPC::cycle_driver () {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-	*out << std::setprecision(4);
+	*out << std::setprecision(6);
         *out << "Cycle = " << iter;
         *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
         *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);
@@ -520,14 +516,13 @@ void MPC::cycle_driver () {
             Exceptions::amanzi_throw(message);
           }
         } else {
-          // commit total_component_concentration_star to the state and move on
           S->update_total_component_concentration(*total_component_concentration_star);
         }
       }
       
       // update the time in the state object
       S->advance_time(mpc_dT);
-      if (FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
+      if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
       // ===========================================================
       // we're done with this time step, commit the state
@@ -573,7 +568,7 @@ void MPC::cycle_driver () {
   }
 
   // some final output
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
   {
     *out << "Cycle = " << iter;
     *out << ",  Time(years) = "<< S->get_time()/ (365.25*60*60*24);
@@ -588,7 +583,7 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
 
   if (time_remaining < 0.0) {
     Errors::Message message("MPC: time step limiter logic error, T_end must be greater than T.");
-    Exceptions::amanzi_throw(message);    
+    Exceptions::amanzi_throw(message);
   }
 
   if (dT >= time_remaining) {
@@ -600,5 +595,5 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
   }
 }
 
-} // close namespace Amanzi
+}  // namespace Amanzi
 
