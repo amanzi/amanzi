@@ -125,31 +125,48 @@ private:
 
   // -- update secondary variables from primary variables T,p
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
-  void UpdateSaturation_(const Teuchos::RCP<State>& S);
 
+  // -- Each constitutive relation has a pair of methods, one which pulls data
+  //    from a State and calls the second with that data.  This separation is
+  //    on purpose, though it is not currently used.  The rationale for this
+  //    design choice is that we may eventually move to a Phalanx-like tree
+  //    structure for updating the state, and having a single interface entry
+  //    point (i.e. a method taking just a state) would likely be useful for
+  //    this.
+
+  // Liquid EOS
+  void UpdateDensityLiquid_(const Teuchos::RCP<State>& S);
   void DensityLiquid_(const Teuchos::RCP<State>& S,
                       const CompositeVector& temp,
                       const CompositeVector& pres,
-                      const Teuchos::RCP<CompositeVector>& dens_liq,
-                      const Teuchos::RCP<CompositeVector>& mol_dens_liq);
+                      const Teuchos::RCP<CompositeVector>& rho_liq,
+                      const Teuchos::RCP<CompositeVector>& n_liq);
 
-  void DensityIce_(const Teuchos::RCP<State>& S,
-                   const CompositeVector& temp,
-                   const CompositeVector& pres,
-                   const Teuchos::RCP<CompositeVector>& dens_ice,
-                   const Teuchos::RCP<CompositeVector>& mol_dens_ice);
-
+  void UpdateViscosityLiquid_(const Teuchos::RCP<State>& S);
   void ViscosityLiquid_(const Teuchos::RCP<State>& S,
                         const CompositeVector& temp,
                         const Teuchos::RCP<CompositeVector>& visc_liq);
 
+  // Ice EOS
+  void UpdateDensityIce_(const Teuchos::RCP<State>& S);
+  void DensityIce_(const Teuchos::RCP<State>& S,
+                   const CompositeVector& temp,
+                   const CompositeVector& pres,
+                   const Teuchos::RCP<CompositeVector>& rho_ice,
+                   const Teuchos::RCP<CompositeVector>& n_ice);
+
+  // Vapor EOS
+  void UpdateDensityGas_(const Teuchos::RCP<State>& S);
   void DensityGas_(const Teuchos::RCP<State>& S,
                    const CompositeVector& temp,
                    const CompositeVector& pres,
                    const double& p_atm,
                    const Teuchos::RCP<CompositeVector>& mol_frac_gas,
-                   const Teuchos::RCP<CompositeVector>& dens_gas,
-                   const Teuchos::RCP<CompositeVector>& mol_dens_gas);
+                   const Teuchos::RCP<CompositeVector>& rho_gas,
+                   const Teuchos::RCP<CompositeVector>& n_gas);
+
+  // WRM
+  void UpdateSaturation_(const Teuchos::RCP<State>& S);
 
   void FrozenSaturation_(const Teuchos::RCP<State>& S,
                          const CompositeVector& temp,
@@ -161,15 +178,14 @@ private:
                            const CompositeVector& pres,
                            const double& p_atm,
                            const Teuchos::RCP<CompositeVector>& sat_star);
-
   void DUnfrozenSaturationDp_(const Teuchos::RCP<State>& S,
           const CompositeVector& pres,
           const double& p_atm,
           const Teuchos::RCP<CompositeVector>& dsat_star);
 
+  void UpdateRelativePermeability_(const Teuchos::RCP<State>& S);
   void RelativePermeability_(const Teuchos::RCP<State>& S,
-                             const CompositeVector& pres,
-                             const double& p_atm,
+                             const CompositeVector& sat_liq,
                              const Teuchos::RCP<CompositeVector>& rel_perm);
 
 private:
@@ -194,8 +210,7 @@ private:
 
   // wrms specified on a region-basis
   typedef std::pair< std::string, Teuchos::RCP<FlowRelations::WRM> > WRMRegionPair;
-  std::vector< Teuchos::RCP<WRMRegionPair> > wrm_ice_liq_;
-  std::vector< Teuchos::RCP<WRMRegionPair> > wrm_liq_gas_;
+  std::vector< Teuchos::RCP<WRMRegionPair> > wrm_;
 
   // ice-liquid capillary pressure model, may be different in ice wedges?
   // for now, just a single one...

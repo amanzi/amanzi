@@ -105,12 +105,12 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   eos_gas_ = Teuchos::rcp(new FlowRelations::EOSVaporInGas(eos_gas_plist));
 
   // -- pc_il model.  cap pressure for ice-water interfaces are a
-  // -- function of temperature.  See notes eqn: 9ish?
+  // -- function of temperature.  See notes eqn 9
   Teuchos::ParameterList pc_il_plist = flow_plist_.sublist("Capillary Pressure Ice-Liquid");
   pc_ice_liq_model_ = Teuchos::rcp(new FlowRelations::PCIceWater(pc_il_plist));
 
-  // -- frozen water retention models
-  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Frozen Water Retention Models");
+  // -- water retention model
+  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Models");
   // count the number of region-model pairs
   int wrm_count = 0;
   for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
@@ -121,7 +121,7 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
       Exceptions::amanzi_throw(message);
     }
   }
-  wrm_ice_liq_.resize(wrm_count);
+  wrm_.resize(wrm_count);
 
   // instantiate the region-model pairs
   FlowRelations::WRMFactory wrm_factory;
@@ -129,30 +129,7 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
     Teuchos::ParameterList wrm_region_list = wrm_plist.sublist(wrm_plist.name(i));
     std::string region = wrm_region_list.get<std::string>("Region");
-    wrm_ice_liq_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
-    iblock++;
-  }
-
-  // -- un-frozen water retention models
-  wrm_plist = flow_plist_.sublist("Unfrozen Water Retention Models");
-  // count the number of region-model pairs
-  wrm_count = 0;
-  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
-    if (wrm_plist.isSublist(wrm_plist.name(i))) {
-      wrm_count++;
-    } else {
-      std::string message("Permafrost: frozen water retention model list contains an entry that is not a sublist.");
-      Exceptions::amanzi_throw(message);
-    }
-  }
-  wrm_liq_gas_.resize(wrm_count);
-
-  // instantiate the region-model pairs
-  iblock = 0;
-  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
-    Teuchos::ParameterList wrm_region_list = wrm_plist.sublist(wrm_plist.name(i));
-    std::string region = wrm_region_list.get<std::string>("Region");
-    wrm_liq_gas_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
+    wrm_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
     iblock++;
   }
 
