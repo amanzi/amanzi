@@ -2847,7 +2847,6 @@ void Mesh_MSTK::init_pface_dirs() {
     }
     else if (cell_dimension() == 2) {
 
-
       idx = 0;
       while ((edge = MESH_Next_Edge(mesh,&idx))) {
 	if (ME_PType(edge) != PINTERIOR) {
@@ -2865,14 +2864,18 @@ void Mesh_MSTK::init_pface_dirs() {
 	      else
 		std::cerr << "Two faces using edge in same direction in 2D mesh" << std::endl;
 	    }
-
-            List_Delete(efaces);
 	  }
-	  else
+	  else {
 	    MEnt_Set_AttVal(edge,attfc0,MEnt_GlobalID(face0),0.0,NULL);
+            face1 = List_Entry(efaces,1);
+            if (face1)
+              MEnt_Set_AttVal(edge,attfc1,MEnt_GlobalID(face1),0.0,NULL);
+          }
+          List_Delete(efaces);
 	}
       }
-    }
+
+    }  // else if (cell_dimension() == 2)
 
 
 
