@@ -69,17 +69,14 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
 
   Krel_faces->PutScalar(0.0);
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
-
-    AmanziGeometry::Point Kgravity = K[c] * gravity_;
-    double Kgravity_norm = norm(Kgravity);
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double cos_angle = (normal * Kgravity) * dirs[n] / (Kgravity_norm * mesh_->face_area(f));
+      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
 
       if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
         (*Krel_faces)[f] = (*Krel_cells)[c];  // The upwind face.
@@ -253,6 +250,32 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Ep
     }
   }
 }
+
+
+/* ******************************************************************
+* Calculates tensor-point product K * g and normalizes the result.
+* To minimize parallel communications, the resultin vector Kg_unit 
+* is distributed across mesh.
+****************************************************************** */
+void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g, 
+                                       std::vector<AmanziGeometry::Point>& Kg_unit)
+{
+  const Epetra_Map& cmap = mesh_->cell_map(true);
+  Epetra_MultiVector Kg_copy(cmap, dim);  // temporary vector
+
+  for (int c = 0; c < ncells_owned; c++) {
+    AmanziGeometry::Point Kg = K[c] * g;
+    double Kg_norm = norm(Kg);
+ 
+    for (int i = 0; i < dim; i++) Kg_copy[i][c] = Kg[i] / Kg_norm;
+  }
+
+  FS->copyMasterMultiCell2GhostMultiCell(Kg_copy);
+  
+  for (int c = 0; c < ncells_wghost; c++) {
+    for (int i = 0; i < dim; i++) (Kg_unit[c])[i] = Kg_copy[i][c];
+  }
+} 
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
