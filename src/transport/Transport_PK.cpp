@@ -238,9 +238,10 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
 
   T_physical = TS->get_time();
   double dT_total = 0.0, dT_cycle;
+  double dT_original = dT;  // advance routines override dT
 
-  if (subcycling && dT < dT_MPC) {
-    dT_cycle = dT;
+  if (subcycling && dT_original < dT_MPC) {
+    dT_cycle = dT_original;
     *ws_subcycle_start = ws_prev;
   } else {
     dT_cycle = dT_MPC;
@@ -250,13 +251,13 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
 
   int ncycles = 0, swap = 1;
   while (dT_total < dT_MPC) {
-  double time = (standalone_mode) ? T_internal : T_physical;
-  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
+    double time = (standalone_mode) ? T_internal : T_physical;
+    for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
  
     T_internal += dT_cycle;
     dT_total += dT_cycle;
 
-    if (subcycling && dT < dT_MPC) {
+    if (subcycling && dT_original < dT_MPC) {
       if (swap) {  // Initial water saturation is in 'start'.
         water_saturation_start = ws_subcycle_start;
         water_saturation_end = ws_subcycle_end;
@@ -269,19 +270,25 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
       swap = 1 - swap;
     }
 
-  if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
+    if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
       advance_donor_upwind(dT_cycle);
-  } else if (spatial_disc_order == 2) {
+    } else if (spatial_disc_order == 2) {
       advance_second_order_upwind(dT_cycle);
     }
 
-    if (subcycling && dT < dT_MPC)  // rotate the concentrations
+    if (subcycling && dT_original < dT_MPC)  // rotate the concentrations
         TS->copymemory_multivector(tcc_next, tcc, 1);
 
     dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
     ncycles++;
   }
 
+  dT = dT_original;  // restore the original dT (just in case)
+
+  if (MyPID == 0 && verbosity_level >= 1) {
+    printf("Number of transport sub-cycles = %3d  dT(sec): stable=%8.3g  mpc=%8.3g\n", 
+        ncycles, dT_original, dT_MPC);
+  }
   //DEBUG
   //writeGMVfile(TS_nextMPC);
 }
