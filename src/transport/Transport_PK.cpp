@@ -238,9 +238,10 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
 
   T_physical = TS->get_time();
   double dT_total = 0.0, dT_cycle;
+  double dT_original = dT;  // advance routines override dT
 
-  if (subcycling && dT < dT_MPC) {
-    dT_cycle = dT;
+  if (subcycling && dT_original < dT_MPC) {
+    dT_cycle = dT_original;
     *ws_subcycle_start = ws_prev;
   } else {
     dT_cycle = dT_MPC;
@@ -256,7 +257,7 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
     T_internal += dT_cycle;
     dT_total += dT_cycle;
 
-    if (subcycling && dT < dT_MPC) {
+    if (subcycling && dT_original < dT_MPC) {
       if (swap) {  // Initial water saturation is in 'start'.
         water_saturation_start = ws_subcycle_start;
         water_saturation_end = ws_subcycle_end;
@@ -275,15 +276,18 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
       AdvanceSecondOrderUpwind(dT_cycle);
     }
 
-    if (subcycling && dT < dT_MPC)  // rotate the concentrations
+    if (subcycling && dT_original < dT_MPC)  // rotate the concentrations
         TS->copymemory_multivector(tcc_next, tcc, 1);
 
     dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
     ncycles++;
   }
 
+  dT = dT_original;  // restore the original dT (just in case)
+
   if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
-    cout << "number of transport sub-cycles =" << ncycles << endl;
+    printf("Number of transport sub-cycles = %3d  dT(sec): stable=%8.3g  mpc=%8.3g\n", 
+        ncycles, dT_original, dT_MPC);
   }
 
   // DEBUG

@@ -178,7 +178,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   Krel_faces->PutScalar(1.0);
 
   if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
-    Kgravity_unit.resize(ncells_wghost);
+    // Kgravity_unit.resize(ncells_wghost);  Resize does not work properly.
     CalculateKVectorUnit(gravity_, Kgravity_unit);
   }
 

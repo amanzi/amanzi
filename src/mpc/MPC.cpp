@@ -316,10 +316,11 @@ void MPC::cycle_driver () {
     total_component_concentration_star =
         Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
 
-    // then start time stepping 
+    // then start time stepping
     while ((S->get_time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
       // determine the time step we are now going to take
-      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99, limiter_dT=1e+99, observation_dT=1e+99;
+      double chemistry_dT = 1e+99, transport_dT = 1e+99, flow_dT = 1e+99;
+      double mpc_dT = 1e+99, limiter_dT = 1e+99, observation_dT = 1e+99;
 
       if (flow_enabled && flow_model == "Richards") {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
@@ -363,7 +364,8 @@ void MPC::cycle_driver () {
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          transport_dT = TPK->CalculateTransportDt();
+          double transport_dT_tmp = TPK->CalculateTransportDt();
+          if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
         }
         if (chemistry_enabled) {
           chemistry_dT = CPK->max_time_step();
