@@ -182,7 +182,7 @@
           <Parameter name="m" type="double" value="0.2136"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
-        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 2 and Plane Surface 3}"/>
+        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
       </ParameterList>
       <ParameterList name="Facies_3">
         <ParameterList name="Porosity: Uniform">
@@ -198,7 +198,7 @@
           <Parameter name="m" type="double" value="0.3006"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
-        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
+        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 2 and Plane Surface 3}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Phase Definitions">
