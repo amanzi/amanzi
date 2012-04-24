@@ -47,10 +47,8 @@ int main(int argc, char *argv[]) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     
-    if (rank!=0) {
-      cout.rdbuf(0);
-    } 
-    
+    if (rank != 0) cout.rdbuf(0);
+
     Teuchos::CommandLineProcessor CLP;
     
     CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"
@@ -80,16 +78,14 @@ int main(int argc, char *argv[]) {
     // determine which simulation driver to call
     std::string framework;
     if (mesh_parameter_list.isSublist("Structured")) {
-        framework = "Structured";
-    }
-    else if (mesh_parameter_list.isSublist("Unstructured")) {
-        framework = "Unstructured";
-    }
-    else {
-        amanzi_throw(Errors::Message("The Mesh parameter list must contain one sublist: \"Structured\" or \"Unstructured\""));
+      framework = "Structured";
+    } else if (mesh_parameter_list.isSublist("Unstructured")) {
+      framework = "Unstructured";
+    } else {
+      amanzi_throw(Errors::Message("The Mesh parameter list must contain one sublist: \"Structured\" or \"Unstructured\""));
     }
     
-    Amanzi::Simulator* simulator = 0;
+    Amanzi::Simulator* simulator = NULL;
     
     if (framework=="Structured") {
 #ifdef ENABLE_Structured
@@ -97,8 +93,7 @@ int main(int argc, char *argv[]) {
 #else
       amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
-    }
-    else {
+    } else {
 #ifdef ENABLE_Unstructured
       simulator = new AmanziUnstructuredGridSimulationDriver();
 #else
@@ -109,7 +104,7 @@ int main(int argc, char *argv[]) {
     Amanzi::ObservationData output_observations;  
     Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm,driver_parameter_list,output_observations);
 
-    if ( ret == Amanzi::Simulator::FAIL ) {
+    if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
     }
 
@@ -119,7 +114,6 @@ int main(int argc, char *argv[]) {
       std::string obs_file = obs_list.get<std::string>("Observation Output Filename");
 
       if (rank == 0) {
-      
         std::ofstream out; out.open(obs_file.c_str(),std::ios::out);
         if (!out.good()) {
             std::cout << "OPEN PROBLEM" << endl;
@@ -135,7 +129,7 @@ int main(int argc, char *argv[]) {
 	  std::string label  = obs_list.name(i);
 	  std::string _label = label;
 #ifdef ENABLE_Structured
-	  if (framework=="Structured")_label = Amanzi::AmanziInput::underscore(label);
+	  if (framework=="Structured") _label = Amanzi::AmanziInput::underscore(label);
 #endif
 	  const Teuchos::ParameterEntry& entry = obs_list.getEntry(label);
 	  if (entry.isList()) {
@@ -159,11 +153,10 @@ int main(int argc, char *argv[]) {
             }
           }
         }
-          out.close();
+        out.close();
       }
     }
-    
-      
+ 
     std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n";
     
     delete simulator;

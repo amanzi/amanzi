@@ -22,9 +22,9 @@
 #include "InputParserIS.hh"
 
 Amanzi::Simulator::ReturnType
-AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
-                                             Teuchos::ParameterList& input_parameter_list,
-                                             Amanzi::ObservationData&      output_observations)
+AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
+                                            Teuchos::ParameterList& input_parameter_list,
+                                            Amanzi::ObservationData& output_observations)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -69,19 +69,12 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   }
   
   
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
-    {  
-      // print parameter list
-      *out << "======================> dumping parameter list <======================" << std::endl;
-      Teuchos::writeParameterListToXmlOStream(new_list, *out);
-      *out << "======================> done dumping parameter list. <================"<<std::endl;
-    }
-
-
-
-  using namespace std;
-
-
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {  
+    // print parameter list
+    *out << "======================> dumping parameter list <======================" << std::endl;
+    Teuchos::writeParameterListToXmlOStream(new_list, *out);
+    *out << "======================> done dumping parameter list. <================"<<std::endl;
+  }
 
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
@@ -106,7 +99,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   Teuchos::ParameterList reg_params = new_list.sublist("Regions");
 
   Amanzi::AmanziGeometry::GeometricModelPtr 
-    geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+      geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
 
 
   // Add the geometric model to the domain
@@ -118,27 +111,17 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   // create the free regions here and add them to the simulation domain
   // Nothing to do for now
 
-  {
-    // empty
-  }
-  
-
-
 
   // ---------------- MESH -----------------------------------------------
-
 
 
   // Create a mesh factory for this geometric model
 
   Amanzi::AmanziMesh::MeshFactory factory(comm) ;
 
-
   // Prepare to read/create the mesh specification
  
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-
 
   // get the Mesh sublist
 
@@ -150,15 +133,10 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   bool unstructured_option = mesh_params.isSublist("Unstructured");
 
-  if (!unstructured_option) 
-    {
-
-      std::cerr << "Unstructured simulator invoked for structured mesh request" << std::endl;
-      throw std::exception();
-    }
-
-
-
+  if (!unstructured_option) {
+    std::cerr << "Unstructured simulator invoked for structured mesh request" << std::endl;
+    throw std::exception();
+  }
 
   // Read and initialize the unstructured mesh parameters
 
@@ -167,14 +145,11 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   // Decide on which mesh framework to use
 
   try {
-
     Amanzi::AmanziMesh::FrameworkPreference prefs(Amanzi::AmanziMesh::default_preference());
-
 
     bool expert_params_specified = unstr_mesh_params.isSublist("Expert");
 
     if (expert_params_specified) {
-
       Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("Expert");  
 
       bool framework_specified = expert_mesh_params.isParameter("Framework");
@@ -184,7 +159,6 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
       // preferences
 
       if (framework_specified) {
-
 	std::string framework = expert_mesh_params.get<string>("Framework");
 
 	if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
@@ -200,37 +174,27 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 	  s += ": specified mesh framework preference not understood";
 	  amanzi_throw(Errors::Message(s));
 	}
-	
       }   
     }
-
-
 
     // Create a mesh factory with default or user preferences for a
     // mesh framework
     // prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
     factory.preference(prefs);
 
-
-
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
-
     // do nothing, this means that the "Framework" parameter was 
     // not in the input
 
   } catch (const std::exception& e) {
-
     std::cerr << rank << ": error: " << e.what() << std::endl;
     ierr++;
-
   }
-
 
   comm->SumAll(&ierr, &aerr, 1);
   if (aerr > 0) {
     return Amanzi::Simulator::FAIL;
   }
-
 
 
   // Read or generate the mesh
@@ -296,11 +260,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
     ierr = 0;
     
     try {
-
       // create the mesh by internal generation
-
-      
-
       mesh = factory.create(gen_params, geom_model_ptr);
 
     } catch (const std::exception& e) {
@@ -326,14 +286,10 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
 
 
-
-
-
   // -------------- MULTI-PROCESS COORDINATOR------- --------------------
 
   // create the MPC
   Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
-
 
 
   //--------------- DO THE SIMULATION -----------------------------------
