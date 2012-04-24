@@ -21,6 +21,8 @@ include(PrintVariable)
 # through these variables.
 project(ATK)
 
+include_directories(${Boost_INCLUDE_DIRS})
+
 set(atk_inc_files Utils.hh
                   Timer.hh
                   TimerManager.hh
