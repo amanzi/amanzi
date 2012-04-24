@@ -13,6 +13,7 @@
 #include "MPC.hpp"
 #include "Domain.hh"
 #include "GeometricModel.hh"
+#include "MeshAudit.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -38,8 +39,9 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  int rank, ierr, aerr;
+  int rank, ierr, aerr, size;
   MPI_Comm_rank(mpi_comm,&rank);
+  MPI_Comm_size(mpi_comm,&size);
 
   bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
   
@@ -166,12 +168,12 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   // Decide on which mesh framework to use
 
+  bool expert_params_specified = unstr_mesh_params.isSublist("Expert");
+
   try {
 
     Amanzi::AmanziMesh::FrameworkPreference prefs(Amanzi::AmanziMesh::default_preference());
 
-
-    bool expert_params_specified = unstr_mesh_params.isSublist("Expert");
 
     if (expert_params_specified) {
 
@@ -325,6 +327,56 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   ASSERT(!mesh.is_null());
 
 
+  if (expert_params_specified) {
+
+    Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("Expert");  
+    bool verify_mesh_param = expert_mesh_params.isParameter("Verify Mesh");
+
+    if (verify_mesh_param) {
+
+      bool verify = expert_mesh_params.get<bool>("Verify Mesh");
+      if (verify) {
+        
+        std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
+
+        if (size == 1) {
+          Amanzi::MeshAudit mesh_auditor(mesh);
+          int status = mesh_auditor.Verify();
+          if (status == 0)
+            std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
+          else {
+            std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
+            return Amanzi::Simulator::FAIL;
+          }
+        }
+        else {
+          std::ostringstream ofile;
+          ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
+          std::ofstream ofs(ofile.str().c_str());
+
+          if (rank == 0)
+            std::cerr << "Writing Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
+    
+          ierr = 0;
+          Amanzi::MeshAudit mesh_auditor(mesh, ofs);
+          int status = mesh_auditor.Verify();        // check the mesh
+          if (status != 0) ierr++;
+          
+          comm->SumAll(&ierr, &aerr, 1);
+          if (aerr == 0) 
+            std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
+          else {
+            if (rank == 0)
+              std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
+            return Amanzi::Simulator::FAIL;
+          }
+        }
+
+      } // if verify
+
+    } // if verify_mesh_param
+    
+  } // If expert_params_specified
 
 
 
