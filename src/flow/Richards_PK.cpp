@@ -177,6 +177,11 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   Krel_cells->PutScalar(1.0);  // we start with fully saturated media
   Krel_faces->PutScalar(1.0);
 
+  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
+    Kgravity_unit.resize(ncells_wghost);
+    CalculateKVectorUnit(gravity_, Kgravity_unit);
+  }
+
   flow_status_ = FLOW_STATUS_INIT;
 }
 

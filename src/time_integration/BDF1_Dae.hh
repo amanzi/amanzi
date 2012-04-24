@@ -48,7 +48,7 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u);
 
   // returns the most recent time
-  const double most_recent_time() { return state.uhist->most_recent_time(); }
+  double most_recent_time() { return state.uhist->most_recent_time(); }
 
   // write statistics about the time step
   void write_bdf1_stepping_statistics();

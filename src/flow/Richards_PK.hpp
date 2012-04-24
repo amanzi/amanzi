@@ -72,6 +72,7 @@ class Richards_PK : public Flow_PK {
   // other main methods
   void ProcessParameterList();
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
+  void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
   void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
   void CalculateRelativePermeabilityFace(const Epetra_Vector& p);
   void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
@@ -161,10 +162,12 @@ class Richards_PK : public Flow_PK {
   std::vector<double> bc_values;
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
+  std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
+
+  int Krel_method;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  int Krel_method;  // method for calculating relative permeability
   int mfd3d_method;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;

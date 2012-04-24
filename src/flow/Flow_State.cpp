@@ -179,8 +179,8 @@ void Flow_State::copyMasterCell2GhostCell(Epetra_Vector& v)
 
 
 /* *******************************************************************
-* Transfer face-based data from master to ghost positions and perform
-* operation mode there. 
+* Transfers face-based data from master to ghost positions and 
+* performs the operation 'mode' there. 
 * WARNING: Vector v must contain ghost faces.              
 ******************************************************************* */
 void Flow_State::combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
