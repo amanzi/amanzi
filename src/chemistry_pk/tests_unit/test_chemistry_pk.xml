@@ -2,17 +2,20 @@
 <ParameterList name="Main">
 
   <ParameterList name="Simple Mesh Parameters">
-      <Parameter name="X_Min" type="double" value="0.0"/>
-      <Parameter name="X_Max" type="double" value="1.0"/>
-      <Parameter name="Y_Min" type="double" value="0.0"/>
-      <Parameter name="Y_Max" type="double" value="1.0"/>
-      <Parameter name="Z_Min" type="double" value="0.0"/>
-      <Parameter name="Z_Max" type="double" value="1.0"/>
-      <Parameter name="Number of Cells in X" type="int" value="10"/> 
-      <Parameter name="Number of Cells in Y" type="int" value="1"/> 
-      <Parameter name="Number of Cells in Z" type="int" value="1"/> 
+      <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}"/>
+      <Parameter name="Domain High Corner" type="Array double" value="{1.0, 1.0, 1.0}"/>
   </ParameterList>
   
+  <ParameterList name="Regions">
+    <ParameterList name="All">
+      <ParameterList name="Region:Box">
+	<Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+	<Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="State">
     <Parameter name="Number of mesh blocks" type="int" value="1"/>
     <Parameter name="Number of component concentrations" type="int" value="5"/>
