@@ -412,8 +412,10 @@ void MPC::cycle_driver () {
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          transport_dT = TPK->calculate_transport_dT();
-        }
+	  if (transport_subcycling==1) {
+	    transport_dT = TPK->calculate_transport_dT();
+	  }
+	}
         if (chemistry_enabled) {
           chemistry_dT = CPK->max_time_step();
         }
