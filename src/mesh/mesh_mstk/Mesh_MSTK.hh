@@ -96,6 +96,8 @@ private:
   void post_create_steps_();
 
   void collapse_degen_edges();
+  Cell_type MFace_Celltype(MFace_ptr f);
+  Cell_type MRegion_Celltype(MRegion_ptr r);
   void label_celltype();
 
   void init_pvert_lists();

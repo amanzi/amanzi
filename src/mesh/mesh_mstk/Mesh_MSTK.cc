@@ -2606,7 +2606,6 @@ void Mesh_MSTK::post_create_steps_()
 
 
 
-
   { // Keep together and in this order 
 
     init_pvert_lists();
@@ -2847,9 +2846,8 @@ void Mesh_MSTK::init_pface_dirs() {
 	}
       }    
 	
-    }
+    } // if (cell_dimension() == 3)
     else if (cell_dimension() == 2) {
-
 
       idx = 0;
       while ((edge = MESH_Next_Edge(mesh,&idx))) {
@@ -2868,14 +2866,19 @@ void Mesh_MSTK::init_pface_dirs() {
 	      else
 		std::cerr << "Two faces using edge in same direction in 2D mesh" << std::endl;
 	    }
-
-            List_Delete(efaces);
 	  }
-	  else
+	  else {
 	    MEnt_Set_AttVal(edge,attfc0,MEnt_GlobalID(face0),0.0,NULL);
+            face1 = List_Entry(efaces,1);
+            if (face1) 
+              MEnt_Set_AttVal(edge,attfc1,MEnt_GlobalID(face1),0.0,NULL);
+          }
+
+          List_Delete(efaces);
 	}
       }
-    }
+
+    } // else if (cell_dimension() == 2)
 
 
 
@@ -3115,10 +3118,16 @@ void Mesh_MSTK::collapse_degen_edges() {
 
 	  orig_vids = new std::vector<unsigned int>;
 
-	  cell_get_nodes(MR_ID(region),orig_vids);
+          List_ptr rverts = MR_Vertices(region);
+          
+          MVertex_ptr rvert;
+          int idx3 = 0;
+          while ((rvert = List_Next_Entry(rverts,&idx3)))
+            orig_vids->push_back(MV_ID(rvert)-1);
 
-	  MEnt_Get_AttVal(region,celltype_att,&ival,NULL,NULL);
-	  celltype = (Cell_type) ival;
+          List_Delete(rverts);
+          
+	  celltype = MRegion_Celltype(region);
 
 	  MEnt_Set_AttVal(region,orig_celltype_att,celltype,0.0,NULL);
 	  MEnt_Set_AttVal(region,orig_celltopo_att,0,0.0,orig_vids);
@@ -3135,10 +3144,16 @@ void Mesh_MSTK::collapse_degen_edges() {
 
 	  orig_vids = new std::vector<unsigned int>;
 
-	  cell_get_nodes(MF_ID(face),orig_vids);
+          List_ptr fverts = MF_Vertices(face,1,0);
+          
+          MVertex_ptr fvert;
+          int idx3 = 0;
+          while ((fvert = List_Next_Entry(fverts,&idx3)))
+            orig_vids->push_back(MV_ID(fvert)-1);
 
-	  MEnt_Get_AttVal(face,celltype_att,&ival,NULL,NULL);
-	  celltype = (Cell_type) ival;
+          List_Delete(fverts);
+          
+	  celltype = MFace_Celltype(face);
 
 	  MEnt_Set_AttVal(face,orig_celltype_att,celltype,0.0,NULL);
 	  MEnt_Set_AttVal(face,orig_celltopo_att,0,0.0,orig_vids);
@@ -3156,16 +3171,20 @@ void Mesh_MSTK::collapse_degen_edges() {
 	 same for master and slave edges and their nodes, we will not
 	 have conflict between processors */
 
+      int vdelid=0;
+
       ev0 = ME_Vertex(edge,0); evgid0 = MEnt_GlobalID(ev0);
       ev1 = ME_Vertex(edge,1); evgid1 = MEnt_GlobalID(ev1);
 
       if (evgid0 < evgid1) {
 	vkeep = ev0;
 	vdel = ev1;
+        vdelid = MV_ID(vdel);
       }
       else {
 	vkeep = ev1;
 	vdel = ev0;
+        vdelid = MV_ID(vdel);
       }
 
       vkeep = ME_Collapse(edge, vkeep, topoflag);
@@ -3173,6 +3192,7 @@ void Mesh_MSTK::collapse_degen_edges() {
       if (!vkeep) {
 	vkeep = vdel;
 	vdel = (vkeep == ev0) ? ev1 : ev1;
+        vdelid = MV_ID(vdel);
 
 	vkeep = ME_Collapse(edge, vkeep, topoflag);
       }
@@ -3186,6 +3206,8 @@ void Mesh_MSTK::collapse_degen_edges() {
       /* In the stored configuration of the original cell, replace the
 	 ID of the deleted vertex with the retained vertex */
 
+      std::vector<Entity_ID> new_vids;
+
       vregs = MV_Regions(vkeep);
       if (vregs) {
 
@@ -3194,13 +3216,17 @@ void Mesh_MSTK::collapse_degen_edges() {
 	  MEnt_Get_AttVal(region,orig_celltopo_att,NULL,NULL,&pval);
 	  orig_vids = (std::vector<Entity_ID> *)pval;
 
-          // Will this work? Don't we have to use push_back?
+          if (!orig_vids) continue;
 
-	  for (int i = 0; i < orig_vids->size(); i++) 
-	    if ((*orig_vids)[i] == MV_ID(vdel)) {
-	        throw std::exception();
-	      (*orig_vids)[i] = (Entity_ID) MV_ID(vkeep);
+          new_vids.clear();
+	  for (int i = 0; i < orig_vids->size(); i++) {            
+	    if ((*orig_vids)[i] == vdelid-1) {
+	      new_vids.push_back((Entity_ID) MV_ID(vkeep)-1);
             }
+            else
+              new_vids.push_back((*orig_vids)[i]);
+          }
+          orig_vids->swap(new_vids);
 	}
 
 	List_Delete(vregs);
@@ -3215,13 +3241,18 @@ void Mesh_MSTK::collapse_degen_edges() {
 	    MEnt_Get_AttVal(region,orig_celltopo_att,NULL,NULL,&pval);
 	    orig_vids = (std::vector<Entity_ID> *)pval;
 
-            // will this work? Don't we have to use push_back
-	    for (int i = 0; i < orig_vids->size(); i++)
-	      if ((*orig_vids)[i] = MV_ID(vdel)) {
-	        throw std::exception();
-		(*orig_vids)[i] = (Entity_ID) MV_ID(vkeep);
+            if (!orig_vids) continue;
+
+            new_vids.clear();
+	    for (int i = 0; i < orig_vids->size(); i++) {
+	      if ((*orig_vids)[i] == vdelid-1) {
+		new_vids.push_back((Entity_ID) MV_ID(vkeep)-1);
               }
-	  }
+              else
+                new_vids.push_back((*orig_vids)[i]);
+            }
+            orig_vids->swap(new_vids);
+          }
 
           List_Delete(vfaces);
 	}
@@ -3234,12 +3265,87 @@ void Mesh_MSTK::collapse_degen_edges() {
 } /* end Mesh_MSTK::collapse_degen_edges */
 
 
+Cell_type Mesh_MSTK::MFace_Celltype(MFace_ptr face) {
+  int nfv = MF_Num_Vertices(face);
+
+  switch (nfv) {
+  case 3:
+    return TRI;
+    break;
+  case 4:
+    return QUAD;
+    break;
+  default:
+    return POLYGON;
+  }
+}
+
+Cell_type Mesh_MSTK::MRegion_Celltype(MRegion_ptr region) {
+  List_ptr rverts, rfaces;
+  MFace_ptr face;
+  int nrv, nrf, idx2, nquads;
+
+  rverts = MR_Vertices(region);
+  nrv = List_Num_Entries(rverts);
+  List_Delete(rverts);
+  
+  nrf = MR_Num_Faces(region);
+  
+  switch (nrf) {
+  case 4:
+    return TET;
+    break;
+  case 5:
+    
+    nquads = 0;
+    rfaces = MR_Faces(region);	  
+    idx2 = 0;
+    while ((face = List_Next_Entry(rfaces,&idx2)))
+      if (MF_Num_Vertices(face) == 4)
+        nquads++;
+    List_Delete(rfaces);
+    
+    switch (nquads) {
+    case 1:
+      return PYRAMID;
+      break;
+    case 3:
+      return PRISM;
+      break;
+    default:
+      return POLYHED;
+    }
+
+    break;
+
+  case 6:
+
+    nquads = 0;
+    rfaces = MR_Faces(region);	  
+    idx2 = 0;
+    while ((face = List_Next_Entry(rfaces,&idx2)))
+      if (MF_Num_Vertices(face) == 4)
+        nquads++;
+    List_Delete(rfaces);
+    
+    if (nquads == 6) 
+      return HEX;
+    else 
+      return POLYHED;
+
+    break;
+
+  default:
+    return POLYHED;
+  }
+
+}
+
 void Mesh_MSTK::label_celltype() {
   Cell_type ctype;
-  int idx, idx2, nrv, nrf, nfv, nquads;
+  int idx;
   MFace_ptr face;
   MRegion_ptr region;
-  List_ptr rfaces, rverts;
 
   if (cell_dimension() == 2) 
     celltype_att = MAttrib_New(mesh,"Cell_type",INT,MFACE);
@@ -3250,18 +3356,7 @@ void Mesh_MSTK::label_celltype() {
 
     idx = 0;
     while ((face = MESH_Next_Face(mesh,&idx))) {
-      nfv = MF_Num_Vertices(face);
-
-      switch (nfv) {
-      case 3:
-	ctype = TRI;
-	break;
-      case 4:
-	ctype = QUAD;
-	break;
-      default:
-	ctype = POLYGON;
-      }
+      ctype = MFace_Celltype(face);
       MEnt_Set_AttVal(face,celltype_att,ctype,0.0,NULL);
     }
       
@@ -3270,59 +3365,7 @@ void Mesh_MSTK::label_celltype() {
 
     idx = 0;
     while ((region = MESH_Next_Region(mesh,&idx))) {
-
-      rverts = MR_Vertices(region);
-      nrv = List_Num_Entries(rverts);
-      List_Delete(rverts);
-
-      nrf = MR_Num_Faces(region);
-
-      switch (nrf) {
-      case 4:
-	ctype = TET;
-	break;
-      case 5:
-
-	  nquads = 0;
-	  rfaces = MR_Faces(region);	  
-	  idx2 = 0;
-	  while ((face = List_Next_Entry(rfaces,&idx2)))
-	    if (MF_Num_Vertices(face) == 4)
-	      nquads++;
-	  List_Delete(rfaces);
-
-	  switch (nquads) {
-	  case 1:
-	    ctype = PYRAMID;
-	    break;
-	  case 3:
-	    ctype = PRISM;
-	    break;
-	  default:
-	    ctype = POLYHED;
-	  }
-
-	break;
-
-      case 6:
-
-	  nquads = 0;
-	  rfaces = MR_Faces(region);	  
-	  idx2 = 0;
-	  while ((face = List_Next_Entry(rfaces,&idx2)))
-	    if (MF_Num_Vertices(face) == 4)
-	      nquads++;
-	  List_Delete(rfaces);
-
-	  ctype = (nquads == 6) ? HEX : POLYHED;
-
-	break;
-      default:
-
-	ctype = POLYHED;
-
-      }
-
+      ctype = MRegion_Celltype(region);
       MEnt_Set_AttVal(region,celltype_att,ctype,0.0,NULL);
 
     }

@@ -17,26 +17,44 @@
 namespace Amanzi 
 {
 
+// Forward declare the manager so that it can be a friend
+class TimerManager;
 
+/**
+ * \class   Timer
+ * \author  Nathan Barnett
+ */
 class Timer
 {
   friend std::ostream& operator<<(std::ostream& os, Timer& t);
+  friend class TimerManager;
 
 public:
-  explicit Timer(std::string name="Timer_");
-  void start();
-  void stop();
-  clock_t getTicks();
-  double getTime();
+  enum Type {
+    AVERAGE     = 0,
+    ACCUMULATE  = 1,
+    ONCE        = 2,
+    MAXIMUM     = 3,
+    MINIMUM     = 4
+  };
+  
+  explicit Timer(std::string name="Timer_", Type type=ONCE);
+  void     start();
+  void     stop();
+  clock_t  getTicks();
+  double   getTime();
   ~Timer();
 
 private:
-  std::string     _name;      //!< Name of the timer (defaults to "Timer + _instance")
-  clock_t 	  _start;     //!< Time at which the timer was started
-  clock_t 	  _stop;      //!< Time at which the timer was stopped
-  bool 		  _running;   //!< Flag for determining if the timer is running
-  static unsigned _instances; //!< Keeps track of the number of timers instantiated
-  unsigned        _num;       //!< Number of this timer
+  std::string     _name;               //!< Name of the timer (defaults to "Timer + _numTimerInstances")
+  clock_t 	      _startTime;          //!< Time at which the timer was started
+  clock_t 	      _stopTime;           //!< Time at which the timer was stopped
+  bool 		      _running;            //!< Flag for determining if the timer is running
+  static unsigned _numTimerInstances;  //!< Keeps track of the number of timers instantiated
+  unsigned        _id;                 //!< Number of this timer
+  clock_t         _runningTotal;       //!< Used to keep track of running totals, etc.
+  unsigned        _numInvocations;     //!< Number of times the timer has been started/restarted
+  Type            _type;               //!< Type of the timer (average, accumulate, etc.)
 };
 
 } //end of namespace Amanzi

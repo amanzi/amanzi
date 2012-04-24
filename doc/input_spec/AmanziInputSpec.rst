@@ -1223,6 +1223,8 @@ at intervals corresponding to the numerical time step values; writes are control
   * [SU] `"File Name Base`" [string]
   
   * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+  
+  * [SU] `"Time Macro`" [string] one of the labeled time macros (see above)
 
   * [SU] `"Variables`" [string] can accept a list of field quantities to include in the file
 

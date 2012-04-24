@@ -15,6 +15,8 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
+#include "Timer.hh"
+
 
 namespace Amanzi {
 
@@ -324,8 +326,15 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
 
     // update the preconditioner if necessary
+    // DEBUG: Nathan
     int errc(0);
-    if (itr%(state.maxpclag+1)==0) fn.update_precon (t, u, h, errc);
+    if (itr%(state.maxpclag+1)==0) {
+      Timer t1;
+      t1.start();
+      fn.update_precon (t, u, h, errc);
+      t1.stop();
+      std::cout << "Preconditioner, if necessary: " << t1 << std::endl;
+    }
 
     // iteration counter
     itr++;
@@ -338,10 +347,20 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     u_tmp.Update(-1.0/h,u0,1.0/h);
 
     // evaluate nonlinear functional
+    // DEBUG: Nathan
+    Timer t1;
+    t1.start();
     fn.fun(t, u, u_tmp, du, h);
+    t1.stop();
+    std::cout << "evaluate nonlinear functional: " << t1 << std::endl;
     
     // apply preconditioner to the nonlinear residual
+    // DEBUG: Nathan
+    Timer t2;
+    t2.start();
     fn.precon(du, u_tmp);
+    t2.stop();
+    std::cout << "apply preconditioner to the nonlinear residual: " << t2 << std::endl;   
 
     // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f  = u_tmp;        // copy preconditioned functional into appropriate data type

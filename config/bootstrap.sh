@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # ############################################################################ #
 #                                                                              #
@@ -94,7 +94,7 @@ function status_message()
   if [ "${no_color}" -eq "${TRUE}" ]; then
     echo "[`date`] $1"
   else
-    echo "[`date`] \033[$GREEN $1\033[m"
+    echo -e "[`date`]\033[$GREEN $1\033[m"
   fi  
 
 }
@@ -104,7 +104,7 @@ function error_message()
   if [ "${no_color}" -eq "${TRUE}" ]; then
     echo "Amanzi Bootstrap ERROR: $1" 1>&2
   else  
-    echo "Amanzi Bootstrap ERROR:\033[$RED $1\033[m" 1>&2 
+    echo -e "Amanzi Bootstrap ERROR:\033[$RED $1\033[m" 1>&2 
   fi
 }
 
@@ -114,7 +114,7 @@ function warn_message()
   if [ "${no_color}" -eq "${TRUE}" ]; then
     echo "Amanzi Bootstrap Warning: $1" 1>&2
   else  
-    echo "Amanzi Bootstrap Warning:\033[$PINK $1\033[m" 1>&2
+    echo -e "Amanzi Bootstrap Warning:\033[$PINK $1\033[m" 1>&2
   fi
 }
 
@@ -695,12 +695,14 @@ function check_tools
     error_message "Mercurial (hg) binary does not exist"
     exit_now 10
   fi
+  status_message "Mercury binary: ${hg_binary}"
 
   # Check CURL 
   if [ ! -e "${curl_binary}" ]; then
     error_message "CURL binary does not exist"
     exit_now 10
   fi
+  status_message "CURL binary: ${curl_binary}"
 
   # Check CMake
   if [ -z "${cmake_binary}" ]; then 
@@ -711,6 +713,7 @@ function check_tools
     error_message "CMake binary does not exist. Will build."
     build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
   fi
+  status_message "CMake binary: ${cmake_binary}"
 
   status_message "Tool check complete"
 

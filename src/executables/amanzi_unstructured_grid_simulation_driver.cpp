@@ -325,10 +325,6 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   ASSERT(!mesh.is_null());
 
 
-
-
-
-
   // -------------- MULTI-PROCESS COORDINATOR------- --------------------
 
   // create the MPC

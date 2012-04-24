@@ -14,30 +14,30 @@
 namespace Amanzi
 {
 
-unsigned Timer::_instances = 0;
+unsigned Timer::_numTimerInstances = 0;
+
 
 /**
  *  \fn         Constructor
  *  \brief      Includes an option for naming the timer - for printout
  *  \param[in]  Name of the timer
  */
-Timer::Timer(std::string name) : _start(0), _stop(0), _running(false), _name(name)
+Timer::Timer(std::string name, Type type) : _startTime(0), _stopTime(0), _running(false), _name(name), _type(type), _runningTotal(0), _numInvocations(1)
 {
   // We increment the number of timer instances and grab the current number 
   // for our own
-  _num = _instances;
-  _instances++;
+  _id = _numTimerInstances;
+  _numTimerInstances++;
 
   // If we used a generic name, concat the instance number so that the timer 
   // names are unique
   if (_name=="Timer_")
   {
     std::stringstream ss;
-    ss << _name << _num;
+    ss << _name << _id;
     _name = ss.str();
   }
 }
-
 
 /**
  *  \fn     Destructor
@@ -45,7 +45,7 @@ Timer::Timer(std::string name) : _start(0), _stop(0), _running(false), _name(nam
 Timer::~Timer()
 {
   // This timer got killed - remove one from the list
-  _instances--;
+  _numTimerInstances--;
 }
 
 
@@ -56,8 +56,9 @@ Timer::~Timer()
  */
 void Timer::start()
 {
-  _running = true;
-  _start   = clock();
+  _running     = true;
+  _numInvocations++;
+  _startTime   = clock();
 }
 
 
@@ -68,8 +69,29 @@ void Timer::start()
  */
 void Timer::stop()
 {
-  _stop    = clock();
-  _running = false;
+  _stopTime    = clock();
+  _running     = false;
+
+  switch ( _type )
+  {
+    case AVERAGE:
+      _runningTotal += (_stopTime-_startTime);
+      break;
+    case ACCUMULATE:
+      _runningTotal += (_stopTime-_startTime);
+      break;
+    case ONCE:
+      _runningTotal = (_stopTime-_startTime);
+      break;
+    case MAXIMUM:
+      _runningTotal = std::max( _runningTotal, (_stopTime-_startTime) );
+      break;
+    case MINIMUM:
+      _runningTotal = std::min( _runningTotal, (_stopTime-_startTime) );
+      break;
+    default:
+      break;
+  }
 }
 
 
@@ -86,10 +108,44 @@ void Timer::stop()
  */
 clock_t Timer::getTicks()
 {
-  if ( _running ) 
-    return ( clock() - _start );
-  else 
-    return ( _stop - _start );
+  if ( _running )
+  {
+    switch (_type)
+    {
+      case ACCUMULATE:
+        return ( _runningTotal+(clock() - _startTime) );
+        break;
+      case ONCE:
+        return ( clock() - _startTime );
+        break;
+      default:
+        throw "That type of timer doesn't make sense to grab while running";
+        break;
+    }
+  }
+  else
+  {
+    switch (_type)
+    {
+      case AVERAGE:
+        return ( _runningTotal / _numInvocations );
+        break;
+      case ACCUMULATE:
+        return ( _runningTotal );
+        break;
+      case ONCE:
+        return ( _runningTotal );
+        break;
+      case MAXIMUM:
+        return ( _runningTotal );
+        break;
+      case MINIMUM:
+        return ( _runningTotal );
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 
@@ -106,10 +162,44 @@ clock_t Timer::getTicks()
  */
 double Timer::getTime()
 {
-  if ( _running ) 
-    return (double( clock() - _start ) / (double)CLOCKS_PER_SEC);
-  else 
-    return (double( _stop - _start ) / (double)CLOCKS_PER_SEC);
+  if ( _running )
+  {
+    switch (_type)
+    {
+      case ACCUMULATE:
+        return ( _runningTotal+(clock() - _startTime) ) / (double)CLOCKS_PER_SEC;
+        break;
+      case ONCE:
+        return ( clock() - _startTime ) / (double)CLOCKS_PER_SEC;
+        break;
+      default:
+        throw "That type of timer doesn't make sense to grab while running";
+        break;
+    }
+  }
+  else
+  {
+    switch (_type)
+    {
+      case AVERAGE:
+        return ( _runningTotal / _numInvocations ) / (double)CLOCKS_PER_SEC;
+        break;
+      case ACCUMULATE:
+        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        break;
+      case ONCE:
+        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        break;
+      case MAXIMUM:
+        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        break;
+      case MINIMUM:
+        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 /**

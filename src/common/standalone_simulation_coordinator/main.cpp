@@ -20,6 +20,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "TimerManager.hh"
 
 // include fenv if it exists
 #include "boost/version.hpp"
@@ -90,6 +91,9 @@ int main(int argc, char *argv[]) {
     }
     
     Amanzi::Simulator* simulator = 0;
+    
+    Amanzi::timer_manager.add( "Full Simulation", Amanzi::Timer::ONCE );
+    Amanzi::timer_manager.start( "Full Simulation" );
     
     if (framework=="Structured") {
 #ifdef ENABLE_Structured
@@ -163,8 +167,11 @@ int main(int argc, char *argv[]) {
       }
     }
     
+    Amanzi::timer_manager.stop( "Full Simulation" );
       
-    std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n";
+    std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
+    
+    std::cout << Amanzi::timer_manager << std::endl;
     
     delete simulator;
     delete comm;

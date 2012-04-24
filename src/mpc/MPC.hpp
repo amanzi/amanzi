@@ -99,7 +99,10 @@ namespace Amanzi
     
     // observation times control
     Teuchos::Array<double> observation_times_;
-   
+    // visualization times control
+    Teuchos::Array<double> visualization_times_;
+    // waypoint times control
+    Teuchos::Array<double> waypoint_times_;
   };
   
   
