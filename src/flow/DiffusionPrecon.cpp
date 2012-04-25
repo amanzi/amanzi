@@ -1,7 +1,10 @@
 #include "DiffusionPrecon.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include <boost/timer.hpp>
 
 namespace Amanzi
+
+
 {
 
 DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, 
@@ -13,6 +16,8 @@ DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix,
 
   if (plist.isSublist("ML Parameters")) {
     ML_plist = plist.sublist("ML Parameters");
+//     ML_plist.set("ML output", 10);
+//     ML_plist.print(cout);
     MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), ML_plist, false);
   } else {
     MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), false);
@@ -33,10 +38,13 @@ void DiffusionPrecon::Compute()
 
 
 int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
 {
   // WARNING: When invoked by AztecOO the arguments X and Y may be aliased:
   // possibly the same object or different views of the same underlying data.
   // To cope with this possibility we do not assign to Y until the end.
+
+  boost::timer total;
 
   const int ncell = D->Mesh().count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -72,7 +80,21 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
   Tf.Update(1.0, Xf, -1.0);
 
   // "Solve" the Schur complement system for Yf with Tf as the rhs using ML
+  boost::timer t;
   MLprec->ApplyInverse(Tf, Yf);
+//   Epetra_FECrsMatrix* Sff = new Epetra_FECrsMatrix(D->Sff());
+//   Epetra_LinearProblem problem(Sff, &Yf, &Tf);
+//   AztecOO solver(problem);
+  
+// //   solver.SetAztecOption(AZ_precond, AZ_Jacobi);
+//   solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+//   solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+//   solver.SetAztecOption(AZ_graph_fill, 1);
+//   solver.SetAztecParam(AZ_drop, 1e-3);
+//   solver.Iterate(10, 1.0E-2);
+  double elapsed_time = t.elapsed();
+//   cout<<"******Application of ML takes "<<elapsed_time<<"seconds\n";
+  
 
   // BACKWARD SUBSTITUTION
   // Yc <- (Dcc)^(-1) * (Xc - Dcf * P * Yf)
@@ -83,7 +105,10 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
   Yc.ReciprocalMultiply(1.0, D->Dcc(), Tc, 0.0);
 
   delete [] fvec_ptrs;
-
+  
+  double elapsed_time_total = total.elapsed();
+//   cout<<"******ApplyInverse takes "<<elapsed_time_total<<"seconds\n";
+//   exit(0);
   return 0;
 }
 

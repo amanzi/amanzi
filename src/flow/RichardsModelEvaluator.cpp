@@ -7,6 +7,7 @@
 #endif // HAVE_MPI
 
 #include "Epetra_Vector.h"
+#include <boost/timer.hpp>
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
@@ -53,8 +54,11 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
+  boost::timer t_ComputeF;
   // compute F(u)
   problem_->ComputeF(u, f, t);
+  double elpased_time_ComputeF = t_ComputeF.elapsed();
+//   cout<<"******ComputeF takes "<<elpased_time_ComputeF<<"seconds\n";
 
   Epetra_Vector *uc     = problem_->CreateCellView(u);  
   Epetra_Vector *udotc  = problem_->CreateCellView(udot);

@@ -329,12 +329,13 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // DEBUG: Nathan
     int errc(0);
     if (itr%(state.maxpclag+1)==0) {
-      Timer t1;
-      t1.start();
+//       Timer t1;
+//       t1.start();
       fn.update_precon (t, u, h, errc);
-      t1.stop();
-      std::cout << "Preconditioner, if necessary: " << t1 << std::endl;
+//       t1.stop();
+//       std::cout << "Preconditioner, if necessary: " << t1 << std::endl;
     }
+ 
 
     // iteration counter
     itr++;
@@ -348,26 +349,30 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // evaluate nonlinear functional
     // DEBUG: Nathan
-    Timer t1;
-    t1.start();
+//     Timer t1;
+//     t1.start();
     fn.fun(t, u, u_tmp, du, h);
-    t1.stop();
-    std::cout << "evaluate nonlinear functional: " << t1 << std::endl;
+//     t1.stop();
+//     std::cout << "evaluate nonlinear functional: " << t1 << std::endl;
     
     // apply preconditioner to the nonlinear residual
     // DEBUG: Nathan
-    Timer t2;
-    t2.start();
+//     Timer t2;
+//     t2.start();
     fn.precon(du, u_tmp);
-    t2.stop();
-    std::cout << "apply preconditioner to the nonlinear residual: " << t2 << std::endl;   
-
+//     t2.stop();
+//     std::cout << "apply preconditioner to the nonlinear residual: " << t2 << std::endl;   
+    
     // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f  = u_tmp;        // copy preconditioned functional into appropriate data type
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
+    
+    
 
     // compute the accellerated correction
     fpa->nka_correction(nev_du, preconditioned_f);
+    
+    
 
     // copy result into an Epetra_Vector.
     du = nev_du.getEpetraVector();  

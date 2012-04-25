@@ -3,6 +3,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <algorithm>
+#include <boost/timer.hpp>
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -406,6 +407,7 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P)
 
 void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
 {
+  boost::timer matrix_gen;
   Epetra_Vector &Pcell_own = *CreateCellView(P);
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
@@ -472,9 +474,18 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
 
   // Compute the face Schur complement of the diffusion matrix.
   D_->ComputeFaceSchur();
+  
+  double elapsed_time_matrix_gen = matrix_gen.elapsed();
+  
+//   cout<<"******Matrix generation takes "<<elapsed_time_matrix_gen<<"seconds\n";
 
+  boost::timer precon_gen;
   // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
   precon_->Compute();
+  
+  double elapsed_time_precon_gen = precon_gen.elapsed();
+  
+//   cout<<"******Preconditioner generation takes "<<elapsed_time_precon_gen<<"seconds\n";
 
   delete &Pcell_own, &Pface_own;
 }

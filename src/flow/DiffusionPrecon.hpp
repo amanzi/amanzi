@@ -9,6 +9,9 @@
 
 #include "ml_MultiLevelPreconditioner.h"
 
+#include "AztecOO_config.h"
+#include "AztecOO.h"
+
 namespace Amanzi
 {
 
