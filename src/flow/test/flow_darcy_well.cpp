@@ -41,7 +41,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: 2D specific storage Darcy, homogeneous media" << endl;
+  if (MyPID == 0) cout << "Test: 2D specific storage Darcy, homogeneous medium" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;

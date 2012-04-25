@@ -75,20 +75,20 @@ int Transport_PK::InitPK()
   const Epetra_Map& cmap = mesh_->cell_map(true);
   cmax = cmap.MaxLID();
 
-  number_owned_cells = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  cmax_owned = number_owned_cells - 1;
+  ncells_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  cmax_owned = ncells_owned - 1;
 
   const Epetra_Map& fmap = mesh_->face_map(true);
   fmax = fmap.MaxLID();
 
-  number_owned_faces = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  fmax_owned = number_owned_faces - 1;
+  nfaces_owned = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  fmax_owned = nfaces_owned - 1;
 
   const Epetra_Map& vmap = mesh_->node_map(true);
   vmax = vmap.MaxLID();
 
-  number_wghost_cells = cmax + 1;  // assume that enumartion starts with 0
-  number_wghost_faces = fmax + 1;
+  ncells_wghost = cmax + 1;  // assume that enumartion starts with 0
+  nfaces_wghost = fmax + 1;
 
 #ifdef HAVE_MPI
   const  Epetra_Comm & comm = cmap.Comm();
@@ -118,8 +118,9 @@ int Transport_PK::InitPK()
   component_local_min_.resize(cmax_owned + 1);
   component_local_max_.resize(cmax_owned + 1);
 
-  ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap));
-  ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap));
+  const Epetra_Map& cmap_false = mesh_->cell_map(false);
+  ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_false));
+  ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap_false));
 
   // advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -129,13 +130,13 @@ int Transport_PK::InitPK()
 
   // dispersivity block initialization
   if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
-    harmonic_points.resize(number_wghost_faces);
+    harmonic_points.resize(nfaces_wghost);
     for (int f = 0; f <= fmax; f++) harmonic_points[f].init(dim);
 
-    harmonic_points_weight.resize(number_wghost_faces);
-    harmonic_points_value.resize(number_wghost_faces);
+    harmonic_points_weight.resize(nfaces_wghost);
+    harmonic_points_value.resize(nfaces_wghost);
 
-    dispersion_tensor.resize(number_wghost_cells);
+    dispersion_tensor.resize(ncells_wghost);
     for (int c = 0; c <= cmax; c++) dispersion_tensor[c].init(dim, 2);
   }
 
@@ -185,7 +186,7 @@ double Transport_PK::CalculateTransportDt()
   const Epetra_Map& fmap = mesh->face_map(true);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  std::vector<double> total_outflux(number_wghost_cells, 0.0);
+  std::vector<double> total_outflux(ncells_wghost, 0.0);
 
   for (f = 0; f <= fmax; f++) {
     c = (*upwind_cell_)[f];
@@ -238,9 +239,10 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
 
   T_physical = TS->get_time();
   double dT_total = 0.0, dT_cycle;
+  double dT_original = dT;  // advance routines override dT
 
-  if (subcycling && dT < dT_MPC) {
-    dT_cycle = dT;
+  if (subcycling && dT_original < dT_MPC) {
+    dT_cycle = dT_original;
     *ws_subcycle_start = ws_prev;
   } else {
     dT_cycle = dT_MPC;
@@ -254,9 +256,10 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
     for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
 
     T_internal += dT_cycle;
+    T_physical += dT_cycle;
     dT_total += dT_cycle;
 
-    if (subcycling && dT < dT_MPC) {
+    if (subcycling && dT_original < dT_MPC) {
       if (swap) {  // Initial water saturation is in 'start'.
         water_saturation_start = ws_subcycle_start;
         water_saturation_end = ws_subcycle_end;
@@ -275,15 +278,18 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
       AdvanceSecondOrderUpwind(dT_cycle);
     }
 
-    if (subcycling && dT < dT_MPC)  // rotate the concentrations
-        TS->copymemory_multivector(tcc_next, tcc, 1);
+    if (subcycling && dT_original < dT_MPC)  // rotate the concentrations
+        TS->copymemory_multivector(tcc_next, tcc, 0);
 
     dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
     ncycles++;
   }
 
+  dT = dT_original;  // restore the original dT (just in case)
+
   if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
-    cout << "number of transport sub-cycles =" << ncycles << endl;
+    printf("Number of transport sub-cycles = %3d  dT(sec): stable=%8.3g  mpc=%8.3g\n", 
+        ncycles, dT_original, dT_MPC);
   }
 
   // DEBUG
@@ -511,7 +517,7 @@ void Transport_PK::ExtractBoundaryConditions(const int component,
                                              std::vector<int>& bc_face_id,
                                              std::vector<double>& bc_face_value)
 {
-  bc_face_id.assign(number_wghost_faces, 0);
+  bc_face_id.assign(nfaces_wghost, 0);
 
   for (int n = 0; n < bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {

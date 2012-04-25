@@ -69,7 +69,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
 
   Krel_faces->PutScalar(0.0);
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -106,7 +106,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
   flux.MaxValue(&max_flux);
   double tol = FLOW_RELATIVE_PERM_TOLERANCE * max_flux;
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -270,10 +270,14 @@ void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g,
     for (int i = 0; i < dim; i++) Kg_copy[i][c] = Kg[i] / Kg_norm;
   }
 
+#ifdef HAVE_MPI
   FS->copyMasterMultiCell2GhostMultiCell(Kg_copy);
-  
+#endif
+
+  AmanziGeometry::Point Kg(dim);
   for (int c = 0; c < ncells_wghost; c++) {
-    for (int i = 0; i < dim; i++) (Kg_unit[c])[i] = Kg_copy[i][c];
+    for (int i = 0; i < dim; i++) Kg[i] = Kg_copy[i][c];
+    Kg_unit.push_back(Kg);
   }
 } 
 

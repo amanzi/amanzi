@@ -119,16 +119,16 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
   cmax_t = target_cmap.MaxLID();
   cmax = std::min(cmax_s, cmax_t);
 
-  int number_vectors = source.NumVectors();
+  int num_vectors = source.NumVectors();
   for (int c = cmin; c <= cmax; c++) {
-    for (int i = 0; i < number_vectors; i++) target[i][c] = source[i][c];
+    for (int i = 0; i < num_vectors; i++) target[i][c] = source[i][c];
   }
 
 #ifdef HAVE_MPI
-  if (target_is_parallel) {
+  if (target_is_parallel == 1) {
     if (cmax_s > cmax_t) {
       Errors::Message msg;
-      msg << "Source map (in copy_multivector) is larger than target map.\n";
+      msg << "The source map is bigger than the target map.\n";
       Exceptions::amanzi_throw(msg);
     }
 

@@ -73,16 +73,12 @@ void MPC::mpc_init() {
 
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
-  transport_enabled =
-      (mpc_parameter_list.get<string>("disable Transport_PK","no") == "no");
-  chemistry_enabled =
-      (mpc_parameter_list.get<string>("disable Chemistry_PK","no") == "no");
-  flow_enabled =
-      (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
+  transport_enabled = (mpc_parameter_list.get<string>("disable Transport_PK", "no") == "no");
+  chemistry_enabled = (mpc_parameter_list.get<string>("disable Chemistry_PK", "no") == "no");
+  flow_enabled = (mpc_parameter_list.get<string>("disable Flow_PK", "no") == "no");
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     *out << "The following process kernels are enabled: ";
-
     if (flow_enabled) *out << "Flow ";
     if (transport_enabled) *out << "Transport ";
     if (chemistry_enabled) *out << "Chemistry ";
@@ -91,19 +87,17 @@ void MPC::mpc_init() {
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
-    S = Teuchos::rcp( new State( state_parameter_list, mesh_maps) );
+    S = Teuchos::rcp(new State(state_parameter_list, mesh_maps));
   }
 
   // create auxilary state objects for the process models
   // chemistry...
   if (chemistry_enabled) {
     try {
-      CS = Teuchos::rcp( new Chemistry_State( S ) );
+      CS = Teuchos::rcp(new Chemistry_State(S));
+      Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
 
-      Teuchos::ParameterList chemistry_parameter_list =
-          parameter_list.sublist("Chemistry");
-
-      CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+      CPK = Teuchos::rcp(new Chemistry_PK(chemistry_parameter_list, CS));
     } catch (const ChemistryException& chem_error) {
       std::cout << "MPC: Chemistry_PK constructor returned an error: "
                 << std::endl << chem_error.what() << std::endl;
@@ -113,12 +107,10 @@ void MPC::mpc_init() {
 
   // transport...
   if (transport_enabled) {
-    TS = Teuchos::rcp( new AmanziTransport::Transport_State( *S ) );
+    TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S));
+    Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
 
-    Teuchos::ParameterList transport_parameter_list =
-        parameter_list.sublist("Transport");
-
-    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling",false);
+    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
 
     TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
@@ -130,7 +122,7 @@ void MPC::mpc_init() {
     FS = Teuchos::rcp(new AmanziFlow::Flow_State(S));
     Teuchos::ParameterList flow_parameter_list = parameter_list.sublist("Flow");
 
-    flow_model = mpc_parameter_list.get<string>("Flow model","Darcy");
+    flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(flow_parameter_list, FS));
     } else if (flow_model == "Richards") {
@@ -153,8 +145,7 @@ void MPC::mpc_init() {
 
   // create the visualization object
   if (parameter_list.isSublist("Visualization Data"))  {
-    Teuchos::ParameterList vis_parameter_list =
-        parameter_list.sublist("Visualization Data");
+    Teuchos::ParameterList vis_parameter_list = parameter_list.sublist("Visualization Data");
     visualization = new Amanzi::Vis(vis_parameter_list, comm);
     visualization->create_files(*mesh_maps);
   } else {  // create a dummy vis object
@@ -164,8 +155,7 @@ void MPC::mpc_init() {
 
   // create the restart object
   if (parameter_list.isSublist("Checkpoint Data")) {
-    Teuchos::ParameterList checkpoint_parameter_list =
-        parameter_list.sublist("Checkpoint Data");
+    Teuchos::ParameterList checkpoint_parameter_list = parameter_list.sublist("Checkpoint Data");
     restart = new Amanzi::Restart(checkpoint_parameter_list, comm);
   } else {
     restart = new Amanzi::Restart();
@@ -240,8 +230,8 @@ void MPC::read_parameter_list()  {
 
 
 /* *******************************************************************/
-void MPC::cycle_driver () {
-  enum time_step_limiter_type { FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS } ;
+void MPC::cycle_driver() {
+  enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
 
   using Teuchos::OSTab;
@@ -250,8 +240,7 @@ void MPC::cycle_driver () {
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
-    // start at time T=T0;
-    S->set_time(T0);
+    S->set_time(T0);  // start at time T=T0;
   }
 
   if (chemistry_enabled) {
@@ -301,9 +290,9 @@ void MPC::cycle_driver () {
   restart->dump_state(*S);
 
   if (flow_enabled) {
-    if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY ) {
+    if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY) {
       FPK->InitSteadyState(T0, dTsteady);
-    } else if ( ti_mode == TRANSIENT ) {
+    } else if (ti_mode == TRANSIENT) {
       FPK->InitTransient(T0, dTtransient);
     }
   }
@@ -316,12 +305,13 @@ void MPC::cycle_driver () {
     total_component_concentration_star =
         Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
 
-    // then start time stepping 
+    // then start time stepping
     while ((S->get_time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
       // determine the time step we are now going to take
-      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99, limiter_dT=1e+99, observation_dT=1e+99;
+      double chemistry_dT = 1e+99, transport_dT = 1e+99, flow_dT = 1e+99;
+      double mpc_dT = 1e+99, limiter_dT = 1e+99, observation_dT = 1e+99;
 
-      if (flow_enabled && flow_model == "Richards") {
+      if (flow_enabled) {  // && flow_model == "Richards") {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
 	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
@@ -330,7 +320,7 @@ void MPC::cycle_driver () {
 	}
       }
       
-      if (flow_enabled && flow_model == "Richards")  {
+      if (flow_enabled) {  // && flow_model == "Richards") {
 	flow_dT = FPK->CalculateFlowDt();
 
         // adjust the time step, so that we exactly hit the switchover time
@@ -363,7 +353,8 @@ void MPC::cycle_driver () {
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          transport_dT = TPK->CalculateTransportDt();
+          double transport_dT_tmp = TPK->CalculateTransportDt();
+          if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
         }
         if (chemistry_enabled) {
           chemistry_dT = CPK->max_time_step();
