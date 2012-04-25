@@ -79,7 +79,7 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   // transient solution
   double dT = 1.0;
-  for (int n = 0; n < 20; n++) {
+  for (int n = 0; n < 10; n++) {
     DPK->Advance(dT);
     DPK->CommitState(FS);
 
