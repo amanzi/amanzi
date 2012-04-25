@@ -96,7 +96,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       
       mesh = globalmesh;
 
-      if (cell_dimension() == 2 && space_dim == 3) {
+      if (topo_dim == 2 && space_dim == 3) {
         
         // Check if this is a completely planar mesh 
         // in which case one can label the space dimension as 2
