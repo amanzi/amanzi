@@ -143,7 +143,7 @@ void MPC::mpc_init() {
         parameter_list.sublist("Transport");
 
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling",false);
-    
+
     if (subcycling) { 
       transport_subcycling = 1;
     } else {

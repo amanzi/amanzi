@@ -117,8 +117,9 @@ int Transport_PK::Init()
   component_local_min_.resize(cmax_owned + 1);
   component_local_max_.resize(cmax_owned + 1);
 
-  ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap));
-  ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap));
+  const Epetra_Map& cmap_false = mesh_->cell_map(false);
+  ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_false));
+  ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap_false));
 
   //advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -255,6 +256,7 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
     for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
  
     T_internal += dT_cycle;
+    T_physical += dT_cycle;
     dT_total += dT_cycle;
 
     if (subcycling && dT_original < dT_MPC) {
@@ -277,7 +279,7 @@ void Transport_PK::advance(double dT_MPC, int subcycling)
     }
 
     if (subcycling && dT_original < dT_MPC)  // rotate the concentrations
-        TS->copymemory_multivector(tcc_next, tcc, 1);
+        TS->copymemory_multivector(tcc_next, tcc, 0);
 
     dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
     ncycles++;
