@@ -111,9 +111,9 @@ if (BUILD_TESTS)
     if ( ENABLE_CGNS AND ENABLE_MSTK_Mesh )
 	set(amanzi_libs geometry mesh mesh_audit simple_mesh mesh_factory state flow whetstone solvers output ${HDF5_LIBRARIES})
 
-        add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
-        target_link_libraries(flow_richards_bdf2 ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_richards_bdf2 flow_richards_bdf2 KIND unit)
+        add_executable(flow_richards_bdf1 test/Main.cc test/flow_richards_bdf1.cpp)
+        target_link_libraries(flow_richards_bdf1 ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_richards_bdf1 flow_richards_bdf1 KIND unit)
     endif()
 
     if ( ENABLE_MSTK_Mesh )

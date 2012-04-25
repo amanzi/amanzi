@@ -7,7 +7,7 @@
   </ParameterList>    
    
   <!--  REGIONS: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
+  input decks for other flow tests -->
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
@@ -97,19 +97,24 @@
         <Parameter name="Absolute error tolerance" type="double" value="0.1"/>
         <Parameter name="Relative error tolerance" type="double" value="1e-05"/>
          <ParameterList name="VerboseObject">
-           <Parameter name="Verbosity Level" type="string" value="none"/>
+           <Parameter name="Verbosity Level" type="string" value="high"/>
          </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Time integrator">
-        <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-        <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-        <Parameter name="NKA max vectors" type="int" value="5"/>
-        <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-        <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
+      <ParameterList name="steady time integrator">
          <ParameterList name="VerboseObject">
-           <Parameter name="Verbosity Level" type="string" value="medium"/>
+           <Parameter name="Verbosity Level" type="string" value="high"/>
          </ParameterList>
+         <Parameter name="error abs tol" type="double" value="1"/>
+         <Parameter name="error rel tol" type="double" value="0"/>
+         <Parameter name="limit iterations" type="int" value="20"/>
+         <Parameter name="max iterations" type="int" value="15"/>
+         <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
+         <Parameter name="max time step" type="double" value="6e+10"/>
+         <Parameter name="min iterations" type="int" value="10"/>
+         <Parameter name="nonlinear tolerance" type="double" value="0.001"/>
+         <Parameter name="time step increase factor" type="double" value="1.25"/>
+         <Parameter name="time step reduction factor" type="double" value="0.8"/>
       </ParameterList>
 
       <Parameter name="Upwind relative permeability" type="bool" value="true"/>
@@ -189,9 +194,11 @@
         <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="reference value" type="double" value="0.0"/>
       </ParameterList>
+<!--
       <ParameterList name="uniform saturation">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+-->
     </ParameterList>
     <ParameterList name="Mesh block 2">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
@@ -204,10 +211,21 @@
         <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="reference value" type="double" value="0.0"/>
       </ParameterList>
+<!--
       <ParameterList name="uniform saturation">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+-->
     </ParameterList>
+  </ParameterList>
+  <ParameterList name="Visualization Data">
+    <ParameterList name="Cycle Data">
+      <Parameter name="End" type="int" value="-1"/>
+      <Parameter name="Interval" type="int" value="1"/>
+      <Parameter name="Start" type="int" value="0"/>
+    </ParameterList>
+    <Parameter name="File Name Base" type="string" value="plot"/>
+    <Parameter name="File Name Digits" type="string" value="5"/>
   </ParameterList>
 </ParameterList>
 
