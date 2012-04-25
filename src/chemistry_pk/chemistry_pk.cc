@@ -435,96 +435,99 @@ void Chemistry_PK::LocalInitialConditions(void) {
     // blocks agrees with the mesh....
 
     // mesh block count starts at 1!?
-    for (int block = 1; block <= number_mesh_blocks; block++) {
-      std::stringstream block_name;
-      block_name << "Mesh block " << block;
-      Teuchos::ParameterList mesh_block_list =
-          initial_conditions.sublist(block_name.str());
+    for (Teuchos::ParameterList::ConstIterator it = initial_conditions.begin(); 
+         it != initial_conditions.end(); 
+         it++) {
+      if ( initial_conditions.isSublist(it->first) ) {      
 
-      int mesh_block_ID = mesh_block_list.get<int>("Mesh block ID");
-      if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_ID,
-                                                           Amanzi::AmanziMesh::CELL)) {
-        // there is an inconsistency in the xml input file...
-        std::string message = "Chemistry_PK::LocalInitialConditions(): inconsistent xml input";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(message));
-      }
+        Teuchos::ParameterList mesh_block_list =
+          initial_conditions.sublist(it->first);
+        
+        std::string region_name = mesh_block_list.get<std::string>("Region");
+        if (!chemistry_state_->get_mesh_maps()->valid_set_name(region_name,
+                                                               Amanzi::AmanziMesh::CELL)) {
+          // there is an inconsistency in the xml input file...
+          std::string message = "Chemistry_PK::LocalInitialConditions(): inconsistent xml input";
+          Exceptions::amanzi_throw(ChemistryInvalidInput(message));
+        }
+        
+        //
+        // If we have free ion species concentrations in the input file
+        // we need to use them (must be of size number_aqueous_components)
+        //
+        if (have_free_ion_guess()) {
+          std::string type("Free Ion Species");
+          std::string keyword("Free Ion Species");
+          int number_to_find = number_free_ion();
+          ExtractInitialCondition(type, keyword, number_to_find, 
+                                  mesh_block_list, region_name,
+                                  current_state_.free_ion_species);
+          /* geh comment
+             ExtractInitialCondition(type, keyword, number_to_find, block,
+             mesh_block_list, mesh_block_ID,
+             saved_state_.free_ion_species);
+          */
+        } else {
+          // need to manually add an initial condition
+          std::vector<double> values(number_free_ion(), 1.0e-9);
+          set_const_values_for_block(values, number_free_ion(),
+                                     current_state_.free_ion_species, region_name);
+          /* geh comment
+             set_const_values_for_block(values, number_free_ion(),
+             saved_state_.free_ion_species, mesh_block_ID);
+          */
+        }
 
-      //
-      // If we have free ion species concentrations in the input file
-      // we need to use them (must be of size number_aqueous_components)
-      //
-      if (have_free_ion_guess()) {
-        std::string type("Free Ion Species");
-        std::string keyword("Free Ion Species");
-        int number_to_find = number_free_ion();
-        ExtractInitialCondition(type, keyword, number_to_find, block,
-                                mesh_block_list, mesh_block_ID,
-                                current_state_.free_ion_species);
-        /* geh comment
-           ExtractInitialCondition(type, keyword, number_to_find, block,
-           mesh_block_list, mesh_block_ID,
-           saved_state_.free_ion_species);
-        */
-      } else {
-        // need to manually add an initial condition
-        std::vector<double> values(number_free_ion(), 1.0e-9);
-        set_const_values_for_block(values, number_free_ion(),
-                                   current_state_.free_ion_species, mesh_block_ID);
-        /* geh comment
-           set_const_values_for_block(values, number_free_ion(),
-           saved_state_.free_ion_species, mesh_block_ID);
-        */
-      }
+        //
+        // look for minerals in this mesh block
+        //
+        if (number_minerals() > 0) {
+          std::string type("Minerals");
+          std::string keyword("Mineral");
+          int number_to_find = number_minerals();
+          ExtractInitialCondition(type, keyword, number_to_find,
+                                  mesh_block_list, region_name,
+                                  current_state_.minerals);
+          /* geh comment
+             ExtractInitialCondition(type, keyword, number_to_find, block,
+             mesh_block_list, mesh_block_ID,
+             saved_state_.minerals);
+          */
+        }
 
-      //
-      // look for minerals in this mesh block
-      //
-      if (number_minerals() > 0) {
-        std::string type("Minerals");
-        std::string keyword("Mineral");
-        int number_to_find = number_minerals();
-        ExtractInitialCondition(type, keyword, number_to_find, block,
-                                mesh_block_list, mesh_block_ID,
-                                current_state_.minerals);
-        /* geh comment
-           ExtractInitialCondition(type, keyword, number_to_find, block,
-           mesh_block_list, mesh_block_ID,
-           saved_state_.minerals);
-        */
-      }
-
-      //
-      // look for ion exchange sites in this mesh block
-      //
-      if (number_ion_exchange_sites() > 0) {
-        std::string type("Ion Exchange Sites");
-        std::string keyword("Ion Exchange Site");
-        int number_to_find = number_ion_exchange_sites();
-        ExtractInitialCondition(type, keyword, number_to_find, block,
-                                mesh_block_list, mesh_block_ID,
-                                current_state_.ion_exchange_sites);
-        /* geh comment
-           ExtractInitialCondition(type, keyword, number_to_find, block,
-           mesh_block_list, mesh_block_ID,
-           saved_state_.ion_exchange_sites);
-        */
-      }
-
-      //
-      // look for sorption/surface complexation sites
-      //
-      if (number_sorption_sites() > 0) {
-        std::string type("Sorption Sites");
-        std::string keyword("Sorption Site");
-        int number_to_find = number_sorption_sites();
-        ExtractInitialCondition(type, keyword, number_to_find, block,
-                                mesh_block_list, mesh_block_ID,
-                                current_state_.sorption_sites);
-        /* geh comment
-           ExtractInitialCondition(type, keyword, number_to_find, block,
-           mesh_block_list, mesh_block_ID,
-           saved_state_.sorption_sites);
-        */
+        //
+        // look for ion exchange sites in this mesh block
+        //
+        if (number_ion_exchange_sites() > 0) {
+          std::string type("Ion Exchange Sites");
+          std::string keyword("Ion Exchange Site");
+          int number_to_find = number_ion_exchange_sites();
+          ExtractInitialCondition(type, keyword, number_to_find,
+                                  mesh_block_list, region_name,
+                                  current_state_.ion_exchange_sites);
+          /* geh comment
+             ExtractInitialCondition(type, keyword, number_to_find, block,
+             mesh_block_list, mesh_block_ID,
+             saved_state_.ion_exchange_sites);
+          */
+        }
+        
+        //
+        // look for sorption/surface complexation sites
+        //
+        if (number_sorption_sites() > 0) {
+          std::string type("Sorption Sites");
+          std::string keyword("Sorption Site");
+          int number_to_find = number_sorption_sites();
+          ExtractInitialCondition(type, keyword, number_to_find,
+                                  mesh_block_list, region_name,
+                                  current_state_.sorption_sites);
+          /* geh comment
+             ExtractInitialCondition(type, keyword, number_to_find, block,
+             mesh_block_list, mesh_block_ID,
+             saved_state_.sorption_sites);
+          */
+        } 
       }
     }  // for (mesh blocks)
   }  // if(initial conditions)
@@ -534,14 +537,13 @@ void Chemistry_PK::ExtractInitialCondition(
     const std::string& type,
     const std::string& keyword,
     const int number_to_find,
-    const int block,
     const Teuchos::ParameterList& mesh_block_list,
-    const int mesh_block_ID,
+    const std::string region_name,
     Teuchos::RCP<Epetra_MultiVector> data) {
   if (verbosity() == kDebugChemistryProcessKernel) {
     std::cout << "      Looking for \'" << type
-              << "\' initial conditions in block "
-              << block << "... ";
+              << "\' initial conditions in region "
+              << region_name << "... ";
   }
   if (mesh_block_list.isSublist(type)) {
     if (verbosity() == kDebugChemistryProcessKernel) {
@@ -563,7 +565,7 @@ void Chemistry_PK::ExtractInitialCondition(
     }  // for(n)
 
     set_const_values_for_block(found_values, number_to_find,
-                               data, mesh_block_ID);
+                               data, region_name);
   } else {  // if(found type)
     std::cout << "none." << std::endl;
   }
@@ -574,34 +576,36 @@ void Chemistry_PK::set_const_values_for_block(
     const std::vector<double>& values,
     const int num_values,
     Teuchos::RCP<Epetra_MultiVector>& multi_vec,
-    const int mesh_block_ID) {
+    const std::string region_name) {
   for (int n = 0; n < num_values; n++) {
     set_cell_value_in_mesh_block(values.at(n), *(*multi_vec)(n),
-                                 mesh_block_ID);
+                                 region_name);
   }
 }  // end set_const_values_for_block()
 
 
 void Chemistry_PK::set_cell_value_in_mesh_block(const double value,
                                                 Epetra_Vector& vec,
-                                                const int mesh_block_id) {
-  if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_id,
+                                                const std::string region_name) {
+  if (!chemistry_state_->get_mesh_maps()->valid_set_name(region_name,
                                                        Amanzi::AmanziMesh::CELL)) {
     Exceptions::amanzi_throw(ChemistryInvalidInput(
         "Chemistry_PK::set_cell_value_in_mesh_block(): invalid mesh set id"));
   }
 
   unsigned int mesh_block_size =
-      chemistry_state_->get_mesh_maps()->get_set_size(mesh_block_id,
+      chemistry_state_->get_mesh_maps()->get_set_size(region_name,
                                                       Amanzi::AmanziMesh::CELL,
                                                       Amanzi::AmanziMesh::OWNED);
 
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  //std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids;
+  cell_ids.resize(mesh_block_size);
 
-  chemistry_state_->get_mesh_maps()->get_set(mesh_block_id,
-                                             Amanzi::AmanziMesh::CELL, 
-                                             Amanzi::AmanziMesh::OWNED,
-                                             cell_ids.begin(), cell_ids.end());
+  chemistry_state_->get_mesh_maps()->get_set_entities(region_name,
+                                                      Amanzi::AmanziMesh::CELL, 
+                                                      Amanzi::AmanziMesh::OWNED,
+                                                      &cell_ids);
 
   for (std::vector<unsigned int>::iterator c = cell_ids.begin();
        c != cell_ids.end();  c++) {

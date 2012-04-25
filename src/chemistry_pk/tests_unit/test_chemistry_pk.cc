@@ -12,7 +12,9 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
+#include "Domain.hh"
+#include "GeometricModel.hh"
 #include "GenerationSpec.hh"
 #include "State.hpp"
 
@@ -21,6 +23,9 @@
 #include "species.hh"
 #include "chemistry_exception.hh"
 
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
 
 /*****************************************************************************
  **
@@ -39,7 +44,7 @@ SUITE(GeochemistryTestsChemistryPK) {
    public:
     ChemistryPKTest();
     ~ChemistryPKTest();
-
+ 
     void RunTest(const std::string name, double* gamma);
 
    protected:
@@ -61,20 +66,44 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::ParameterList parameter_list;
     Teuchos::updateParametersFromXmlFile(xml_input_filename, &parameter_list);
 
+    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+    Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(3);
+    Teuchos::ParameterList& reg_params = parameter_list.sublist("Regions");
+    Amanzi::AmanziGeometry::GeometricModelPtr 
+      geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, comm) );
+    simdomain_ptr->Add_Geometric_Model(geom_model_ptr);    
+
     // create a dummy mesh?
-    Epetra_SerialComm* comm = new Epetra_SerialComm();
+    // Epetra_SerialComm* comm = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
-        parameter_list.sublist("Simple Mesh Parameters");
-    Amanzi::AmanziMesh::GenerationSpec g(mesh_parameter_list);
-    mesh_ = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(g, (const Epetra_MpiComm *)comm));
+        parameter_list.sublist("Mesh Parameters");
+ 
+    // Create a mesh factory for the geometric model
+    Amanzi::AmanziMesh::MeshFactory factory(comm) ;
+    // Prepare to read/create the mesh specification
+
+    // get the Mesh sublist
+    Teuchos::ParameterList mesh_params = parameter_list.sublist("Mesh");
+    // Make sure the unstructured mesh option was chosen
+    bool unstructured_option = mesh_params.isSublist("Unstructured");
+    // Read and initialize the unstructured mesh parameters
+    Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("Unstructured");
+    Amanzi::AmanziMesh::FrameworkPreference prefs(Amanzi::AmanziMesh::default_preference());
+    prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
+    factory.preference(prefs);
+    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("Generate Mesh");
+    mesh_ = factory.create(gen_params, geom_model_ptr);
+    
+    
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
     state_ = Teuchos::rcp(new State(state_parameter_list, mesh_));
-
+ 
     // create the chemistry state object from the state
     chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(state_));
-
+ 
     // create the chemistry parameter list
     chemistry_parameter_list_ = parameter_list.sublist("Chemistry");
   }

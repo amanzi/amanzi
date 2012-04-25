@@ -47,7 +47,7 @@ State::State( Teuchos::ParameterList &parameter_list_,
   number_of_components = parameter_list.get<int>("Number of component concentrations");
 
   // create the Eptera_Vector objects
-
+  
   create_storage();
   initialize_from_parameter_list();
   create_default_compnames(number_of_components);
@@ -130,7 +130,7 @@ void State::initialize_from_parameter_list()
   // set_water_saturation(parameter_list.get<double>("Constant water saturation"));
   set_viscosity(parameter_list.get<double>("Constant viscosity"));
 
-
+  
   // initialize the material ID array (this is only used for visualization)
   if (parameter_list.isParameter("Region Name to Material ID Map (Material IDs)")) {
     if (parameter_list.isParameter("Region Name to Material ID Map (Region Names)")) {
@@ -165,8 +165,6 @@ void State::initialize_from_parameter_list()
   } else {
     material_ids->PutScalar(0.0);
   }
-
-
 
 
   for (Teuchos::ParameterList::ConstIterator it = parameter_list.begin(); it != parameter_list.end(); it++) {
