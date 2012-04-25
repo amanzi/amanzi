@@ -13,6 +13,7 @@
 #include "State.hpp"
 
 
+/* *******************************************************************/
 State::State(int number_of_components_,
              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
     number_of_components(number_of_components_), mesh_maps(mesh_maps_)  
@@ -22,37 +23,39 @@ State::State(int number_of_components_,
   // create the Eptera_Vector objects
   create_storage();
   create_default_compnames(number_of_components);
-};
+}
 
 
-
-State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
+/* *******************************************************************/
+State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
     mesh_maps(mesh_maps_) {
   // this constructor is going to be used in restarts, where we
   // read the number of components from a file before creating
   // storage
   init_verbosity(parameter_list);
-};
+}
 
-State::State( Teuchos::ParameterList &parameter_list_,
-              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
+
+/* *******************************************************************/
+State::State(Teuchos::ParameterList &parameter_list_,
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
     mesh_maps(mesh_maps_),
     parameter_list(parameter_list_)
 {
   init_verbosity(parameter_list);
-  
+
   // get the number of component concentrations from the
   // parameter list
   number_of_components = parameter_list.get<int>("Number of component concentrations");
 
   // create the Eptera_Vector objects
-
   create_storage();
   initialize_from_parameter_list();
   create_default_compnames(number_of_components);
-};
+}
 
 
+/* *******************************************************************/
 void State::init_verbosity (Teuchos::ParameterList &parameter_list_) {
   // set the line prefix for output
   this->setLinePrefix("Amanzi::State       ");
@@ -69,12 +72,14 @@ void State::init_verbosity (Teuchos::ParameterList &parameter_list_) {
 }
 
 
+/* *******************************************************************/
 State::~State()
 {
   //delete [] (*gravity);
 }
 
 
+/* *******************************************************************/
 void State::create_default_compnames(int n)
 {
   compnames.resize(n);
@@ -87,7 +92,7 @@ void State::create_default_compnames(int n)
 }
 
 
-
+/* *******************************************************************/
 void State::initialize_from_parameter_list()
 {
   using Teuchos::OSTab;
@@ -95,26 +100,20 @@ void State::initialize_from_parameter_list()
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-
   // read the component names if they are spelled out
   Teuchos::Array<std::string> comp_names;
-  if (parameter_list.isParameter("Component Solutes"))
-  {
+  if (parameter_list.isParameter("Component Solutes")) {
     comp_names = parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
-  }
-  else
-  {
+  } else {
     comp_names.resize(number_of_components);
-    for (int i=0; i<number_of_components; i++)
-    {
+    for (int i = 0; i < number_of_components; i++) {
       std::stringstream ss;
       ss << "comp " << i;
       comp_names[i] = ss.str();
     }
   }
   // now create the map
-  for (int i=0; i<comp_names.size(); i++)
-  {
+  for (int i = 0; i < comp_names.size(); i++) {
     comp_no[comp_names[i]] = i;
   }
 
@@ -152,33 +151,24 @@ void State::initialize_from_parameter_list()
         *out << std::endl;
       }
 
-
       for (int ii=0; ii<regnames.size(); ii++) {
         double value = static_cast<double>(matids[ii]);
         set_cell_value_in_region(value, *get_material_ids(), regnames[ii]);
       }
-
-      
-
     }  
   } else {
     material_ids->PutScalar(0.0);
   }
 
 
-
-
   for (Teuchos::ParameterList::ConstIterator it = parameter_list.begin(); it != parameter_list.end(); it++) {
-
-    if (parameter_list.isSublist(it->first) && (it->first != "VerboseObject")  ) {
-
+    if (parameter_list.isSublist(it->first) && (it->first != "VerboseObject")) {
       Teuchos::ParameterList& sublist = parameter_list.sublist(it->first);
 
       std::string region = sublist.get<std::string>("Region");
 
-
       // initialize the arrays with some constants from the input file
-      set_porosity(sublist.get<double>("Constant porosity"),region);
+      set_porosity(sublist.get<double>("Constant porosity"), region);
 
       if (sublist.isParameter("Constant permeability")) {
         set_permeability(sublist.get<double>("Constant permeability"),region);
@@ -207,24 +197,18 @@ void State::initialize_from_parameter_list()
       }
 
       // set the saturation
-      if (sublist.isSublist("uniform saturation"))
-      {
+      if (sublist.isSublist("uniform saturation")) {
         const Teuchos::ParameterList&  unif_s_list = sublist.sublist("uniform saturation");
         set_uniform_saturation( unif_s_list, region );
-      }
-      else if (sublist.isSublist("linear saturation"))
-      {
+      } else if (sublist.isSublist("linear saturation")) {
         const Teuchos::ParameterList&  lin_s_list = sublist.sublist("linear saturation");
         set_uniform_saturation( lin_s_list, region );
-      }
-      else
-      {
+      } else {
         // maybe throw an exception
       }
 
       // set the specific storage
-      if (sublist.isSublist("Constant specific storage"))
-      {
+      if (sublist.isSublist("Constant specific storage")) {
         set_specific_storage(sublist.get<double>("Constant specific storage"), region);
       }
 
@@ -244,11 +228,10 @@ void State::initialize_from_parameter_list()
 
 
 
-
+/* *******************************************************************/
 void State::create_storage ()
 {
   // create the Eptera_Vector objects
-
   water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
@@ -271,21 +254,20 @@ void State::create_storage ()
 }
 
 
-
+/* *******************************************************************/
 void State::set_time ( double new_time ) {
-
   last_time = new_time;
   time = new_time;
-
 }
+
 
 void State::set_cycle ( int new_cycle ) {
-
   cycle = new_cycle;
-
 }
 
-void State::set_number_of_components ( const int n )
+
+/* *******************************************************************/
+void State::set_number_of_components(const int n)
 {
   number_of_components = n;
 }
@@ -294,8 +276,8 @@ void State::set_number_of_components ( const int n )
 void State::update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector> new_tcc)
 {
   *total_component_concentration = *new_tcc;
-
 }
+
 
 void State::update_total_component_concentration(const Epetra_MultiVector& new_tcc)
 {
@@ -303,10 +285,13 @@ void State::update_total_component_concentration(const Epetra_MultiVector& new_t
 
 }
 
+
+/* *******************************************************************/
 void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
 {
   *darcy_flux = new_darcy_flux;
 }
+
 
 void State::update_pressure(const Epetra_Vector &new_pressure)
 {
@@ -314,7 +299,7 @@ void State::update_pressure(const Epetra_Vector &new_pressure)
 }
 
 
-
+/* *******************************************************************/
 void State::advance_time(double dT)
 {
   last_time = time;
@@ -322,7 +307,7 @@ void State::advance_time(double dT)
 }
 
 
-
+/* *******************************************************************/
 void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
                                      const std::string& region)
 {
@@ -346,11 +331,11 @@ void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
        c != cell_ids.end();  c++) {
     v[*c] = value;
   }
-
 }
 
 
 
+/* *******************************************************************/
 void State::set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
                                      const std::string& region) {
 
@@ -375,7 +360,7 @@ void State::set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
 
 
 
-
+/* *******************************************************************/
 void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector& v,
                                      const std::string& region)
 {
@@ -395,10 +380,10 @@ void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector&
     Amanzi::AmanziGeometry::Point p( mesh_maps->cell_centroid(*c) );
     v[*c] = fun( &p[0] );
   }
-
 }
 
 
+/* *******************************************************************/
 void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
                                          int mesh_block_id)
 {
@@ -422,6 +407,7 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 }
 
 
+/* *******************************************************************/
 void State::set_darcy_flux(const double* u, const int mesh_block_id)
 {
   // Epetra_Map face_map = mesh_maps->face_map(false);
@@ -457,6 +443,8 @@ void State::set_darcy_flux(const double* u, const int mesh_block_id)
   }
 }
 
+
+/* *******************************************************************/
 void State::set_darcy_flux(const double* u, const std::string region)
 {
   if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
@@ -492,6 +480,7 @@ void State::set_darcy_flux(const double* u, const std::string region)
 }
 
 
+/* *******************************************************************/
 void State::set_water_density( const double wd )
 {
   water_density->PutScalar(wd);
@@ -505,26 +494,33 @@ void State::set_water_saturation( const double ws )
 }
 
 
+/* *******************************************************************/
 void State::set_porosity( const double phi )
 {
   porosity->PutScalar(phi);
 }
+
 
 void State::set_porosity( const double phi, const int mesh_block_id )
 {
   set_cell_value_in_mesh_block(phi,*porosity,mesh_block_id);
 }
 
+
 void State::set_porosity( const double phi, const std::string region )
 {
   set_cell_value_in_region(phi,*porosity,region);
 }
 
+
+/* *******************************************************************/
 void State::set_specific_storage(const double ss, const std::string region)
 {
   set_cell_value_in_region(ss, *specific_storage, region);
 }
 
+
+/* *******************************************************************/
 void State::set_zero_total_component_concentration()
 {
   total_component_concentration->PutScalar(0.0);
@@ -538,6 +534,7 @@ void State::set_total_component_concentration( const double* conc, const int mes
   }
 }
 
+
 void State::set_total_component_concentration( const double* conc, const std::string region )
 {
   for (int nc=0; nc<number_of_components; nc++) {
@@ -546,11 +543,13 @@ void State::set_total_component_concentration( const double* conc, const std::st
 }
 
 
+/* *******************************************************************/
 void State::set_permeability( const double kappa )
 {
   vertical_permeability->PutScalar(kappa);
   horizontal_permeability->PutScalar(kappa);
 }
+
 
 void State::set_permeability( const double kappa, const int mesh_block_id)
 {
@@ -558,36 +557,43 @@ void State::set_permeability( const double kappa, const int mesh_block_id)
   set_cell_value_in_mesh_block(kappa,*horizontal_permeability,mesh_block_id);
 }
 
+
 void State::set_permeability( const double kappa, const std::string region)
 {
   set_cell_value_in_region(kappa,*vertical_permeability,region);
   set_cell_value_in_region(kappa,*horizontal_permeability,region);
 }
 
-void State::set_vertical_permeability( const double kappa )
+
+void State::set_vertical_permeability(const double kappa)
 {
   vertical_permeability->PutScalar(kappa);
 }
 
-void State::set_vertical_permeability( const double kappa, const int mesh_block_id)
+
+void State::set_vertical_permeability(const double kappa, const int mesh_block_id)
 {
   set_cell_value_in_mesh_block(kappa,*vertical_permeability,mesh_block_id);
 }
 
-void State::set_vertical_permeability( const double kappa, const std::string region)
+
+void State::set_vertical_permeability(const double kappa, const std::string region)
 {
   set_cell_value_in_region(kappa,*vertical_permeability,region);
 }
 
-void State::set_horizontal_permeability( const double kappa )
+
+void State::set_horizontal_permeability(const double kappa)
 {
   horizontal_permeability->PutScalar(kappa);
 }
 
-void State::set_horizontal_permeability( const double kappa, const int mesh_block_id)
+
+void State::set_horizontal_permeability(const double kappa, const int mesh_block_id)
 {
   set_cell_value_in_mesh_block(kappa,*horizontal_permeability,mesh_block_id);
 }
+
 
 void State::set_horizontal_permeability( const double kappa, const std::string region)
 {
@@ -595,13 +601,14 @@ void State::set_horizontal_permeability( const double kappa, const std::string r
 }
 
 
-
+/* *******************************************************************/
 void State::set_viscosity(const double mu)
 {
   *viscosity = mu;
 }
 
 
+/* *******************************************************************/
 void State::set_gravity(const double *g)
 {
   (*gravity)[0] = g[0];
@@ -610,10 +617,10 @@ void State::set_gravity(const double *g)
 }
 
 
+/* *******************************************************************/
 double State::water_mass()
 {
   // compute the total mass of water in the domain
-
   Epetra_Vector wm ( *water_saturation );
 
   wm.Multiply(1.0,*water_density,wm,0.0);
@@ -635,6 +642,7 @@ double State::water_mass()
 }
 
 
+/* *******************************************************************/
 double State::point_value(const std::string& point_region, const std::string& name)
 {
   if (!mesh_maps->valid_set_name(point_region,Amanzi::AmanziMesh::CELL))
@@ -646,7 +654,6 @@ double State::point_value(const std::string& point_region, const std::string& na
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
-
   double value(0.0);
   double volume(0.0);
 
@@ -654,7 +661,6 @@ double State::point_value(const std::string& point_region, const std::string& na
 
   mesh_maps->get_set_entities(point_region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
-
 
   // check if Aqueous concentration was requested
   std::string var;
@@ -666,7 +672,6 @@ double State::point_value(const std::string& point_region, const std::string& na
     var = name;
   }
   
-
   // extract the value if it is a component
   if ( comp_no.find(var) != comp_no.end() )  {
     value = 0.0;
@@ -693,9 +698,7 @@ double State::point_value(const std::string& point_region, const std::string& na
     Exceptions::amanzi_throw(m);
   }
 
-
   // syncronize the result across processors
-
   double result;
   mesh_maps->get_comm()->SumAll(&value,&result,1);
 
@@ -706,71 +709,89 @@ double State::point_value(const std::string& point_region, const std::string& na
 }
 
 
-
-void State::set_darcy_flux ( const Epetra_Vector& darcy_flux_ )
+/* *******************************************************************/
+void State::set_darcy_flux(const Epetra_Vector& darcy_flux_)
 {
   *darcy_flux = darcy_flux_;
 }
 
-void State::set_water_saturation ( const Epetra_Vector& water_saturation_ )
+
+void State::set_water_saturation(const Epetra_Vector& water_saturation_)
 {
   *water_saturation = water_saturation_;
 };
 
-void State::set_porosity ( const Epetra_Vector& porosity_ )
+
+void State::set_porosity(const Epetra_Vector& porosity_)
 {
   *porosity = porosity_;
 };
 
-void State::set_permeability ( const Epetra_Vector& permeability_ )
+
+/* *******************************************************************/
+void State::set_permeability(const Epetra_Vector& permeability_)
 {
   *vertical_permeability = permeability_;
   *horizontal_permeability = permeability_;
 };
 
-void State::set_vertical_permeability ( const Epetra_Vector& permeability_ )
+
+void State::set_vertical_permeability(const Epetra_Vector& permeability_)
 {
   *vertical_permeability = permeability_;
 };
 
-void State::set_horizontal_permeability ( const Epetra_Vector& permeability_ )
+
+void State::set_horizontal_permeability( const Epetra_Vector& permeability_)
 {
   *horizontal_permeability = permeability_;
 };
 
-void State::set_pressure ( const Epetra_Vector& pressure_ )
+
+/* *******************************************************************/
+void State::set_pressure(const Epetra_Vector& pressure_)
 {
   *pressure = pressure_;
 };
 
-void State::set_water_density ( const Epetra_Vector& water_density_ )
+
+/* *******************************************************************/
+void State::set_water_density(const Epetra_Vector& water_density_)
 {
   *water_density = water_density_;
 };
 
-void State::set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ )
+
+void State::set_darcy_velocity(const Epetra_MultiVector& darcy_velocity_)
 {
   *darcy_velocity = darcy_velocity_;
 };
 
-void State::set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ )
+
+/* *******************************************************************/
+void State::set_total_component_concentration(const Epetra_MultiVector& total_component_concentration_)
 {
   *total_component_concentration = total_component_concentration_;
 };
 
-void State::set_material_ids ( const Epetra_Vector& material_ids_ )
+
+/* *******************************************************************/
+void State::set_material_ids(const Epetra_Vector& material_ids_)
 {
   *material_ids = material_ids_;
-};
+}
 
-void State::set_uniform_pressure ( const Teuchos::ParameterList& unif_p_list, const std::string& region )
+
+/* *******************************************************************/
+void State::set_uniform_pressure(const Teuchos::ParameterList& unif_p_list, const std::string& region )
 {
   // get value from paramter list
   const double value = unif_p_list.get<double>("value");
   set_cell_value_in_region( value, *pressure, region );
-};
+}
 
-void State::set_linear_pressure ( const Teuchos::ParameterList& lin_p_list, const std::string& region )
+
+void State::set_linear_pressure(const Teuchos::ParameterList& lin_p_list, const std::string& region )
 {
   // get parameters from parameter list
   const double ref_value = lin_p_list.get<double>("reference value");
@@ -781,8 +802,7 @@ void State::set_linear_pressure ( const Teuchos::ParameterList& lin_p_list, cons
   Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
 
   set_cell_value_in_region ( lin_p, *pressure, region );
-
-};
+}
 
 
 void State::set_file_pressure ( const Teuchos::ParameterList& file_p_list, const std::string& region )
@@ -801,14 +821,16 @@ void State::set_file_pressure ( const Teuchos::ParameterList& file_p_list, const
 };
 
 
-void State::set_uniform_saturation ( const Teuchos::ParameterList& unif_s_list, const std::string& region )
+/* *******************************************************************/
+void State::set_uniform_saturation(const Teuchos::ParameterList& unif_s_list, const std::string& region)
 {
   // get value from paramter list
   const double value = unif_s_list.get<double>("value");
   set_cell_value_in_region( value, *water_saturation, region );
 };
 
-void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, const std::string& region )
+
+void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, const std::string& region)
 {
   // get parameters from parameter list
   const double ref_value = lin_s_list.get<double>("reference value");
@@ -819,13 +841,10 @@ void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, co
   Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
 
   set_cell_value_in_region ( lin_p, *water_saturation, region );
+}
 
 
-
-};
-
-
-
+/* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, bool force) {
   if (!vis.is_disabled()) {
     if ( force || vis.dump_requested(get_cycle()))  {
@@ -864,12 +883,12 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
       // write component data
       vis.write_vector( *get_total_component_concentration(), compnames);
       vis.finalize_timestep();
-      
     }
   }
 }
 
 
+/* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force)  {
   write_vis(vis, force);
   
@@ -886,6 +905,7 @@ void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector
 }
 
 
+/* *******************************************************************/
 void State::set_compnames(std::vector<std::string>& compnames_)
 {
   compnames = compnames_;

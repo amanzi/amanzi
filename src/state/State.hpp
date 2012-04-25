@@ -14,21 +14,18 @@
 
 typedef enum { COMPLETE, UPDATING } status_type;
 
-class State  : public Teuchos::VerboseObject<State> {
-  
-public:
+class State : public Teuchos::VerboseObject<State> {
+ public:
+  State(int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
 
-  State( int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
+  State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
 
-  State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
-
-  State( Teuchos::ParameterList &parameter_list, 
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
+  State(Teuchos::ParameterList &parameter_list, 
+	Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
 
   ~State();
 
   // access methods
-
   Teuchos::RCP<Epetra_Vector>       get_pressure ()         { return pressure; }; 
   Teuchos::RCP<Epetra_Vector>       get_darcy_flux ()       { return darcy_flux; };
   Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
