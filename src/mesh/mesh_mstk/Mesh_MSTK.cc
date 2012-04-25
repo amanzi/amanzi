@@ -1946,7 +1946,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
             {
               MSet_Name(mset1,setname1);
               
-              if (MSet_EntDim(mset) == entdim &&
+              if (MSet_EntDim(mset1) == entdim &&
                   strcmp(setname1,setname.c_str()) == 0)
                 break;
             }
