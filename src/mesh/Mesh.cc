@@ -651,6 +651,8 @@ unsigned int Mesh::num_sets(const Entity_kind kind) const
         nsets++;
       }
   }
+
+  return nsets;
   
 }
 
