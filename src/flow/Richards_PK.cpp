@@ -182,6 +182,13 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
     CalculateKVectorUnit(gravity_, Kgravity_unit);
   }
 
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    if (mfd3d_method == FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+      std::printf("Richards Flow: discretization method is for orthogonal hexes.\n");
+    } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA) {
+      std::printf("Richards Flow: discretization method is for generic polyhedra.\n");
+    }
+  }
   flow_status_ = FLOW_STATUS_INIT;
 }
 

@@ -465,7 +465,6 @@ void MPC::cycle_driver() {
 	limitstring = std::string("(chemistry limits timestep)");
 	break;
       case (FLOW_LIMITS): 
-	limitstring = std::string("(flow limits timestep)");
 	break;
       }
 

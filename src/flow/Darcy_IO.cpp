@@ -81,6 +81,14 @@ void Darcy_PK::ProcessParameterList()
     src_sink = NULL;
   }
 
+  // discretization method
+  string mfd3d_method_name = dp_list.get<string>("Discretization method hint", "monotone");
+  if (mfd3d_method_name == "monotone") {
+    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
+  } else if (mfd3d_method_name == "none") {
+    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
+  }
+
   // Set up internal clock.
   double T_physical = FS->get_time();
   T_internal = (standalone_mode) ? T_internal : T_physical;
@@ -91,13 +99,6 @@ void Darcy_PK::ProcessParameterList()
 
   max_itrs_sss = solver_list.get<int>("maximal number of iterations", 100);
   convergence_tol_sss = solver_list.get<double>("error tolerance", 1e-12);
-
-  string mfd3d_method_name = sss_list.get<string>("Discretization method hint", "monotone");
-  if (mfd3d_method_name == "monotone") {
-    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (mfd3d_method_name == "none") {
-    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
-  }
 }
 
 }  // namespace AmanziFlow

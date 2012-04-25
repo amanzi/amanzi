@@ -140,6 +140,13 @@ void Richards_PK::ProcessParameterList()
     }
   }
 
+  string mfd3d_method_name = rp_list.get<string>("Discretization method hint", "monotone");
+  if (mfd3d_method_name == "monotone") {
+    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
+  } else if (mfd3d_method_name == "none") {
+    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
+  }
+
   // Time integrator for period I, temporary called steady state time integrator
   if (rp_list.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = rp_list.sublist("steady state time integrator");
