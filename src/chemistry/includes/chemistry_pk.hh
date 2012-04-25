@@ -180,17 +180,16 @@ class Chemistry_PK {
   void ExtractInitialCondition(const std::string& type,
                                const std::string& keyword,
                                const int number_to_find,
-                               const int block,
                                const Teuchos::ParameterList& mesh_block_list,
-                               const int mesh_block_ID,
+                               const std::string region_name,
                                Teuchos::RCP<Epetra_MultiVector> data);
   void set_const_values_for_block(const std::vector<double>& values,
                                   const int num_values,
                                   Teuchos::RCP<Epetra_MultiVector>& vec,
-                                  const int mesh_block_id);
+                                  const std::string region_name);
   void set_cell_value_in_mesh_block(const double value,
                                     Epetra_Vector& vec,
-                                    const int mesh_block_id);
+                                    const std::string region_name);
   void SizeBeakerComponents(void);
   void CopyCellToBeakerComponents(
       const int cell_id,
