@@ -157,11 +157,11 @@ set(Trilinos_CMAKE_LANG_ARGS
 if ( CMAKE_CXX_COMPILER_VERSION )
   if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
     if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
-      set(ENABLE_Trilinos_PATCH OFF)
+      set(ENABLE_Trilinos_Patch OFF)
     else()
       message(STATUS "Trilinos requires a patch when using"
                      " GNU ${CMAKE_CXX_COMPILER_VERSION}")
-      set(ENABLE_Trilinos_PATCH ON)
+      set(ENABLE_Trilinos_Patch ON)
     endif()
   endif()
 endif()  
@@ -173,6 +173,7 @@ if (ENABLE_Trilinos_Patch)
                @ONLY)
   set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
 endif()  
+print_variable(Trilinos_PATCH_COMMAND)
 
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}
