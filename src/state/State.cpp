@@ -120,7 +120,10 @@ void State::initialize_from_parameter_list()
   double u[3];
   u[0] = parameter_list.get<double>("Gravity x");
   u[1] = parameter_list.get<double>("Gravity y");
-  u[2] = parameter_list.get<double>("Gravity z");
+  if (mesh_maps->space_dimension() == 3)
+    u[2] = parameter_list.get<double>("Gravity z");
+  else
+    u[2] = 0.0;
   set_gravity(u);
 
   set_zero_total_component_concentration();
@@ -177,9 +180,9 @@ void State::initialize_from_parameter_list()
         set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"), region);
       }
 
-      u[0] = sublist.get<double>("Constant Darcy flux x",0.0);
-      u[1] = sublist.get<double>("Constant Darcy flux y",0.0);
-      u[2] = sublist.get<double>("Constant Darcy flux z",0.0);
+      u[0] = sublist.get<double>("Constant Darcy flux x", 0.0);
+      u[1] = sublist.get<double>("Constant Darcy flux y", 0.0);
+      u[2] = sublist.get<double>("Constant Darcy flux z", 0.0);
       set_darcy_flux(u, region);
 
       // set the pressure
@@ -192,8 +195,6 @@ void State::initialize_from_parameter_list()
       } else if (sublist.isSublist("file pressure")) {
 	const Teuchos::ParameterList&  file_p_list = sublist.sublist("file pressure");
 	set_file_pressure(file_p_list, region);
-      } else {
-	// ?
       }
 
       // set the saturation
@@ -203,9 +204,7 @@ void State::initialize_from_parameter_list()
       } else if (sublist.isSublist("linear saturation")) {
         const Teuchos::ParameterList& lin_s_list = sublist.sublist("linear saturation");
         set_uniform_saturation(lin_s_list, region);
-      } else {
-        // maybe throw an exception
-      }
+      }  
 
       // set the specific storage
       if (sublist.isParameter("Constant specific storage")) {
@@ -644,8 +643,7 @@ double State::water_mass()
 /* *******************************************************************/
 double State::point_value(const std::string& point_region, const std::string& name)
 {
-  if (!mesh_maps->valid_set_name(point_region, Amanzi::AmanziMesh::CELL))
-  {
+  if (!mesh_maps->valid_set_name(point_region, Amanzi::AmanziMesh::CELL)) {
     // throw
   }
 
@@ -687,7 +685,7 @@ double State::point_value(const std::string& point_region, const std::string& na
     
     for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
-      value +=  (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+      value += (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
   } else {

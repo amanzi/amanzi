@@ -111,10 +111,11 @@ int main(int argc, char *argv[]) {
     // print out observation file in ASCII format 
     Teuchos::ParameterList obs_list;
     if (driver_parameter_list.isParameter("Native Unstructured Input")) {
-      obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
-    } else {
       obs_list = driver_parameter_list.sublist("Observation Data");
+    } else {
+      obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
     }
+
     if (obs_list.isParameter("Observation Output Filename")) {
       std::string obs_file = obs_list.get<std::string>("Observation Output Filename");
 
