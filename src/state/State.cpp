@@ -644,7 +644,7 @@ double State::water_mass()
 /* *******************************************************************/
 double State::point_value(const std::string& point_region, const std::string& name)
 {
-  if (!mesh_maps->valid_set_name(point_region,Amanzi::AmanziMesh::CELL))
+  if (!mesh_maps->valid_set_name(point_region, Amanzi::AmanziMesh::CELL))
   {
     // throw
   }
