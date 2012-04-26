@@ -1,4 +1,3 @@
-
 #include <iostream>
 
 #include <Epetra_Comm.h>
@@ -63,7 +62,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       verbLevel = Teuchos::VERB_HIGH;
     } else if ( verbosity == "Extreme" ) {
       verbLevel = Teuchos::VERB_HIGH;
-
     } 
       
   } else {
@@ -118,21 +116,17 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
 
   // Create a mesh factory for this geometric model
-
   Amanzi::AmanziMesh::MeshFactory factory(comm) ;
 
   // Prepare to read/create the mesh specification
- 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // get the Mesh sublist
-
   ierr = 0;
   Teuchos::ParameterList mesh_params = new_list.sublist("Mesh");
 
 
   // Make sure the unstructured mesh option was chosen
-
   bool unstructured_option = mesh_params.isSublist("Unstructured");
 
   if (!unstructured_option) {
@@ -169,8 +163,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
 	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
-	} else if (framework == "") {
-	  // ??
+	// } else if (framework == "") {
 	} else {
 	  std::string s(framework);
 	  s += ": specified mesh framework preference not understood";
@@ -198,49 +191,36 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     return Amanzi::Simulator::FAIL;
   }
 
-
   // Read or generate the mesh
-
   std::string file(""), format("");
 
   if (unstr_mesh_params.isSublist("Read Mesh File")) {
-
     Teuchos::ParameterList read_params = unstr_mesh_params.sublist("Read Mesh File");
     
     if (read_params.isParameter("File")) {
-
       file = read_params.get<string>("File");
-
-    } 
-    else {
+    } else {
       std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
       throw std::exception();
     }
 
     if (read_params.isParameter("Format")) {
-
       // Is the format one that we can read?
-
       format = read_params.get<string>("Format");
 
       if (format != "Exodus II") {	    
 	std::cerr << "Can only read files in Exodus II format" << std::endl;
 	throw std::exception();
       }
-    } 
-    else {
+    } else {
       std::cerr << "Must specify Format parameter for Read option under Mesh" << std::endl;
       throw std::exception();
     }
 
-
     if (!file.empty()) {
-
       ierr = 0;
       try {
-	    
-	// create the mesh from the file
-
+        // create the mesh from the file
 	mesh = factory.create(file, geom_model_ptr);
 	    
       } catch (const std::exception& e) {
@@ -254,10 +234,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       }
     }
 
-  } // If Read parameters are specified
-
-  else if (unstr_mesh_params.isSublist("Generate Mesh")) {
-
+  } else if (unstr_mesh_params.isSublist("Generate Mesh")) {  // If Read parameters are specified
     Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("Generate Mesh");
     ierr = 0;
     
@@ -275,41 +252,34 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       return Amanzi::Simulator::FAIL;
     }
 
-  } // If Generate parameters are specified
-  
-  else {
-
+  } else {  // If Generate parameters are specified
     std::cerr << rank << ": error: " << "Neither Read nor Generate options specified for mesh" << std::endl;
     throw std::exception();
-
   }
 
   ASSERT(!mesh.is_null());
 
 
   if (expert_params_specified) {
-
     Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("Expert");  
     bool verify_mesh_param = expert_mesh_params.isParameter("Verify Mesh");
 
     if (verify_mesh_param) {
-
       bool verify = expert_mesh_params.get<bool>("Verify Mesh");
+
       if (verify) {
-        
         std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
 
         if (size == 1) {
           Amanzi::MeshAudit mesh_auditor(mesh);
           int status = mesh_auditor.Verify();
-          if (status == 0)
+          if (status == 0) {
             std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
-          else {
+          } else {
             std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
             return Amanzi::Simulator::FAIL;
           }
-        }
-        else {
+        } else {
           std::ostringstream ofile;
           ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
           std::ofstream ofs(ofile.str().c_str());
@@ -323,26 +293,21 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
           if (status != 0) ierr++;
           
           comm->SumAll(&ierr, &aerr, 1);
-          if (aerr == 0) 
+          if (aerr == 0) {
             std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
-          else {
+          } else {
             if (rank == 0)
               std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
             return Amanzi::Simulator::FAIL;
           }
         }
-
       } // if verify
-
     } // if verify_mesh_param
-    
   } // If expert_params_specified
 
   // -------------- MULTI-PROCESS COORDINATOR------- --------------------
 
-  // create the MPC
   Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
-
 
   //--------------- DO THE SIMULATION -----------------------------------
 
@@ -351,9 +316,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   //-----------------------------------------------------
   
 
-
   // Clean up
-  
   mesh.reset();
   delete comm;
       

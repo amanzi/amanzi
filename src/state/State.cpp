@@ -171,10 +171,10 @@ void State::initialize_from_parameter_list()
       set_porosity(sublist.get<double>("Constant porosity"), region);
 
       if (sublist.isParameter("Constant permeability")) {
-        set_permeability(sublist.get<double>("Constant permeability"),region);
+        set_permeability(sublist.get<double>("Constant permeability"), region);
       } else {
-        set_vertical_permeability(sublist.get<double>("Constant vertical permeability"),region);
-        set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"),region);
+        set_vertical_permeability(sublist.get<double>("Constant vertical permeability"), region);
+        set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"), region);
       }
 
       u[0] = sublist.get<double>("Constant Darcy flux x",0.0);
@@ -198,17 +198,17 @@ void State::initialize_from_parameter_list()
 
       // set the saturation
       if (sublist.isSublist("uniform saturation")) {
-        const Teuchos::ParameterList&  unif_s_list = sublist.sublist("uniform saturation");
-        set_uniform_saturation( unif_s_list, region );
+        const Teuchos::ParameterList& unif_s_list = sublist.sublist("uniform saturation");
+        set_uniform_saturation(unif_s_list, region);
       } else if (sublist.isSublist("linear saturation")) {
-        const Teuchos::ParameterList&  lin_s_list = sublist.sublist("linear saturation");
-        set_uniform_saturation( lin_s_list, region );
+        const Teuchos::ParameterList& lin_s_list = sublist.sublist("linear saturation");
+        set_uniform_saturation(lin_s_list, region);
       } else {
         // maybe throw an exception
       }
 
       // set the specific storage
-      if (sublist.isSublist("Constant specific storage")) {
+      if (sublist.isParameter("Constant specific storage")) {
         set_specific_storage(sublist.get<double>("Constant specific storage"), region);
       }
 
@@ -327,8 +327,7 @@ void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
   mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
 
-  for( std::vector<unsigned int>::iterator c = cell_ids.begin();
-       c != cell_ids.end();  c++) {
+  for (std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
     v[*c] = value;
   }
 }
@@ -503,13 +502,13 @@ void State::set_porosity( const double phi )
 
 void State::set_porosity( const double phi, const int mesh_block_id )
 {
-  set_cell_value_in_mesh_block(phi,*porosity,mesh_block_id);
+  set_cell_value_in_mesh_block(phi, *porosity, mesh_block_id);
 }
 
 
 void State::set_porosity( const double phi, const std::string region )
 {
-  set_cell_value_in_region(phi,*porosity,region);
+  set_cell_value_in_region(phi, *porosity, region);
 }
 
 
@@ -538,7 +537,7 @@ void State::set_total_component_concentration( const double* conc, const int mes
 void State::set_total_component_concentration( const double* conc, const std::string region )
 {
   for (int nc=0; nc<number_of_components; nc++) {
-    set_cell_value_in_region(conc[nc], *(*total_component_concentration)(nc),region);
+    set_cell_value_in_region(conc[nc], *(*total_component_concentration)(nc), region);
   }
 }
 
@@ -553,15 +552,15 @@ void State::set_permeability( const double kappa )
 
 void State::set_permeability( const double kappa, const int mesh_block_id)
 {
-  set_cell_value_in_mesh_block(kappa,*vertical_permeability,mesh_block_id);
-  set_cell_value_in_mesh_block(kappa,*horizontal_permeability,mesh_block_id);
+  set_cell_value_in_mesh_block(kappa, *vertical_permeability, mesh_block_id);
+  set_cell_value_in_mesh_block(kappa, *horizontal_permeability, mesh_block_id);
 }
 
 
 void State::set_permeability( const double kappa, const std::string region)
 {
-  set_cell_value_in_region(kappa,*vertical_permeability,region);
-  set_cell_value_in_region(kappa,*horizontal_permeability,region);
+  set_cell_value_in_region(kappa, *vertical_permeability, region);
+  set_cell_value_in_region(kappa, *horizontal_permeability, region);
 }
 
 
@@ -573,13 +572,13 @@ void State::set_vertical_permeability(const double kappa)
 
 void State::set_vertical_permeability(const double kappa, const int mesh_block_id)
 {
-  set_cell_value_in_mesh_block(kappa,*vertical_permeability,mesh_block_id);
+  set_cell_value_in_mesh_block(kappa, *vertical_permeability, mesh_block_id);
 }
 
 
 void State::set_vertical_permeability(const double kappa, const std::string region)
 {
-  set_cell_value_in_region(kappa,*vertical_permeability,region);
+  set_cell_value_in_region(kappa, *vertical_permeability, region);
 }
 
 

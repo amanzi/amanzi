@@ -157,6 +157,9 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
 
+  Epetra_Vector& pressure = FS->ref_pressure();
+  *solution_cells = pressure;
+
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 }
 
