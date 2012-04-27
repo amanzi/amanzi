@@ -156,6 +156,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   int itrs = 0;
   double L2norm, L2error = 1.0;

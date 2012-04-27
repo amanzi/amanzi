@@ -635,13 +635,20 @@ void Richards_PK::InitializePressureHydrostatic(const double Tp, Epetra_Vector& 
   solver_tmp->SetPrecOperator(preconditioner);
   solver_tmp->SetAztecOption(AZ_solver, AZ_cg);
   solver_tmp->SetAztecOption(AZ_output, AZ_none);
+  solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
   rhs = preconditioner->get_rhs();
   solver_tmp->SetRHS(&*rhs);
 
   u.PutScalar(0.0);
   solver_tmp->SetLHS(&u);
-  solver_tmp->Iterate(1000, 1e-8);
+  solver_tmp->Iterate(max_itrs, convergence_tol);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    int num_itrs = solver_tmp->NumIters();
+    double linear_residual = solver_tmp->TrueResidual();
+    std::printf("Initial pressure: linear solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+  }
 
   delete solver_tmp;
 }
