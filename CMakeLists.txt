@@ -46,12 +46,6 @@ include(AmanziVersion)
 # Addtional build options
 include(AmanziOptions)
 
-# Add the TPL build targets
-option(ENABLE_SuperBuild "Create TPL build targets" OFF)
-if ( ENABLE_SuperBuild )
-  add_subdirectory(config/SuperBuild)
-endif()
-
 # Find required Amanzi TPL
 include(AmanziTPL)
 

@@ -151,77 +151,42 @@ set(${LIBRARIES})
 set(_combined_name)
 foreach(_library ${_list})
 
-  print_variable(_library)  
   set(_combined_name ${_combined_name}_${_library})
 
   if(_libraries_work)
 
-    if ( BLA_VENDOR_PATH )
-      print_variable(BLA_VENDOR_PATH)
+    if ( BLA_VENDOR_DIRS )
       find_library(${_prefix}_${_library}_LIBRARY
 	           NAMES ${_library}
-		   PATHS ${BLA_VENDOR_PATH}
+                   PATHS "${BLA_VENDOR_DIRS}"
 		   NO_DEFAULT_PATHS)
-      print_variable(${_prefix}_${_library}_LIBRARY)
     endif()
     
     find_library(${_prefix}_${_library}_LIBRARY
                  NAMES ${_library}
 		 PATHS ${BLA_DEFAULT_SEARCH_PATHS})
                
-
-      
-
-#TESTING   if ( WIN32 )
-#TESTING     if(BLA_STATIC)
-#TESTING      set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib;.dll")
-#TESTING    endif(BLA_STATIC)
-#TESTING    find_library(${_prefix}_${_library}_LIBRARY
-#TESTING    NAMES ${_library}
-#TESTING    PATHS ENV LIB
-#TESTING    )
-#TESTING   endif ( WIN32 )
-#TESTING
-#TESTING   if ( APPLE )
-#TESTING    if(BLA_STATIC)
-#TESTING     set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib;.dll")
-#TESTING    endif(BLA_STATIC)
-#TESTING    find_library(${_prefix}_${_library}_LIBRARY
-#TESTING    NAMES ${_library}
-#TESTING    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV DYLD_LIBRARY_PATH
-#TESTING    )
-#TESTING
-#TESTING   else ( APPLE )
-#TESTING    if(BLA_STATIC)
-#TESTING      set(CMAKE_FIND_LIBRARY_SUFFIXES ".a;.so")
-#TESTING    endif(BLA_STATIC)
-#TESTING    find_library(${_prefix}_${_library}_LIBRARY
-#TESTING    NAMES ${_library}
-#TESTING    PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV LD_LIBRARY_PATH
-#TESTING    )
-#TESTING   endif( APPLE )
-
+    # Loop will continue, provided _library was found
     mark_as_advanced(${_prefix}_${_library}_LIBRARY)
     set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
-    print_variable(${LIBRARIES})
     set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
   endif(_libraries_work)
 endforeach(_library ${_list})
+
 if(_libraries_work)
-    print_variable(_libraries_owrk)
   # Test this combination of libraries.
   set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_threads})
-  message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
+  #message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
   check_fortran_function_exists(${_name} ${_prefix}${_combined_name}_WORKS)
   set(CMAKE_REQUIRED_LIBRARIES)
   mark_as_advanced(${_prefix}${_combined_name}_WORKS)
   set(_libraries_work ${${_prefix}${_combined_name}_WORKS})
-    print_variable(_libraries_work)
+ 
 endif(_libraries_work)
 if(NOT _libraries_work)
   set(${LIBRARIES} FALSE)
 endif(NOT _libraries_work)
-message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
+#message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
 endmacro(Check_Fortran_Libraries)
 
 set(BLAS_LINKER_FLAGS)

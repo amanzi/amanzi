@@ -51,11 +51,12 @@ foreach (var ${MPI_CMAKE_ARGS} )
 endforeach() 
 
 # BLAS
-option(ENABLE_BLAS_Search "Search for BLAS libraries" OFF)
-if (ENABLE_BLAS_Search)
+option(ENABLE_BLA_Search "Search for BLAS/LAPACK libraries" OFF)
+if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
-      message(STATUS "Search all possible BLAS vendor types")
+      set(BLA_VENDOR All)
     endif()
+    message(STATUS "Searching BLAS libraries vendor - ${BLA_VENDOR}")
     find_package(BLAS)
     if (NOT BLAS_FOUND )
       message(FATAL_ERROR "Failed to locate BLAS libraries."
@@ -74,10 +75,11 @@ if ( BLAS_LIBRARIES )
 endif()            
  
 # LAPACK
-if (ENABLE_BLAS_Search)
+if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
-      message(STATUS "Search all possible BLAS vendor types")
+      set(BLA_VENDOR All)
     endif()
+    message(STATUS "Searching LAPACK libraries vendor - ${BLA_VENDOR}")
     find_package(LAPACK)
     if ( NOT LAPACK_FOUND )
       message(FATAL_ERROR "Failed to locate LAPACK libraries."
@@ -90,6 +92,7 @@ endif()
 if ( LAPACK_LIBRARIES )
   list(APPEND Trilinos_CMAKE_TPL_ARGS
     "-DTPL_LAPACK_LIBRARIES:FILEPATH=${LAPACK_LIBRARIES}")
+            message(STATUS "Trilinos LAPACK libraries: ${LAPACK_LIBRARIES}")    
 endif()
 
 # Boost
@@ -154,11 +157,11 @@ set(Trilinos_CMAKE_LANG_ARGS
 if ( CMAKE_CXX_COMPILER_VERSION )
   if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
     if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
-      set(ENABLE_Trilinos_PATCH OFF)
+      set(ENABLE_Trilinos_Patch OFF)
     else()
      message(STATUS "Trilinos requires a patch when using"
                     " GNU ${CMAKE_CXX_COMPILER_VERSION}")
-      set(ENABLE_Trilinos_PATCH ON)
+      set(ENABLE_Trilinos_Patch ON)
     endif()
   endif()
 endif()  
@@ -170,6 +173,7 @@ if (ENABLE_Trilinos_Patch)
                @ONLY)
   set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
 endif()  
+print_variable(Trilinos_PATCH_COMMAND)
 
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}

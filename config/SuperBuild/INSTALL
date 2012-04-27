@@ -27,7 +27,7 @@ Users are required to provide the following to build
 Getting TPL-Build
 -----------------
 
-TPL-Build is a seperate CMake project in the Amanzi repository. You will need 
+TPL-Build is a separate CMake project in the Amanzi repository. You will need 
 a clone of the Amanzi repository,
 
 ``hg clone https://software.lanl.gov/ascem/hg/amanzi``.
@@ -83,27 +83,17 @@ For now, we recommended users that wish to SuperBuild Amanzi do the following,
 	   /full/path/to/amanzi/config/SuperBuild
     4. make [-j n] amanzi, where ``-j n`` is the number of parallel make threads.
 
-There is a script called bootstrap.sh under development that enventually will install all
+There is a script called bootstrap.sh under development that eventually will install all
 the required software, including CMake but is not ready for general use at this time.
+
+When building Amanzi through SuperBuild, the user will see two separate build directories,
+``TPL_BUILD`` and ``amanzi-build``. The TPL software is built in separate directory. If you
+wish to rebuild Amanzi without rebuilding the TPLs, cd to ``amanzi-build`` and call
+``make``.
 
 
 Known Issues
 ------------
-
-Trilinos ptrdiff_t compile error
-++++++++++++++++++++++++++++++++
-We are currently using Trilinos 10.6.4 and can not upgrade to a newer
-version until the mesh class is upgraded to address changes in STK. In
-this older version of Trilinos, there are several header files that use
-ptrdiff_t without including cstddef.h. In particular, the
-4.6 GCC compiler is much more picky than previous versions and the
-``ptrdiff_t`` definition is found in the ``cstddef.h`` for versions 4.6 and
-greater. The TPL build system has a patch for this bug. 
-It attempts to find the compiler version and will apply the patch
-if the compiler id (CMAKE_COMPILER_ID) is GNU and the version is greater than
-4.6. To enable the patch for other compilers and versions
-add -D ENABLE_Trilinos_Patch:BOOL=TRUE to the TPL build cmake configuration
-command. 
 
 TPL build fails with any PGI compiler
 +++++++++++++++++++++++++++++++++++++
@@ -115,8 +105,8 @@ Library parallelio (ASCEM-IO) missing archive index (MacOSX)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 This bug has only been reported on Macs. Users will experience this bug
 when linking the HDF5 test binaries in the Amanzi test suite. Despite a kludge
-in the shell script to build ASCEM-IO, this problem presists. The work-around
-is to run ranlib on the installed libparallelio.a library.
+in the shell script to address this when building ASCEM-IO, this problem persists.
+The work-around is to run ranlib on the installed libparallelio.a library.
 
 Fails to locate OpenSSL in the build CURL step
 ++++++++++++++++++++++++++++++++++++++++++++++
@@ -138,14 +128,46 @@ the BLAS and LAPACK libraries found in standard system libraries
 clusters have tuned BLAS/LAPACK libraries. Please consult the support
 documentation for these machines to find the recommended libraries.
 
-Once the tuned BLAS/LAPACK libraries have been identified, the full path name 
-of the libraries should be passed in with the configurations variables 
-``BLAS_LIBRARIES`` and ``LAPACK_LIBRARIES``. Multiple library names should be 
-separated with a semi-colon. Although the tpl-build will pass these names to 
-the Trilinos build system, that will not guarantee a smooth Amanzi build. In 
-some cases, Intel's MKL libraries, require additional link flags when building 
-Amanzi. Use the ``CMAKE_EXE_LINKER_FLAGS`` configuration variable to define these
-additional link flags when building Amanzi. 
+To enable a search for BLAS/LAPACK libraries, add ``-D ENABLE_BLA_Search:BOOL=TRUE``
+to your cmake options. The cmake mechanism searches through a list of known vendor
+supplied BLAS/LAPACK libraries. Unless, ``BLA_VENDOR`` is set, all possible vendors
+are searched, and the search ceases once a valid BLAS/LAPACK library is found. If
+the library is not located in a standard installation location or is not in the user's 
+``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH``, the set ``BLA_VENDOR_DIRS`` to the
+directories containing the libraries.
+
+Supported BLAS/LAPACK Vendors:
+
+============= ============================================
+Vendor        Description
+------------- --------------------------------------------
+ATLAS         Automatically Tuned Linear Algebra Software
+PhiPACK       PHiPAC (Portable High Performance ANSI C)
+CXML          HP Libraries
+DXML          ??
+SunPerf       Sun Performance Libraries
+SCSL          SGI/Cray Performance Libraries
+SGIMATH       ??
+IBMESSL       ??
+ACML          AMD Core Math Library
+ACML_MP       AMD Core Math Library multi-threaded
+LibSci        Cray XT/XE Science Libraries
+Apple         Mac OSX Accelerate Framework
+NAS           ??
+Intel10_32    Intel MKL with 32bit int
+Intel10_64lp  Intel MKL with 64bit int
+Intel         Older versions of MKL
+Generic       Generic BLAS    
+============= ============================================
+
+If the search fails during the TPL configuration or if the Trilinos configuration
+fails to locate these libraries, the user can override the search by explicitly
+defining the libraries with ``BLAS_LIBRARIES`` and ``LAPACK_LIBRARIES`` at
+configuration time. Multiple library names should be 
+separated with a semi-colon. In some cases, Intel's MKL libraries, require
+additional link flags when building Amanzi. Use the ``CMAKE_EXE_LINKER_FLAGS``
+configuration variable to define these additional link flags when building Amanzi.
+Consult the documentation for the particular library for more information. 
 
 
 Trilinos Build Configuration Files
