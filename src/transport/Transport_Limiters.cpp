@@ -83,7 +83,7 @@ void Transport_PK::LimiterTensorial(const int component,
     }
 
     double grad_norm = norm(gradient_c1);
-    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c1 = 0.0;
+    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c1.set(0.0);
 
     for (int i = 0; i < dim; i++) (*gradient)[i][c] = gradient_c1[i];
   }
@@ -429,7 +429,7 @@ void Transport_PK::LimiterKuzmin(const int component,
     }
 
     double grad_norm = norm(gradient_c);
-    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c = 0.0;
+    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c.set(0.0);
 
     for (int i = 0; i < dim; i++) (*gradient)[i][c] = gradient_c[i];
   }

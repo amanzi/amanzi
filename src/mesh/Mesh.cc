@@ -234,7 +234,7 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
       double area;
       AmanziGeometry::Point centroid(spacedim), normal(spacedim);
       compute_face_geometry(faceid, &area, &centroid, &normal);
-      return area;
+      return centroid;
     }
     else
       return face_centroids[faceid];
@@ -256,7 +256,7 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
       double area;
       AmanziGeometry::Point centroid(spacedim), normal(spacedim);
       compute_face_geometry(faceid, &area, &centroid, &normal);
-      return area;
+      return centroid;
     }
     else
       return face_normals[faceid];
