@@ -50,7 +50,6 @@ struct BDF1State {
   double    hlast;        // last step size
   double    hpc;          // step size built into the current preconditioner
   bool      usable_pc;    // whether the current preconditioner is usable
-  int       freeze_count; // don't increase step size for this number of steps
   int       mitr;         // maximum number of nonlinear iterations, more and we fail 
   int       minitr;       // minimum number of nonlinear iterations (we will increase time step here)
   int       maxitr;       // maximum number of nonlinear iterations (we cut time step here)
