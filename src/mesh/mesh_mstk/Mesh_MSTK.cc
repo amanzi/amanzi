@@ -117,10 +117,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
           }
         }
         
-        if (planar) {
+        if (planar)
           space_dim = 2;
-          MPI_Scatter(&space_dim,1,MPI_INT,&space_dim,1,MPI_INT,0,mpicomm);
-        }
       }
 
     }
@@ -128,6 +126,10 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       mesh = MESH_New(UNKNOWN_REP);
       ok = 1;
     }
+
+    int space_dim_p0 = space_dim;
+    MPI_Scatter(&space_dim_p0,1,MPI_INT,&space_dim,1,MPI_INT,0,mpicomm);
+
 
     ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
                                    numprocs,mpicomm);
