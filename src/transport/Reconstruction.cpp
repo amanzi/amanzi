@@ -44,12 +44,16 @@ void Reconstruction::Init()
   number_owned_faces = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   fmax_owned = fmin + number_owned_faces - 1;
 
+  /*
   double *memory;  // we need to allocate sufficient memory for LAPACK routines
   memory = new double(TRANSPORT_MAX_FACES * TRANSPORT_MAX_FACES);
   Teuchos::SerialDenseMatrix<int, double> matrix(Teuchos::View,
                                                  memory,
                                                  TRANSPORT_MAX_FACES,
                                                  TRANSPORT_MAX_FACES,
+                                                 TRANSPORT_MAX_FACES);
+  */
+  Teuchos::SerialDenseMatrix<int, double> matrix(TRANSPORT_MAX_FACES,
                                                  TRANSPORT_MAX_FACES);
 
   dim = mesh_->space_dimension();
