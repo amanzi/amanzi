@@ -174,7 +174,6 @@ void BDF1Dae::commit_solution(const double h, const Epetra_Vector& u) {
 
   state.hlast = h;
   state.seq++;
-  state.freeze_count = std::max<int>(0, state.freeze_count-1);
 
   state.hmin = std::min<double>(h, state.hmin);
   state.hmax = std::max<double>(h, state.hmax);
