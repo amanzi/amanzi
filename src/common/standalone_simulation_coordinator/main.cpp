@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     }
     
     Amanzi::ObservationData output_observations;  
-    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm,driver_parameter_list,output_observations);
+    Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list, output_observations);
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));

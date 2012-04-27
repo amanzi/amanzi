@@ -25,9 +25,9 @@ TEST(ADVANCE_WITH_STK) {
 
   std::cout << "Test: advance with STK" << endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
   // read parameter list
@@ -82,6 +82,9 @@ TEST(ADVANCE_WITH_STK) {
   // check that the final state is constant  
   for (int k=0; k<4; k++) 
     CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
+
+  delete gm;
+  delete comm;
 }
  
 

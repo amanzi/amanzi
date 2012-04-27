@@ -33,7 +33,6 @@ bool compareEpsilon(T& first, T eps) {
 * Empty                                             
 ****************************************************************** */
 Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
-
   numproc_ = numproc;
 
   Teuchos::ParameterList new_list, tmp_list;
@@ -45,12 +44,12 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.set<std::string>("grid_option", "Unstructured");
 
   // checkpoint list is optional
-  tmp_list = create_Checkpoint_Data_List (plist);
+  tmp_list = create_Checkpoint_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Checkpoint Data") = tmp_list;
   }
 
-  tmp_list = create_Visualization_Data_List (plist);
+  tmp_list = create_Visualization_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Visualization Data") = tmp_list;
   }
@@ -58,7 +57,7 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   if (plist->sublist("Output").isSublist("Observation Data")) {
     Teuchos::ParameterList& od_list = plist->sublist("Output").sublist("Observation Data");
     if (od_list.begin() != od_list.end()) {
-      new_list.sublist("Observation Data") = create_Observation_Data_List (plist);
+      new_list.sublist("Observation Data") = create_Observation_Data_List(plist);
     }
   }
 
@@ -355,36 +354,34 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
   using boost::bind;
 
   // Create a parameter list for holding data
-  Teuchos::ParameterList  obs_list;
-  Teuchos::Array<double>  observationPoints;
+  Teuchos::ParameterList obs_list;
+  Teuchos::Array<double> observationPoints;
 
   // Check if there is an "Output" XML node
-  if ( plist->isSublist("Output") ) {
+  if (plist->isSublist("Output")) {
     // If "Output" exists, check if there is an "Observation Data" subnode
-    if ( plist->sublist("Output").isSublist("Observation Data") ) {
+    if (plist->sublist("Output").isSublist("Observation Data")) {
       // If both exist, initialize a structure with the XML data
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
       // If the node has value refering to the name of the output file, grab it
       if (olist.isParameter("Observation Output Filename")) {
-        obs_list.set<std::string>("Observation Output Filename",olist.get<std::string>("Observation Output Filename"));
+        obs_list.set<std::string>("Observation Output Filename", olist.get<std::string>("Observation Output Filename"));
       } else {
-      // Otherwise, throw an exception
         Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
       }
       // Iterate through the array
-      for ( Teuchos::ParameterList::ConstIterator i = olist.begin();
-            i != olist.end(); i++ ) {
+      for (Teuchos::ParameterList::ConstIterator i = olist.begin(); i != olist.end(); i++) {
         // If the current iteration node is a "tree"
-        if (  olist.isSublist( i->first ) ) {
+        if (olist.isSublist(i->first)) {
           // copy the observation data sublist into the local list
           obs_list.sublist(i->first) = olist.sublist(i->first);
 
-          if ( obs_list.sublist(i->first).isParameter("Time Macro") ) {
+          if (obs_list.sublist(i->first).isParameter("Time Macro")) {
             std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
             // Create a local parameter list and store the time macro (3 doubles)
             Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
             if (time_macro_list.isParameter("Start_Period_Stop")) {
-              obs_list.sublist(i->first).set("Start_Period_Stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+              obs_list.sublist(i->first).set("Start_Period_Stop", time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
               // Grab the times for start, stop, and period
               Teuchos::Array<double> startPeriodStop = Teuchos::getParameter<Teuchos::Array<double> >(time_macro_list, "Start_Period_Stop");
               // Since the Teuchos array is a reference, we copy into modifiable variables
@@ -392,9 +389,9 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
               double stop   = startPeriodStop[2];;
               double period = startPeriodStop[1];
               // If the stop time from the macro is -1, we have to look elsewhere for the end time
-              if ( stop==-1 ) {
+              if (stop == -1) {
                 if (plist->isSublist("Execution Control")) {
-                  if ( plist->sublist("Execution Control").isSublist("Time Integration Mode") ) {
+                  if (plist->sublist("Execution Control").isSublist("Time Integration Mode")) {
                     Teuchos::ParameterList time_integration_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
                     if (time_integration_mode_list.isSublist("Steady")) {
                       stop = time_integration_mode_list.sublist("Steady").get<double>("End");
@@ -410,20 +407,20 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
                 }
               }
 
-              for (double j=start; j<=stop; j+=period)
+              for (double j = start; j <= stop; j += period)
                 observationPoints.push_back(j);
             }
             if (time_macro_list.isParameter("Values")) {
               obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
               Teuchos::Array<double> values = time_macro_list.get<Teuchos::Array<double> >("Values");
-              observationPoints.insert( observationPoints.end(), values.begin(), values.end() );
+              observationPoints.insert(observationPoints.end(), values.begin(), values.end());
             }
             obs_list.sublist(i->first).remove("Time Macro");
           }
 
-          if ( obs_list.sublist(i->first).isParameter("Cycle Macro") ) {
+          if (obs_list.sublist(i->first).isParameter("Cycle Macro")) {
             std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
-            obs_list.sublist(i->first).set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
+            obs_list.sublist(i->first).set("Start_Period_Stop", get_Cycle_Macro(cycle_macro, plist));
             obs_list.sublist(i->first).remove("Cycle Macro");
           }
 
@@ -436,6 +433,7 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
       }
     }
   }
+
   // Sort the array of observation points and remove any identical ones
   std::sort( observationPoints.begin(), observationPoints.end() );
   // Remove points that are too close together

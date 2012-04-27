@@ -15,7 +15,7 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
   // interpret paramerter list
   // loop over the sublists and create an observation for each
   for (Teuchos::ParameterList::ConstIterator i = observations_plist_.begin(); i != observations_plist_.end(); i++) {
-    //  sublists
+    // sublists
     if (observations_plist_.isSublist(observations_plist_.name(i))) {
       Teuchos::ParameterList observable_plist = observations_plist_.sublist(observations_plist_.name(i));
 	    
@@ -37,7 +37,7 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
     }
   }     
 }
-  
+    
   
 void Unstructured_observations::make_observations(State& state)
 {
@@ -50,7 +50,7 @@ void Unstructured_observations::make_observations(State& state)
       Errors::Message m("Unstructured_observations: can only handle Functional == Observation Data: Integral, or Functional == Observation Data: Point");
       Exceptions::amanzi_throw(m); 
     }
-      
+        
     std::string label = i->first;
       
     // make sure that we need to make an observation now
@@ -86,7 +86,6 @@ void Unstructured_observations::make_observations(State& state)
 
 bool Unstructured_observations::observation_requested(
     double time, double last_time, Teuchos::Array<double>& T, Teuchos::Array<double>& SPS) {
-    
   for (int i = 0; i < T.size(); i++) {
     if (last_time < T[i] && T[i] <= time) {
       return true;

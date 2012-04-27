@@ -136,7 +136,7 @@ void MPC::mpc_init() {
   // done creating auxilary state objects and  process models
 
   // create the observations
-  if ( parameter_list.isSublist("Observation Data") ) {
+  if (parameter_list.isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data"); 
     observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
   } else {
@@ -365,9 +365,9 @@ void MPC::cycle_driver() {
       mpc_dT = std::min(std::min(std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT);
 
       // make sure we hit the observation times exactly
-      if (observation_times_.size()>0) {
+      if (observation_times_.size() > 0) {
 	int next_time_index(-1);
-	for (int ii=0; ii<observation_times_.size(); ii++) {
+	for (int ii = 0; ii < observation_times_.size(); ii++) {
 	  if (S->get_time() < observation_times_[ii]) {
 	    next_time_index = ii;
 	    break;

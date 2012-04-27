@@ -10,7 +10,7 @@
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="String" value="4"/>
-        <Parameter name="File" type="String" value="../flow/test/4x4x4.par"/>
+        <Parameter name="File" type="String" value="test/cube_4x4x4.par"/>
         <Parameter name="Format" type="String" value="Unknown"/>
         <Parameter name="Entity" type="String" value="Face"/>
       </ParameterList>
