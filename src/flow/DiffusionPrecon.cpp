@@ -107,8 +107,7 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
   delete [] fvec_ptrs;
   
   double elapsed_time_total = total.elapsed();
-//   cout<<"******ApplyInverse takes "<<elapsed_time_total<<"seconds\n";
-//   exit(0);
+
   return 0;
 }
 

@@ -131,12 +131,13 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  
+  
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
     {
       *out << "Reading checkpoint from file " << filename << std::endl;
     }
-  
   
   Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm, filename); 
 
