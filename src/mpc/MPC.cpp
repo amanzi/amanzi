@@ -143,7 +143,7 @@ void MPC::mpc_init() {
         parameter_list.sublist("Transport");
 
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling",false);
-    
+
     if (subcycling) { 
       transport_subcycling = 1;
     } else {
@@ -412,8 +412,11 @@ void MPC::cycle_driver () {
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-	  if (transport_subcycling==1) {
-	    transport_dT = TPK->calculate_transport_dT();
+	  // we must call calculate_transport_dT, even when subcycling is on
+	  double tpk_dT = TPK->calculate_transport_dT();
+	  // but we only use the tranport dT if subcycling is off 
+	  if (transport_subcycling==0) {
+	    transport_dT = tpk_dT;
 	  }
 	}
         if (chemistry_enabled) {

@@ -1,15 +1,22 @@
 <!-- unit test input for the chemistry process kernel -->
 <ParameterList name="Main">
 
-  <ParameterList name="Simple Mesh Parameters">
-      <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
-      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}"/>
-      <Parameter name="Domain High Corner" type="Array double" value="{1.0, 1.0, 1.0}"/>
-  </ParameterList>
-  
+  <ParameterList name="Mesh">
+     <ParameterList name="Unstructured">
+       <ParameterList name="Expert">
+         <Parameter name="Framework" type="string" value="MSTK"/>
+       </ParameterList>
+       <ParameterList name="Generate Mesh">
+         <Parameter name="Domain High Corner" type="Array double" value="{1, 1, 1}"/>
+         <Parameter name="Domain Low Corner" type="Array double" value="{0, 0, 0}"/>
+         <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
   <ParameterList name="Regions">
     <ParameterList name="All">
-      <ParameterList name="Region:Box">
+      <ParameterList name="Region: Box">
 	<Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
 	<Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
@@ -17,27 +24,29 @@
   </ParameterList>
 
   <ParameterList name="State">
-    <Parameter name="Number of mesh blocks" type="int" value="1"/>
     <Parameter name="Number of component concentrations" type="int" value="5"/>
-    <Parameter name="Constant water saturation" type="double" value="1.0"/>
+    <Parameter name="Component Solutes" type="Array string" value="{Al+++,H+,HPO4-2,SiO2(aq),UO2++}"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
     <Parameter name="Constant viscosity" type="double" value="0.001308"/>
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.8"/>
-
-    <ParameterList name="Mesh block 1"> 
-      <Parameter name="Mesh block ID" type="int" value="0"/>
+    <Parameter name="Material Names" type="Array string" value="{Dummy material}"/>
+    <ParameterList name="The whole mesh"> 
+      <Parameter name="Region" type="string" value="All"/>
       <Parameter name="Constant porosity" type="double" value="0.1"/>
-      <Parameter name="Constant permeability" type="double" value="1.0e-10"/>
-      <Parameter name="Constant Darcy flux x" type="double" value="1.0e-7"/>
-      <Parameter name="Constant Darcy flux y" type="double" value="0"/>
-      <Parameter name="Constant Darcy flux z" type="double" value="0"/>
+      <Parameter name="Constant horizontal permeability" type="double" value="1.0e-10"/>
+      <Parameter name="Constant vertical permeability" type="double" value="1.0e-10"/>
       <Parameter name="Constant component concentration 0" type="double" value="6.5874E-09"/>  <!-- Al+++ -->
       <Parameter name="Constant component concentration 1" type="double" value="2.1593E-08"/>  <!-- H+ -->
       <Parameter name="Constant component concentration 2" type="double" value="1.0000E-06"/>  <!-- HPO4-2 -->
       <Parameter name="Constant component concentration 3" type="double" value="1.8703E-04"/>  <!-- SiO2(aq) -->
       <Parameter name="Constant component concentration 4" type="double" value="1.0000E-15"/>  <!-- UO2++ -->
+      <ParameterList name="linear pressure">
+         <Parameter name="gradient" type="Array double" value="{0, 0, -9793.52}"/>
+         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+         <Parameter name="reference value" type="double" value="101325"/>
+      </ParameterList>      
    </ParameterList>
   </ParameterList>
 
@@ -55,8 +64,8 @@
       <Parameter name="Number of ion exchange sites" type="int" value="0"/>
       <Parameter name="Number of sorption sites" type="int" value="0"/>
       <Parameter name="Number of mesh blocks" type="int" value="1"/>
-      <ParameterList name="Mesh block 1"> 
-        <Parameter name="Mesh block ID" type="int" value="0"/>
+      <ParameterList name="The whole mesh"> 
+	<Parameter name="Region" type="string" value="All"/>
         <ParameterList name="Free Ion Species">
 	  <Parameter name="Free Ion Species 0" type="double" value="4.36476e-16"/>  <!-- Al+++ -->
 	  <Parameter name="Free Ion Species 1" type="double" value="3.16772e-08"/>  <!-- H+ -->

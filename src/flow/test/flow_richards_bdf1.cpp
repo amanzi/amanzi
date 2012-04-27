@@ -24,7 +24,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Flow_State.hpp"
 #include "RichardsProblem.hpp"
 #include "RichardsModelEvaluator.hpp"
-#include "BDF2_Dae.hpp"
+#include "BDF1_Dae.hh"
 
 #include "gmv_mesh.hh"
 
@@ -45,7 +45,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_richards_bdf2.xml";
+  string xmlFileName = "test/flow_richards_bdf1.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create an SIMPLE mesh framework 
@@ -63,6 +63,11 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   RCP<State> S = Teuchos::rcp(new State(state_list, mesh));
   RCP<Amanzi::Flow_State> FS = Teuchos::rcp(new Amanzi::Flow_State(S));
 
+  // create a vis object
+  Teuchos::ParameterList& vlist = parameter_list.sublist("Visualization Data");
+  Amanzi::Vis V(vlist, (Epetra_MpiComm *)comm);
+  V.create_files(*mesh);
+
   // create Richards problem
   ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
   ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
@@ -77,35 +82,37 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   problem.set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
 
   // create the Richards Model Evaluator
-  ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
+  ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");
   Amanzi::RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
 
   // create the time stepping object
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList);
-  *bdf2_list = richards_list.get<Teuchos::ParameterList>("Time integrator");  
-  BDF2::Dae TS(RME, problem.Map());
-  TS.setParameterList(bdf2_list);
+  Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList);
+  *bdf1_list = richards_list.get<Teuchos::ParameterList>("steady time integrator");  
+  BDF1Dae TS(RME, problem.Map());
+  TS.setParameterList(bdf1_list);
 
   // create the initial condition
   Epetra_Vector u(problem.Map());
 
-  Epetra_Vector *ucells = problem.CreateCellView(u);
-  for (int c=0; c<ucells->MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    //(*ucells)[c] = 101325.0 + 9793.5 * (103.2 - xc[2]);
-    (*ucells)[c] = xc[2] * (xc[2] + 10.0);
-  }
+  // Epetra_Vector *ucells = problem.CreateCellView(u);
+  // for (int c=0; c<ucells->MyLength(); c++) {
+  //   const Point& xc = mesh->cell_centroid(c);
+  //   //(*ucells)[c] = 101325.0 + 9793.5 * (103.2 - xc[2]);
+  //   (*ucells)[c] = xc[2] * (xc[2] + 10.0);
+  // }
 
-  Epetra_Vector *ufaces = problem.CreateFaceView(u);
-  for (int f=0; f<ufaces->MyLength(); f++) {
-    const Point& xf = mesh->face_centroid(f);
-    //(*ufaces)[f] = 101325.0 + 9793.5 * (103.2 - xf[2]);
-    (*ufaces)[f] = xf[2] * (xf[2] + 10.0);
-  }
+  // Epetra_Vector *ufaces = problem.CreateFaceView(u);
+  // for (int f=0; f<ufaces->MyLength(); f++) {
+  //   const Point& xf = mesh->face_centroid(f);
+  //   //(*ufaces)[f] = 101325.0 + 9793.5 * (103.2 - xf[2]);
+  //   (*ufaces)[f] = xf[2] * (xf[2] + 10.0);
+  // }
+  u.PutScalar(0.0);
   
   // initialize the state
   S->update_pressure(*problem.CreateCellView(u));
   S->set_time(0.0);
+  S->set_cycle(0);
 
   // set intial and final time
   double t0 = 0.0;
@@ -114,7 +121,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   // compute the initial udot
   Epetra_Vector udot(problem.Map());
   problem.compute_udot(t0, u, udot);
-  udot.PutScalar(0.0);
+  //udot.PutScalar(0.0);
 
   // intialize the state of the time stepper
   TS.set_initial_state(t0, u, udot);
@@ -126,21 +133,24 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   // iterate
   int i = 0;
   double tlast = t0;
-  do {    
-    TS.bdf2_step(h, 0.0, u, hnext);
+  do {
+    S->write_vis(V, true);
+    
+    TS.bdf1_step(h, u, hnext);
     TS.commit_solution(h, u);
-
-    S->advance_time(h);    
+    
+    S->advance_time(h);
     S->update_pressure(*problem.CreateCellView(u));  // update only the cell-based pressure
-
-    TS.write_bdf2_stepping_statistics();
-
+    
+    TS.write_bdf1_stepping_statistics();
+    
     h = hnext;
     i++;
+    S->set_cycle(i);
 
     tlast=TS.most_recent_time();
   } while (t1 >= tlast && i < 6000);
-
+  
   // check for bounds
   for (int k=0; k<80; k++) CHECK(u[k] < 0.001 && u[k] > -0.6);
 
