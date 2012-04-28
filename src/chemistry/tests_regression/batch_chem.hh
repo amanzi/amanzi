@@ -22,6 +22,9 @@ struct SimulationParameters {
   double delta_time;  // [s]
   int num_time_steps;  // [-]
   int output_interval;  // [steps]
+  double cation_exchange_capacity;
+  std::vector<double> mineral_ssa;  // specific surface area []
+  std::vector<double> site_density;  // sorption site density []
 };
 
 static const std::string kSimulationSection("simulation parameters");
@@ -44,6 +47,10 @@ static const std::string kSorbedSection("total_sorbed");
 static const std::string kFreeIonSection("free_ion");
 static const std::string kIonExchangeSection("ion_exchange");
 
+static const std::string kSiteDensitySection("site_density");
+static const std::string kSpecificSurfaceAreaSection("specific_surface_area");
+static const std::string kCationExchangeCapacitySection("cation_exchange_capacity");
+
 int CommandLineOptions(int argc, char** argv,
                        std::string* verbosity_name,
                        std::string* input_file_name,
@@ -61,9 +68,13 @@ void ParseSimulationParameter(const std::string& raw_line,
 
 void ParseComponentValue(const std::string& raw_line,
                          std::vector<double>* component);
+void ParseComponentValue(const std::string& raw_line,
+                         double* component);
 
 void ModelSpecificParameters(const std::string model,
                              amanzi::chemistry::Beaker::BeakerParameters* parameters);
+void OverrideParameters(const SimulationParameters& simulation_params,
+                        amanzi::chemistry::Beaker::BeakerParameters* parameters);
 
 void PrintInput(const SimulationParameters& params,
                 const amanzi::chemistry::Beaker::BeakerComponents& components);

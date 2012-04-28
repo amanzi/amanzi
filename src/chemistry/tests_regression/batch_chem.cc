@@ -28,6 +28,10 @@ namespace ac = amanzi::chemistry;
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
 
+/* TODO: might be worth switching over to reading the component values
+   into a map rather than a vector, then order of components in the
+   cfg file wouldn't matter, but we need to request an name-id map
+   from the beaker.  */
 
 int main(int argc, char** argv) {
   bool debug_batch_driver(false);
@@ -55,6 +59,9 @@ int main(int argc, char** argv) {
   components.total_sorbed.clear();
 
   SimulationParameters simulation_params;
+  simulation_params.mineral_ssa.clear();
+  simulation_params.site_density.clear();
+  simulation_params.cation_exchange_capacity = -1.0;
   if (!input_file_name.empty()) {
     ReadInputFile(input_file_name, &simulation_params, &components);
   }
@@ -89,6 +96,7 @@ int main(int argc, char** argv) {
       parameters.saturation = simulation_params.saturation;  // -
       parameters.volume = simulation_params.volume;  // m^3
       ModelSpecificParameters(simulation_params.comparison_model, &parameters);
+      OverrideParameters(simulation_params, &parameters);
 
       if (components.free_ion.size() == 0) {
         // initialize free-ion concentrations, these are actual
@@ -176,6 +184,29 @@ void ModelSpecificParameters(const std::string model,
     // bad model name, how did we get here....
   }
 }  // end ModelSpecificParameters()
+
+void OverrideParameters(const SimulationParameters& simulation_params,
+                        ac::Beaker::BeakerParameters* parameters) {
+  if (simulation_params.mineral_ssa.size() > 0) {
+    parameters->override_database = true;
+    parameters->mineral_specific_surface_area.assign(
+        simulation_params.mineral_ssa.begin(),
+        simulation_params.mineral_ssa.end());
+  }
+
+  if (simulation_params.site_density.size() > 0) {
+    parameters->override_database = true;
+    parameters->sorption_site_density.assign(
+        simulation_params.site_density.begin(),
+        simulation_params.site_density.end());
+  }
+
+  if (simulation_params.cation_exchange_capacity > 0.0) {
+    parameters->override_database = true;
+    parameters->cation_exchange_capacity = 
+        simulation_params.cation_exchange_capacity;
+  }
+}  // end OverrideParameters()
 
 /*******************************************************************************
  **
@@ -295,7 +326,10 @@ void ReadInputFile(const std::string& file_name,
     kSectionMineral,
     kSectionSorbed,
     kSectionFreeIon,
-    kSectionIonExchange
+    kSectionIonExchange,
+    kSectionSiteDensity,
+    kSectionSpecificSurfaceArea,
+    kSectionCationExchangeCapacity
   } current_section;
 
   int count = 0;
@@ -338,6 +372,12 @@ void ReadInputFile(const std::string& file_name,
         current_section = kSectionSorbed;
       } else if (section_name.compare(kFreeIonSection) == 0) {
         current_section = kSectionFreeIon;
+      } else if (section_name.compare(kSiteDensitySection) == 0) {
+        current_section = kSectionSiteDensity;
+      } else if (section_name.compare(kSpecificSurfaceAreaSection) == 0) {
+        current_section = kSectionSpecificSurfaceArea;
+      } else if (section_name.compare(kCationExchangeCapacitySection) == 0) {
+        current_section = kSectionCationExchangeCapacity;
       } else {
         std::cout << "batch_chem::ReadInputFile(): ";
         std::cout << "unknown section found on line " << count << ":";
@@ -357,6 +397,12 @@ void ReadInputFile(const std::string& file_name,
         ParseComponentValue(raw_line, &(components->total_sorbed));
       } else if (current_section == kSectionFreeIon) {
         ParseComponentValue(raw_line, &(components->free_ion));
+      } else if (current_section == kSectionSiteDensity) {
+        ParseComponentValue(raw_line, &(simulation_params->site_density));
+      } else if (current_section == kSectionSpecificSurfaceArea) {
+        ParseComponentValue(raw_line, &(simulation_params->mineral_ssa));
+      } else if (current_section == kSectionCationExchangeCapacity) {
+        ParseComponentValue(raw_line, &(simulation_params->cation_exchange_capacity));
       }
     }
   }
@@ -433,6 +479,26 @@ void ParseComponentValue(const std::string& raw_line,
 
 }  // end ParseComponentValue();
 
+void ParseComponentValue(const std::string& raw_line,
+                         double* component)
+{
+  // this is intended for a single value, not a c-style array!
+  std::string equal("=:");
+  std::string spaces(" \t");
+  ac::StringTokenizer param(raw_line, equal);
+  //std::cout << "\'" << raw_line << "\'" << std::endl;
+  // if param.size() == 0 then we have a blank line
+  if (param.size() != 0) {
+    ac::StringTokenizer param_value(param.at(1), spaces);
+    double value;
+    if (param_value.size() > 0) {
+      value = std::atof(param_value.at(0).c_str());
+    }
+    *component = value;
+  }
+
+}  // end ParseComponentValue();
+
 
 /*******************************************************************************
  **
@@ -504,6 +570,11 @@ void PrintSimulationParameters(const SimulationParameters& params)
   std::cout << "\tdelta time: " << params.delta_time << std::endl;
   std::cout << "\tnum time steps: " << params.num_time_steps << std::endl;
   std::cout << "\toutput interval: " << params.output_interval << std::endl;
+  std::cout << "-- Database override parameters:" << std::endl;
+  std::cout << "  Site Density: " << std::endl;
+  PrintDoubleVector(params.site_density);
+  std::cout << "  Specific Surface Area: " << std::endl;
+  PrintDoubleVector(params.mineral_ssa);
 }
 
 

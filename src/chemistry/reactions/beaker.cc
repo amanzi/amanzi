@@ -9,6 +9,7 @@
 #include "beaker.hh"
 
 #include <cstdlib>
+#include <cassert>
 
 #include <string>
 #include <iostream>
@@ -47,6 +48,7 @@ const double Beaker::volume_default = 1.0;  // [m^3]
 
 Beaker::Beaker()
     : verbosity_(kSilent),
+      override_database_(false),
       tolerance_(tolerance_default),
       max_iterations_(max_iterations_default),
       ncomp_(0),
@@ -316,11 +318,20 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   parameters.max_iterations = max_iterations_default;
 
   parameters.activity_model_name = ActivityModelFactory::unit;
+  parameters.pitzer_database.clear();
 
   parameters.porosity = porosity_default;
   parameters.saturation = saturation_default;
   parameters.water_density = water_density_kg_m3_default;  // kg / m^3
   parameters.volume = volume_default;  // m^3
+
+  parameters.override_database = false;
+  parameters.mineral_specific_surface_area.clear();
+  parameters.cation_exchange_capacity = 0.0;
+  parameters.sorption_site_density.clear();
+  parameters.isotherm_kd.clear();
+  parameters.isotherm_langmuir_b.clear();
+  parameters.isotherm_freundlich_n.clear();
 
   return parameters;
 }  // end GetDefaultParameters()
@@ -343,10 +354,15 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
   parameters.water_density = water_density_kg_m3();  // kg / m^3
   parameters.volume = volume();  // m^3
 
+  parameters.override_database = override_database();
+  // TODO: finish isotherm data....
+  //parameters.isotherm_kd = isotherm_kd_;
+
   return parameters;
 }  // end GetCurrentParameters()
 
 void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
+  override_database(parameters.override_database);
   tolerance(parameters.tolerance);
   max_iterations(parameters.max_iterations);
   porosity(parameters.porosity);
@@ -355,6 +371,23 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
   volume(parameters.volume);  // vol = [m^3]
   update_accumulation_coefficients();
   update_por_sat_den_vol();
+  if (override_database()) {
+    if (parameters.mineral_specific_surface_area.size() > 0) {
+      for (int m = 0; m < minerals_.size(); ++m) {
+        minerals_.at(m).set_specific_surface_area(parameters.mineral_specific_surface_area.at(m));
+      }
+    }
+
+    if (parameters.sorption_site_density.size() > 0) {
+      for (int scr = 0; scr < surfaceComplexationRxns_.size(); ++scr) {
+        surfaceComplexationRxns_.at(scr).UpdateSiteDensity(parameters.sorption_site_density.at(scr));
+      }
+    }
+
+    if (parameters.cation_exchange_capacity > 0.0) {
+      // do something here....
+    }
+  }
 }  // end SetParameters()
 
 
