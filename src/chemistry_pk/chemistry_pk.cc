@@ -444,7 +444,7 @@ void Chemistry_PK::LocalInitialConditions(void) {
       Teuchos::ParameterList mesh_block_list =
           initial_conditions.sublist(block_name.str());
 
-      int mesh_block_ID = mesh_block_list.get<int>("Mesh block ID");
+      int mesh_block_ID = block;//mesh_block_list.get<int>("Mesh block ID");
       if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_ID,
                                                            Amanzi::AmanziMesh::CELL)) {
         // there is an inconsistency in the xml input file...

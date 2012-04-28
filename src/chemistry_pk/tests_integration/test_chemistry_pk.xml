@@ -1,0 +1,554 @@
+<!-- unit test input for the chemistry process kernel -->
+<ParameterList name="Main">
+
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+  <ParameterList name="General Description">
+    <Parameter name="Model Name" type="string" value="chemistry process kernel integration test"/>
+    <Parameter name="Description" type="string" value="chemistry process kernel integration test"/>
+    <Parameter name="Authors" type="string" value="bandre"/>
+    <Parameter name="Last modified" type="string" value="2012-03-29 16:35"/>
+  </ParameterList>
+
+  <ParameterList name="Execution Control">
+    <Parameter name="Verbosity" type="string" value="Medium"/>
+    <Parameter name="Flow Model" type="string" value="Off"/>
+    <Parameter name="Transport Model" type="string" value="Off"/>
+    <Parameter name="Chemistry Model" type="string" value="On"/>
+    <ParameterList name="Time Integration Mode">
+      <ParameterList name="Transient">
+        <Parameter name="Start" type="double" value="0"/>
+        <Parameter name="End" type="double" value="3.16e7"/>
+        <Parameter name="Initial Time Step" type="double" value="0.01"/>
+        <Parameter name="Initial Time Step Multiplier" type="double" value="86400.0"/>
+        <Parameter name="Maximum Time Step Change" type="double" value="1.1"/>
+        <Parameter name="Maximum Time Step Size" type="double" value="86400.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+  
+  <ParameterList name="Domain">
+    <Parameter name="Spatial Dimension" type="int" value="3"/>
+  </ParameterList>
+  
+  
+  <ParameterList name="Mesh">
+    <ParameterList name="Unstructured">
+      <ParameterList name="Generate Mesh">
+       <ParameterList name="Uniform Structured">
+         <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+         <Parameter name="Domain High Corner" type="Array double" value="{1.0, 1.0, 1.0}" />
+         <Parameter name="Number of Cells" type="Array int" value="{1, 1, 10}"/>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+  
+  <ParameterList name="Regions">
+    <ParameterList name="All">
+      <ParameterList name="Region: Box">
+       <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+       <Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Upper">
+      <ParameterList name="Region: Box">
+       <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.5}"/>
+       <Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Lower">
+      <ParameterList name="Region: Box">
+       <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+       <Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="XLOW">
+      <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array double" value="{0.0, 0.5, 0.5}"/>
+       <Parameter name="Direction" type="Array double" value="{1.0, 0.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="XHIGH">
+      <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array double" value="{1.0, 0.5, 0.5}"/>
+       <Parameter name="Direction" type="Array double" value="{-1.0, 0.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="YLOW">
+      <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array double" value="{0.5, 0.0, 0.5}"/>
+       <Parameter name="Direction" type="Array double" value="{0.0, 1.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="YHIGH">
+      <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array double" value="{0.5, 1.0, 0.5}"/>
+       <Parameter name="Direction" type="Array double" value="{0.0, -1.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="ZLOW">
+      <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array double" value="{0.5, 0.5, 0.0}"/>
+       <Parameter name="Direction" type="Array double" value="{0.0, 0.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="ZHIGH">
+      <ParameterList name="Region: Plane">
+       <Parameter name="Location" type="Array double" value="{0.5, 0.5, 1.0}"/>
+       <Parameter name="Direction" type="Array double" value="{0.0, 0.0, -1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+  
+  <ParameterList name="Material Properties">
+    <ParameterList name="Soil">
+      <Parameter name="Assigned Regions" type="Array string" value="{Lower}"/>
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="1.0"/>
+      </ParameterList>
+      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+        <Parameter name="Horizontal" type="double" value="1.94e-13"/>
+        <Parameter name="Vertical" type="double" value="1.94e-13"/>
+      </ParameterList>
+      <!--LVZ soil-->
+      <ParameterList name="Capillary Pressure: van Genuchten">
+        <Parameter name="alpha" type="double" value="0.0264"/>
+        <Parameter name="Sr" type="double" value="0.4"/>
+        <Parameter name="m" type="double" value="0.286"/>
+        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+      </ParameterList>
+      <ParameterList name="Isotherms">
+       <ParameterList name="UO2++">
+         <Parameter name="Kd" type="double" value="11.0"/>
+         <Parameter name="Freundlich N" type="double" value="1.0"/>
+         <Parameter name="Langmuir b" type="double" value="1.0"/>
+       </ParameterList>
+       <ParameterList name="Al+++">
+         <Parameter name="Kd" type="double" value="3.0"/>
+         <Parameter name="Freundlich N" type="double" value="3.5"/>
+         <Parameter name="Langmuir b" type="double" value="0.3"/>
+       </ParameterList>
+      </ParameterList>
+      <ParameterList name="Mineralogy">
+       <ParameterList name="Kaolinite">
+         <!-- required -->
+         <Parameter name="Volume Fraction" type="double" value="0.15"/>
+         <Parameter name="Specific Surface Area" type="double" value="1.1"/>
+         <!-- optional? -->
+         <Parameter name="Cation Exchange Capacity" type="double" value="12.0"/>
+       </ParameterList>
+       <ParameterList name="Quartz">
+         <Parameter name="Volume Fraction" type="double" value="0.21"/>
+         <Parameter name="Specific Surface Area" type="double" value="1.2"/>
+       </ParameterList>
+       <ParameterList name="(UO2)3(PO4)2.4H2O">
+         <Parameter name="Volume Fraction" type="double" value="0.0"/>
+         <Parameter name="Specific Surface Area" type="double" value="1.3"/>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Waste">
+      <Parameter name="Assigned Regions" type="Array string" value="{Upper}"/>
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="1.0"/>
+      </ParameterList>
+      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+        <Parameter name="Horizontal" type="double" value="1.94e-13"/>
+        <Parameter name="Vertical" type="double" value="1.94e-13"/>
+      </ParameterList>
+      <!--LVZ soil-->
+      <ParameterList name="Capillary Pressure: van Genuchten">
+        <Parameter name="alpha" type="double" value="0.0264"/>
+        <Parameter name="Sr" type="double" value="0.4"/>
+        <Parameter name="m" type="double" value="0.286"/>
+        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+      </ParameterList>
+      <ParameterList name="Isotherms">
+         <ParameterList name="UO2++">
+           <Parameter name="Kd" type="double" value="10.0"/>
+           <Parameter name="Freundlich N" type="double" value="1.5"/>
+           <Parameter name="Langmuir b" type="double" value="0.1"/>
+         </ParameterList>
+         <ParameterList name="H+">
+           <Parameter name="Kd" type="double" value="2.0"/>
+           <Parameter name="Freundlich N" type="double" value="2.5"/>
+           <Parameter name="Langmuir b" type="double" value="0.2"/>
+         </ParameterList>
+      </ParameterList>
+      <ParameterList name="Mineralogy">
+       <ParameterList name="Kaolinite">
+         <!-- required -->
+         <Parameter name="Volume Fraction" type="double" value="0.05"/>
+         <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+         <!-- optional -->
+         <Parameter name="Cation Exchange Capacity" type="double" value="2.0"/>
+       </ParameterList>
+       <ParameterList name="Quartz">
+         <Parameter name="Volume Fraction" type="double" value="0.2"/>
+         <Parameter name="Specific Surface Area" type="double" value="0.2"/>
+       </ParameterList>
+       <ParameterList name="(UO2)3(PO4)2.4H2O">
+         <Parameter name="Volume Fraction" type="double" value="0.75"/>
+         <Parameter name="Specific Surface Area" type="double" value="0.3"/>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+  
+  <ParameterList name="Phase Definitions">
+    <ParameterList name="Aqueous">
+      <ParameterList name="Phase Properties">
+        <ParameterList name="Density: Uniform">
+          <Parameter name="Density" type="double" value="1000"/>
+        </ParameterList>
+        <ParameterList name="Viscosity: Uniform">
+          <Parameter name="Viscosity" type="double" value="0.001"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Phase Components">
+        <ParameterList name="Water">
+          <Parameter name="Component Solutes" type="Array string" value="{Al+++,H+,HPO4-,SiO2(aq),UO2++}"/>
+	  <Parameter name="Minerals" type="Array string" value="{Kaolinite,Quartz,(UO2)3(PO4)2.4H2O}"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- phase definitions -->
+  
+  <ParameterList name="Initial Conditions">
+    <ParameterList name="IC for soil">
+      <ParameterList name="IC: Linear Pressure">
+        <Parameter name="Gradient Value" type="Array double" value="{0.0,1.0}"/>
+        <Parameter name="Reference Coordinate" type="Array double" value="{0.0,0.0}"/>
+        <Parameter name="Reference Value" type="double" value="101325.0"/>
+      </ParameterList>
+      <Parameter name="Assigned Regions" type="Array string" value="{All,Lower,Upper}"/>
+      <ParameterList name="Solute IC">
+        <ParameterList name="Aqueous">
+          <ParameterList name="Water">
+            <ParameterList name="Al+++">
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0e-16"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="H+">
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0e-16"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="HPO4-">
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0e-16"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="SiO2(aq)">
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0e-16"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="UO2++">
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0e-16"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- initial conditions -->
+  
+  
+  <ParameterList name="Boundary Conditions">
+    <ParameterList name="BC left">
+      <Parameter name="Assigned Regions" type="Array string" value="{XLOW}"/>
+      <ParameterList name="Solute BC">
+       <ParameterList name="Aqueous">
+         <ParameterList name="Water">
+           <ParameterList name="Al+++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="H+">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="HPO4-">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="SiO2(aq)">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="UO2++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="BC right">
+      <Parameter name="Assigned Regions" type="Array string" value="{XHIGH}"/>
+      <ParameterList name="Solute BC">
+       <ParameterList name="Aqueous">
+         <ParameterList name="Water">
+           <ParameterList name="Al+++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="H+">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="HPO4-">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="SiO2(aq)">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="UO2++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+     <ParameterList name="BC front">
+      <Parameter name="Assigned Regions" type="Array string" value="{YLOW}"/>
+      <ParameterList name="Solute BC">
+       <ParameterList name="Aqueous">
+         <ParameterList name="Water">
+           <ParameterList name="Al+++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="H+">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="HPO4-">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="SiO2(aq)">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="UO2++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+     <ParameterList name="BC back">
+      <Parameter name="Assigned Regions" type="Array string" value="{YHIGH}"/>
+      <ParameterList name="Solute BC">
+       <ParameterList name="Aqueous">
+         <ParameterList name="Water">
+           <ParameterList name="Al+++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="H+">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="HPO4-">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="SiO2(aq)">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="UO2++">
+             <ParameterList name="BC: Zero Flux">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+   <ParameterList name="BC lower">
+      <Parameter name="Assigned Regions" type="Array string" value="{ZLOW}"/>
+      <ParameterList name="Solute BC">
+       <ParameterList name="Aqueous">
+         <ParameterList name="Water">
+           <ParameterList name="Al+++">
+             <ParameterList name="BC: Outflow">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="H+">
+             <ParameterList name="BC: Outflow">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="HPO4-">
+             <ParameterList name="BC: Outflow">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="SiO2(aq)">
+             <ParameterList name="BC: Outflow">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="UO2++">
+             <ParameterList name="BC: Outflow">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="BC upper">
+      <Parameter name="Assigned Regions" type="Array string" value="{ZHIGH}"/>
+      <ParameterList name="Solute BC">
+       <ParameterList name="Aqueous">
+         <ParameterList name="Water">
+           <ParameterList name="Al+++">
+             <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+             <ParameterList name="BC: Uniform Concentration">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Values" type="Array double" value="{1.0}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="H+">
+             <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+             <ParameterList name="BC: Uniform Concentration">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Values" type="Array double" value="{1.0}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="HPO4-">
+             <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+             <ParameterList name="BC: Uniform Concentration">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Values" type="Array double" value="{1.0}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="SiO2(aq)">
+             <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+             <ParameterList name="BC: Uniform Concentration">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Values" type="Array double" value="{1.0}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="UO2++">
+             <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+             <ParameterList name="BC: Uniform Concentration">
+               <Parameter name="Times" type="Array double" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Values" type="Array double" value="{1.0}"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+      </ParameterList>
+    </ParameterList>  
+  </ParameterList> <!-- Boundary Conditions -->
+
+  <ParameterList name="Chemistry">
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
+    <Parameter name="Thermodynamic Database File" type="string" value="test_chemistry_pk.bgd" />
+    <Parameter name="Verbosity" type="int" value="1" />
+    <Parameter name="Activity Model" type="string" value="debye-huckel" />
+    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
+    <Parameter name="Using sorption" type="string" value="yes"/>
+    <Parameter name="Free ion concentrations provided" type="string" value="yes"/>
+    <ParameterList name="Initial Conditions">
+      <Parameter name="Number of minerals" type="int" value="3"/>
+      <Parameter name="Number of ion exchange sites" type="int" value="0"/>
+      <Parameter name="Number of sorption sites" type="int" value="0"/>
+      <Parameter name="Number of mesh blocks" type="int" value="1"/>
+      <ParameterList name="Mesh block 1"> 
+        <Parameter name="Mesh block ID" type="int" value="0"/>
+        <ParameterList name="Free Ion Species">
+          <Parameter name="Free Ion Species 0" type="double" value="4.36476e-16"/>  <!-- Al+++ -->
+          <Parameter name="Free Ion Species 1" type="double" value="3.16772e-08"/>  <!-- H+ -->
+          <Parameter name="Free Ion Species 2" type="double" value="1.00000e-06"/>  <!-- HPO4-2 -->
+          <Parameter name="Free Ion Species 3" type="double" value="1.87000e-04"/>  <!-- SiO2(aq) -->
+          <Parameter name="Free Ion Species 4" type="double" value="1.84374e-20"/>  <!-- UO2++ -->
+        </ParameterList>
+        <ParameterList name="Minerals">
+          <Parameter name="Mineral 0" type="double" value="0.15"/>  <!-- Kaolinite -->
+          <Parameter name="Mineral 1" type="double" value="0.21"/>  <!-- Quartz -->
+          <Parameter name="Mineral 2" type="double" value="0.0"/>   <!-- (UO2)3(PO4)2.4H2O -->
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- Chemistry -->
+
+
+
+</ParameterList>
