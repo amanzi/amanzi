@@ -120,34 +120,31 @@
         <Parameter name="m" type="double" value="0.286"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
-      <ParameterList name="Isotherms">
-       <ParameterList name="UO2++">
-         <Parameter name="Kd" type="double" value="11.0"/>
-         <Parameter name="Freundlich N" type="double" value="1.0"/>
-         <Parameter name="Langmuir b" type="double" value="1.0"/>
-       </ParameterList>
-       <ParameterList name="Al+++">
-         <Parameter name="Kd" type="double" value="3.0"/>
-         <Parameter name="Freundlich N" type="double" value="3.5"/>
-         <Parameter name="Langmuir b" type="double" value="0.3"/>
-       </ParameterList>
+      <ParameterList name="Surface Complexation Sites">
+	<ParameterList name=">SiOH">
+	  <Parameter name="Site Density" type="double" value="4.36e-3"/>
+	</ParameterList>
+	<ParameterList name=">FeOH">
+	  <Parameter name="Site Density" type="double" value="5.36e-3"/>
+	</ParameterList>
+	<ParameterList name=">AlOH">
+	  <Parameter name="Site Density" type="double" value="6.36e-3"/>
+	</ParameterList>
       </ParameterList>
       <ParameterList name="Mineralogy">
-       <ParameterList name="Kaolinite">
-         <!-- required -->
-         <Parameter name="Volume Fraction" type="double" value="0.15"/>
-         <Parameter name="Specific Surface Area" type="double" value="1.1"/>
-         <!-- optional? -->
-         <Parameter name="Cation Exchange Capacity" type="double" value="12.0"/>
-       </ParameterList>
-       <ParameterList name="Quartz">
-         <Parameter name="Volume Fraction" type="double" value="0.21"/>
-         <Parameter name="Specific Surface Area" type="double" value="1.2"/>
-       </ParameterList>
-       <ParameterList name="(UO2)3(PO4)2.4H2O">
-         <Parameter name="Volume Fraction" type="double" value="0.0"/>
-         <Parameter name="Specific Surface Area" type="double" value="1.3"/>
-       </ParameterList>
+	<ParameterList name="Kaolinite">
+	  <!-- required -->
+	  <Parameter name="Volume Fraction" type="double" value="0.15"/>
+	  <Parameter name="Specific Surface Area" type="double" value="4.0e-4"/>
+	</ParameterList>
+	<ParameterList name="Quartz">
+	  <Parameter name="Volume Fraction" type="double" value="0.21"/>
+	  <Parameter name="Specific Surface Area" type="double" value="3.0e-4"/>
+	</ParameterList>
+	<ParameterList name="(UO2)3(PO4)2.4H2O">
+	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
+	  <Parameter name="Specific Surface Area" type="double" value="0.5"/>
+	</ParameterList>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Waste">
@@ -166,29 +163,26 @@
         <Parameter name="m" type="double" value="0.286"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
-      <ParameterList name="Isotherms">
-         <ParameterList name="UO2++">
-           <Parameter name="Kd" type="double" value="10.0"/>
-           <Parameter name="Freundlich N" type="double" value="1.5"/>
-           <Parameter name="Langmuir b" type="double" value="0.1"/>
-         </ParameterList>
-         <ParameterList name="H+">
-           <Parameter name="Kd" type="double" value="2.0"/>
-           <Parameter name="Freundlich N" type="double" value="2.5"/>
-           <Parameter name="Langmuir b" type="double" value="0.2"/>
-         </ParameterList>
+      <ParameterList name="Surface Complexation Sites">
+	<ParameterList name=">SiOH">
+	  <Parameter name="Site Density" type="double" value="1.36e-3"/>
+	</ParameterList>
+	<ParameterList name=">FeOH">
+	  <Parameter name="Site Density" type="double" value="2.36e-3"/>
+	</ParameterList>
+	<ParameterList name=">AlOH">
+	  <Parameter name="Site Density" type="double" value="3.36e-3"/>
+	</ParameterList>
       </ParameterList>
       <ParameterList name="Mineralogy">
        <ParameterList name="Kaolinite">
          <!-- required -->
          <Parameter name="Volume Fraction" type="double" value="0.05"/>
-         <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-         <!-- optional -->
-         <Parameter name="Cation Exchange Capacity" type="double" value="2.0"/>
+         <Parameter name="Specific Surface Area" type="double" value="2.0e-4"/>
        </ParameterList>
        <ParameterList name="Quartz">
          <Parameter name="Volume Fraction" type="double" value="0.2"/>
-         <Parameter name="Specific Surface Area" type="double" value="0.2"/>
+         <Parameter name="Specific Surface Area" type="double" value="1.0e-4"/>
        </ParameterList>
        <ParameterList name="(UO2)3(PO4)2.4H2O">
          <Parameter name="Volume Fraction" type="double" value="0.75"/>
@@ -213,6 +207,7 @@
         <ParameterList name="Water">
           <Parameter name="Component Solutes" type="Array string" value="{Al+++,H+,HPO4-,SiO2(aq),UO2++}"/>
 	  <Parameter name="Minerals" type="Array string" value="{Kaolinite,Quartz,(UO2)3(PO4)2.4H2O}"/>
+	  <Parameter name="Sorption Sites" type="Array string" value="{>FeOH,>AlOH,>SiOH}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -233,30 +228,35 @@
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-16"/>
+                <Parameter name="Free Ion Guess" type="double" value="4.36476e-16"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="H+">
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-16"/>
+                <Parameter name="Free Ion Guess" type="double" value="3.16772e-08"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="HPO4-">
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-16"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.00000e-06"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="SiO2(aq)">
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-16"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.87000e-04"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="UO2++">
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-16"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.84374e-20"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -524,29 +524,6 @@
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
-    <Parameter name="Using sorption" type="string" value="yes"/>
-    <Parameter name="Free ion concentrations provided" type="string" value="yes"/>
-    <ParameterList name="Initial Conditions">
-      <Parameter name="Number of minerals" type="int" value="3"/>
-      <Parameter name="Number of ion exchange sites" type="int" value="0"/>
-      <Parameter name="Number of sorption sites" type="int" value="0"/>
-      <Parameter name="Number of mesh blocks" type="int" value="1"/>
-      <ParameterList name="Mesh block 1"> 
-        <Parameter name="Mesh block ID" type="int" value="0"/>
-        <ParameterList name="Free Ion Species">
-          <Parameter name="Free Ion Species 0" type="double" value="4.36476e-16"/>  <!-- Al+++ -->
-          <Parameter name="Free Ion Species 1" type="double" value="3.16772e-08"/>  <!-- H+ -->
-          <Parameter name="Free Ion Species 2" type="double" value="1.00000e-06"/>  <!-- HPO4-2 -->
-          <Parameter name="Free Ion Species 3" type="double" value="1.87000e-04"/>  <!-- SiO2(aq) -->
-          <Parameter name="Free Ion Species 4" type="double" value="1.84374e-20"/>  <!-- UO2++ -->
-        </ParameterList>
-        <ParameterList name="Minerals">
-          <Parameter name="Mineral 0" type="double" value="0.15"/>  <!-- Kaolinite -->
-          <Parameter name="Mineral 1" type="double" value="0.21"/>  <!-- Quartz -->
-          <Parameter name="Mineral 2" type="double" value="0.0"/>   <!-- (UO2)3(PO4)2.4H2O -->
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
   </ParameterList> <!-- Chemistry -->
 
 

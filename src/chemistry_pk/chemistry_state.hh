@@ -24,16 +24,9 @@ class Chemistry_State {
 
   virtual ~Chemistry_State();
 
-  void AllocateMemory(const int num_aqueous,
-                      const int num_free_ion,
-                      const int num_minerals,
-                      const int num_ion_exchange_sites,
-                      const int num_total_sorbed,
-                      const int num_sorption_sites);
-
-  // access methods
-  Teuchos::RCP<const Epetra_MultiVector> total_component_concentration() {
-    return simulation_state_->get_total_component_concentration();
+  // stuff chemistry can't/shouldn't change
+  Teuchos::RCP<const Mesh> mesh_maps() const {
+    return simulation_state_->get_mesh_maps();
   }
 
   Teuchos::RCP<const Epetra_Vector> porosity() const {
@@ -46,54 +39,61 @@ class Chemistry_State {
     return simulation_state_->get_water_density();
   }
 
-  Teuchos::RCP<const Mesh> mesh_maps() const {
-    return simulation_state_->get_mesh_maps();
-  }
-
   Teuchos::RCP<const Epetra_Vector> volume() const {
     return simulation_state_->volume();
   }
 
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components() const {
-    return aqueous_components_;
+  int number_of_aqueous_components(void) const {
+    return simulation_state_->get_number_of_components();
+  }
+
+  // stuff chemistry can change
+  Teuchos::RCP<Epetra_MultiVector> total_component_concentration() {
+    return simulation_state_->get_total_component_concentration();
   }
 
   Teuchos::RCP<Epetra_MultiVector> free_ion_species() const {
-    return free_ion_species_;
+    return simulation_state_->free_ion_concentrations();
+  }
+
+  int number_of_minerals(void) const {
+    return simulation_state_->number_of_minerals();
   }
 
   Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions() const {
-    return mineral_volume_fractions_;
+    return simulation_state_->mineral_volume_fractions();
   }
 
   Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area() const {
-    return mineral_specific_surface_area_;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites() const {
-    return ion_exchange_sites_;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> sorption_sites() const {
-    return sorption_sites_;
+    return simulation_state_->mineral_specific_surface_area();
   }
 
   Teuchos::RCP<Epetra_MultiVector> total_sorbed() const {
-    return total_sorbed_;
+    return simulation_state_->total_sorbed();
+  }
+
+  int number_of_ion_exchange_sites(void) const {
+    return simulation_state_->number_of_ion_exchange_sites();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites() const {
+    return simulation_state_->ion_exchange_sites();
+  }
+
+  int number_of_sorption_sites(void) const {
+    return simulation_state_->number_of_sorption_sites();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> sorption_sites() const {
+    return simulation_state_->sorption_sites();
+  }
+
+  bool using_sorption(void) const {
+    return simulation_state_->using_sorption();
   }
 
  private:
   Teuchos::RCP<State> simulation_state_;
-
-  // local variable
-  Teuchos::RCP<Epetra_Vector> volume_;
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
-  Teuchos::RCP<Epetra_MultiVector> free_ion_species_;
-  Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions_;
-  Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area_;
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites_;
-  Teuchos::RCP<Epetra_MultiVector> sorption_sites_;
-  Teuchos::RCP<Epetra_MultiVector> total_sorbed_;
 
 };
 

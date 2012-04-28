@@ -42,7 +42,7 @@ TEST(ADVANCE_WITH_STK) {
   
   // create a transport state with two component 
   int num_components = 2;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);

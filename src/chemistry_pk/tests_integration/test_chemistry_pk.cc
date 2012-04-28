@@ -123,12 +123,12 @@ SUITE(GeochemistryTestsChemistryPK) {
       std::cout << e.what() << std::endl;
     }
     // verbosity should be set after the constructor is finished....
-    CHECK_EQUAL(cpk_->verbosity(), 1);
+    CHECK_EQUAL(0, cpk_->verbosity());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize) {
-    // just make sure that we can have all the pieces together to set
-    // up a chemistry process kernel....
+    // make sure that we can initialize the pk and internal chemistry
+    // object correctly based on the xml input....
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
       cpk_->InitializeChemistry();
@@ -137,13 +137,17 @@ SUITE(GeochemistryTestsChemistryPK) {
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
     }
-    // XXXX is set by InitializeChemistry....
+    // assume all is right with the world if we exited w/o an error
     CHECK_EQUAL(0, 0);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
-    cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-    cpk_->InitializeChemistry();
+    try {
+      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+      cpk_->InitializeChemistry();
+    } catch (std::exception e) {
+      std::cout << e.what() << std::endl;
+    }
     std::vector<std::string> names;
     cpk_->set_chemistry_output_names(&names);
     CHECK_EQUAL(names.at(0), "pH");

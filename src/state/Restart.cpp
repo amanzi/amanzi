@@ -120,6 +120,30 @@ void Amanzi::Restart::dump_state(State& S, bool force)
       restart_output->writeAttrReal((*S.get_viscosity()),"viscosity");	
       
       restart_output->writeAttrInt(S.get_number_of_components(),"number of components");
+      restart_output->writeAttrInt(S.number_of_minerals(),"Number of minerals");
+      restart_output->writeAttrInt(S.number_of_ion_exchange_sites(),"Number of ion exchange sites");
+      restart_output->writeAttrInt(S.number_of_sorption_sites(),"Number of sorption sites");
+      restart_output->writeAttrInt(static_cast<int>(S.use_sorption_isotherms()),
+                                   "Use Sorption Isotherms");
+      for (int m = 0; m < S.number_of_minerals(); ++m) {
+        // TODO: need to dump the list of mineral names instead of
+        // this "Mineral N".... ticket #668
+        std::stringstream dummy;
+        dummy << "Mineral " << m;
+        restart_output->writeAttrString(S.mineral_names().at(m), dummy.str());
+        std::string name = S.mineral_names().at(m) + " volume fraction";
+        restart_output->writeDataReal(*(*S.mineral_volume_fractions())(m),
+                                      name);
+        name = S.mineral_names().at(m) + " specific surface area";
+        restart_output->writeDataReal(*(*S.mineral_specific_surface_area())(m),
+                                      name);
+      }
+
+      if (S.use_sorption_isotherms()) {
+
+      }
+
+      // TODO: dump additional ion exchange site, sorption sites, etc.
     }
   }
 }
@@ -146,6 +170,8 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   // first we must read the number of components
   restart_input->readAttrInt(idummy,"number of components");
   S.set_number_of_components(idummy);
+  restart_input->readAttrInt(idummy,"Number of minerals");
+  S.set_number_of_minerals(idummy);
 
   // now we can create storage
   S.create_storage();
@@ -227,6 +253,36 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
     }
   S.set_total_component_concentration(*cell_multivector);
   delete cell_multivector;        
+
+  // TODO: switch to using mineral names instead of mineral N, ticket #668.
+  std::vector<std::string> mineral_names;
+  mineral_names.clear();
+  for (int m = 0; m < S.number_of_minerals(); ++m) {
+    std::stringstream dummy;
+    dummy << "Mineral " << m;
+    std::string name;
+    restart_output->readAttrString(name, dummy.str());
+    mineral_names.push_back(name);
+  }
+  S.set_mineral_names(mineral_names);
+  
+  // TODO: loop through and read the mineral data
+  for (int m = 0; m < S.number_of_minerals(); ++m) {
+    std::string name = S.mineral_names().at(m) + " volume fraction";
+    restart_output->readData(*(*S.mineral_volume_fractions())(m),
+                                 name);
+    name = S.mineral_names().at(m) + " specific surface area";
+    restart_output->readData(*(*S.mineral_specific_surface_area())(m),
+                                  name);
+  }
+  restart_input->readAttrInt(idummy, "Use Sorption Isotherms");
+  S.set_use_sorption_isotherms(static_cast<bool>(idummy));
+  if (S.use_sorption_isotherms()) {
+    for (int s = 0; s < S.get_number_of_components(); ++s) {
+
+    }
+  }
+  // TODO: read additional ion exchange site, sorption sites, etc.
 
   delete restart_input;
 
