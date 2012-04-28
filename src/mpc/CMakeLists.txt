@@ -28,6 +28,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
+include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
@@ -102,7 +103,7 @@ if (BUILD_TESTS)
 
         # Test: mpc-moab
         add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
-        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry flow transport whetstone ${UnitTest_LIBRARIES})
+        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry_pk flow transport whetstone ${UnitTest_LIBRARIES})
         add_amanzi_test(mpc-moab test_mpc_moab KIND int)
     
     endif()

@@ -37,9 +37,9 @@ include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 
-add_library(chemistry chemistry_pk.cc chemistry_state.cc)
-target_link_libraries(chemistry ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
-add_install_library(chemistry)
+add_library(chemistry_pk chemistry_pk.cc chemistry_state.cc)
+target_link_libraries(chemistry_pk ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
+add_install_library(chemistry_pk)
 
 if (BUILD_TESTS)
   add_subdirectory(tests_unit)

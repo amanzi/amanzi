@@ -60,6 +60,17 @@ class Beaker {
     double saturation;  // [-]
     double water_density;  // [kg/m^3]
     double volume;  // [m^3]
+
+    // the following parameters will be read in from the database file
+    // but can be overridden by the driver, e.g. when amanzi needs spatially
+    // dependent chemistry parameters! Need some logic to be smart about this....
+    bool override_database;
+    std::vector<double> mineral_specific_surface_area;
+    double cation_exchange_capacity;
+    std::vector<double> sorption_site_density;
+    std::vector<double> isotherm_kd;
+    std::vector<double> isotherm_freundlich_n;
+    std::vector<double> isotherm_langmuir_b;
   };
 
   struct SolverStatus {
@@ -172,6 +183,10 @@ class Beaker {
                            const BeakerComponents& total) const;
   void DisplayResults(void) const;
 
+  bool override_database(void) const {
+    return override_database_;
+  }
+
   void ncomp(int i) {
     this->ncomp_ = i;
   }
@@ -240,6 +255,10 @@ class Beaker {
   // volume [m^3]
   void updateParameters(const BeakerParameters& parameters, double dt);
 
+  void override_database(const bool value) {
+    this->override_database_ = value;
+  }
+
   void tolerance(double value) {
     this->tolerance_ = value;
   }
@@ -299,6 +318,7 @@ class Beaker {
 
  private:
   Verbosity verbosity_;
+  bool override_database_;
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species

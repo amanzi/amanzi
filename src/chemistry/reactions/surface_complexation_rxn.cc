@@ -60,6 +60,10 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void) {
   }
 }  // end SetNewtonSolveFlag
 
+void SurfaceComplexationRxn::UpdateSiteDensity(const double site_density) {
+  surface_site_.at(0).UpdateSiteDensity(site_density);
+}  // end UpdateSiteDensity()
+
 void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) {
   const double site_density = (surface_site_[0]).SiteDensity();
 

@@ -72,6 +72,10 @@ class Mineral : public SecondarySpecies {
   }
   void UpdateSurfaceAreaFromVolumeFraction(const double total_volume);
 
+  void set_specific_surface_area(const double d) { 
+    this->specific_surface_area_ = d;
+  }
+
   void set_verbosity(const Verbosity verbosity) {
     this->verbosity_ = verbosity;
   };

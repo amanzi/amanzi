@@ -24,19 +24,20 @@ add_install_include_file(${chem_inc})
 # Amanzi includes
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${CHEMPK_SOURCE_DIR})
 
 # Trilinos related (TPL) includes
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 
-add_executable(chemistry_pk_tests 
+add_executable(chemistry_pk_tests
                main.cc
                test_chemistry_pk.cc)
 
 set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone mesh_functions)
 
 target_link_libraries(chemistry_pk_tests 
-  geometry mesh_factory mesh stk_mesh state chemistry error_handling 
+  geometry mesh_factory mesh stk_mesh state chemistry_pk error_handling 
 		      ${UnitTest_LIBRARIES} 
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 

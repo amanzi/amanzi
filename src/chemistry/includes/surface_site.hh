@@ -25,6 +25,7 @@ class SurfaceSite {
   // adds a pointer to mineral list
   void AddMineral(Mineral* mineral);
   double SiteDensity(void) const;
+  void UpdateSiteDensity(const double site_density);
 
   void display(void) const;
   void Display(void) const;

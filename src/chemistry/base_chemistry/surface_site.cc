@@ -42,6 +42,11 @@ void SurfaceSite::AddMineral(Mineral* mineral) {
   // minerals_.push_back(mineral);
 }
 
+void SurfaceSite::UpdateSiteDensity(const double site_density) {
+  // needs to change for minerals....
+  set_molar_density(site_density);
+}  // end UpdateSiteDenity()
+
 // Sum the total site concentration based on minerals
 double SurfaceSite::SiteDensity(void) const {
   /* For now, we are skipping the use of minerals - geh
