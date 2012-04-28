@@ -34,6 +34,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
          Amanzi::ObservationData& output_observations_):
     parameter_list(parameter_list_),
     mesh_maps(mesh_maps_),
+    chemistry_enabled(false),
     comm(comm_),
     output_observations(output_observations_),
     transport_subcycling(0)
@@ -89,8 +90,11 @@ void MPC::mpc_init() {
   // to allow for testing of the process kernels separately
   transport_enabled =
       (mpc_parameter_list.get<string>("disable Transport_PK","no") == "no");
-  chemistry_enabled =
-      (mpc_parameter_list.get<string>("disable Chemistry_PK","no") == "no");
+
+  if (mpc_parameter_list.get<string>("Chemistry Model","Off") != "Off") {
+    chemistry_enabled = true;
+  }
+
   flow_enabled =
       (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
 
@@ -117,21 +121,28 @@ void MPC::mpc_init() {
     S = Teuchos::rcp( new State( state_parameter_list, mesh_maps) );
   // }
 
+  //  
   // create auxilary state objects for the process models
+  //
+
   // chemistry...
-
   if (chemistry_enabled) {
-    try {
-      CS = Teuchos::rcp( new Chemistry_State( S ) );
+    if (parameter_list.isSublist("Chemistry")) {
+      try {
+        CS = Teuchos::rcp( new Chemistry_State( S ) );
 
-      Teuchos::ParameterList chemistry_parameter_list =
-          parameter_list.sublist("Chemistry");
-
-      CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
-    } catch (const ChemistryException& chem_error) {
-      std::cout << "MPC: Chemistry_PK constructor returned an error: "
-                << std::endl << chem_error.what() << std::endl;
-      amanzi_throw(chem_error);
+        Teuchos::ParameterList chemistry_parameter_list =
+            parameter_list.sublist("Chemistry");
+ 
+        CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+      } catch (const ChemistryException& chem_error) {
+        *out << "MPC::mpc_init() : The chemistry process kernel constructor returned an error: "
+                  << std::endl << chem_error.what() << std::endl;
+        amanzi_throw(chem_error);
+      }
+    } else {
+      Errors::Message message("MPC::mpc_init() : XML input file must contain a \'Chemistry\' section if the chemistry process kernel is enabled.");
+      Exceptions::amanzi_throw(message);
     }
   }
 

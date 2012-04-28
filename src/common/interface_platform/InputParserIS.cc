@@ -61,6 +61,9 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Transport")          = create_Transport_List(plist);
   new_list.sublist("State")              = create_State_List(plist);
   new_list.sublist("Flow")               = create_Flow_List(plist);
+  if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
+    new_list.sublist("Chemistry") = CreateChemistryList(plist);
+  }
 
   return new_list;
 
@@ -590,12 +593,13 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
 
     if ( exe_sublist.isParameter("Chemistry Model") ) {
       if ( exe_sublist.get<std::string>("Chemistry Model") == "Off" ) {
-        mpc_list.set<std::string>("disable Chemistry_PK","yes");
+        mpc_list.set<std::string>("Chemistry Model","Off");
       } else {
-        Exceptions::amanzi_throw(Errors::Message("Chemistry Model must be Off, we currently do not support Chemistry through the inpur spec."));
+        std::string chem_model = exe_sublist.get<std::string>("Chemistry Model");
+        mpc_list.set<std::string>("Chemistry Model", chem_model);
       }
     } else {
-      Exceptions::amanzi_throw(Errors::Message("The parameter Chemistry Model must be specified."));
+      Exceptions::amanzi_throw(Errors::Message("The parameter \'Chemistry Model\' must be specified."));
     }
 
 
@@ -1311,6 +1315,17 @@ Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
 
   return vlist;
 }
+
+Teuchos::ParameterList CreateChemistryList ( Teuchos::ParameterList* plist ) {
+  Teuchos::ParameterList chemistry_list;
+
+  if ( plist->isSublist("Chemistry") ) {
+    chemistry_list = plist->sublist("Chemistry");
+  }
+
+  return chemistry_list;
+}
+
 
 }
 }
