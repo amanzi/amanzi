@@ -85,10 +85,13 @@ Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
   // create the appropriate chemistry object
   if (database_format == "simple") {
     chem_ = new SimpleThermoDatabase();
-  } else if (database_format == "PFloTran Parsed Database") {
-    // hammond stuff here....
   } else {
     // invalid database format, helpful error message and throw an error.
+    std::ostringstream error_stream;
+    error_stream << ChemistryException::kChemistryError;
+    error_stream << "Chemistry_Pk::Chemistry_Pk(): \n";
+    error_stream << "  Input parameter 'Thermodynamic Database Format' must be 'simple'.\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 
   set_verbosity(static_cast<Verbosity>(parameter_list_.get<int>("Verbosity", 0)));
