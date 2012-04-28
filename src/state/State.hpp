@@ -126,6 +126,11 @@ public:
   void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force=false);
   void set_compnames(std::vector<std::string>& compnames_);
 
+  void ExtractVolumeFromMesh(void);
+  Teuchos::RCP<const Epetra_Vector> volume() const {
+    return volume_;
+  }
+
 private:
   void initialize_from_parameter_list();
   void init_verbosity (Teuchos::ParameterList &parameter_list_);
@@ -154,6 +159,7 @@ private:
   Teuchos::RCP<Epetra_Vector> vertical_permeability;  
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
   Teuchos::RCP<Epetra_Vector> material_ids;
+  Teuchos::RCP<Epetra_Vector> volume_;
 
   Teuchos::RCP<double*> gravity;
   Teuchos::RCP<double> density;

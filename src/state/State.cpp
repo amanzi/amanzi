@@ -20,9 +20,10 @@ State::State(int number_of_components_,
 {
   init_verbosity(parameter_list);
 
+  create_default_compnames(number_of_components);
   // create the Eptera_Vector objects
   create_storage();
-  create_default_compnames(number_of_components);
+  ExtractVolumeFromMesh();
 };
 
 
@@ -32,6 +33,10 @@ State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
   // this constructor is going to be used in restarts, where we
   // read the number of components from a file before creating
   // storage
+
+  // can't use this constructor because none of the memory has been
+  // initialized! The existing copy methods will fail....
+
   init_verbosity(parameter_list);
 };
 
@@ -48,9 +53,10 @@ State::State( Teuchos::ParameterList &parameter_list_,
 
   // create the Eptera_Vector objects
 
+  create_default_compnames(number_of_components);
   create_storage();
   initialize_from_parameter_list();
-  create_default_compnames(number_of_components);
+  ExtractVolumeFromMesh();
 };
 
 
@@ -264,6 +270,8 @@ void State::create_storage ()
   viscosity = Teuchos::rcp(new double);
   gravity =   Teuchos::rcp(new double*);
   *gravity = new double[3];
+
+  volume_ =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 }
 
 
@@ -902,3 +910,19 @@ void State::set_compnames(std::vector<std::string>& compnames_)
 {
   compnames = compnames_;
 }
+
+
+void State::ExtractVolumeFromMesh(void) {
+  int ncell = mesh_maps->cell_map(false).NumMyElements();
+
+  if (ncell != volume_->MyLength()) {
+    Exceptions::amanzi_throw(Errors::Message("State::ExtractVolumeFromMesh() size error."));
+  }
+
+  double xdata[24];  // 8 x 3
+  Epetra_SerialDenseMatrix xmatrix(View, xdata, 3, 3, 8);
+  for (int j = 0; j < ncell; ++j) {
+    mesh_maps->cell_to_coordinates((unsigned int) j, xdata, xdata + 24);
+    (*volume_)[j] = cell_geometry::hex_volume(xmatrix);
+  }
+}  // end ExtractVolumeFromMesh()
