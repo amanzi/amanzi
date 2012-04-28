@@ -138,6 +138,13 @@ class Chemistry_PK {
 
   double current_time_;
   double saved_time_;
+
+  // Note: total aqueous components, free ions, total sorbed must all be
+  // the same size. Each array has it's own number_XXX variable to keep
+  // life simple. When you want to access total_sorbed, use
+  // number_total_sorbed(), instead of having to remember which
+  // variables use number_aqueous_components and which have their own
+  // variable.
   int number_aqueous_components_;
   int number_free_ion_;
   int number_total_sorbed_;
@@ -149,34 +156,14 @@ class Chemistry_PK {
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
 
-  struct InternalStorage {
-    // things we don't change, just point to State object
-    Teuchos::RCP<const Epetra_Vector> porosity;
-    Teuchos::RCP<const Epetra_Vector> water_saturation;
-    Teuchos::RCP<const Epetra_Vector> water_density;
-    Teuchos::RCP<const Epetra_SerialDenseVector> volume;
-    // things we need internal copies of
-    Teuchos::RCP<Epetra_MultiVector> aqueous_components;
-    Teuchos::RCP<Epetra_MultiVector> free_ion_species;
-    Teuchos::RCP<Epetra_MultiVector> minerals;
-    Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites;
-    Teuchos::RCP<Epetra_MultiVector> sorption_sites;
-    Teuchos::RCP<Epetra_MultiVector> total_sorbed;
-    // geh can do without for now.    Teuchos::RCP<Epetra_MultiVector> free_site_concentrations;
-  };
-
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
-  void InitializeInternalStorage(InternalStorage* storage);
-  void SwapCurrentAndSavedStorage(void);
-
-  InternalStorage current_state_;
-  InternalStorage saved_state_;
+  void UpdateChemistryStateStorage(void);
 
   void XMLParameters(void);
-  void LocalPhysicalState(void);
-  void LocalInitialConditions(void);
+  void GetSizesFromState(void);
   void SetupAuxiliaryOutput(void);
+  void LocalInitialConditions(void);
   void ExtractInitialCondition(const std::string& type,
                                const std::string& keyword,
                                const int number_to_find,
@@ -186,7 +173,7 @@ class Chemistry_PK {
                                Teuchos::RCP<Epetra_MultiVector> data);
   void set_const_values_for_block(const std::vector<double>& values,
                                   const int num_values,
-                                  Teuchos::RCP<Epetra_MultiVector>& vec,
+                                  Teuchos::RCP<Epetra_MultiVector> vec,
                                   const int mesh_block_id);
   void set_cell_value_in_mesh_block(const double value,
                                     Epetra_Vector& vec,
