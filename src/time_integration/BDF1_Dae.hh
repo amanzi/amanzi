@@ -19,12 +19,9 @@
 namespace Amanzi {
 
 class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
-                public Teuchos::ParameterListAcceptor
-{
-
+                public Teuchos::ParameterListAcceptor {
  public:
-
-  // Create the BDF2 Dae solver object, the nonlinear problem must
+  // Create the BDF1Dae solver object, the nonlinear problem must
   // be defined in a class that derives from the virtual base class
   // fnBase.
   // The map is passed in, so that the BDF2 Dae stepper knows what
@@ -51,24 +48,19 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u);
 
   // returns the most recent time
-  const double most_recent_time()
-  {
-    return state.uhist->most_recent_time();
-  }
+  double most_recent_time() { return state.uhist->most_recent_time(); }
 
   // write statistics about the time step
   void write_bdf1_stepping_statistics();
 
   // Overridden from ParameterListAccpetor
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const&) ;
-  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() ;
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const&);
+  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
   Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-
  private:
-
   double rmin;
   double rmax;
   double margin;
@@ -88,7 +80,6 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   const static double RMIN;
   const static double RMAX;
   const static double MARGIN;
-
 };
 
 }

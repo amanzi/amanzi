@@ -69,22 +69,23 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
   /* initialize a transport process kernel from the transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
+  TPK.InitPK();
   TPK.set_standalone_mode(true);
-  TPK.print_statistics();
+  TPK.printStatistics();
  
   /* advance the transport state */
   int iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
 
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   bool flag = true;
   while (T < 0.3) {
-    double dT = TPK.calculate_transport_dT();
-    TPK.advance(dT);
+    double dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 
@@ -103,7 +104,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
 
     *tcc = *tcc_next;
   }
-  TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, AmanziTransport::TRANSPORT_LIMITER_TOLERANCE);
+  TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, AmanziTransport::TRANSPORT_LIMITER_TOLERANCE);
  
   delete comm;
 }

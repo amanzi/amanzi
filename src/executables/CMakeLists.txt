@@ -91,7 +91,8 @@ include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 add_library(udriv amanzi_unstructured_grid_simulation_driver.cpp)
 target_link_libraries(udriv ${Epetra_LIBRARIES} 
                             ${Teuchos_LIBRARIES}
-                            mesh state mpc error_handling)
+                            mesh mesh_audit state mpc error_handling
+			    ${Boost_LIBRARIES})
 add_install_library(udriv)
 
 #
@@ -162,6 +163,14 @@ endif()
 #                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
 #    add_install_binary(stk_mesh_test_hex)		     
 #endif()
+
+#
+# Binary: verify_mesh
+#
+add_executable(verify_deform verify_deform.cc)
+target_link_libraries(verify_deform mesh_factory mesh ${amanzi_mesh_libs}
+                      output ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+add_install_binary(verify_deform)		     
 
 #
 #

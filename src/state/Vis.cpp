@@ -114,7 +114,7 @@ void Amanzi::Vis::finalize_timestep() const
   viz_output->endTimestep();
 }
 
-const bool Amanzi::Vis::is_disabled() const
+bool Amanzi::Vis::is_disabled() const
 {
   return disabled;
 }

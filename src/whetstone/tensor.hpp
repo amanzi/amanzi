@@ -21,10 +21,10 @@ const int WHETSTONE_TENSOR_SIZE[3][3] = {1, 1, 1,
 
 class Tensor {
  public:
-  Tensor() { d_ = 0; rank_ = 0; data_ = NULL; };
+  Tensor() { d_ = rank_ = 0; data_ = NULL; }
   Tensor(const Tensor& T);
-  Tensor(const int d, const int rank) { init(d, rank); }
-  ~Tensor() { if (data_) delete [] data_; }
+  Tensor(const int d, const int rank) { data_ = NULL; init(d, rank); }
+  ~Tensor() { if (data_) delete[] data_; }
 
   // primary members
   int init(const int d, const int rank);
@@ -33,8 +33,10 @@ class Tensor {
   void inverse();
 
   // elementary operators
+  friend Tensor operator*(Tensor& T, const double& c);
   friend AmanziGeometry::Point operator*(Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(Tensor& T1, Tensor& T2);
+  Tensor& operator*=(const double& c);
 
   // access members
   double& operator()(int i, int j) { return data_[i * WHETSTONE_TENSOR_SIZE[d_-1][rank_-1] + j]; }
@@ -52,7 +54,7 @@ class Tensor {
  
  private:
   int d_, rank_;
-  double *data_;
+  double* data_;
 };
 
 }  // namespace WhetStone

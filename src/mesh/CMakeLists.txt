@@ -34,19 +34,12 @@ add_install_library(mesh)
 target_link_libraries(mesh geometry)
 
 
-
-#
-# Library: cell_geometry (WILL GO AWAY WHEN EVERYONE SWITCHES TO THE NEW API)
-#
-add_library(cell_geometry cell_geometry.cc)
-add_install_library(cell_geometry)
-
 #
 # Library: mesh_audit
 #
-add_library(mesh_audit MeshAudit.cc MeshAuditOld.cc)
+add_library(mesh_audit MeshAudit.cc)
 add_install_library(mesh_audit)
-target_link_libraries(mesh_audit mesh error_handling cell_geometry ${Epetra_LIBRARIES})
+target_link_libraries(mesh_audit mesh error_handling ${Epetra_LIBRARIES})
 
 #
 # Install Header files
@@ -84,3 +77,50 @@ endif(ENABLE_MSTK_Mesh)
 
 add_subdirectory(mesh_factory)
 
+
+if (BUILD_TESTS)
+
+    # Include dirs for test
+    include_directories(${MESH_SOURCE_DIR})
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${GEOMETRY_SOURCE_DIR})
+    include_directories(${Epetra_INCLUDE_DIRS})
+
+    # Add UnitTest ExodusII include directories
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Need to copy files for the tests 
+    if (NOT (${MESH_SOURCE_DIR} EQUAL ${MESH_BINARY_DIR}))
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        copy_directory ${MESH_SOURCE_DIR}/test ${MESH_BINARY_DIR}/test) 
+    endif()
+
+
+    # Test: mstk_mesh
+    add_executable(test_deform
+                   test/Main.cc 
+                   test/test_deform.cc)
+
+    target_link_libraries(test_deform geometry simple_mesh mesh_factory ${UnitTest_LIBRARIES})
+
+
+    # STK (Trilinos Package)
+    if (ENABLE_STK_Mesh)
+      target_link_libraries(test_deform stk_mesh)
+    endif(ENABLE_STK_Mesh)    
+
+    # MOAB Mesh framework
+    if (ENABLE_MOAB_Mesh)
+      target_link_libraries(test_deform moab_mesh)
+    endif(ENABLE_MOAB_Mesh)    
+    
+    # MSTK Mesh framework
+    if (ENABLE_MSTK_Mesh)
+      target_link_libraries(test_deform mstk_mesh)
+    endif(ENABLE_MSTK_Mesh)    
+
+
+    add_amanzi_test(mesh test_deform KIND unit)
+
+endif()
+  

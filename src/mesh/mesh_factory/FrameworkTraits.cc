@@ -206,6 +206,10 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
                                       const double *coords) 
   {}
 
+  void node_set_coordinates(const Amanzi::AmanziMesh::Entity_ID nodeid,
+                            const Amanzi::AmanziGeometry::Point coords)
+  {}
+
   const Epetra_Map& cell_epetra_map (const bool include_ghost) const
   { return *bogus_map_; }
     
@@ -440,7 +444,7 @@ struct FrameworkTraits {
               >
           >
       >::type {};
-    };
+  };
 
 /// Generate a hex mesh from explicit arguments
   static Teuchos::RCP<Mesh>

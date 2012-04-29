@@ -1328,6 +1328,9 @@ bool MeshAudit::check_cell_set_ids() const
 
 bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
 {
+  os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  return false;
+
   bool error = false;
 
   // Get the number of sets.
@@ -1428,6 +1431,9 @@ bool MeshAudit::check_valid_cell_set_id() const
 
 bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
 {
+  os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  return false;
+
   // Get the list of set IDs.
   int nset = mesh->num_sets(kind); // this should not fail
   AmanziMesh::Set_ID_List sids(nset);
@@ -1486,6 +1492,9 @@ bool MeshAudit::check_cell_sets() const
 bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
                           const Epetra_Map &map_own, const Epetra_Map &map_use) const
 {
+  os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  return false;
+
   bool error = false;
 
   // Get the list of set IDs.
@@ -1523,6 +1532,9 @@ bool MeshAudit::check_get_set(unsigned int sid,
 			      AmanziMesh::Parallel_type ptype, 
 			      const Epetra_Map &map) const
 {
+  os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  return false;
+
   // Get the size of the set.
   int n;
   try {
@@ -1582,6 +1594,9 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
                                const Epetra_Map &map_own, 
 			       const Epetra_Map &map_use) const
 {
+  os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
+  return false;
+
   if (comm.NumProc() == 1) {
 
     // In serial, the owned and used sets should be identical.
@@ -1759,6 +1774,9 @@ int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMe
 
   if (nn == 2) {
     // These are edges in a 2D mesh
+    
+    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
+    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
     
     if (n == 0 && fnode1[1] == fnode2[1]) return 1;
     if (n == 1 && fnode1[0] == fnode2[1]) return -1;

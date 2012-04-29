@@ -64,7 +64,7 @@ set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} )
 list(REVERSE mpc_tpl_libs)
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 list(REVERSE mpc_tpl_libs)
-target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
+target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data ${mpc_tpl_libs})
 
 #
 # Install Targets

@@ -46,7 +46,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4.par", comm, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_STK("test/cube_4x4x4.par", comm, gm));
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();
@@ -64,24 +64,24 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
+  TPK.InitPK();
   TPK.set_standalone_mode(true);
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();  
-  TPK.advance(dT);
+  double dT = TPK.CalculateTransportDt();  
+  TPK.Advance(dT);
 
   // printing cell concentration
   int  iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   while(T < 1.0) {
-    dT = TPK.calculate_transport_dT();
-    TPK.advance(dT);
+    dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 

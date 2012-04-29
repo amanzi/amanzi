@@ -9,18 +9,19 @@ namespace Amanzi {
 
 class StaticHeadFunction : public Function {
  public:
-  StaticHeadFunction(double patm, double rho, double g, std::auto_ptr<Function> h)
-      : patm_(patm), rho_g_(rho*g), h_(h) {}
-  StaticHeadFunction(double patm, double rho, double g, const Function& h)
-      : patm_(patm), rho_g_(rho*g), h_(h.Clone()) {}
+  StaticHeadFunction(double patm, double rho, double g, std::auto_ptr<Function> h, int dim)
+      : patm_(patm), rho_g_(rho*g), h_(h), dim_(dim) {}
+  StaticHeadFunction(double patm, double rho, double g, const Function& h, int dim)
+      : patm_(patm), rho_g_(rho*g), h_(h.Clone()), dim_(dim) {}
   StaticHeadFunction(const StaticHeadFunction& src)
-      : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()) {}
+      : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()), dim_(src.dim_) {}
   ~StaticHeadFunction() {}
   StaticHeadFunction* Clone() const { return new StaticHeadFunction(*this); }
-  // N.B. The array (t,x,y,z) is passed as *x, so that x[3] is z.
-  double operator() (const double *x) const { return patm_+rho_g_*((*h_)(x)-x[3]); }
+  // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
+  double operator() (const double *x) const { return patm_+rho_g_ * ((*h_)(x)-x[dim_]); }
  
  private:
+  int dim_;
   double patm_, rho_g_;
   std::auto_ptr<Function> h_;
 };

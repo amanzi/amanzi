@@ -32,8 +32,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
   // Pre-processing (init, MPI queries etc)
 
-  int space_dimension = 3;
-  pre_create_steps_(space_dimension, incomm, gm);
+  int space_dim = 3;
+  pre_create_steps_(space_dim, incomm, gm);
 
 
 
@@ -53,6 +53,33 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
     set_cell_dimension((MESH_Num_Regions(mesh) ? 3 : 2));
 
+    if (cell_dimension() == 2 && space_dim == 3) {
+      
+      // Check if this is a completely planar mesh 
+      // in which case one can label the space dimension as 2
+      
+      MVertex_ptr mv, mv0 = MESH_Vertex(mesh,0);
+      double vxyz[3], z0;
+
+      MV_Coords(mv0,vxyz);
+      z0 = vxyz[2];
+
+      bool planar = true;
+      int idx = 0;
+      while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+        MV_Coords(mv,vxyz);
+        if (z0 != vxyz[2]) {
+          planar = false;
+          break;
+        }
+      }
+       
+      if (planar) {
+        space_dim = 2;
+        set_space_dimension(space_dim);
+      }
+    }
+
     myprocid = 0;
   }
   else {
@@ -68,11 +95,42 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       topo_dim = MESH_Num_Regions(globalmesh) ? 3 : 2;
       
       mesh = globalmesh;
+
+      if (topo_dim == 2 && space_dim == 3) {
+        
+        // Check if this is a completely planar mesh 
+        // in which case one can label the space dimension as 2
+        
+        MVertex_ptr mv, mv0 = MESH_Vertex(mesh,0);
+        double vxyz[3], z0;
+        
+        MV_Coords(mv0,vxyz);
+        z0 = vxyz[2];
+        
+        bool planar = true;
+        int idx = 0;
+        while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+          MV_Coords(mv,vxyz);
+          if (z0 != vxyz[2]) {
+            planar = false;
+            break;
+          }
+        }
+        
+        if (planar)
+          space_dim = 2;
+      }
+
     }
     else {
       mesh = MESH_New(UNKNOWN_REP);
       ok = 1;
     }
+
+    // int space_dim_p0 = space_dim;
+    // MPI_Scatter(&space_dim_p0,1,MPI_INT,&space_dim,1,MPI_INT,0,mpicomm);
+    MPI_Bcast(&space_dim,1,MPI_INT,0,MPI_COMM_WORLD);
+
 
     ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
                                    numprocs,mpicomm);
@@ -81,6 +139,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       MESH_Delete(globalmesh);
 
     set_cell_dimension(topo_dim);
+    set_space_dimension(space_dim);
   }
 
   if (!ok) {
@@ -598,37 +657,12 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 
     /* base face */
 
+    MFace_ptr face0 = List_Entry(rfaces,0);
+    int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+
 
     if (celltype >= TET && celltype <= HEX) {
       int lid;
-      MFace_ptr face0;
-      int fdir0;
-
-
-      if (celltype == TET || celltype == HEX) {
-        face0 = List_Entry(rfaces,0);
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
-      }
-      else if (celltype == PRISM) {
-        /* Find one of the 3 node faces */
-        int i;
-        for (i = 0; i < 5; i++) {
-          face0 = List_Entry(rfaces,i);
-          if (MF_Num_Edges(face0) == 3)
-            break;
-        }
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
-      }
-      else if (celltype == PYRAMID) {
-        /* Find the 4 node face */
-        int i;
-        for (i = 0; i < 5; i++) {
-          face0 = List_Entry(rfaces,i);
-          if (MF_Num_Edges(face0) == 4)
-            break;
-        }
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
-      }
       
       int mkid = MSTK_GetMarker();
       MEnt_Mark(face0,mkid);
@@ -740,37 +774,14 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
 
     List_ptr rfaces = MR_Faces((MRegion_ptr)cell);   
 
+    /* base face */
+
+    MFace_ptr face0 = List_Entry(rfaces,0);
+    int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+
+
     if (celltype >= TET && celltype <= HEX) {
       int lid;
-      MFace_ptr face0;
-      int fdir0;
-
-
-      if (celltype == TET || celltype == HEX) {
-        face0 = List_Entry(rfaces,0);
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
-      }
-      else if (celltype == PRISM) {
-        /* Find one of the 3 node faces */
-        int i;
-        for (i = 0; i < 5; i++) {
-          face0 = List_Entry(rfaces,i);
-          if (MF_Num_Edges(face0) == 3)
-            break;
-        }
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
-      }
-      else if (celltype == PYRAMID) {
-        /* Find the 4 node face */
-        int i;
-        for (i = 0; i < 5; i++) {
-          face0 = List_Entry(rfaces,i);
-          if (MF_Num_Edges(face0) == 4)
-            break;
-        }
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
-      }
-      
 
       int mkid = MSTK_GetMarker();
       MEnt_Mark(face0,mkid);
@@ -908,7 +919,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
 {
 
   MEntity_ptr cell;
-  int j, nf, result;
+  int j,nf, result;
 
   ASSERT(faceids != NULL);
   ASSERT(face_dirs != NULL);
@@ -927,35 +938,13 @@ void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
     int celltype = cell_get_type(cellid);
 
     if (ordered && (celltype >= TET && celltype <= HEX)) {
-      MFace_ptr face0;
-      int fdir0, lid;
+      int lid;
+
 
       /* base face */
 
-      if (celltype == TET || celltype == HEX) {
-        face0 = List_Entry(rfaces,0);
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
-      }
-      else if (celltype == PRISM) {
-        /* Find one of the 3 node faces */
-        int i;
-        for (i = 0; i < 5; i++) {
-          face0 = List_Entry(rfaces,i);
-          if (MF_Num_Edges(face0) == 3)
-            break;
-        }
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
-      }
-      else if (celltype == PYRAMID) {
-        /* Find the 4 node face */
-        int i;
-        for (i = 0; i < 5; i++) {
-          face0 = List_Entry(rfaces,i);
-          if (MF_Num_Edges(face0) == 4)
-            break;
-        }
-        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);        
-      }
+      MFace_ptr face0 = List_Entry(rfaces,0);
+      int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
 
       /* Markers for faces to avoid searching */
 
@@ -1833,6 +1822,17 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
   MV_Set_Coords(v,(double *)coords);
 }
 
+void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
+                                     const AmanziGeometry::Point coords) {
+  MVertex_ptr v = vtx_id_to_handle[nodeid];
+
+  double coordarray[3] = {0.0,0.0,0.0};
+  for (int i = 0; i < Mesh::space_dimension(); i++)
+    coordarray[i] = coords[i];
+
+  MV_Set_Coords(v,(double *)coordarray);
+}
+
 
 
 
@@ -1949,7 +1949,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
             {
               MSet_Name(mset1,setname1);
               
-              if (MSet_EntDim(mset) == entdim &&
+              if (MSet_EntDim(mset1) == entdim &&
                   strcmp(setname1,setname.c_str()) == 0)
                 break;
             }
@@ -2606,6 +2606,7 @@ void Mesh_MSTK::post_create_steps_()
 
 
 
+
   { // Keep together and in this order 
 
     init_pvert_lists();
@@ -2846,7 +2847,7 @@ void Mesh_MSTK::init_pface_dirs() {
 	}
       }    
 	
-    } // if (cell_dimension() == 3)
+    }
     else if (cell_dimension() == 2) {
 
       idx = 0;
@@ -2870,15 +2871,14 @@ void Mesh_MSTK::init_pface_dirs() {
 	  else {
 	    MEnt_Set_AttVal(edge,attfc0,MEnt_GlobalID(face0),0.0,NULL);
             face1 = List_Entry(efaces,1);
-            if (face1) 
+            if (face1)
               MEnt_Set_AttVal(edge,attfc1,MEnt_GlobalID(face1),0.0,NULL);
           }
-
           List_Delete(efaces);
 	}
       }
 
-    } // else if (cell_dimension() == 2)
+    }  // else if (cell_dimension() == 2)
 
 
 

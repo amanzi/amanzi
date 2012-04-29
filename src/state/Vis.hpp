@@ -25,7 +25,7 @@ namespace Amanzi {
     bool dump_requested(const int cycle, const double time=-std::numeric_limits<double>::max());
     void write_vector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
     void write_vector(const Epetra_Vector& vec, const std::string name ) const;
-    const bool is_disabled() const;
+    bool is_disabled() const;
 
   private:    
     void read_parameters(Teuchos::ParameterList& plist);

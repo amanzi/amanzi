@@ -8,8 +8,6 @@
 
 #include "State.hpp"
 
-#include "cell_geometry.hh"
-
 #include "chemistry_exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -54,12 +52,7 @@ void Chemistry_State::ExtractVolumeFromMesh(void) {
         ChemistryException("Chemistry_State::ExtractVolumeFromMesh() size error."));
   }
 
-  double xdata[24];  // 8 x 3
-  Epetra_SerialDenseMatrix xmatrix(View, xdata, 3, 3, 8);
-  for (int j = 0; j < ncell; ++j) {
-    mesh->cell_to_coordinates((unsigned int) j, xdata, xdata + 24);
-    (*volume_)[j] = cell_geometry::hex_volume(xmatrix);
-  }
+  for (int j = 0; j < ncell; ++j) (*volume_)[j] = mesh->cell_volume(j);
 }  // end ExtractVolumeFromMesh()
 
 }  // namespace chemistry

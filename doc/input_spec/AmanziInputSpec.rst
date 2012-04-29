@@ -475,7 +475,9 @@ Usage:
 
    * [U] `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
-    * [U] `"Framework`" [string] one of "stk::mesh", "MSTK", or "MOAB". 
+    * [U] `"Framework`" [string] one of "stk::mesh", "MSTK",
+      "MOAB" or "Simple". 
+    * [U] `"Verify Mesh`" [bool] true or false. 
 
 
 Example of `"Structured`" mesh:

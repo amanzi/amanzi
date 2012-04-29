@@ -44,7 +44,7 @@ Mesh_simple::Mesh_simple (double x0, double y0,
                           const Epetra_MpiComm *communicator,
                           const AmanziGeometry::GeometricModelPtr &gm) 
 {
-  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
+  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generated 2D meshes"));
 }
   
 
@@ -571,11 +571,32 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
                                       const double *ncoord)
 {
   unsigned int offset = 3*local_node_id;
+  int spdim = Mesh::space_dimension();
 
   ASSERT(ncoord != NULL);
   
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
-  std::copy(&(ncoord[0]),&(ncoord[2]),destination_begin);
+  for (int i = 0; i < spdim; i++) {
+    *destination_begin = ncoord[i];
+    destination_begin++;
+  }
+}
+
+void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
+                                       const AmanziGeometry::Point ncoord)
+{
+  unsigned int offset = 3*local_node_id;
+
+  std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
+  double coordarray[3] = {0.0,0.0,0.0};
+  int spdim = Mesh::space_dimension();
+  for (int i = 0; i < spdim; i++)
+    coordarray[i] = ncoord[i];
+
+  for (int i = 0; i < spdim; i++) {
+    *destination_begin = ncoord[i];
+    destination_begin++;
+  }
 }
 
 
@@ -684,12 +705,10 @@ void Mesh_simple::cell_get_face_adj_cells(const AmanziMesh::Entity_ID cellid,
 
     unsigned int foffset = 2*faceid;
 
-    // FIXME int adjcell0 = face_to_cell_[foffset];
     unsigned int adjcell0 = face_to_cell_[foffset];
     if (adjcell0 != -1 && adjcell0 != cellid)
       fadj_cellids->push_back(adjcell0);    
     else {
-      // int adjcell1 = face_to_cell_[foffset+1];
       unsigned int adjcell1 = face_to_cell_[foffset+1];
       if (adjcell1 != -1 && adjcell1 != cellid)
 	fadj_cellids->push_back(adjcell1);

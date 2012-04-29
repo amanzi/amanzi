@@ -56,31 +56,31 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
+  TPK.InitPK();
   TPK.set_standalone_mode(true);
-  TPK.print_statistics();
+  TPK.printStatistics();
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();
-  TPK.advance(dT);
+  double dT = TPK.CalculateTransportDt();
+  TPK.Advance(dT);
 
   // printing cell concentration
   int  iter, k;
   double  T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   while(T < 1.0) {
-    dT = TPK.calculate_transport_dT();
-    TPK.advance(dT);
+    dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 
     if (iter < 10 && TPK.MyPID == 3) {
       printf("T=%7.2f  C_0(x):", T);
-      for (int k=0; k<2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
     }
     *tcc = *tcc_next;
   }

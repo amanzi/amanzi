@@ -11,6 +11,7 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
+
 namespace Amanzi {
 namespace AmanziInput {
 
@@ -28,21 +29,27 @@ bool compareEpsilon(T& first, T eps) {
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
-
   numproc_ = numproc;
 
   Teuchos::ParameterList new_list, tmp_list;
 
   init_global_info(plist);
 
+  // unstructured header
+  new_list.set<bool>("Native Unstructured Input", true);
+  new_list.set<std::string>("grid_option", "Unstructured");
+
   // checkpoint list is optional
-  tmp_list = create_Checkpoint_Data_List (plist);
+  tmp_list = create_Checkpoint_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
-    new_list.sublist("Checkpoint Data")    = tmp_list;
+    new_list.sublist("Checkpoint Data") = tmp_list;
   }
 
-  tmp_list = create_Visualization_Data_List (plist);
+  tmp_list = create_Visualization_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Visualization Data") = tmp_list;
   }
@@ -50,24 +57,25 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   if (plist->sublist("Output").isSublist("Observation Data")) {
     Teuchos::ParameterList& od_list = plist->sublist("Output").sublist("Observation Data");
     if (od_list.begin() != od_list.end()) {
-      new_list.sublist("Observation Data") = create_Observation_Data_List (plist);
+      new_list.sublist("Observation Data") = create_Observation_Data_List(plist);
     }
   }
 
-  new_list.sublist("Regions")            = get_Regions_List(plist);
-  new_list.sublist("Mesh")               = translate_Mesh_List(plist);
-  new_list.sublist("Domain")             = get_Domain_List(plist);
-  new_list.sublist("MPC")                = create_MPC_List(plist);
-  new_list.sublist("Transport")          = create_Transport_List(plist);
-  new_list.sublist("State")              = create_State_List(plist);
-  new_list.sublist("Flow")               = create_Flow_List(plist);
+  new_list.sublist("Regions") = get_Regions_List(plist);
+  new_list.sublist("Mesh") = translate_Mesh_List(plist);
+  new_list.sublist("Domain") = get_Domain_List(plist);
+  new_list.sublist("MPC") = create_MPC_List(plist);
+  new_list.sublist("Transport") = create_Transport_List(plist);
+  new_list.sublist("State") = create_State_List(plist);
+  new_list.sublist("Flow") = create_Flow_List(plist);
 
   return new_list;
-
 }
 
 
-
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList time_macro;
 
@@ -93,11 +101,12 @@ Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::P
   }
 
   return time_macro;
-
 }
 
 
-
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist ) {
   Teuchos::Array<int> cycle_range;
 
@@ -114,12 +123,14 @@ Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::Pa
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& macro_name, Teuchos::ParameterList* plist ) {
 
   std::vector<std::string> vars;
 
   for (int i=0; i<macro_name.size(); i++) {
-
     if ( plist->sublist("Output").sublist("Variable Macros").isSublist(macro_name[i]) ) {
       Teuchos::ParameterList& macro_list = plist->sublist("Output").sublist("Variable Macros").sublist(macro_name[i]);
 
@@ -152,17 +163,12 @@ Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& ma
         } else {
           vars.push_back(macro_solute);
         }
-
       }
-
-
-
     } else {
       std::stringstream ss;
       ss << "The variable macro " << macro_name[i] << " does not exist in the input file";
       Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
     }
-
   }
 
   Teuchos::Array<std::string> ret_vars(vars.size());
@@ -175,6 +181,9 @@ Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& ma
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 void init_global_info( Teuchos::ParameterList* plist ) {
 
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
@@ -215,12 +224,12 @@ void init_global_info( Teuchos::ParameterList* plist ) {
       verbosity_level = "low";
     }
   }
-
 }
 
 
-
-
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_Checkpoint_Data_List ( Teuchos::ParameterList* plist ) {
 
   Teuchos::ParameterList restart_list;
@@ -251,16 +260,18 @@ Teuchos::ParameterList create_Checkpoint_Data_List ( Teuchos::ParameterList* pli
 }
 
 
-
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* plist ) {
 
   Teuchos::ParameterList  vis_list;
   Teuchos::Array<double>  visualizationPoints;
-  
+
   if ( plist->isSublist("Output") ) {
     if ( plist->sublist("Output").isSublist("Visualization Data") ) {
       vis_list = plist->sublist("Output").sublist("Visualization Data");
-      
+
       // Cycle Macro  
       if ( vis_list.isParameter("Cycle Macro") ) {
         std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
@@ -337,41 +348,42 @@ Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* 
 
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* plist ) {
   using namespace boost;
   using boost::bind;
 
   // Create a parameter list for holding data
-  Teuchos::ParameterList  obs_list;
-  Teuchos::Array<double>  observationPoints;
+  Teuchos::ParameterList obs_list;
+  Teuchos::Array<double> observationPoints;
 
   // Check if there is an "Output" XML node
-  if ( plist->isSublist("Output") ) {
+  if (plist->isSublist("Output")) {
     // If "Output" exists, check if there is an "Observation Data" subnode
-    if ( plist->sublist("Output").isSublist("Observation Data") ) {
+    if (plist->sublist("Output").isSublist("Observation Data")) {
       // If both exist, initialize a structure with the XML data
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
       // If the node has value refering to the name of the output file, grab it
       if (olist.isParameter("Observation Output Filename")) {
-        obs_list.set<std::string>("Observation Output Filename",olist.get<std::string>("Observation Output Filename"));
+        obs_list.set<std::string>("Observation Output Filename", olist.get<std::string>("Observation Output Filename"));
       } else {
-        // Otherwise, throw an exception
         Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
       }
       // Iterate through the array
-      for ( Teuchos::ParameterList::ConstIterator i = olist.begin();
-            i != olist.end(); i++ ) {
+      for (Teuchos::ParameterList::ConstIterator i = olist.begin(); i != olist.end(); i++) {
         // If the current iteration node is a "tree"
-        if (  olist.isSublist( i->first ) ) {
+        if (olist.isSublist(i->first)) {
           // copy the observation data sublist into the local list
           obs_list.sublist(i->first) = olist.sublist(i->first);
 
-          if ( obs_list.sublist(i->first).isParameter("Time Macro") ) {
+          if (obs_list.sublist(i->first).isParameter("Time Macro")) {
             std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
             // Create a local parameter list and store the time macro (3 doubles)
             Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
             if (time_macro_list.isParameter("Start_Period_Stop")) {
-              obs_list.sublist(i->first).set("Start_Period_Stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+              obs_list.sublist(i->first).set("Start_Period_Stop", time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
               // Grab the times for start, stop, and period
               Teuchos::Array<double> startPeriodStop = Teuchos::getParameter<Teuchos::Array<double> >(time_macro_list, "Start_Period_Stop");
               // Since the Teuchos array is a reference, we copy into modifiable variables
@@ -379,9 +391,9 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
               double stop   = startPeriodStop[2];;
               double period = startPeriodStop[1];
               // If the stop time from the macro is -1, we have to look elsewhere for the end time
-              if ( stop==-1 ) {
+              if (stop == -1) {
                 if (plist->isSublist("Execution Control")) {
-                  if ( plist->sublist("Execution Control").isSublist("Time Integration Mode") ) {
+                  if (plist->sublist("Execution Control").isSublist("Time Integration Mode")) {
                     Teuchos::ParameterList time_integration_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
                     if (time_integration_mode_list.isSublist("Steady")) {
                       stop = time_integration_mode_list.sublist("Steady").get<double>("End");
@@ -397,20 +409,20 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
                 }
               }
 
-              for (double j=start; j<=stop; j+=period)
+              for (double j = start; j <= stop; j += period)
                 observationPoints.push_back(j);
             }
             if (time_macro_list.isParameter("Values")) {
               obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
               Teuchos::Array<double> values = time_macro_list.get<Teuchos::Array<double> >("Values");
-              observationPoints.insert( observationPoints.end(), values.begin(), values.end() );
+              observationPoints.insert(observationPoints.end(), values.begin(), values.end());
             }
             obs_list.sublist(i->first).remove("Time Macro");
           }
 
-          if ( obs_list.sublist(i->first).isParameter("Cycle Macro") ) {
+          if (obs_list.sublist(i->first).isParameter("Cycle Macro")) {
             std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
-            obs_list.sublist(i->first).set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
+            obs_list.sublist(i->first).set("Start_Period_Stop", get_Cycle_Macro(cycle_macro, plist));
             obs_list.sublist(i->first).remove("Cycle Macro");
           }
 
@@ -419,11 +431,11 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
           //   obs_list.sublist(i->first).set("Variables",  get_Variable_Macro(var_macro, plist));
           //   obs_list.sublist(i->first).remove("Variable Macro");
           // }
-
         }
       }
     }
   }
+
   // Sort the array of observation points and remove any identical ones
   std::sort( observationPoints.begin(), observationPoints.end() );
   // Remove points that are too close together
@@ -438,6 +450,9 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList reg_list;
 
@@ -448,6 +463,10 @@ Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist ) {
   return reg_list;
 }
 
+
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList get_Mesh_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList msh_list;
 
@@ -459,6 +478,9 @@ Teuchos::ParameterList get_Mesh_List ( Teuchos::ParameterList* plist ) {
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList msh_list;
 
@@ -505,14 +527,11 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
         } else {
           msh_list.sublist("Unstructured").sublist("Read Mesh File") = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File");
         }
-
       }
-
 
       if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Expert")) {
         msh_list.sublist("Unstructured").sublist("Expert") = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert");
       }
-
     }
   }
 
@@ -520,7 +539,9 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
 }
 
 
-
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList get_Domain_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList dom_list;
 
@@ -532,7 +553,9 @@ Teuchos::ParameterList get_Domain_List ( Teuchos::ParameterList* plist ) {
 }
 
 
-
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList mpc_list;
 
@@ -611,6 +634,9 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList trp_list;
 
@@ -639,8 +665,8 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
       }
 
       // continue to set some reasonable defaults
-      trp_list.set<std::string>("enable internal tests","yes");
-      trp_list.set<int>("verbosity level",0);
+      trp_list.set<std::string>("enable internal tests", "no");
+      trp_list.set<int>("verbosity level", 0);
       trp_list.set<double>("CFL",1.0);
       trp_list.set<std::string>("flow mode","transient");
 
@@ -719,11 +745,12 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   }
 
   return trp_list;
-
 }
 
 
-
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList flw_list;
 
@@ -733,96 +760,130 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 
       } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
-        richards_problem.set<bool>("Upwind relative permeability", true);
+        richards_problem.set<std::string>("Relative permeability method", "Upwind with gravity");
         // this one should come from the input file...
-        richards_problem.set<double>("Atmospheric pressure", 101325.0);
+        richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        richards_problem.set<double>("atmospheric pressure", 101325.0);
 
-        Teuchos::ParameterList& richards_model_evaluator = richards_problem.sublist("Richards model evaluator");
+        // create sublists for the steady state time integrator
+        Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady state time integrator");
+        Teuchos::ParameterList& sti_error_control = steady_time_integrator.sublist("error control");
+        Teuchos::ParameterList& sti_time_control = steady_time_integrator.sublist("time control");
+        Teuchos::ParameterList& sti_linear_solver = steady_time_integrator.sublist("linear solver");
+        Teuchos::ParameterList& sti_nonlinear_bdf2 = steady_time_integrator.sublist("nonlinear solver BDF2");
+        Teuchos::ParameterList& sti_nonlinear_bdf1 = steady_time_integrator.sublist("nonlinear solver BDF1");
+
         // set some reasonable defaults...
-        richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
-        richards_model_evaluator.set<double>("Relative error tolerance",0.0);
-        richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        steady_time_integrator.set<std::string>("method","BDF1");
 
-        Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
-        // set some reasonable defaults...
-        time_integrator.set<int>("Nonlinear solver max iterations", 10);
-        time_integrator.set<int>("NKA max vectors", 10);
-        time_integrator.set<int>("Maximum number of BDF tries", 20);
-        time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
-        time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
-        time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        sti_error_control.set<double>("absolute error tolerance",1.0);
+        sti_error_control.set<double>("relative error tolerance",0.0);
+        sti_error_control.set<double>("convergence tolerance",1e-12);
+        sti_error_control.set<int>("maximal number of iterations",400);
 
+        sti_time_control.set<double>("start time",0.0);
+        sti_time_control.set<double>("end time",1e+10);
+        sti_time_control.set<double>("initial time step",1e-7);
+        sti_time_control.set<double>("maximal time step",1e+7);
 
-        // set paramters for the steady state time integrator
-        Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady time integrator");
+        sti_linear_solver.set<std::string>("iterative method","CGS");
+        sti_linear_solver.set<double>("error tolerance",1e-14);
+        sti_linear_solver.set<int>("maximal number of iterations",100);
 
-        bool have_unstructured_algorithm_sublist(false);
+        sti_nonlinear_bdf2.set<int>("Nonlinear solver max iterations", 10);
+        sti_nonlinear_bdf2.set<int>("NKA max vectors", 10);
+        sti_nonlinear_bdf2.set<int>("Maximum number of BDF tries", 20);
+        sti_nonlinear_bdf2.set<double>("Nonlinear solver tolerance", 0.01);
+        sti_nonlinear_bdf2.set<double>("NKA drop tolerance", 5.0e-2);
+
+	bool have_unstructured_algorithm_sublist(false);
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
           if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
             have_unstructured_algorithm_sublist = true;
             Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-            steady_time_integrator.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
-            steady_time_integrator.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
-            steady_time_integrator.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
-            steady_time_integrator.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
-            steady_time_integrator.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
-            steady_time_integrator.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
-            steady_time_integrator.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
-            steady_time_integrator.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
-            steady_time_integrator.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
-            steady_time_integrator.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
-          }
-        }
-        if (have_unstructured_algorithm_sublist == false) {
+	    sti_nonlinear_bdf1.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
+	    sti_nonlinear_bdf1.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
+            sti_nonlinear_bdf1.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
+            sti_nonlinear_bdf1.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
+            sti_nonlinear_bdf1.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
+            sti_nonlinear_bdf1.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
+	    sti_nonlinear_bdf1.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
+	    sti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
+	    sti_nonlinear_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
+	    sti_nonlinear_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
+         } 
+	}
+	if (have_unstructured_algorithm_sublist == false) {
           // set some probably not so good defaults for the steady computation
-          steady_time_integrator.set<int>("max iterations",10);
-          steady_time_integrator.set<int>("min iterations",5);
-          steady_time_integrator.set<int>("limit iterations",20);
-          steady_time_integrator.set<double>("nonlinear tolerance",1.0);
-          steady_time_integrator.set<double>("time step reduction factor",0.8);
-          steady_time_integrator.set<double>("time step increase factor",1.2);
-          steady_time_integrator.set<double>("max time step", 1.0e+8);
-          steady_time_integrator.set<int>("max preconditioner lag iterations", 5);
-          steady_time_integrator.set<double>("error abs tol", 1.0);
-          steady_time_integrator.set<double>("error rel tol", 0.0);
+	  sti_nonlinear_bdf1.set<int>("max iterations",10);
+	  sti_nonlinear_bdf1.set<int>("min iterations",5);
+	  sti_nonlinear_bdf1.set<int>("limit iterations",20);
+	  sti_nonlinear_bdf1.set<double>("nonlinear tolerance",1.0);
+	  sti_nonlinear_bdf1.set<double>("time step reduction factor",0.8);
+	  sti_nonlinear_bdf1.set<double>("time step increase factor",1.2);
+	  sti_nonlinear_bdf1.set<double>("max time step", 1.0e+8);
+	  sti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", 5);
+	  sti_nonlinear_bdf1.set<double>("error abs tol", 1.0);
+	  sti_nonlinear_bdf1.set<double>("error rel tol", 0.0);	    
         }
 
-        // set paramters for the steady state time integrator
+        // crerate sublists for the transient time integrator
         Teuchos::ParameterList& transient_time_integrator = richards_problem.sublist("transient time integrator");
+        Teuchos::ParameterList& tti_error_control = transient_time_integrator.sublist("error control");
+        Teuchos::ParameterList& tti_time_control = transient_time_integrator.sublist("time control");
+        Teuchos::ParameterList& tti_linear_solver = transient_time_integrator.sublist("linear solver");
+        Teuchos::ParameterList& tti_nonlinear_bdf2 = transient_time_integrator.sublist("nonlinear solver BDF2");
+        Teuchos::ParameterList& tti_nonlinear_bdf1 = transient_time_integrator.sublist("nonlinear solver BDF1");
 
-        have_unstructured_algorithm_sublist = false;
+        // set some reasonable defaults...
+        transient_time_integrator.set<std::string>("method","BDF1");
+
+        tti_error_control.set<double>("absolute error tolerance",1.0);
+        tti_error_control.set<double>("relative error tolerance",0.0);
+        tti_error_control.set<double>("convergence tolerance",1e-12);
+        tti_error_control.set<int>("maximal number of iterations",400);
+
+        tti_linear_solver.set<std::string>("iterative method","CGS");
+        tti_linear_solver.set<double>("error tolerance",1e-14);
+        tti_linear_solver.set<int>("maximal number of iterations",100);
+
+        tti_time_control.set<double>("start time",0.0);
+        tti_time_control.set<double>("end time",1e+10);
+        tti_time_control.set<double>("initial time step",1e-7);
+        tti_time_control.set<double>("maximal time step",1e+7);
+
+	have_unstructured_algorithm_sublist = false;
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
           if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
-            have_unstructured_algorithm_sublist = true;
-            Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-            transient_time_integrator.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
-            transient_time_integrator.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
-            transient_time_integrator.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
-            transient_time_integrator.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
-            transient_time_integrator.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
-            transient_time_integrator.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
-            transient_time_integrator.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
-            transient_time_integrator.set<int>("max preconditioner lag iterations", num_list.get<int>("transient max preconditioner lag iterations",5));
-            transient_time_integrator.set<double>("error abs tol", num_list.get<double>("transient error abs tol",1.0));
-            transient_time_integrator.set<double>("error rel tol", num_list.get<double>("transient error rel tol",0.0));
-          }
-        }
-        if (have_unstructured_algorithm_sublist == false) {
+	    have_unstructured_algorithm_sublist = true;
+	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    tti_nonlinear_bdf1.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
+	    tti_nonlinear_bdf1.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
+            tti_nonlinear_bdf1.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
+            tti_nonlinear_bdf1.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
+            tti_nonlinear_bdf1.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
+            tti_nonlinear_bdf1.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
+	    tti_nonlinear_bdf1.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
+	    tti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", num_list.get<int>("transient max preconditioner lag iterations",5));
+	    tti_nonlinear_bdf1.set<double>("error abs tol", num_list.get<double>("transient error abs tol",1.0));
+	    tti_nonlinear_bdf1.set<double>("error rel tol", num_list.get<double>("transient error rel tol",0.0));
+         } 
+	}
+	if (have_unstructured_algorithm_sublist == false) {
           // set some probably not so good defaults for the steady computation
-          transient_time_integrator.set<int>("max iterations",10);
-          transient_time_integrator.set<int>("min iterations",5);
-          transient_time_integrator.set<int>("limit iterations",20);
-          transient_time_integrator.set<double>("nonlinear tolerance",1.0);
-          transient_time_integrator.set<double>("time step reduction factor",0.8);
-          transient_time_integrator.set<double>("time step increase factor",1.2);
-          transient_time_integrator.set<double>("max time step", 1.0e+8);
-          transient_time_integrator.set<int>("max preconditioner lag iterations", 5);
-          transient_time_integrator.set<double>("error abs tol", 1.0);
-          transient_time_integrator.set<double>("error rel tol", 0.0);
+	  tti_nonlinear_bdf1.set<int>("max iterations",10);
+	  tti_nonlinear_bdf1.set<int>("min iterations",5);
+	  tti_nonlinear_bdf1.set<int>("limit iterations",20);
+	  tti_nonlinear_bdf1.set<double>("nonlinear tolerance",1.0);
+	  tti_nonlinear_bdf1.set<double>("time step reduction factor",0.8);
+	  tti_nonlinear_bdf1.set<double>("time step increase factor",1.2);
+	  tti_nonlinear_bdf1.set<double>("max time step", 1.0e+8);
+	  tti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", 5);
+	  tti_nonlinear_bdf1.set<double>("error abs tol", 1.0);
+	  tti_nonlinear_bdf1.set<double>("error rel tol", 0.0);	    
         }
 
 
-        steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
         // insert the water retention models sublist
@@ -847,7 +908,12 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
   return flw_list;
 }
 
-Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
+
+/* ******************************************************************
+* WRM sublist
+****************************************************************** */
+Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList wrm_list;
 
   // loop through the material properties list and extract the water retention model info
@@ -869,7 +935,7 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
     double Sr = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("Sr");
     double m = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("m");
     double krel_smooth = matprop_list.sublist(i->first).sublist("Capillary Pressure: van Genuchten").get<double>("krel smoothing interval", 0.0);
-    if (krel_smooth<0.0) {
+    if (krel_smooth < 0.0) {
       Exceptions::amanzi_throw(Errors::Message("If krel smoothing interval is specified it must be positive."));
     }
 
@@ -889,15 +955,19 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
       wrm_sublist.set<double>("van Genuchten m", m);
       wrm_sublist.set<double>("van Genuchten alpha",alpha);
       wrm_sublist.set<double>("van Genuchten residual saturation", Sr);
-      wrm_sublist.set<double>("van Genuchten krel smoothing interval", krel_smooth);
+      wrm_sublist.set<double>("regularization interval", krel_smooth);
     }
-
   }
 
   return wrm_list;
 }
 
-Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
+
+/* ******************************************************************
+* DPC sublist
+****************************************************************** */
+Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList dpc_list;
   
   double aggthr(0.0);
@@ -920,11 +990,8 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
       if (ncp_list.isParameter("ML smoother sweeps")) {
 	nsmooth = ncp_list.get<int>("ML smoother sweeps");
       }      
-
     }
   }
-
-
 
   Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
   ml_list.set<int>("ML output", 0);
@@ -1020,11 +1087,7 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
 
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
-
         }
-
-
-
 
       } else if ( bc.isSublist("BC: Uniform Pressure") ) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
@@ -1033,15 +1096,11 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
         Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
         Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 
-
         std::stringstream ss;
         ss << "BC " << bc_counter++;
 
-
         Teuchos::ParameterList& tbc = ssf_list.sublist("pressure").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
-
-
 
         if ( times.size() == 1 ) {
           Teuchos::ParameterList& tbcs = tbc.sublist("boundary pressure").sublist("function-constant");
@@ -1051,7 +1110,6 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
 
           tbcs.set<Teuchos::Array<double> >("x values", times);
           tbcs.set<Teuchos::Array<double> >("y values", values);
-
 
           std::vector<std::string> forms_(time_fns.size());
 
@@ -1074,14 +1132,11 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
         Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
         Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
 
-
         std::stringstream ss;
         ss << "BC " << bc_counter++;
 
-
         Teuchos::ParameterList& tbc = ssf_list.sublist("static head").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
-
 
 
         if ( times.size() == 1 ) {
@@ -1092,7 +1147,6 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
 
           tbcs.set<Teuchos::Array<double> >("x values", times);
           tbcs.set<Teuchos::Array<double> >("y values", values);
-
 
           std::vector<std::string> forms_(time_fns.size());
 
@@ -1107,20 +1161,20 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
-
       }
 
       // TODO...
       // add the rest of the boundary conditions
-
     }
   }
-
 
   return ssf_list;
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList stt_list;
 
@@ -1166,7 +1220,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         }
       }
 
-
       double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
       double perm_vert, perm_horiz;
 
@@ -1178,7 +1231,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
       } else {
         Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
-
       }
 
       for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
@@ -1207,7 +1259,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
                   ic_for_region = &(ic_list.sublist(it->first));
                 }
               }
-
             }
           } else {
             Exceptions::amanzi_throw(Errors::Message("The list Initial Conditions contains an entry that is not a ParamterList itself."));
@@ -1282,11 +1333,9 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
       matnames[k] = matid_to_material[k+1];
     }
 
-
     stt_list.set<Teuchos::Array<int> >("Region Name to Material ID Map (Material IDs)",matids);
     stt_list.set<Teuchos::Array<std::string> >("Region Name to Material ID Map (Region Names)",regnames);
     stt_list.set<Teuchos::Array<std::string> >("Material Names",matnames);
-
 
   } else {
     Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");
@@ -1296,6 +1345,9 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
 }
 
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
 Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
   Teuchos::ParameterList vlist;
 
@@ -1312,5 +1364,5 @@ Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
   return vlist;
 }
 
-}
-}
+}  // namespace AmanziInput
+}  // namespace Amanzi

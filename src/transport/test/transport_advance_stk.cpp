@@ -25,9 +25,9 @@ TEST(ADVANCE_WITH_STK) {
 
   std::cout << "Test: advance with STK" << endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
   // read parameter list
@@ -51,24 +51,25 @@ TEST(ADVANCE_WITH_STK) {
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
+  TPK.InitPK();
   TPK.set_standalone_mode(true);
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();
-  TPK.advance(dT);
+  double dT = TPK.CalculateTransportDt();
+  TPK.Advance(dT);
 
   // printing cell concentration  
   int i, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
-  for (i=0; i<50; i++) {
-    dT = TPK.calculate_transport_dT();
-    TPK.advance(dT);
+  for (i = 0; i < 50; i++) {
+    dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
 
     if (i < 10) {
@@ -81,6 +82,9 @@ TEST(ADVANCE_WITH_STK) {
   // check that the final state is constant  
   for (int k=0; k<4; k++) 
     CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
+
+  delete gm;
+  delete comm;
 }
  
 

@@ -14,21 +14,18 @@
 
 typedef enum { COMPLETE, UPDATING } status_type;
 
-class State  : public Teuchos::VerboseObject<State> {
-  
-public:
+class State : public Teuchos::VerboseObject<State> {
+ public:
+  State(int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
 
-  State( int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
+  State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
 
-  State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
-
-  State( Teuchos::ParameterList &parameter_list, 
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
+  State(Teuchos::ParameterList &parameter_list, 
+	Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
 
   ~State();
 
   // access methods
-
   Teuchos::RCP<Epetra_Vector>       get_pressure ()         { return pressure; }; 
   Teuchos::RCP<Epetra_Vector>       get_darcy_flux ()       { return darcy_flux; };
   Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
@@ -43,17 +40,19 @@ public:
   Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
   Teuchos::RCP<double*>             get_gravity()      { return gravity; }
 
+  Teuchos::RCP<Epetra_Vector>       get_specific_storage() { return specific_storage; };
+
   Teuchos::RCP<Epetra_MultiVector>  get_darcy_velocity () { return darcy_velocity; }
   Teuchos::RCP<Epetra_MultiVector>  get_total_component_concentration () 
   { return total_component_concentration; };
   
   const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
-  const double get_time () const { return time; };
-  const double get_last_time () const { return last_time; }
-  const int get_cycle () const { return cycle; };
+  double get_time () const { return time; };
+  double get_last_time () const { return last_time; }
+  int get_cycle () const { return cycle; };
 
-  const int get_number_of_components() const { return number_of_components; };
+  int get_number_of_components() const { return number_of_components; };
 
   const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
 
@@ -67,7 +66,7 @@ public:
   void update_pressure(const Epetra_Vector&);
 
   // status methods
-  const status_type get_status () const { return status; };
+  status_type get_status () const { return status; };
   void set_status ( status_type new_status ) { status = new_status; }
 
 
@@ -79,21 +78,22 @@ public:
   void set_zero_total_component_concentration();
   void set_total_component_concentration(const double* conc, const int mesh_block_id); 
   void set_total_component_concentration(const double* conc, const std::string region ); 
-  void set_porosity( const double phi );
-  void set_porosity( const double phi, const int mesh_block_id );
-  void set_porosity( const double phi, const std::string region );
-  void set_permeability (const double kappa);
-  void set_permeability (const double kappa, const int mesh_block_id);
-  void set_permeability (const double kappa, const std::string region);
-  void set_horizontal_permeability (const double kappa);
-  void set_horizontal_permeability (const double kappa, const int mesh_block_id);
-  void set_horizontal_permeability (const double kappa, const std::string region);  
-  void set_vertical_permeability (const double kappa);
-  void set_vertical_permeability (const double kappa, const int mesh_block_id);
-  void set_vertical_permeability (const double kappa, const std::string region);
+  void set_porosity(const double phi);
+  void set_porosity(const double phi, const int mesh_block_id);
+  void set_porosity(const double phi, const std::string region);
+  void set_permeability(const double kappa);
+  void set_permeability(const double kappa, const int mesh_block_id);
+  void set_permeability(const double kappa, const std::string region);
+  void set_horizontal_permeability(const double kappa);
+  void set_horizontal_permeability(const double kappa, const int mesh_block_id);
+  void set_horizontal_permeability(const double kappa, const std::string region);  
+  void set_vertical_permeability(const double kappa);
+  void set_vertical_permeability(const double kappa, const int mesh_block_id);
+  void set_vertical_permeability(const double kappa, const std::string region);
   void set_viscosity(const double mu);
   void set_gravity(const double *g);
   void set_number_of_components(const int n);
+  void set_specific_storage(const double ss, const std::string region);
 
 
   // set methods 
@@ -154,6 +154,7 @@ private:
   Teuchos::RCP<Epetra_Vector> vertical_permeability;  
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
   Teuchos::RCP<Epetra_Vector> material_ids;
+  Teuchos::RCP<Epetra_Vector> specific_storage;
 
   Teuchos::RCP<double*> gravity;
   Teuchos::RCP<double> density;
