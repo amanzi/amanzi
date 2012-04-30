@@ -28,6 +28,8 @@ set(atk_inc_files Utils.hh
                   TimerManager.hh
 )
 
+include_directories(${Boost_INCLUDE_DIRS})
+
 add_library(atk Timer.cc
                 TimerManager.cc
 )
