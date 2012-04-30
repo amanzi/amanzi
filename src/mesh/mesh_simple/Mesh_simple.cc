@@ -705,11 +705,11 @@ void Mesh_simple::cell_get_face_adj_cells(const AmanziMesh::Entity_ID cellid,
 
     unsigned int foffset = 2*faceid;
 
-    unsigned int adjcell0 = face_to_cell_[foffset];
+    int adjcell0 = face_to_cell_[foffset];
     if (adjcell0 != -1 && adjcell0 != cellid)
       fadj_cellids->push_back(adjcell0);    
     else {
-      unsigned int adjcell1 = face_to_cell_[foffset+1];
+      int adjcell1 = face_to_cell_[foffset+1];
       if (adjcell1 != -1 && adjcell1 != cellid)
 	fadj_cellids->push_back(adjcell1);
     }
