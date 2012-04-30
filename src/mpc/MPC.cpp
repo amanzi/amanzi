@@ -378,19 +378,19 @@ void MPC::cycle_driver() {
       // take the mpc time step as the min of all suggested time steps 
       mpc_dT = std::min(std::min(std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT);
 
-      // make sure we hit the observation times exactly
-      if (observation_times_.size() > 0) {
+      // make sure we hit the observation+visualization times exactly
+      if (waypoint_times_.size() > 0) {
         int next_time_index(-1);
-	for (int ii = 0; ii < observation_times_.size(); ii++) {
-	  if (S->get_time() < observation_times_[ii]) {
+	for (int ii = 0; ii < waypoint_times_.size(); ii++) {
+	  if (S->get_time() < waypoint_times_[ii]) {
 	    next_time_index = ii;
 	    break;
 	  }	  
 	}
 	if (next_time_index >= 0) {
 	  // now we are trying to hit the next reset time exactly
-	  if (S->get_time()+2*mpc_dT > observation_times_[next_time_index]) {
-	    limiter_dT = time_step_limiter(S->get_time(), mpc_dT, observation_times_[next_time_index]);
+	  if (S->get_time()+2*mpc_dT > waypoint_times_[next_time_index]) {
+	    limiter_dT = time_step_limiter(S->get_time(), mpc_dT, waypoint_times_[next_time_index]);
 	    tslimiter = MPC_LIMITS;
 	  }	  
 	}
