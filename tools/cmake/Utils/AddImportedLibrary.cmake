@@ -39,6 +39,7 @@ function(ADD_IMPORTED_LIBRARY target_name)
     message(FATAL_ERROR "Target ${name} is already defined.")
   endif()
 
+
   # --- Set the library type
   set(lib_type UNKNOWN)
   if(PARSE_STATIC)
@@ -50,6 +51,11 @@ function(ADD_IMPORTED_LIBRARY target_name)
 
   # --- Add the library target 
   add_library(${target_name} ${lib_type} IMPORTED)
+
+  # --- Update the global property that tracks imported targets
+  set(prop_name IMPORTED_${lib_type}_LIBRARIES)
+  get_property(prop_value GLOBAL PROPERTY ${prop_name})
+  set_property(GLOBAL PROPERTY ${prop_name} ${prop_value} ${target_name})
 
   # --- Set the properties
   set_target_properties(${target_name} PROPERTIES
