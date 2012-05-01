@@ -251,6 +251,29 @@ int  PorousMedia::it_pressure;
 bool PorousMedia::do_any_diffuse;
 int  PorousMedia::do_cpl_advect;
 
+//
+// Init to steady
+//
+bool PorousMedia::do_richard_init_to_steady;
+int  PorousMedia::richard_init_to_steady_verbose;
+int  PorousMedia::steady_min_iterations;
+int  PorousMedia::steady_max_iterations;
+int  PorousMedia::steady_limit_iterations;
+Real PorousMedia::steady_time_step_reduction_factor;
+Real PorousMedia::steady_time_step_increase_factor;
+Real PorousMedia::steady_time_step_retry_factor_1;
+Real PorousMedia::steady_time_step_retry_factor_2;
+Real PorousMedia::steady_time_step_retry_factor_f;
+int  PorousMedia::max_consecutive_failures_1;
+int  PorousMedia::max_consecutive_failures_2;
+Real PorousMedia::steady_tolerance;
+Real PorousMedia::steady_initial_time_step;
+Real PorousMedia::steady_maximum_time_steps;
+int  PorousMedia::max_num_consecutive_success;
+Real PorousMedia::steady_extra_time_step_increase_factor;
+int  PorousMedia::max_num_consecutive_increases;
+Real PorousMedia::consecutive_increase_reduction_factor;
+
 static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
 //
@@ -464,6 +487,26 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::it_pressure         = 0;  
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
+
+  PorousMedia::do_richard_init_to_steady = false;
+  PorousMedia::richard_init_to_steady_verbose = 1;
+  PorousMedia::steady_min_iterations = 10;
+  PorousMedia::steady_max_iterations = 15;
+  PorousMedia::steady_limit_iterations = 20;
+  PorousMedia::steady_time_step_reduction_factor = 0.8;
+  PorousMedia::steady_time_step_increase_factor = 1.25;
+  PorousMedia::steady_time_step_retry_factor_1 = 0.5;
+  PorousMedia::steady_time_step_retry_factor_2 = 0.1;
+  PorousMedia::steady_time_step_retry_factor_f = 0.01;
+  PorousMedia::max_consecutive_failures_1 = 3;
+  PorousMedia::max_consecutive_failures_2 = 4;
+  PorousMedia::steady_tolerance = 1.e-8;
+  PorousMedia::steady_initial_time_step = 1.e2;
+  PorousMedia::steady_maximum_time_steps = 8000;
+  PorousMedia::max_num_consecutive_success = 3;
+  PorousMedia::steady_extra_time_step_increase_factor = 10.;
+  PorousMedia::max_num_consecutive_increases = 3;
+  PorousMedia::consecutive_increase_reduction_factor = 0.15;
 
   PorousMedia::echo_inputs         = 0;
 }
@@ -1017,6 +1060,9 @@ PorousMedia::read_rock()
     if (build_full_kmap)
     {
         
+        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "Building kmap on finest level..." << std::endl;
+
         BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
         
         if (kappadata == 0)
@@ -1037,12 +1083,22 @@ PorousMedia::read_rock()
             r.build_kmap(*kappadata, gsfile);
 	}
         
-      VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-      VisMF::Write(*kappadata,kfile);
+        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Finished building kmap on finest level.  Writing..." << std::endl;
+
+        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+        VisMF::Write(*kappadata,kfile);
+
+        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Finished writing kmap..." << std::endl;
+
     }
     
     if (build_full_pmap)
     {
+        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "Building pmap on finest level..." << std::endl;
+
         BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
         
         if (phidata == 0)
@@ -1063,8 +1119,14 @@ PorousMedia::read_rock()
             r.build_pmap(*phidata, gsfile);
 	}
         
+        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Finished building pmap on finest level.  Writing..." << std::endl;
+
         VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
         VisMF::Write(*phidata,pfile);
+
+        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Finished writing pmap..." << std::endl;
     }
     
     if (ParallelDescriptor::IOProcessor()) {
@@ -1133,6 +1195,25 @@ void PorousMedia::read_prob()
 
   // Verbosity
   pb.query("v",verbose);
+  pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
+  pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
+  pb.query("steady_min_iterations",steady_min_iterations);
+  pb.query("steady_max_iterations",steady_max_iterations);
+  pb.query("steady_limit_iterations",steady_limit_iterations);
+  pb.query("steady_time_step_reduction_factor",steady_time_step_reduction_factor);
+  pb.query("steady_time_step_increase_factor",steady_time_step_increase_factor);
+  pb.query("steady_time_step_retry_factor_1",steady_time_step_retry_factor_1);
+  pb.query("steady_time_step_retry_factor_2",steady_time_step_retry_factor_2);
+  pb.query("steady_time_step_retry_factor_f",steady_time_step_retry_factor_f);
+  pb.query("max_consecutive_failures_1",max_consecutive_failures_1);
+  pb.query("max_consecutive_failures_2",max_consecutive_failures_2);
+  pb.query("steady_tolerance",steady_tolerance);
+  pb.query("steady_initial_time_step",steady_initial_time_step);
+  pb.query("steady_maximum_time_steps",steady_maximum_time_steps);
+  pb.query("max_num_consecutive_success",max_num_consecutive_success);
+  pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
+  pb.query("max_num_consecutive_increases",max_num_consecutive_increases);
+  pb.query("consecutive_increase_reduction_factor",consecutive_increase_reduction_factor);
   
   // Get timestepping parameters.
   pb.get("cfl",cfl);
