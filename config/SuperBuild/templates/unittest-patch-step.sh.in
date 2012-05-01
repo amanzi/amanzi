@@ -6,6 +6,7 @@
 # Change the compiler, C++ flags
 cxx_compiler=@CMAKE_CXX_COMPILER@
 cxx_flags='@Amanzi_COMMON_CXXFLAGS@'
+ldflags='-L@TPL_INSTALL_PREFIX@/lib @CMAKE_CXX_LINK_FLAGS@'
 
 # Set the Makefile
 make_file=@UnitTest_source_dir@/Makefile
@@ -13,5 +14,6 @@ make_file=@UnitTest_source_dir@/Makefile
 echo "Patching file ${make_file}"
 @PERL_EXECUTABLE@ -w -i -p -e "s:^CXX[\s]{0,}=.*:CXX = ${cxx_compiler}:" ${make_file}
 @PERL_EXECUTABLE@ -w -i -p -e "s:^CXXFLAGS[\s]{0,}\?=.*:CXXFLAGS ?= ${cxx_flags}:" ${make_file}
+@PERL_EXECUTABLE@ -w -i -p -e "s:^LDFLAGS[\s]{0,}\?=.*:LDFLAGS ?= ${ldflags}:" ${make_file}
 
 exit $?

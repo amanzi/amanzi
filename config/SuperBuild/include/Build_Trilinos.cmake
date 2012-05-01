@@ -173,7 +173,7 @@ if (ENABLE_Trilinos_Patch)
                @ONLY)
   set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
 endif()  
-print_variable(Trilinos_PATCH_COMMAND)
+#print_variable(Trilinos_PATCH_COMMAND)
 
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}
