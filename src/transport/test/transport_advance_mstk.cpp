@@ -11,7 +11,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "UnitTest++.h"
 
-#include "MSTK_types.h"
 #include "Mesh_MSTK.hh"
 
 #include "State.hpp"
