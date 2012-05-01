@@ -3,10 +3,6 @@
 #include "math.h"
 #include "UnitTest++.h"
 
-#include "Mesh_MOAB.hh"
-#include "Mesh_simple.hh"
-#include "Mesh.hh"
-
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
@@ -16,6 +12,12 @@
 
 #include "State.hpp"
 #include "MPC.hpp"
+
+// #include "Mesh_MOAB.hh"
+#include "Mesh_MSTK.hh"
+#include "Mesh_simple.hh"
+#include "Mesh.hh"
+
 
 
 TEST(DRIVER) {
@@ -57,17 +59,16 @@ TEST(DRIVER) {
       mesh = MMS;
       
     } 
-  else if (mesh_class == "MOAB")  
+  else if (mesh_class == "MSTK")  
     {
       
-      Teuchos::ParameterList moab_mesh_parameter_list = 
-      	mesh_parameter_list.sublist("MOAB Mesh Parameters");
+      Teuchos::ParameterList mstk_mesh_parameter_list = 
+      	mesh_parameter_list.sublist("MSTK Mesh Parameters");
       
-      string filename = moab_mesh_parameter_list.get<string>("Exodus file name");
+      string filename = mstk_mesh_parameter_list.get<string>("Exodus file name");
 
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MOAB> MMM = 
-      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), comm));      
-      
+      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> MMM = 
+      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(filename.c_str(), comm));      
       mesh = MMM;
 
     }

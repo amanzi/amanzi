@@ -1,17 +1,17 @@
 <ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+
+  <!-- This is a special list specifically designed for this test -->
+  <!-- It does not conform to the Amanzi input specification      -->
 
   <ParameterList name="Mesh">
     <Parameter name="Mesh Class" type="string" value="Simple"/>
     <ParameterList name="Simple Mesh Parameters">
-      <Parameter name="X_Min" type="double" value="0.0"/>
-      <Parameter name="X_Max" type="double" value="1.0"/>
-      <Parameter name="Y_Min" type="double" value="0.0"/>
-      <Parameter name="Y_Max" type="double" value="1.0"/>
-      <Parameter name="Z_Min" type="double" value="0.0"/>
-      <Parameter name="Z_Max" type="double" value="1.0"/>
-      <Parameter name="Number of Cells in X" type="int" value="10"/> 
-      <Parameter name="Number of Cells in Y" type="int" value="10"/> 
-      <Parameter name="Number of Cells in Z" type="int" value="10"/> 
+      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}"/>
+      <Parameter name="Domain High Corner" type="Array double" value="{1.0, 1.0, 1.0}"/>
+      <Parameter name="Number of Cells" type="Array int" value="{10, 10, 10}"/> 
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
       <Parameter name="Exodus file name" type="string" value="test/moab_mesh.exo"/>
@@ -19,7 +19,19 @@
     <ParameterList name="STK Mesh Parameters">
     </ParameterList>   
   </ParameterList>
-  
+
+  <!-- End special list -->
+
+
+  <ParameterList name="Regions">
+    <ParameterList name="All">
+      <ParameterList name="Region: Box">
+	<Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+	<Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
@@ -35,7 +47,6 @@
 
   
   <ParameterList name="State">
-    <Parameter name="Number of mesh blocks" type="int" value="1"/>
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
@@ -44,8 +55,8 @@
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.8"/>
 
-    <ParameterList name="Mesh block 1"> 
-      <Parameter name="Mesh block ID" type="int" value="0"/>
+    <ParameterList name="The whole mesh"> 
+      <Parameter name="Region" type="string" value="All"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
       <Parameter name="Constant permeability" type="double" value="1.0"/>

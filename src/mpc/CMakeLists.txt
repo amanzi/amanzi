@@ -95,16 +95,18 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit moab_mesh state mpc flow transport chemistry whetstone)
+    set(amanzi_libs geometry mesh mesh_audit mstk_mesh state mpc flow transport chemistry whetstone)
     
-    if ( ENABLE_MOAB_Mesh )
-        include_directories(${MOAB_SOURCE_DIR})
-        include_directories(${MOAB_INCLUDE_DIRS})
+    if ( ENABLE_MSTK_Mesh )
+        include_directories(${MSTK_INCLUDE_DIRS})
+        include_directories(${MSTK_SOURCE_DIR})
 
-        # Test: mpc-moab
-        add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
-        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry_pk flow transport whetstone ${UnitTest_LIBRARIES})
-        add_amanzi_test(mpc-moab test_mpc_moab KIND int)
+	add_definitions("-DMSTK_HAVE_MPI")
+
+        # Test: mpc-mstk
+        add_executable(test_mpc_mstk test/Main.cc test/test_driver.cpp)
+        target_link_libraries(test_mpc_mstk mpc mesh mstk_mesh chemistry_pk flow transport whetstone ${UnitTest_LIBRARIES})
+        add_amanzi_test(mpc-mstk test_mpc_mstk KIND int)
     
     endif()
 
