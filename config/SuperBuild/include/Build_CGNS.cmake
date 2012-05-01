@@ -7,6 +7,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(CGNS
                              TARGET cgns
+			     DEPENDS ZLIB
                              BUILD_IN_SOURCE)
 
 # --- Define the configure command
