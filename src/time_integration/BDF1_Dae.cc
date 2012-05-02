@@ -253,9 +253,9 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   // Predicted solution (initial value for the nonlinear solver)
   Epetra_Vector up(map);
 
-  if ( state.uhist->history_size() > 1) {
+  if (state.uhist->history_size() > 1) {
     state.uhist->interpolate_solution(tnew,  up);
-  } else  {
+  } else {
     up = u;
   }
 
@@ -391,13 +391,14 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     du.NormInf(&du_norm);
 
     // protect against floating point overflow
-    if (itr>1 && du_norm > 1000.0 * previous_du_norm) {
+    if (itr > 1 && du_norm > 1000.0 * previous_du_norm) {
+      *out << itr << ": error (infinity norm) " << du_norm << std::endl;
       *out << "Nonlinear solver is threatening to overflow, cutting current time step." << std::endl;
       throw state.mitr+1;
     }
 
     // protect against divergencve of the nonlinear solver
-    if (itr>1 && du_norm >= previous_du_norm) {
+    if (itr > 1 && du_norm >= previous_du_norm) {
       // the solver threatening to diverge
       ++divergence_count;
 
