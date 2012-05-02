@@ -1185,7 +1185,7 @@ fi
 
 if [ \$AMANZI_TEST -eq 1 ]; then
     cd \${AMANZI_DIR}/build
-    \${CTEST} --timeout 60 --output-on-failure
+    \${CTEST} --timeout 150 --output-on-failure
     if [ \$? -ne 0 ]; then
 	exit 1
     fi
