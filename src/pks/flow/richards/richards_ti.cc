@@ -184,12 +184,15 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   preconditioner_->AssembleGlobalMatrices();
   preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
 
+  // Code to dump Schur complement to check condition number
+  /*
   Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
   std::stringstream filename_s;
   filename_s << "schur_" << S_next_->cycle() << ".txt";
   //a  std::string filename = filename_s.str();
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
   std::cout << "updated precon " << S_next_->cycle() << std::endl;
+  */
 
   preconditioner_->UpdateMLPreconditioner();
 };
