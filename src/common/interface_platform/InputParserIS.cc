@@ -1315,17 +1315,17 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
         stt_mat.set<std::string>("Region", *i);
 
-	if (  mineralogy.isSublist("Mineralogy") ) {
+	if (  mineralogy.begin() != mineralogy.end() ) { // this is to avoid creating an empty Mineralogy list 
 	  Teuchos::ParameterList& region_mineralogy = stt_mat.sublist("Mineralogy");
 	  region_mineralogy = mineralogy;
 	}
 	
-	if ( isotherms.isSublist("Sorption Isotherms") ) {
+	if ( isotherms.begin() != isotherms.end() ) { // this is to avoid creating an empty Sorption Isotherms list 
 	  Teuchos::ParameterList& region_isotherms = stt_mat.sublist("Sorption Isotherms");
 	  region_isotherms = isotherms;
 	}
           
-	if ( surface_sites.isSublist("Surface Complexation Sites") ) {
+	if ( surface_sites.begin() != surface_sites.end() ) { // this is to avoid creating an empty Surface Complexation Sites list
 	  Teuchos::ParameterList& region_surface_sites = stt_mat.sublist("Surface Complexation Sites");
 	  region_surface_sites = surface_sites;
 	}
