@@ -89,29 +89,29 @@ if (BUILD_TESTS)
 
     set(amanzi_libs geometry mesh mesh_audit mesh_factory simple_mesh mstk_mesh state flow whetstone)
  
-    # Test: miscaleneous Darcy flow routines
-    add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp)
-    target_link_libraries(flow_darcy_misc ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
-    add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
-    add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
- 
-    # Test: transient Darcy flow 
     if ( ENABLE_MSTK_Mesh )
+        # Test: miscaleneous Darcy flow routines
+        add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp)
+        target_link_libraries(flow_darcy_misc ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
+        add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
+        add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
+ 
+        # Test: transient Darcy flow 
         add_executable(flow_darcy_2D test/Main.cc test/flow_darcy_2D.cpp)
         target_link_libraries(flow_darcy_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(flow_darcy_2D flow_darcy_2D KIND int)
+ 
+        # Test: transient Darcy flow with a source
+        add_executable(flow_darcy_well test/Main.cc test/flow_darcy_well.cpp)
+        target_link_libraries(flow_darcy_well ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_darcy_well flow_darcy_well KIND int)
+
+        # Test: miscaleneous Richards flow routines
+        add_executable(flow_richards_convergence test/Main.cc test/flow_richards_convergence.cpp)
+        target_link_libraries(flow_richards_convergence ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_richards_convergence flow_richards_convergence KIND int)
     endif()    
- 
-    # Test: transient Darcy flow with a source
-    add_executable(flow_darcy_well test/Main.cc test/flow_darcy_well.cpp)
-    target_link_libraries(flow_darcy_well ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_darcy_well flow_darcy_well KIND int)
- 
-    # Test: miscaleneous Richards flow routines
-    add_executable(flow_richards_convergence test/Main.cc test/flow_richards_convergence.cpp)
-    target_link_libraries(flow_richards_convergence ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_richards_convergence flow_richards_convergence KIND int)
  
     # Test: van Genuchten flow routines
     add_executable(flow_vanGenuchten test/Main.cc test/flow_vanGenuchten.cpp)
