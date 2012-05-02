@@ -2,15 +2,16 @@
 #ifndef AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_
 #define AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_
 
-#include "Teuchos_RCP.hpp"
+#include "State.hpp"
 #include "Mesh.hh"
+
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 class Epetra_Vector;
 class Epetra_MultiVector;
 class Epetra_SerialDenseVector;
-
-class State;
+class ParameterList;
 
 namespace amanzi {
 namespace chemistry {
@@ -21,44 +22,79 @@ class Chemistry_State {
  public:
   explicit Chemistry_State(Teuchos::RCP<State> S);
 
-  ~Chemistry_State();
+  virtual ~Chemistry_State();
 
-  // access methods
-  Teuchos::RCP<const Epetra_MultiVector> get_total_component_concentration() {
-    return total_component_concentration_;
-  }
-
-  Teuchos::RCP<const Epetra_Vector> get_porosity() const {
-    return porosity_;
-  }
-  Teuchos::RCP<const Epetra_Vector> get_water_saturation() const {
-    return water_saturation_;
-  }
-  Teuchos::RCP<const Epetra_Vector> get_water_density() const {
-    return water_density_;
+  // stuff chemistry can't/shouldn't change
+  Teuchos::RCP<const Mesh> mesh_maps() const {
+    return simulation_state_->get_mesh_maps();
   }
 
-  Teuchos::RCP<const Mesh> get_mesh_maps() const {
-    return mesh_maps_;
+  Teuchos::RCP<const Epetra_Vector> porosity() const {
+    return simulation_state_->get_porosity();
+  }
+  Teuchos::RCP<const Epetra_Vector> water_saturation() const {
+    return simulation_state_->get_water_saturation();
+  }
+  Teuchos::RCP<const Epetra_Vector> water_density() const {
+    return simulation_state_->get_water_density();
   }
 
-  Teuchos::RCP<const Epetra_SerialDenseVector> get_volume() const {
-    return volume_;
+  Teuchos::RCP<const Epetra_Vector> volume() const {
+    return simulation_state_->volume();
+  }
+
+  int number_of_aqueous_components(void) const {
+    return simulation_state_->get_number_of_components();
+  }
+
+  // stuff chemistry can change
+  Teuchos::RCP<Epetra_MultiVector> total_component_concentration() {
+    return simulation_state_->get_total_component_concentration();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> free_ion_species() const {
+    return simulation_state_->free_ion_concentrations();
+  }
+
+  int number_of_minerals(void) const {
+    return simulation_state_->number_of_minerals();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions() const {
+    return simulation_state_->mineral_volume_fractions();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area() const {
+    return simulation_state_->mineral_specific_surface_area();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> total_sorbed() const {
+    return simulation_state_->total_sorbed();
+  }
+
+  int number_of_ion_exchange_sites(void) const {
+    return simulation_state_->number_of_ion_exchange_sites();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites() const {
+    return simulation_state_->ion_exchange_sites();
+  }
+
+  int number_of_sorption_sites(void) const {
+    return simulation_state_->number_of_sorption_sites();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> sorption_sites() const {
+    return simulation_state_->sorption_sites();
+  }
+
+  bool using_sorption(void) const {
+    return simulation_state_->using_sorption();
   }
 
  private:
-  // variables that point to main State object
-  Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_;
-  Teuchos::RCP<const Epetra_Vector> porosity_;
-  Teuchos::RCP<const Epetra_Vector> water_saturation_;
-  Teuchos::RCP<const Epetra_Vector> water_density_;
+  Teuchos::RCP<State> simulation_state_;
 
-  Teuchos::RCP<Mesh> mesh_maps_;
-
-  // local variable
-  Teuchos::RCP<Epetra_SerialDenseVector> volume_;
-
-  void ExtractVolumeFromMesh(void);
 };
 
 }  // namespace chemistry

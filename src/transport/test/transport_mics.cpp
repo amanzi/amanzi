@@ -54,7 +54,7 @@ TEST(CONSTRUCTOR) {
 
   /* create a Transport state with two components */
   int num_components = 2;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
@@ -97,7 +97,7 @@ TEST(FACES_VOLUMES) {
  
   // create a transport state with two components
   int num_components = 2;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);

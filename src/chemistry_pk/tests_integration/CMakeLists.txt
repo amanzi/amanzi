@@ -23,7 +23,9 @@ add_install_include_file(${chem_inc})
 
 # Amanzi includes
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 
 # Trilinos related (TPL) includes
@@ -34,18 +36,16 @@ add_executable(chemistry_pk_tests
                main.cc
                test_chemistry_pk.cc)
 
-set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone mesh_functions)
-
-target_link_libraries(chemistry_pk_tests 
-  geometry mesh_factory mesh stk_mesh state chemistry_pk error_handling 
-		      ${UnitTest_LIBRARIES} 
+target_link_libraries(chemistry_pk_tests chemistry_pk state 
+                      simple_mesh error_handling exodus_reader 
+		      interface
+                      ${UnitTest_LIBRARIES} 
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-
-add_amanzi_test(chemistry_pk chemistry_pk_tests KIND unit)
+add_amanzi_test(chemistry_pk chemistry_pk_tests KIND int)
 
 if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
   execute_process(COMMAND ${CMAKE_COMMAND} -E
-                  copy_directory ${CHEMPK_SOURCE_DIR}/tests_unit ${CHEMPK_BINARY_DIR}/tests_unit)
+                  copy_directory ${CHEMPK_SOURCE_DIR}/tests_integration ${CHEMPK_BINARY_DIR}/tests_integration)
 endif()
 
 
