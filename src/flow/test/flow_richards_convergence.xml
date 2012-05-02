@@ -203,6 +203,7 @@
       <ParameterList name="uniform saturation">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 2">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
@@ -217,6 +218,7 @@
       <ParameterList name="uniform saturation">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

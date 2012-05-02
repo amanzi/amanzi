@@ -12,6 +12,8 @@
 #include "chemistry_exception.hh"
 #include "verbosity.hh"
 
+#include "chemistry_state.hh"
+
 // forward declarations
 class Epetra_MultiVector;
 class Epetra_Vector;
@@ -19,9 +21,6 @@ class Epetra_SerialDenseVector;
 
 namespace amanzi {
 namespace chemistry {
-
-// forward declarations from chemistry
-class Chemistry_State;
 
 // Trilinos based chemistry process kernel for the unstructured mesh
 class Chemistry_PK {
@@ -56,59 +55,39 @@ class Chemistry_PK {
   }
 
   int number_aqueous_components(void) const {
-    return this->number_aqueous_components_;
-  }
-  void set_number_aqueous_components(const int nac) {
-    this->number_aqueous_components_ = nac;
-  }
-
-  int have_free_ion_guess(void) const {
-    return this->have_free_ion_guess_;
-  }
-  void set_have_free_ion_guess(const int hfi) {
-    this->have_free_ion_guess_ = hfi;
+    return chemistry_state_->number_of_aqueous_components();
   }
 
   int number_free_ion(void) const {
-    return this->number_free_ion_;
-  }
-  void set_number_free_ion(const int nfi) {
-    this->number_free_ion_ = nfi;
+    return chemistry_state_->number_of_aqueous_components();
   }
 
   int number_total_sorbed(void) const {
-    return this->number_total_sorbed_;
-  }
-  void set_number_total_sorbed(const int nts) {
-    this->number_total_sorbed_ = nts;
+    return chemistry_state_->number_of_aqueous_components();
   }
 
   int number_minerals(void) const {
-    return this->number_minerals_;
-  }
-  void set_number_minerals(const int nm) {
-    this->number_minerals_ = nm;
+    return chemistry_state_->number_of_minerals();
   }
 
   int number_ion_exchange_sites(void) const {
-    return this->number_ion_exchange_sites_;
-  }
-  void set_number_ion_exchange_sites(const int ies) {
-    this->number_ion_exchange_sites_ = ies;
+    return chemistry_state_->number_of_ion_exchange_sites();
   }
 
   int number_sorption_sites(void) const {
-    return this->number_sorption_sites_;
-  }
-  void set_number_sorption_sites(const int scs) {
-    this->number_sorption_sites_ = scs;
+    return chemistry_state_->number_of_sorption_sites();
   }
 
   int using_sorption(void) const {
-    return this->using_sorption_;
+    return chemistry_state_->using_sorption();
   }
-  void set_using_sorption(const int us) {
-    this->using_sorption_ = us;
+
+  bool override_database(void) const {
+    return override_database_;
+  }
+
+  void set_override_database(const bool value) {
+    override_database_ = value;
   }
 
   // Ben: the following two routines provide the interface for
@@ -124,6 +103,7 @@ class Chemistry_PK {
 
  private:
   Verbosity verbosity_;
+  bool override_database_;
   double max_time_step_;
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
@@ -138,58 +118,16 @@ class Chemistry_PK {
 
   double current_time_;
   double saved_time_;
-  int number_aqueous_components_;
-  int number_free_ion_;
-  int number_total_sorbed_;
-  int number_minerals_;
-  int number_ion_exchange_sites_;
-  int number_sorption_sites_;
-  int using_sorption_;
-  int have_free_ion_guess_;
+
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
 
-  struct InternalStorage {
-    // things we don't change, just point to State object
-    Teuchos::RCP<const Epetra_Vector> porosity;
-    Teuchos::RCP<const Epetra_Vector> water_saturation;
-    Teuchos::RCP<const Epetra_Vector> water_density;
-    Teuchos::RCP<const Epetra_SerialDenseVector> volume;
-    // things we need internal copies of
-    Teuchos::RCP<Epetra_MultiVector> aqueous_components;
-    Teuchos::RCP<Epetra_MultiVector> free_ion_species;
-    Teuchos::RCP<Epetra_MultiVector> minerals;
-    Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites;
-    Teuchos::RCP<Epetra_MultiVector> sorption_sites;
-    Teuchos::RCP<Epetra_MultiVector> total_sorbed;
-    // geh can do without for now.    Teuchos::RCP<Epetra_MultiVector> free_site_concentrations;
-  };
-
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
-  void InitializeInternalStorage(InternalStorage* storage);
-  void SwapCurrentAndSavedStorage(void);
-
-  InternalStorage current_state_;
-  InternalStorage saved_state_;
+  void UpdateChemistryStateStorage(void);
 
   void XMLParameters(void);
-  void LocalPhysicalState(void);
-  void LocalInitialConditions(void);
   void SetupAuxiliaryOutput(void);
-  void ExtractInitialCondition(const std::string& type,
-                               const std::string& keyword,
-                               const int number_to_find,
-                               const Teuchos::ParameterList& mesh_block_list,
-                               const std::string region_name,
-                               Teuchos::RCP<Epetra_MultiVector> data);
-  void set_const_values_for_block(const std::vector<double>& values,
-                                  const int num_values,
-                                  Teuchos::RCP<Epetra_MultiVector>& vec,
-                                  const std::string region_name);
-  void set_cell_value_in_mesh_block(const double value,
-                                    Epetra_Vector& vec,
-                                    const std::string region_name);
   void SizeBeakerComponents(void);
   void CopyCellToBeakerComponents(
       const int cell_id,

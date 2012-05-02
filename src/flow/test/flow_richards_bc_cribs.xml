@@ -312,6 +312,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 2">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -323,6 +324,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 3">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -334,6 +336,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 4">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -345,6 +348,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 5">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -356,6 +360,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 6">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -367,6 +372,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 7">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -378,6 +384,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <ParameterList name="Mesh block 8">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -389,6 +396,7 @@
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Number of mesh blocks" type="int" value="8"/>

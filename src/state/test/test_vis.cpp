@@ -68,7 +68,11 @@ SUITE(VISUALIZATION) {
 
     V.create_files(*Mesh);
     
-    State S(1, Mesh);
+    State S(1, 2, Mesh);
+    std::vector<std::string> names(2);
+    names.at(0) = "Aoeui";
+    names.at(1) = "Snthd";
+    S.set_mineral_names(names);
     S.set_cycle(3);
 
     // create some auxillary data

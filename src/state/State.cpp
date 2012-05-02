@@ -1,6 +1,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
+
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "errors.hh"
@@ -15,20 +16,36 @@
 
 /* *******************************************************************/
 State::State(int number_of_components_,
-             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-    number_of_components(number_of_components_), mesh_maps(mesh_maps_)  
-{
+             int number_of_minerals,
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
+    : number_of_components(number_of_components_),
+      mesh_maps(mesh_maps_),
+      number_of_minerals_(number_of_minerals),
+      number_of_ion_exchange_sites_(0),
+      number_of_sorption_sites_(0),
+      using_sorption_(false),
+      use_sorption_isotherms_(false) {
+  // the default parameter_list is empty, so we can't sanely implement
+  // mineralogy or isotherms here because we can't safely allocate
+  // memory.... This constructor can't be used for anything with
+  // geochemistry...?!
   init_verbosity(parameter_list);
 
+  SetupSoluteNames();
+  // can't call verify mineralogy because no way of setting the 
+  //VerifyMaterialChemistry();
   // create the Eptera_Vector objects
   create_storage();
-  create_default_compnames(number_of_components);
-}
+  ExtractVolumeFromMesh();
+};
 
 
-/* *******************************************************************/
-State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-    mesh_maps(mesh_maps_) {
+State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
+    : mesh_maps(mesh_maps_),
+      number_of_ion_exchange_sites_(0),
+      number_of_sorption_sites_(0),
+      using_sorption_(false),
+      use_sorption_isotherms_(false) {
   // this constructor is going to be used in restarts, where we
   // read the number of components from a file before creating
   // storage
@@ -36,23 +53,26 @@ State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
 }
 
 
-/* *******************************************************************/
-State::State(Teuchos::ParameterList &parameter_list_,
-             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-    mesh_maps(mesh_maps_),
-    parameter_list(parameter_list_)
-{
+State::State( Teuchos::ParameterList &parameter_list_,
+              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
+    : mesh_maps(mesh_maps_),
+      parameter_list(parameter_list_),
+      number_of_minerals_(0),
+      number_of_ion_exchange_sites_(0),
+      number_of_sorption_sites_(0),
+      using_sorption_(false),
+      use_sorption_isotherms_(false) {
   init_verbosity(parameter_list);
 
-  // get the number of component concentrations from the
-  // parameter list
-  number_of_components = parameter_list.get<int>("Number of component concentrations");
+  // need to set up a few things before we can setup the storage and assign values
+  SetupSoluteNames();
+  VerifyMaterialChemistry();
 
   // create the Eptera_Vector objects
   create_storage();
   initialize_from_parameter_list();
-  create_default_compnames(number_of_components);
-}
+  ExtractVolumeFromMesh();
+};
 
 
 /* *******************************************************************/
@@ -91,8 +111,38 @@ void State::create_default_compnames(int n)
   }
 }
 
+void State::SetupSoluteNames(void) {
+  // get the number of component concentrations from the
+  // parameter list
+  if (parameter_list.isParameter("Number of component concentrations")) {
+    number_of_components = 
+        parameter_list.get<int>("Number of component concentrations");
+  } else {
+    // if the parameter list does not contain this key, then assume we
+    // are being called from a state constructor w/o a valid parameter
+    // list (vis/restart) and the number_of_components variable was
+    // already set to a valid (non-zero?) value....
+  }
 
-/* *******************************************************************/
+  // read the component names if they are spelled out
+  Teuchos::Array<std::string> comp_names;
+  if (parameter_list.isParameter("Component Solutes"))
+  {
+    comp_names = 
+        parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
+  }
+
+  if (comp_names.size()) {
+    set_compnames(comp_names);
+  } else {
+    create_default_compnames(number_of_components);
+  }
+  // now create the map
+  for (int i = 0; i < comp_names.size(); ++i) {
+    comp_no[comp_names[i]] = i;
+  }
+}  // end SetupSoluteNames()
+
 void State::initialize_from_parameter_list()
 {
   using Teuchos::OSTab;
@@ -100,22 +150,7 @@ void State::initialize_from_parameter_list()
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-  // read the component names if they are spelled out
-  Teuchos::Array<std::string> comp_names;
-  if (parameter_list.isParameter("Component Solutes")) {
-    comp_names = parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
-  } else {
-    comp_names.resize(number_of_components);
-    for (int i = 0; i < number_of_components; i++) {
-      std::stringstream ss;
-      ss << "comp " << i;
-      comp_names[i] = ss.str();
-    }
-  }
-  // now create the map
-  for (int i = 0; i < comp_names.size(); i++) {
-    comp_no[comp_names[i]] = i;
-  }
+
 
   double u[3];
   u[0] = parameter_list.get<double>("Gravity x");
@@ -213,16 +248,25 @@ void State::initialize_from_parameter_list()
       // read the component concentrations from the xml file
       // and initialize them in mesh block mesh_block_ID
       double tcc_const[number_of_components];
+      double free_ion_guess[number_of_components];
       for (int nc=0; nc<number_of_components; nc++) {
         std::stringstream s;
         s << "Constant component concentration " << nc;
 
         tcc_const[nc] = sublist.get<double>(s.str());
+        s.clear();
+        s.str("");
+        s << "Free Ion Guess " << nc;
+        free_ion_guess[nc] = sublist.get<double>(s.str());
+        s.clear();
+        s.str("");
       }
       set_total_component_concentration(tcc_const, region);
+      set_free_ion_concentrations(free_ion_guess, region);
+      SetRegionMaterialChemistry(region, &sublist);
     }
   }
-}
+}  // end initialize_from_parameter_list()
 
 
 
@@ -249,11 +293,71 @@ void State::create_storage()
   *gravity = new double[3];
 
   specific_storage = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
-}
+
+  volume_ =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+
+  // if chemistry in enabled, we'll always need free_ions stored.
+  free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
+
+  if (number_of_minerals() > 0) {
+    mineral_volume_fractions_ = Teuchos::rcp(
+        new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
+    mineral_specific_surface_area_ = Teuchos::rcp(
+        new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
+  } else {
+    mineral_volume_fractions_ = Teuchos::null;
+    mineral_specific_surface_area_ = Teuchos::null;
+  }
+
+  if (using_sorption()) {
+    total_sorbed_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+    // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
+    sorption_sites_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), 
+                               number_of_sorption_sites()));
+  } else {
+    total_sorbed_ = Teuchos::null;
+    sorption_sites_ = Teuchos::null;
+  }
+
+  if (number_of_sorption_sites() > 0) {
+    // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
+    sorption_sites_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), 
+                               number_of_sorption_sites()));
+  } else {
+    sorption_sites_ = Teuchos::null;
+  }
+
+  if (number_of_ion_exchange_sites() > 0) {
+    // TODO: eventually this probably needs to be a 3d array: [cell][mineral][site]
+    // for now we assume [cell][site], but site will always be one?
+    ion_exchange_sites_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), 
+                               number_of_ion_exchange_sites()));    
+  } else {
+    ion_exchange_sites_ = Teuchos::null;
+  }
+
+  if (use_sorption_isotherms()) {
+    isotherm_kd_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+    isotherm_freundlich_n_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+    isotherm_langmuir_b_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+  } else {
+    isotherm_kd_ = Teuchos::null;
+    isotherm_freundlich_n_ = Teuchos::null;
+    isotherm_langmuir_b_ = Teuchos::null;
+  }
+
+}  // end create_storage()
 
 
-/* *******************************************************************/
-void State::set_time(double new_time) {
+
+void State::set_time ( double new_time ) {
   last_time = new_time;
   time = new_time;
 }
@@ -264,7 +368,6 @@ void State::set_cycle(int new_cycle) {
 }
 
 
-/* *******************************************************************/
 void State::set_number_of_components(const int n)
 {
   number_of_components = n;
@@ -528,11 +631,18 @@ void State::set_total_component_concentration(const double* conc, const int mesh
   }
 }
 
-
 void State::set_total_component_concentration(const double* conc, const std::string region)
 {
   for (int nc=0; nc<number_of_components; nc++) {
     set_cell_value_in_region(conc[nc], *(*total_component_concentration)(nc), region);
+  }
+}
+
+
+void State::set_free_ion_concentrations( const double* conc, const std::string region )
+{
+  for (int nc=0; nc<number_of_components; nc++) {
+    set_cell_value_in_region(conc[nc], *(*free_ion_concentrations_)(nc),region);
   }
 }
 
@@ -876,6 +986,9 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
       
       // write component data
       vis.write_vector( *get_total_component_concentration(), compnames);
+
+      // write the geochemistry data
+
       vis.finalize_timestep();
     }
   }
@@ -904,3 +1017,360 @@ void State::set_compnames(std::vector<std::string>& compnames_)
 {
   compnames = compnames_;
 }
+
+void State::set_compnames(Teuchos::Array<std::string>& compnames_)
+{
+  compnames.clear();
+  compnames.resize(compnames_.size());
+  for (int i = 0; i < compnames.size(); ++i) {
+    compnames.at(i) = compnames_.at(i);
+  }
+}
+
+void State::ExtractVolumeFromMesh(void) {
+  int ncell = mesh_maps->cell_map(false).NumMyElements();
+  if (ncell != volume()->MyLength()) {
+    Exceptions::amanzi_throw(Errors::Message("State::ExtractVolumeFromMesh() size error."));
+  }
+  for (int j = 0; j < ncell; ++j) {
+    (*volume_)[j] = mesh_maps->cell_volume(j);
+  }
+}
+
+
+void State::VerifyMaterialChemistry(void) {
+  /*
+  ** This function is setting the mineral_names_, mineral_name_id_map_,
+  ** number of ion exchange sites, number of sorption sites, etc. It
+  ** must be called *before* create_storage()!
+  **
+  ** loop through each mesh region/mesh block whatever and verify that
+  ** the mineralogy and isotherm data, if provided, is correct.
+  **
+  */
+  const std::string block_key("Mesh block ");
+
+  SetupMineralNames();
+  SetupSorptionSiteNames();
+
+  // loop through the state parameter list looking for mesh blocks
+  for (Teuchos::ParameterList::ConstIterator item = parameter_list.begin();
+       item != parameter_list.end(); ++item) {
+
+    std::string item_name = parameter_list.name(item);
+    size_t found_block = item_name.find(block_key);
+    if (found_block != std::string::npos) {
+      std::string block_name = item_name.substr(found_block + block_key.length(), 
+                                                item_name.length());
+      Teuchos::ParameterList mesh_block_data = parameter_list.sublist(parameter_list.name(item));
+      // block_name should match mesh_block_data.region...
+      std::string region_name = mesh_block_data.get<std::string>("Region");
+
+      //
+      // check for chemistry related data in the block:
+      //
+
+      if (mesh_block_data.isSublist("Mineralogy")) {
+        VerifyMineralogy(region_name, mesh_block_data.sublist("Mineralogy"));
+      }
+
+      if (mesh_block_data.isSublist("Sorption Isotherms")) {
+        VerifySorptionIsotherms(region_name,
+                                mesh_block_data.sublist("Sorption Isotherms"));
+      }
+
+      if (mesh_block_data.isSublist("Surface Complexation Sites")) {
+        VerifySorptionSites(region_name,
+                            mesh_block_data.sublist("Surface Complexation Sites"));
+      }
+      
+      if (mesh_block_data.isParameter("Cation Exchange Capacity")) {
+        // limit to one ion exchange site for now....
+        set_using_sorption(true);
+        set_number_of_ion_exchange_sites(1);
+      }
+    }  // end if(mesh_block)
+  }  // end for(parameter_list)
+
+
+  //
+  // error checking?
+  //
+
+}  // end VerifyMaterialChemistry()
+
+void State::SetupMineralNames() {
+  // do we need to worry about minerals?
+  mineral_names_.clear();
+  Teuchos::Array<std::string> data;
+  if (parameter_list.isParameter("Minerals")) {
+    data = parameter_list.get<Teuchos::Array<std::string> >("Minerals");
+  } 
+
+  // the mineral_names_ list should be the order expected by the chemistry....
+  mineral_names_.clear();
+  mineral_name_id_map_.clear();
+  for (int m = 0; m < data.size(); ++m) {
+    mineral_name_id_map_[data.at(m)] = m;
+    mineral_names_.push_back(data.at(m));
+  }
+
+  if (mineral_names_.size() > 0) {
+    // we read some mineral names, so override any value that may have
+    // been set in the constructor
+    set_number_of_minerals(mineral_names_.size());
+  } else if (number_of_minerals() > 0 && mineral_names_.size() == 0) {
+    // assume we are called from the constructor w/o a valid parameter
+    // list and the mineral names will be set later....
+  }
+}  // end SetupMineralNames()
+
+void State::SetupSorptionSiteNames() {
+  // could almost generalize the SetupMineralNames and
+  // SetupSorptionSiteNames into a single function w/ different
+  // parameters, but using_sorption needs to be set...
+
+  // do we need to worry about sorption sites?
+  sorption_site_names_.clear();
+  Teuchos::Array<std::string> data;
+  if (parameter_list.isParameter("Sorption Sites")) {
+    data = parameter_list.get<Teuchos::Array<std::string> >("Sorption Sites");
+  } 
+
+  // the sorption_site_names_ list should be the order expected by the chemistry...
+  sorption_site_names_.clear();
+  sorption_site_name_id_map_.clear();
+  for (int s = 0; s < data.size(); ++s) {
+    sorption_site_name_id_map_[data.at(s)] = s;
+    sorption_site_names_.push_back(data.at(s));
+  }
+
+  if (sorption_site_names_.size() > 0) {
+    // we read some sorption site names, so override any value that
+    // may have been set in the constructor and set the sorption flag
+    // so we allocate the correct amount of memory
+    set_number_of_sorption_sites(sorption_site_names_.size());
+    set_using_sorption(true);
+  } else if (number_of_sorption_sites() > 0 && sorption_site_names_.size() == 0) {
+    // assume we are called from the constructor w/o a valid parameter
+    // list and the sorption names will be set later....?
+  }
+}  // end SetupSorptionSiteNames()
+
+void State::VerifyMineralogy(const std::string& region_name,
+                             const Teuchos::ParameterList& minerals_list) {
+  // loop through each mineral, verify that the mineral name is known
+  for (Teuchos::ParameterList::ConstIterator mineral_iter = minerals_list.begin(); 
+       mineral_iter != minerals_list.end(); ++mineral_iter) {
+    std::string mineral_name = minerals_list.name(mineral_iter);
+    if (!mineral_name_id_map_.count(mineral_name)) {
+      std::stringstream message;
+      message << "Error: State::VerifyMineralogy(): " << mineral_name
+              << " was specified in the mineralogy for region "
+              << region_name << " but was not listed in the minerals phase list.\n";
+      Exceptions::amanzi_throw(Errors::Message(message.str()));            
+    }
+
+    // all minerals will have a volume fraction and specific surface
+    // area, but sane defaults can be provided, so we don't bother
+    // with them here.
+
+  }  // end for(minerals)
+}  // end VerifyMineralogy()
+
+void State::VerifySorptionIsotherms(const std::string& region_name,
+                                    const Teuchos::ParameterList& isotherms_list) {
+  // verify that every species listed is in the component names list.
+  // verify that every listed species has a Kd value (no sane default)
+  // langmuir and freundlich values are optional (sane defaults)
+  set_using_sorption(true);
+  set_use_sorption_isotherms(true);
+
+  // loop through each species in the isotherm list
+  for (Teuchos::ParameterList::ConstIterator species_iter = isotherms_list.begin(); 
+       species_iter != isotherms_list.end(); ++species_iter) {
+    std::string species_name = isotherms_list.name(species_iter);
+
+    // verify that the name is a known species
+    if (!comp_no.count(species_name)) {
+      std::stringstream message;
+      message << "Error: State::VerifySorptionIsotherms(): region: "
+              << region_name << " contains isotherm data for solute \'" 
+              << species_name 
+              << "\' but it is not specified in the component solutes list.\n";
+      Exceptions::amanzi_throw(Errors::Message(message.str()));      
+    }
+
+
+    // check that this item is a sublist:
+    Teuchos::ParameterList species_data;
+    if (!isotherms_list.isSublist(species_name)) {
+      std::stringstream message;
+      message << "Error: State::VerifySorptionIsotherms(): region: "
+              << region_name << " ; species : " << species_name
+              << " ; must be a named \'ParameterList\' of isotherm data.\n";
+      Exceptions::amanzi_throw(Errors::Message(message.str()));            
+    } else {
+      species_data = isotherms_list.sublist(species_name);
+    }
+
+    // verify that the required parameters are present
+    if (!species_data.isParameter("Kd")) {
+      std::stringstream message;
+      message << "Error: State::VerifySorptionIsotherms(): region: "
+              << region_name << " ; species name: " << species_name 
+              << " ; each isotherm must have a 'Kd' parameter.\n";
+      Exceptions::amanzi_throw(Errors::Message(message.str()));      
+    }
+    // langmuir and freundlich parameters are optional, we'll assign
+    // sane defaults.
+  }  // end for(species)
+}  // end VerifySorptionIsotherms()
+
+void State::VerifySorptionSites(const std::string& region_name,
+                                const Teuchos::ParameterList& sorption_site_list) {
+  set_using_sorption(true);
+  // loop through each sorption site, verify that the site name is known
+  for (Teuchos::ParameterList::ConstIterator site_iter = sorption_site_list.begin(); 
+       site_iter != sorption_site_list.end(); ++site_iter) {
+    std::string site_name = sorption_site_list.name(site_iter);
+    if (!sorption_site_name_id_map_.count(site_name)) {
+      std::stringstream message;
+      message << "Error: State::VerifySorptionSites(): " << site_name
+              << " was specified in the 'Surface Complexation Sites' list for region "
+              << region_name << " but was not listed in the sorption sites phase list.\n";
+      Exceptions::amanzi_throw(Errors::Message(message.str()));            
+    }
+
+    // all sorption sites will have a site density
+    // but we can default to zero, so don't do any further checking
+
+  }  // end for(sorption_sites)
+}  // end VerifySorptionSites()
+
+void State::SetRegionMaterialChemistry(const std::string& region_name,
+                                       Teuchos::ParameterList* region_data) {
+
+  if (region_data->isSublist("Mineralogy")) {
+    SetRegionMineralogy(region_name, region_data->sublist("Mineralogy"));
+  } else {
+    // std::cout << "no mineralogy in region '" << region_name 
+    //           << "'..." << std::endl;
+  }
+
+  if (region_data->isSublist("Sorption Isotherms")) {
+    SetRegionSorptionIsotherms(region_name, region_data->sublist("Sorption Isotherms"));
+  } else {
+    // std::cout << "no sorption isotherms in region '" << region_name 
+    //           << "'..." << std::endl;
+  }
+
+  if (region_data->isSublist("Surface Complexation Sites")) {
+    SetRegionSorptionSites(region_name, region_data->sublist("Surface Complexation Sites"));
+  } else {
+    // std::cout << "no surface complexation sites in region '" << region_name 
+    //           << "'..." << std::endl;
+  }
+
+  double cec = region_data->get<double>("Cation Exchange Capacity", 0.0);
+  if (number_of_ion_exchange_sites() > 0) {
+    set_cell_value_in_region(cec, *(*ion_exchange_sites_)(0), region_name);
+  }
+
+}  // end SetRegionMaterialChemistry()
+
+void State::SetRegionMineralogy(const std::string& region_name,
+                                const Teuchos::ParameterList& region_mineralogy) {
+  /*
+  ** Process a "Mineralogy" parameter list for the current region.
+  ** 
+  ** NOTE: assumes that error checking in the parameter list was done
+  ** during VerifyMaterialChemistry()!
+  */
+
+  Teuchos::ParameterList::ConstIterator mineral;
+  for (mineral = region_mineralogy.begin(); 
+       mineral != region_mineralogy.end(); ++mineral) {
+    std::string mineral_name = region_mineralogy.name(mineral);
+
+    // find the correct index for this mineral name
+    // std::vector<std::string>::iterator mineral_iterator = 
+    //     std::find(mineral_names_.begin(), mineral_names_.end(), mineral_name); 
+    // int m = std::distance(mineral_names_.begin(), mineral_iterator);
+    
+    int m = mineral_name_id_map_[mineral_name];
+
+    Teuchos::ParameterList mineral_data = region_mineralogy.sublist(mineral_name);
+
+    double value = mineral_data.get<double>("Volume Fraction", 0.0);
+    set_cell_value_in_region(value, *(*mineral_volume_fractions_)(m), region_name);
+
+    value = mineral_data.get<double>("Specific Surface Area", 1.0);
+    set_cell_value_in_region(value, *(*mineral_specific_surface_area_)(m), region_name);
+
+  }  // end for(mineral_list)
+}  // end SetRegionMineralogy()
+
+
+void State::SetRegionSorptionIsotherms(const std::string& region_name,
+                                       const Teuchos::ParameterList& region_isotherms) {
+  /*
+  ** Process a "Sorption Isotherm" parameter list for the current region
+  **
+  ** Note: assume that the species names have already been verified
+  */
+
+  Teuchos::ParameterList::ConstIterator isotherm_species;
+  for (isotherm_species = region_isotherms.begin(); 
+       isotherm_species != region_isotherms.end(); ++isotherm_species) {
+
+    // assume that all sublists are going to be species names with
+    // some optional parameters.
+    std::string species_name = region_isotherms.name(isotherm_species);
+
+    // determine the species index for this name
+    // std::vector<std::string>::iterator species_iterator = 
+    //     std::find(compnames.begin(), compnames.end(), species_name); 
+    // int s = std::distance(compnames.begin(), species_iterator);
+
+    int s = comp_no[species_name];
+
+    Teuchos::ParameterList species_data = region_isotherms.sublist(species_name);
+
+    // assign per region per species parameter values with sane defaults
+    double value = species_data.get<double>("Kd", 0.0);
+    set_cell_value_in_region(value, *(*isotherm_kd_)(s), region_name);
+
+    // TODO(bandre): is this a sane default?
+    value = species_data.get<double>("Langmuir b", 1.0);
+    set_cell_value_in_region(value, *(*isotherm_langmuir_b_)(s), region_name);
+
+    value = species_data.get<double>("Freundlich N", 1.0);
+    set_cell_value_in_region(value, *(*isotherm_freundlich_n_)(s), region_name);
+  }  // end for(isotherm_species)
+}  // end SetRegionSorptionIsotherms()
+
+
+void State::SetRegionSorptionSites(const std::string& region_name,
+                                   const Teuchos::ParameterList& region_sorption_sites) {
+  /*
+  ** Process a "Surface Complexation Sites" parameter list for the current region
+  **
+  ** Note: assume that the surface sites names have already been verified
+  */
+
+  std::map<std::string, int>::iterator site_data;
+  for (site_data = sorption_site_name_id_map_.begin();
+       site_data != sorption_site_name_id_map_.end(); ++site_data) {
+    std::string site_name = site_data->first;
+    int index = site_data->second;
+    double site_density = 0.0;
+    if (region_sorption_sites.isSublist(site_name)) {
+      Teuchos::ParameterList site_list = region_sorption_sites.sublist(site_name);
+      site_density = site_list.get<double>("Site Density", 0.0);
+    }
+    set_cell_value_in_region(site_density, *(*sorption_sites_)(index), region_name);
+  }
+}  // end SetRegionSorptionSites()
+
+
