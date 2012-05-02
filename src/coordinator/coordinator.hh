@@ -27,6 +27,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "ObservationData.H"
 #include "unstructured_observations.hh"
 #include "visualization.hh"
+#include "checkpoint.hh"
 
 namespace Amanzi {
 
@@ -70,8 +71,9 @@ private:
   //  ObservationData& output_observations_;
   //  Teuchos::RCP<UnstructuredObservations> observations_;
 
-  // vis
+  // vis and checkpointing
   Teuchos::RCP<Visualization> visualization_;
+  Teuchos::RCP<Checkpoint> checkpoint_;
 };
 
 } // close namespace Amanzi

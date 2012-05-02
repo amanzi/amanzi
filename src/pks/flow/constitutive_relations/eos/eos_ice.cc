@@ -30,7 +30,7 @@ EOSIce::EOSIce(Teuchos::ParameterList& eos_plist) :
     kT0_(273.15),
 
     kalpha_(1.0e-10),
-    kp0_(1.0e5),
+    kp0_(1.0e5) {
 
   InitializeFromPlist_();
 };
@@ -45,12 +45,11 @@ double EOSIce::DMassDensityDT(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = kb_ + 2.0*kc_*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
-
 };
 
 double EOSIce::DMassDensityDp(double T, double p) {
   double dT = T - kT0_;
-  double rho1bar = ka_ + (kb_ + kc_)*dT)*dT;
+  double rho1bar = ka_ + (kb_ + kc_*dT)*dT;
   return rho1bar * kalpha_;
 };
 

@@ -430,6 +430,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc_ inv(Acc_) Xc
   int ierr;
+
   ierr  = Tc.ReciprocalMultiply(1.0, *Acc_, *X.ViewComponent("cell", false), 0.0);
   ierr |= (*Afc_).Multiply(true, Tc, Tf);  // Afc_ is kept in transpose form
   Tf.Update(1.0, *X.ViewComponent("face", false), -1.0);

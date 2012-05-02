@@ -236,7 +236,7 @@ void Permafrost::UpdateSaturation_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
 
   Teuchos::RCP<CompositeVector> sat_gas =
-    S->GetFieldData("saturation_gas", "falow");
+    S->GetFieldData("saturation_gas", "flow");
   Teuchos::RCP<CompositeVector> sat_liq =
     S->GetFieldData("saturation_liquid", "flow");
   Teuchos::RCP<CompositeVector> sat_ice =

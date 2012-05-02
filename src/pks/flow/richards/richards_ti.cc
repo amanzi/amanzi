@@ -6,6 +6,9 @@ A base two-phase, thermal Richard's equation with water vapor.
 Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 */
 
+#include "Epetra_FECrsMatrix.h"
+#include "EpetraExt_RowMatrixOut.h"
+
 #include "richards.hh"
 
 namespace Amanzi {
@@ -134,12 +137,16 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<const CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume");
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells = preconditioner_->Aff_cells();
+  std::vector<Epetra_SerialDenseVector>& Acf_cells = preconditioner_->Acf_cells();
+  std::vector<Epetra_SerialDenseVector>& Afc_cells = preconditioner_->Afc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  std::vector<Epetra_SerialDenseVector>& Ff_cells = preconditioner_->Ff_cells();
 
   Teuchos::RCP<CompositeVector> dsat_liq = Teuchos::rcp(new CompositeVector(*sat_liq));
   DSaturationDp_(S_next_, *pres, *p_atm, dsat_liq);
 
+  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
     // many terms here...
     // accumulation term is d/dt ( phi * (omega_g*n_g*s_g + n_l*s_l) )
@@ -150,14 +157,24 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     double T = (*temp)("cell",0,c);
     double phi = (*poro)("cell",0,c);
 
+    if (c==0) std::cout << "    p =" << p << std::endl;
+    if (c==0) std::cout << "    T =" << T << std::endl;
+    if (c==0) std::cout << "    phi =" << phi << std::endl;
+
     //  omega_g * sat_g * d(n_g)/dp
     double result = (*mol_frac_gas)(c) * (*sat_gas)(c) * eos_gas_->DMolarDensityDp(T,p);
+    if (c==0) std::cout << "    res0 (0) =" << result << std::endl;
+    if (c==99) std::cout << "    res0 (99) =" << result << std::endl;
 
     // + sat_l * d(n_l)/dp
     result += (*sat_liq)(c) * eos_liquid_->DMolarDensityDp(T,p);
+    if (c==0) std::cout << "    res1 (0) =" << result << std::endl;
+    if (c==99) std::cout << "    res1 (99) =" << result << std::endl;
 
     // + (n_l - omega_g * n_g) * d(sat_l)/d(p_c) * d(p_c)/dp
     result += ((*n_liq)(c) - (*mol_frac_gas)(c)*(*n_gas)(c)) * (*dsat_liq)(c);
+    if (c==0) std::cout << "    res3 (0) =" << result << std::endl;
+    if (c==99) std::cout << "    res3 (99) =" << result << std::endl;
 
     Acc_cells[c] += phi * result * (*cell_volume)(c) / h;
     Fc_cells[c] += phi * result * (*cell_volume)(c) / h * p;
@@ -166,6 +183,14 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   preconditioner_->AssembleGlobalMatrices();
   preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  std::stringstream filename_s;
+  filename_s << "schur_" << S_next_->cycle() << ".txt";
+  //a  std::string filename = filename_s.str();
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  std::cout << "updated precon " << S_next_->cycle() << std::endl;
+
   preconditioner_->UpdateMLPreconditioner();
 };
 

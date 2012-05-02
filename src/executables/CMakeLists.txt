@@ -21,17 +21,20 @@ add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
 # wrap stuff in whole-archive for static stuff
 WHOLE_ARCHIVE(pk_factory)
-WHOLE_ARCHIVE(pk_energy_two_phase)
 WHOLE_ARCHIVE(pk_energy_advection_diffusion)
 WHOLE_ARCHIVE(pk_energy_constant_temperature)
+WHOLE_ARCHIVE(pk_energy_three_phase)
 WHOLE_ARCHIVE(pk_energy_two_phase)
 WHOLE_ARCHIVE(pk_transport_passive_tracer)
 WHOLE_ARCHIVE(pk_flow_richards)
+WHOLE_ARCHIVE(pk_flow_permafrost)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(mpc)
 
 WHOLE_ARCHIVE(flow_relations_eos)
 WHOLE_ARCHIVE(flow_relations_wrm)
+WHOLE_ARCHIVE(energy_relations_internal_energy)
+WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 
 target_link_libraries(ats
                       coordinator
@@ -41,13 +44,16 @@ target_link_libraries(ats
                       ${pk_energy_constant_temperature}
                       ${pk_energy_advection_diffusion}
                       ${pk_energy_two_phase}
+                      ${pk_energy_three_phase}
                       ${pk_flow_richards}
+                      ${pk_flow_permafrost}
                       energy_bc_factory
                       ${energy_relations_thermal_conductivity}
-                      energy_relations_internal_energy
+                      ${energy_relations_internal_energy}
                       flow_bc_factory
                       ${flow_relations_eos}
                       ${flow_relations_wrm}
+                      flow_relations_pc
                       advection
                       divgrad
                       amanzi_whetstone

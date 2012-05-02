@@ -35,7 +35,7 @@ double IEMQuadratic::DInternalEnergyDT(double temp) {
 };
 
 void IEMQuadratic::InitializeFromPlist_() {
-  if (plist_.isParameter("u_0 [J/kg]")) {
+  if (plist_.isParameter("quadratic u_0 [J/kg]")) {
     u0_ = plist_.get<double>("quadratic u_0 [J/kg]");
     ka_ = plist_.get<double>("quadratic a [J/kg-K]");
     kb_ = plist_.get<double>("quadratic b [J/kg-K^2]");

@@ -41,6 +41,10 @@ void Coordinator::coordinator_init() {
   visualization_ = Teuchos::rcp(new Visualization(vis_plist, comm_));
   visualization_->create_files(*mesh_);
 
+  // checkpointing for the state
+  Teuchos::ParameterList chkp_plist = parameter_list_.sublist("Checkpoint");
+  checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
+
   // create the top level PK
   Teuchos::ParameterList pks_list = parameter_list_.sublist("PKs");
   Teuchos::ParameterList::ConstIterator pk_item = pks_list.begin();
@@ -127,7 +131,7 @@ void Coordinator::cycle_driver () {
   //  observations_->MakeObservations(*S_);
 
   // write visualization if requested at IC
-  //  S_->WriteVis(visualization_);
+  S_->WriteVis(visualization_, true);
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -168,13 +172,13 @@ void Coordinator::cycle_driver () {
     S_next_->advance_time(dt);
     fail = pk_->advance(dt);
 
+    // advance the iteration count
+    S_next_->advance_cycle();
+
     if (!fail) {
       // update the new state with the new solution
       pk_->solution_to_state(soln_, S_next_);
       pk_->commit_state(dt, S_next_);
-
-      // advance the iteration count
-      S_next_->advance_cycle();
 
       // make observations
       //      observations_->MakeObservations(*S_next_);
@@ -183,6 +187,7 @@ void Coordinator::cycle_driver () {
       // this needs to be fixed...
       pk_->calculate_diagnostics(S_next_);
       S_next_->WriteVis(visualization_);
+      S_next_->WriteCheckpoint(checkpoint_);
 
       // write restart dump if requested
       // restart->dump_state(*S_next_);
@@ -196,10 +201,12 @@ void Coordinator::cycle_driver () {
     }
   } // while not finished
 
-  // force visualization at the end of simulation
+  // force visualization and checkpoint at the end of simulation
+  // this needs to be fixed -- should not force, but ask if we want to checkpoint/vis at end
   S_next_->advance_cycle(); // hackery to make the vis stop whining
   pk_->calculate_diagnostics(S_next_);
   S_next_->WriteVis(visualization_, true);
+  S_next_->WriteCheckpoint(checkpoint_, true);
 
   // dump observations
   //  output_observations_.print(std::cout);

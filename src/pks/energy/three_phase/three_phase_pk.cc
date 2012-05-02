@@ -18,7 +18,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<ThreePhase> ThreePhase::reg_("two-phase energy");
+RegisteredPKFactory<ThreePhase> ThreePhase::reg_("three-phase energy");
 
 ThreePhase::ThreePhase(Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
@@ -50,6 +50,9 @@ ThreePhase::ThreePhase(Teuchos::ParameterList& plist,
   // -- liquid
   S->RequireField("internal_energy_liquid", "energy", AmanziMesh::CELL, 1, true);
   S->RequireField("enthalpy_liquid", "energy", AmanziMesh::CELL, 1, true);
+
+  // -- ice
+  S->RequireField("internal_energy_ice", "energy", AmanziMesh::CELL, 1, true);
 
   // -- rock assumed constant for now?
   S->RequireScalar("density_rock");
@@ -144,6 +147,7 @@ void ThreePhase::initialize(const Teuchos::RCP<State>& S) {
   S->GetRecord("thermal_conductivity","energy")->set_initialized();
   S->GetRecord("internal_energy_gas","energy")->set_initialized();
   S->GetRecord("internal_energy_liquid","energy")->set_initialized();
+  S->GetRecord("internal_energy_ice","energy")->set_initialized();
   S->GetRecord("internal_energy_rock","energy")->set_initialized();
   S->GetRecord("enthalpy_liquid","energy")->set_initialized();
 

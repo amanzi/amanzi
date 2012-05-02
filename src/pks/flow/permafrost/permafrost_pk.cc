@@ -60,7 +60,6 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   S->RequireField("saturation_ice", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("density_ice", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("molar_density_ice", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("viscosity_ice", "flow", AmanziMesh::CELL, 1, true);
 
   S->RequireField("saturation_gas", "flow", AmanziMesh::CELL, 1, true);
   S->RequireField("density_gas", "flow", AmanziMesh::CELL, 1, true);

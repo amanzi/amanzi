@@ -26,6 +26,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
   matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_(S, matrix_);
+  std::cout << "BC in res: " << bc_values_[3] << ", " << bc_values_[5] << std::endl;
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 

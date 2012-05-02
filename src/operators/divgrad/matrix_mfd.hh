@@ -65,6 +65,12 @@ public:
 
   // access to data for updating manually
   std::vector<double>& Acc_cells() { return Acc_cells_; }
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Acf_cells() { return Acf_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Afc_cells() { return Afc_cells_; }
+  Teuchos::RCP<Epetra_FECrsMatrix> Schur() { return Sff_; }
+
+
   std::vector<double>& Fc_cells() { return Fc_cells_; }
   std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
   Teuchos::RCP<const Epetra_Vector> Acc() { return Acc_; }

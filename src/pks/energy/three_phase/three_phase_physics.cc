@@ -305,7 +305,7 @@ void ThreePhase::UpdateInternalEnergyRock_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> int_energy_rock =
     S->GetFieldData("internal_energy_rock", "energy");
 
-  InternalEnergyLiquid_(S, *temp, int_energy_rock);
+  InternalEnergyRock_(S, *temp, int_energy_rock);
 };
 
 
