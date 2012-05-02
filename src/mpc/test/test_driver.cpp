@@ -39,6 +39,17 @@ TEST(DRIVER) {
   Teuchos::ParameterList driver_parameter_list;
   Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
   
+
+
+  // For now create one geometric model from all the regions in the spec
+
+  Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
+
+  int spdim = 3;
+  Amanzi::AmanziGeometry::GeometricModelPtr 
+      geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+
+
   // get the Mesh sublist
   Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("Mesh");
 
@@ -46,20 +57,9 @@ TEST(DRIVER) {
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
-  cout << mesh_class << endl;
+  cout << "Using mesh framework " << mesh_class << endl;
 
-  if (mesh_class == "Simple") 
-    {
-      Teuchos::ParameterList simple_mesh_parameter_list = 
-      	mesh_parameter_list.sublist("Simple Mesh Parameters");
-
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_simple> MMS = 
-      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(simple_mesh_parameter_list, comm));
-      
-      mesh = MMS;
-      
-    } 
-  else if (mesh_class == "MSTK")  
+  if (mesh_class == "MSTK")  
     {
       
       Teuchos::ParameterList mstk_mesh_parameter_list = 
@@ -68,7 +68,7 @@ TEST(DRIVER) {
       string filename = mstk_mesh_parameter_list.get<string>("Exodus file name");
 
       Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> MMM = 
-      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(filename.c_str(), comm));      
+      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(filename.c_str(), comm, geom_model_ptr));      
       mesh = MMM;
 
     }
