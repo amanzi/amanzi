@@ -343,7 +343,8 @@ bool Mesh::valid_set_id(unsigned int id, Entity_kind kind) const
       
     }
   }
-  
+
+  return false;
 }
 
 
@@ -388,7 +389,8 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
       
     }
   }
-  
+
+  return false;
 }
 
 
