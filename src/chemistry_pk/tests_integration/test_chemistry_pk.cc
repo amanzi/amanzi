@@ -12,9 +12,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 
-#include "MeshFactory.hh"
-#include "Domain.hh"
-#include "GeometricModel.hh"
+#include "InputParserIS.hh"
+#include "Mesh_simple.hh"
 #include "GenerationSpec.hh"
 #include "State.hpp"
 
@@ -35,6 +34,9 @@
 
 SUITE(GeochemistryTestsChemistryPK) {
   namespace ac = amanzi::chemistry;
+  namespace ag = Amanzi::AmanziGeometry;
+  namespace am = Amanzi::AmanziMesh;
+
   /*****************************************************************************
    **
    **  Common testing code
@@ -53,6 +55,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::RCP<ac::Chemistry_State> chemistry_state_;
 
    private:
+    Epetra_SerialComm* comm_;
+    ag::GeometricModelPtr gm_;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
     Teuchos::RCP<State> state_;
   };  // end class SpeciationTest
@@ -60,42 +64,31 @@ SUITE(GeochemistryTestsChemistryPK) {
   ChemistryPKTest::ChemistryPKTest() {
     // assume that no errors or exceptions will occur in the
     // mesh/state related code....
-
-    // get the parameter list from the input file
+    
+    // get the parameter list from the input file.
     std::string xml_input_filename("test_chemistry_pk.xml");
+    Teuchos::ParameterList input_spec;
+    Teuchos::updateParametersFromXmlFile(xml_input_filename, &input_spec);
+
+    // Chemistry uses the official input spec, not the unstructured
+    // native, but we need to translate for state.
     Teuchos::ParameterList parameter_list;
-    Teuchos::updateParametersFromXmlFile(xml_input_filename, &parameter_list);
+    parameter_list = Amanzi::AmanziInput::translate(&input_spec, 1);
+    
+    //std::cout << input_spec << std::endl;
+    //std::cout << parameter_list << std::endl;
 
-    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-
-    Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(3);
-    Teuchos::ParameterList& reg_params = parameter_list.sublist("Regions");
-    Amanzi::AmanziGeometry::GeometricModelPtr 
-      geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, comm) );
-    simdomain_ptr->Add_Geometric_Model(geom_model_ptr);    
-
-    // create a dummy mesh?
-    // Epetra_SerialComm* comm = new Epetra_SerialComm();
+    // create a test mesh
+    comm_ = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
-        parameter_list.sublist("Mesh Parameters");
- 
-    // Create a mesh factory for the geometric model
-    Amanzi::AmanziMesh::MeshFactory factory(comm) ;
-    // Prepare to read/create the mesh specification
-
-    // get the Mesh sublist
-    Teuchos::ParameterList mesh_params = parameter_list.sublist("Mesh");
-    // Make sure the unstructured mesh option was chosen
-    bool unstructured_option = mesh_params.isSublist("Unstructured");
-    // Read and initialize the unstructured mesh parameters
-    Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("Unstructured");
-    Amanzi::AmanziMesh::FrameworkPreference prefs(Amanzi::AmanziMesh::default_preference());
-    prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
-    factory.preference(prefs);
-    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("Generate Mesh");
-    mesh_ = factory.create(gen_params, geom_model_ptr);
+        parameter_list.sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh");
+    am::GenerationSpec g(mesh_parameter_list);
     
-    
+    Teuchos::ParameterList region_parameter_list = parameter_list.sublist("Regions");
+    gm_ = 
+        new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_);
+  
+    mesh_ = Teuchos::rcp(new am::Mesh_simple(g, (const Epetra_MpiComm *)comm_, gm_));
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
@@ -109,7 +102,9 @@ SUITE(GeochemistryTestsChemistryPK) {
   }
 
   ChemistryPKTest::~ChemistryPKTest() {
-    delete cpk_;
+    //delete cpk_;
+    delete comm_;
+    delete gm_;
   }
 
   void ChemistryPKTest::RunTest(const std::string name, double * gamma) {
@@ -131,12 +126,12 @@ SUITE(GeochemistryTestsChemistryPK) {
       std::cout << e.what() << std::endl;
     }
     // verbosity should be set after the constructor is finished....
-    CHECK_EQUAL(cpk_->verbosity(), 1);
+    CHECK_EQUAL(0, cpk_->verbosity());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize) {
-    // just make sure that we can have all the pieces together to set
-    // up a chemistry process kernel....
+    // make sure that we can initialize the pk and internal chemistry
+    // object correctly based on the xml input....
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
       cpk_->InitializeChemistry();
@@ -145,13 +140,17 @@ SUITE(GeochemistryTestsChemistryPK) {
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
     }
-    // XXXX is set by InitializeChemistry....
+    // assume all is right with the world if we exited w/o an error
     CHECK_EQUAL(0, 0);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
-    cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-    cpk_->InitializeChemistry();
+    try {
+      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+      cpk_->InitializeChemistry();
+    } catch (std::exception e) {
+      std::cout << e.what() << std::endl;
+    }
     std::vector<std::string> names;
     cpk_->set_chemistry_output_names(&names);
     CHECK_EQUAL(names.at(0), "pH");

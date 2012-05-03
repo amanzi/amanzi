@@ -169,8 +169,8 @@ SUITE(RESTART) {
 
     // create a state object with some data in it
     int number_of_components = 2;
-
-    State S0(number_of_components, Mesh);
+    int number_of_minerals = 2;
+    State S0(number_of_components, number_of_minerals, Mesh);
 
     S0.set_time(1.02);
 
@@ -222,7 +222,18 @@ SUITE(RESTART) {
     S0.set_total_component_concentration(*cell_multivector);
     delete cell_multivector;       
 
-
+    std::vector<std::string> mineral_names(number_of_minerals);
+    mineral_names.at(0) = "Aoeui";
+    mineral_names.at(1) = "Snthd";
+    S0.set_mineral_names(mineral_names);
+ 
+    cell_multivector = new Epetra_MultiVector(S0.get_mesh().cell_epetra_map(false),
+                                              S0.number_of_minerals());
+    cell_multivector->Random();
+    S0.set_mineral_volume_fractions(*cell_multivector);
+    cell_multivector->Random();
+    S0.set_mineral_specific_surface_area(*cell_multivector);
+    delete cell_multivector;
 
     R.dump_state(S0);
 
@@ -337,8 +348,34 @@ SUITE(RESTART) {
   	  }
       }    
 
+
+    CHECK_EQUAL(S0.number_of_minerals(), S1.number_of_minerals());
+    CHECK_EQUAL(S0.mineral_names().size(), S1.mineral_names().size());
+    CHECK_EQUAL(S1.number_of_minerals(), S1.mineral_names().size());
+    for (int m = 0; m < S0.mineral_names().size(); ++m) {
+      CHECK_EQUAL(S0.mineral_names().at(m), S1.mineral_names().at(m));
+    }
+    
+    int num_cells = S0.mineral_volume_fractions()->MyLength();
+    int num_cells_2 = S1.mineral_volume_fractions()->MyLength();
+    CHECK_EQUAL(num_cells, num_cells_2);
+    for (int m = 0; m < S0.number_of_minerals(); ++m) {
+      for (int cell = 0; cell < num_cells; ++cell) {
+        double v1 = (*(*S0.mineral_volume_fractions())(m))[cell];
+        double v2 = (*(*S1.mineral_volume_fractions())(m))[cell];
+        CHECK_EQUAL(v1, v2);
+      }
+    }
+    num_cells = S0.mineral_specific_surface_area()->MyLength();
+    num_cells_2 = S1.mineral_specific_surface_area()->MyLength();
+    CHECK_EQUAL(num_cells, num_cells_2);
+    for (int m = 0; m < S0.number_of_minerals(); ++m) {
+      for (int cell = 0; cell < num_cells; ++cell) {
+        double v1 = (*(*S0.mineral_specific_surface_area())(m))[cell];
+        double v2 = (*(*S1.mineral_specific_surface_area())(m))[cell];
+        CHECK_EQUAL(v1, v2);
+      }
+    }
   }
-
-
-
+  
 }

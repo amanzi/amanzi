@@ -240,7 +240,7 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.84
 TRILINOS_VERSION=10.6.4
-CCSE_VERSION=1.0.0
+CCSE_VERSION=1.0.1
 ASCEMIO_VERSION=1.2
 
 AMANZI_TPL_ARCHIVES=https://software.lanl.gov/ascem/tpls
@@ -1185,7 +1185,7 @@ fi
 
 if [ \$AMANZI_TEST -eq 1 ]; then
     cd \${AMANZI_DIR}/build
-    \${CTEST} --timeout 60 --output-on-failure
+    \${CTEST} --timeout 150 --output-on-failure
     if [ \$? -ne 0 ]; then
 	exit 1
     fi

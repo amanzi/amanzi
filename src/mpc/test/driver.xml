@@ -1,29 +1,94 @@
 <ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+
+  <!-- This is a special list specifically designed for this test -->
+  <!-- It does not conform to the Amanzi input specification      -->
 
   <ParameterList name="Mesh">
-    <Parameter name="Mesh Class" type="string" value="Simple"/>
-    <ParameterList name="Simple Mesh Parameters">
-      <Parameter name="X_Min" type="double" value="0.0"/>
-      <Parameter name="X_Max" type="double" value="1.0"/>
-      <Parameter name="Y_Min" type="double" value="0.0"/>
-      <Parameter name="Y_Max" type="double" value="1.0"/>
-      <Parameter name="Z_Min" type="double" value="0.0"/>
-      <Parameter name="Z_Max" type="double" value="1.0"/>
-      <Parameter name="Number of Cells in X" type="int" value="10"/> 
-      <Parameter name="Number of Cells in Y" type="int" value="10"/> 
-      <Parameter name="Number of Cells in Z" type="int" value="10"/> 
-    </ParameterList>
-    <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Exodus file name" type="string" value="test/moab_mesh.exo"/>
-    </ParameterList>   
-    <ParameterList name="STK Mesh Parameters">
+    <Parameter name="Mesh Class" type="string" value="MSTK"/>
+    <ParameterList name="MSTK Mesh Parameters">
+      <Parameter name="Exodus file name" type="string" value="test/mesh.exo"/>
     </ParameterList>   
   </ParameterList>
-  
+
+  <!-- End special list -->
+
+
+  <ParameterList name="Regions">
+    <ParameterList name="All">
+      <ParameterList name="Region: Box">
+	<Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+	<Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="SS0">
+      <ParameterList name="Region: Labeled Set">
+	<Parameter name="Label" type="String" value="1"/>
+	<Parameter name="File" type="String" value="mesh.exo"/>
+	<Parameter name="Format" type="String" value="Exodus II"/>
+	<Parameter name="Entity" type="String" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+	
+    <ParameterList name="SS1">
+      <ParameterList name="Region: Labeled Set">
+	<Parameter name="Label" type="String" value="2"/>
+	<Parameter name="File" type="String" value="mesh.exo"/>
+	<Parameter name="Format" type="String" value="Exodus II"/>
+	<Parameter name="Entity" type="String" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+	
+    <ParameterList name="SS2">
+      <ParameterList name="Region: Labeled Set">
+	<Parameter name="Label" type="String" value="3"/>
+	<Parameter name="File" type="String" value="mesh.exo"/>
+	<Parameter name="Format" type="String" value="Exodus II"/>
+	<Parameter name="Entity" type="String" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+	
+    <ParameterList name="SS3">
+      <ParameterList name="Region: Labeled Set">
+	<Parameter name="Label" type="String" value="4"/>
+	<Parameter name="File" type="String" value="mesh.exo"/>
+	<Parameter name="Format" type="String" value="Exodus II"/>
+	<Parameter name="Entity" type="String" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+	
+    <ParameterList name="SS4">
+      <ParameterList name="Region: Labeled Set">
+	<Parameter name="Label" type="String" value="5"/>
+	<Parameter name="File" type="String" value="mesh.exo"/>
+	<Parameter name="Format" type="String" value="Exodus II"/>
+	<Parameter name="Entity" type="String" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+	
+    <ParameterList name="SS5">
+      <ParameterList name="Region: Labeled Set">
+	<Parameter name="Label" type="String" value="6"/>
+	<Parameter name="File" type="String" value="mesh.exo"/>
+	<Parameter name="Format" type="String" value="Exodus II"/>
+	<Parameter name="Entity" type="String" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+	
+  </ParameterList> <!-- End Regions -->
+
 
   <ParameterList name="MPC">
-    <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="1e-4"/>
+    <ParameterList name="Time Integration Mode">
+      <ParameterList name="Steady">
+	<Parameter name="Start" type="double" value="0.0"/>
+	<Parameter name="End" type="double" value="1.0e-4"/>   
+	<Parameter name="Initial Time Step" type="double" value="1000"/>
+      </ParameterList>
+    </ParameterList>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <Parameter name="Flow model" type="string" value="Darcy"/>
     <ParameterList name="GMV">
@@ -31,11 +96,10 @@
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
       <Parameter name="Dump cycle frequency" type="int" value="1000"/>
     </ParameterList>    
-  </ParameterList> 
+  </ParameterList> <!-- End MPC -->
 
   
   <ParameterList name="State">
-    <Parameter name="Number of mesh blocks" type="int" value="1"/>
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
@@ -43,9 +107,9 @@
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.8"/>
-
-    <ParameterList name="Mesh block 1"> 
-      <Parameter name="Mesh block ID" type="int" value="0"/>
+    
+    <ParameterList name="The whole mesh"> 
+      <Parameter name="Region" type="string" value="All"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
       <Parameter name="Constant permeability" type="double" value="1.0"/>
@@ -54,9 +118,10 @@
       <Parameter name="Constant Darcy flux y" type="double" value="0"/>
       <Parameter name="Constant Darcy flux z" type="double" value="0"/>
 -->
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
 
-  </ParameterList>
+  </ParameterList> <!-- End State -->
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
@@ -66,55 +131,150 @@
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC 0">
-	<Parameter name="Side set ID" type="int" value="3"/>
-	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="Component 0" type="double" value="1.0"/>
+	<Parameter name="Regions" type="Array string" value="{SS3}"/>
+	<Parameter name="Component 0" type="Array double" value="{1.0, 0.0}"/>
+        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
       </ParameterList>  
     </ParameterList>
-  </ParameterList>
+  </ParameterList> <!-- End Transport -->
 
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="test/tracer.bgd" />
-  </ParameterList>
+  </ParameterList> <!-- End Chemistry -->
 
   <ParameterList name="Flow">
+    <ParameterList name="Darcy Problem">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
+      
+      <Parameter name="atmospheric pressure" type="double" value="0.0"/>
+      <ParameterList name="Diffusion Preconditioner">
+        <ParameterList name="ML Parameters">
+          <Parameter name="ML output" type="int" value="0"/>
+          <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
+          <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+          <Parameter name="aggregation: threshold" type="double" value="0"/>
+          <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+          <Parameter name="coarse: max size" type="int" value="128"/>
+          <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+          <Parameter name="cycle applications" type="int" value="2"/>
+          <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+          <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+          <Parameter name="max levels" type="int" value="40"/>
+          <Parameter name="prec type" type="string" value="MGW"/>
+          <Parameter name="smoother: damping factor" type="double" value="1"/>
+          <Parameter name="smoother: pre or post" type="string" value="both"/>
+          <Parameter name="smoother: sweeps" type="int" value="2"/>
+          <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+        </ParameterList>
+      </ParameterList>
+      
+      <ParameterList name="steady state time integrator">
+        <Parameter name="method" type="string" value="backward Euler"/>
+	
+        <ParameterList name="error control">
+          <Parameter name="absolute error tolerance" type="double" value="0.1"/>
+          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
+          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
+          <Parameter name="maximal number of iterations" type="int" value="200"/>
+        </ParameterList>
 
-    <Parameter name="Max Iterations" type="int" value="100"/>
-    <Parameter name="Error Tolerance" type="double" value="1.0e-12"/>
+        <ParameterList name="time control">
+          <Parameter name="start time" type="double" value="0.0"/>
+          <Parameter name="end time" type="double" value="100.0"/>
+          <Parameter name="initial time step" type="double" value="0.1"/>
+          <Parameter name="maximal time step" type="double" value="1.0"/>
+        </ParameterList>
+
+        <ParameterList name="linear solver"> 
+          <Parameter name="iterative method" type="string" value="CGS"/>
+          <Parameter name="error tolerance" type="double" value="1e-12"/>
+          <Parameter name="maximal number of iterations" type="int" value="200"/>
+        </ParameterList>
+
+        <ParameterList name="nonlinear solver BDF2">
+          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
+          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
+          <Parameter name="NKA max vectors" type="int" value="5"/>
+          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
+          <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="transient time integrator">
+      <!-- Is not used for this test -->
+      </ParameterList>
+
+      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
+
+      <ParameterList name="boundary conditions">
+
+	<ParameterList name="pressure">
+
+	  <ParameterList name="BC00">
+	    <Parameter name="regions" type="Array string" value="{SS0}"/>
+	    <ParameterList name="boundary pressure">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="1.0"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>  
+	  <ParameterList name="BC01">
+	    <Parameter name="regions" type="Array string" value="{SS1}"/>
+	    <ParameterList name="boundary pressure">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="2.0"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	  <ParameterList name="BC03">
+	    <Parameter name="regions" type="Array string" value="{SS3}"/>
+	    <ParameterList name="boundary pressure">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="-2.0"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>  
+	  
+	</ParameterList>
+
+<!--
+	  <ParameterList name="BC02">
+	    <Parameter name="Type" type="string" value="Darcy Constant"/>
+	    <Parameter name="BC value"  type="double" value="1.0"/>
+	    <Parameter name="Side set ID" type="int" value="2" />
+	  </ParameterList>  
+-->
+
+	<ParameterList name="static head">
+	  <ParameterList name="BC04">
+	    <Parameter name="regions" type="Array string" value="{SS4}"/>
+	    <ParameterList name="water table elevation">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="2.0"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+
+	<ParameterList name="mass flux">
+	  <ParameterList name="BC05">
+	    <Parameter name="regions" type="Array string" value="{SS5}"/>
+	    <ParameterList name="outward mass flux">
+	      <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="0.0"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>  
+
+      </ParameterList> <!-- End boundary conditions -->
+
+    </ParameterList> <!-- End Darcy Problem -->
+
+  </ParameterList>  <!-- End Flow -->
     
-    <ParameterList name="Flow BC">
-      <Parameter name="number of BCs" type="int" value="6"/>
-      <ParameterList name="BC00">
-	<Parameter name="Type" type="string" value="Pressure Constant"/>
-	<Parameter name="BC value" type="double" value="1.0" />
-	<Parameter name="Side set ID" type="int" value="0" />
-      </ParameterList>  
-      <ParameterList name="BC01">
-	<Parameter name="Type" type="string" value="Pressure Constant"/>
-	<Parameter name="BC value" type="double" value="2.0" />
-	<Parameter name="Side set ID" type="int" value="1" />
-      </ParameterList>
-      <ParameterList name="BC02">
-	<Parameter name="Type" type="string" value="Darcy Constant"/>
-	<Parameter name="BC value"  type="double" value="1.0"/>
-	<Parameter name="Side set ID" type="int" value="2" />
-      </ParameterList>  
-      <ParameterList name="BC03">
-	<Parameter name="Type" type="string" value="Pressure Constant"/>
-	<Parameter name="BC value" type="double" value="-2.0" />
-	<Parameter name="Side set ID" type="int" value="3" />
-      </ParameterList>  
-      <ParameterList name="BC04">
-	<Parameter name="Type" type="string" value="Static Head"/>
-	<Parameter name="BC value" type="double" value="2.0" />
-	<Parameter name="Side set ID" type="int" value="4" />
-      </ParameterList>
-      <ParameterList name="BC05">
-	<Parameter name="Type" type="string" value="No Flow"/>
-	<Parameter name="Side set ID" type="int" value="5" />
-      </ParameterList>  
-    </ParameterList>
-  </ParameterList>
-  
-</ParameterList>
+</ParameterList> <!-- End Main -->

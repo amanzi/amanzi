@@ -15,7 +15,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "MSTK_types.h"
 #include "Mesh_MSTK.hh"
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
@@ -59,7 +58,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   
   /* create a MPC state with one component */
   int num_components = 1;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
  
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));

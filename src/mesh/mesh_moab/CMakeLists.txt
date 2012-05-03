@@ -52,30 +52,30 @@ add_install_include_file(${moab_inc_files})
 if (BUILD_TESTS)
     
     # Add UnitTest include
-    include_directories(${UnitTest_INCLUDE_DIRS})
+#    include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 
-    if (NOT (${MOAB_SOURCE_DIR} EQUAL ${MOAB_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${MOAB_SOURCE_DIR}/test ${MOAB_BINARY_DIR}/test) 
-    endif()
+#    if (NOT (${MOAB_SOURCE_DIR} EQUAL ${MOAB_BINARY_DIR}))
+#        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+#          copy_directory ${MOAB_SOURCE_DIR}/test ${MOAB_BINARY_DIR}/test) 
+#    endif()
 
 
     # Test: moab_Mesh
-    add_executable(test_moab_mesh 
-                   test/Main.cc 
-                   test/test_hex_2x2x2.cc
-                   test/test_hex_3x3x2.cc
-                   test/test_hex_4x4x4.cc)
-    target_link_libraries(test_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(moab_mesh test_moab_mesh KIND unit)
-
+#    add_executable(test_moab_mesh 
+#                   test/Main.cc 
+#                   test/test_hex_2x2x2.cc
+#                   test/test_hex_3x3x2.cc
+#                   test/test_hex_4x4x4.cc)
+#    target_link_libraries(test_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
+#    add_amanzi_test(moab_mesh test_moab_mesh KIND unit)
+#
     # Test: moab_mesh_parallel
-    add_executable(test_parallel_moab_mesh
-        test/Main.cc
-        test/test_hex_4x4x4_4P.cc)
-    target_link_libraries(test_parallel_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4 KIND int)
+#    add_executable(test_parallel_moab_mesh
+#        test/Main.cc
+#        test/test_hex_4x4x4_4P.cc)
+#    target_link_libraries(test_parallel_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
+#    add_amanzi_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4 KIND int)
 
 endif()
 

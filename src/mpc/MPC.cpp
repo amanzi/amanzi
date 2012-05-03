@@ -32,6 +32,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
          Amanzi::ObservationData& output_observations_):
     parameter_list(parameter_list_),
     mesh_maps(mesh_maps_),
+    chemistry_enabled(false),
     comm(comm_),
     output_observations(output_observations_),
     transport_subcycling(0)
@@ -87,9 +88,15 @@ void MPC::mpc_init() {
   
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
-  transport_enabled = (mpc_parameter_list.get<string>("disable Transport_PK", "no") == "no");
-  chemistry_enabled = (mpc_parameter_list.get<string>("disable Chemistry_PK", "no") == "no");
-  flow_enabled = (mpc_parameter_list.get<string>("disable Flow_PK", "no") == "no");
+  transport_enabled =
+      (mpc_parameter_list.get<string>("disable Transport_PK","no") == "no");
+
+  if (mpc_parameter_list.get<string>("Chemistry Model","Off") != "Off") {
+    chemistry_enabled = true;
+  }
+
+  flow_enabled =
+      (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     *out << "The following process kernels are enabled: ";
@@ -104,18 +111,28 @@ void MPC::mpc_init() {
     S = Teuchos::rcp(new State(state_parameter_list, mesh_maps));
   }
 
+  //  
   // create auxilary state objects for the process models
+  //
+
   // chemistry...
   if (chemistry_enabled) {
-    try {
-      CS = Teuchos::rcp(new Chemistry_State(S));
-      Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
+    if (parameter_list.isSublist("Chemistry")) {
+      try {
+        CS = Teuchos::rcp( new Chemistry_State( S ) );
 
-      CPK = Teuchos::rcp(new Chemistry_PK(chemistry_parameter_list, CS));
-    } catch (const ChemistryException& chem_error) {
-      std::cout << "MPC: Chemistry_PK constructor returned an error: "
-                << std::endl << chem_error.what() << std::endl;
-      amanzi_throw(chem_error);
+        Teuchos::ParameterList chemistry_parameter_list =
+            parameter_list.sublist("Chemistry");
+ 
+        CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+      } catch (const ChemistryException& chem_error) {
+        *out << "MPC::mpc_init() : The chemistry process kernel constructor returned an error: "
+                  << std::endl << chem_error.what() << std::endl;
+        amanzi_throw(chem_error);
+      }
+    } else {
+      Errors::Message message("MPC::mpc_init() : XML input file must contain a \'Chemistry\' section if the chemistry process kernel is enabled.");
+      Exceptions::amanzi_throw(message);
     }
   }
 
@@ -378,19 +395,19 @@ void MPC::cycle_driver() {
       // take the mpc time step as the min of all suggested time steps 
       mpc_dT = std::min(std::min(std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT);
 
-      // make sure we hit the observation times exactly
-      if (observation_times_.size() > 0) {
+      // make sure we hit the observation+visualization times exactly
+      if (waypoint_times_.size() > 0) {
         int next_time_index(-1);
-	for (int ii = 0; ii < observation_times_.size(); ii++) {
-	  if (S->get_time() < observation_times_[ii]) {
+	for (int ii = 0; ii < waypoint_times_.size(); ii++) {
+	  if (S->get_time() < waypoint_times_[ii]) {
 	    next_time_index = ii;
 	    break;
 	  }	  
 	}
 	if (next_time_index >= 0) {
 	  // now we are trying to hit the next reset time exactly
-	  if (S->get_time()+2*mpc_dT > observation_times_[next_time_index]) {
-	    limiter_dT = time_step_limiter(S->get_time(), mpc_dT, observation_times_[next_time_index]);
+	  if (S->get_time()+2*mpc_dT > waypoint_times_[next_time_index]) {
+	    limiter_dT = time_step_limiter(S->get_time(), mpc_dT, waypoint_times_[next_time_index]);
 	    tslimiter = MPC_LIMITS;
 	  }	  
 	}

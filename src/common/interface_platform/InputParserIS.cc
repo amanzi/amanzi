@@ -61,13 +61,16 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
     }
   }
 
-  new_list.sublist("Regions") = get_Regions_List(plist);
-  new_list.sublist("Mesh") = translate_Mesh_List(plist);
-  new_list.sublist("Domain") = get_Domain_List(plist);
-  new_list.sublist("MPC") = create_MPC_List(plist);
-  new_list.sublist("Transport") = create_Transport_List(plist);
-  new_list.sublist("State") = create_State_List(plist);
-  new_list.sublist("Flow") = create_Flow_List(plist);
+  new_list.sublist("Regions")            = get_Regions_List(plist);
+  new_list.sublist("Mesh")               = translate_Mesh_List(plist);
+  new_list.sublist("Domain")             = get_Domain_List(plist);
+  new_list.sublist("MPC")                = create_MPC_List(plist);
+  new_list.sublist("Transport")          = create_Transport_List(plist);
+  new_list.sublist("State")              = create_State_List(plist);
+  new_list.sublist("Flow")               = create_Flow_List(plist);
+  if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
+    new_list.sublist("Chemistry") = CreateChemistryList(plist);
+  }
 
   return new_list;
 }
@@ -186,19 +189,53 @@ Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& ma
 ****************************************************************** */
 void init_global_info( Teuchos::ParameterList* plist ) {
 
+  phase_name = "Aqueous";
+  phase_comp_name = "Water";
+  // don't know the history of these variables, clear them just to be safe.
+  comp_names.clear();
+  mineral_names_.clear();
+  sorption_site_names_.clear();
+
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
   if ( (++ phase_list.begin()) == phase_list.end() ) {
-    phase_name = phase_list.name(phase_list.begin());
-    phase_comp_name = phase_list.sublist(phase_name).sublist("Phase Components").name(phase_list.sublist(phase_name).sublist("Phase Components").begin());
-
-    comp_names = phase_list.sublist(phase_name).sublist("Phase Components").sublist(phase_comp_name).get<Teuchos::Array<std::string> >("Component Solutes");
-
+    if (phase_list.isSublist(phase_name)) {
+      Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
+      if (aqueous_list.isSublist("Phase Components")) {
+        Teuchos::ParameterList phase_components = 
+            aqueous_list.sublist("Phase Components");
+        if (phase_components.isSublist("Water")) {
+          Teuchos::ParameterList water_components = 
+              phase_components.sublist(phase_comp_name);
+          comp_names = 
+              water_components.get<Teuchos::Array<std::string> >("Component Solutes");
+          // this is the order that the chemistry expects
+          if (water_components.isParameter("Minerals")) {
+            mineral_names_ = water_components.get<Teuchos::Array<std::string> >("Minerals");
+          }
+          if (water_components.isParameter("Sorption Sites")) {
+            sorption_site_names_ = water_components.get<Teuchos::Array<std::string> >("Sorption Sites");
+          }
+        }  // end water
+      }  // end phase components
+    }  // end Aqueous phase
+  } else {
+    std::stringstream message;
+    message << "Error: InputParserIS::init_global_info(): "
+            << "Only a single phase is supported on unstructured meshes at this time!\n" 
+            << phase_list << std::endl;
+    Exceptions::amanzi_throw(Errors::Message(message.str()));      
+  }
+ 
+  if (comp_names.size() > 0) {
     // create a map for the components
     for (int i=0; i<comp_names.size(); i++) {
       comp_names_map[comp_names[i]] = i;
     }
   } else {
-    // we can only do single phase
+    std::stringstream message;
+    message << "Error: InputParserIS::init_global_info(): "
+            << "component names must be defined in the phase definitions block!\n";
+    Exceptions::amanzi_throw(Errors::Message(message.str()));      
   }
 
   if ( plist->isSublist("Execution Control") ) {
@@ -613,12 +650,13 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
 
     if ( exe_sublist.isParameter("Chemistry Model") ) {
       if ( exe_sublist.get<std::string>("Chemistry Model") == "Off" ) {
-        mpc_list.set<std::string>("disable Chemistry_PK","yes");
+        mpc_list.set<std::string>("Chemistry Model","Off");
       } else {
-        Exceptions::amanzi_throw(Errors::Message("Chemistry Model must be Off, we currently do not support Chemistry through the inpur spec."));
+        std::string chem_model = exe_sublist.get<std::string>("Chemistry Model");
+        mpc_list.set<std::string>("Chemistry Model", chem_model);
       }
     } else {
-      Exceptions::amanzi_throw(Errors::Message("The parameter Chemistry Model must be specified."));
+      Exceptions::amanzi_throw(Errors::Message("The parameter \'Chemistry Model\' must be specified."));
     }
 
 
@@ -1191,6 +1229,14 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
     stt_list.set<Teuchos::Array<std::string> >("Component Solutes", comp_names);
     stt_list.set<int>("Number of component concentrations", comp_names.size());
 
+    // write the array of mineral names. hopefully order is preserved...
+    if (mineral_names_.size()) {
+      stt_list.set<Teuchos::Array<std::string> >("Minerals", mineral_names_);
+    }
+    if (sorption_site_names_.size()) {
+      stt_list.set<Teuchos::Array<std::string> >("Sorption Sites", sorption_site_names_);
+    }
+
     double viscosity = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Viscosity: Uniform").get<double>("Viscosity");
     double density = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Density: Uniform").get<double>("Density");
 
@@ -1231,6 +1277,31 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
       } else {
         Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
+
+      }
+
+      // extract the mineralogy for this material
+      Teuchos::ParameterList mineralogy;
+      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Mineralogy")) {
+        mineralogy = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy");
+      }
+      // extract the isotherms for this material
+      Teuchos::ParameterList isotherms;
+      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Sorption Isotherms")) {
+        isotherms = matprop_list.sublist(matprop_list.name(i)).sublist("Sorption Isotherms");
+      }
+
+      // extract the surface complexation sites for this material
+      Teuchos::ParameterList surface_sites;
+      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Surface Complexation Sites")) {
+        surface_sites = matprop_list.sublist(matprop_list.name(i)).sublist("Surface Complexation Sites");
+      }
+
+      // extract the ion exchange information, may be a list in the future.
+      // real cation exchange capacities are > 0, so we can use cec < 0 as a flag.
+      double cec = -1.0;
+      if (matprop_list.sublist(matprop_list.name(i)).isParameter("Cation Exchange Capacity")) {
+        cec = matprop_list.sublist(matprop_list.name(i)).get<double>("Cation Exchange Capacity");
       }
 
       for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
@@ -1244,6 +1315,24 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
         stt_mat.set<std::string>("Region", *i);
 
+	if (  mineralogy.begin() != mineralogy.end() ) { // this is to avoid creating an empty Mineralogy list 
+	  Teuchos::ParameterList& region_mineralogy = stt_mat.sublist("Mineralogy");
+	  region_mineralogy = mineralogy;
+	}
+	
+	if ( isotherms.begin() != isotherms.end() ) { // this is to avoid creating an empty Sorption Isotherms list 
+	  Teuchos::ParameterList& region_isotherms = stt_mat.sublist("Sorption Isotherms");
+	  region_isotherms = isotherms;
+	}
+          
+	if ( surface_sites.begin() != surface_sites.end() ) { // this is to avoid creating an empty Surface Complexation Sites list
+	  Teuchos::ParameterList& region_surface_sites = stt_mat.sublist("Surface Complexation Sites");
+	  region_surface_sites = surface_sites;
+	}
+
+        if (cec > 0.0) {
+          stt_mat.set<double>("Cation Exchange Capacity", cec);
+        }
         // find the initial conditions for the current region
         Teuchos::ParameterList& ic_list = plist->sublist("Initial Conditions");
         Teuchos::ParameterList* ic_for_region = NULL;
@@ -1312,6 +1401,14 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
           ss << "Constant component concentration " << comp_names_map[ comp_names[ii] ];
 
           stt_mat.set<double>(ss.str(), conc);
+
+          conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-16);
+          ss.clear();
+          ss.str("");
+          ss << "Free Ion Guess " << comp_names_map[ comp_names[ii] ];
+          stt_mat.set<double>(ss.str(), conc);
+          ss.clear();
+          ss.str("");
         }
       }
     }
@@ -1336,7 +1433,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
     stt_list.set<Teuchos::Array<int> >("Region Name to Material ID Map (Material IDs)",matids);
     stt_list.set<Teuchos::Array<std::string> >("Region Name to Material ID Map (Region Names)",regnames);
     stt_list.set<Teuchos::Array<std::string> >("Material Names",matnames);
-
   } else {
     Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");
   }
@@ -1364,5 +1460,14 @@ Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
   return vlist;
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
+Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
+  Teuchos::ParameterList chemistry_list;
+  if ( plist->isSublist("Chemistry") ) {
+    chemistry_list = plist->sublist("Chemistry");
+  }
+  return chemistry_list;
+}  // end CreateChemistryList()
+
+
+}
+}

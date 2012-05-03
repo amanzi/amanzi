@@ -127,9 +127,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       ok = 1;
     }
 
-    // int space_dim_p0 = space_dim;
-    // MPI_Scatter(&space_dim_p0,1,MPI_INT,&space_dim,1,MPI_INT,0,mpicomm);
-    MPI_Bcast(&space_dim,1,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&space_dim,1,MPI_INT,0,mpicomm);
 
 
     ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,

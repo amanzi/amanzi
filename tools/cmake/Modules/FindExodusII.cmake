@@ -124,9 +124,16 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
                          NAMES ${exodus_lib_names}
                          HINTS ${ExodusII_LIBRARY_DIR}
                          NO_DEFAULT_PATH)
+
+            find_library(_ExodusII_Fortran_LIBRARY
+                         NAMES exodus_for
+                         HINTS ${ExodusII_LIBRARY_DIR}
+                         NO_DEFAULT_PATH)
+
         else()
             message(SEND_ERROR "ExodusII_LIBRARY_DIR=${ExodusII_LIBRARY_DIR} does not exist")
-            set(ExodusII_LIBRARY "ExodusII_LIBRARY-NOTFOUND")
+            set(_ExodusII_LIBRARY "ExodusII_LIBRARY-NOTFOUND")
+            set(_ExodusII_Fortran_LIBRARY "ExodusII_Fortran_LIBRARY-NOTFOUND")
         endif()
 
     else() 
@@ -141,10 +148,17 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
                              HINTS ${ExodusII_DIR}
                              PATH_SUFFIXES ${exodus_lib_suffixes}
                              NO_DEFAULT_PATH)
+                
+		find_library(_ExodusII_Fortran_LIBRARY
+                             NAMES exodus_for
+                             HINTS ${ExodusII_DIR}
+                             PATH_SUFFIXES ${exodus_lib_suffixes}
+                             NO_DEFAULT_PATH)
 
             else()
                  message(SEND_ERROR "ExodusII_DIR=${ExodusII_DIR} does not exist")
                  set(ExodusII_LIBRARY "ExodusII_LIBRARY-NOTFOUND")
+                 set(ExodusII_Fortran_LIBRARY "ExodusII_Fortran_LIBRARY-NOTFOUND")
             endif()    
 
 
@@ -154,6 +168,10 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
                          NAMES ${exodus_lib_names}
                          PATH_SUFFIXES ${exodus_lib_suffixes})
 
+            find_library(_ExodusII_Fortran_LIBRARY
+                         NAMES exodus_for
+                         PATH_SUFFIXES ${exodus_lib_suffixes})
+
         endif()
 
     endif()
@@ -161,12 +179,22 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
     # Create the library target store the name in ExodusII_LIBRARY
     if ( _ExodusII_LIBRARY )
         set(ExodusII_LIBRARY exodusii)
-	add_imported_library(${ExodusII_LIBRARY}
-	                     LOCATION ${_ExodusII_LIBRARY}
-			     LINK_LANGUAGES "C;CXX")
+        add_imported_library(${ExodusII_LIBRARY}
+                     LOCATION ${_ExodusII_LIBRARY}
+                     LINK_LANGUAGES "C;CXX")
     else()
         message(SEND_ERROR "Can not locate ExodusII library")
-    endif()    
+    endif()
+
+    if ( _ExodusII_Fortran_LIBRARY )
+        set(ExodusII_Fortran_LIBRARY exodusii_for)
+        add_imported_library(${ExodusII_Fortran_LIBRARY}
+                             LOCATION ${_ExodusII_Fortran_LIBRARY}
+                             LINK_LANGUAGES "Fortran")
+        set_target_properties(${ExodusII_Fortran_LIBRARY} PROPERTIES
+	                      IMPORTED_LINK_INTERFACE_LIBRARIES "${Exodus_LIBRARY}")
+    endif()
+
 
    
     # Define prerequisite packages
@@ -177,29 +205,17 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
     find_package(NetCDF QUIET REQUIRED)
     set_target_properties(${ExodusII_LIBRARY} PROPERTIES
                           IMPORTED_LINK_INTERFACE_LIBRARIES "${NetCDF_LIBRARIES}")
-    list(APPEND ExodusII_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})			
+    list(APPEND ExodusII_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
 
     #add_package_dependency(ExodusII DEPENDS_ON NetCDF)
 
    
 endif(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS )    
 
-# Send useful message if everything is found
-find_package_handle_standard_args(ExodusII DEFAULT_MSG
-                                           ExodusII_LIBRARIES
-                                           ExodusII_INCLUDE_DIRS)
-
-# find_package)handle)standard_args should set ExodusII_FOUND but it does not!
-if ( ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
-    set(ExodusII_FOUND TRUE)
-else()
-    set(ExodusII_FOUND FALSE)
-endif()
-
 # Define the version
 if ( ExodusII_INCLUDE_DIR )
-    set(exodus_h "${ExodusII_INCLUDE_DIR}/exodusII.h")
-    file(STRINGS "${exodus_h}" exodus_version_string REGEX "^#define EX_API_VERS")
+    set(exodus_h ${ExodusII_INCLUDE_DIR}/exodusII.h)
+    file(STRINGS ${exodus_h} exodus_version_string REGEX "^#define EX_API_VERS")
     string(REGEX REPLACE "^#define EX_API_VERS ([0-9]+\\.[0-9]+).*$" "\\1" exodus_version "${exodus_version_string}")
 
     #PRINT_VARIABLE(exodus_version_string)
@@ -208,6 +224,19 @@ if ( ExodusII_INCLUDE_DIR )
     set(ExodusII_VERSION "${exodus_version}")
 
 endif()    
+
+# Send useful message if everything is found
+find_package_handle_standard_args(ExodusII DEFAULT_MSG
+                                           ExodusII_INCLUDE_DIR
+                                           ExodusII_LIBRARIES)
+
+# find_package)handle)standard_args should set ExodusII_FOUND but it does not!
+if ( ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
+    set(ExodusII_FOUND TRUE)
+else()
+    set(ExodusII_FOUND FALSE)
+endif()
+
 
 mark_as_advanced(
   ExodusII_VERSION
