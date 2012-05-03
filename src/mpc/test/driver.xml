@@ -107,7 +107,7 @@
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.8"/>
-
+    
     <ParameterList name="The whole mesh"> 
       <Parameter name="Region" type="string" value="All"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
@@ -118,6 +118,7 @@
       <Parameter name="Constant Darcy flux y" type="double" value="0"/>
       <Parameter name="Constant Darcy flux z" type="double" value="0"/>
 -->
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
 
   </ParameterList> <!-- End State -->
