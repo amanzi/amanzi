@@ -33,23 +33,80 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the License for more information.
 #=============================================================================
-# (To distributed this file outside of CMake, substitute the full
+# FULL CMAKE COPYRIGHT NOTICE:
+#CMake - Cross Platform Makefile Generator
+#Copyright 2000-2009 Kitware, Inc., Insight Software Consortium
+#All rights reserved.
+#
+#Redistribution and use in source and binary forms, with or without
+#modification, are permitted provided that the following conditions
+#are met:
+#
+#* Redistributions of source code must retain the above copyright
+#  notice, this list of conditions and the following disclaimer.
+#
+#* Redistributions in binary form must reproduce the above copyright
+#  notice, this list of conditions and the following disclaimer in the
+#  documentation and/or other materials provided with the distribution.
+#
+#* Neither the names of Kitware, Inc., the Insight Software Consortium,
+#  nor the names of their contributors may be used to endorse or promote
+#  products derived from this software without specific prior written
+#  permission.
+#
+#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+#A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+#HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#------------------------------------------------------------------------------
+#
+#The above copyright and license notice applies to distributions of
+#CMake in source and binary form.  Some source files contain additional
+#notices of original copyright by their contributors; see each source
+#for details.  Third-party software packages supplied with CMake under
+#compatible licenses provide their own copyright notices documented in
+#corresponding subdirectories.
+#
+#------------------------------------------------------------------------------
+#
+#CMake was initially developed by Kitware with the following sponsorship:
+#
+# * National Library of Medicine at the National Institutes of Health
+#   as part of the Insight Segmentation and Registration Toolkit (ITK).
+#
+# * US National Labs (Los Alamos, Livermore, Sandia) ASC Parallel
+#   Visualization Initiative.
+#
+# * National Alliance for Medical Image Computing (NAMIC) is funded by the
+#   National Institutes of Health through the NIH Roadmap for Medical Research,
+#   Grant U54 EB005149.
+#
+# * Kitware, Inc.
+
+# (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-get_property(_LANGUAGES_ GLOBAL PROPERTY ENABLED_LANGUAGES)
-if(NOT _LANGUAGES_ MATCHES Fortran)
-  if(LAPACK_FIND_REQUIRED)
-    message(FATAL_ERROR
-      "FindLAPACK is Fortran-only so Fortran must be enabled.")
-  else(LAPACK_FIND_REQUIRED)
-    message(STATUS "Looking for LAPACK... - NOT found (Fortran not enabled)")
-    return()
-  endif(LAPACK_FIND_REQUIRED)
-endif(NOT _LANGUAGES_ MATCHES Fortran)
+set(_lapack_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
 
+get_property(_LANGUAGES_ GLOBAL PROPERTY ENABLED_LANGUAGES)
+if (NOT _LANGUAGES_ MATCHES Fortran)
+include(CheckFunctionExists)
+else (NOT _LANGUAGES_ MATCHES Fortran)
 include(CheckFortranFunctionExists)
+endif (NOT _LANGUAGES_ MATCHES Fortran)
+
 set(LAPACK_FOUND FALSE)
 set(LAPACK95_FOUND FALSE)
+
+# TODO: move this stuff to separate module
 
 macro(Check_Lapack_Libraries LIBRARIES _prefix _name _flags _list _blas _threads)
 # This macro checks for the existence of the combination of fortran libraries
@@ -63,70 +120,60 @@ macro(Check_Lapack_Libraries LIBRARIES _prefix _name _flags _list _blas _threads
 # N.B. _prefix is the prefix applied to the names of all cached variables that
 # are generated internally and marked advanced by this macro.
 
-# Define the default search paths and find suffixes -- lpritch
-if ( WIN32 )
-
-  set(BLA_DEFAULT_SEARCH_PATHS 
-      ENV LIB)
-  set(BLA_DEFAULT_SUFFIXES ".lib;.all")  
-
-elseif ( APPLE )
-
-  set(BLA_DEFAULT_SEARCH_PATHS 
-      /usr/local
-      /usr/lib
-      /usr/local/lib64
-      /usr/lib64
-      ENV DYLD_LIBRARY_PATH)
-  set(BLA_DEFAULT_SUFFIXES ".lib;.dll")  
-
-elseif (UNIX)
-
-  set(BLA_DEFAULT_SEARCH_PATHS 
-      /usr/local
-      /usr/lib
-      /usr/local/lib64
-      /usr/lib64
-      ENV LD_LIBRARY_PATH)
-  set(BLA_DEFAULT_SUFFIXES ".a;.so")  
-
-endif()
-
-
 set(_libraries_work TRUE)
 set(${LIBRARIES})
 set(_combined_name)
+if (NOT _libdir)
+  if (WIN32)
+    set(_libdir ENV LIB)
+  elseif (APPLE)
+    set(_libdir /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV DYLD_LIBRARY_PATH)
+  else ()
+    set(_libdir /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV LD_LIBRARY_PATH)
+  endif ()
+endif ()
 foreach(_library ${_list})
   set(_combined_name ${_combined_name}_${_library})
 
   if(_libraries_work)
-    if ( BLA_VENDOR_DIRS )
-        find_library(${_prefix}_${_library}_LIBRARY
-                     NAMES ${_library}
-                     PATHS "${BLA_VENDOR_DIRS}"
-                     NO_DEFAULT_PATHS)
-    endif()
-    
+    if (BLA_STATIC)
+      if (WIN32)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES .lib ${CMAKE_FIND_LIBRARY_SUFFIXES})
+      endif ( WIN32 )
+      if (APPLE)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES .lib ${CMAKE_FIND_LIBRARY_SUFFIXES})
+      else (APPLE)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+      endif (APPLE)
+    else (BLA_STATIC)
+			if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        # for ubuntu's libblas3gf and liblapack3gf packages
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES} .so.3gf)
+      endif ()
+    endif (BLA_STATIC)
     find_library(${_prefix}_${_library}_LIBRARY
-                 NAMES ${_library}
-                 PATHS ${BLA_DEFAULT_SEARCH_PATHS})
-               
-
-            mark_as_advanced(${_prefix}_${_library}_LIBRARY)
-            set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
-            set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
-   endif(_libraries_work)
+      NAMES ${_library}
+      PATHS ${_libdir}
+      )
+    mark_as_advanced(${_prefix}_${_library}_LIBRARY)
+    set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
+    set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
+  endif(_libraries_work)
 endforeach(_library ${_list})
 
 if(_libraries_work)
   # Test this combination of libraries.
   if(UNIX AND BLA_STATIC)
-    set(CMAKE_REQUIRED_LIBRARIES ${_flags} "-Wl,--start-group ${${LIBRARIES}} ${_blas} -Wl,--end-group" ${_threads})
+    set(CMAKE_REQUIRED_LIBRARIES ${_flags} "-Wl,--start-group" ${${LIBRARIES}} ${_blas} "-Wl,--end-group" ${_threads})
   else(UNIX AND BLA_STATIC)
     set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_blas} ${_threads})
   endif(UNIX AND BLA_STATIC)
 #  message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
-  check_fortran_function_exists(${_name} ${_prefix}${_combined_name}_WORKS)
+  if (NOT _LANGUAGES_ MATCHES Fortran)
+    check_function_exists("${_name}_" ${_prefix}${_combined_name}_WORKS)
+  else (NOT _LANGUAGES_ MATCHES Fortran)
+    check_fortran_function_exists(${_name} ${_prefix}${_combined_name}_WORKS)
+  endif (NOT _LANGUAGES_ MATCHES Fortran)
   set(CMAKE_REQUIRED_LIBRARIES)
   mark_as_advanced(${_prefix}${_combined_name}_WORKS)
   set(_libraries_work ${${_prefix}${_combined_name}_WORKS})
@@ -134,7 +181,7 @@ if(_libraries_work)
 endif(_libraries_work)
 
  if(_libraries_work)
-   set(${LIBRARIES} ${${LIBRARIES}} ${_blas})
+   set(${LIBRARIES} ${${LIBRARIES}} ${_blas} ${_threads})
  else(_libraries_work)
     set(${LIBRARIES} FALSE)
  endif(_libraries_work)
@@ -163,52 +210,28 @@ if(BLAS_FOUND)
       set(BLA_VENDOR "All")
     endif(NOT BLA_VENDOR)
   endif ($ENV{BLA_VENDOR} MATCHES ".+")
+
+if (BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
+ if(NOT LAPACK_LIBRARIES)
+  check_lapack_libraries(
+  LAPACK_LIBRARIES
+  LAPACK
+  cheev
+  ""
+  "goto2"
+  "${BLAS_LIBRARIES}"
+  ""
+  )
+ endif(NOT LAPACK_LIBRARIES)
+endif (BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
+
+
 #acml lapack
- if (BLA_VENDOR STREQUAL "ACML" OR BLA_VENDOR STREQUAL "All")
-  if(NOT LAPACK_LIBRARIES)
-   check_lapack_libraries(
-    LAPACK_LIBRARIES
-    LAPACK
-    cheev
-    ""
-    "acml"
-    ""
-    ""
-    )
-  endif(NOT LAPACK_LIBRARIES)
- endif (BLA_VENDOR STREQUAL "ACML" OR BLA_VENDOR STREQUAL "All")
-
-#acml_mp lapack
- if (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
-  if(NOT LAPACK_LIBRARIES)
-   check_lapack_libraries(
-    LAPACK_LIBRARIES
-    LAPACK
-    cheev
-    ""
-    "acml_mp"
-    ""
-    ""
-    )
-  endif(NOT LAPACK_LIBRARIES)
- endif (BLA_VENDOR STREQUAL "ACML_MP" OR BLA_VENDOR STREQUAL "All")
-
- #LibSci lapack
- if (BLA_VENDOR STREQUAL "LibSci" OR BLA_VENDOR STREQUAL "All")
-  if(NOT LAPACK_LIBRARIES)
-   string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} compiler_id_lc)   
-   set(library_names "sci_${compiler_id_lc}")
-   check_lapack_libraries(
-    LAPACK_LIBRARIES
-    LAPACK
-    cheev
-    ""
-    "${library_names}"
-    ""
-    ""
-    )
-  endif(NOT LAPACK_LIBRARIES)
-endif (BLA_VENDOR STREQUAL "LibSci" OR BLA_VENDOR STREQUAL "All")
+ if (BLA_VENDOR MATCHES "ACML.*" OR BLA_VENDOR STREQUAL "All")
+   if (BLAS_LIBRARIES MATCHES ".+acml.+")
+     set (LAPACK_LIBRARIES ${BLAS_LIBRARIES})
+   endif ()
+ endif ()
 
 # Apple LAPACK library?
 if (BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")
@@ -238,7 +261,9 @@ if (BLA_VENDOR STREQUAL "NAS" OR BLA_VENDOR STREQUAL "All")
   endif ( NOT LAPACK_LIBRARIES )
 endif (BLA_VENDOR STREQUAL "NAS" OR BLA_VENDOR STREQUAL "All")
 # Generic LAPACK library?
-if (BLA_VENDOR STREQUAL "Generic" OR BLA_VENDOR STREQUAL "All")
+if (BLA_VENDOR STREQUAL "Generic" OR
+    BLA_VENDOR STREQUAL "ATLAS" OR
+    BLA_VENDOR STREQUAL "All")
   if ( NOT LAPACK_LIBRARIES )
     check_lapack_libraries(
     LAPACK_LIBRARIES
@@ -250,42 +275,71 @@ if (BLA_VENDOR STREQUAL "Generic" OR BLA_VENDOR STREQUAL "All")
     ""
     )
   endif ( NOT LAPACK_LIBRARIES )
-endif (BLA_VENDOR STREQUAL "Generic" OR BLA_VENDOR STREQUAL "All")
+endif ()
 #intel lapack
- if (BLA_VENDOR MATCHES "Intel*" OR BLA_VENDOR STREQUAL "All")
+if (BLA_VENDOR MATCHES "Intel*" OR BLA_VENDOR STREQUAL "All")
+  if (NOT WIN32)
+    set(LM "-lm")
+  endif ()
   if (_LANGUAGES_ MATCHES C OR _LANGUAGES_ MATCHES CXX)
-   if(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
+    if(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
       find_PACKAGE(Threads)
-   else(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
-       find_package(Threads REQUIRED)
-   endif(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
-   if (BLA_F95)
-    if(NOT LAPACK95_LIBRARIES)
-     check_lapack_libraries(
-     LAPACK95_LIBRARIES
-     LAPACK
-     cheev
-     ""
-     "mkl_lapack95"
-     "${BLAS95_LIBRARIES}"
-     "${CMAKE_THREAD_LIBS_INIT}"
-     )
-    endif(NOT LAPACK95_LIBRARIES)
-   else(BLA_F95)
-    if(NOT LAPACK_LIBRARIES)
-     check_lapack_libraries(
-     LAPACK_LIBRARIES
-     LAPACK
-     cheev
-     ""
-     "mkl_lapack"
-     "${BLAS_LIBRARIES}"
-     "${CMAKE_THREAD_LIBS_INIT}"
-     )
-    endif(NOT LAPACK_LIBRARIES)
-   endif(BLA_F95)
+    else(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
+      find_package(Threads REQUIRED)
+    endif(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
+    if (BLA_F95)
+      if(NOT LAPACK95_LIBRARIES)
+        # old
+        check_lapack_libraries(
+          LAPACK95_LIBRARIES
+          LAPACK
+          cheev
+          ""
+          "mkl_lapack95"
+          "${BLAS95_LIBRARIES}"
+          "${CMAKE_THREAD_LIBS_INIT};${LM}"
+          )
+      endif(NOT LAPACK95_LIBRARIES)
+      if(NOT LAPACK95_LIBRARIES)
+        # new >= 10.3
+        check_lapack_libraries(
+          LAPACK95_LIBRARIES
+          LAPACK
+          CHEEV
+          ""
+          "mkl_intel_lp64"
+          "${BLAS95_LIBRARIES}"
+          "${CMAKE_THREAD_LIBS_INIT};${LM}"
+          )
+      endif(NOT LAPACK95_LIBRARIES)
+    else(BLA_F95)
+      if(NOT LAPACK_LIBRARIES)
+        # old
+        check_lapack_libraries(
+          LAPACK_LIBRARIES
+          LAPACK
+          cheev
+          ""
+          "mkl_lapack"
+          "${BLAS_LIBRARIES}"
+          "${CMAKE_THREAD_LIBS_INIT};${LM}"
+          )
+      endif(NOT LAPACK_LIBRARIES)
+      if(NOT LAPACK_LIBRARIES)
+        # new >= 10.3
+        check_lapack_libraries(
+          LAPACK_LIBRARIES
+          LAPACK
+          cheev
+          ""
+          "mkl_gf_lp64"
+          "${BLAS_LIBRARIES}"
+          "${CMAKE_THREAD_LIBS_INIT};${LM}"
+          )
+      endif(NOT LAPACK_LIBRARIES)
+    endif(BLA_F95)
   endif (_LANGUAGES_ MATCHES C OR _LANGUAGES_ MATCHES CXX)
- endif(BLA_VENDOR MATCHES "Intel*" OR BLA_VENDOR STREQUAL "All")
+endif(BLA_VENDOR MATCHES "Intel*" OR BLA_VENDOR STREQUAL "All")
 else(BLAS_FOUND)
   message(STATUS "LAPACK requires BLAS")
 endif(BLAS_FOUND)
@@ -336,3 +390,5 @@ else(BLA_F95)
   endif(LAPACK_FOUND)
  endif(NOT LAPACK_FIND_QUIETLY)
 endif(BLA_F95)
+
+set(CMAKE_FIND_LIBRARY_SUFFIXES ${_lapack_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
