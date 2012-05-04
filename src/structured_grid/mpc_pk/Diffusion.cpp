@@ -1113,6 +1113,7 @@ Diffusion::richard_iter (Real                   dt,
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_iter()");
 
   std::string tag = "       Newton step: ";
+  std::string tag_ls = "  line-search:  ";
   //
   // This routine solves the time-dependent richards equation
   //
@@ -1130,7 +1131,7 @@ Diffusion::richard_iter (Real                   dt,
   MultiFab& P_new = caller->get_new_data(Press_Type);
 
   // setup multifabs for solvers
-  MultiFab Rhs(grids,1,0);
+  MultiFab Rhs(grids,1,1); // HACK: add a grow cell here, not for solvers, but for ls reuse later
   MultiFab Soln(grids,1,1);
   Rhs.setVal(0.);
   Soln.setVal(0.);
@@ -1181,10 +1182,16 @@ Diffusion::richard_iter (Real                   dt,
       coefs_fboxlib_mg (a1_p, bb_p, alpha, beta_dp, a_dp, false);
       mgt_solver.set_porous_coefficients(a1_p, a2_p, bb_p, b_dp, xa, xb, nc_opt);    
 
-      int linsol_status;
+      int linsol_status = 0;
       mgt_solver.solve(phi_p, Rhs_p, S_tol, S_tol_abs, 
 		       visc_bndry, fill_bcs_for_gradient, final_resnorm,
                        linsol_status);
+
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve init res=" << status.initial_residual_norm
+                    << std::endl;
+      }
 
       if (linsol_status==1)
       {
@@ -1195,6 +1202,12 @@ Diffusion::richard_iter (Real                   dt,
               std::cout << tag << status.reason << std::endl;
           }
           return;
+      }
+
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve final res=" << final_resnorm
+                    << std::endl;
       }
     }
 //   // Construct krylov subspace
@@ -1274,14 +1287,25 @@ Diffusion::richard_iter (Real                   dt,
 
   residual_richard(visc_op,dt*density[0],gravity,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhsp1.norm2(0);
-  status.initial_solution_norm = S_new.norm2(0);
+  status.initial_solution_norm = S_new.norm2(nc);
 
   if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
       status.reason = "Full linear step accepted";
       status.success = true;
       status.status = "Finished";
-      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-          std::cout << tag << status.reason << std::endl;
+  }
+
+  Real solution_norm = Soln.norm2(0);
+  if (status.status!="Finished"  &&  solution_norm < 1.e-12 * status.initial_solution_norm) {
+      status.reason = "Solution rejected.  Linear system solved, but solution norm too small";
+      status.success = false;
+      status.status = "Finished";
+      if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+          std::cout << tag << status.reason << ".... r,ir,f,ir*f:"
+                    << status.initial_residual_norm << ", " 
+                    << status.residual_norm_pre_ls << ", " 
+                    << status.initial_residual_norm * status.ls_acceptance_factor
+                    << std::endl;
       }
   }
 
@@ -1296,9 +1320,19 @@ Diffusion::richard_iter (Real                   dt,
           status.ls_factor = status.min_ls_factor;
       }
 
-      Soln.mult(status.ls_factor);
+      MultiFab::Copy(Rhs,Soln,0,0,1,1); // Rhs not used again, reuse here
+      Rhs.mult(status.ls_factor);
+      Real solution_norm = Rhs.norm2(0);
+      if (solution_norm < 1.e-8 * status.initial_solution_norm) {
+          status.reason = "Solution rejected.  Linear system solved, but ls-scaled solution norm too small";
+          status.success = false;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+              std::cout << tag << status.reason << std::endl;
+          }
+      }
       MultiFab::Copy(Stmp,S_new,nc,0,1,1);
-      MultiFab::Add(Stmp,Soln,0,0,1,0);
+      MultiFab::Add(Stmp,Rhs,0,0,1,1);
 
       pm_level->calcCapillary(&pctmp,Stmp);
       pctmp.mult(-1.0);
@@ -1311,36 +1345,37 @@ Diffusion::richard_iter (Real                   dt,
       status.residual_norm_post_ls = Rhsp1.norm2(0);
 
       if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
-          std::cout << tag << "  line-search:  "
+          std::cout << tag << tag_ls
                     << "iter=" << status.ls_iterations
                     << ", step length=" << status.ls_factor
+                    << ", old residual norm=" << status.initial_residual_norm
                     << ", new residual norm=" << status.residual_norm_post_ls << '\n';
       }
-      
+
       if (status.residual_norm_post_ls < status.initial_residual_norm * status.ls_acceptance_factor) {
           status.reason = "LS-reduced step accepted";
           status.success = true;
           status.status = "Finished";
           if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
-              std::cout << tag << status.reason << std::endl;
+              std::cout << tag << tag_ls << status.reason << std::endl;
           }
       }
 
       if (status.ls_iterations >= status.max_ls_iterations) {
-          status.reason = "Linear system solved, but residual could not be reduced.  Too large ls_iterations ";
+          status.reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
           status.success = false;
           status.status = "Finished";
           if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
-              std::cout << tag << status.reason << std::endl;
+              std::cout << tag << tag_ls << status.reason << std::endl;
           }
       }
 
       if (status.ls_factor == status.min_ls_factor) {
-          status.reason = "Linear system solved, but residual could not be reduced.  Too small ls_factor ";
+          status.reason = "Solution rejected.  Linear system solved, but ls_factor too small";
           status.success = false;
           status.status = "Finished";
           if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
-              std::cout << tag << status.reason << std::endl;
+              std::cout << tag << tag_ls << status.reason << std::endl;
           }
       }
   }

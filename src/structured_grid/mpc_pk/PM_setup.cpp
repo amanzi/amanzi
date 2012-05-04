@@ -275,6 +275,12 @@ int  PorousMedia::steady_max_num_consecutive_success;
 Real PorousMedia::steady_extra_time_step_increase_factor;
 int  PorousMedia::steady_max_num_consecutive_increases;
 Real PorousMedia::steady_consecutive_increase_reduction_factor;
+int  PorousMedia::richard_max_ls_iterations;
+Real PorousMedia::richard_min_ls_factor;
+Real PorousMedia::richard_ls_acceptance_factor;
+Real PorousMedia::richard_ls_reduction_factor;
+bool PorousMedia::richard_monitor_linear_solve;
+bool PorousMedia::richard_monitor_line_search;
 
 static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
@@ -512,6 +518,13 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
   PorousMedia::steady_consecutive_increase_reduction_factor = 0.15;
+
+  PorousMedia::richard_max_ls_iterations = 10;
+  PorousMedia::richard_min_ls_factor = 1.e-8;
+  PorousMedia::richard_ls_acceptance_factor = 1.4;
+  PorousMedia::richard_ls_reduction_factor = 0.1;
+  PorousMedia::richard_monitor_linear_solve = false;
+  PorousMedia::richard_monitor_line_search = false;
 
   PorousMedia::echo_inputs         = 0;
 }

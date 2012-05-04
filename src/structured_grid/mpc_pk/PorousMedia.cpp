@@ -1150,7 +1150,7 @@ PorousMedia::richard_init_to_steady()
                 if (richard_init_to_steady_verbose>2) {
                     richard_solver_verbose = 1;
                 }
-
+                
                 const Real cur_time = state[State_Type].curTime();
                 const int  finest_level = parent->finestLevel();
                 Array<Real> dt_save(finest_level+1);
@@ -1174,21 +1174,25 @@ PorousMedia::richard_init_to_steady()
                 MultiFab tmp(grids,1,1);
                 MultiFab tmpP(grids,1,1);
                 MultiFab& S_new = get_new_data(State_Type);
+                int nc = 0; // Component of water in state
 
                 Real total_psuedo_time = 0;
-                Real prev_err, err = 1.0;
+                Real prev_abs_err, init_abs_err;
+                Real rel_err = -1;
+                Real abs_err = -1;
+ 
+                bool first = true;
                 int k = 0;
                 bool continue_iterations = true;
                 bool solved = false;
                 while (!solved  &&  k < steady_maximum_time_steps  &&  continue_iterations)
                 {
-                    MultiFab::Copy(tmp,S_new,0,0,1,1);
+                    MultiFab::Copy(tmp,S_new,nc,0,1,0);
                     tmp.mult(-1.0);
-
 
                     if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
                         std::cout << tag << "  psuedo-time = " << total_psuedo_time 
-                                  << ", iter=" << k << ", dt = " << dt << '\n';
+                                  << ", psuedo-iter=" << k << ", dt = " << dt << '\n';
                     }
 
                     // FIXME: Put max iters inside ret structure....
@@ -1199,29 +1203,50 @@ PorousMedia::richard_init_to_steady()
                     {
                         k++;
                         total_psuedo_time += dt;
-                        MultiFab::Add(tmp,S_new,0,0,1,0);
-                        prev_err = err;
-                        err = tmp.norm2(0)/S_new.norm2(0);
+                        prev_abs_err = abs_err;
+
+                        MultiFab::Add(tmp,S_new,nc,0,1,0);
+                        abs_err = tmp.norm2(0);
+
+                        if (first){
+                            init_abs_err = abs_err;
+                            first = false;
+                        }
+                        else {
+                            rel_err = abs_err / init_abs_err;
+                        }
+                          
+                        solved = ((abs_err <= steady_tolerance) || ((rel_err>0)  && (rel_err <= steady_tolerance)) );
+                        continue_iterations = (!solved) || (k < steady_maximum_time_steps);
 
                         if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
-                            std::cout << tag << "             - step accepted.   newton iters, new err:  "
-                                      << curr_nwt_iter << ", " << err << '\n';
+                            std::cout << tag << "             - step accepted."
+                                      << "   newton iters=" << curr_nwt_iter << ", "
+                                      << "   abs_err=" << abs_err;
+                            if (rel_err > 0) {
+                                std::cout << ", rel_err=" << rel_err;
+                            }
+                            std::cout << std::endl;
                         }
 
-                        //solved = err < steady_tolerance;
-                        solved = err < steady_tolerance  &&  total_psuedo_time > 1.e12;
 
                         num_consecutive_failures_1 = 0;
                         num_consecutive_failures_2 = 0;
                         last_chance = false;
 
-                        if (err > prev_err) {
-                            num_consecutive_increases++;
-                            num_consecutive_success = 0;
+                        if (prev_abs_err > 0) {
+                            if (abs_err > prev_abs_err) {
+                                num_consecutive_increases++;
+                                num_consecutive_success = 0;
+                            }
+                            else {
+                                num_consecutive_success++;
+                                num_consecutive_increases = 0;
+                            }
                         }
                         else {
-                            num_consecutive_success++;
                             num_consecutive_increases = 0;
+                            num_consecutive_success = 0;
                         }
                         
                         if (num_consecutive_increases > steady_max_num_consecutive_increases) {
@@ -1229,7 +1254,8 @@ PorousMedia::richard_init_to_steady()
                         }
                         else {
 
-                            if (curr_nwt_iter < steady_min_iterations && prev_err > err) {
+                            if (curr_nwt_iter < steady_min_iterations && 
+                                prev_abs_err > 0  &&  prev_abs_err > abs_err) {
 
                                 if (num_consecutive_success >= steady_max_num_consecutive_success) {
                                     num_consecutive_success = 0;
@@ -5000,7 +5026,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = total_nwt_iter;
-  Real max_err_nwt = 1e-8;
+  Real max_err_nwt = 1e-6;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   FillStateBndry(pcTime,State_Type,0,ncomps);
@@ -5017,22 +5043,13 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   }
 
   Diffusion::NewtonStepInfo linear_status;
-  linear_status.status = "";
   linear_status.success = true;
-  linear_status.reason = "";
-  linear_status.ls_iterations = -1;
-  linear_status.max_ls_iterations = 10;
-  linear_status.min_ls_factor = 1.e-8;
-  linear_status.ls_factor = -1;
-  linear_status.ls_acceptance_factor = 1.;
-  linear_status.ls_reduction_factor = 0.1;
-  linear_status.residual_norm_pre_ls = -1; 
-  linear_status.residual_norm_post_ls = -1;
-  linear_status.initial_residual_norm = -1;
-  linear_status.initial_solution_norm = -1;
-  linear_status.monitor_linear_solve = false;
-  linear_status.monitor_line_search = true;
-
+  linear_status.max_ls_iterations = richard_max_ls_iterations;
+  linear_status.min_ls_factor = richard_min_ls_factor;
+  linear_status.ls_acceptance_factor = richard_ls_acceptance_factor;
+  linear_status.ls_reduction_factor = richard_ls_reduction_factor;
+  linear_status.monitor_linear_solve = richard_monitor_linear_solve;
+  linear_status.monitor_line_search = richard_monitor_line_search;
 
   if (do_n)
     {
@@ -5051,11 +5068,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
             if (linear_status.success) {
                 if (richard_solver_verbose>0 && ParallelDescriptor::IOProcessor()) {
                     std::cout << "     Iteration " << itr_nwt 
-                              << " : Error = "       << err_nwt << " (tol: " << max_err_nwt;
-                    if (linear_status.reason == "LS-reduced step accepted") {
-                        std::cout << " line search factor: " << linear_status.ls_factor;
-                    }
-                    std::cout << ")\n"; 
+                              << " : Error = "       << err_nwt << " (tol: " << max_err_nwt << ")\n";
                 }
                 if (model != model_list["richard"])
                     scalar_adjust_constraint(0,ncomps-1);
@@ -7214,11 +7227,12 @@ PorousMedia::post_init_state ()
                   Real dt = steady_initial_time_step;
                   MultiFab tmp(grids,1,0);
                   PorousMedia::Reason ret = RICHARD_SUCCESS;
-                  Real err = 1.0;
-                  Real prev_err = err;
-
+                  Real abs_err, init_abs_err, rel_err = -1;
+ 
+                  bool first = true;
                   int k = 0;
-                  while (err > steady_tolerance && 
+                  while (abs_err > steady_tolerance && 
+                         rel_err > steady_tolerance && 
                          k < steady_maximum_time_steps &&
                          ret == RICHARD_SUCCESS)
                   {
@@ -7230,9 +7244,20 @@ PorousMedia::post_init_state ()
 
                       if (ret == RICHARD_SUCCESS)
                       {
-                          MultiFab::Add(tmp,S_new,0,0,1,0);
-                          prev_err = err;
-                          err = tmp.norm2(0)/S_new.norm2(0);
+                          prev_abs_err = abs_err;
+                          
+                          MultiFab::Add(tmp,S_new,nc,0,1,0);
+                          abs_err = tmp.norm2(0);
+                          if (first) {
+                              init_abs_err = abs_err;
+                              first = false;
+                          }
+                          else {
+
+                              rel_err = abs_err / init_abs_err;
+
+                          }
+                          
                           if (verbose && ParallelDescriptor::IOProcessor())
                               std::cout << k << " " << dt << " " << curr_nwt_iter << " " << err << std::endl;
 

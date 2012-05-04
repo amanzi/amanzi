@@ -1156,6 +1156,16 @@ protected:
   static Real steady_consecutive_increase_reduction_factor;
     
   //
+  // Newton step defaults
+  //
+  static int  richard_max_ls_iterations;
+  static Real richard_min_ls_factor;
+  static Real richard_ls_acceptance_factor;
+  static Real richard_ls_reduction_factor;
+  static bool richard_monitor_linear_solve;
+  static bool richard_monitor_line_search;
+
+  //
   // Number of states
   //
   static int  num_state_type;
