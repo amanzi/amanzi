@@ -25,6 +25,8 @@ private:
     //
     PMAmr (const PMAmr& rhs);
     PMAmr& operator= (const PMAmr& rhs);
+
+    Real strt_time;
 };
 
 #endif /*_PMAmr_H_*/

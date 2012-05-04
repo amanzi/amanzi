@@ -179,6 +179,7 @@ int  PorousMedia::NUM_STATE;
 int  PorousMedia::full_cycle;
 int  PorousMedia::max_step;
 Real PorousMedia::stop_time;
+Real PorousMedia::dt_init;
 
 Array<AdvectionForm> PorousMedia::advectionType;
 Array<DiffusionForm> PorousMedia::diffusionType;
@@ -251,6 +252,7 @@ int  PorousMedia::it_pressure;
 bool PorousMedia::do_any_diffuse;
 int  PorousMedia::do_cpl_advect;
 
+int  PorousMedia::richard_solver_verbose;
 //
 // Init to steady
 //
@@ -264,15 +266,15 @@ Real PorousMedia::steady_time_step_increase_factor;
 Real PorousMedia::steady_time_step_retry_factor_1;
 Real PorousMedia::steady_time_step_retry_factor_2;
 Real PorousMedia::steady_time_step_retry_factor_f;
-int  PorousMedia::max_consecutive_failures_1;
-int  PorousMedia::max_consecutive_failures_2;
+int  PorousMedia::steady_max_consecutive_failures_1;
+int  PorousMedia::steady_max_consecutive_failures_2;
 Real PorousMedia::steady_tolerance;
 Real PorousMedia::steady_initial_time_step;
 Real PorousMedia::steady_maximum_time_steps;
-int  PorousMedia::max_num_consecutive_success;
+int  PorousMedia::steady_max_num_consecutive_success;
 Real PorousMedia::steady_extra_time_step_increase_factor;
-int  PorousMedia::max_num_consecutive_increases;
-Real PorousMedia::consecutive_increase_reduction_factor;
+int  PorousMedia::steady_max_num_consecutive_increases;
+Real PorousMedia::steady_consecutive_increase_reduction_factor;
 
 static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
@@ -438,6 +440,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::verbose      = 0;
   PorousMedia::cfl          = 0.8;
   PorousMedia::init_shrink  = 1.0;
+  PorousMedia::dt_init      = -1.0; // Ignore if < 0
   PorousMedia::change_max   = 1.1;
   PorousMedia::fixed_dt     = -1.0;
   PorousMedia::richard_max_dt = 5.e5;
@@ -488,6 +491,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
 
+  PorousMedia::richard_solver_verbose = 1;
+
   PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::richard_init_to_steady_verbose = 1;
   PorousMedia::steady_min_iterations = 10;
@@ -498,15 +503,15 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_time_step_retry_factor_1 = 0.5;
   PorousMedia::steady_time_step_retry_factor_2 = 0.1;
   PorousMedia::steady_time_step_retry_factor_f = 0.01;
-  PorousMedia::max_consecutive_failures_1 = 3;
-  PorousMedia::max_consecutive_failures_2 = 4;
+  PorousMedia::steady_max_consecutive_failures_1 = 3;
+  PorousMedia::steady_max_consecutive_failures_2 = 4;
   PorousMedia::steady_tolerance = 1.e-8;
   PorousMedia::steady_initial_time_step = 1.e2;
   PorousMedia::steady_maximum_time_steps = 8000;
-  PorousMedia::max_num_consecutive_success = 3;
+  PorousMedia::steady_max_num_consecutive_success = 3;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
-  PorousMedia::max_num_consecutive_increases = 3;
-  PorousMedia::consecutive_increase_reduction_factor = 0.15;
+  PorousMedia::steady_max_num_consecutive_increases = 3;
+  PorousMedia::steady_consecutive_increase_reduction_factor = 0.15;
 
   PorousMedia::echo_inputs         = 0;
 }
@@ -1195,6 +1200,8 @@ void PorousMedia::read_prob()
 
   // Verbosity
   pb.query("v",verbose);
+  pb.query("richard_solver_verbose",richard_solver_verbose);
+
   pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
   pb.query("steady_min_iterations",steady_min_iterations);
@@ -1205,19 +1212,20 @@ void PorousMedia::read_prob()
   pb.query("steady_time_step_retry_factor_1",steady_time_step_retry_factor_1);
   pb.query("steady_time_step_retry_factor_2",steady_time_step_retry_factor_2);
   pb.query("steady_time_step_retry_factor_f",steady_time_step_retry_factor_f);
-  pb.query("max_consecutive_failures_1",max_consecutive_failures_1);
-  pb.query("max_consecutive_failures_2",max_consecutive_failures_2);
+  pb.query("steady_max_consecutive_failures_1",steady_max_consecutive_failures_1);
+  pb.query("steady_max_consecutive_failures_2",steady_max_consecutive_failures_2);
   pb.query("steady_tolerance",steady_tolerance);
   pb.query("steady_initial_time_step",steady_initial_time_step);
   pb.query("steady_maximum_time_steps",steady_maximum_time_steps);
-  pb.query("max_num_consecutive_success",max_num_consecutive_success);
+  pb.query("steady_max_num_consecutive_success",steady_max_num_consecutive_success);
   pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
-  pb.query("max_num_consecutive_increases",max_num_consecutive_increases);
-  pb.query("consecutive_increase_reduction_factor",consecutive_increase_reduction_factor);
+  pb.query("steady_max_num_consecutive_increases",steady_max_num_consecutive_increases);
+  pb.query("consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
   
   // Get timestepping parameters.
   pb.get("cfl",cfl);
   pb.query("init_shrink",init_shrink);
+  pb.query("dt_init",dt_init);
   pb.query("dt_cutoff",dt_cutoff);
   pb.query("change_max",change_max);
   pb.query("fixed_dt",fixed_dt);
