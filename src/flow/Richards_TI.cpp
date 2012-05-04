@@ -22,7 +22,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate f(u, du/dt) = d(s u)/dt + A*u - g.                                         
+* Calculate f(u, du/dt) = d(s(u))/dt + A*u - g.                                         
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
@@ -34,7 +34,6 @@ void Richards_PK::fun(
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
-#if 1
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -53,17 +52,6 @@ void Richards_PK::fun(
       f[c] += rho * phi[c] * volume * (s1 - s2) / dTp;
     }
   }
-#else
-  Epetra_Vector* u_cells = FS->createCellView(u);
-  Epetra_Vector dSdP(mesh_->cell_map(false));
-  derivedSdP(*u_cells, dSdP);
-
-  for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
-    double factor = rho * phi[c] * dSdP[c] * volume;
-    f[c] += factor * udot[c];
-  }
-#endif
 }
 
 

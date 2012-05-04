@@ -201,9 +201,11 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Initializing Steady State Flow: T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
-     if (initialize_with_darcy)
-         std::printf("Initializing Steady State Flow with a clipped Darcy pressure\n");
+     std::printf("Richards Flow: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+     if (initialize_with_darcy) {
+       std::printf("Richards Flow: initializing with a clipped Darcy pressure\n");
+       std::printf("Richards Flow: clipping saturation value =%5.2g\n", clip_saturation);
+     }
   }
 
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
@@ -253,7 +255,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   if (initialize_with_darcy) {
     double pmin = atm_pressure;
     InitializePressureHydrostatic(T0, *solution);
-    ClipHydrostaticPressure(pmin, 0.6, *solution);
+    ClipHydrostaticPressure(pmin, clip_saturation, *solution);
     pressure = *solution_cells;
   } else {
     *solution_cells = pressure;

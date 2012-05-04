@@ -166,11 +166,13 @@ class Richards_PK : public Flow_PK {
 
   int Krel_method;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
-  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
+  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability
 
   int mfd3d_method;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
+
+  double clip_saturation;  // initialization options
 
  private:
   void operator=(const Richards_PK& RPK);
