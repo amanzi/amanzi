@@ -38,7 +38,12 @@ endif()
 
 set(BL_DEFINES "BL_NOLINEVALUES;BL_PARALLEL_IO;BL_SPACEDIM=${AMANZI_SPACEDIM};BL_FORT_USE_${BL_FORTLINK};BL_${BL_MACHINE};BL_USE_${AMANZI_PRECISION};MG_USE_FBOXLIB;MG_USE_F90_SOLVERS;MG_USE_FBOXLIB")
 
+#set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g -O1 -Wall")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g -O1 -Wall")
+#set(CMAKE_Fortran_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g -O1 -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g")
+set(CMAKE_Fortran_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g")
 if (ENABLE_MPI)
   # bandre: I think the amanzi config requires that the mpi compilers
   # be set through the CC/CXX/FC environment variables before cmake is

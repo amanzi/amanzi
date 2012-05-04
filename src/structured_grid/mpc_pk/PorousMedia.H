@@ -495,7 +495,13 @@ protected:
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
-  enum Reason {RICHARD_SUCCESS, RICHARD_NEWTON_FAIL, RICHARD_LINEAR_FAIL};
+  enum Reason
+  {
+      RICHARD_SUCCESS, 
+      RICHARD_NEWTON_FAIL,
+      RICHARD_LINEAR_FAIL
+  };
+
   PorousMedia::Reason richard_scalar_update (Real dt, 
                                   int& total_nwt_iter,
                                   MultiFab* u_mac = 0);
@@ -1073,6 +1079,8 @@ protected:
   static Real dt_cutoff;     // minimum dt allowed
   static int  sum_interval;  // number of timesteps for conservation stats
   static int  full_cycle;
+  static Real dt_init; // if >0, initial time step size
+
   //
   // Internal parameters for options.
   //
@@ -1122,28 +1130,30 @@ protected:
   static int  max_step;
   static Real stop_time;
 
+  static int  richard_solver_verbose;
+
   //
   // Init-to-steady parameters
   //
   static bool do_richard_init_to_steady;
-  static int richard_init_to_steady_verbose;
-  static int steady_min_iterations;
-  static int steady_max_iterations;
-  static int steady_limit_iterations;
+  static int  richard_init_to_steady_verbose;
+  static int  steady_min_iterations;
+  static int  steady_max_iterations;
+  static int  steady_limit_iterations;
   static Real steady_time_step_reduction_factor;
   static Real steady_time_step_increase_factor;
   static Real steady_time_step_retry_factor_1;
   static Real steady_time_step_retry_factor_2;
   static Real steady_time_step_retry_factor_f;
-  static int max_consecutive_failures_1;
-  static int max_consecutive_failures_2;
+  static int  steady_max_consecutive_failures_1;
+  static int  steady_max_consecutive_failures_2;
   static Real steady_tolerance;
   static Real steady_initial_time_step;
   static Real steady_maximum_time_steps;
-  static int max_num_consecutive_success;
+  static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
-  static int max_num_consecutive_increases;
-  static Real consecutive_increase_reduction_factor;
+  static int  steady_max_num_consecutive_increases;
+  static Real steady_consecutive_increase_reduction_factor;
     
   //
   // Number of states
