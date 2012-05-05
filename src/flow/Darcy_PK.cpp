@@ -127,7 +127,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  updateBoundaryConditions(
+  UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_cells, atm_pressure,
       bc_markers, bc_values);
@@ -237,7 +237,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   if (src_sink != NULL) src_sink->Compute(time);
 
-  updateBoundaryConditions(
+  UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_cells, atm_pressure,
       bc_markers, bc_values);

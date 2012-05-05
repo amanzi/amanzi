@@ -27,8 +27,7 @@ namespace AmanziFlow {
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  // T_internal = Tp;  breaks internal clock (lipnikov@lanl.gov)
-  ComputePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
+  ComputePreconditionerMFD(u, matrix, mfd3d_method, Tp, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -70,7 +69,8 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  ComputePreconditionerMFD(u, preconditioner, Tp, dTp, true);
+  int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+  ComputePreconditionerMFD(u, preconditioner, disc_method, Tp, dTp, true);
   ierr = 0;
 }
 
@@ -86,11 +86,9 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
     error_norm = std::max<double>(error_norm, tmp);
   }
 
-  // find the global maximum
 #ifdef HAVE_MPI
   double buf = error_norm;
-  // MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  du.Comm().MaxAll(&buf, &error_norm, 1);
+  du.Comm().MaxAll(&buf, &error_norm, 1);  // find the global maximum
 #endif
   return  error_norm;
 }

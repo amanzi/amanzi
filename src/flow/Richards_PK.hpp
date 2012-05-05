@@ -85,7 +85,7 @@ class Richards_PK : public Flow_PK {
                                    Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, 
+  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, int disc_method,
                                 double Tp, double dTp, bool flag_update_ML);
 
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
