@@ -61,7 +61,7 @@ set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATC
 set(CCSE_URL_STRING     "file:///home/marc/src/ASCEM/amanzi/Dist")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz)
 #set(CCSE_MD5_SUM        04c255b7c022776f7ac88be096125534) 
-set(CCSE_MD5_SUM        0e6d5086f6f441606332b2049b49fb41)
+set(CCSE_MD5_SUM        2ceb6f5d0eccddc5aa8ecf3a4e1c0a01)
 
 #
 # TPL: UnitTest
