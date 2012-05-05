@@ -1301,11 +1301,7 @@ Diffusion::richard_iter (Real                   dt,
       status.success = false;
       status.status = "Finished";
       if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
-          std::cout << tag << status.reason << ".... r,ir,f,ir*f:"
-                    << status.initial_residual_norm << ", " 
-                    << status.residual_norm_pre_ls << ", " 
-                    << status.initial_residual_norm * status.ls_acceptance_factor
-                    << std::endl;
+          std::cout << tag << status.reason << std::endl;
       }
   }
 
