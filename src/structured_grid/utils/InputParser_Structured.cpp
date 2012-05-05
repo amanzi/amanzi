@@ -961,14 +961,14 @@ namespace Amanzi {
                 mtest.insert(MTEST::value_type("Regions_Assigned",false));
         
                 std::string label = rlist.name(i);
-                std::string _label = underscore(label);
-                    
-                // Add this rock label to list of rocks
-                arrayrock.push_back(_label);
-
                 const ParameterEntry& entry = rlist.getEntry(label);
             
                 if (entry.isList()) {
+                    std::string _label = underscore(label);
+                    
+                    // Add this rock label to list of rocks
+                    arrayrock.push_back(_label);
+
                     ParameterList rsublist;
                     const ParameterList& rslist = rlist.sublist(label);
                     for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) 
