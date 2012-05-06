@@ -1150,6 +1150,7 @@ PorousMedia::richard_init_to_steady()
                 if (richard_init_to_steady_verbose>2) {
                     richard_solver_verbose = 1;
                 }
+		initial_iter = 1;
                 
                 const Real cur_time = state[State_Type].curTime();
                 const int  finest_level = parent->finestLevel();
@@ -1347,6 +1348,7 @@ PorousMedia::richard_init_to_steady()
                 }
 
                 richard_solver_verbose = old_richard_solver_verbose;
+		initial_iter = 0;
 
                 //
                 // Re-instate timestep.
@@ -2348,11 +2350,24 @@ void
 PorousMedia::advance_richard (Real time,
 			      Real dt)
 {
+  std::string tag = "Richard Time Step: ";
   // 
   // Time stepping for richard's equation
   //
   int curr_nwt_iter = 20;
   PorousMedia::Reason ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+  if (ParallelDescriptor::IOProcessor())
+    {
+      std::cout << tag;
+      if (ret == RICHARD_LINEAR_FAIL) {
+	std::cout << " - linear solver failure ";
+      }
+      else if ( ret == RICHARD_NEWTON_FAIL) {
+	std::cout << tag << " - nonlinear solver failure ";
+      }
+      std::cout << std::endl;
+    }
+
   BL_ASSERT(ret == RICHARD_SUCCESS);
 
   compute_vel_phase(u_mac_curr,0,time+dt);

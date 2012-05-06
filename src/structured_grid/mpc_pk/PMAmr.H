@@ -16,6 +16,8 @@ public:
 
     static EventCoord& eventCoord() {return event_coord;}
 
+    Real StartTime() const {return strt_time;}
+
 protected:
     static EventCoord event_coord;
 
