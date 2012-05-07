@@ -97,7 +97,7 @@ void Matrix_MFD::createMFDstiffnessMatrices(int mfd3d_method,
     } else {
        mfd.darcy_mass_inverse(c, K[c], Bff);
     }
-
+ 
     for (int n = 0; n < nfaces; n++)
       for (int m = 0; m < nfaces; m++) Bff(m, n) *= Krel_faces[faces[m]];
 

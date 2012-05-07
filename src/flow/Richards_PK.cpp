@@ -22,10 +22,12 @@ Authors: Neil Carlson (nnc@lanl.gov),
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "Matrix_Audit.hpp"
 
 #include "Flow_BC_Factory.hpp"
 #include "boundary_function.hh"
 #include "Richards_PK.hpp"
+
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -532,6 +534,11 @@ void Richards_PK::ComputePreconditionerMFD(
     matrix->computeSchurComplement(bc_markers, bc_values);
     matrix->update_ML_preconditioner();
   }
+
+  // DEBUG
+  //Matrix_Audit audit(mesh_, matrix);
+  //audit.InitAudit();
+  //audit.CheckSpectralBounds();
 }
 
 
