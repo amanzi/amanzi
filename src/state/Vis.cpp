@@ -140,7 +140,7 @@ bool Amanzi::Vis::dump_requested(const int cycle, const double time)
     if (!visualization_times_.empty() && time!=-std::numeric_limits<double>::max())
     {
       // If the current timestep is equal to the one on the stack, dump
-      if (visualization_times_.top()==time)
+      if (abs(visualization_times_.top()-time) < 1.0e-7)
       {
         visualization_times_.pop();
         return true;

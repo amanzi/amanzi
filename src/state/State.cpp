@@ -951,7 +951,7 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
 /* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, bool force) {
   if (!vis.is_disabled()) {
-    if ( force || vis.dump_requested(get_cycle(), get_time()))  {
+    if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
       using Teuchos::OSTab;
       Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
