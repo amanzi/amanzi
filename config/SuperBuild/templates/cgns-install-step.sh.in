@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+# CGNS recommends running with the make configure target
+#5.0.xmake config shared=0 cc=@CMAKE_C_COMPILER@ prefix=@TPL_INSTALL_PREFIX@
+cgns_src_dir=@CGNS_source_dir@
+cgns_prefix=@TPL_INSTALL_PREFIX@
+
+# Make the install directory if it does not exist
+if [ ! -e "@TPL_INSTALL_PREFIX@" ] ; then
+  echo "Making install prefix @TPL_INSTALL_PREFIX@"
+  mkdir -p @TPL_INSTALL_PREFIX@
+
+  if [ $? -ne 0 ] ; then
+    echo "Failed to mkdir @TPL_INSTALL_PREFIX@"
+    exit $?
+  fi
+
+fi
+
+# Make the install include directory if it does not exist
+if [ ! -e "@TPL_INSTALL_PREFIX@/include" ] ; then
+  echo "Making install include directory @TPL_INSTALL_PREFIX@/include"
+  mkdir -p @TPL_INSTALL_PREFIX@/include
+
+  if [ $? -ne 0 ] ; then
+    echo "Failed to mkdir @TPL_INSTALL_PREFIX@/include"
+    exit $?
+  fi
+
+fi
+
+# Make the install lib directory if it does not exist
+if [ ! -e "@TPL_INSTALL_PREFIX@/lib" ] ; then
+  echo "Making install lib directory @TPL_INSTALL_PREFIX@/lib"
+  mkdir -p @TPL_INSTALL_PREFIX@/lib
+
+  if [ $? -ne 0 ] ; then
+    echo "Failed to mkdir @TPL_INSTALL_PREFIX@/lib"
+    exit $?
+  fi
+
+fi
+
+cd @CGNS_source_dir@
+make install
+
+exit $?
