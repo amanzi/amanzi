@@ -76,6 +76,7 @@ double Permafrost::enorm(Teuchos::RCP<const TreeVector> u,
 
   for (int lcv=0; lcv!=pres_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*dpres_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*pres_vec)(0))[lcv]));
+    if (std::isnan(tmp)) return 1.e99;
     enorm_val = std::max<double>(enorm_val, tmp);
   }
 
@@ -84,6 +85,7 @@ double Permafrost::enorm(Teuchos::RCP<const TreeVector> u,
 
   for (int lcv=0; lcv!=fpres_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*fdpres_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*fpres_vec)(0))[lcv]));
+    if (std::isnan(tmp)) return 1.e99;
     enorm_val = std::max<double>(enorm_val, tmp);
   }
 
@@ -165,6 +167,9 @@ void Permafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     if (c==0) std::cout << "    p =" << p << std::endl;
     if (c==0) std::cout << "    T =" << T << std::endl;
     if (c==0) std::cout << "    phi =" << phi << std::endl;
+    if (c==99) std::cout << "    p =" << p << std::endl;
+    if (c==99) std::cout << "    T =" << T << std::endl;
+    if (c==99) std::cout << "    phi =" << phi << std::endl;
 
 
     //  omega_g * sat_g * d(n_g)/dp

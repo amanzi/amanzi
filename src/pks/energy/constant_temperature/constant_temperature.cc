@@ -55,12 +55,12 @@ void ConstantTemperature::initialize(const Teuchos::RCP<State>& S) {
   S->GetFieldData("temperature", "energy")->PutScalar(T_);
   S->GetRecord("temperature", "energy")->set_initialized();
 
-  if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
-    // model evaluator params
-    // -- tolerances
-    atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
-    rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+  state_to_solution(S, solution_);
+  atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 
+  // initialize the timesteppper
+  if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);

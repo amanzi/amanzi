@@ -187,12 +187,10 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize the timesteppper
   state_to_solution(S, solution_);
-  if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
-    // model evaluator params
-    // -- tolerances
-    atol_ = flow_plist_.get<double>("Absolute error tolerance",1e-5);
-    rtol_ = flow_plist_.get<double>("Relative error tolerance",1e-5);
+  atol_ = flow_plist_.get<double>("Absolute error tolerance",1e-5);
+  rtol_ = flow_plist_.get<double>("Relative error tolerance",1e-5);
 
+  if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(flow_plist_.sublist("Time integrator")));

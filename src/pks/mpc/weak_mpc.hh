@@ -34,8 +34,17 @@ public:
 
   virtual bool advance(double dt);
 
+private:
   // factory registration
   static RegisteredPKFactory<WeakMPC> reg_;
+
+  // These BDF methods do not need to be implemented for the weak mpc.
+  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {};
+  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {};
+  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du) {};
+  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {};
 
 };
 } // close namespace Amanzi

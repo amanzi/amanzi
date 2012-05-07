@@ -22,7 +22,6 @@ us to the air-water system.
 #include "PK.hh"
 #include "pk_factory.hh"
 #include "bdf_time_integrator.hh"
-#include "bdf_fn_base.hh"
 
 #include "advection.hh"
 #include "matrix_mfd.hh"
@@ -30,7 +29,7 @@ us to the air-water system.
 namespace Amanzi {
 namespace Energy {
 
-class AdvectionDiffusion : public PK, public BDFFnBase {
+class AdvectionDiffusion : public PK {
 
 public:
 
