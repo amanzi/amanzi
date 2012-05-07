@@ -257,6 +257,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   DeriveSaturationFromPressure(pressure, water_saturation);
 
+  // control options
   absolute_tol = absolute_tol_sss;
   relative_tol = relative_tol_sss;
 
@@ -318,6 +319,15 @@ void Richards_PK::InitTransient(double T0, double dT0)
     solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
   }
 
+  // initialize pressure and saturation
+  Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& water_saturation = FS->ref_water_saturation();
+  *solution_cells = pressure;
+
+  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  DeriveSaturationFromPressure(pressure, water_saturation);
+
+  // control options
   absolute_tol = absolute_tol_trs;
   relative_tol = relative_tol_trs;
 

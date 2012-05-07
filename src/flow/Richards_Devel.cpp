@@ -31,6 +31,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   int itrs;
   for (itrs = 0; itrs < 20; itrs++) {
@@ -69,6 +70,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
     preconditioner->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    AddTimeDerivative_MFD(*solution_old_cells, dTp, preconditioner);
     preconditioner->applyBoundaryConditions(bc_markers, bc_values);
     preconditioner->assembleGlobalMatrices();
     preconditioner->computeSchurComplement(bc_markers, bc_values);
@@ -96,7 +98,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
           itrs, error, linear_residual, num_itrs);
     }
 
-    if (error < 10.0) 
+    if (error < 5.0) 
       break;
     else 
       solution_old = solution_new;

@@ -64,6 +64,8 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> specific_storage() { return specific_storage_; }
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
 
+  State* state() { return S_; }
+
   double ref_fluid_density() { return *fluid_density_; }  // references
   double ref_fluid_viscosity() { return *fluid_viscosity_; }
   Epetra_Vector& ref_pressure() { return *pressure_; }
