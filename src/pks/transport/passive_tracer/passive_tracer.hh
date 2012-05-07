@@ -25,14 +25,13 @@ simple passive tracer transport
 
 #include "pk_factory.hh"
 #include "PK.hh"
-#include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
 
 
 namespace Amanzi {
 namespace Transport {
 
-class PassiveTracer : public PK, public BDFFnBase {
+class PassiveTracer : public PK {
 
 public:
 

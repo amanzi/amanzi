@@ -55,12 +55,11 @@ void PassiveTracer::initialize(const Teuchos::RCP<State>& S) {
   // initialize the advection method
   advection_->set_num_dofs(1);
 
-  if (!transport_plist_.get<bool>("Strongly Coupled PK", false)) {
-    // model evaluator params
-    // -- tolerances
-    atol_ = transport_plist_.get<double>("Absolute error tolerance",1.0);
-    rtol_ = transport_plist_.get<double>("Relative error tolerance",1e-5);
+  state_to_solution(S, solution_);
+  atol_ = transport_plist_.get<double>("Absolute error tolerance",1.0);
+  rtol_ = transport_plist_.get<double>("Relative error tolerance",1e-5);
 
+  if (!transport_plist_.get<bool>("Strongly Coupled PK", false)) {
     Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(transport_plist_.sublist("Time integrator")));
     time_stepper_ = Teuchos::rcp(new BDF2TimeIntegrator(this, bdf2_plist_p, solution_));

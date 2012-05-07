@@ -22,7 +22,6 @@ us to the air-water system.
 #include "pk_factory.hh"
 #include "PK.hh"
 #include "bdf_time_integrator.hh"
-#include "bdf_fn_base.hh"
 
 #include "thermal_conductivity_threephase.hh"
 #include "internal_energy_model.hh"
@@ -33,7 +32,7 @@ us to the air-water system.
 namespace Amanzi {
 namespace Energy {
 
-class ThreePhase : public PK, public BDFFnBase {
+class ThreePhase : public PK {
 
 public:
 

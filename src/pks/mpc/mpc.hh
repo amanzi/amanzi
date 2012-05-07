@@ -39,9 +39,8 @@ namespace Amanzi {
 class MPC : public PK {
 
 public:
-  // all PK constructors must look like this
-  MPC(Teuchos::ParameterList& mpc_plist,
-      const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution);
+  MPC(Teuchos::ParameterList& mpc_plist, const Teuchos::RCP<State>& S,
+      const Teuchos::RCP<TreeVector>& soln) : mpc_plist_(mpc_plist) {};
 
   // PK methods
   // -- calls all sub-PK initialize() methods

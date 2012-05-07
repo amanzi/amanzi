@@ -113,14 +113,12 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   bc_flux_->Compute(time);
   UpdateBoundaryConditions_();
 
-  // initialize the timesteppper
   state_to_solution(S, solution_);
-  if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
-    // model evaluator params
-    // -- tolerances
-    atol_ = energy_plist_.get<double>("Absolute error tolerance",1e-5);
-    rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e-5);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 
+  // initialize the timesteppper
+  if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));

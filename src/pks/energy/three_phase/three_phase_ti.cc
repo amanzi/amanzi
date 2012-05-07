@@ -7,6 +7,7 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
+#include <boost/math/special_functions/fpclassify.hpp>
 #include "Epetra_Vector.h"
 #include "three_phase.hh"
 
@@ -38,8 +39,13 @@ void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   Teuchos::RCP<CompositeVector> res = g->data();
   res->PutScalar(0.0);
 
-  // diffusion term, implicit
-  ApplyDiffusion_(S_next_, res);
+  // diffusion term
+  bool imp_diff = energy_plist_.get<bool>("Implicit Diffusion Term", true);
+  if (imp_diff) {
+    ApplyDiffusion_(S_next_, res);
+  } else {
+    ApplyDiffusion_(S_inter_, res);
+  }
   std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 
@@ -48,8 +54,14 @@ void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 
-  // advection term, explicit
-  AddAdvection_(S_inter_, res, true);
+  // advection term
+  bool imp_adv = energy_plist_.get<bool>("Implicit Advection Term", false);
+  if (imp_adv) {
+    AddAdvection_(S_next_, res, true);
+  } else {
+    AddAdvection_(S_inter_, res, true);
+  }
+
   std::cout << "  res0 (after advection): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after advection): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 };
@@ -73,6 +85,7 @@ double ThreePhase::enorm(Teuchos::RCP<const TreeVector> u,
 
   for (int lcv=0; lcv!=temp_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*dtemp_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*temp_vec)(0))[lcv]));
+    if (std::isnan(tmp)) return 1.e99;
     enorm_val = std::max<double>(enorm_val, tmp);
   }
 
@@ -81,6 +94,7 @@ double ThreePhase::enorm(Teuchos::RCP<const TreeVector> u,
 
   for (int lcv=0; lcv!=ftemp_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*fdtemp_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*ftemp_vec)(0))[lcv]));
+    if (std::isnan(tmp)) return 1.e99;
     enorm_val = std::max<double>(enorm_val, tmp);
   }
 

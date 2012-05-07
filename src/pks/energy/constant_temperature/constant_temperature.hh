@@ -32,14 +32,13 @@ Example usage:
 
 #include "PK.hh"
 #include "pk_factory.hh"
-#include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
 
 
 namespace Amanzi {
 namespace Energy {
 
-class ConstantTemperature : public PK, public BDFFnBase {
+class ConstantTemperature : public PK {
 
 public:
 

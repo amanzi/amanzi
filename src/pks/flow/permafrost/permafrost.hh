@@ -21,7 +21,6 @@
 
 #include "PK.hh"
 #include "pk_factory.hh"
-#include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
 
 #include "wrm.hh"
@@ -37,7 +36,7 @@ const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 2;
 const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
 const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4;
 
-class Permafrost : public PK, public BDFFnBase {
+class Permafrost : public PK {
 
 public:
   Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
