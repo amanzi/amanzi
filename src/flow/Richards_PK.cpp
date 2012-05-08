@@ -145,7 +145,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   // Get solver parameters from the flow parameter list.
   ProcessParameterList();
 
-  // Process boundary data
+  // Process boundary data (state may be incomplete at this moment)
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
@@ -245,13 +245,13 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
+  *solution_cells = pressure;
+
   if (initialize_with_darcy) {
     double pmin = atm_pressure;
     InitializePressureHydrostatic(T0, *solution);
     ClipHydrostaticPressure(pmin, clip_saturation, *solution);
     pressure = *solution_cells;
-  } else {
-    *solution_cells = pressure;
   }
 
   DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
