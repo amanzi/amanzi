@@ -85,10 +85,12 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     int num_itrs = solver->NumIters();
     double linear_residual = solver->TrueResidual();
 
+    /*
     int ndof = ncells_owned + nfaces_owned;
     for (int c = 0; c < ndof; c++) {
       solution_new[c] = (solution_old[c] + solution_new[c]) / 2;
     }
+    */
 
     // error analysis
     double error = ErrorNorm(solution_old, solution_new);

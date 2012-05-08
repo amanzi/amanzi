@@ -153,16 +153,6 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   double T_physical = FS->get_time();
   T_internal = (standalone_mode) ? T_internal : T_physical;
 
-  double time = T_internal;
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  bc_head->Compute(time);
-  bc_seepage->Compute(time);
-  UpdateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, atm_pressure,
-      bc_markers, bc_values);
-
   // Process other fundamental structures
   K.resize(ncells_owned);
   is_matrix_symmetric = (Krel_method == FLOW_RELATIVE_PERM_CENTERED);
