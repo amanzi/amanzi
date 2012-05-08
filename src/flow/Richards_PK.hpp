@@ -85,7 +85,7 @@ class Richards_PK : public Flow_PK {
                                    Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, 
+  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, int disc_method,
                                 double Tp, double dTp, bool flag_update_ML);
 
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -166,11 +166,13 @@ class Richards_PK : public Flow_PK {
 
   int Krel_method;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
-  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
+  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability
 
   int mfd3d_method;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
+
+  double clip_saturation;  // initialization options
 
  private:
   void operator=(const Richards_PK& RPK);

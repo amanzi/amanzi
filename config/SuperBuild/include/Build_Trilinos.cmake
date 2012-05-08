@@ -46,7 +46,7 @@ set(MPI_CMAKE_ARGS DIR EXEC EXEC_NUMPROCS_FLAG EXE_MAX_NUMPROCS C_COMPILER)
 foreach (var ${MPI_CMAKE_ARGS} )
   set(mpi_var "MPI_${var}")
   if ( ${mpi_var} )
-    list(APPEND Trilinos_CMAKE_TPL_ARGS "-D${mpi_var}=${${mpi_var}}")
+    list(APPEND Trilinos_CMAKE_TPL_ARGS "-D${mpi_var}:STRING=${${mpi_var}}")
   endif()
 endforeach() 
 
@@ -104,14 +104,14 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_Netcdf:BOOL=ON"
-            "-DNetcdf_INCLUDE_DIRS=${TPL_INSTALL_PREFIX}/include"
-            "-DNetcdf_LIBRARY_DIRS:PATH=${TPL_INSTALL_PREFIX}/lib")
+            "-DNetcdf_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
+            "-DNetcdf_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
 
 # ExodusII 
 list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_ExodusII:BOOL=ON" 
-            "-DExodusII_LIBRARY_DIRS:PATH=${TPL_INSTALL_PREFIX}/lib"
-            "-DExodusII_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include")
+            "-DExodusII_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+            "-DExodusII_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
 
 #  - Addtional Trilinos CMake Arguments
 set(Trilinos_CMAKE_EXTRA_ARGS
@@ -133,7 +133,7 @@ endif()
 
 #  - Add CMake configuration file
 if(Trilinos_Build_Config_File)
-    list(APPEND Trilinos_CMAKE_EXTRA_ARGS
+    set(Trilinos_Config_File_ARGS 
         "-C${Trilinos_Build_Config_File}")
     message(STATUS "Will add ${Trilinos_Build_Config_File} to the Trilinos configure")    
 endif()    
@@ -188,9 +188,10 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
-                    CMAKE_ARGS    ${Trilinos_CMAKE_LANG_ARGS} 
-                                  ${Trilinos_CMAKE_ARGS}
-                                 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+		    CMAKE_ARGS          ${Trilnos_Config_File_ARGS}
+                    CMAKE_CACHE_ARGS    ${Trilinos_CMAKE_LANG_ARGS} 
+                                        ${Trilinos_CMAKE_ARGS}
+                                        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make

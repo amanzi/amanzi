@@ -62,6 +62,14 @@ list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
 target_link_libraries(flow functions mesh_functions ${flow_tpl_libs} time_integration)
+
+#
+# Library: matrix audit
+#
+add_library(matrix_audit Matrix_Audit.cpp)
+add_install_library(matrix_audit)
+target_link_libraries(matrix_audit ${flow_tpl_libs})
+
 #
 # Install Targets
 #

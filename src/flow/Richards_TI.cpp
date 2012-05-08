@@ -22,19 +22,17 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate f(u, du/dt) = d(s u)/dt + A*u - g.                                         
+* Calculate f(u, du/dt) = d(s(u))/dt + A*u - g.                                         
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  // T_internal = Tp;  breaks internal clock (lipnikov@lanl.gov)
-  ComputePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
+  ComputePreconditionerMFD(u, matrix, mfd3d_method, Tp, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
-#if 1
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -53,17 +51,6 @@ void Richards_PK::fun(
       f[c] += rho * phi[c] * volume * (s1 - s2) / dTp;
     }
   }
-#else
-  Epetra_Vector* u_cells = FS->createCellView(u);
-  Epetra_Vector dSdP(mesh_->cell_map(false));
-  derivedSdP(*u_cells, dSdP);
-
-  for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
-    double factor = rho * phi[c] * dSdP[c] * volume;
-    f[c] += factor * udot[c];
-  }
-#endif
 }
 
 
@@ -82,7 +69,8 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  ComputePreconditionerMFD(u, preconditioner, Tp, dTp, true);
+  int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+  ComputePreconditionerMFD(u, preconditioner, disc_method, Tp, dTp, true);
   ierr = 0;
 }
 
@@ -98,11 +86,9 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
     error_norm = std::max<double>(error_norm, tmp);
   }
 
-  // find the global maximum
 #ifdef HAVE_MPI
   double buf = error_norm;
-  // MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  du.Comm().MaxAll(&buf, &error_norm, 1);
+  du.Comm().MaxAll(&buf, &error_norm, 1);  // find the global maximum
 #endif
   return  error_norm;
 }

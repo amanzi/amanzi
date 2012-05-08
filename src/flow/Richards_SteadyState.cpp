@@ -28,20 +28,6 @@ int Richards_PK::AdvanceToSteadyState()
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
-  /* Initialization must be done in routine InitSteadyState(). 
-  if (initialize_with_darcy) {
-    double pmin = atm_pressure;
-    InitializePressureHydrostatic(0.0, *solution);
-    ClipHydrostaticPressure(pmin, 0.6, *solution);
-    for (int c=0; c<ncells_owned; c++) pressure[c] = (*solution_cells)[c];
-  } else {{
-    *solution_cells = pressure;
-  }
-
-  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-  DeriveSaturationFromPressure(pressure, water_saturation);
-  */
-
   // start iterations
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
@@ -158,6 +144,17 @@ int Richards_PK::AdvanceSteadyState_Picard()
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
+  // update boundary conditions
+  double time = 0.0;
+  bc_pressure->Compute(time);
+  bc_flux->Compute(time);
+  bc_head->Compute(time);
+  bc_seepage->Compute(time);
+  UpdateBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *solution_cells, atm_pressure,
+      bc_markers, bc_values);
+
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
@@ -172,15 +169,23 @@ int Richards_PK::AdvanceSteadyState_Picard()
       for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
     }
 
-    // create algebraic problem (matrix = preconditioner)
+    // create algebraic problem
     matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
-    matrix->computeSchurComplement(bc_markers, bc_values);
-    matrix->update_ML_preconditioner();
-    rhs = matrix->get_rhs();  // export rhs from matrix class
+    rhs = matrix->get_rhs();  // export RHS from the matrix class
+
+    // create preconditioner
+    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
+    preconditioner->createMFDrhsVectors();
+    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->assembleGlobalMatrices();
+    preconditioner->computeSchurComplement(bc_markers, bc_values);
+    preconditioner->update_ML_preconditioner();
 
     // check convergence of non-linear residual
     L2error = matrix->computeResidual(solution_new, residual);

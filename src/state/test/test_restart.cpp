@@ -240,7 +240,7 @@ SUITE(RESTART) {
 
     // now read the file into a new state object
 
-    State S1(Mesh);
+    State S1(number_of_components, number_of_minerals, Mesh);
 
     std::string filename = "restart_dump0004.h5";
 

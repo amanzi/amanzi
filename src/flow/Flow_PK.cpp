@@ -76,7 +76,7 @@ Epetra_Map* Flow_PK::createSuperMap()
 /* ******************************************************************
 * Add a boundary marker to used faces.                                          
 ****************************************************************** */
-void Flow_PK::updateBoundaryConditions(
+void Flow_PK::UpdateBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_cells, const double atm_pressure,

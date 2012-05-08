@@ -14,6 +14,8 @@
       </ParameterList>
 
       <Parameter name="atmospheric pressure" type="double" value="101325"/>
+      <Parameter name="Discretization method hint" type="string" value="monotone"/>
+
       <ParameterList name="Diffusion Preconditioner">
         <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="1"/>
