@@ -41,6 +41,10 @@ add_library(chemistry_pk chemistry_state.cc chemistry_pk.cc)
 target_link_libraries(chemistry_pk ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 add_install_library(chemistry_pk)
 
+# Add install include files
+file(GLOB chem_inc_files "*hh")
+add_install_include_file(${chem_inc_files})
+
 if (BUILD_TESTS)
   add_subdirectory(tests_integration)
 endif()
