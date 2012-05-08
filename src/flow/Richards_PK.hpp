@@ -94,7 +94,7 @@ class Richards_PK : public Flow_PK {
 
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
 
-  void InitializePressureHydrostatic(const double T, Epetra_Vector& u);
+  void InitializePressureHydrostatic(const double T);
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 

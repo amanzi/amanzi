@@ -63,7 +63,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     AddTimeDerivative_MFDpicard(*solution_cells, *solution_old_cells, dTp, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
-    rhs = matrix->get_rhs();
+    rhs = matrix->rhs();
 
     // create preconditioner
     int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
@@ -181,7 +181,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     preconditioner->update_ML_preconditioner();
 
     // call AztecOO solver
-    rhs = matrix->get_rhs();
+    rhs = matrix->rhs();
     Epetra_Vector b(*rhs);
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
@@ -235,8 +235,8 @@ void Richards_PK::AddTimeDerivative_MFDpicard(
   DerivedSdP(pressure_cells_dSdP, dSdP);
 
   const Epetra_Vector& phi = FS->ref_porosity();
-  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
-  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+  std::vector<double>& Acc_cells = matrix->Acc_cells();
+  std::vector<double>& Fc_cells = matrix->Fc_cells();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -255,8 +255,8 @@ void Richards_PK::AddTimeDerivative_MFDpicard(
 void Richards_PK::AddTimeDerivative_MFDfake(
     Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
-  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
-  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+  std::vector<double>& Acc_cells = matrix->Acc_cells();
+  std::vector<double>& Fc_cells = matrix->Fc_cells();
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);

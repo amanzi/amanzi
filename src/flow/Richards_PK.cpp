@@ -140,7 +140,7 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   solution_cells = Teuchos::rcp(FS->createCellView(*solution));
   solution_faces = Teuchos::rcp(FS->createFaceView(*solution));
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  rhs = matrix->get_rhs();  // import rhs from the matrix
+  rhs = matrix->rhs();  // import rhs from the matrix
 
   // Get solver parameters from the flow parameter list.
   ProcessParameterList();
@@ -249,12 +249,13 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   if (initialize_with_darcy) {
     double pmin = atm_pressure;
-    InitializePressureHydrostatic(T0, *solution);
+    InitializePressureHydrostatic(T0);
     ClipHydrostaticPressure(pmin, clip_saturation, *solution);
     pressure = *solution_cells;
+  } else {
+    DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   }
 
-  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
@@ -583,8 +584,8 @@ void Richards_PK::AddTimeDerivative_MFD(
   DerivedSdP(pressure_cells, dSdP);
 
   const Epetra_Vector& phi = FS->ref_porosity();
-  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
-  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+  std::vector<double>& Acc_cells = matrix->Acc_cells();
+  std::vector<double>& Fc_cells = matrix->Fc_cells();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -602,7 +603,7 @@ void Richards_PK::AddTimeDerivative_MFD(
 * at time Tp.
 * WARNING: data in vectors Krel and rhs are destroyed.
 ****************************************************************** */
-void Richards_PK::InitializePressureHydrostatic(const double Tp, Epetra_Vector& u)
+void Richards_PK::InitializePressureHydrostatic(const double Tp)
 {
   AztecOO* solver_tmp = new AztecOO;
 
@@ -638,17 +639,16 @@ void Richards_PK::InitializePressureHydrostatic(const double Tp, Epetra_Vector& 
   preconditioner->update_ML_preconditioner();
 
   // solve symmetric problem
-  solver_tmp->SetUserOperator(preconditioner);
+  solver_tmp->SetUserOperator(matrix);
   solver_tmp->SetPrecOperator(preconditioner);
   solver_tmp->SetAztecOption(AZ_solver, AZ_cg);
   solver_tmp->SetAztecOption(AZ_output, AZ_none);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
-  rhs = matrix->get_rhs();
-  solver_tmp->SetRHS(&*rhs);
+  Epetra_Vector b(*(matrix->rhs()));
+  solver_tmp->SetRHS(&b);
 
-  u.PutScalar(0.0);
-  solver_tmp->SetLHS(&u);
+  solver_tmp->SetLHS(&*solution);
   solver_tmp->Iterate(max_itrs, convergence_tol);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {

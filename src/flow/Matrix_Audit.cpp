@@ -40,7 +40,7 @@ void Matrix_Audit::InitAudit()
 {
   printf("Matrix_Audit: initializingfor matrix id =%2d\n", matrix_type); 
   if (matrix_type == MATRIX_AUDIT_MFD) {
-    A = &(matrix_->get_Aff_cells());
+    A = &(matrix_->Aff_cells());
   }
 
   lda = 1;
@@ -60,7 +60,12 @@ void Matrix_Audit::InitAudit()
 
 
 /* ******************************************************************
-* AAA.                                            
+* AAA. 
+cout << " |Aff|=" << matrix->Aff()->NormInf() << endl;
+cout << " |Afc|=" << matrix->Afc()->NormInf() << endl;
+double err;
+matrix->Acc()->NormInf(&err);
+cout << " |Acc|=" << err << endl;                                           
 ****************************************************************** */
 int Matrix_Audit::CheckSpectralBounds()
 { 
@@ -74,7 +79,6 @@ int Matrix_Audit::CheckSpectralBounds()
   for (int i = 0; i < A->size(); i++) {
     Teuchos::SerialDenseMatrix<int, double>& Ai = (*A)[i];
     int n = Ai.numRows();
-if (i==9902) cout << Ai << endl;
     
     lapack.GEEV('N', 'N', n, Ai.values(), n, dmem1, dmem2, 
                 &VL, 1, &VR, 1, dwork1, lwork1, &info);
@@ -96,10 +100,6 @@ if (i==9902) cout << Ai << endl;
     cndmin = std::min<double>(cndmin, cnd);
     cndmax = std::max<double>(cndmax, cnd);
     cndavg += cnd;
-if (i==9902) {
-for (int k=0; k<n; k++) cout << dmem1[k] << " "; cout << " c=" << i << endl;
-exit(0);
-}
   }
   cndavg /= A->size();
 

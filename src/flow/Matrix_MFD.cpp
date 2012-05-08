@@ -39,7 +39,7 @@ void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Aff_cells.clear();
+  Aff_cells_.clear();
   for (int c = 0; c < K.size(); c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -57,7 +57,7 @@ void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
        mfd.darcy_mass_inverse(c, K[c], Bff);
     }
 
-    Aff_cells.push_back(Bff);
+    Aff_cells_.push_back(Bff);
   }
 }
 
@@ -74,10 +74,10 @@ void Matrix_MFD::createMFDstiffnessMatrices(int mfd3d_method,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Aff_cells.clear();
-  Afc_cells.clear();
-  Acf_cells.clear();
-  Acc_cells.clear();
+  Aff_cells_.clear();
+  Afc_cells_.clear();
+  Acf_cells_.clear();
+  Acc_cells_.clear();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
@@ -113,10 +113,10 @@ void Matrix_MFD::createMFDstiffnessMatrices(int mfd3d_method,
       matsum += colsum;
     }
 
-    Aff_cells.push_back(Bff);  // This the only place where memory can be allocated.
-    Afc_cells.push_back(Bfc);
-    Acf_cells.push_back(Bcf);
-    Acc_cells.push_back(matsum);
+    Aff_cells_.push_back(Bff);  // This the only place where memory can be allocated.
+    Afc_cells_.push_back(Bfc);
+    Acf_cells_.push_back(Bcf);
+    Acc_cells_.push_back(matsum);
   }
 }
 
@@ -130,8 +130,8 @@ void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells[c];
-    Epetra_SerialDenseVector& Bcf = Acf_cells[c];
+    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells_[c];
+    Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
 
     int n = Bff.numRows();
     double scale = old_scale[c] / new_scale[c];
@@ -140,7 +140,7 @@ void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
       for (int j = 0; j < n; j++) Bff(i, j) *= scale;
       Bcf(i) *= scale;
     }
-    Acc_cells[c] *= scale;
+    Acc_cells_[c] *= scale;
   }
 }
 
@@ -150,8 +150,8 @@ void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
 ****************************************************************** */
 void Matrix_MFD::createMFDrhsVectors()
 {
-  Ff_cells.clear();
-  Fc_cells.clear();
+  Ff_cells_.clear();
+  Fc_cells_.clear();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
@@ -164,8 +164,8 @@ void Matrix_MFD::createMFDrhsVectors()
     Epetra_SerialDenseVector Ff(nfaces);  // Entries are initilaized to 0.0.
     double Fc = 0.0;
 
-    Ff_cells.push_back(Ff);
-    Fc_cells.push_back(Fc);
+    Ff_cells_.push_back(Ff);
+    Fc_cells_.push_back(Fc);
   }
 }
 
@@ -185,12 +185,12 @@ void Matrix_MFD::applyBoundaryConditions(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells[c];  // B means elemental.
-    Epetra_SerialDenseVector& Bfc = Afc_cells[c];
-    Epetra_SerialDenseVector& Bcf = Acf_cells[c];
+    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells_[c];  // B means elemental.
+    Epetra_SerialDenseVector& Bfc = Afc_cells_[c];
+    Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
 
-    Epetra_SerialDenseVector& Ff = Ff_cells[c];
-    double& Fc = Fc_cells[c];
+    Epetra_SerialDenseVector& Ff = Ff_cells_[c];
+    double& Fc = Fc_cells_[c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -249,21 +249,21 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
   ff_graph.GlobalAssemble();  // Symbolic graph is complete.
 
   // create global matrices
-  Acc = Teuchos::rcp(new Epetra_Vector(cmap));
-  Acf = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
-  Aff = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
-  Sff = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
-  Aff->GlobalAssemble();
-  Sff->GlobalAssemble();
+  Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  Acf_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
+  Aff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
+  Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
+  Aff_->GlobalAssemble();
+  Sff_->GlobalAssemble();
 
   if (flag_symmetry_)
-    Afc = Acf;
+    Afc_ = Acf_;
   else
-    Afc = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
+    Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
 
-  rhs = Teuchos::rcp(new Epetra_Vector(super_map));
-  rhs_cells = Teuchos::rcp(FS->createCellView(*rhs));
-  rhs_faces = Teuchos::rcp(FS->createFaceView(*rhs));
+  rhs_ = Teuchos::rcp(new Epetra_Vector(super_map));
+  rhs_cells_ = Teuchos::rcp(FS->createCellView(*rhs_));
+  rhs_faces_ = Teuchos::rcp(FS->createFaceView(*rhs_));
 }
 
 
@@ -274,7 +274,7 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 ****************************************************************** */
 void Matrix_MFD::assembleGlobalMatrices()
 {
-  Aff->PutScalar(0.0);
+  Aff_->PutScalar(0.0);
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
@@ -292,14 +292,14 @@ void Matrix_MFD::assembleGlobalMatrices()
       faces_LID[n] = faces[n];
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
-    (*Acc)[c] = Acc_cells[c];
-    (*Acf).ReplaceMyValues(c, nfaces, Acf_cells[c].Values(), faces_LID);
-    (*Aff).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells[c].values());
+    (*Acc_)[c] = Acc_cells_[c];
+    (*Acf_).ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
+    (*Aff_).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
 
     if (!flag_symmetry_)
-        (*Afc).ReplaceMyValues(c, nfaces, Afc_cells[c].Values(), faces_LID);
+        (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
   }
-  (*Aff).GlobalAssemble();
+  (*Aff_).GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
   Epetra_Vector rhs_faces_wghost(fmap_wghost);
@@ -308,16 +308,16 @@ void Matrix_MFD::assembleGlobalMatrices()
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    (*rhs_cells)[c] = Fc_cells[c];
+    (*rhs_cells_)[c] = Fc_cells_[c];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      rhs_faces_wghost[f] += Ff_cells[c][n];
+      rhs_faces_wghost[f] += Ff_cells_[c][n];
     }
   }
   FS->combineGhostFace2MasterFace(rhs_faces_wghost, Add);
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f = 0; f < nfaces; f++) (*rhs_faces)[f] = rhs_faces_wghost[f];
+  for (int f = 0; f < nfaces; f++) (*rhs_faces_)[f] = rhs_faces_wghost[f];
 }
 
 
@@ -327,7 +327,7 @@ void Matrix_MFD::assembleGlobalMatrices()
 void Matrix_MFD::computeSchurComplement(
     std::vector<int>& bc_markers, std::vector<double>& bc_values)
 {
-  Sff->PutScalar(0.0);
+  Sff_->PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces_LID;
   std::vector<int> dirs;
@@ -338,12 +338,12 @@ void Matrix_MFD::computeSchurComplement(
     int nfaces = faces_LID.size();
     Epetra_SerialDenseMatrix Schur(nfaces, nfaces);
 
-    Epetra_SerialDenseVector& Bcf = Acf_cells[c];
-    Epetra_SerialDenseVector& Bfc = Afc_cells[c];
+    Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
+    Epetra_SerialDenseVector& Bfc = Afc_cells_[c];
 
     for (int n = 0; n < nfaces; n++) {
       for (int m = 0; m < nfaces; m++) {
-        Schur(n, m) = Aff_cells[c](n, m) - Bfc[n] * Bcf[m] / (*Acc)[c];
+        Schur(n, m) = Aff_cells_[c](n, m) - Bfc[n] * Bcf[m] / (*Acc_)[c];
       }
     }
 
@@ -357,10 +357,10 @@ void Matrix_MFD::computeSchurComplement(
     }
 
     Epetra_IntSerialDenseVector faces_GID(nfaces);
-    for (int n = 0; n < nfaces; n++) faces_GID[n] = (*Acf).ColMap().GID(faces_LID[n]);
-    (*Sff).SumIntoGlobalValues(faces_GID, Schur);
+    for (int n = 0; n < nfaces; n++) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
+    (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
   }
-  (*Sff).GlobalAssemble();
+  (*Sff_).GlobalAssemble();
 }
 
 
@@ -370,7 +370,7 @@ void Matrix_MFD::computeSchurComplement(
 double Matrix_MFD::computeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
 {
   Apply(solution, residual);
-  residual.Update(1.0, *rhs, -1.0);
+  residual.Update(1.0, *rhs_, -1.0);
 
   double norm_residual;
   residual.Norm2(&norm_residual);
@@ -384,7 +384,7 @@ double Matrix_MFD::computeResidual(const Epetra_Vector& solution, Epetra_Vector&
 double Matrix_MFD::computeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
 {
   Apply(solution, residual);
-  residual.Update(-1.0, *rhs, 1.0);
+  residual.Update(-1.0, *rhs_, 1.0);
 
   double norm_residual;
   residual.Norm2(&norm_residual);
@@ -398,7 +398,7 @@ double Matrix_MFD::computeNegativeResidual(const Epetra_Vector& solution, Epetra
 void Matrix_MFD::init_ML_preconditioner(Teuchos::ParameterList& ML_list_)
 {
   ML_list = ML_list_;
-  MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff, ML_list, false);
+  MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
 }
 
 
@@ -442,16 +442,16 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Face unknowns:  Yf = Aff * Xf + Afc * Xc
   int ierr;
   Epetra_MultiVector Tf(fmap, nvectors);
-  ierr  = (*Aff).Multiply(false, Xf, Yf);
-  ierr |= (*Afc).Multiply(true, Xc, Tf);  // Afc is kept in transpose form
+  ierr  = (*Aff_).Multiply(false, Xf, Yf);
+  ierr |= (*Afc_).Multiply(true, Xc, Tf);  // Afc is kept in the transpose form
   Yf.Update(1.0, Tf, 1.0);
 
   // Cell unknowns:  Yc = Acf * Xf + Acc * Xc
-  ierr |= (*Acf).Multiply(false, Xf, Yc);  // It performs the required parallel communications.
-  ierr |= Yc.Multiply(1.0, *Acc, Xc, 1.0);
+  ierr |= (*Acf_).Multiply(false, Xf, Yc);  // It performs the required parallel communications.
+  ierr |= Yc.Multiply(1.0, *Acc_, Xc, 1.0);
 
   if (ierr) {
-    Errors::Message msg("Matrix_MFD::Apply has failed to calculate Y = inv(A) * X.");
+    Errors::Message msg("Matrix_MFD::Apply has failed to calculate y = A*x.");
     Exceptions::amanzi_throw(msg);
   }
   delete [] fvec_ptrs;
@@ -496,20 +496,20 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
   int ierr;
-  ierr  = Tc.ReciprocalMultiply(1.0, *Acc, Xc, 0.0);
-  ierr |= (*Afc).Multiply(true, Tc, Tf);  // Afc is kept in transpose form
+  ierr  = Tc.ReciprocalMultiply(1.0, *Acc_, Xc, 0.0);
+  ierr |= (*Afc_).Multiply(true, Tc, Tf);  // Afc is kept in transpose form
   Tf.Update(1.0, Xf, -1.0);
 
   // Solve the Schur complement system Sff * Yf = Tf.
   MLprec->ApplyInverse(Tf, Yf);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
-  ierr |= (*Acf).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
+  ierr |= (*Acf_).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
   Tc.Update(1.0, Xc, -1.0);
-  ierr |= Yc.ReciprocalMultiply(1.0, *Acc, Tc, 0.0);
+  ierr |= Yc.ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
 
   if (ierr) {
-    Errors::Message msg("Matrix_MFD::ApplyInverse has failed in calculating y = A*x.");
+    Errors::Message msg("Matrix_MFD::ApplyInverse has failed in calculating y = inv(A)*x.");
     Exceptions::amanzi_throw(msg);
   }
   delete [] fvec_ptrs;
@@ -560,7 +560,7 @@ void Matrix_MFD::deriveDarcyMassFlux(const Epetra_Vector& solution,
       int f = faces[n];
       if (f < nfaces_owned && !flag[f]) {
         double s(0.0);
-        for (int m = 0; m < nfaces; m++) s += Aff_cells[c](n, m) * dp[m];
+        for (int m = 0; m < nfaces; m++) s += Aff_cells_[c](n, m) * dp[m];
         darcy_mass_flux[f] = s * dirs[n];
         flag[f] = 1;
       }

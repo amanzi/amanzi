@@ -82,6 +82,7 @@ void Flow_PK::UpdateBoundaryConditions(
     const Epetra_Vector& pressure_cells, const double atm_pressure,
     std::vector<int>& bc_markers, std::vector<double>& bc_values)
 {
+  int flag_essential_bc = 0;
   for (int n = 0; n < bc_markers.size(); n++) {
     bc_markers[n] = FLOW_BC_FACE_NULL;
     bc_values[n] = 0.0;
@@ -92,12 +93,14 @@ void Flow_PK::UpdateBoundaryConditions(
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_PRESSURE;
     bc_values[f] = bc->second;
+    flag_essential_bc = 1;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_HEAD;
     bc_values[f] = bc->second;
+    flag_essential_bc = 1;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
@@ -118,6 +121,7 @@ void Flow_PK::UpdateBoundaryConditions(
     } else {
       bc_markers[f] = FLOW_BC_FACE_PRESSURE;
       bc_values[f] = atm_pressure;
+      flag_essential_bc = 1;
     }
   }
 
@@ -133,7 +137,14 @@ void Flow_PK::UpdateBoundaryConditions(
         bc_values[f] = 0.0;
       }
     }
-  } 
+  }
+
+  // verify that the algebraic problem is consistent
+  if (! flag_essential_bc) {
+     Errors::Message msg; 
+     msg << "Flow PK: No essential boundary conditions, the solver may fail.";
+     Exceptions::amanzi_throw(msg);
+  }
 }
 
 
@@ -187,8 +198,8 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
-    double& Fc = matrix->get_Fc_cells()[c];
+    Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+    double& Fc = matrix->Fc_cells()[c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];

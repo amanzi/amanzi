@@ -175,7 +175,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
-    rhs = matrix->get_rhs();  // export RHS from the matrix class
+    rhs = matrix->rhs();  // export RHS from the matrix class
 
     // create preconditioner
     int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
