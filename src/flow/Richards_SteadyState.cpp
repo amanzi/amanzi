@@ -22,13 +22,6 @@ namespace AmanziFlow {
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState()
 {
-  flow_status_++;  // indicates intermediate state
-
-  // initialize pressure and saturation at T=0.
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& water_saturation = FS->ref_water_saturation();
-
-  // start iterations
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
     ierr = AdvanceSteadyState_Picard();

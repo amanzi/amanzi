@@ -100,7 +100,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
           itrs, error, linear_residual, num_itrs);
     }
 
-    if (error < 5.0) 
+    if (error < 1.0) 
       break;
     else 
       solution_old = solution_new;
@@ -134,7 +134,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
 
-  if (is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_cgs);
+  if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
 
   T_internal = T0_sss;

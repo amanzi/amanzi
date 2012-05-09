@@ -140,6 +140,10 @@ void Flow_PK::UpdateBoundaryConditions(
   }
 
   // verify that the algebraic problem is consistent
+#ifdef HAVE_MPI
+  int flag = flag_essential_bc;
+  mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
+#endif
   if (! flag_essential_bc) {
      Errors::Message msg; 
      msg << "Flow PK: No essential boundary conditions, the solver may fail.";
