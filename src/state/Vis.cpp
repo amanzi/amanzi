@@ -7,7 +7,7 @@
 
 
 Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
-  plist(plist_), disabled(false), comm(comm_)
+    plist(plist_), disabled(false), comm(comm_), hasTimeData_(false), hasCycleData_(false)
 { 
   read_parameters(plist);
 
@@ -16,7 +16,7 @@ Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
 }
 
 // this constructor makes an object that will not create any output
-Amanzi::Vis::Vis (): disabled(true)
+Amanzi::Vis::Vis (): disabled(true), hasTimeData_(false), hasCycleData_(false)
 {
 }
 
@@ -28,28 +28,24 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
   if (plist.isParameter("Visualization Times")) {
     Teuchos::Array<double>vis_times = plist.get<Teuchos::Array<double> >("Visualization Times"); 
     // To improve lookup speed while running, we will put these in a stack 
-    for (Teuchos::Array<double>::reverse_iterator rit=vis_times.rbegin(); rit<vis_times.rend(); ++rit)
-    {
+    for (Teuchos::Array<double>::reverse_iterator rit=vis_times.rbegin(); rit<vis_times.rend(); ++rit) {
       visualization_times_.push(*rit);
     }
+    hasTimeData_ = true;
   }
   
   // Grab the cycle parameter list that we wrote in InputParserIS.cc
-  if ( plist.isSublist("Cycle Data") ) 
-  {
-      Teuchos::ParameterList &ilist = plist.sublist("Cycle Data");
+  if ( plist.isSublist("Cycle Data") ) {
+    Teuchos::ParameterList &ilist = plist.sublist("Cycle Data");
       
-      interval = ilist.get<int>("Interval");
-      start = ilist.get<int>("Start");
-      end = ilist.get<int>("End");
+    interval = ilist.get<int>("Interval");
+    start = ilist.get<int>("Start");
+    end = ilist.get<int>("End");
       
-    if (ilist.isParameter("Steps"))
-	{
-	  steps = ilist.get<Teuchos::Array<int> >("Steps");  
-	}
-  } else {
-    // Errors::Message m("Amanzi::Vis::read_parameters... Cycle Data sublist does not exist in the Visualization Data list");
-    //  Exceptions::amanzi_throw(m);
+    if (ilist.isParameter("Steps")) {
+      steps = ilist.get<Teuchos::Array<int> >("Steps");
+    }
+    hasCycleData_ = true;
   }
 }
 
@@ -136,43 +132,36 @@ bool Amanzi::Vis::dump_requested(const int cycle, const double time)
 
   if (!is_disabled())
   {
-    // Test time (e.g. t=34.65s)
-    if (!visualization_times_.empty() && time!=-std::numeric_limits<double>::max())
-    {
-      // If the current timestep is equal to the one on the stack, dump
-      if (abs(visualization_times_.top()-time) < 1.0e-7)
-      {
-        visualization_times_.pop();
-        return true;
-      }
-    }
-    // Test time step (e.g. n=16)
-    if (steps.size() > 0) 
-    {
-      for (int i=0; i<steps.size(); i++) 
-      {
-        if (cycle == steps[i])
-        {
+    if (hasTimeData_) {
+      // Test time (e.g. t=34.65s)
+      if (!visualization_times_.empty() && time!=-std::numeric_limits<double>::max()) {
+        // If the current timestep is equal to the one on the stack, dump
+        if (abs(visualization_times_.top()-time) < 1.0e-7) {
+          visualization_times_.pop();
           return true;
         }
       }
     }
-    else if ( (end<0) || (cycle<=end) ) 
-	{
-	  if (start<=cycle)  
-      {
-        int cycle_loc = cycle - start;
-	      
-        if (cycle_loc % interval == 0) 
-        {
-          return true;
+    if (hasCycleData_) {
+      // Test time step (e.g. n=16)
+      if (steps.size() > 0) {
+        for (int i=0; i<steps.size(); i++) {
+          if (cycle == steps[i]) {
+            return true;
+          }
         }
-	      
+      } else if ( (end<0) || (cycle<=end) ) {
+        if (start<=cycle) {
+          int cycle_loc = cycle - start;
+
+          if (cycle_loc % interval == 0) {
+            return true;
+          }
+        }
       }
-	}
+    }
   }
   // if none of the conditions apply we do not write a visualization dump
   return false;
-
 }
 
