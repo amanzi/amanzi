@@ -92,7 +92,7 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="backward Euler"/>
+        <Parameter name="method" type="string" value="BDF2"/>
 
         <ParameterList name="error control">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
