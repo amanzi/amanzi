@@ -322,10 +322,14 @@ void MPC::cycle_driver() {
     // Remove the early timesteps from the waypoints and vis
     double t0 = S->get_time();
     visualization->set_start_time(t0);
-    while (waypoint_times_.top()<t0)
-      waypoint_times_.pop();
-    while (reset_times_.top().t<t0)
-      reset_times_.pop();
+    if (!waypoint_times_.empty()) {
+      while (waypoint_times_.top()<t0)
+        waypoint_times_.pop();
+    }
+    if (!reset_times_.empty()) {
+      while (reset_times_.top().t<t0)
+        reset_times_.pop();
+    }
   }
 
   // write visualization output as requested
@@ -363,6 +367,17 @@ void MPC::cycle_driver() {
       // determine the time step we are now going to take
       double chemistry_dT = 1e+99, transport_dT = 1e+99, flow_dT = 1e+99;
       double mpc_dT = 1e+99, limiter_dT = 1e+99, observation_dT = 1e+99;
+      
+      // Update our reset times (delete the next one if we just did it)
+      if (!reset_times_.empty()) {
+        if (S->get_time()>=reset_times_.top().t)
+          reset_times_.pop();
+      }
+      // Update our waypoint times (delete the next one if we just did it)
+      if (!waypoint_times_.empty()) {
+        if (S->get_time()>=waypoint_times_.top())
+          waypoint_times_.pop();
+      }
 
       if (flow_enabled) {  // && flow_model == "Richards") {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
@@ -385,9 +400,6 @@ void MPC::cycle_driver() {
         // make sure we hit any of the reset times exactly (not in steady mode)
         if (ti_mode != STEADY && S->get_time() >= Tswitch) {
           if (!reset_times_.empty()) {
-            // Update our reset times (delete the next one if we just did it) - this could go at the top of the loop...
-            if (S->get_time()>=reset_times_.top().t)
-              reset_times_.pop();
 	        // now we are trying to hit the next reset time exactly
 	        if (S->get_time()+2*flow_dT > reset_times_.top().t) {
 		      limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_.top().t);
@@ -412,9 +424,6 @@ void MPC::cycle_driver() {
 
       // make sure we hit the waypoint times exactly
       if (!waypoint_times_.empty()) {
-        // Update our waypoint (delete the next one if we just did it) - this could go at the top of the loop...
-        if (S->get_time()>=waypoint_times_.top())
-          waypoint_times_.pop();
         // now we are trying to hit the next reset time exactly
         if (S->get_time()+2*mpc_dT > waypoint_times_.top()) {
           limiter_dT = time_step_limiter(S->get_time(), mpc_dT, waypoint_times_.top());

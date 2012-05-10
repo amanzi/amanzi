@@ -104,8 +104,6 @@ class MPC : public Teuchos::VerboseObject<MPC> {
  
   // time period control
   std::stack<TdtPair<double> > reset_times_;
-//  Teuchos::Array<double> reset_times_;
-//  Teuchos::Array<double> reset_times_dt_;
 
   // waypoint times control
   std::stack<double> waypoint_times_;
