@@ -261,7 +261,7 @@ void MPC::read_parameter_list()  {
       Exceptions::amanzi_throw(message);
     }
     
-    std::vector<std::pair<double, double> > sortable(reset_times.size());
+    std::vector<std::pair<double, double> > sortable(0);
     for (int i=0; i<reset_times.size(); ++i) {
       sortable.push_back(std::make_pair(reset_times[i], reset_times_dt[i]));
     }
@@ -464,8 +464,8 @@ void MPC::cycle_driver() {
 	        mpc_dT = reset_times_.top().dt;
 	        tslimiter = MPC_LIMITS;
 	        // now reset the BDF2 integrator..
-	        FPK->InitTransient(S->get_time(), mpc_dT);   
-	        break;	    
+	        FPK->InitTransient(S->get_time(), mpc_dT);
+	        break;
 	      }
 	    }
       }
