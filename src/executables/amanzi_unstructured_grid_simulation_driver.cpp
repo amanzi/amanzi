@@ -61,16 +61,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     } else if ( verbosity == "High" ) {
       verbLevel = Teuchos::VERB_HIGH;
     } else if ( verbosity == "Extreme" ) {
-      verbLevel = Teuchos::VERB_HIGH;
+      verbLevel = Teuchos::VERB_EXTREME;
     } 
       
   } else {
     new_list = input_parameter_list;
   }
   
-  
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {  
-    // print parameter list
+  if (out.get() && ! native && includesVerbLevel(verbLevel,Teuchos::VERB_EXTREME,true)) {  
     *out << "======================> dumping parameter list <======================" << std::endl;
     Teuchos::writeParameterListToXmlOStream(new_list, *out);
     *out << "======================> done dumping parameter list. <================"<<std::endl;

@@ -68,7 +68,7 @@ BCRec     PorousMedia::phys_bc;
 BCRec     PorousMedia::pres_bc;
 MacProj*  PorousMedia::mac_projector = 0;
 Godunov*  PorousMedia::godunov       = 0;
-static int do_n = true;
+static int do_n = false;
 static double richard_time;
 static double richard_time_min = 1.e6;
 
@@ -5108,7 +5108,16 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
             itr_nwt++;
             diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
                                       alpha,&dalpha,cmp_pcp1,cmp_pcp1_dp,
-                                      u_mac,do_upwind,&err_nwt);
+                                      u_mac,do_upwind,linear_status);
+
+	    err_nwt = linear_status.residual_norm_post_ls;
+
+            if (linear_status.success) {
+                if (verbose > 1 && ParallelDescriptor::IOProcessor()) {
+                    std::cout << "Newton iteration linear solver failed" << "\n"; 
+                }
+                break;
+            }
             if (verbose>1 && ParallelDescriptor::IOProcessor())
                 std::cout << "     Iteration " << itr_nwt 
                           << " : Error = "       << err_nwt << "\n"; 
@@ -8585,7 +8594,16 @@ PorousMedia::richard_sync ()
 	{
             diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
                                       alpha,&dalpha,cmp_pcp1,cmp_pcp1_dp,
-                                      u_mac_curr,do_upwind,&err_nwt);
+                                      u_mac_curr,do_upwind,linear_status);
+
+	    err_nwt = linear_status.residual_norm_post_ls;
+
+            if (linear_status.success) {
+                if (verbose > 1 && ParallelDescriptor::IOProcessor()) {
+                    std::cout << "Newton iteration linear solver failed" << "\n"; 
+                }
+                break;
+            }
 
             if (verbose > 1 && ParallelDescriptor::IOProcessor())
                 std::cout << "Newton iteration " << itr_nwt 

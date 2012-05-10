@@ -76,12 +76,17 @@ class Matrix_MFD : public Epetra_Operator {
   bool HasNormInf() const { return false; }
 
   // access methods
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& get_Aff_cells() { return Aff_cells; }
-  std::vector<double>& get_Acc_cells() { return Acc_cells; }
-  std::vector<Epetra_SerialDenseVector>& get_Ff_cells() { return Ff_cells; }
-  std::vector<double>& get_Fc_cells() { return Fc_cells; }
-  Teuchos::RCP<Epetra_Vector>& get_rhs() { return rhs; }
-  Teuchos::RCP<Epetra_Vector>& get_rhs_faces() { return rhs_faces; }
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
+  std::vector<double>& Acc_cells() { return Acc_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
+  std::vector<double>& Fc_cells() { return Fc_cells_; }
+  Teuchos::RCP<Epetra_Vector>& rhs() { return rhs_; }
+  Teuchos::RCP<Epetra_Vector>& rhs_faces() { return rhs_faces_; }
+
+  Teuchos::RCP<Epetra_FECrsMatrix>& Aff() { return Aff_; }
+  Teuchos::RCP<Epetra_Vector>& Acc() { return Acc_; }
+  Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
+  Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
  private:
   Teuchos::RCP<Flow_State> FS;
@@ -90,22 +95,22 @@ class Matrix_MFD : public Epetra_Operator {
 
   bool flag_symmetry_;
 
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells;
-  std::vector<Epetra_SerialDenseVector> Acf_cells, Afc_cells;
-  std::vector<double> Acc_cells;  // duplication may be useful later
+  std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
+  std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
+  std::vector<double> Acc_cells_;  // duplication may be useful later
 
-  std::vector<Epetra_SerialDenseVector> Ff_cells;
-  std::vector<double> Fc_cells;
+  std::vector<Epetra_SerialDenseVector> Ff_cells_;
+  std::vector<double> Fc_cells_;
 
-  Teuchos::RCP<Epetra_Vector> Acc;
-  Teuchos::RCP<Epetra_CrsMatrix> Acf; 
-  Teuchos::RCP<Epetra_CrsMatrix> Afc;  // We generate transpose of this matrix block. 
-  Teuchos::RCP<Epetra_FECrsMatrix> Aff;
-  Teuchos::RCP<Epetra_FECrsMatrix> Sff;  // Schur complement
+  Teuchos::RCP<Epetra_Vector> Acc_;
+  Teuchos::RCP<Epetra_CrsMatrix> Acf_; 
+  Teuchos::RCP<Epetra_CrsMatrix> Afc_;  // We generate transpose of this matrix block. 
+  Teuchos::RCP<Epetra_FECrsMatrix> Aff_;
+  Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
 
-  Teuchos::RCP<Epetra_Vector> rhs;
-  Teuchos::RCP<Epetra_Vector> rhs_cells;
-  Teuchos::RCP<Epetra_Vector> rhs_faces;
+  Teuchos::RCP<Epetra_Vector> rhs_;
+  Teuchos::RCP<Epetra_Vector> rhs_cells_;
+  Teuchos::RCP<Epetra_Vector> rhs_faces_;
 
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;

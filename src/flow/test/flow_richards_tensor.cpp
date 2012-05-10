@@ -97,7 +97,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
-    cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
+    // cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
     err_p += pow(pressure[c] - p_exact, 2.0);
   }
   err_p = sqrt(err_p);
@@ -114,6 +114,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   }
   err_u = sqrt(err_u);
 
+  printf("Errors err_p=%8.3g  err_u=%8.3g\n", err_p, err_u);
   CHECK(err_p < 1e-8);
   CHECK(err_u < 1e-8);
 

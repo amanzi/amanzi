@@ -31,6 +31,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   int itrs;
   for (itrs = 0; itrs < 20; itrs++) {
@@ -50,21 +51,30 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     bc_flux->Compute(time);
     bc_head->Compute(time);
     bc_seepage->Compute(time);
-    updateBoundaryConditions(
+    UpdateBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
         *solution_old_cells, atm_pressure,
         bc_markers, bc_values);
 
-    // create algebraic problem (matrix = preconditioner)
+    // create algebraic problem
     matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     AddTimeDerivative_MFDpicard(*solution_cells, *solution_old_cells, dTp, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
-    matrix->computeSchurComplement(bc_markers, bc_values);
-    matrix->update_ML_preconditioner();
-    rhs = matrix->get_rhs();
+    rhs = matrix->rhs();
+
+    // create preconditioner
+    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
+    preconditioner->createMFDrhsVectors();
+    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    AddTimeDerivative_MFD(*solution_old_cells, dTp, preconditioner);
+    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->assembleGlobalMatrices();
+    preconditioner->computeSchurComplement(bc_markers, bc_values);
+    preconditioner->update_ML_preconditioner();
 
     // call AztecOO solver
     solver->SetRHS(&*rhs);  // AztecOO modifies the right-hand-side.
@@ -75,10 +85,12 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     int num_itrs = solver->NumIters();
     double linear_residual = solver->TrueResidual();
 
+    /*
     int ndof = ncells_owned + nfaces_owned;
     for (int c = 0; c < ndof; c++) {
       solution_new[c] = (solution_old[c] + solution_new[c]) / 2;
     }
+    */
 
     // error analysis
     double error = ErrorNorm(solution_old, solution_new);
@@ -88,7 +100,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
           itrs, error, linear_residual, num_itrs);
     }
 
-    if (error < 10.0) 
+    if (error < 1.0) 
       break;
     else 
       solution_old = solution_new;
@@ -122,7 +134,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
 
-  if (is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_cgs);
+  if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
 
   T_internal = T0_sss;
@@ -147,23 +159,31 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     bc_flux->Compute(time);
     bc_head->Compute(time);
     bc_seepage->Compute(time);
-    updateBoundaryConditions(
+    UpdateBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
         *solution_cells, atm_pressure,
         bc_markers, bc_values);
 
-    // create algebraic problem (matrix = preconditioner)
+    // create algebraic problem
     matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     AddTimeDerivative_MFDfake(*solution_cells, dT, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
-    matrix->computeSchurComplement(bc_markers, bc_values);
-    matrix->update_ML_preconditioner();
+
+    // create preconditioner
+    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
+    preconditioner->createMFDrhsVectors();
+    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->assembleGlobalMatrices();
+    preconditioner->computeSchurComplement(bc_markers, bc_values);
+    preconditioner->update_ML_preconditioner();
 
     // call AztecOO solver
-    rhs = matrix->get_rhs();
+    rhs = matrix->rhs();
     Epetra_Vector b(*rhs);
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
@@ -217,8 +237,8 @@ void Richards_PK::AddTimeDerivative_MFDpicard(
   DerivedSdP(pressure_cells_dSdP, dSdP);
 
   const Epetra_Vector& phi = FS->ref_porosity();
-  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
-  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+  std::vector<double>& Acc_cells = matrix->Acc_cells();
+  std::vector<double>& Fc_cells = matrix->Fc_cells();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -237,8 +257,8 @@ void Richards_PK::AddTimeDerivative_MFDpicard(
 void Richards_PK::AddTimeDerivative_MFDfake(
     Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
-  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
-  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+  std::vector<double>& Acc_cells = matrix->Acc_cells();
+  std::vector<double>& Fc_cells = matrix->Fc_cells();
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);

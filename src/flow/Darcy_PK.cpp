@@ -127,7 +127,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  updateBoundaryConditions(
+  UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_cells, atm_pressure,
       bc_markers, bc_values);
@@ -197,7 +197,7 @@ int Darcy_PK::AdvanceToSteadyState()
   matrix->computeSchurComplement(bc_markers, bc_values);
   matrix->update_ML_preconditioner();
 
-  rhs = matrix->get_rhs();
+  rhs = matrix->rhs();
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
@@ -237,7 +237,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   if (src_sink != NULL) src_sink->Compute(time);
 
-  updateBoundaryConditions(
+  UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_cells, atm_pressure,
       bc_markers, bc_values);
@@ -256,7 +256,7 @@ int Darcy_PK::Advance(double dT_MPC)
   matrix->computeSchurComplement(bc_markers, bc_values);
   matrix->update_ML_preconditioner();
 
-  rhs = matrix->get_rhs();
+  rhs = matrix->rhs();
   if (src_sink != NULL) addSourceTerms(src_sink, *rhs);
 
   Epetra_Vector b(*rhs);
@@ -324,8 +324,8 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
 {
   const Epetra_Vector& specific_storage = FS->ref_specific_storage();
 
-  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
-  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+  std::vector<double>& Acc_cells = matrix->Acc_cells();
+  std::vector<double>& Fc_cells = matrix->Fc_cells();
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
