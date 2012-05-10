@@ -29,6 +29,7 @@ Data is separated into sections, where each section of the file is starts with a
   * `Ion Exchange Complexes`
   * `Surface Complex Sites`
   * `Surface Complexes`
+  * `Sorption Isotherms`
 
 Each line within a section is semi-colon delimited. White space around values is removed.
 
@@ -60,6 +61,18 @@ Example::
   OH-                  =  1.0 H2O  -1.0 H+                           ;    13.9951     ;   3.5           ;  -1.0  ;  17.0073
 
 
+Aqueous Kinetics
+~~~~~~~~~~~~~~~~
+
+Example::
+
+  <General Kinetics
+    1.00 Pu_238 <->   1.00 U_234 ;   1.00 Pu_238 ;   2.50000E-10 ;   1.00 U_234 ;   0.00000E+00
+    1.00 U_234 <->   1.00 Th_230 ;   1.00 U_234 ;   8.90000E-14 ;   1.00 Th_230 ;   0.00000E+00
+    1.00 Th_230 <->   1.00 Ra_226 ;   1.00 Th_230 ;   2.90000E-13 ;   1.00 Ra_226 ;   0.00000E+00
+    1.00 Ra_226 <->   1.00 Pb_210 ;   1.00 Ra_226 ;   1.40000E-11 ;   1.00 Pb_210 ;   0.00000E+00
+
+
 Minerals
 ~~~~~~~~
 Minerals and other complexes follow the same convention as aqueous equilibrium complexes, with additional data as needed. This section contains all minerals present in the system during the simulation, including those initiall not present but that may precipitate later. They are used for calculating saturation states, but not equilibrium or kinetic calculations.
@@ -73,22 +86,60 @@ Example::
 Mineral Kinetics
 ~~~~~~~~~~~~~~~~
 
-* The mineral kinetics section lists the name of a mineral found in the mineral section, the type of rate law, and rate parameters for that law. Currently only the `TST` rate law is implemented. The keywords "log10_rate_constant" and "moles_m2_sec" must be present in the line, but no unit conversion are currently preformed. The modifying primary species terms follow the rate constant, along with their exponent coefficients.
+The mineral kinetics section lists the name of a mineral found in the mineral section, the type of rate law, and rate parameters for that law. Currently only the `TST` rate law is implemented. The keywords "log10_rate_constant" and "moles_m2_sec" must be present in the line, but no unit conversion are currently preformed. The modifying primary species terms follow the rate constant, along with their exponent coefficients.
 
-  ::
+Example::
+
   <Mineral Kinetics
   # name               ; TST ; log10_rate_constant double     moles_m2_sec ; primary_name coeff ....
 
+Equilibrium Surface Complexation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Surface complex sites are listed by name and surface density. At this time all surface sites are assumed to occur on the bulk material rather than a specific mineral.
 
-  ::
+Example::
+
+  <Surface Complex Sites 
+  # name               ; surface_density [moles sites / m^2 mineral]
+
+Surface Complexes....
+
+Example::
+
   <Surface Complexes
   # name               =  coeff surface site  coeff primary_name ... ; log10(Keq) 25C ; charge 
 
 
-* Surface complex sites are listed by name and surface density:
-  ::
-  <Surface Complex Sites 
-  # name               ; surface_density [moles sites / m^2 mineral]
+Ion Exchange
+~~~~~~~~~~~~
+
+Example::
+
+  <Ion Exchange Sites
+  X- ; -1.0 ; Kaolinite
+
+  <Ion Exchange Complexes
+  Na+X = 1.0 Na+  1.00 X-  ;   1.00000E+00
+  UO2++X = 1.0 UO2++  2.00 X-  ;   2.23872E-01
+  Ca++X = 1.0 Ca++  2.00 X-  ;   3.16228E-01
+  Al+++X = 1.0 Al+++  3.00 X-  ;   1.71133E+00
+  H+X = 1.0 H+  1.00 X-  ;   2.51189E-02
+
+
+
+Sorption Isotherms
+~~~~~~~~~~~~~~~~~~
+
+Example::
+
+  <Isotherms
+  # Primary Species Name ; linear ; Kd
+  Pu_238 ; linear ;   2.00000E+07
+  # Primary Species Name ; langmuir ; Kd  langmuir_b
+  U_234 ; langmuir ;   5.00000E+06    1.0
+  # Primary Species Name ; langmuir ; Kd  freundlich_n
+  Th_230 ; freundlich ;   1.00000E+07  1.0
+
 
 
 Example
