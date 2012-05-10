@@ -129,7 +129,6 @@ bool Amanzi::Vis::is_disabled() const
  */
 bool Amanzi::Vis::dump_requested(const int cycle, const double time)
 {
-
   if (!is_disabled())
   {
     if (hasTimeData_) {
@@ -163,5 +162,17 @@ bool Amanzi::Vis::dump_requested(const int cycle, const double time)
   }
   // if none of the conditions apply we do not write a visualization dump
   return false;
+}
+
+/**
+ * \fn         set_start_time
+ * \brief      When starting from a restart, in particular, the Time Macro provided
+ *             may fill the visualization stop points array with times before the
+ *             simulation start time. It is necessary to remove these early points
+ *
+ * \param[in]  t0 - the initial time step
+ */
+void Amanzi::Vis::set_start_time(const double t0) {
+  while (visualization_times_.top()<t0) visualization_times_.pop();
 }
 
