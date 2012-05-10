@@ -100,7 +100,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
           itrs, error, linear_residual, num_itrs);
     }
 
-    if (error < 1.0) 
+    if (error < 1e-4) 
       break;
     else 
       solution_old = solution_new;
@@ -276,7 +276,7 @@ double Richards_PK::ErrorNorm(const Epetra_Vector& uold, const Epetra_Vector& un
 {
   double error_norm = 0.0;
   for (int n = 0; n < ncells_owned; n++) {
-    double tmp = abs(uold[n] - unew[n]) / (absolute_tol + relative_tol * abs(uold[n]));
+    double tmp = fabs(uold[n] - unew[n]) / (absolute_tol + relative_tol * abs(uold[n]));
     error_norm = std::max<double>(error_norm, tmp);
   }
 

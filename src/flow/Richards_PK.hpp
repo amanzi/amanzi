@@ -98,6 +98,8 @@ class Richards_PK : public Flow_PK {
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
+  double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
+
   // control methods
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
   void PrintStatistics() const;

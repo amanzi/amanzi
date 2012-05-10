@@ -126,6 +126,7 @@ void Flow_PK::UpdateBoundaryConditions(
   }
 
   // mark missing boundary conditions as zero flux conditions
+  int missed = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers[f] == FLOW_BC_FACE_NULL) {
       cells.clear();
@@ -135,8 +136,12 @@ void Flow_PK::UpdateBoundaryConditions(
       if (ncells == 1) {
         bc_markers[f] = FLOW_BC_FACE_FLUX;
         bc_values[f] = 0.0;
+        missed++;
       }
     }
+  }
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
+    std::printf("Richards Flow: assigned zero flux boundary condition to%7d faces\n", missed);
   }
 
   // verify that the algebraic problem is consistent

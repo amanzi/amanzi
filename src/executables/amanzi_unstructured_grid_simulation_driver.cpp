@@ -68,7 +68,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
-  if (out.get() && ! native && includesVerbLevel(verbLevel,Teuchos::VERB_EXTREME,true)) {  
+  if (out.get() && ! native && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {  
     *out << "======================> dumping parameter list <======================" << std::endl;
     Teuchos::writeParameterListToXmlOStream(new_list, *out);
     *out << "======================> done dumping parameter list. <================"<<std::endl;

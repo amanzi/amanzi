@@ -133,6 +133,9 @@ int Richards_PK::AdvanceSteadyState_Picard()
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
+  Epetra_Vector* solution_old_cells = FS->createCellView(solution_old);
+  Epetra_Vector* solution_new_cells = FS->createCellView(solution_new);
+
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
@@ -196,12 +199,8 @@ int Richards_PK::AdvanceSteadyState_Picard()
     double linear_residual = solver->TrueResidual();
 
     // update relaxation
-    double relaxation = 0.2;
-    for (int c = 0; c < ncells_owned; c++) {
-      double diff = fabs(solution_new[c] - solution_old[c]);
-      double umax = std::max(fabs(solution_new[c]), fabs(solution_old[c]));
-      if (diff > 5e-3 * umax) relaxation = std::min(relaxation, 5e-3 * umax / diff);
-    }
+    double relaxation;
+    relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n",
@@ -220,6 +219,30 @@ int Richards_PK::AdvanceSteadyState_Picard()
 
   num_nonlinear_steps = itrs;
   return 0;
+}
+
+
+/* ******************************************************************
+* Calculate relazation factor.                                                       
+****************************************************************** */
+double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew)
+{ 
+  Epetra_Vector dSdP(mesh_->cell_map(false));
+  DerivedSdP(uold, dSdP);
+
+  double relaxation = 1.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    double diff = dSdP[c] * fabs(unew[c] - uold[c]);
+    if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double diff = fabs(unew[c] - uold[c]);
+    double umax = std::max(fabs(unew[c]), fabs(uold[c]));
+    if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+  }
+
+  return relaxation;
 }
 
 }  // namespace AmanziFlow
