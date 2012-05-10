@@ -324,6 +324,8 @@ void MPC::cycle_driver() {
     visualization->set_start_time(t0);
     while (waypoint_times_.top()<t0)
       waypoint_times_.pop();
+    while (reset_times_.top().t<t0)
+      reset_times_.pop();
   }
 
   // write visualization output as requested
