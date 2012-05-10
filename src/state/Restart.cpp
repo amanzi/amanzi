@@ -174,9 +174,6 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   restart_input->readAttrInt(idummy,"Number of minerals");
   S.set_number_of_minerals(idummy);
 
-  // now we can create storage
-  S.create_storage();
-    
   // read the attributes
   restart_input->readAttrReal(dummy,"time");
   S.set_time(dummy);  

@@ -105,8 +105,8 @@ int MFD3D::darcy_mass_inverse_hex(int cell,
 
 
 /* ******************************************************************
-* This is debug version of the above routine for scalar tensors
-* and orthogonal brick element.
+* This is a debug version of the above routine for a scalar tensor
+* and an orthogonal brick element.
 ****************************************************************** */
 int MFD3D::darcy_mass_inverse_diagonal(int cell,
                                        Tensor& permeability,

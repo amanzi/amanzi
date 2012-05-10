@@ -140,14 +140,14 @@ void Richards_PK::ProcessParameterList()
     }
   }
 
-  string mfd3d_method_name = rp_list.get<string>("Discretization method hint", "monotone");
+  string mfd3d_method_name = rp_list.get<string>("Discretization method hint", "none");
   if (mfd3d_method_name == "monotone") {
     mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
   } else if (mfd3d_method_name == "none") {
     mfd3d_method = FLOW_MFD3D_POLYHEDRA;
   }
 
-  // Time integrator for period I, temporary called steady state time integrator
+  // Time integrator for period I, temporary called steady-state time integrator
   if (rp_list.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = rp_list.sublist("steady state time integrator");
 
@@ -166,6 +166,7 @@ void Richards_PK::ProcessParameterList()
     }
 
     initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
+    clip_saturation = sss_list.get<double>("clipping saturation value", 0.6);
 
     if (sss_list.isSublist("error control")) {
       Teuchos::ParameterList& err_list = sss_list.sublist("error control");

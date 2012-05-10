@@ -92,7 +92,7 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="backward Euler"/>
+        <Parameter name="method" type="string" value="BDF2"/>
 
         <ParameterList name="error control">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
@@ -104,7 +104,7 @@
         <ParameterList name="time control">
           <Parameter name="start pseudo time" type="double" value="0.0"/>
           <Parameter name="end pseudo time" type="double" value="1e+11"/>
-          <Parameter name="initial time step" type="double" value="1e+2"/>
+          <Parameter name="initial time step" type="double" value="1e+3"/>
           <Parameter name="maximal time step" type="double" value="1e+11"/>
         </ParameterList>
 
