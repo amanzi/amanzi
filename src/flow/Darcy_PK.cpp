@@ -228,6 +228,8 @@ int Darcy_PK::Advance(double dT_MPC)
     T_internal = (standalone_mode) ? T_internal : T_physical;
   }
 
+  solver->SetAztecOption(AZ_output, AZ_none);
+
   // update boundary conditions and source terms
   double time = T_internal;
   bc_pressure->Compute(time);

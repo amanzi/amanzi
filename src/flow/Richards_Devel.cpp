@@ -177,6 +177,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
     preconditioner->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner);
     preconditioner->applyBoundaryConditions(bc_markers, bc_values);
     preconditioner->assembleGlobalMatrices();
     preconditioner->computeSchurComplement(bc_markers, bc_values);

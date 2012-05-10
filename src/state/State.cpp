@@ -777,22 +777,31 @@ double State::point_value(const std::string& point_region, const std::string& na
   }
   
   // extract the value if it is a component
-  if ( comp_no.find(var) != comp_no.end() )  {
+  if (comp_no.find(var) != comp_no.end())  {
     value = 0.0;
     volume = 0.0;
     for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
-      value += (*(*total_component_concentration)( comp_no[var] ))[ic] *  mesh_maps->cell_volume(ic);
+      value += (*(*total_component_concentration)(comp_no[var]))[ic] * mesh_maps->cell_volume(ic);
       
       volume += mesh_maps->cell_volume(ic);
     }
-  } else if ( var == "Volumetric water content" ) {
+  } else if (var == "Volumetric water content") {
     value = 0.0;
     volume = 0.0;
     
     for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
       value += (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }
+  } else if (var == "Aqueous pressure") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*pressure)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
   } else {

@@ -479,7 +479,7 @@ void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Ep
 
 
 /* ******************************************************************
-* Estimate du/dt from the pressure equations, -du/dt = g - A*u.
+* Estimate du/dt from the pressure equations, du/dt = g - A*u.
 ****************************************************************** */
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
