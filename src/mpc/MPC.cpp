@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "errors.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -24,6 +26,7 @@ namespace Amanzi {
 using amanzi::chemistry::Chemistry_State;
 using amanzi::chemistry::Chemistry_PK;
 using amanzi::chemistry::ChemistryException;
+
 
 /* *******************************************************************/
 MPC::MPC(Teuchos::ParameterList parameter_list_,
@@ -58,9 +61,6 @@ void MPC::mpc_init() {
 
   mpc_parameter_list =  parameter_list.sublist("MPC");
 
-  reset_times_.resize(0);
-  reset_times_dt_.resize(0);
-  
   read_parameter_list();
 
   // now we need to get the observations time from the observation data list
@@ -252,14 +252,24 @@ void MPC::read_parameter_list()  {
 
   if (mpc_parameter_list.isSublist("Time Period Control")) {
     Teuchos::ParameterList& tpc_list =  mpc_parameter_list.sublist("Time Period Control"); 
+
+    Teuchos::Array<double> reset_times    = tpc_list.get<Teuchos::Array<double> >("Start Times");
+    Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
     
-    reset_times_ = tpc_list.get<Teuchos::Array<double> >("Start Times");
-    reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
-    
-    if (reset_times_.size() != reset_times_dt_.size()) {
+    if (reset_times.size() != reset_times_dt.size()) {
       Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
       Exceptions::amanzi_throw(message);
-    }    
+    }
+    
+    std::vector<std::pair<double, double> > sortable(reset_times.size());
+    for (int i=0; i<reset_times.size(); ++i) {
+      sortable.push_back(std::make_pair(reset_times[i], reset_times_dt[i]));
+    }
+    std::sort(sortable.begin(), sortable.end());
+    for (std::vector<std::pair<double, double> >::reverse_iterator rit=sortable.rbegin(); rit<sortable.rend(); ++rit) {
+      TdtPair<double> p(rit->first, rit->second);
+      reset_times_.push(p);
+    }
   }
 }
 
@@ -362,35 +372,28 @@ void MPC::cycle_driver() {
       }
       
       if (flow_enabled) {  // && flow_model == "Richards") {
-	flow_dT = FPK->CalculateFlowDt();
+	    flow_dT = FPK->CalculateFlowDt();
 
         // adjust the time step, so that we exactly hit the switchover time
         if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
           limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
-	  tslimiter = MPC_LIMITS;
+	      tslimiter = MPC_LIMITS;
         }
 
         // make sure we hit any of the reset times exactly (not in steady mode)
         if (ti_mode != STEADY && S->get_time() >= Tswitch) {
-          if (reset_times_.size() > 0) {
-	    // first we find the next reset time
-	    int next_time_index(-1);
-	    for (int ii=0; ii<reset_times_.size(); ii++) {
-	      if (S->get_time() < reset_times_[ii]) {
-	        next_time_index = ii;
-	        break;
-	      }
-	    }
-	    if (next_time_index >= 0) {
-	      // now we are trying to hit the next reset time exactly
-	      if (S->get_time()+2*flow_dT > reset_times_[next_time_index]) {
-		limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[next_time_index]);
-		tslimiter = MPC_LIMITS;
+          if (!reset_times_.empty()) {
+            // Update our reset times (delete the next one if we just did it) - this could go at the top of the loop...
+            if (S->get_time()>=reset_times_.top().t)
+              reset_times_.pop();
+	        // now we are trying to hit the next reset time exactly
+	        if (S->get_time()+2*flow_dT > reset_times_.top().t) {
+		      limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_.top().t);
+		      tslimiter = MPC_LIMITS;
+		    }
 	      }
 	    }
 	  }
-        }
-      }
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
@@ -452,18 +455,17 @@ void MPC::cycle_driver() {
       
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
-	for (int ii=0; ii<reset_times_.size(); ++ii) {
-	  // this is probably iffy...
-	  if (S->get_time() == reset_times_[ii]) {
-	    *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
-
-	    mpc_dT = reset_times_dt_[ii];
-	    tslimiter = MPC_LIMITS;
-	    // now reset the BDF2 integrator..
-	    FPK->InitTransient(S->get_time(), mpc_dT);   
-	    break;	    
-	  }
-	}
+	    if (!reset_times_.empty()) {
+	      // this is probably iffy...
+	      if (S->get_time() == reset_times_.top().t) {
+	        *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
+	        mpc_dT = reset_times_.top().dt;
+	        tslimiter = MPC_LIMITS;
+	        // now reset the BDF2 integrator..
+	        FPK->InitTransient(S->get_time(), mpc_dT);   
+	        break;	    
+	      }
+	    }
       }
 
       // steady flow is special, it might redo a time step, so we print
