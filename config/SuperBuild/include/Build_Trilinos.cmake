@@ -12,6 +12,14 @@ define_external_project_args(Trilinos
 
 #  - Trilinos Package Configuration
 
+if(Trilinos_Build_Config_File)
+  message(STATUS "Including Trilinos build configuration file ${Trilinos_Build_Config_File}")
+  if ( NOT EXISTS ${Trilinos_Build_Config_File} )
+    message(FATAL_ERROR "File ${Trilinos_Build_Config_File} does not exist.")
+  endif()
+  include(${Trilinos_Build_Config_File})
+endif()
+
 # List of packages enabled in the Trilinos build
 set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX)
 if ( ENABLE_STK_Mesh )
@@ -132,11 +140,13 @@ endif()
 
 
 #  - Add CMake configuration file
-if(Trilinos_Build_Config_File)
-    set(Trilinos_Config_File_ARGS 
-        "-C${Trilinos_Build_Config_File}")
-    message(STATUS "Will add ${Trilinos_Build_Config_File} to the Trilinos configure")    
-endif()    
+#print_variable(Trilinos_Build_Config_File)
+#if(Trilinos_Build_Config_File)
+#    set(Trilinos_Config_File_ARGS 
+#        "-C${Trilinos_Build_Config_File}")
+#    print_variable(Trilinos_Config_File_ARGS)
+#    message(STATUS "Will add ${Trilinos_Build_Config_File} to the Trilinos configure")    
+#endif()    
 
 
 #  - Final Trilinos CMake Arguments 
