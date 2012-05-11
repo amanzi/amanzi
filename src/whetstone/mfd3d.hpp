@@ -49,6 +49,9 @@ class MFD3D {
   int darcy_mass_inverse(int cell,
                          Tensor& permeability,
                          Teuchos::SerialDenseMatrix<int, double>& W);
+  int darcy_mass_inverse_SO(int cell,
+                            Tensor& permeability,
+                            Teuchos::SerialDenseMatrix<int, double>& W);
   int darcy_mass_inverse_hex(int cell,
                              Tensor& permeability,
                              Teuchos::SerialDenseMatrix<int, double>& W);

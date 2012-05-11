@@ -109,7 +109,33 @@ void Tensor::inverse()
 
 
 /* ******************************************************************
-* Trace operation with tensors of rank 1 and 2
+* Transpose operator for non-symmetric tensors.
+****************************************************************** */
+void Tensor::transpose()
+{
+  int size = WHETSTONE_TENSOR_SIZE[d_-1][rank_-1];
+  if (rank_ == 2 && d_ == 2) {
+    double tmp = data_[1];
+    data_[1] = data_[2];
+    data_[2] = tmp;
+  } else if (rank_ == 2 && d_ == 3) {
+    double tmp = data_[1];
+    data_[1] = data_[3];
+    data_[3] = tmp;
+
+    tmp = data_[2];
+    data_[2] = data_[6];
+    data_[6] = tmp;
+
+    tmp = data_[5];
+    data_[5] = data_[7];
+    data_[7] = tmp;   
+  }
+}
+
+
+/* ******************************************************************
+* Multiplication by a constant.
 ****************************************************************** */
 Tensor& Tensor::operator*=(const double& c)
 {

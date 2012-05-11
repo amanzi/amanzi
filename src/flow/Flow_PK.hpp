@@ -59,6 +59,7 @@ const int FLOW_MFD3D_POLYHEDRA = 1;
 const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
 const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
 const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
+const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;  // rc1 compatibility
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
