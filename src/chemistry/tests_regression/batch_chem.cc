@@ -8,6 +8,7 @@
 #endif
 
 #include <cstdlib>
+#include <cctype>
 
 #include <iostream>
 #include <iomanip>
@@ -106,6 +107,14 @@ int main(int argc, char** argv) {
   if (debug_batch_driver) {
     PrintInput(simulation_params, components);
   }
+
+  double time_units_conversion = 1.0;
+  char time_units = 's';
+  std::fstream text_output;
+  if (simulation_params.text_output.size() > 0) {
+    SetupTextOutput(simulation_params, input_file_name,
+                    &text_output, &time_units, &time_units_conversion);
+  }
   ac::Beaker* chem = NULL;
 
   try {
@@ -147,15 +156,23 @@ int main(int argc, char** argv) {
         message.str("");
         message << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         ac::chem_out->Write(ac::kVerbose, message);
+
+        // write out the headers info and initial conditions
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components);
+        std::vector<std::string> names;
+        chem->GetPrimaryNames(&names);
+        WriteTextOutputHeader(&text_output, time_units, names);
+        WriteTextOutput(&text_output, 0.0, components);
+
         // parameters.max_iterations = 2;
         for (int time_step = 0; time_step < simulation_params.num_time_steps;
              time_step++) {
           chem->ReactionStep(&components, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
-            chem->DisplayTotalColumns((time_step + 1) * simulation_params.delta_time,
-                                      components);
+            double time = (time_step + 1) * simulation_params.delta_time;
+            chem->DisplayTotalColumns(time, components);
+            WriteTextOutput(&text_output, time * time_units_conversion, components);
           }
           if (simulation_params.verbosity >= ac::kDebugNonlinearSolver) {
             message.str("");
@@ -194,6 +211,7 @@ int main(int argc, char** argv) {
     ac::chem_out->Write(ac::kVerbose, "Failed!\n");
   }
 
+  text_output.close();
   // cleanup memory
   delete chem;
   delete ac::chem_out;
@@ -468,6 +486,10 @@ void ParseSimulationParameter(const std::string& raw_line,
       params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
       params->verbosity_name.assign(value);
+    } else if (param.at(0).find(kTextOutputParam) != std::string::npos) {
+      params->text_output.assign(value) ;
+    } else if (param.at(0).find(kTextTimeUnitsParam) != std::string::npos) {
+      params->text_time_units.assign(value) ;
     } else if (param.at(0).find(kComparisonModelParam) != std::string::npos) {
       params->comparison_model.assign(value);
     } else if (param.at(0).find(kDatabaseTypeParam) != std::string::npos) {
@@ -556,6 +578,8 @@ void WriteTemplateFile(const std::string& file_name)
   template_file << kDescriptionParam << " = " << std::endl;
   template_file << kVerbosityParam << " = verbose" << std::endl;
   template_file << kComparisonModelParam << " = pflotran" << std::endl;
+  template_file << kTextOutputParam << " = true" << std::endl;
+  template_file << kTextTimeUnitsParam << " = days" << std::endl;
   template_file << std::endl;
   template_file << kDatabaseTypeParam << " = simple" << std::endl;
   template_file << kDatabaseFileParam << " = " << std::endl;
@@ -580,6 +604,70 @@ void WriteTemplateFile(const std::string& file_name)
   template_file << std::endl;
   template_file.close();
 }  // end WriteTemplateFile()
+
+void SetupTextOutput(const SimulationParameters& simulation_params,
+                     const std::string& input_file_name,
+                     std::fstream* text_output, char* time_units,
+                     double* time_units_conversion) {
+  // are we writting to observations to a text file?
+  if (ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "true") ||
+      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "yes")) {
+    // generate the output file name:
+    size_t position = input_file_name.find_last_of('.');
+    std::string text_output_name = input_file_name.substr(0, position) + ".txt";
+
+    text_output->open(text_output_name.c_str(), std::fstream::out);
+
+    // do we want to change the time units for the output?
+    if (simulation_params.text_time_units.size() > 0) {
+      *time_units = std::tolower(simulation_params.text_time_units.at(0));
+      switch (*time_units) {
+        case 's':
+          break;
+        case 'm':
+          *time_units_conversion = 60.0;
+          break;
+        case 'h':
+          *time_units_conversion = 60.0 * 60.0;
+          break;
+        case 'd':
+          *time_units_conversion = 60.0 * 60.0 * 24.0;
+          break;
+        case 'y':
+          *time_units_conversion = 60.0 * 60.0 * 24.0 * 365.25;
+          break;
+        default:
+          break;
+      }
+    }
+    *time_units_conversion = 1.0 / (*time_units_conversion);
+  }
+
+}  // end SetupTextOutput()
+
+void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
+                           const std::vector<std::string>& names) {
+  if (text_output->is_open()) {
+    *text_output << "# Time(" << time_units << ")";
+    for (std::vector<std::string>::const_iterator name = names.begin();
+         name != names.end(); ++name) {
+      *text_output <<  " , " << *name;
+    }
+    *text_output << std::endl;
+  }
+}  // end WriteTextOutputHeader()
+
+void WriteTextOutput(std::fstream* text_output, const double time, 
+                     const amanzi::chemistry::Beaker::BeakerComponents& components) {
+  if (text_output->is_open()) {
+    std::string seperator(" , ");
+    *text_output << std::scientific << std::setprecision(6) << std::setw(15) << time;
+    for (int i = 0; i < components.total.size(); ++i) {
+      *text_output << seperator << components.total.at(i);
+    }
+    *text_output << std::endl;
+  }
+}  // end WriteTextOutput()
 
 
 void PrintInput(const SimulationParameters& params,

@@ -16,6 +16,11 @@
 ---- Aqueous Equilibrium Complexes
     Reaction                               log Keq  Charge       GMW  D-H a0
 
+---- General Kinetics
+    Reaction
+  1.00 A(aq) <---> 1.00 B(aq)
+      R_f = 1.16e-06 * a_(A(aq))^(1.00)
+      R_b = 0.00e+00
 ------------------------------------------------ Beaker description --
 --- Input Components -------------------------------------------------
 ---- Aqueous Components
@@ -155,4 +160,4 @@
           B(aq)    1.19649e-04    1.00000e+00    1.19649e-04
 ---------------------------------------------------------- Solution --
 
-Done!
+Success!

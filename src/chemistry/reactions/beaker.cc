@@ -746,6 +746,7 @@ void Beaker::DisplayTotalColumnHeaders(void) const {
     }
   }
   message << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayTotalColumnHeaders()
 
 void Beaker::DisplayTotalColumns(const double time,

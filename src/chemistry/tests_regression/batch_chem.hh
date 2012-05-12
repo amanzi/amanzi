@@ -12,6 +12,8 @@ struct SimulationParameters {
   std::string description;
   std::string verbosity_name;
   amanzi::chemistry::Verbosity verbosity;
+  std::string text_output;
+  std::string text_time_units;
   std::string comparison_model;
   std::string database_type;
   std::string database_file;
@@ -30,6 +32,8 @@ struct SimulationParameters {
 static const std::string kSimulationSection("simulation parameters");
 static const std::string kDescriptionParam("description");
 static const std::string kVerbosityParam("verbosity");
+static const std::string kTextOutputParam("text_output");
+static const std::string kTextTimeUnitsParam("text_time_units");
 static const std::string kComparisonModelParam("comparison_model");
 static const std::string kDatabaseTypeParam("database_type");
 static const std::string kDatabaseFileParam("database_file");
@@ -58,6 +62,19 @@ int CommandLineOptions(int argc, char** argv,
                        bool* debug_batch_driver);
 
 void WriteTemplateFile(const std::string& file_name);
+
+void SetupTextOutput(const SimulationParameters& simulation_params,
+                     const std::string& input_file_name,
+                     std::fstream* text_output, char* time_units,
+                     double* time_units_conversion);
+
+void WriteTextOutputHeader(std::fstream* text_output,
+                           const char time_units,
+                           const std::vector<std::string>& names);
+
+void WriteTextOutput(std::fstream* text_output,
+                     const double time,
+                     const amanzi::chemistry::Beaker::BeakerComponents& components);
 
 void ReadInputFile(const std::string& file_name,
                    SimulationParameters* simulation_params,
