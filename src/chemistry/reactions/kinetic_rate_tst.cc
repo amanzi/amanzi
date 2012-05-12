@@ -71,7 +71,7 @@
 #include <iostream>
 
 #include "secondary_species.hh"
-#include "block.hh"
+#include "matrix_block.hh"
 #include "string_tokenizer.hh"
 #include "chemistry_verbosity.hh"
 
@@ -228,7 +228,7 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
 void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_species,
                                                const std::vector<Mineral>&  minerals,
                                                const double por_den_sat_vol,
-                                               Block* J) {
+                                               MatrixBlock* J) {
   /*
   ** Evaluate the dR/dC terms for this rate and add to the appropriate
   ** location in the jacobian. See file description above for the jacobian.
@@ -296,9 +296,9 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
     }
 
     // J_ij = nu_i * dR/dCj
-    for (int i = 0; i < J->getSize(); i++) {
-      for (int j = 0; j < J->getSize(); j++) {
-        J->addValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
+    for (int i = 0; i < J->size(); i++) {
+      for (int j = 0; j < J->size(); j++) {
+        J->AddValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
         // std::cout << dRdC_row.at(j) * primary_stoichiometry.at(i) << " ";
       }
       // std::cout << std::endl;

@@ -14,7 +14,7 @@ namespace amanzi {
 namespace chemistry {
 
 // forward declarations from chemistry
-class Block;
+class MatrixBlock;
 
 class IonExchangeRxn {
  public:
@@ -34,7 +34,7 @@ class IonExchangeRxn {
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to sorbed dtotal
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
-                               Block* dtotal);
+                               MatrixBlock* dtotal);
   void CheckUniformZ(const std::vector<Species>& primarySpecies);
   void set_uniform_z(const bool flag) { uniform_z_ = flag; };
   bool uniform_z(void) const { return uniform_z_; };

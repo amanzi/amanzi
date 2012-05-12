@@ -16,10 +16,9 @@ namespace chemistry {
 const double LUSolver::kSmallNumber = 1.0e-20;
 
 LUSolver::LUSolver(void)
-    : LinearSolver(),
+    : system_size_(0),
       row_interchange_(0.0),
       factored_(false) {
-  name_ = strings::kLU;
   pivoting_indices_.clear();
   row_scaling_.clear();
 }  // end LUSolver constructor

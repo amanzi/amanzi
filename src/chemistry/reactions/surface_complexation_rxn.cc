@@ -8,7 +8,7 @@
 #include <sstream>
 
 #include "chemistry_exception.hh"
-#include "block.hh"
+#include "matrix_block.hh"
 
 #include "exceptions.hh"
 
@@ -132,7 +132,7 @@ void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) 
 
 void SurfaceComplexationRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
   // All referenced equations #s are from the pflotran chemistry implementation
   // document by Peter Lichtner
 
@@ -174,7 +174,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
       for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
         double dPsij_dmi = dSi_mi * srfcplx->stoichiometry(jcomp);
-        dtotal->addValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
+        dtotal->AddValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
       }
     }
   }

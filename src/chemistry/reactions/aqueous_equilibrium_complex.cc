@@ -6,7 +6,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "block.hh"
+#include "matrix_block.hh"
 
 namespace amanzi {
 namespace chemistry {
@@ -62,7 +62,7 @@ void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> *tota
 
 void AqueousEquilibriumComplex::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
 
   // taking derivative of contribution to residual in row i with respect
   // to species in column j
@@ -78,7 +78,7 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
         act_coef_;  // here act_coef is from complex
     // row loop
     for (int i = 0; i < ncomp(); i++) {
-      dtotal->addValue(species_ids_.at(i), jcomp, stoichiometry_.at(i)*tempd);
+      dtotal->AddValue(species_ids_.at(i), jcomp, stoichiometry_.at(i)*tempd);
     }
   }
 }  // end addContributionToDTotal()

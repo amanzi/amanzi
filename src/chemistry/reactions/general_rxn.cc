@@ -6,7 +6,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "block.hh"
+#include "matrix_block.hh"
 
 namespace amanzi {
 namespace chemistry {
@@ -128,7 +128,7 @@ void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
 }  // end addContributionToResidual()
 
 void GeneralRxn::addContributionToJacobian(
-    Block* J,
+    MatrixBlock* J,
     const std::vector<Species> primarySpecies,
     double por_den_sat_vol) {
 
@@ -145,7 +145,7 @@ void GeneralRxn::addContributionToJacobian(
           por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
-        J->addValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
+        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
       }
     }  // end columns
   }  // end forward expression
@@ -160,7 +160,7 @@ void GeneralRxn::addContributionToJacobian(
           por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
-        J->addValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
+        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
       }
     }  // end columns
   }  // end backward expression

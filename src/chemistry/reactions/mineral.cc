@@ -5,6 +5,7 @@
 #include <iomanip>
 
 #include "secondary_species.hh"
+#include "matrix_block.hh"
 #include "chemistry_verbosity.hh"
 
 namespace amanzi {
@@ -88,7 +89,7 @@ void Mineral::AddContributionToTotal(std::vector<double> *total) {
 }  // end addContributionToTotal()
 
 void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                      Block* dtotal) {
+                                      MatrixBlock* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
 }  // end addContributionToDTotal()

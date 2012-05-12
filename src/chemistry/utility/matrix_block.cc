@@ -4,14 +4,17 @@
 
 #include <cmath>
 
-#include <iostream>
+#include <sstream>
 #include <iomanip>
+
+#include "chemistry_output.hh"
 
 namespace amanzi {
 namespace chemistry {
 
-MatrixBlock::MatrixBlock() : size_(0),
-                             A_(NULL) {
+MatrixBlock::MatrixBlock() 
+  : size_(0),
+    A_(NULL) {
 }  // end MatrixBlock()
 
 MatrixBlock::MatrixBlock(const int size) 
@@ -204,27 +207,31 @@ void MatrixBlock::AddValues(int ioffset, int joffset, MatrixBlock* b, double sca
   }
 }
 
-void MatrixBlock::Print() {
+void MatrixBlock::Print() const {
+  std::stringstream message;
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
       if (std::fabs(A_[j][i]) > 0.) {
-        // TODO(bandre): is the [j][i] indexing here intentional...?
-        std::cout << i << " " << j << " : "
+        // TODO(bandre): is the [j][i] indexing here intentional for comparison to fortran...?
+        message << i << " " << j << " : "
                   << std::scientific << A_[j][i] << std::endl;
       }
     }
   }
+  chem_out->Write(kVerbose, message);
 }
 
-void MatrixBlock::Print_ij() {
+void MatrixBlock::Print_ij() const {
+  std::stringstream message;
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
       if (std::fabs(A_[i][j]) > 0.) {
-        std::cout << i << " " << j << " : "
+        message << i << " " << j << " : "
                   << std::scientific << A_[i][j] << std::endl;
       }
     }
   }
+  chem_out->Write(kVerbose, message);
 }
 
 }  // namespace chemistry

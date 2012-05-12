@@ -94,7 +94,7 @@ SUITE(GeochemistryTestsKineticRate) {
     void AddContributionToJacobian(const ac::SpeciesArray& primary_species,
                                    const std::vector<ac::Mineral>& minerals,
                                    const double por_den_sat_vol,
-                                   ac::Block* J) {
+                                   ac::MatrixBlock* J) {
       static_cast<void>(primary_species);
       static_cast<void>(minerals);
       static_cast<void>(por_den_sat_vol);

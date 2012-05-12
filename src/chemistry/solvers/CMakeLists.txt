@@ -9,7 +9,7 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(SRCS 
-	 ./lu.cc
+	 ./lu_solver.cc
 	 ./newton.cc 
 )
 

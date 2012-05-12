@@ -10,7 +10,6 @@
 
 #include "activity_model.hh"
 #include "aqueous_equilibrium_complex.hh"
-#include "block.hh"
 #include "general_rxn.hh"
 #include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
@@ -18,6 +17,8 @@
 #include "species.hh"
 #include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"
+#include "lu_solver.hh"
+#include "matrix_block.hh"
 #include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 
@@ -122,7 +123,11 @@ class Beaker {
   virtual void display(void) const;
   void print_results(void) const;
   void print_results(double time) const;
-  void print_linear_system(const std::string& s, Block* A, std::vector<double> vector);
+  void print_linear_system(const std::string& s, 
+                           const MatrixBlock& A, 
+                           const std::vector<double>& vector) const;
+  void print_linear_system(const std::string& s, 
+                           const std::vector<double>& vector) const;
 
   bool override_database(void) const {
     return override_database_;
@@ -301,7 +306,7 @@ class Beaker {
   void AddAccumulation(const std::vector<double>& total,
                        const std::vector<double>& total_sorbed,
                        std::vector<double> *residual);
-  void AddAccumulationDerivative(Block* J, Block* dtotal, Block* dtotal_sorbed);
+  void AddAccumulationDerivative(MatrixBlock* J, MatrixBlock* dtotal, MatrixBlock* dtotal_sorbed);
   void CalculateFixedAccumulation(const std::vector<double>& total,
                                   const std::vector<double>& total_sorbed,
                                   std::vector<double> *fixed_accumulation);
@@ -316,7 +321,6 @@ class Beaker {
 
   // solvers
   void ScaleRHSAndJacobian(void);
-  void SolveLinearSystem(void);
 
   // output
   void DisplayParameters(void) const;
@@ -342,13 +346,13 @@ class Beaker {
   std::vector<double> total_;  // [mol/L]
   // Matrix block containing derivative of total concentration w/respec to
   // free-ion
-  Block* dtotal_;  // [kg water/sec]
+  MatrixBlock dtotal_;  // [kg water/sec]
 
   // Sorbed phase total component concentrations for basis species
   std::vector<double> total_sorbed_;  // [mol/m^3 bulk]
   // Matrix block containing derivative of total sorbed concentration
   // w/respec to free-ion
-  Block* dtotal_sorbed_;  // [kg water/sec]
+  MatrixBlock dtotal_sorbed_;  // [kg water/sec]
 
   // common parameters among reactions
   double porosity_;            // [m^3 pore / m^3 bulk]
@@ -386,8 +390,7 @@ class Beaker {
   std::vector<double> prev_molal_;     // previous molality of primary species
 
   std::vector<double> rhs_;            // right-hand-side of system
-  std::vector<int> indices_;           // array for pivoting in LU
-  Block* jacobian_;                   // Jacobian [kg water/sec]
+  MatrixBlock jacobian_;              // Jacobian [kg water/sec]
 
   SolverStatus status_;
   void ResetStatus(void);
@@ -398,6 +401,8 @@ class Beaker {
   static const double water_density_kg_m3_default_;
   static const double volume_default_;
 
+  LUSolver lu_solver_;
+  
 #ifdef GLENN
   DirectSolver* solver;
 #endif

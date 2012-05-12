@@ -13,7 +13,7 @@ namespace amanzi {
 namespace chemistry {
 
 // forward declarations from chemistry
-class Block;
+class MatrixBlock;
 
 class SurfaceComplexationRxn {
  public:
@@ -32,7 +32,7 @@ class SurfaceComplexationRxn {
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to sorbed dtotal
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
-                               Block* dtotal);
+                               MatrixBlock* dtotal);
   // If the free site stoichiometry in any of the surface complexes
   // is not equal to 1., we must use Newton's method to solve for
   // the free site concentration.  This function determines if this

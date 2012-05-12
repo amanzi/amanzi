@@ -9,14 +9,12 @@
 #include <vector>
 #include <ostream>
 
-#include "linear_solver.hh"
-
 namespace amanzi {
 namespace chemistry {
 
 class MatrixBlock;
 
-class LUSolver : public LinearSolver {
+class LUSolver {
  public:
   LUSolver();
   virtual ~LUSolver();
@@ -29,7 +27,14 @@ class LUSolver : public LinearSolver {
  protected:
   void Decomposition(MatrixBlock* A);
   void BackSolve(MatrixBlock* A, std::vector<double>* b);
+  void set_system_size(const int size) {
+    this->system_size_ = size;
+  }
+  int system_size(void) const {
+    return this->system_size_;
+  }
  private:
+  int system_size_;
   double row_interchange_;
   std::vector<int> pivoting_indices_;
   std::vector<double> row_scaling_;

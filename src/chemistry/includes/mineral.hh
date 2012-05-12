@@ -21,7 +21,7 @@ namespace amanzi {
 namespace chemistry {
 
 // forward declarations from chemistry
-class Block;
+class MatrixBlock;
 
 class Mineral : public SecondarySpecies {
  public:
@@ -42,7 +42,7 @@ class Mineral : public SecondarySpecies {
   virtual void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                       Block* dtotal);
+                                       MatrixBlock* dtotal);
 
   void Display(void) const;
   void DisplayResultsHeader(void) const;

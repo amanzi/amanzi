@@ -20,17 +20,17 @@
 #include "activity_model.hh"
 #include "activity_model_factory.hh"
 #include "aqueous_equilibrium_complex.hh"
-#include "block.hh"
 #include "general_rxn.hh"
-#include "chemistry_exception.hh"
 #include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
-#include "lu.hh"
 #include "mineral.hh"
 #include "mineral_kinetics_factory.hh"
 #include "species.hh"
 #include "surface_complexation_rxn.hh"
+#include "lu_solver.hh"
+#include "matrix_block.hh"
 #include "chemistry_verbosity.hh"
+#include "chemistry_exception.hh"
 
 #include "exceptions.hh"
 
@@ -52,8 +52,10 @@ Beaker::Beaker()
       tolerance_(tolerance_default_),
       max_iterations_(max_iterations_default_),
       ncomp_(0),
-      dtotal_(NULL),
-      dtotal_sorbed_(NULL),
+      total_(),
+      dtotal_(),
+      total_sorbed_(),
+      dtotal_sorbed_(),
       porosity_(porosity_default_),
       saturation_(saturation_default_),
       water_density_kg_m3_(water_density_kg_m3_default_),
@@ -64,7 +66,12 @@ Beaker::Beaker()
       sorbed_accumulation_coef_(0.0),
       por_sat_den_vol_(0.0),
       activity_model_(NULL),
-      jacobian_(NULL) {
+      fixed_accumulation_(),
+      residual_(),
+      prev_molal_(),
+      rhs_(),
+      jacobian_(),
+      lu_solver_() {
   // this is ifdef is breaking the formatting tools
   // #ifdef GLENN
   // , solver(NULL) {
@@ -81,9 +88,6 @@ Beaker::Beaker()
 }  // end Beaker() constructor
 
 Beaker::~Beaker() {
-  delete dtotal_;
-  delete dtotal_sorbed_;
-  delete jacobian_;
   delete activity_model_;
 
   if (mineral_rates_.size() != 0) {
@@ -257,9 +261,9 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     }
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
-    jacobian_->zero();
+    jacobian_.Zero();
     CalculateDTotal();
-    jacobian_->addValues(0, 0, dtotal_);
+    jacobian_.AddValues(0, 0, &dtotal_);
 
     for (int i = 0; i < ncomp(); i++) {
       rhs_.at(i) = residual_.at(i);
@@ -286,7 +290,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
     for (int i = 0; i < ncomp(); i++) {
-      jacobian_->scaleColumn(i, primary_species().at(i).molality());
+      jacobian_.ScaleColumn(i, primary_species().at(i).molality());
     }
 
     if (verbosity() == kDebugBeaker) {
@@ -294,10 +298,10 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     }
 
     // call solver
-    SolveLinearSystem();
+    lu_solver_.Solve(&jacobian_, &rhs_);
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("after solve", NULL, rhs_);
+      print_linear_system("after solve", rhs_);
     }
 
     // calculate update truncating at a maximum of 5 in log space
@@ -428,7 +432,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
     for (int i = 0; i < ncomp(); i++) {
-      jacobian_->scaleColumn(i, primary_species().at(i).molality());
+      jacobian_.ScaleColumn(i, primary_species().at(i).molality());
     }
 
     if (verbosity() == kDebugBeaker) {
@@ -436,10 +440,10 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     }
 
     // solve J dlnc = r
-    SolveLinearSystem();
+    lu_solver_.Solve(&jacobian_, &rhs_);
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("after solve", NULL, rhs_);
+      print_linear_system("after solve", rhs_);
     }
 
     // units of solution: mol/kg water (change in molality)
@@ -772,33 +776,25 @@ void Beaker::DisplayTotalColumns(const double time,
 void Beaker::ResizeInternalMemory(const int size) {
   ncomp(size);
   total_.resize(ncomp());
-  delete dtotal_;
-  dtotal_ = new Block(ncomp());
+  dtotal_.Resize(ncomp());
 
   if (surfaceComplexationRxns_.size() > 0 ||
       sorption_isotherm_rxns_.size() > 0) {
     total_sorbed_.resize(ncomp(), 0.0);
-    delete dtotal_sorbed_;
-    dtotal_sorbed_ = new Block(ncomp());
-    dtotal_sorbed_->zero();
+    dtotal_sorbed_.Resize(ncomp());
+    dtotal_sorbed_.Zero();
   } else {
     total_sorbed_.resize(0);
-    dtotal_sorbed_ = NULL;
+    //dtotal_sorbed_.Resize(0);
   }
 
   fixed_accumulation_.resize(ncomp());
   residual_.resize(ncomp());
   prev_molal_.resize(ncomp());
 
-  delete jacobian_;
-  jacobian_ = new Block(ncomp());
+  jacobian_.Resize(ncomp());
   rhs_.resize(ncomp());
-  indices_.resize(ncomp());
-
-#ifdef GLENN
-  solver = new DirectSolver();
-  solver->Initialize(ncomp());
-#endif
+  lu_solver_.Initialize(ncomp());
 }  // end ResizeInternalMemry()
 
 
@@ -1120,36 +1116,36 @@ void Beaker::CalculateTotal(void) {
 }  // end CalculateTotal()
 
 void Beaker::CalculateDTotal(void) {
-  dtotal_->zero();
+  dtotal_.Zero();
   // derivative with respect to free-ion is 1.
-  dtotal_->setDiagonal(1.0);
+  dtotal_.SetDiagonal(1.0);
 
   // add in derviative of complex contribution with respect to free-ion
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
        i != aqComplexRxns_.end(); i++) {
-    i->AddContributionToDTotal(primary_species(), dtotal_);
+    i->AddContributionToDTotal(primary_species(), &dtotal_);
   }
 
   // scale by density of water
-  dtotal_->scale(water_density_kg_L());
+  dtotal_.Scale(water_density_kg_L());
 
   // calculate sorbed derivatives
-  if (dtotal_sorbed_) {
-    dtotal_sorbed_->zero();
+  if (total_sorbed_.size()) {
+    dtotal_sorbed_.Zero();
     for (std::vector<SurfaceComplexationRxn>::iterator i =
              surfaceComplexationRxns_.begin();
          i != surfaceComplexationRxns_.end(); i++) {
-      i->AddContributionToDTotal(primary_species(), dtotal_sorbed_);
+      i->AddContributionToDTotal(primary_species(), &dtotal_sorbed_);
     }
     for (std::vector<SorptionIsothermRxn>::iterator i =
              sorption_isotherm_rxns_.begin();
          i != sorption_isotherm_rxns_.end(); i++) {
-      i->AddContributionToDTotal(primary_species(), dtotal_sorbed_);
+      i->AddContributionToDTotal(primary_species(), &dtotal_sorbed_);
     }
     // add ion exchange
     for (std::vector<IonExchangeRxn>::iterator ier = ion_exchange_rxns_.begin();
          ier != ion_exchange_rxns_.end(); ier++) {
-      ier->AddContributionToDTotal(primary_species(), dtotal_sorbed_);
+      ier->AddContributionToDTotal(primary_species(), &dtotal_sorbed_);
     }
   }
 }  // end CalculateDTotal()
@@ -1190,13 +1186,13 @@ void Beaker::AddKineticChemistryToJacobian(void) {
   // loop over general kinetic reactions and add rates
   for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
        i != generalKineticRxns_.end(); i++) {
-    i->addContributionToJacobian(jacobian_, primary_species(), por_sat_den_vol());
+    i->addContributionToJacobian(&jacobian_, primary_species(), por_sat_den_vol());
   }
 
   // add mineral mineral contribution to Jacobian here.  units = kg water/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToJacobian(primary_species(), minerals_, por_sat_den_vol(), jacobian_);
+    (*rate)->AddContributionToJacobian(primary_species(), minerals_, por_sat_den_vol(), &jacobian_);
   }
 
   // add multirate kinetic surface complexation contribution to Jacobian here.
@@ -1226,21 +1222,21 @@ void Beaker::AddAccumulation(const std::vector<double>& total,
   }
 }  // end AddAccumulation()
 
-void Beaker::AddAccumulationDerivative(Block* J,
-                                       Block* dtotal,
-                                       Block* dtotal_sorbed) {
+void Beaker::AddAccumulationDerivative(MatrixBlock* J,
+                                       MatrixBlock* dtotal,
+                                       MatrixBlock* dtotal_sorbed) {
   // aqueous_accumulation_coef = porosity*saturation*volume*1000./dt
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*(m^3 bulk)/(sec)
   //         *(kg water/L water)*(1000L water/m^3 water) = kg water/sec
   // all Jacobian entries should be in kg water/sec
-  J->addValues(dtotal, aqueous_accumulation_coef());
+  J->AddValues(dtotal, aqueous_accumulation_coef());
 
   // add accumulation derivative term for equilibrium sorption
   // (e.g. Kd, surface complexation) here
   // sorbed_accumulation_coef = volume/dt
   // units = (kg water/m^3 bulk)*(m^3 bulk)/(sec) = kg water/sec
-  if (dtotal_sorbed) {
-    J->addValues(dtotal_sorbed, sorbed_accumulation_coef());
+  if (total_sorbed_.size()) {
+    J->AddValues(dtotal_sorbed, sorbed_accumulation_coef());
   }
 }  // end AddAccumulationDerivative()
 
@@ -1273,21 +1269,21 @@ void Beaker::CalculateJacobian(void) {
   CalculateDTotal();
 
   // zero Jacobian
-  jacobian_->zero();
+  jacobian_.Zero();
   // add in derivatives for equilibrium chemistry
-  AddAccumulationDerivative(jacobian_, dtotal_, dtotal_sorbed_);
+  AddAccumulationDerivative(&jacobian_, &dtotal_, &dtotal_sorbed_);
 
   // add in derivatives for kinetic chemistry
   AddKineticChemistryToJacobian();
 }  // end CalculateJacobian()
 
 void Beaker::ScaleRHSAndJacobian(void) {
-  for (int i = 0; i < jacobian_->getSize(); i++) {
-    double max = jacobian_->getRowAbsMax(i);
+  for (int i = 0; i < jacobian_.size(); i++) {
+    double max = jacobian_.GetRowAbsMax(i);
     if (max > 1.0) {
       double scale = 1.0 / max;
       rhs_.at(i) *= scale;
-      jacobian_->scaleRow(i, scale);
+      jacobian_.ScaleRow(i, scale);
     }
   }
 }  // end ScaleRHSAndJacobian()
@@ -1318,16 +1314,6 @@ double Beaker::CalculateMaxRelChangeInMolality(void) {
   return max_rel_change;
 }  // end CalculateMaxRelChangeInMolality()
 
-void Beaker::SolveLinearSystem(void) {
-  // LU direct solve
-#ifndef GLENN
-  double D;
-  ludcmp(jacobian_->getValues(), ncomp(), &indices_, &D);
-  lubksb(jacobian_->getValues(), ncomp(), indices_, &rhs_);
-#else
-  solver->Solve(A, b);
-#endif
-}  // end SolveLinearSystem
 
 void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const {
   double charge_balance = 0.0;
@@ -1631,17 +1617,26 @@ void Beaker::print_results(double time) const {
   message << std::endl;
 }  // end print_results()
 
-void Beaker::print_linear_system(const std::string& s, Block* A,
-                                 std::vector<double> vector) {
+void Beaker::print_linear_system(const std::string& s, 
+                                 const MatrixBlock& A,
+                                 const std::vector<double>& vector) const {
   std::stringstream message;
   message << s << std::endl;
   for (unsigned int i = 0; i < vector.size(); i++) {
     message << "RHS: " << primary_species().at(i).name() << " " << vector.at(i) << std::endl;
   }
-  if (A) {
-    A->print();
+  chem_out->Write(kVerbose,message);
+  A.Print_ij();
+}  // end print_linear_system()
+
+void Beaker::print_linear_system(const std::string& s, 
+                                 const std::vector<double>& vector) const {
+  std::stringstream message;
+  message << s << std::endl;
+  for (unsigned int i = 0; i < vector.size(); i++) {
+    message << "RHS: " << primary_species().at(i).name() << " " << vector.at(i) << std::endl;
   }
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(kVerbose,message);
 }  // end print_linear_system()
 
 }  // namespace chemistry

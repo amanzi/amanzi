@@ -4,7 +4,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "block.hh"
+#include "matrix_block.hh"
 
 namespace amanzi {
 namespace chemistry {
@@ -135,7 +135,7 @@ void SurfaceComplex::AddContributionToTotal(std::vector<double> *total) {
 
 void SurfaceComplex::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
 }  // end AddContributionToDTotal()
 
 void SurfaceComplex::Display(void) const {

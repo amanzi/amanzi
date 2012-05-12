@@ -30,7 +30,7 @@
 namespace amanzi {
 namespace chemistry {
 
-class Block;
+class MatrixBlock;
 
 class KineticRateTST : public KineticRate {
  public:
@@ -49,7 +49,7 @@ class KineticRateTST : public KineticRate {
   void AddContributionToJacobian(const SpeciesArray& primary_species,
                                  const std::vector<Mineral>& minerals,
                                  const double por_den_sat_vol,
-                                 Block* J);
+                                 MatrixBlock* J);
   void Display(void) const;
 
   void ParseParameters(const StringTokenizer& rate);

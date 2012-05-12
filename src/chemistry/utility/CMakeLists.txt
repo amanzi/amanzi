@@ -9,7 +9,7 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(SRCS 
-	 ./block.cc 
+	 ./matrix_block.cc 
 	 ./file_io.cc 
 	 ./chemistry_exception.cc
 	 ./chemistry_output.cc

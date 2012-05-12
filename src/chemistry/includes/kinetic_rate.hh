@@ -20,7 +20,7 @@
 namespace amanzi {
 namespace chemistry {
 
-class Block;
+class MatrixBlock;
 
 class KineticRate {
  public:
@@ -37,7 +37,7 @@ class KineticRate {
   virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
                                          const double por_den_sat_vol,
-                                         Block* J) = 0;
+                                         MatrixBlock* J) = 0;
   virtual void Display(void) const = 0;
 
   virtual void ParseParameters(const StringTokenizer& rate_parameters) = 0;

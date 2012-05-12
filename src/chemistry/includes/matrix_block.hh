@@ -5,8 +5,12 @@
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
+#include "chemistry_output.hh"
+
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 class MatrixBlock {
  public:
@@ -35,6 +39,7 @@ class MatrixBlock {
 
   double GetRowAbsMax(int irow);
 
+  // TODO(bandre): can we make some of these pointers const refs?
   void SetValue(int i, int j, double value);
   void SetValues(double** values);
   void SetValues(MatrixBlock* b);
@@ -58,8 +63,8 @@ class MatrixBlock {
   void Zero(void);
   void SetDiagonal(double d);
 
-  void Print(void);
-  void Print_ij(void);
+  void Print(void) const;
+  void Print_ij(void) const;
 
 
  private:
