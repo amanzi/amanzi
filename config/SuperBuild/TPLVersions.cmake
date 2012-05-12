@@ -35,7 +35,7 @@ set(ZLIB_VERSION_MAJOR 1)
 set(ZLIB_VERSION_MINOR 2)
 set(ZLIB_VERSION_PATCH 6)
 set(ZLIB_VERSION ${ZLIB_VERSION_MAJOR}.${ZLIB_VERSION_MINOR}.${ZLIB_VERSION_PATCH})
-set(ZLIB_URL_STRING     "http://zlib.net")
+set(ZLIB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ZLIB_ARCHIVE_FILE   zlib-${ZLIB_VERSION}.tar.gz)
 set(ZLIB_MD5_SUM        618e944d7c7cd6521551e30b32322f4a) 
 

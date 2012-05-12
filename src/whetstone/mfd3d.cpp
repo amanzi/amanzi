@@ -105,8 +105,8 @@ int MFD3D::darcy_mass_inverse_hex(int cell,
 
 
 /* ******************************************************************
-* This is debug version of the above routine for scalar tensors
-* and orthogonal brick element.
+* This is a debug version of the above routine for a scalar tensor
+* and an orthogonal brick element.
 ****************************************************************** */
 int MFD3D::darcy_mass_inverse_diagonal(int cell,
                                        Tensor& permeability,
@@ -126,6 +126,63 @@ int MFD3D::darcy_mass_inverse_diagonal(int cell,
     double area = mesh_->face_area(f);
     W(n, n) = nfaces * permeability(0, 0) * area * area / (d * volume);
   }
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Second-generation MFD method as inlemented in RC1.
+****************************************************************** */
+int MFD3D::darcy_mass_inverse_SO(int cell,
+                                 Tensor& permeability,
+                                 Teuchos::SerialDenseMatrix<int, double>& W)
+{
+  int d = mesh_->space_dimension();
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> fdirs;
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
+
+/* 
+1. loop over corners and assemple elemental dxd corner matrices
+2. rescale the mass matrix to physical volume.
+3. invert the mass matrix.
+*/
+  Tensor N(d, 2), K(d, 2), NK(d, 2), Mv(d, 2);
+
+  AmanziMesh::Entity_ID_List nodes, corner_faces;
+  mesh_->cell_get_nodes(cell, &nodes);
+  int nnodes = nodes.size();
+
+  W.putScalar(0.0);
+  K = permeability;
+  K.inverse();
+
+  for (int n = 0; n < nnodes; n++) {
+    int v = nodes[n];
+    mesh_->node_get_cell_faces(v, cell, AmanziMesh::USED, &corner_faces);
+    int nfaces = corner_faces.size();
+
+    for (int i = 0; i < d; i++) {
+      int f = corner_faces[i];
+      N.add_column(i, mesh_->face_centroid(f));
+    }
+    N.inverse();
+    NK = N * K;
+
+    N.transpose();
+    Mv = NK * N;
+
+    for (int i = 0; i < d; i++) {  // assembling
+      int k = find_position(corner_faces[i], faces);
+      for (int j = i; j < d; j++) {
+        int l = find_position(corner_faces[j], faces);
+        W(k, l) += Mv(i, j);
+        W(l, k) = W(k, l);
+      }
+    }
+  }
+ 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

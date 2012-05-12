@@ -58,6 +58,8 @@ const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-10;
 const int FLOW_MFD3D_POLYHEDRA = 1;
 const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
 const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
+const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
+const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;  // rc1 compatibility
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
@@ -102,7 +104,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
 
   // boundary condition members
-  void updateBoundaryConditions(
+  void UpdateBoundaryConditions(
       BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
       BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
       const Epetra_Vector& pressure_cells, const double atm_pressure,

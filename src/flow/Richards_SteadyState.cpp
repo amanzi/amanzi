@@ -22,27 +22,6 @@ namespace AmanziFlow {
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState()
 {
-  flow_status_++;  // indicates intermediate state
-
-  // initialize pressure and saturation at T=0.
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& water_saturation = FS->ref_water_saturation();
-
-  /* Initialization must be done in routine InitSteadyState(). 
-  if (initialize_with_darcy) {
-    double pmin = atm_pressure;
-    InitializePressureHydrostatic(0.0, *solution);
-    ClipHydrostaticPressure(pmin, 0.6, *solution);
-    for (int c=0; c<ncells_owned; c++) pressure[c] = (*solution_cells)[c];
-  } else {{
-    *solution_cells = pressure;
-  }
-
-  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-  DeriveSaturationFromPressure(pressure, water_saturation);
-  */
-
-  // start iterations
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
     ierr = AdvanceSteadyState_Picard();
@@ -154,9 +133,23 @@ int Richards_PK::AdvanceSteadyState_Picard()
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
+  Epetra_Vector* solution_old_cells = FS->createCellView(solution_old);
+  Epetra_Vector* solution_new_cells = FS->createCellView(solution_new);
+
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
+
+  // update boundary conditions
+  double time = 0.0;
+  bc_pressure->Compute(time);
+  bc_flux->Compute(time);
+  bc_head->Compute(time);
+  bc_seepage->Compute(time);
+  UpdateBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *solution_cells, atm_pressure,
+      bc_markers, bc_values);
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
@@ -172,15 +165,23 @@ int Richards_PK::AdvanceSteadyState_Picard()
       for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
     }
 
-    // create algebraic problem (matrix = preconditioner)
+    // create algebraic problem
     matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
-    matrix->computeSchurComplement(bc_markers, bc_values);
-    matrix->update_ML_preconditioner();
-    rhs = matrix->get_rhs();  // export rhs from matrix class
+    rhs = matrix->rhs();  // export RHS from the matrix class
+
+    // create preconditioner
+    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
+    preconditioner->createMFDrhsVectors();
+    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->assembleGlobalMatrices();
+    preconditioner->computeSchurComplement(bc_markers, bc_values);
+    preconditioner->update_ML_preconditioner();
 
     // check convergence of non-linear residual
     L2error = matrix->computeResidual(solution_new, residual);
@@ -198,12 +199,8 @@ int Richards_PK::AdvanceSteadyState_Picard()
     double linear_residual = solver->TrueResidual();
 
     // update relaxation
-    double relaxation = 0.2;
-    for (int c = 0; c < ncells_owned; c++) {
-      double diff = fabs(solution_new[c] - solution_old[c]);
-      double umax = std::max(fabs(solution_new[c]), fabs(solution_old[c]));
-      if (diff > 5e-3 * umax) relaxation = std::min(relaxation, 5e-3 * umax / diff);
-    }
+    double relaxation;
+    relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n",
@@ -222,6 +219,30 @@ int Richards_PK::AdvanceSteadyState_Picard()
 
   num_nonlinear_steps = itrs;
   return 0;
+}
+
+
+/* ******************************************************************
+* Calculate relazation factor.                                                       
+****************************************************************** */
+double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew)
+{ 
+  Epetra_Vector dSdP(mesh_->cell_map(false));
+  DerivedSdP(uold, dSdP);
+
+  double relaxation = 1.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    double diff = dSdP[c] * fabs(unew[c] - uold[c]);
+    if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double diff = fabs(unew[c] - uold[c]);
+    double umax = std::max(fabs(unew[c]), fabs(uold[c]));
+    if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+  }
+
+  return relaxation;
 }
 
 }  // namespace AmanziFlow

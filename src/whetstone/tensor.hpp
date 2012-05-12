@@ -4,7 +4,7 @@
 /*
 Tensors of rank 1 are numbers in all dimensions.
 Tensors of rank 2 are square matrices in all dimensions.
-Only symmetric tensors of rank 4 are are considered here.
+Only symmetric tensors of rank 4 are considered here.
 */
 
 #include  <iostream>
@@ -31,6 +31,7 @@ class Tensor {
   double trace();
   double det();
   void inverse();
+  void transpose();
 
   // elementary operators
   friend Tensor operator*(Tensor& T, const double& c);
