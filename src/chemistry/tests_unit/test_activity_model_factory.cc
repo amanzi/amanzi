@@ -61,11 +61,12 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
   }
 
   void ActivityModelFactoryTest::RunTest(const std::string name) {
-    std::string database(" ");
+    ac::ActivityModel::ActivityModelParameters parameters;
+    parameters.database_filename = "";
+    parameters.pitzer_jfunction = "";
     std::vector<ac::Species> primaries;
     std::vector<ac::AqueousEquilibriumComplex> secondaries;
-    std::string dummy(" "); // This the name of the approach for the J's function in the Pitzer model
-    activity_model_ = amf_.Create(name, database, primaries, secondaries, dummy);
+    activity_model_ = amf_.Create(name, parameters, primaries, secondaries);
   }
 
   /*!

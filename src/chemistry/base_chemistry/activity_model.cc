@@ -15,11 +15,20 @@ namespace chemistry {
 ActivityModel::ActivityModel()
     : I_(0.0),
       Z_(0.0),
-      M_(0.0) {
+      M_(0.0),
+      verbosity_(kSilent),
+      name_("") {
 }  // end ActivityModel constructor
 
 ActivityModel::~ActivityModel() {
 }  // end ActivityModel destructor
+
+void ActivityModel::Setup(
+    const ActivityModelParameters& parameters,
+    const std::vector<Species>& primary_species,
+    const std::vector<AqueousEquilibriumComplex>& secondary_species) {
+
+}  // end Setup()
 
 void ActivityModel::CalculateIonicStrength(
     const std::vector<Species>& primarySpecies,

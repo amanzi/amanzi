@@ -26,10 +26,13 @@ class VirialCoefficient;
 class ActivityModelPitzerHWM : public ActivityModel {
  public:
 
-  ActivityModelPitzerHWM(const std::string& database, const std::vector<Species>& primary_species,
-		                 const std::vector<AqueousEquilibriumComplex>& aqueous_complexes,
-		                 const std::string& jfunction_approach_);
+  ActivityModelPitzerHWM();
   ~ActivityModelPitzerHWM();
+
+  void Setup(const ActivityModelParameters& parameters,
+             const std::vector<Species>& primary_species,
+             const std::vector<AqueousEquilibriumComplex>& secondary_species);
+
   double Evaluate(const Species& species);
   void EvaluateVector(std::vector<double>& gamma, double& water_activity,
 		              const std::vector<Species>& primary_species,

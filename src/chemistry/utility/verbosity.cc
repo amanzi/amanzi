@@ -23,6 +23,7 @@ VerbosityMap CreateVerbosityMap(void)
   verbosity_map[kDebugName] = kDebug;
   verbosity_map[kDebugBeakerName] = kDebugBeaker;
   verbosity_map[kDebugInputFileName] = kDebugInputFile;
+  verbosity_map[kDebugActivityModelName] = kDebugActivityModel;
   return verbosity_map;
 }  // end CreateVerbosityMap()
 

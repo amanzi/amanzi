@@ -9,14 +9,27 @@
 
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
+#include "verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {
 
 class ActivityModel {
  public:
+  struct ActivityModelParameters {
+    Verbosity verbosity;
+    // if the activity model requires a database put the name here
+    std::string database_filename;
+    // This the name of the approach for the J's function in the Pitzer model
+    std::string pitzer_jfunction;
+  };
+
   ActivityModel();
   virtual ~ActivityModel();
+
+  virtual void Setup(const ActivityModelParameters& parameters,
+                     const std::vector<Species>& primary_species,
+                     const std::vector<AqueousEquilibriumComplex>& secondary_species);
 
   void CalculateIonicStrength(
       const std::vector<Species>& primarySpecies,
@@ -50,6 +63,13 @@ class ActivityModel {
     return this->name_;
   }
 
+  virtual void set_verbosity(const Verbosity verbosity) {
+    this->verbosity_ = verbosity;
+  };
+  virtual Verbosity verbosity(void) const {
+    return this->verbosity_;
+  };
+
  protected:
   double log_to_ln(double d) {
     return d * 2.30258509299;
@@ -69,6 +89,7 @@ class ActivityModel {
   double M_;  // sum ( m_i )
 
  private:
+  Verbosity verbosity_;
   std::string name_;
 };
 

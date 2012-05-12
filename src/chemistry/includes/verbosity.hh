@@ -19,6 +19,7 @@ enum Verbosity { kSilent,
                  kDebugIonExchange,
                  kDebugNewtonSolver,
                  kDebugChemistryProcessKernel,
+                 kDebugActivityModel,
                  kDebugNever  // always last!
 };
 
@@ -28,6 +29,7 @@ static const std::string kVerboseName("verbose");
 static const std::string kDebugName("debug");
 static const std::string kDebugBeakerName("debug_beaker");
 static const std::string kDebugInputFileName("debug_input_file");
+static const std::string kDebugActivityModelName("debug_activity_model");
 
 typedef std::map<std::string, Verbosity> VerbosityMap;
 
