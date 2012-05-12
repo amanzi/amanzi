@@ -11,7 +11,6 @@ include_directories(${CHEM_INCLUDES_DIR})
 set(SRCS 
 	 ./block.cc 
 	 ./file_io.cc 
-	 ./glenn.cc 
 	 ./chemistry_exception.cc
 	 ./chemistry_output.cc
 	 ./chemistry_utilities.cc
