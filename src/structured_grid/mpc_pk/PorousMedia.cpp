@@ -31,6 +31,8 @@
 #include "simple_thermo_database.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
+#include "chemistry_output.hh"
+amanzi::chemistry::ChemistryOutput* amanzi::chemistry::chem_out = NULL;
 #endif
 
 #define GEOM_GROW   1
@@ -538,6 +540,11 @@ PorousMedia::PorousMedia (Amr&            papa,
 
   // Set up boundary condition work
   setup_bound_desc();
+
+#ifdef AMANZI
+  amanzi::chemistry::SetupDefaultChemistryOutput();
+  amanzi::chemistry::chem_out->AddLevel("silent");
+#endif
 }
 
 PorousMedia::~PorousMedia ()
@@ -588,7 +595,9 @@ PorousMedia::~PorousMedia ()
       delete pcnp1_cc;
     }
   delete diffusion;
-
+#ifdef AMANZI
+  delete amanzi::chemistry::chem_out;
+#endif
 }
 
 void
