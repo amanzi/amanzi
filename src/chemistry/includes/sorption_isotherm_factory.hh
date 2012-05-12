@@ -5,7 +5,7 @@
 #include <string>
 
 #include "species.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 #include "string_tokenizer.hh"
 
 

@@ -10,7 +10,7 @@
 
 #include "beaker.hh"
 #include "chemistry_exception.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 #include "chemistry_state.hh"
 

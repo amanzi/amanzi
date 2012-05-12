@@ -18,7 +18,8 @@
 #include "species.hh"
 #include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"
-#include "verbosity.hh"
+#include "chemistry_output.hh"
+#include "chemistry_verbosity.hh"
 
 #ifdef GLENN
 #include "chemistry/includes/direct_solver.hh"
@@ -27,6 +28,8 @@
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput chem_out;
 
 class KineticRate;
 

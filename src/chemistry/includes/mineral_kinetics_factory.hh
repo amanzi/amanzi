@@ -15,7 +15,7 @@
 
 #include "species.hh"
 #include "mineral.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 #include "string_tokenizer.hh"
 
 namespace amanzi {

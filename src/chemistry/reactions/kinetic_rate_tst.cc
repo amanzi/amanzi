@@ -73,7 +73,7 @@
 #include "secondary_species.hh"
 #include "block.hh"
 #include "string_tokenizer.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {

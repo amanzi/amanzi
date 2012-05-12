@@ -12,7 +12,7 @@
 #include "kinetic_rate.hh"
 #include "species.hh"
 #include "string_tokenizer.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
 

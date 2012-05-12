@@ -5,7 +5,16 @@
 #include "beaker.hh"
 #include "glenn.hh"
 #include "activity_model_factory.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
+#include "chemistry_output.hh"
+
+// create a global ChemistryOutput* pointer in the amanzi::chemisry
+// namespace that can be used by an other chemistry object
+namespace amanzi {
+namespace chemistry {
+ChemistryOutput chem_out;
+}  // end namespace chemistry
+}  // end namespace amanzi
 
 using std::cout;
 namespace ac = amanzi::chemistry;
@@ -13,6 +22,15 @@ namespace ac = amanzi::chemistry;
 int main(int argc, char** argv) {
   static_cast<void>(argc);
   static_cast<void>(argv);
+
+  ac::OutputOptions output_options;
+  output_options.use_stdout = true;
+  output_options.file_name = "chemistry-unit-test-results.txt";
+  output_options.verbosity_levels.push_back(ac::strings::kVerbosityError);
+  output_options.verbosity_levels.push_back(ac::strings::kVerbosityWarning);
+  output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
+
+  ac::chem_out.Initialize(output_options);
 
   std::string filename;
 
@@ -73,7 +91,7 @@ int main(int argc, char** argv) {
     components.total[i] *= parameters.water_density / 1000.;
   }
 #endif
-  beaker.resize();
+  beaker.ResizeInternalMemory(components.total.size());
   // solve for free-ion concentrations
 
   // to test react with unitary time step

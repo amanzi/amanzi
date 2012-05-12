@@ -29,7 +29,7 @@
 #include "exceptions.hh"
 #include "errors.hh"
 #include "simple_thermo_database.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #endif
 

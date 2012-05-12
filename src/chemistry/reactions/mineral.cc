@@ -5,7 +5,7 @@
 #include <iomanip>
 
 #include "secondary_species.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {

@@ -9,7 +9,7 @@
 
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {

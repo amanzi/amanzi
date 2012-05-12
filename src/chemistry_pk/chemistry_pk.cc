@@ -14,7 +14,8 @@
 #include "chemistry_state.hh"
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
-#include "verbosity.hh"
+#include "chemistry_output.hh"
+#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 
 #include "Mesh.hh"
@@ -63,6 +64,10 @@ namespace chemistry {
  **
  ******************************************************************************/
 
+// create a global ChemistryOutput object in the amanzi::chemisry
+// namespace that will be used by the chemistry library
+ChemistryOutput chem_out;
+
 Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
     : verbosity_(kSilent),
@@ -73,7 +78,7 @@ Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
       current_time_(0.0),
       saved_time_(0.0) {
 
-  // NOTE: we want the chemistry_pk and chem lib silet by default so
+  // NOTE: we want the chemistry_pk and chem lib silent by default so
   // they don't generate a lot of output in parallel machines. Can
   // modify in the xml file or after verbosity is set in
   // XMLParameters() for debugging.
@@ -91,6 +96,10 @@ void Chemistry_PK::InitializeChemistry(void) {
 
   XMLParameters();
   //set_verbosity(kDebugBeaker);
+  OutputOptions output_options;
+  output_options.use_stdout = true;
+  output_options.verbosity_levels.push_back(strings::kVerbosityVerbose);
+  chem_out.Initialize(output_options);
 
   // TODO: some sort of check of the state object to see if mineral_ssa,
   // CEC, site density, etc is present.

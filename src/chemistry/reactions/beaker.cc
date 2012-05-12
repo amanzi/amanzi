@@ -30,7 +30,7 @@
 #include "mineral_kinetics_factory.hh"
 #include "species.hh"
 #include "surface_complexation_rxn.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 #include "exceptions.hh"
 
@@ -794,9 +794,11 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) {
   }
   if (std::fabs(charge_balance) > tolerance()) {
     if (verbosity() > kTerse) {
-      std::cout << "WARNING: Beaker::CheckChargeBalance() :\n"
+      std::stringstream message;
+      message << "WARNING: Beaker::CheckChargeBalance() :\n"
                 << "         charge balance = " << std::scientific
                 << charge_balance << std::fixed << std::endl;
+      chem_out.Write(kVerbose, message.str());
     }
   }
 }  // end CheckChargeBalance()

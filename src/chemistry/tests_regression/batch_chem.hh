@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "beaker.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 struct SimulationParameters {
   std::string description;
@@ -80,8 +80,6 @@ void PrintInput(const SimulationParameters& params,
                 const amanzi::chemistry::Beaker::BeakerComponents& components);
 void PrintSimulationParameters(const SimulationParameters& params);
 void PrintComponents(const amanzi::chemistry::Beaker::BeakerComponents& components);
-void PrintDoubleVector(const std::vector<double> &total);
-
 
 
 #endif  /* AMANZI_CHEMISTRY_BATCH_CHEM_HH_ */

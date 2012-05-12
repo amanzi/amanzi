@@ -10,7 +10,7 @@
 #include "mineral.hh"
 #include "chemistry_exception.hh"
 #include "block.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 SUITE(GeochemistryTestsMineral) {
   namespace ac = amanzi::chemistry;

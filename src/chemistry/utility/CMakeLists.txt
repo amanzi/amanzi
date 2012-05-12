@@ -13,8 +13,10 @@ set(SRCS
 	 ./file_io.cc 
 	 ./glenn.cc 
 	 ./chemistry_exception.cc
+	 ./chemistry_output.cc
+	 ./chemistry_utilities.cc
 	 ./string_tokenizer.cc
-	 ./verbosity.cc
+	 ./chemistry_verbosity.cc
 )
 
 add_library(geochemutil ${SRCS}) 
