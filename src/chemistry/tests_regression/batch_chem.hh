@@ -10,7 +10,7 @@
 
 struct SimulationParameters {
   std::string description;
-  std::string verbosity_name;
+  std::vector<std::string> verbosity_names;
   amanzi::chemistry::Verbosity verbosity;
   std::string text_output;
   std::string text_time_units;
@@ -27,6 +27,30 @@ struct SimulationParameters {
   double cation_exchange_capacity;
   std::vector<double> mineral_ssa;  // specific surface area []
   std::vector<double> site_density;  // sorption site density []
+
+  SimulationParameters()
+      : description(""),
+        verbosity_names(),
+        verbosity(amanzi::chemistry::kVerbose), 
+        text_output(""),
+        text_time_units("s"),
+        comparison_model("pflotran"),
+        database_type("simple"),
+        database_file(""),
+        activity_model(""),
+        porosity(1.0),
+        saturation(1.0),
+        volume(1.0),
+        delta_time(1.0),
+        num_time_steps(0),
+        output_interval(1),
+        cation_exchange_capacity(-1.0),
+        mineral_ssa(),
+        site_density() {
+    verbosity_names.clear();
+    mineral_ssa.clear();
+    site_density.clear();
+  }
 };
 
 static const std::string kSimulationSection("simulation parameters");
@@ -62,6 +86,8 @@ int CommandLineOptions(int argc, char** argv,
                        bool* debug_batch_driver);
 
 void WriteTemplateFile(const std::string& file_name);
+
+void SetupChemistryOutput(void);
 
 void SetupTextOutput(const SimulationParameters& simulation_params,
                      const std::string& input_file_name,

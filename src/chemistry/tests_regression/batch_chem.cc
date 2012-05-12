@@ -31,7 +31,7 @@
 // namespace that can be used by an other chemistry object
 namespace amanzi {
 namespace chemistry {
-ChemistryOutput* chem_out;
+ChemistryOutput* chem_out = NULL;
 }  // end namespace chemistry
 }  // end namespace amanzi
 
@@ -46,15 +46,7 @@ const std::string kPflotran("pflotran");
    from the beaker.  */
 
 int main(int argc, char** argv) {
-  ac::OutputOptions output_options;
-  output_options.use_stdout = true;
-  output_options.file_name = "chemistry-unit-test-results.txt";
-  output_options.verbosity_levels.push_back(ac::strings::kVerbosityError);
-  output_options.verbosity_levels.push_back(ac::strings::kVerbosityWarning);
-  output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
-
-  ac::chem_out = new ac::ChemistryOutput();
-  ac::chem_out->Initialize(output_options);
+  ac::SetupDefaultChemistryOutput();
   std::stringstream message;
 
   bool debug_batch_driver(false);
@@ -96,12 +88,17 @@ int main(int argc, char** argv) {
     abort();
   }
 
-  ac::VerbosityMap verbosity_map = ac::CreateVerbosityMap();
-  simulation_params.verbosity = verbosity_map[simulation_params.verbosity_name];
-  // if verbosity was specified on the command line, override the
-  // value specified in the input file
+  // if verbosity was specified on the command line, add the level on chem_out
   if (!verbosity_name.empty()) {
-    simulation_params.verbosity = verbosity_map[verbosity_name];
+    ac::chem_out->AddLevel(verbosity_name);
+  }
+
+  // if verbosity levels were specified in the input file, add the levels
+  std::vector<std::string>::const_iterator name;
+  for (name = simulation_params.verbosity_names.begin();
+       name != simulation_params.verbosity_names.end();
+       ++name) {
+    ac::chem_out->AddLevel(*name);
   }
 
   if (debug_batch_driver) {
@@ -485,7 +482,8 @@ void ParseSimulationParameter(const std::string& raw_line,
       // version in value, which has been tokenized by spaces!
       params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
-      params->verbosity_name.assign(value);
+      ac::StringTokenizer verb_names(value, ", \t");
+      params->verbosity_names.assign(verb_names.begin(), verb_names.end());
     } else if (param.at(0).find(kTextOutputParam) != std::string::npos) {
       params->text_output.assign(value) ;
     } else if (param.at(0).find(kTextTimeUnitsParam) != std::string::npos) {
@@ -685,7 +683,12 @@ void PrintSimulationParameters(const SimulationParameters& params)
   std::stringstream message;
   message << "-- Simulation parameters:" << std::endl;
   message << "\tdescription: " << params.description << std::endl;
-  message << "\tverbosity name: " << params.verbosity_name << std::endl;
+  message << "\tverbosity names: " << std::endl;
+  for (std::vector<std::string>::const_iterator name = params.verbosity_names.begin();
+       name != params.verbosity_names.end(); ++name) {
+    message << *name << ", ";
+  }
+  message << std::endl;
   message << "\tverbosity enum: " << params.verbosity << std::endl;
   message << "\tcomparison model: " << params.comparison_model << std::endl;
   message << "\tdatabase type: " << params.database_type << std::endl;

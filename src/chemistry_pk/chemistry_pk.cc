@@ -66,7 +66,7 @@ namespace chemistry {
 
 // create a global ChemistryOutput object in the amanzi::chemisry
 // namespace that will be used by the chemistry library
-ChemistryOutput* chem_out;
+ChemistryOutput* chem_out = NULL;
 
 Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
@@ -82,7 +82,8 @@ Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
   // they don't generate a lot of output in parallel machines. Can
   // modify in the xml file or after verbosity is set in
   // XMLParameters() for debugging.
-  chem_out = new ChemistryOutput();
+  SetupDefaultChemistryOutput();
+  chem_out->AddLevel("silent");
 }  // end Chemistry_PK()
 
 Chemistry_PK::~Chemistry_PK() {
@@ -98,12 +99,14 @@ void Chemistry_PK::InitializeChemistry(void) {
   XMLParameters();
   //set_verbosity(kDebugBeaker); 
 
-  // TODO(bandre): need to set these parameters based on
-  // the xml, maybe move up to the constructor....?
-  OutputOptions output_options;
-  output_options.use_stdout = true;
-  output_options.verbosity_levels.push_back(strings::kVerbosityVerbose);
-  chem_out->Initialize(output_options);
+  // modify output levels based on xml input
+  // for (levels) {chem_out->AddLevel()}
+  // debugging
+  if (false) {
+    chem_out->RemoveLevel("silent");
+    chem_out->AddLevel("some debug level");
+    chem_out->set_use_stdout(true);
+  }
 
   // TODO: some sort of check of the state object to see if mineral_ssa,
   // CEC, site density, etc is present.

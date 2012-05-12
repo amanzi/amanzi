@@ -18,6 +18,7 @@ namespace chemistry {
 VerbosityMap CreateVerbosityMap(void)
 {
   // create a std::map to convert a string into a verbosity enum value
+  // add mixed case and all lower case keys.
 
   VerbosityMap verbosity_map;
   std::string key;

@@ -10,7 +10,7 @@
 // namespace that can be used by an other chemistry object
 namespace amanzi {
 namespace chemistry {
-ChemistryOutput* chem_out;
+ChemistryOutput* chem_out = NULL;
 }  // end namespace chemistry
 }  // end namespace amanzi
 
@@ -18,15 +18,11 @@ ChemistryOutput* chem_out;
 int main(int argc, char* argv[]) {
   namespace ac = amanzi::chemistry;
 
-  ac::OutputOptions output_options;
-  output_options.use_stdout = true;
-  output_options.file_name = "chemistry-unit-test-results.txt";
-  output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
-
-  ac::chem_out = new ac::ChemistryOutput();
-  ac::chem_out->Initialize(output_options);
+  ac::SetupDefaultChemistryOutput();
 
   int status = UnitTest::RunAllTests();
+
   delete ac::chem_out;
+
   return status;
 }

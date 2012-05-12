@@ -71,25 +71,22 @@ extern ChemistryOutput* chem_out;
 namespace amanzi {
 namespace chemistry {
 
+void SetupDefaultChemistryOutput(void);
+
 class ChemistryOutput {
  public:
   ChemistryOutput();
   virtual ~ChemistryOutput();
 
   void Initialize(const OutputOptions& options);
+  void AddLevel(const std::string& level);
+  void RemoveLevel(const std::string& level);
 
-  void OpenFileStream(const std::string& file_name);
-  void CloseFileStream(void);
+  void AddLevel(const Verbosity& level);
+  void RemoveLevel(const Verbosity& level);
+
   void Write(const Verbosity level, const std::stringstream& data);
   void Write(const Verbosity level, const std::string& data);
-
-  void set_verbosity_flags(const VerbosityFlags& verbosity_flags) {
-    this->verbosity_flags_ = verbosity_flags;
-  }
-
-  const VerbosityFlags& verbosity_flags(void) const {
-    return this->verbosity_flags_;
-  }
 
   void set_use_stdout(const bool use_stdout) {
     this->use_stdout_ = use_stdout;
@@ -100,12 +97,22 @@ class ChemistryOutput {
   }
 
  protected:
+ private:
+  void OpenFileStream(const std::string& file_name);
+  void CloseFileStream(void);
+
+  const VerbosityMap& verbosity_map(void) const {
+    return this->verbosity_map_;
+  }
+
+  const VerbosityFlags& verbosity_flags(void) const {
+    return this->verbosity_flags_;
+  }
+
+  VerbosityMap verbosity_map_;
   VerbosityFlags verbosity_flags_;
   bool use_stdout_;
   std::ofstream* file_stream_;
-
- private:
-
 
 };
 
