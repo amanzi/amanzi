@@ -32,7 +32,7 @@
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_output.hh"
-amanzi::chemistry::ChemistryOutput* amanzi::chemistry::chem_out = NULL;
+extern amanzi::chemistry::ChemistryOutput* amanzi::chemistry::chem_out;
 #endif
 
 #define GEOM_GROW   1

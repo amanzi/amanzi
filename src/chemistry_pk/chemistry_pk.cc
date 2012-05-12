@@ -64,9 +64,9 @@ namespace chemistry {
  **
  ******************************************************************************/
 
-// create a global ChemistryOutput object in the amanzi::chemisry
+// global ChemistryOutput object in the amanzi::chemisry
 // namespace that will be used by the chemistry library
-ChemistryOutput* chem_out = NULL;
+extern ChemistryOutput* chem_out;
 
 Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)

@@ -31,7 +31,7 @@
 // namespace that can be used by an other chemistry object
 namespace amanzi {
 namespace chemistry {
-ChemistryOutput* chem_out = NULL;
+extern ChemistryOutput* chem_out;
 }  // end namespace chemistry
 }  // end namespace amanzi
 

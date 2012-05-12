@@ -37,6 +37,8 @@
 namespace amanzi {
 namespace chemistry {
 
+ChemistryOutput* chem_out = NULL;
+
 // solver defaults
 const double Beaker::tolerance_default_ = 1.0e-12;
 const unsigned int Beaker::max_iterations_default_ = 250;
