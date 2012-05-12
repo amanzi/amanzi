@@ -38,33 +38,33 @@ namespace amanzi {
 namespace chemistry {
 
 // solver defaults
-const double Beaker::tolerance_default = 1.0e-12;
-const unsigned int Beaker::max_iterations_default = 250;
+const double Beaker::tolerance_default_ = 1.0e-12;
+const unsigned int Beaker::max_iterations_default_ = 250;
 // default physical parameters
-const double Beaker::porosity_default = 1.0;  // [-]
-const double Beaker::saturation_default = 1.0;  // [-]
-const double Beaker::water_density_kg_m3_default = 1000.0;
-const double Beaker::volume_default = 1.0;  // [m^3]
+const double Beaker::porosity_default_ = 1.0;  // [-]
+const double Beaker::saturation_default_ = 1.0;  // [-]
+const double Beaker::water_density_kg_m3_default_ = 1000.0;
+const double Beaker::volume_default_ = 1.0;  // [m^3]
 
 Beaker::Beaker()
     : verbosity_(kSilent),
       override_database_(false),
-      tolerance_(tolerance_default),
-      max_iterations_(max_iterations_default),
+      tolerance_(tolerance_default_),
+      max_iterations_(max_iterations_default_),
       ncomp_(0),
       dtotal_(NULL),
       dtotal_sorbed_(NULL),
-      porosity_(porosity_default),
-      saturation_(saturation_default),
-      water_density_kg_m3_(water_density_kg_m3_default),
+      porosity_(porosity_default_),
+      saturation_(saturation_default_),
+      water_density_kg_m3_(water_density_kg_m3_default_),
       water_density_kg_L_(1.0),
-      volume_(volume_default),
+      volume_(volume_default_),
       dt_(0.0),
       aqueous_accumulation_coef_(0.0),
       sorbed_accumulation_coef_(0.0),
       por_sat_den_vol_(0.0),
       activity_model_(NULL),
-      J(NULL) {
+      jacobian_(NULL) {
   // this is ifdef is breaking the formatting tools
   // #ifdef GLENN
   // , solver(NULL) {
@@ -81,11 +81,9 @@ Beaker::Beaker()
 }  // end Beaker() constructor
 
 Beaker::~Beaker() {
-  // According to C++ In A Nutshell (and other sources), no check
-  // on NULL is necessary for "delete".
   delete dtotal_;
   delete dtotal_sorbed_;
-  delete J;
+  delete jacobian_;
   delete activity_model_;
 
   if (mineral_rates_.size() != 0) {
@@ -108,7 +106,8 @@ Beaker::~Beaker() {
 #endif
 }  // end Beaker destructor
 
-void Beaker::resize() {
+void Beaker::ResizeInternalMemory(const int size) {
+  ncomp(size);
   total_.resize(ncomp());
   delete dtotal_;
   dtotal_ = new Block(ncomp());
@@ -129,29 +128,26 @@ void Beaker::resize() {
   residual.resize(ncomp());
   prev_molal.resize(ncomp());
 
-  delete J;
-  J = new Block(ncomp());
-  rhs.resize(ncomp());
+  delete jacobian_;
+  jacobian_ = new Block(ncomp());
+  rhs_.resize(ncomp());
   indices.resize(ncomp());
 
 #ifdef GLENN
   solver = new DirectSolver();
   solver->Initialize(ncomp());
 #endif
-}  // end resize()
+}  // end ResizeInternalMemry()
 
-void Beaker::resize(int n) {
-  ncomp(n);
-  resize();
-}  // end resize()
 
 void Beaker::Setup(const Beaker::BeakerComponents& components,
                    const Beaker::BeakerParameters& parameters) {
   SetParameters(parameters);
 
-  this->SetupActivityModel(parameters.activity_model_name, parameters.pitzer_database, parameters.jfunction_pitzer);
-  this->resize(static_cast<int>(this->primary_species().size()));
-  this->VerifyComponentSizes(components);
+  SetupActivityModel(parameters.activity_model_name, 
+                     parameters.pitzer_database, parameters.jfunction_pitzer);
+  ResizeInternalMemory(static_cast<int>(primary_species().size()));
+  VerifyComponentSizes(components);
 }  // end Setup()
 
 void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) {
@@ -326,16 +322,16 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
 
   parameters.thermo_database_file.clear();
 
-  parameters.tolerance = tolerance_default;
-  parameters.max_iterations = max_iterations_default;
+  parameters.tolerance = tolerance_default_;
+  parameters.max_iterations = max_iterations_default_;
 
   parameters.activity_model_name = ActivityModelFactory::unit;
   parameters.pitzer_database.clear();
 
-  parameters.porosity = porosity_default;
-  parameters.saturation = saturation_default;
-  parameters.water_density = water_density_kg_m3_default;  // kg / m^3
-  parameters.volume = volume_default;  // m^3
+  parameters.porosity = porosity_default_;
+  parameters.saturation = saturation_default_;
+  parameters.water_density = water_density_kg_m3_default_;  // kg / m^3
+  parameters.volume = volume_default_;  // m^3
 
   parameters.override_database = false;
   parameters.mineral_specific_surface_area.clear();
@@ -860,44 +856,44 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // units of residual: mol/sec
     calculateResidual(&residual, fixed_accumulation);
     // units of Jacobian: kg water/sec
-    calculateJacobian(J);
+    calculateJacobian(jacobian_);
     // therefore, units of solution: mol/kg water (change in molality)
 
     for (int i = 0; i < ncomp(); i++) {
-      rhs[i] = residual[i];
+      rhs_[i] = residual[i];
     }
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("before scale", J, rhs);
+      print_linear_system("before scale", jacobian_, rhs_);
     }
 
     // scale the Jacobian
-    scaleRHSAndJacobian(&rhs, J);
+    scaleRHSAndJacobian(&rhs_, jacobian_);
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("after scale", J, rhs);
+      print_linear_system("after scale", jacobian_, rhs_);
     }
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
     for (int i = 0; i < ncomp(); i++) {
-      J->scaleColumn(i, primarySpecies_[i].molality());
+      jacobian_->scaleColumn(i, primarySpecies_[i].molality());
     }
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("before solve", J, rhs);
+      print_linear_system("before solve", jacobian_, rhs_);
     }
 
     // solve J dlnc = r
-    solveLinearSystem(J, &rhs);
+    solveLinearSystem(jacobian_, &rhs_);
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("after solve", NULL, rhs);
+      print_linear_system("after solve", NULL, rhs_);
     }
 
     // units of solution: mol/kg water (change in molality)
     // calculate update truncating at a maximum of 5 in nat log space
     // update with exp(-dlnc)
-    updateMolalitiesWithTruncation(&rhs, &prev_molal, 5.);
+    updateMolalitiesWithTruncation(&rhs_, &prev_molal, 5.);
     // calculate maximum relative change in concentration over all species
     max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 
@@ -1013,12 +1009,12 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     }
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
-    J->zero();
+    jacobian_->zero();
     calculateDTotal();
-    J->addValues(0, 0, dtotal_);
+    jacobian_->addValues(0, 0, dtotal_);
 
     for (int i = 0; i < ncomp(); i++) {
-      rhs[i] = residual[i];
+      rhs_[i] = residual[i];
     }
 
     if (verbosity() >= kDebugBeaker) {
@@ -1028,34 +1024,34 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     }
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("before scale", J, rhs);
+      print_linear_system("before scale", jacobian_, rhs_);
     }
 
     // scale the Jacobian
-    scaleRHSAndJacobian(&rhs, J);
+    scaleRHSAndJacobian(&rhs_, jacobian_);
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("after scale", J, rhs);
+      print_linear_system("after scale", jacobian_, rhs_);
     }
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
     for (int i = 0; i < ncomp(); i++) {
-      J->scaleColumn(i, primarySpecies_[i].molality());
+      jacobian_->scaleColumn(i, primarySpecies_[i].molality());
     }
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("before solve", J, rhs);
+      print_linear_system("before solve", jacobian_, rhs_);
     }
 
     // call solver
-    solveLinearSystem(J, &rhs);
+    solveLinearSystem(jacobian_, &rhs_);
 
     if (verbosity() == kDebugBeaker) {
-      print_linear_system("after solve", NULL, rhs);
+      print_linear_system("after solve", NULL, rhs_);
     }
 
     // calculate update truncating at a maximum of 5 in log space
-    updateMolalitiesWithTruncation(&rhs, &prev_molal, 5.);
+    updateMolalitiesWithTruncation(&rhs_, &prev_molal, 5.);
     // calculate maximum relative change in concentration over all species
     max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 

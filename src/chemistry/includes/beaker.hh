@@ -81,8 +81,7 @@ class Beaker {
   };
 
   // resizes matrix and vectors for nonlinear system
-  void resize();
-  void resize(int ncomp);
+  void ResizeInternalMemory(const int size);
 
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
@@ -370,18 +369,18 @@ class Beaker {
   std::vector<double> residual;       // entire residual [mol/sec]
   std::vector<double> prev_molal;     // previous molality of primary species
 
-  std::vector<double> rhs;            // right-hand-side of system
+  std::vector<double> rhs_;            // right-hand-side of system
   std::vector<int> indices;           // array for pivoting in LU
-  Block* J;                           // Jacobian [kg water/sec]
+  Block* jacobian_;                   // Jacobian [kg water/sec]
 
   SolverStatus status_;
   void ResetStatus(void);
-  static const double tolerance_default;
-  static const unsigned int max_iterations_default;
-  static const double porosity_default;
-  static const double saturation_default;
-  static const double water_density_kg_m3_default;
-  static const double volume_default;
+  static const double tolerance_default_;
+  static const unsigned int max_iterations_default_;
+  static const double porosity_default_;
+  static const double saturation_default_;
+  static const double water_density_kg_m3_default_;
+  static const double volume_default_;
 
 #ifdef GLENN
   DirectSolver* solver;

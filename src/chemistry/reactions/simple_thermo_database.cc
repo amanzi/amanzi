@@ -56,13 +56,13 @@ SimpleThermoDatabase::~SimpleThermoDatabase(void) {
 
 void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
                                  const Beaker::BeakerParameters& parameters) {
-  this->ReadFile(parameters.thermo_database_file);
-  this->SetParameters(parameters);
-  this->SetupActivityModel(parameters.activity_model_name, 
-                           parameters.pitzer_database, parameters.jfunction_pitzer);
-  this->resize(this->primary_species().size());
-  this->VerifyComponentSizes(components);
-  this->SetComponents(components);
+  ReadFile(parameters.thermo_database_file);
+  SetParameters(parameters);
+  SetupActivityModel(parameters.activity_model_name, 
+                     parameters.pitzer_database, parameters.jfunction_pitzer);
+  ResizeInternalMemory(primary_species().size());
+  VerifyComponentSizes(components);
+  SetComponents(components);
 }  // end Setup()
 
 /*******************************************************************************

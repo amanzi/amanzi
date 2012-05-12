@@ -38,7 +38,7 @@ class Glenn {
 
 static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   // primary species
-  g->resize(2);
+  g->ResizeInternalMemory(2);
 
   total->push_back(1.e-6);
   total->push_back(1.e-3);
@@ -145,7 +145,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
   // first line indicates number of primary and secondary components
   file->getLine();
   file->readInt(&ncomp);
-  g->resize(ncomp);
+  g->ResizeInternalMemory(ncomp);
   file->readInt(&neqcplx);
   file->readInt(&ngeneral_rxn);
   file->readInt(&nsurfcplx_rxn);
