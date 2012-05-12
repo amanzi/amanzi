@@ -16,7 +16,6 @@ Mineral::Mineral()
       verbosity_(kSilent),
       molar_volume_(0.0),
       specific_surface_area_(0.0),
-      surface_area_(0.0),
       volume_fraction_(0.0) {
 }  // end Mineral() constructor
 
@@ -36,7 +35,6 @@ Mineral::Mineral(const SpeciesName in_name,
       verbosity_(kSilent),
       molar_volume_(molar_volume),
       specific_surface_area_(specific_surface_area),
-      surface_area_(0.0),
       volume_fraction_(0.0) {
 }  // end Mineral costructor
 
@@ -44,35 +42,29 @@ Mineral::Mineral(const SpeciesName in_name,
 Mineral::~Mineral() {
 }  // end Mineral() destructor
 
-/*
-**
-**  these functions are only needed if mineral equilibrium is added.
-**
-*/
+void Mineral::UpdateSpecificSurfaceArea(void) {
+  // updating SSA not supported at this time!
 
-void Mineral::UpdateSurfaceAreaFromVolumeFraction(const double total_volume) {
-  // area = SSA * GMW * V_fraction * V_total * unit_conversion / mole volume
-  // m^2 = (m^2/g * g/mol * -- * m^3 * cm^3/m^3) / (cm^3/mol)
-  // double cm3_in_m3 = 10.0;
-  double cm3_in_m3 = 1.0e6;
-  set_surface_area(specific_surface_area() * gram_molecular_weight() *
-                   volume_fraction() * total_volume * cm3_in_m3 / molar_volume());
-  // hard code bulk surface area: 100 m^2/m^3
-  set_surface_area(100.0 * total_volume);
+}  // end UpdateSpecificSurfaceArea()
 
-  if (verbosity() == kDebugMineralKinetics) {
-    std::cout << "Mineral: " << name() << "\n"
-              << "   SSA: " << specific_surface_area() << " [m^2/g]\n"
-              << "   GMW:" << gram_molecular_weight() << " [g/mole]\n"
-              << "   mole volume^-1: " << 1.0 / molar_volume() << " [mole/cm^3]\n"
-              << "   volume fraction: " << volume_fraction() << " [-]\n"
-              << std::scientific << "   total volume: " << total_volume << " [m^3]\n"
-              << "   cm3 in m3=" << cm3_in_m3 << "\n"
-              << "   surface area=" << surface_area() << " [m^2]\n"
-              << std::fixed
-              << std::endl;
+void Mineral::UpdateVolumeFraction(const double rate,
+                                   const double delta_time) {
+  // NOTE: the rate is a dissolution rate so either need to use -rate
+  // or vol_frac -= .... inorder to get the correct
+  // dissolution/precipitation behavior.
+
+  // delta_vf = [m^3/mole] * [moles/m^3/sec] * [sec]
+  volume_fraction_ -= molar_volume() * rate * delta_time;
+  if (false) {
+    std::stringstream message;
+    message << name() << "::UpdateVolumeFraction() : \n"
+            << "molar_volume : " << molar_volume() << "\n"
+            << "rate : " << rate << "\n"
+            << "dt : " << delta_time << "\n"
+            << "delta_vf : " << molar_volume() * rate * delta_time << std::endl;
+    chem_out->Write(kVerbose, message);
   }
-}  // end UpdateSurfaceAreaFromVolumeFraction()
+}  // end UpdateVolumeFraction()
 
 void Mineral::Update(const std::vector<Species>& primary_species, const Species& water_species) {
   double lnQK = -lnK_;
@@ -109,16 +101,15 @@ void Mineral::Display(void) const {
     }
   }
   if (SecondarySpecies::h2o_stoich_!=0.0) {
-	  std::cout << " + ";
-	  std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+    std::cout << " + ";
+    std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
   std::cout << std::endl;
   std::cout << std::setw(40) << " "
             << std::setw(10) << std::setprecision(5) << std::fixed << logK_
-            << std::setw(13) << molar_volume()
-            << std::setw(13) << gram_molecular_weight()
+            << std::setw(13) << std::scientific << molar_volume()
+            << std::setw(13) << std::fixed << gram_molecular_weight()
             << std::setw(13) << specific_surface_area()
-            << std::setw(13) << std::scientific << surface_area()
             << std::setw(13) << std::fixed << volume_fraction()
             << std::endl;
 }  // end Display()

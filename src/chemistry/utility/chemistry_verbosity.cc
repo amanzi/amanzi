@@ -43,9 +43,13 @@ VerbosityMap CreateVerbosityMap(void)
   utilities::LowerCaseString(strings::kVerbosityError, &key);
   verbosity_map[key] = kError;
 
-  verbosity_map[strings::kVerbosityDebugChemistryCoordinator] = kDebugChemistryCoordinator;
-  utilities::LowerCaseString(strings::kVerbosityDebugChemistryCoordinator, &key);
-  verbosity_map[key] = kDebugChemistryCoordinator;
+  verbosity_map[strings::kVerbosityDebugBeaker] = kDebugBeaker;
+  utilities::LowerCaseString(strings::kVerbosityDebugBeaker, &key);
+  verbosity_map[key] = kDebugBeaker;
+
+  verbosity_map[strings::kVerbosityDebugMineralKinetics] = kDebugMineralKinetics;
+  utilities::LowerCaseString(strings::kVerbosityDebugMineralKinetics, &key);
+  verbosity_map[key] = kDebugMineralKinetics;
 
   verbosity_map[strings::kVerbosityDebugInputFile] = kDebugInputFile;
   utilities::LowerCaseString(strings::kVerbosityDebugInputFile, &key);
@@ -55,10 +59,6 @@ VerbosityMap CreateVerbosityMap(void)
   utilities::LowerCaseString(strings::kVerbosityDebugDatabase, &key);
   verbosity_map[key] = kDebugDatabase;
 
-  verbosity_map[strings::kVerbosityDebugReactionNetwork] = kDebugReactionNetwork;
-  utilities::LowerCaseString(strings::kVerbosityDebugReactionNetwork, &key);
-  verbosity_map[key] = kDebugReactionNetwork;
-
   verbosity_map[strings::kVerbosityDebugActivityModel] = kDebugActivityModel;
   utilities::LowerCaseString(strings::kVerbosityDebugActivityModel, &key);
   verbosity_map[key] = kDebugActivityModel;
@@ -66,18 +66,6 @@ VerbosityMap CreateVerbosityMap(void)
   verbosity_map[strings::kVerbosityDebugSpeciation] = kDebugSpeciation;
   utilities::LowerCaseString(strings::kVerbosityDebugSpeciation, &key);
   verbosity_map[key] = kDebugSpeciation;
-
-  verbosity_map[strings::kVerbosityDebugOperatorSplitting] = kDebugOperatorSplitting;
-  utilities::LowerCaseString(strings::kVerbosityDebugOperatorSplitting, &key);
-  verbosity_map[key] = kDebugOperatorSplitting;
-
-  verbosity_map[strings::kVerbosityDebugNonlinearSolver] = kDebugNonlinearSolver;
-  utilities::LowerCaseString(strings::kVerbosityDebugNonlinearSolver, &key);
-  verbosity_map[key] = kDebugNonlinearSolver;
-
-  verbosity_map[strings::kVerbosityDebugODESolver] = kDebugODESolver;
-  utilities::LowerCaseString(strings::kVerbosityDebugODESolver, &key);
-  verbosity_map[key] = kDebugODESolver;
 
   verbosity_map[strings::kVerbosityDebugLinearSolver] = kDebugLinearSolver;
   utilities::LowerCaseString(strings::kVerbosityDebugLinearSolver, &key);

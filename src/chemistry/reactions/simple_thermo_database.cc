@@ -667,7 +667,7 @@ void SimpleThermoDatabase::RemoveLeadingAndTrailingSpaces(std::string* s) {
 **
 **  Secondary Species Fields:
 **
-**  Name = coeff reactant ... ; log Keq ; gram molecular weight [g/mole] ; molar volume [cm^3/mole] ; specific surface area [m^2]
+**  Name = coeff reactant ... ; log Keq ; gram molecular weight [g/mole] ; molar volume [cm^3/mole] ; specific surface area [cm^2 mineral / cm^3 bulk]
 **
 *******************************************************************************/
 void SimpleThermoDatabase::ParseMineral(const std::string& data) {
@@ -697,9 +697,13 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
 
   no_spaces.tokenize(mineral_eq.at(3), space);
   double molar_volume(std::atof(no_spaces.at(0).c_str()));
+  // convert: [cm^3/mole] --> [m^3/mole]
+  molar_volume /= 1000000.0;
 
   no_spaces.tokenize(mineral_eq.at(4), space);
   double specific_surface_area(std::atof(no_spaces.at(0).c_str()));
+  // convert: [cm^2 mineral / cm^3 bulk] --> [m^2 mineral / m^3 bulk]
+  specific_surface_area *= 100.0;
 
   Mineral mineral(name, mineral_id_++,
                   species,
@@ -750,7 +754,7 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
   rate_data.erase(rate_data.begin());  // erase reaction type string
 
   MineralKineticsFactory mkf;
-  mkf.set_verbosity(verbosity());
+  mkf.set_debug(false);
   SpeciesId mineral_id = mkf.VerifyMineralName(mineral_name, minerals());
   Mineral mineral = minerals().at(mineral_id);
   KineticRate* kinetic_rate = mkf.Create(rate_type, rate_data, mineral, primary_species());

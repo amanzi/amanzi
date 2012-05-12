@@ -13,9 +13,10 @@ namespace amanzi {
 namespace chemistry {
 
 KineticRate::KineticRate(void)
-    : verbosity_(kSilent),
+    : debug_(false),
       name_("KineticRate"),
-      identifier_(0) {
+      identifier_(0),
+      reaction_rate_(0.0) {
   reactant_names.clear();
   reactant_stoichiometry.clear();
   reactant_ids.clear();
@@ -56,13 +57,13 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
           // geh          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
           (*out_stoichiometry)[(*s).identifier()] = in_stoichiometry.at(current);
         }
-        if (verbosity() == kDebugMineralKinetics) {
+        if (debug() == kDebugMineralKinetics) {
           std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type
                     << " species " << (*s).name() << std::endl;
         }
       }
     }
-    if (species_found == false && verbosity() == kDebugMineralKinetics) {
+    if (species_found == false && debug() == kDebugMineralKinetics) {
       // TODO(bandre): is this actually a runtime error?
       std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'"
                 << in_names.at(current) << "\' in " << species_type

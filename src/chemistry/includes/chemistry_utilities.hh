@@ -34,6 +34,7 @@ bool CompareFabs(const double& a, const double& b);
  **
  ******************************************************************************/
 void LowerCaseString(const std::string& in, std::string* out);
+void RemoveLeadingAndTrailingWhitespace(std::string* line);
 
 /*******************************************************************************
  **

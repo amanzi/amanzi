@@ -126,11 +126,11 @@ SUITE(GeochemistryTestsKineticRate) {
     CHECK_EQUAL(rate.name(), "abc123");
   }
 
-  // can we set the verbosity?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_verbosity) {
+  // can we set the debug flag?
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_debug) {
     MockKineticRate rate;
-    rate.set_verbosity(ac::kVerbose);
-    CHECK_EQUAL(rate.verbosity(), ac::kVerbose);
+    rate.set_debug(true);
+    CHECK_EQUAL(rate.debug(), true);
   }
 
   // does SetSpeciesIds function work?

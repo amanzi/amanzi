@@ -232,11 +232,6 @@ SUITE(GeochemistryTestsMineral) {
     CHECK_CLOSE(mineral_->molar_volume(), 36.9340, 1.0e-4);
   }
 
-  TEST_FIXTURE(MineralTest, Mineral_surface_area) {
-    // TODO(bandre): add to constructor?
-    CHECK_CLOSE(mineral_->surface_area(), 0.0, 1.0e-10);
-  }
-
   TEST_FIXTURE(MineralTest, Mineral_specific_surface_area) {
     CHECK_CLOSE(mineral_->specific_surface_area(), 0.987654, 1.0e-6);
   }
@@ -245,12 +240,22 @@ SUITE(GeochemistryTestsMineral) {
     CHECK_CLOSE(mineral_->volume_fraction(), 0.23456, 1.0e-10);
   }
 
-  TEST_FIXTURE(MineralTest, Mineral_UpdateSurfaceAreaFromVolumeFraction) {
+/*
+  TEST_FIXTURE(MineralTest, Mineral_UpdateVolumeFraction) {
+    double rate = 1.0;
+    double delta_t = 1.0;
+    mineral_->UpdateVolumeFraction(rate, delta_time);
+    CHECK_CLOSE(mineral_->volume_fraction(), 100.0, 1.0e-10);
+  }
+*/
+/*
+  TEST_FIXTURE(MineralTest, Mineral_UpdateSpecificSurfaceArea) {
     // code currently has a hard coded value of 100
     mineral_->set_volume_fraction(0.2);
-    mineral_->UpdateSurfaceAreaFromVolumeFraction(1.0);
-    CHECK_CLOSE(mineral_->surface_area(), 100.0, 1.0e-10);
+    mineral_->UpdateSpecificSurfaceArea(void);
+    CHECK_CLOSE(mineral_->specific_surface_area(), 100.0, 1.0e-10);
   }
+*/
 
   TEST_FIXTURE(MineralTest, Mineral_verbosity) {
     mineral_->set_verbosity(ac::kDebugMineralKinetics);

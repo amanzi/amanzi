@@ -110,7 +110,6 @@ void Chemistry_PK::InitializeChemistry(void) {
 
   // TODO: some sort of check of the state object to see if mineral_ssa,
   // CEC, site density, etc is present.
-  set_override_database(true);
 
   // initial conditions for minerals etc should be handled by the
   // state/chemistry_state object before we reach this point. We just
@@ -331,7 +330,7 @@ void Chemistry_PK::SizeBeakerComponents(void) {
     beaker_components_.total_sorbed.resize(number_total_sorbed(), 0.0);
   }
 
-  if (override_database()) {
+  if (false) {  // TODO: check to see if we need to initialize these....
     beaker_parameters_.mineral_specific_surface_area.resize(number_minerals(), 0.0);
     if (number_ion_exchange_sites() > 0) {
       beaker_components_.ion_exchange_sites.resize(number_ion_exchange_sites(), 0.0);
@@ -340,7 +339,7 @@ void Chemistry_PK::SizeBeakerComponents(void) {
     if (number_sorption_sites() > 0) {
       beaker_parameters_.sorption_site_density.resize(number_sorption_sites(), 0.0);
     }
-  }  // if(override)
+  }
 }  // end SizeBeakerComponents()
 
 
@@ -425,8 +424,7 @@ void Chemistry_PK::CopyStateToBeakerParameters(const int cell_id) {
   beaker_parameters_.porosity = (*chemistry_state_->porosity())[cell_id];
   beaker_parameters_.saturation = (*chemistry_state_->water_saturation())[cell_id];
   beaker_parameters_.volume = (*chemistry_state_->volume())[cell_id];
-  beaker_parameters_.override_database = override_database();
-  if (override_database()) {
+  if (false) {
     for (int m = 0; m < number_minerals(); ++m) {
       double* cells_ssa = (*chemistry_state_->mineral_specific_surface_area())[m];
       beaker_parameters_.mineral_specific_surface_area.at(m) = cells_ssa[cell_id];

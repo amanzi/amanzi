@@ -66,9 +66,7 @@ class Beaker {
     double volume;  // [m^3]
 
     // the following parameters will be read in from the database file
-    // but can be overridden by the driver, e.g. when amanzi needs spatially
-    // dependent chemistry parameters! Need some logic to be smart about this....
-    bool override_database;
+    // but can be overridden by the driver if their size > 0....
     std::vector<double> mineral_specific_surface_area;
     double cation_exchange_capacity;
     std::vector<double> sorption_site_density;
@@ -128,10 +126,6 @@ class Beaker {
                            const std::vector<double>& vector) const;
   void print_linear_system(const std::string& s, 
                            const std::vector<double>& vector) const;
-
-  bool override_database(void) const {
-    return override_database_;
-  }
 
   int ncomp(void) const {
     return this->ncomp_;
@@ -226,10 +220,6 @@ class Beaker {
   void AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
   void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
-  void override_database(const bool value) {
-    this->override_database_ = value;
-  }
-
   void ncomp(int i) {
     this->ncomp_ = i;
   }
@@ -284,7 +274,8 @@ class Beaker {
   // volume [m^3]
   void UpdateParameters(const BeakerParameters& parameters, double dt);
 
-  void UpdateActivityCoefficients();
+  void UpdateActivityCoefficients(void);
+  void UpdateKineticMinerals(void);
   void InitializeMolalities(double initial_molality);
   void InitializeMolalities(const std::vector<double>& initial_molalities);
 
@@ -337,7 +328,6 @@ class Beaker {
   void DisplaySorptionIsotherms(void) const;
 
   Verbosity verbosity_;
-  bool override_database_;
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species

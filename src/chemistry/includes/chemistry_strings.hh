@@ -20,15 +20,13 @@ static const std::string kVerbosityTerse("terse");
 static const std::string kVerbosityVerbose("verbose");
 static const std::string kVerbosityWarning("warning");
 static const std::string kVerbosityError("error");
-static const std::string kVerbosityDebugChemistryCoordinator("debug ChemistryCoordinator");
+
+static const std::string kVerbosityDebugBeaker("Debug Input File");
+static const std::string kVerbosityDebugMineralKinetics("Debug Mineral Kinetics");
 static const std::string kVerbosityDebugInputFile("debug Input File");
 static const std::string kVerbosityDebugDatabase("debug Database");
-static const std::string kVerbosityDebugReactionNetwork("debug Reaction Network");
 static const std::string kVerbosityDebugActivityModel("debug ActivityModel");
 static const std::string kVerbosityDebugSpeciation("debug Speciation");
-static const std::string kVerbosityDebugOperatorSplitting("debug Operator Splitting");
-static const std::string kVerbosityDebugODESolver("debug ODESolver");
-static const std::string kVerbosityDebugNonlinearSolver("debug NonlinearSolver");
 static const std::string kVerbosityDebugLinearSolver("debug LinearSolver");
 static const std::string kVerbosityDebugChemistryProcessKernel("debug ChemistryProcessKernel");
 

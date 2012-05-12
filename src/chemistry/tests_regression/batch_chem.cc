@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
 
   if (components.total.size() == 0) {
     message.str("");
-    message << "Must have a non-zero number of total component values." << std::endl;
+    message << "Must have a non-zero number of total component values.\n";
     ac::chem_out->Write(ac::kError, message);
     abort();
   }
@@ -98,7 +98,9 @@ int main(int argc, char** argv) {
   for (name = simulation_params.verbosity_names.begin();
        name != simulation_params.verbosity_names.end();
        ++name) {
-    ac::chem_out->AddLevel(*name);
+    std::string data = *name;
+    ac::utilities::RemoveLeadingAndTrailingWhitespace(&data);
+    ac::chem_out->AddLevel(data);
   }
 
   if (debug_batch_driver) {
@@ -112,6 +114,7 @@ int main(int argc, char** argv) {
     SetupTextOutput(simulation_params, input_file_name,
                     &text_output, &time_units, &time_units_conversion);
   }
+
   ac::Beaker* chem = NULL;
 
   try {
@@ -171,7 +174,7 @@ int main(int argc, char** argv) {
             chem->DisplayTotalColumns(time, components);
             WriteTextOutput(&text_output, time * time_units_conversion, components);
           }
-          if (simulation_params.verbosity >= ac::kDebugNonlinearSolver) {
+          if (simulation_params.verbosity >= ac::kDebugBeaker) {
             message.str("");
             ac::Beaker::SolverStatus status = chem->status();
             message << "Timestep: " << time_step << std::endl;
@@ -233,21 +236,18 @@ void ModelSpecificParameters(const std::string model,
 void OverrideParameters(const SimulationParameters& simulation_params,
                         ac::Beaker::BeakerParameters* parameters) {
   if (simulation_params.mineral_ssa.size() > 0) {
-    parameters->override_database = true;
     parameters->mineral_specific_surface_area.assign(
         simulation_params.mineral_ssa.begin(),
         simulation_params.mineral_ssa.end());
   }
 
   if (simulation_params.site_density.size() > 0) {
-    parameters->override_database = true;
     parameters->sorption_site_density.assign(
         simulation_params.site_density.begin(),
         simulation_params.site_density.end());
   }
 
   if (simulation_params.cation_exchange_capacity > 0.0) {
-    parameters->override_database = true;
     parameters->cation_exchange_capacity = 
         simulation_params.cation_exchange_capacity;
   }
@@ -303,7 +303,7 @@ int CommandLineOptions(int argc, char** argv,
         std::cout << "         write a template input file" << std::endl;
         std::cout << std::endl;
         std::cout << "    -v string" << std::endl;
-        std::cout << "         override verbosity from input file:" << std::endl;
+        std::cout << "         additional verbosity level:" << std::endl;
         std::cout << "            silent" << std::endl;
         std::cout << "            terse" << std::endl;
         std::cout << "            verbose" << std::endl;
@@ -482,7 +482,7 @@ void ParseSimulationParameter(const std::string& raw_line,
       // version in value, which has been tokenized by spaces!
       params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
-      ac::StringTokenizer verb_names(value, ", \t");
+      ac::StringTokenizer verb_names(value, ",");
       params->verbosity_names.assign(verb_names.begin(), verb_names.end());
     } else if (param.at(0).find(kTextOutputParam) != std::string::npos) {
       params->text_output.assign(value) ;
@@ -574,6 +574,7 @@ void WriteTemplateFile(const std::string& file_name)
   }
   template_file << "[" << kSimulationSection << "]" << std::endl;
   template_file << kDescriptionParam << " = " << std::endl;
+  template_file << "# verbosity can be a comma seperated list." << std::endl;
   template_file << kVerbosityParam << " = verbose" << std::endl;
   template_file << kComparisonModelParam << " = pflotran" << std::endl;
   template_file << kTextOutputParam << " = true" << std::endl;
@@ -683,7 +684,7 @@ void PrintSimulationParameters(const SimulationParameters& params)
   std::stringstream message;
   message << "-- Simulation parameters:" << std::endl;
   message << "\tdescription: " << params.description << std::endl;
-  message << "\tverbosity names: " << std::endl;
+  message << "\tverbosity names: ";
   for (std::vector<std::string>::const_iterator name = params.verbosity_names.begin();
        name != params.verbosity_names.end(); ++name) {
     message << *name << ", ";
@@ -700,7 +701,7 @@ void PrintSimulationParameters(const SimulationParameters& params)
   message << "\tdelta time: " << params.delta_time << std::endl;
   message << "\tnum time steps: " << params.num_time_steps << std::endl;
   message << "\toutput interval: " << params.output_interval << std::endl;
-  message << "-- Database override parameters:" << std::endl;
+  message << "-- Database parameters:" << std::endl;
   ac::chem_out->Write(ac::kVerbose, message);
   ac::utilities::PrintVector("  Site Density", params.site_density);
   ac::utilities::PrintVector("  Specific Surface Area", params.mineral_ssa);

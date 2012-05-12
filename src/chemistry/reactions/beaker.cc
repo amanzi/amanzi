@@ -48,7 +48,6 @@ const double Beaker::volume_default_ = 1.0;  // [m^3]
 
 Beaker::Beaker()
     : verbosity_(kSilent),
-      override_database_(false),
       tolerance_(tolerance_default_),
       max_iterations_(max_iterations_default_),
       ncomp_(0),
@@ -147,9 +146,8 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   parameters.water_density = water_density_kg_m3_default_;  // kg / m^3
   parameters.volume = volume_default_;  // m^3
 
-  parameters.override_database = false;
   parameters.mineral_specific_surface_area.clear();
-  parameters.cation_exchange_capacity = 0.0;
+  parameters.cation_exchange_capacity = -1.0;
   parameters.sorption_site_density.clear();
   parameters.isotherm_kd.clear();
   parameters.isotherm_langmuir_b.clear();
@@ -176,15 +174,14 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
   parameters.water_density = water_density_kg_m3();  // kg / m^3
   parameters.volume = volume();  // m^3
 
-  parameters.override_database = override_database();
-  // TODO: finish isotherm data....
-  // parameters.isotherm_kd = isotherm_kd_;
+  // TODO: loop over minerals and copy SSA.
+
+  // TODO: loop over isotherms....
 
   return parameters;
 }  // end GetCurrentParameters()
 
 void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
-  override_database(parameters.override_database);
   tolerance(parameters.tolerance);
   max_iterations(parameters.max_iterations);
   porosity(parameters.porosity);
@@ -193,22 +190,21 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
   volume(parameters.volume);  // vol = [m^3]
   update_accumulation_coefficients();
   update_por_sat_den_vol();
-  if (override_database()) {
-    if (parameters.mineral_specific_surface_area.size() > 0) {
-      for (int m = 0; m < minerals_.size(); ++m) {
-        minerals_.at(m).set_specific_surface_area(parameters.mineral_specific_surface_area.at(m));
-      }
-    }
 
-    if (parameters.sorption_site_density.size() > 0) {
-      for (int scr = 0; scr < surfaceComplexationRxns_.size(); ++scr) {
-        surfaceComplexationRxns_.at(scr).UpdateSiteDensity(parameters.sorption_site_density.at(scr));
-      }
+  if (parameters.mineral_specific_surface_area.size() > 0) {
+    for (int m = 0; m < minerals_.size(); ++m) {
+      minerals_.at(m).set_specific_surface_area(parameters.mineral_specific_surface_area.at(m));
     }
+  }
 
-    if (parameters.cation_exchange_capacity > 0.0) {
-      // do something here....
+  if (parameters.sorption_site_density.size() > 0) {
+    for (int scr = 0; scr < surfaceComplexationRxns_.size(); ++scr) {
+      surfaceComplexationRxns_.at(scr).UpdateSiteDensity(parameters.sorption_site_density.at(scr));
     }
+  }
+
+  if (parameters.cation_exchange_capacity > 0.0) {
+    // do something here....
   }
 }  // end SetParameters()
 
@@ -236,7 +232,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     minerals_.at(m).set_volume_fraction(components.minerals.at(m));
-    minerals_.at(m).UpdateSurfaceAreaFromVolumeFraction(volume());
+    // NOTE: SSA already updated by the call to UpdateParameters()!
   }
 
   // store current molalities
@@ -388,7 +384,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     minerals_.at(m).set_volume_fraction(components->minerals.at(m));
-    minerals_.at(m).UpdateSurfaceAreaFromVolumeFraction(volume());
+    // NOTE: SSA already updated by the call to UpdateParameters()!
   }
 
   // initialize to a large number (not necessary, but safe)
@@ -496,6 +492,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
   // update total concentrations
   UpdateEquilibriumChemistry();
+  UpdateKineticMinerals();
   UpdateComponents(components);
   ValidateSolution();
 
@@ -504,6 +501,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
 
 void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
+  // Copy from the beaker memory back into a component struct
   for (int i = 0; i < ncomp(); i++) {
     components->total.at(i) = total_.at(i);
     if (components->free_ion.size() > 0) {
@@ -515,7 +513,7 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
     }
   }
   for (unsigned int m = 0; m < minerals_.size(); m++) {
-    components->minerals[m] = minerals_.at(m).volume_fraction();
+    components->minerals.at(m) = minerals_.at(m).volume_fraction();
   }
   for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
     components->ion_exchange_sites.at(i) = ion_exchange_rxns_.at(i).site().cation_exchange_capacity();
@@ -745,6 +743,12 @@ void Beaker::DisplayTotalColumnHeaders(void) const {
       message << std::setw(15) << temp;
     }
   }
+  if (minerals().size() > 0) {
+    for (int m = 0; m < minerals().size(); ++m) {
+      std::string temp =  minerals().at(m).name() + "_vf";
+      message << std::setw(15) << temp;
+    }
+  }
   message << std::endl;
   chem_out->Write(kVerbose, message);
 }  // end DisplayTotalColumnHeaders()
@@ -752,7 +756,7 @@ void Beaker::DisplayTotalColumnHeaders(void) const {
 void Beaker::DisplayTotalColumns(const double time,
                                  const BeakerComponents& components) const {
   std::stringstream message;
-  message << std::scientific << std::setprecision(5) << std::setw(15);
+  message << std::scientific << std::setprecision(6) << std::setw(15);
   message << time;
   for (int i = 0; i < ncomp(); i++) {
     message << std::setw(15) << components.total.at(i);
@@ -760,6 +764,11 @@ void Beaker::DisplayTotalColumns(const double time,
   if (total_sorbed_.size() > 0) {
     for (int i = 0; i < total_sorbed_.size(); i++) {
       message << std::setw(15) << components.total_sorbed.at(i);
+    }
+  }
+  if (minerals().size() > 0) {
+    for (int m = 0; m < minerals().size(); ++m) {
+      message << std::setw(15) << components.minerals.at(m);
     }
   }
   message << std::endl;
@@ -882,7 +891,6 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
   if (minerals().size() == size) {
     for (unsigned int m = 0; m < size; m++) {
       minerals_.at(m).set_volume_fraction(components.minerals.at(m));
-      minerals_.at(m).UpdateSurfaceAreaFromVolumeFraction(volume());
     }
   } else {
     std::ostringstream error_stream;
@@ -997,8 +1005,7 @@ void Beaker::update_por_sat_den_vol(void) {
 }  // end update_por_sat_den_vol()
 
 
-void Beaker::UpdateActivityCoefficients() {
-  // return;
+void Beaker::UpdateActivityCoefficients(void) {
   activity_model_->CalculateIonicStrength(primary_species(),
                                           aqComplexRxns_);
   activity_model_->CalculateActivityCoefficients(&primary_species_,
@@ -1009,6 +1016,21 @@ void Beaker::UpdateActivityCoefficients() {
     i->update();
   }
 }  // end UpdateActivityCoefficients
+
+void Beaker::UpdateKineticMinerals(void) {
+
+  // loop through the kinetic minerals list. Update the volume
+  // fraction, specific surface area, etc
+
+  for (std::vector<KineticRate*>::iterator r = mineral_rates_.begin();
+       r != mineral_rates_.end(); ++r) {
+    double kinetic_rate = (*r)->reaction_rate();
+    int i = (*r)->identifier();
+    minerals_.at(i).UpdateVolumeFraction(kinetic_rate, dt());
+    minerals_.at(i).UpdateSpecificSurfaceArea();
+  }
+
+}  // end UpdateKineticMinerals()
 
 void Beaker::InitializeMolalities(double initial_molality) {
   for (std::vector<Species>::iterator i = primary_species_.begin();
@@ -1177,7 +1199,7 @@ void Beaker::AddKineticChemistryToResidual(void) {
   // add mineral mineral contribution to residual here.  units = mol/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToResidual(minerals_, por_sat_den_vol(), &residual_);
+    (*rate)->AddContributionToResidual(minerals_, volume(), &residual_);
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
@@ -1193,7 +1215,7 @@ void Beaker::AddKineticChemistryToJacobian(void) {
   // add mineral mineral contribution to Jacobian here.  units = kg water/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToJacobian(primary_species(), minerals_, por_sat_den_vol(), &jacobian_);
+    (*rate)->AddContributionToJacobian(primary_species(), minerals_, volume(), &jacobian_);
   }
 
   // add multirate kinetic surface complexation contribution to Jacobian here.
@@ -1452,15 +1474,13 @@ void Beaker::DisplayMinerals(void) const {
             << std::setw(13) << "molar volume"
             << std::setw(13) << "GMW"
             << std::setw(13) << "SSA"
-            << std::setw(13) << "Area"
             << std::setw(13) << "Vfrac"
             << std::endl;
     message << std::setw(12) << " "
             << std::setw(38) << " "
-            << std::setw(13) << "[cm^3/mol]"
+            << std::setw(13) << "[m^3/mol]"
             << std::setw(13) << "[g/mol]"
-            << std::setw(13) << "[m^2/g]"
-            << std::setw(13) << "[m^2]"
+            << std::setw(13) << "[m^2/m^3 blk]"
             << std::setw(13) << "[-]"
             << std::endl;
     chem_out->Write(kVerbose, message);
