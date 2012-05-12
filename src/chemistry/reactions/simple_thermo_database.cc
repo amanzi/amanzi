@@ -342,7 +342,7 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
   // std::cout << "gmw: " << gram_molecular_weight << std::endl;
 
   Species primary(primary_id_++, name, charge, gram_molecular_weight, size_parameter);
-  this->addPrimarySpecies(primary);
+  this->AddPrimarySpecies(primary);
   if (verbosity() == kDebugInputFile) {
     primary.display();
   }
@@ -397,7 +397,7 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
                                       species_ids,
                                       h2o_stoich,
                                       charge, gram_molecular_weight, size_parameter, logKeq);
-  this->addAqueousEquilibriumComplex(secondary);
+  this->AddAqueousEquilibriumComplex(secondary);
   if (verbosity() == kDebugInputFile) {
     secondary.display();
   }
@@ -541,7 +541,7 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
                      forward_stoichiometries,forward_species_ids,
                      backward_stoichiometries,backward_species_ids,
                      forward_rate_constant,backward_rate_constant);
-  this->addGeneralRxn(general);
+  this->AddGeneralRxn(general);
 
 }  // end ParseGeneralKinetics()
 
@@ -711,7 +711,7 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
                   molar_volume,
                   specific_surface_area);
   mineral.set_verbosity(verbosity());
-  this->addMineral(mineral);
+  this->AddMineral(mineral);
   if (verbosity() == kDebugInputFile) {
     mineral.display();
   }
@@ -916,7 +916,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
   surface_complexation_reactions_.push_back(rxn);
   surface_complexation_rxn_id_++;
 
-  // this->addSurfaceComplexationRxn(rxn);
+  // this->AddSurfaceComplexationRxn(rxn);
   if (verbosity() == kDebugInputFile) {
     site.display();
     // rxn.Display();
@@ -994,7 +994,7 @@ void SimpleThermoDatabase::FinishSurfaceComplexation(void) {
   std::vector<SurfaceComplexationRxn>::iterator rxn;
   for (rxn = surface_complexation_reactions_.begin();
        rxn != surface_complexation_reactions_.end(); rxn++) {
-    this->addSurfaceComplexationRxn(*rxn);
+    this->AddSurfaceComplexationRxn(*rxn);
   }
 }  // end FinishSurfaceComplexation()
 

@@ -6,7 +6,7 @@ namespace chemistry {
 
 static const double TINY = 1.0e-20;
 
-void ludcmp(double** a, int n, int* indx, double* d) {
+void ludcmp(double** a, int n, std::vector<int>* indx, double* d) {
   int i, imax, j, k;
   double big, dum, sum, temp;
   double* vv;
@@ -53,7 +53,7 @@ void ludcmp(double** a, int n, int* indx, double* d) {
       *d = -*d;
       vv[imax] = vv[j];
     }
-    indx[j] = imax;
+    indx->at(j) = imax;
     if (a[j][j] == 0.0) {
       a[j][j] = TINY;
     }
@@ -70,12 +70,12 @@ void ludcmp(double** a, int n, int* indx, double* d) {
 
 #undef TINY
 
-void lubksb(double** a, int n, int* indx, std::vector<double>* b) {
+void lubksb(double** a, int n, const std::vector<int>& indx, std::vector<double>* b) {
   int i, ii = 0, ip, j;
   double sum;
 
   for (i = 0; i < n; i++) {
-    ip = indx[i];
+    ip = indx.at(i);
     sum = b->at(ip);
     (*b)[ip] = b->at(i);
     if (ii != 0) {
@@ -96,31 +96,31 @@ void lubksb(double** a, int n, int* indx, std::vector<double>* b) {
   }
 }  // end lubksb()
 
-void lubksb(double** a, int n, int* indx, double b[]) {
-  int i, ii = 0, ip, j;
-  double sum;
+// void lubksb(double** a, int n, int* indx, double b[]) {
+//   int i, ii = 0, ip, j;
+//   double sum;
 
-  for (i = 0; i < n; i++) {
-    ip = indx[i];
-    sum = b[ip];
-    b[ip] = b[i];
-    if (ii != 0)
-      for (j = ii - 1; j < i; j++) {
-        sum -= a[i][j] * b[j];
-      }
-    else if (sum != 0.0) {
-      ii = i + 1;
-    }
-    b[i] = sum;
-  }
-  for (i = n - 1; i >= 0; i--) {
-    sum = b[i];
-    for (j = i + 1; j < n; j++) {
-      sum -= a[i][j] * b[j];
-    }
-    b[i] = sum / a[i][i];
-  }
-}  // end lubksb()
+//   for (i = 0; i < n; i++) {
+//     ip = indx[i];
+//     sum = b[ip];
+//     b[ip] = b[i];
+//     if (ii != 0)
+//       for (j = ii - 1; j < i; j++) {
+//         sum -= a[i][j] * b[j];
+//       }
+//     else if (sum != 0.0) {
+//       ii = i + 1;
+//     }
+//     b[i] = sum;
+//   }
+//   for (i = n - 1; i >= 0; i--) {
+//     sum = b[i];
+//     for (j = i + 1; j < n; j++) {
+//       sum -= a[i][j] * b[j];
+//     }
+//     b[i] = sum / a[i][i];
+//   }
+// }  // end lubksb()
 
 }  // namespace chemistry
 }  // namespace amanzi
