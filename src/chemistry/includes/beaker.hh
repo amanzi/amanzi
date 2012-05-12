@@ -29,7 +29,7 @@
 namespace amanzi {
 namespace chemistry {
 
-extern ChemistryOutput chem_out;
+extern ChemistryOutput* chem_out;
 
 class KineticRate;
 

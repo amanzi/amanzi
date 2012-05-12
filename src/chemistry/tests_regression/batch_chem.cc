@@ -26,11 +26,11 @@
 #include "chemistry_exception.hh"
 #include "string_tokenizer.hh"
 
-// create a global ChemistryOutput object in the amanzi::chemisry
+// create a global ChemistryOutput* pointer in the amanzi::chemisry
 // namespace that can be used by an other chemistry object
 namespace amanzi {
 namespace chemistry {
-ChemistryOutput chem_out;
+ChemistryOutput* chem_out;
 }  // end namespace chemistry
 }  // end namespace amanzi
 
@@ -52,7 +52,8 @@ int main(int argc, char** argv) {
   output_options.verbosity_levels.push_back(ac::strings::kVerbosityWarning);
   output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
 
-  ac::chem_out.Initialize(output_options);
+  ac::chem_out = new ac::ChemistryOutput();
+  ac::chem_out->Initialize(output_options);
   std::stringstream message;
 
   bool debug_batch_driver(false);
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
   if (components.total.size() == 0) {
     message.str("");
     message << "Must have a non-zero number of total component values." << std::endl;
-    ac::chem_out.Write(ac::kError, message);
+    ac::chem_out->Write(ac::kError, message);
     abort();
   }
 
@@ -145,7 +146,7 @@ int main(int argc, char** argv) {
       if (simulation_params.num_time_steps != 0) {
         message.str("");
         message << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
-        ac::chem_out.Write(ac::kVerbose, message);
+        ac::chem_out->Write(ac::kVerbose, message);
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components);
         // parameters.max_iterations = 2;
@@ -164,37 +165,38 @@ int main(int argc, char** argv) {
             message << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
             message << "    number of newton iterations: " << status.num_newton_iterations << std::endl;
             message << "    solution converged: " << status.converged << std::endl;
-            ac::chem_out.Write(ac::kVerbose, message);
+            ac::chem_out->Write(ac::kVerbose, message);
           }
         }
-        ac::chem_out.Write(ac::kVerbose, "---- Final Speciation\n");
+        ac::chem_out->Write(ac::kVerbose, "---- Final Speciation\n");
         chem->Speciate(components, parameters);
         if (simulation_params.verbosity >= ac::kTerse) {
           chem->DisplayResults();
         }
       }
     } else {
-      ac::chem_out.Write(ac::kVerbose, "No database file specified in input file.\n");
+      ac::chem_out->Write(ac::kVerbose, "No database file specified in input file.\n");
     }
   } catch (const ac::ChemistryException& geochem_error) {
-    ac::chem_out.Write(ac::kError, geochem_error.what());
+    ac::chem_out->Write(ac::kError, geochem_error.what());
     error = EXIT_FAILURE;
   } catch (const std::runtime_error& rt_error) {
-    ac::chem_out.Write(ac::kError, rt_error.what());
+    ac::chem_out->Write(ac::kError, rt_error.what());
     error = EXIT_FAILURE;
   } catch (const std::logic_error& lg_error) {
-    ac::chem_out.Write(ac::kError, lg_error.what());
+    ac::chem_out->Write(ac::kError, lg_error.what());
     error = EXIT_FAILURE;
   }
 
   if (!error) {
-    ac::chem_out.Write(ac::kVerbose, "Success!\n");
+    ac::chem_out->Write(ac::kVerbose, "Success!\n");
   } else {
-    ac::chem_out.Write(ac::kVerbose, "Failed!\n");
+    ac::chem_out->Write(ac::kVerbose, "Failed!\n");
   }
 
   // cleanup memory
   delete chem;
+  delete ac::chem_out;
 
   return error;
 }  // end main()
@@ -320,7 +322,7 @@ int CommandLineOptions(int argc, char** argv,
     message << "\tverbosity name: " << *verbosity_name << std::endl;
     message << "----------------------------------------------- Command Line Options -" << std::endl;
     message << std::endl << std::endl;
-    ac::chem_out.Write(ac::kDebugDriver, message);
+    ac::chem_out->Write(ac::kDebugDriver, message);
   }
   return error;
 }  // end commandLineOptions()
@@ -342,7 +344,7 @@ void ReadInputFile(const std::string& file_name,
     message << "batch_chem: \n";
     message << "input file \'" << file_name
               << "\' could not be opened." << std::endl;
-    ac::chem_out.Write(ac::kError, message);
+    ac::chem_out->Write(ac::kError, message);
     abort();
   }
 
@@ -415,7 +417,7 @@ void ReadInputFile(const std::string& file_name,
         message << "batch_chem::ReadInputFile(): ";
         message << "unknown section found on line " << count << ":";
         message << "\'" << raw_line << "\'"<< std::endl;
-        ac::chem_out.Write(ac::kDebugInputFile, message);
+        ac::chem_out->Write(ac::kDebugInputFile, message);
       }
     } else if (line_type == kParameter) {
       // assume parameter line, but it may be empty (just spaces or missing an = )...
@@ -547,7 +549,7 @@ void WriteTemplateFile(const std::string& file_name)
     message << "batch_chem: \n";
     message << "template file \'" << file_name
               << "\' could not be opened." << std::endl;
-    ac::chem_out.Write(ac::kError, message);
+    ac::chem_out->Write(ac::kError, message);
     abort();
   }
   template_file << "[" << kSimulationSection << "]" << std::endl;
@@ -583,10 +585,10 @@ void WriteTemplateFile(const std::string& file_name)
 void PrintInput(const SimulationParameters& params,
                 const amanzi::chemistry::Beaker::BeakerComponents& components)
 {
-  ac::chem_out.Write(ac::kVerbose, "- Input File ---------------------------------------------------------\n");
+  ac::chem_out->Write(ac::kVerbose, "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params);
   PrintComponents(components);
-  ac::chem_out.Write(ac::kVerbose, "--------------------------------------------------------- Input File -\n");
+  ac::chem_out->Write(ac::kVerbose, "--------------------------------------------------------- Input File -\n");
 }  // end PrintInput()
 
 
@@ -608,7 +610,7 @@ void PrintSimulationParameters(const SimulationParameters& params)
   message << "\tnum time steps: " << params.num_time_steps << std::endl;
   message << "\toutput interval: " << params.output_interval << std::endl;
   message << "-- Database override parameters:" << std::endl;
-  ac::chem_out.Write(ac::kVerbose, message);
+  ac::chem_out->Write(ac::kVerbose, message);
   ac::utilities::PrintVector("  Site Density", params.site_density);
   ac::utilities::PrintVector("  Specific Surface Area", params.mineral_ssa);
 }
@@ -616,7 +618,7 @@ void PrintSimulationParameters(const SimulationParameters& params)
 
 void PrintComponents(const ac::Beaker::BeakerComponents& components)
 {
-  ac::chem_out.Write(ac::kVerbose, "-- Input components: \n");
+  ac::chem_out->Write(ac::kVerbose, "-- Input components: \n");
   ac::utilities::PrintVector("  Totals", components.total);
   ac::utilities::PrintVector("  Minerals", components.minerals);
   ac::utilities::PrintVector("  Total sorbed", components.total_sorbed);

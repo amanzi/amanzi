@@ -798,7 +798,7 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) {
       message << "WARNING: Beaker::CheckChargeBalance() :\n"
                 << "         charge balance = " << std::scientific
                 << charge_balance << std::fixed << std::endl;
-      chem_out.Write(kVerbose, message.str());
+      chem_out->Write(kVerbose, message.str());
     }
   }
 }  // end CheckChargeBalance()

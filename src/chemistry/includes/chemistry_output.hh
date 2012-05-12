@@ -7,11 +7,13 @@
 **  Base class for all chemisty io. Handles common code to deal with
 **  output to a file and/or stdout and verbosity.
 **
-**  TODO(bandre): We are creating a global variable, similar to
-**  std::cout: ChemistryOutput chem_out; Inorder to be in compliance with
-**  the standard, we need to make the global variable a pointer,
-**  new/delete the pointer from main. Need to make sure that this is
-**  thread safe!
+**  NOTE(bandre): We are creating a global variable, similar to
+**  std::cout: ChemistryOutput chem_out; Inorder to be in compliance
+**  with the standard, we need to make the global variable a pointer,
+**  ChemistryOutput* chem_out, then new/delete the pointer from
+**  main. 
+**
+**  TODO(bandre): Is this thread safe?!
 **
 **  TODO(bandre): need a way to silence the output for parallel
 **  jobs. Something like if the silent flag is set, the rest of the
@@ -26,7 +28,7 @@
 // namespace that can be used by an other chemistry object
 namespace amanzi {
 namespace chemistry {
-ChemistryOutput chem_out;
+ChemistryOutput* chem_out;
 }  // end namespace chemistry
 }  // end namespace amanzi
 
@@ -34,24 +36,24 @@ int main ()
 {
   namespace ac = amanzi::chemistry;
 
-  ac::VerbosityFlags verbosity_flags;
-  ac::VerbosityMap verbosity_map = ac::CreateVerbosityMap();
+  ac::OutputOptions output_options;
+  output_options.use_stdout = true;
+  output_options.file_name = "chemistry-unit-test-results.txt";
+  output_options.verbosity_levels.push_back(ac::strings::kVerbosityError);
+  output_options.verbosity_levels.push_back(ac::strings::kVerbosityWarning);
+  output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
+  ac::chem_out = new ac::ChemistryOutput();
+  ac::chem_out->Initialize(output_options);
 
-  std::string verbosity_level = ac::strings::kVerbosityVerbose;
-  verbosity_flags.set(verbosity_map.at(verbosity_level));
+  .... do something interesting....
 
-  verbosity_level = ac::strings::kVerbosityDebugChemistryCoordinator;
-  verbosity_flags.set(verbosity_map.at(verbosity_level));
-
-  bool use_stdout = true;
-  std::string output_file_name = "test.txt";
-  ac::chem_out.Initialize(verbosity_flags, output_file_name, use_stdout);
+  delete ac::chem_out;
 }
 
 In other header files:
 namespace amanzi {
 namespace chemistry {
-extern ChemistryOutput chem_out;
+extern ChemistryOutput* chem_out;
 }  // end namespace chemistry
 }  // end namespace amanzi
 

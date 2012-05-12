@@ -12,7 +12,7 @@
 // namespace that can be used by an other chemistry object
 namespace amanzi {
 namespace chemistry {
-ChemistryOutput chem_out;
+ChemistryOutput* chem_out;
 }  // end namespace chemistry
 }  // end namespace amanzi
 
@@ -29,8 +29,8 @@ int main(int argc, char** argv) {
   output_options.verbosity_levels.push_back(ac::strings::kVerbosityError);
   output_options.verbosity_levels.push_back(ac::strings::kVerbosityWarning);
   output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
-
-  ac::chem_out.Initialize(output_options);
+  ac::chem_out = new ac::ChemistryOutput();
+  ac::chem_out->Initialize(output_options);
 
   std::string filename;
 
@@ -113,6 +113,6 @@ int main(int argc, char** argv) {
   double time_step = final_time / 1000;
 
   g.solve(&components, final_time, time_step, parameters);
-
+  delete ac::chem_out;
   cout << "Done!\n";
 }

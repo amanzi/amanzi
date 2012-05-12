@@ -29,7 +29,7 @@
 // namespace that can be used by an other chemistry object
 namespace amanzi {
 namespace chemistry {
-ChemistryOutput chem_out;
+ChemistryOutput* chem_out;
 }  // end namespace chemistry
 }  // end namespace amanzi
 
@@ -40,8 +40,8 @@ int main(int argc, char** argv) {
   output_options.use_stdout = true;
   output_options.file_name = "chemistry-unit-test-results.txt";
   output_options.verbosity_levels.push_back(ac::strings::kVerbosityVerbose);
-
-  ac::chem_out.Initialize(output_options);
+  ac::chem_out = new ac::ChemistryOutput();
+  ac::chem_out->Initialize(output_options);
 
   ac::Verbosity verbosity = ac::kTerse;
   int test = 0;
@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "Done!\n";
+  delete ac::chem_out;
   return error;
 }  // end main()
 

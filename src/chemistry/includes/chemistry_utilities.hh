@@ -15,7 +15,7 @@
 namespace amanzi {
 namespace chemistry {
 
-extern ChemistryOutput chem_out;
+extern ChemistryOutput* chem_out;
 
 namespace utilities {
 
@@ -58,7 +58,7 @@ void PrintVector(const std::string& name,
     output << *i << "  ";
   }
   output << " }\n";
-  chem_out.Write(kVerbose, output);
+  chem_out->Write(kVerbose, output);
 }  // end PrintVector
 
 
