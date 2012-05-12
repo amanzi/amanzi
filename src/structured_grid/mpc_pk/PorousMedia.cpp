@@ -1167,183 +1167,230 @@ PorousMedia::richard_init_to_steady()
 
                 int num_consecutive_failures_1 = 0;
                 int num_consecutive_failures_2 = 0;
-                int num_consecutive_increases = 0;
-                int num_consecutive_success = 0;
+                int num_consecutive_residual_increases = 0;
+                int num_consecutive_residual_decreases = 0;
                 bool last_chance = false;
 
                 Real dt = steady_initial_time_step;
-                MultiFab tmp(grids,1,1);
+                MultiFab tmpS(grids,1,1);
                 MultiFab tmpP(grids,1,1);
                 MultiFab& S_new = get_new_data(State_Type);
+                MultiFab& P_new = get_new_data(State_Type);
                 int nc = 0; // Component of water in state
 
                 Real total_psuedo_time = 0;
-                Real prev_abs_err, init_abs_err;
-                Real rel_err = -1;
-                Real abs_err = -1;
+                Real init_rel_saturation_update_norm, init_abs_saturation_update_norm;
+                Real rel_saturation_update_norm = -1;
+                Real abs_saturation_update_norm = -1;
+
+                Real init_rel_pressure_update_norm, init_abs_pressure_update_norm;
+                Real rel_pressure_update_norm = -1;
+                Real abs_pressure_update_norm = -1;
  
+                Real init_abs_residual_norm, init_rel_residual_norm, prev_abs_residual_norm;
+                Real rel_residual_norm = -1;
+                Real abs_residual_norm = -1;
+ 
+                bool test_abs_residual = steady_abs_residual_tolerance>0;
+                bool test_rel_residual = steady_rel_residual_tolerance>0;
+                bool test_abs_s_update = steady_abs_saturation_update_tolerance>0;
+                bool test_rel_s_update = steady_rel_saturation_update_tolerance>0;
+                bool test_abs_p_update = steady_abs_pressure_update_tolerance>0;
+                bool test_rel_p_update = steady_rel_pressure_update_tolerance>0;
+
                 bool first = true;
                 int k = 0;
-                bool continue_iterations = true;
+                bool continue_psuedo_timestepping = true;
                 bool solved = false;
-                while (!solved  &&  k < steady_maximum_time_steps  &&  continue_iterations)
+                while (!solved  &&  k < steady_max_time_steps  &&  continue_psuedo_timestepping)
                 {
-                    MultiFab::Copy(tmp,S_new,nc,0,1,0);
-                    tmp.mult(-1.0);
+                    MultiFab::Copy(tmpS,S_new,nc,0,1,0);
+                    MultiFab::Copy(tmpP,P_new,nc,0,1,0);
+                    tmpS.mult(-1.0);
+                    tmpP.mult(-1.0);
 
                     if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "  psuedo-time = " << total_psuedo_time 
+                        std::cout << tag << "  psuedo-time = " << total_psuedo_time+dt 
                                   << ", psuedo-iter=" << k << ", dt = " << dt << '\n';
                     }
 
-                    // FIXME: Put max iters inside ret structure....
+                    // FIXME: Put max_iters, max_err inside a returned struct....
                     int curr_nwt_iter = steady_limit_iterations;
-                    PorousMedia::Reason ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+                    prev_abs_residual_norm = abs_residual_norm;
+                    abs_residual_norm = 1.e-6;
+                    PorousMedia::Reason ret = richard_scalar_update(dt,curr_nwt_iter,abs_residual_norm,u_mac_curr);
 
                     if (ret == RICHARD_SUCCESS)
                     {
+                        // Time step success.  Should we continue and should we adjust the dt for next time?
                         k++;
                         total_psuedo_time += dt;
-                        prev_abs_err = abs_err;
+                        prev_abs_residual_norm = abs_residual_norm;
 
-                        MultiFab::Add(tmp,S_new,nc,0,1,0);
-                        abs_err = tmp.norm2(0);
+                        MultiFab::Add(tmpS,S_new,nc,0,1,0);
+                        MultiFab::Add(tmpP,P_new,nc,0,1,0);
+                        abs_saturation_update_norm = tmpS.norm2(0);
+                        abs_pressure_update_norm = tmpP.norm2(0);
 
-                        if (first){
-                            init_abs_err = abs_err;
+                        if (first)
+                        {
+                            init_abs_residual_norm = abs_residual_norm;
+                            init_rel_residual_norm = rel_residual_norm = 1;
+                            init_abs_saturation_update_norm = abs_saturation_update_norm;
+                            init_rel_saturation_update_norm = rel_saturation_update_norm = 1;
+                            init_abs_pressure_update_norm = abs_pressure_update_norm;
+                            init_rel_pressure_update_norm = rel_pressure_update_norm = 1;
                             first = false;
                         }
                         else {
-                            rel_err = abs_err / init_abs_err;
+                            rel_residual_norm = abs_residual_norm / init_abs_residual_norm;
+                            rel_saturation_update_norm = abs_saturation_update_norm / init_abs_saturation_update_norm;
+                            rel_pressure_update_norm = abs_pressure_update_norm / init_abs_pressure_update_norm;
                         }
-                          
-                        solved = ((abs_err <= steady_tolerance) || ((rel_err>0)  && (rel_err <= steady_tolerance)) );
-                        continue_iterations = (!solved) || (k < steady_maximum_time_steps);
 
-                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
+                        // HAve we solved the full problem?
+                        if ( (test_abs_residual && (abs_residual_norm <= steady_abs_residual_tolerance))
+                             || 
+                             (test_rel_residual && (rel_residual_norm <= steady_rel_residual_tolerance))
+                             ||
+                             (test_abs_s_update && (abs_saturation_update_norm <= steady_abs_saturation_update_tolerance))
+                             || 
+                             (test_rel_s_update && (rel_saturation_update_norm <= steady_rel_saturation_update_tolerance))
+                             ||
+                             (test_abs_p_update && (abs_pressure_update_norm <= steady_abs_pressure_update_tolerance)) 
+                             ||
+                             (test_rel_p_update && (rel_pressure_update_norm <= steady_rel_pressure_update_tolerance))
+                            )
+                        {
+                            solved = true;
+                        }
+                        else {
+                            solved = false;
+                        }
+
+                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
+                        {
                             std::cout << tag << "             - step accepted."
                                       << "   newton iters=" << curr_nwt_iter << ", "
-                                      << "   abs_err=" << abs_err;
-                            if (rel_err > 0) {
-                                std::cout << ", rel_err=" << rel_err;
-                            }
-                            std::cout << std::endl;
-                        }
-
-
-                        num_consecutive_failures_1 = 0;
-                        num_consecutive_failures_2 = 0;
-                        last_chance = false;
-
-                        if (prev_abs_err > 0) {
-                            if (abs_err > prev_abs_err) {
-                                num_consecutive_increases++;
-                                num_consecutive_success = 0;
-                            }
-                            else {
-                                num_consecutive_success++;
-                                num_consecutive_increases = 0;
-                            }
-                        }
-                        else {
-                            num_consecutive_increases = 0;
-                            num_consecutive_success = 0;
+                                      << "   abs_s_update_norm=" << abs_saturation_update_norm
+                                      << "   abs_p_update_norm=" << abs_saturation_update_norm
+                                      << "   abs_r_norm=" << abs_residual_norm << std::endl;
                         }
                         
-                        if (num_consecutive_increases > steady_max_num_consecutive_increases) {
-                            dt *= steady_consecutive_increase_reduction_factor;
+                        // Should we take another psuedo time step?
+                        if ( (k > steady_max_time_steps)  ||  (total_psuedo_time >= steady_max_psuedo_time) )
+                        {
+                            continue_psuedo_timestepping = false;
+                        }
+
+                        // If we will continue, should adjust time step?
+                        if (steady_use_petsc_dt_control) {
+                            Real fac = init_abs_residual_norm / abs_residual_norm;
+                            if (fac > 1) 
+                                dt *= fac;
+                            dt = std::min(steady_max_psuedo_time-total_psuedo_time,dt);
                         }
                         else {
-
-                            if (curr_nwt_iter < steady_min_iterations && 
-                                prev_abs_err > 0  &&  prev_abs_err > abs_err) {
-
-                                if (num_consecutive_success >= steady_max_num_consecutive_success) {
-                                    num_consecutive_success = 0;
-                                    dt *= steady_time_step_increase_factor;
-                                }
-                            }
-                            else {
-                                num_consecutive_success = 0;
-                            }
                             
-                            if (curr_nwt_iter > steady_max_iterations ) {
-                                dt *= steady_time_step_reduction_factor;
-                            }
+                            if (solved) {
+                                num_consecutive_failures_1 = 0;
+                                num_consecutive_failures_2 = 0;
+                                last_chance = false;                                
+                                if ( first ) {
+                                    num_consecutive_residual_increases = 0;
+                                    num_consecutive_residual_decreases = 0;
+                                }
+
+                                // Can we increase dt? (if not testing on abs r, base this only on newton iteration count)
+                                if ( (curr_nwt_iter < steady_min_iterations) ) {
+                                    if (!test_abs_residual  || (abs_residual_norm < prev_abs_residual_norm)) {
+                                        num_consecutive_residual_decreases++;
+                                        if (num_consecutive_residual_decreases >= steady_max_num_consecutive_residual_decreases) {
+                                            num_consecutive_residual_decreases = 0;
+                                            dt *= steady_time_step_increase_factor;
+                                        }
+                                    }
+                                }
+                                    
+                                // Must we decrease dt? (if not testing on abs r, base this only on newton iteration count)
+                                if ( (curr_nwt_iter > steady_max_iterations) ) {                                    
+                                    if (!test_abs_residual  || (abs_residual_norm > prev_abs_residual_norm)) {
+                                        num_consecutive_residual_increases++;
+                                        if (num_consecutive_residual_increases >= steady_max_num_consecutive_residual_increases) {
+                                            num_consecutive_residual_increases = 0;
+                                            dt *= steady_time_step_reduction_factor;
+                                        }
+                                    }
+                                }
+                                    
+                            } // Finished processing case where step was correctly solved
                         }
                     }
                     else {
 
-                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                        {
-                            std::cout << tag << "             - step rejected: ";
-                            if (ret == RICHARD_LINEAR_FAIL) {
-                                std::cout << " - linear solver failure ";
-                            }
-                            else if ( ret == RICHARD_NEWTON_FAIL) {
-                                std::cout << tag << " - nonlinear solver failure ";
-                            }
-                            std::cout << std::endl;
-                        }
-
-                        num_consecutive_success = 0;
-
-                        if (last_chance) {
-                            continue_iterations = false;
+                        // If we will continue, should adjust time step?
+                        if (0 && steady_use_petsc_dt_control) {
+                            std::cout << "...need to implement petsc scheme to decrease time step.  " << std::endl;
                         }
                         else {
-                            num_consecutive_failures_1++;
-                            tmp.mult(-1.0);
-                            MultiFab::Copy(S_new,tmp,0,0,1,1); // Set S_new to old solution
+                            // Process failed step
+                            num_consecutive_residual_decreases = 0;
                             
-                            if (num_consecutive_failures_1 <= steady_max_consecutive_failures_1) {
-                                dt *= steady_time_step_retry_factor_1;
-                                if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                    std::cout << tag << " - **********  Note: this failure level 1, scaling dt by " 
-                                              << steady_time_step_retry_factor_1
-                                              << " and retrying" << std::endl;
+                            if (last_chance) {
+                                continue_psuedo_timestepping = false;
                             }
                             else {
-                                num_consecutive_failures_2++;
+                                
+                                std::cout << tag << "             - step rejected: ";
+                                if (ret == RICHARD_LINEAR_FAIL) {
+                                    std::cout << " - linear solver failure ";
+                                }
+                                else if ( ret == RICHARD_NEWTON_FAIL) {
+                                    std::cout << tag << " - nonlinear solver failure ";
+                                }
+                                std::cout << std::endl;
 
-                                if (num_consecutive_failures_2 <= steady_max_consecutive_failures_2) {
-                                    dt *= steady_time_step_retry_factor_2;
-                                    if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                        std::cout << tag << " - **********  Note: this is failure level 2, scaling dt by "
-                                                  << steady_time_step_retry_factor_2
-                                                  << " and retrying" << std::endl;
+                                std::cout << "   newton iters=" << curr_nwt_iter << ", "
+                                          << "   abs_s_update_norm=" << abs_saturation_update_norm
+                                          << "   abs_p_update_norm=" << abs_saturation_update_norm
+                                          << "   abs_r_norm=" << abs_residual_norm << std::endl;
+                                
+                                // Reset the step, adjust dt and try again
+                                num_consecutive_failures_1++;
+                                tmpS.mult(-1.0);
+                                tmpP.mult(-1.0);
+                                MultiFab::Copy(S_new,tmpS,0,0,1,1); // Set S_new to old solution
+                                MultiFab::Copy(P_new,tmpP,0,0,1,1); // Set P_new to old solution
+                                
+                                // Should we cut the time step?
+                                if (num_consecutive_failures_1 <= steady_max_consecutive_failures_1) {
+                                    dt *= steady_time_step_retry_factor_1;
                                 }
                                 else {
-                                    
-                                    if (! last_chance) {
+                                    num_consecutive_failures_2++;
+                                    if (num_consecutive_failures_2 <= steady_max_consecutive_failures_2) {
+                                        dt *= steady_time_step_retry_factor_2;
+                                    }
+                                    else {
                                         last_chance = true;
-                                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                            std::cout << tag << " - **********  Note: this is failure level 3, scaling dt by "
-                                                      << steady_time_step_retry_factor_f
-                                                      << " and retrying one last time..." << std::endl;
+                                        dt += steady_time_step_retry_factor_f;
                                     }
                                 }
                             }
                         }
-                    }
-
-                    if (richard_init_to_steady_verbose>1 &&  ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "    Iteration status counters: " << std::endl;
-                        std::cout << tag << "      num_consecutive_success: " << num_consecutive_success << std::endl;
-                        std::cout << tag << "      num_consecutive_failures_1: " << num_consecutive_failures_1 << std::endl;
-                        std::cout << tag << "      num_consecutive_failures_2: " << num_consecutive_failures_2 << std::endl;
-                        std::cout << tag << "      num_consecutive_increases: " << num_consecutive_increases << std::endl;
-                        std::cout << tag << "      last_chance: " << last_chance << std::endl;
-                    }
+                    } // Finished processing case where step did not solve, finish Amanzi dt processing
                 }
-                if (solved) {
-                    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+
+                // Finished time stepping (either because the nonlinear solver stalled, hit max_iter, or we solved the problem)
+                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+                    if (solved) {
                         std::cout << tag << "Success!  Total psuedo-time to steady: " << total_psuedo_time << std::endl;
                     }
-                }
-                else {
-                    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "Warning: psuedo-time to steady iterations failed.  Continuing..." << std::endl;
+                    else if (total_psuedo_time = steady_max_psuedo_time) {
+                        std::cout << tag << "Warning: final psuedo-time reached, but solution is not steady.  Continuing..." << std::endl;
+                    }
+                    else {
+                        std::cout << tag << "Warning: max iterations reached.  steady solution not found.  Continuing..." << std::endl;
                     }
                 }
 
@@ -1363,7 +1410,6 @@ PorousMedia::richard_init_to_steady()
                 // Fix up pressure field
                 FillStateBndry(cur_time,State_Type,0,ncomps);
                 calcCapillary(cur_time);
-                MultiFab& P_new = get_new_data(Press_Type);
                 MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
                 P_new.mult(-1.0,1);
                 calcLambda(cur_time);
@@ -2355,7 +2401,8 @@ PorousMedia::advance_richard (Real time,
   // Time stepping for richard's equation
   //
   int curr_nwt_iter = 20;
-  PorousMedia::Reason ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+  Real abs_residual_norm = 1.e-6;
+  PorousMedia::Reason ret = richard_scalar_update(dt,curr_nwt_iter,abs_residual_norm,u_mac_curr);
   if (ParallelDescriptor::IOProcessor())
     {
       std::cout << tag;
@@ -5001,7 +5048,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
 // Richard equation: Time-dependent solver.  Only doing a first-order implicit scheme
 //
 PorousMedia::Reason
-PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_mac)
+PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, Real& err_nwt, MultiFab* u_mac)
 
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_update()");
@@ -5041,9 +5088,9 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   // initialization
   int do_upwind = 1;
   int  max_itr_nwt = total_nwt_iter;
-  Real max_err_nwt = 1e-6;
+  Real max_err_nwt = err_nwt;
   int  itr_nwt = 0;
-  Real err_nwt = 1e10;
+  err_nwt = 1e10;
   FillStateBndry(pcTime,State_Type,0,ncomps);
   FillStateBndry(pcTime,Press_Type,0,1);
   diffusion->allocFluxBoxesLevel(cmp_pcp1,0,1);
@@ -7234,7 +7281,7 @@ PorousMedia::post_init_state ()
                   int max_consecutive_failures_2 = 4;
                   Real steady_tolerance = 1.e-8;
                   Real steady_initial_time_step = 1.e2;
-                  Real steady_maximum_time_steps = 8000;
+                  Real steady_max_time_steps = 8000;
 
                   // Counters, etc
                   int num_consecutive_failures_1 = 0;
@@ -7257,7 +7304,7 @@ PorousMedia::post_init_state ()
                   int k = 0;
                   while (abs_err > steady_tolerance && 
                          rel_err > steady_tolerance && 
-                         k < steady_maximum_time_steps &&
+                         k < steady_max_time_steps &&
                          ret == RICHARD_SUCCESS)
                   {
                       k++;
