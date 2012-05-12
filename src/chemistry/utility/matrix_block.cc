@@ -1,5 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "chemistry/includes/matrix_block.hh"
+
+#include "matrix_block.hh"
 
 #include <cmath>
 
@@ -11,15 +12,40 @@ namespace chemistry {
 
 MatrixBlock::MatrixBlock() : size_(0),
                              A_(NULL) {
-}
+}  // end MatrixBlock()
 
-MatrixBlock::MatrixBlock(int n) {
-  set_size(n);
+MatrixBlock::MatrixBlock(const int size) 
+    : size_(size),
+      A_(NULL) {
+  AllocateMemory();
+}  // end MatrixBlock(size)
+
+MatrixBlock::~MatrixBlock() {
+  FreeMemory();
+}  // end ~MatrixBlock
+
+void MatrixBlock::Resize(const int new_size) {
+  FreeMemory();
+  set_size(new_size);
+  AllocateMemory();
+}  // end Resize(new_size)
+
+void MatrixBlock::AllocateMemory(void) {
   A_ = new double*[size()];
   for (int i = 0; i < size(); i++) {
     A_[i] = new double[size()];
   }
-}
+}  // end AllocateMemory()
+
+void MatrixBlock::FreeMemory(void) {
+  if (A_) {
+    for (int i = 0; i < size(); i++) {
+      delete [] A_[i];
+    }
+    delete [] A_;
+  }
+  A_ = NULL;
+}  // end FreeMemory()
 
 void MatrixBlock::Zero() {
   for (int i = 0; i < size(); i++) {
@@ -80,15 +106,6 @@ void MatrixBlock::SetValues(double** values) {
 
 void MatrixBlock::SetValues(MatrixBlock* b) {
   double** B = b->GetValues();
-  for (int i = 0; i < size(); i++) {
-    for (int j = 0; j < size(); j++) {
-      A_[i][j] = B[i][j];
-    }
-  }
-}
-
-void MatrixBlock::SetValues(Block* b) {
-  double** B = b->getValues();
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
       A_[i][j] = B[i][j];
@@ -191,6 +208,7 @@ void MatrixBlock::Print() {
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
       if (std::fabs(A_[j][i]) > 0.) {
+        // TODO(bandre): is the [j][i] indexing here intentional...?
         std::cout << i << " " << j << " : "
                   << std::scientific << A_[j][i] << std::endl;
       }
@@ -198,14 +216,15 @@ void MatrixBlock::Print() {
   }
 }
 
-MatrixBlock::~MatrixBlock() {
-  if (A_) {
-    for (int i = 0; i < size(); i++) {
-      delete [] A_[i];
+void MatrixBlock::Print_ij() {
+  for (int i = 0; i < size(); i++) {
+    for (int j = 0; j < size(); j++) {
+      if (std::fabs(A_[i][j]) > 0.) {
+        std::cout << i << " " << j << " : "
+                  << std::scientific << A_[i][j] << std::endl;
+      }
     }
-    delete [] A_;
   }
-  A_ = NULL;
 }
 
 }  // namespace chemistry

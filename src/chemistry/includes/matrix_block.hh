@@ -2,7 +2,6 @@
 #ifndef AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
 #define AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
 
-#include "chemistry/includes/block.hh"
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
@@ -14,6 +13,8 @@ class MatrixBlock {
   MatrixBlock();
   explicit MatrixBlock(int n);
   virtual ~MatrixBlock();
+
+  void Resize(const int new_size);
 
   int size(void) const {
     return this->size_;
@@ -37,7 +38,6 @@ class MatrixBlock {
   void SetValue(int i, int j, double value);
   void SetValues(double** values);
   void SetValues(MatrixBlock* b);
-  void SetValues(Block* b);
   void SetValues(int ioffset, int joffset, MatrixBlock* b);
   void SetValues(double** values, double scale);
   void SetValues(MatrixBlock* b, double scale);
@@ -59,9 +59,12 @@ class MatrixBlock {
   void SetDiagonal(double d);
 
   void Print(void);
+  void Print_ij(void);
 
 
  private:
+  void AllocateMemory(void);
+  void FreeMemory(void);
 
   int size_;
   double** A_;
