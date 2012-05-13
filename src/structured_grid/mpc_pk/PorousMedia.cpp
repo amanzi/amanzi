@@ -1248,33 +1248,43 @@ PorousMedia::richard_init_to_steady()
                             rel_pressure_update_norm = abs_pressure_update_norm / init_abs_pressure_update_norm;
                         }
 
-                        // HAve we solved the full problem?
-                        if ( (test_abs_residual && (abs_residual_norm <= steady_abs_residual_tolerance))
-                             || 
-                             (test_rel_residual && (rel_residual_norm <= steady_rel_residual_tolerance))
-                             ||
-                             (test_abs_s_update && (abs_saturation_update_norm <= steady_abs_saturation_update_tolerance))
-                             || 
-                             (test_rel_s_update && (rel_saturation_update_norm <= steady_rel_saturation_update_tolerance))
-                             ||
-                             (test_abs_p_update && (abs_pressure_update_norm <= steady_abs_pressure_update_tolerance)) 
-                             ||
-                             (test_rel_p_update && (rel_pressure_update_norm <= steady_rel_pressure_update_tolerance))
-                            )
-                        {
-                            solved = true;
-                        }
-                        else {
-                            solved = false;
-                        }
-
                         if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
                         {
                             std::cout << tag << "             - step accepted."
                                       << "   newton iters=" << curr_nwt_iter << ", "
-                                      << "   abs_s_update_norm=" << abs_saturation_update_norm
-                                      << "   abs_p_update_norm=" << abs_saturation_update_norm
-                                      << "   abs_r_norm=" << abs_residual_norm << std::endl;
+                                      << "   norm_ds=" << abs_saturation_update_norm
+                                      << "   norm_dp=" << abs_saturation_update_norm
+                                      << "   norm_r=" << abs_residual_norm << std::endl;
+                        }
+
+                        // Have we solved the full problem?
+			bool abs_r_converged = (test_abs_residual && (abs_residual_norm <= steady_abs_residual_tolerance));
+			bool rel_r_converged = (test_rel_residual && (rel_residual_norm <= steady_rel_residual_tolerance));
+			bool abs_ds_converged = (test_abs_s_update && (abs_saturation_update_norm <= steady_abs_saturation_update_tolerance));
+			bool rel_ds_converged = (test_rel_s_update && (rel_saturation_update_norm <= steady_rel_saturation_update_tolerance));
+			bool abs_dp_converged = (test_abs_p_update && (abs_pressure_update_norm <= steady_abs_pressure_update_tolerance));
+			bool rel_dp_converged = (test_rel_p_update && (rel_pressure_update_norm <= steady_rel_pressure_update_tolerance));
+
+                        if ( abs_r_converged || rel_r_converged || abs_ds_converged || 
+			     rel_ds_converged  || abs_dp_converged || rel_dp_converged)
+                        {
+                            solved = true;
+
+			    if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
+			      {
+				std::string abs_r_str = (abs_r_converged ? " small abs residual " : "");
+				std::string rel_r_str = (rel_r_converged ? " small rel residual " : "");
+				std::string abs_ds_str = (abs_ds_converged ? " small abs ds " : "");
+				std::string rel_ds_str = (rel_ds_converged ? " small rel ds " : "");
+				std::string abs_dp_str = (abs_dp_converged ? " small abs dp " : "");
+				std::string rel_dp_str = (rel_dp_converged ? " small rel dp " : "");
+
+				std::cout << tag << "   Steady solution found (reason: " 
+					  << abs_r_str << rel_r_str << abs_ds_str << rel_ds_str << abs_dp_str << rel_dp_str << ")" << std::endl;
+			      }
+                        }
+                        else {
+                            solved = false;
                         }
                         
                         // Should we take another psuedo time step?
@@ -1286,6 +1296,7 @@ PorousMedia::richard_init_to_steady()
                         // If we will continue, should adjust time step?
                         if (steady_use_petsc_dt_control) {
                             Real fac = init_abs_residual_norm / abs_residual_norm;
+			    fac = std::max(.3,std::min(2.0,fac));
                             if (fac > 1) 
                                 dt *= fac;
                             dt = std::min(steady_max_psuedo_time-total_psuedo_time,dt);
@@ -1329,8 +1340,11 @@ PorousMedia::richard_init_to_steady()
                     else {
 
                         // If we will continue, should adjust time step?
-                        if (0 && steady_use_petsc_dt_control) {
-                            std::cout << "...need to implement petsc scheme to decrease time step.  " << std::endl;
+                        if (steady_use_petsc_dt_control) {
+                            Real fac = init_abs_residual_norm / abs_residual_norm;
+			    fac = std::max(.3,std::min(2.,fac));
+			    dt *= fac;
+                            dt = std::min(steady_max_psuedo_time-total_psuedo_time,dt);
                         }
                         else {
                             // Process failed step
@@ -1340,7 +1354,8 @@ PorousMedia::richard_init_to_steady()
                                 continue_psuedo_timestepping = false;
                             }
                             else {
-                                
+
+			      if (ParallelDescriptor::IOProcessor()) {
                                 std::cout << tag << "             - step rejected: ";
                                 if (ret == RICHARD_LINEAR_FAIL) {
                                     std::cout << " - linear solver failure ";
@@ -1354,28 +1369,29 @@ PorousMedia::richard_init_to_steady()
                                           << "   abs_s_update_norm=" << abs_saturation_update_norm
                                           << "   abs_p_update_norm=" << abs_saturation_update_norm
                                           << "   abs_r_norm=" << abs_residual_norm << std::endl;
-                                
-                                // Reset the step, adjust dt and try again
-                                num_consecutive_failures_1++;
-                                tmpS.mult(-1.0);
-                                tmpP.mult(-1.0);
-                                MultiFab::Copy(S_new,tmpS,0,0,1,1); // Set S_new to old solution
-                                MultiFab::Copy(P_new,tmpP,0,0,1,1); // Set P_new to old solution
-                                
-                                // Should we cut the time step?
-                                if (num_consecutive_failures_1 <= steady_max_consecutive_failures_1) {
-                                    dt *= steady_time_step_retry_factor_1;
-                                }
-                                else {
-                                    num_consecutive_failures_2++;
-                                    if (num_consecutive_failures_2 <= steady_max_consecutive_failures_2) {
-                                        dt *= steady_time_step_retry_factor_2;
-                                    }
-                                    else {
-                                        last_chance = true;
-                                        dt += steady_time_step_retry_factor_f;
-                                    }
-                                }
+			      }
+
+			      // Reset the step, adjust dt and try again
+			      num_consecutive_failures_1++;
+			      tmpS.mult(-1.0);
+			      tmpP.mult(-1.0);
+			      MultiFab::Copy(S_new,tmpS,0,0,1,1); // Set S_new to old solution
+			      MultiFab::Copy(P_new,tmpP,0,0,1,1); // Set P_new to old solution
+                              
+			      // Should we cut the time step?
+			      if (num_consecutive_failures_1 <= steady_max_consecutive_failures_1) {
+				dt *= steady_time_step_retry_factor_1;
+			      }
+			      else {
+				num_consecutive_failures_2++;
+				if (num_consecutive_failures_2 <= steady_max_consecutive_failures_2) {
+				  dt *= steady_time_step_retry_factor_2;
+				}
+				else {
+				  last_chance = true;
+				  dt += steady_time_step_retry_factor_f;
+				}
+			      }
                             }
                         }
                     } // Finished processing case where step did not solve, finish Amanzi dt processing
@@ -5118,12 +5134,13 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, Real& err_nwt,
       calcCapillary(pcTime);
       MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
       P_new.mult(-1.0,1);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.success)) 
+      bool continue_iterations = true;
+      while ((continue_iterations) && (itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
             itr_nwt++;
             diffusion->richard_iter(dt,nc,gravity,density,res_fix,
                                     alpha,cmp_pcp1,cmp_pcp1_dp,
-                                    u_mac,do_upwind,&err_nwt,linear_status);
+                                    u_mac,do_upwind,linear_status);
             
             err_nwt = linear_status.residual_norm_post_ls;
 
@@ -5144,13 +5161,20 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, Real& err_nwt,
                 calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
                 if (verbose > 1) check_minmax();
             }
+	    else {
+	      if (richard_solver_verbose>0 && ParallelDescriptor::IOProcessor()) {
+		std::cout << "     Iteration " << itr_nwt << " : Linear solver failed )\n"  << " err: " << err_nwt << std::endl;
+	      }
+	      continue_iterations = false;
+	    }
 	}
     }
   else
     {
       MultiFab dalpha(grids,1,1);
       calc_richard_alpha(&dalpha,pcTime);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+      bool continue_iterations = true;
+      while ((continue_iterations) && (itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
 	{
             itr_nwt++;
             diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
@@ -5160,29 +5184,35 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, Real& err_nwt,
 	    err_nwt = linear_status.residual_norm_post_ls;
 
             if (linear_status.success) {
-                if (verbose > 1 && ParallelDescriptor::IOProcessor()) {
-                    std::cout << "Newton iteration linear solver failed" << "\n"; 
+                if (richard_solver_verbose>0 && ParallelDescriptor::IOProcessor()) {
+                    std::cout << "     Iteration " << itr_nwt 
+                              << " : Error = "       << err_nwt << " (tol: " << max_err_nwt << ")\n";
                 }
-                break;
-            }
-            if (verbose>1 && ParallelDescriptor::IOProcessor())
-                std::cout << "     Iteration " << itr_nwt 
-                          << " : Error = "       << err_nwt << "\n"; 
-            calcInvPressure (S_new,P_new); 
-            if (model != model_list["richard"])
-                scalar_adjust_constraint(0,ncomps-1);
-            calcLambda(pcTime);
-            compute_vel_phase(u_mac,0,pcTime);
-            calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-            calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
-            calc_richard_alpha(&dalpha,pcTime);
-            if (verbose > 1)  check_minmax();
+
+		calcInvPressure (S_new,P_new); 
+		if (model != model_list["richard"])
+		  scalar_adjust_constraint(0,ncomps-1);
+		calcLambda(pcTime);
+		compute_vel_phase(u_mac,0,pcTime);
+		calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
+		calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
+		calc_richard_alpha(&dalpha,pcTime);
+		if (verbose > 1)  check_minmax();
+	    }
+	    else {
+	      if (richard_solver_verbose>0 && ParallelDescriptor::IOProcessor()) {
+		std::cout << "     Iteration " << itr_nwt << " : Linear solver failed\n";
+	      }
+	      continue_iterations = false;
+	    }
 	}
     }
 
   PorousMedia::Reason retVal = RICHARD_SUCCESS;
   if (!linear_status.success) {
       retVal = RICHARD_LINEAR_FAIL;
+      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+          std::cout << "     **************** Newton failed: linear solve failure\n"; 
   }
   if (itr_nwt > max_itr_nwt) {
       retVal = RICHARD_NEWTON_FAIL;
@@ -8605,7 +8635,7 @@ PorousMedia::richard_sync ()
 	{
             diffusion->richard_iter(dt,nc,gravity,density,res_fix,
                                     alpha,cmp_pcp1,cmp_pcp1_dp,
-                                    u_mac_curr,do_upwind,&err_nwt,linear_status);    
+                                    u_mac_curr,do_upwind,linear_status);    
             
             err_nwt = linear_status.residual_norm_post_ls;
 
