@@ -196,13 +196,13 @@ double Transport_PK::CalculateTransportDt()
 
   // loop over cells and calculate minimal dT
   double outflux, dT_cell;
-  const Epetra_Vector& ws = TS->ref_water_saturation();
+  const Epetra_Vector& ws_prev = TS->ref_prev_water_saturation();
   const Epetra_Vector& phi = TS->ref_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
   for (c = 0; c <= cmax_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * ws[c] / outflux;
+    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * ws_prev[c] / outflux;
 
     dT = std::min(dT, dT_cell);
   }
@@ -211,7 +211,7 @@ double Transport_PK::CalculateTransportDt()
 
 #ifdef HAVE_MPI
   double dT_global;
-  const  Epetra_Comm & comm = ws.Comm();
+  const Epetra_Comm& comm = ws_prev.Comm();
 
   comm.MinAll(&dT, &dT_global, 1);
   dT = dT_global;
@@ -293,8 +293,15 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
   dT = dT_original;  // restore the original dT (just in case)
 
   if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
-    printf("Number of transport sub-cycles = %3d  dT(sec): stable=%8.3g  mpc=%8.3g\n", 
+    printf("Transport PK: number of sub-cycles = %3d  dT(sec): stable=%8.3g  mpc=%8.3g\n", 
         ncycles, dT_original, dT_MPC);
+
+    double tccmin[number_components];
+    double tccmax[number_components];
+
+    tcc_next.MinValue(tccmin);
+    tcc_next.MaxValue(tccmax);
+    printf("Transport PK: min/max of tracer are %9.6g %9.6g\n", tccmin[0], tccmax[0]);
   }
 
   // DEBUG
