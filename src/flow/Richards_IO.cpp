@@ -145,6 +145,8 @@ void Richards_PK::ProcessParameterList()
     mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
   } else if (mfd3d_method_name == "none") {
     mfd3d_method = FLOW_MFD3D_POLYHEDRA;
+  } else if (mfd3d_method_name == "support operator") {
+    mfd3d_method = FLOW_MFD3D_SUPPORT_OPERATOR;
   }
 
   // Time integrator for period I, temporary called steady-state time integrator

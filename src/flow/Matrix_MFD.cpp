@@ -94,6 +94,8 @@ void Matrix_MFD::createMFDstiffnessMatrices(int mfd3d_method,
            mfd.darcy_mass_inverse(c, K[c], Bff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
        mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
+       mfd.darcy_mass_inverse_SO(c, K[c], Bff);
     } else {
        mfd.darcy_mass_inverse(c, K[c], Bff);
     }

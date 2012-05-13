@@ -172,6 +172,7 @@ double Transport_PK::CalculateTransportDt()
     IdentifyUpwindCells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
+
   } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
@@ -240,6 +241,10 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
   T_physical = TS->get_time();
   double dT_total = 0.0, dT_cycle;
   double dT_original = dT;  // advance routines override dT
+
+  if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
+    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+  }
 
   if (subcycling && dT_original < dT_MPC) {
     dT_cycle = dT_original;

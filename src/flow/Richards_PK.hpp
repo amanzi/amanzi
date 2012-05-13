@@ -88,10 +88,15 @@ class Richards_PK : public Flow_PK {
   void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, int disc_method,
                                 double Tp, double dTp, bool flag_update_ML);
 
+  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
+                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+
+  // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
 
+  // initization members
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
 
   void InitializePressureHydrostatic(const double T);

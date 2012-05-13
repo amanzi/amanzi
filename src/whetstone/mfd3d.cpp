@@ -143,19 +143,14 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
   std::vector<int> fdirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
 
-/* 
-1. loop over corners and assemple elemental dxd corner matrices
-2. rescale the mass matrix to physical volume.
-3. invert the mass matrix.
-*/
-  Tensor N(d, 2), K(d, 2), NK(d, 2), Mv(d, 2);
+  Tensor N(d, 2), NK(d, 2), Mv(d, 2);
+  Tensor K(permeability);
 
   AmanziMesh::Entity_ID_List nodes, corner_faces;
   mesh_->cell_get_nodes(cell, &nodes);
   int nnodes = nodes.size();
 
   W.putScalar(0.0);
-  K = permeability;
   K.inverse();
 
   for (int n = 0; n < nnodes; n++) {

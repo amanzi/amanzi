@@ -200,11 +200,13 @@ AmanziGeometry::Point operator*(Tensor& T, const AmanziGeometry::Point& p)
 /* ******************************************************************
 * Second convolution operation for tensors of rank 1, 2, and 4
 ****************************************************************** */
-Tensor operator*(Tensor& T1, Tensor& T2)
+Tensor operator*(const Tensor& T1, const Tensor& T2)
 {
   int d = T1.get_dimension();  // the dimensions should be equals
   int rank1 = T1.get_rank(), rank2 = T2.get_rank();
   double *data1 = T1.get_data(), *data2 = T2.get_data();
+
+  Tensor T3;
 
   if (d == 2 && rank1 == 4 && rank2 == 2) {
     double a0, b0, c0;
@@ -212,14 +214,34 @@ Tensor operator*(Tensor& T1, Tensor& T2)
     b0 = T2(1, 1);
     c0 = T2(0, 1);
 
-    Tensor T3(d, rank2);
+    T3.init(d, rank2);
     T3(0, 0) = T1(0, 0) * a0 + T1(0, 1) * b0 + T1(0, 2) * c0;
     T3(1, 1) = T1(1, 0) * a0 + T1(1, 1) * b0 + T1(1, 2) * c0;
     T3(1, 0) = T3(0, 1) = T1(2, 0) * a0 + T1(2, 1) * b0 + T1(2, 2) * c0;
-    return T3;
-  } else {
-    return T1;  // ugly way to avoid compiler's warnings (lipnikov@lanl.gov)
+
+  } else if (rank1 == 1) {
+    T3.init(d, rank2);
+    double *data3 = T3.get_data();
+    int size = WHETSTONE_TENSOR_SIZE[d-1][rank2-1]; 
+    for (int i = 0; i < size*size; i++) data3[i] = data2[i] * data1[0];
+
+  } else if (rank2 == 1) {
+    T3.init(d, rank1);
+    double *data3 = T3.get_data();
+    int size = WHETSTONE_TENSOR_SIZE[d-1][rank2-1]; 
+    for (int i = 0; i < size*size; i++) data3[i] = data1[i] * data2[0];
+
+  } else if (rank2 == 2) {
+    T3.init(d, 2);
+    for (int i = 0; i < d; i++) {
+      for (int j = 0; j < d; j++) {
+        double& entry = T3(i, j);
+        for (int k = 0; k < d; k++) entry += T1(i, k) * T2(k, j);
+      }
+    }
   }
+
+  return T3;
 }
 
 

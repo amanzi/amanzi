@@ -379,7 +379,6 @@ int Richards_PK::Advance(double dT_MPC)
     update_precon(time, *solution, dT, ierr);
   }
 
-  double dTnext;
   if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
     bdf2_dae->commit_solution(dT, *solution);
@@ -401,7 +400,6 @@ int Richards_PK::Advance(double dT_MPC)
       dTnext = dT;
     }
   }
-  dT = dTnext;
   num_itrs++;
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
@@ -415,23 +413,24 @@ int Richards_PK::Advance(double dT_MPC)
 ****************************************************************** */
 void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
 {
-  Epetra_Vector& pressure = FS_MPC->ref_pressure();
-  pressure = *solution_cells;
-
-  Epetra_Vector& water_saturation = FS_MPC->ref_water_saturation();
-  FS_MPC->ref_prev_water_saturation() = water_saturation;
-  DeriveSaturationFromPressure(pressure, water_saturation);
-
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
+  Epetra_Vector& pressure = FS_MPC->ref_pressure();  // save pressure
+  pressure = *solution_cells;
+
+  // update saturations
+  Epetra_Vector& ws = FS_MPC->ref_water_saturation();
+  Epetra_Vector& ws_prev = FS_MPC->ref_prev_water_saturation();
+  ws_prev = ws;
+
+  CalculateConsistentSaturation(flux, ws_prev, ws);
+  // DeriveSaturationFromPressure(pressure, ws);
+
   // DEBUG
-  // if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-  //   std::printf("Commited flow state for transport: see flow.gmv\n");
-  // }
   // writeGMVfile(FS_MPC);
 }
 
@@ -442,8 +441,7 @@ void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
 ****************************************************************** */
 void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
-  // Epetra_Vector& pressure = FS_MPC->ref_pressure();
-  // pressure = *solution_cells;
+  dT = dTnext;
 
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
@@ -452,27 +450,26 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
 
 /* ******************************************************************
-* BDF methods need a good initial guess.
-* This method gives a less smoother solution than in Flow 1.0.
-* WARNING: Each owned face must have at least one owned cell. 
-* Probability that this assumption is violated is close to zero. 
-* Even when it happens, the code will not crash.
+* Saturatin should be in exact balance with Darcy fluxes in order to
+* have extrema dimishing property for concentrations. 
 ****************************************************************** */
-void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux, 
+                                                const Epetra_Vector& ws_prev, Epetra_Vector& ws)
 {
-  AmanziMesh::Entity_ID_List cells;
+  const Epetra_Vector& phi = FS->ref_porosity();
 
-  for (int f = 0; f < nfaces_owned; f++) {
-    cells.clear();
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    int ncells = cells.size();
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
 
-    if (ncells > 0) {
-      double face_value = 0.0;
-      for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
-      ufaces[f] = face_value / ncells;
-    } else {
-      ufaces[f] = atm_pressure;
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    ws[c] = ws_prev[c];
+    double factor = dT / (phi[c] * mesh_->cell_volume(c));
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      ws[c] -= factor * flux[f] * dirs[n]; 
     }
   }
 }
@@ -540,6 +537,33 @@ void Richards_PK::ComputePreconditionerMFD(
   //Matrix_Audit audit(mesh_, matrix);
   //audit.InitAudit();
   //audit.CheckSpectralBounds();
+}
+
+
+/* ******************************************************************
+* BDF methods need a good initial guess.
+* This method gives a less smoother solution than in Flow 1.0.
+* WARNING: Each owned face must have at least one owned cell. 
+* Probability that this assumption is violated is close to zero. 
+* Even when it happens, the code will not crash.
+****************************************************************** */
+void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    cells.clear();
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    int ncells = cells.size();
+
+    if (ncells > 0) {
+      double face_value = 0.0;
+      for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
+      ufaces[f] = face_value / ncells;
+    } else {
+      ufaces[f] = atm_pressure;
+    }
+  }
 }
 
 

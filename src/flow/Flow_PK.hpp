@@ -150,7 +150,7 @@ class Flow_PK : public BDF2::fnBase {
  
   Teuchos::RCP<Flow_State> FS;
   
-  double T_internal, dT, dT0;
+  double T_internal, dT, dT0, dTnext;
   int flow_status_;
   int standalone_mode;
  
