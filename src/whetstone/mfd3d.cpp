@@ -18,6 +18,7 @@ Usage:
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "errors.hh"
 
 #include "mfd3d.hpp"
 #include "tensor.hpp"
@@ -157,6 +158,11 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
     int v = nodes[n];
     mesh_->node_get_cell_faces(v, cell, AmanziMesh::USED, &corner_faces);
     int nfaces = corner_faces.size();
+    if (nfaces < d) {
+      Errors::Message msg;
+      msg << "WhetStone MFD3D: number of faces forming a corner is small.";
+      Exceptions::amanzi_throw(msg);
+    }
 
     for (int i = 0; i < d; i++) {
       int f = corner_faces[i];

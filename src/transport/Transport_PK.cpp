@@ -295,13 +295,21 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
   if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
     printf("Transport PK: number of sub-cycles = %3d  dT(sec): stable=%8.3g  mpc=%8.3g\n", 
         ncycles, dT_original, dT_MPC);
+  }
 
-    double tccmin[number_components];
-    double tccmax[number_components];
+  if (verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
+    double tccmin_vec[number_components];
+    double tccmax_vec[number_components];
 
-    tcc_next.MinValue(tccmin);
-    tcc_next.MaxValue(tccmax);
-    printf("Transport PK: min/max of tracer are %9.6g %9.6g\n", tccmin[0], tccmax[0]);
+    tcc_next.MinValue(tccmin_vec);
+    tcc_next.MaxValue(tccmax_vec);
+
+    double tccmin, tccmax;
+    tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
+    tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
+
+    if (MyPID == 0) 
+        printf("Transport PK: min/max of tracer are %9.6g %9.6g\n", tccmin, tccmax);
   }
 
   // DEBUG
