@@ -534,9 +534,9 @@ void Richards_PK::ComputePreconditionerMFD(
   }
 
   // DEBUG
-  //Matrix_Audit audit(mesh_, matrix);
-  //audit.InitAudit();
-  //audit.CheckSpectralBounds();
+  // Matrix_Audit audit(mesh_, matrix);
+  // audit.InitAudit();
+  // audit.CheckSpectralBounds();
 }
 
 

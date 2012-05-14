@@ -373,11 +373,11 @@ void MPC::cycle_driver() {
       }
       // Update our waypoint times (delete the next one if we just did it)
       if (!waypoint_times_.empty()) {
-        if (S->get_time()>=waypoint_times_.top())
+        if (S->get_time() >= waypoint_times_.top())
           waypoint_times_.pop();
       }
 
-      if (flow_enabled) {  // && flow_model == "Richards") {
+      if (flow_enabled) {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
 	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
@@ -386,28 +386,28 @@ void MPC::cycle_driver() {
 	}
       }
       
-      if (flow_enabled) {  // && flow_model == "Richards") {
-	    flow_dT = FPK->CalculateFlowDt();
+      if (flow_enabled) {
+        flow_dT = FPK->CalculateFlowDt();
 
         // adjust the time step, so that we exactly hit the switchover time
-        if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
+        if (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
           limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
-	      tslimiter = MPC_LIMITS;
+          tslimiter = MPC_LIMITS;
         }
 
         // make sure we hit any of the reset times exactly (not in steady mode)
         if (! ti_mode == STEADY) {
           if (!reset_times_.empty()) {
             if (reset_times_[1].first != Tswitch) {
-	          // now we are trying to hit the next reset time exactly
-	          if (S->get_time()+2*flow_dT > reset_times_[1].first) {
-		        limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[1].first);
-		        tslimiter = MPC_LIMITS;
-		      }
-		    }
-	      }
-	    }
-	  }
+              // now we are trying to hit the next reset time exactly
+              if (S->get_time()+2*flow_dT > reset_times_[1].first) {
+                limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[1].first);
+		tslimiter = MPC_LIMITS;
+              }
+            }
+          }
+        }
+      }
 	
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
@@ -459,23 +459,23 @@ void MPC::cycle_driver() {
 	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
 	tslimiter = MPC_LIMITS;
       }
-      if (ti_mode == STEADY  &&  S->get_time()+2*mpc_dT > T1) { 
+      if (ti_mode == STEADY && S->get_time()+2*mpc_dT > T1) { 
 	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
 	tslimiter = MPC_LIMITS;
       }
       
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
-	    if (!reset_times_.empty()) {
-	      // this is probably iffy...
-	      if (S->get_time() == reset_times_.front().first) {
-	        *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
-	        mpc_dT = reset_times_.front().second;
-	        tslimiter = MPC_LIMITS;
-	        // now reset the BDF2 integrator..
-	        FPK->InitTransient(S->get_time(), mpc_dT);
-	      }
-	    }
+        if (!reset_times_.empty()) {
+          // this is probably iffy...
+          if (S->get_time() == reset_times_.front().first) {
+            *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
+            mpc_dT = reset_times_.front().second;
+            tslimiter = MPC_LIMITS;
+	    // now reset the flow time integrator..
+	    FPK->InitTransient(S->get_time(), mpc_dT);
+	  }
+        }
       }
 
       // steady flow is special, it might redo a time step, so we print

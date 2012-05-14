@@ -64,7 +64,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 
 
 /* ******************************************************************
-* Compute new preconditioner B(p, dT_prec). For BDF2 method, we need
+* Compute new preconditioner B(p, dT_prec). For BDFx method, we need
 * a separate memory allocation.                                              
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)

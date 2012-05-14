@@ -15,6 +15,7 @@ Usage:
 #include <vector>
 
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
@@ -166,7 +167,7 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
 
     for (int i = 0; i < d; i++) {
       int f = corner_faces[i];
-      N.add_column(i, mesh_->face_centroid(f));
+      N.add_column(i, mesh_->face_normal(f));
     }
     N.inverse();
     NK = N * K;
@@ -184,6 +185,21 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
     }
   }
  
+  // invert matrix W
+  Teuchos::LAPACK<int, double> lapack;
+  int info, size = W.numRows();
+
+  int ipiv[size];
+  double work[size];
+
+  lapack.GETRF(size, size, W.values(), size, ipiv, &info);
+  lapack.GETRI(size, W.values(), size, ipiv, work, size, &info);
+  if (info != 0) {
+    Errors::Message msg;
+    msg << "WhetStone MFD3D: support operator generated bad elemental mass matrix.";
+    Exceptions::amanzi_throw(msg);
+  }
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

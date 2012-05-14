@@ -89,9 +89,9 @@ void Matrix_MFD::createMFDstiffnessMatrices(int mfd3d_method,
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
        if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-           mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+         mfd.darcy_mass_inverse_hex(c, K[c], Bff);
        else
-           mfd.darcy_mass_inverse(c, K[c], Bff);
+         mfd.darcy_mass_inverse(c, K[c], Bff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
        mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
