@@ -7,65 +7,16 @@
 include(CMakeParseArguments)
 include(PrintVariable)
 
+function(_APPEND_TEST_LABEL test_name label)
 
-function (_REGISTER_TEST test_name test_exec test_args nprocs is_parallel mpi_args)
-
-  if ("${nprocs}" STREQUAL "")
-    set(nprocs 1)
+  get_test_property(${test_name} LABELS current_labels)
+  if (current_labels)
+    set_tests_properties(${test_name} PROPERTIES LABELS "${current_labels};${label}")
+  else()  
+    set_tests_properties(${test_name} PROPERTIES LABELS "${label}")
   endif()
 
-      if ((${nprocs} GREATER 1) OR "${is_parallel}" OR "${TESTS_REQUIRE_MPIEXEC}")
-      _add_parallel_test(${test_name} ${test_exec} "${test_args}" ${nprocs} "${mpi_args}")
-      _add_test_labels(${test_name} "PARALLEL")
-    else()
-      add_test(${test_name} ${test_exec} ${test_args})
-      _add_test_labels(${test_name} "SERIAL")
-    ENDIF()
-
-endfunction(_REGISTER_TEST)
-
-
-
-function(_ADD_PARALLEL_TEST test_name test_exec test_args nproc mpi_args)
-
-  set(_options  "")
-  set(_oneValue "")
-  set(_multiValue "MPI_EXEC_ARGS")
-  cmake_parse_arguments(ADD_PARALLEL_TEST "${_options}" "${_oneValue}" "${_multiValue}" ${ARGN}) 
-
-  # Do not allow mpi_exec to run more than the MAX_NPROCS
-  if ( MPI_EXEC_MAX_NUMPROCS )
-    if (${MPI_EXEC_MAX_NUMPROCS} LESS ${nproc}  )
-      set(nproc ${MPI_EXEC_MAX_NUMPROCS})
-      message(WARNING "Test ${test_name} requested too many procs. "
-        "Will run ${test_name} with ${nproc} ranks")
-    endif()
-  endif()
-
-  # Build MPI_EXEC cpmmand
-  # This will have to change if POE is used as MPI_EXEC!
-  set(_mpi_cmd "${MPI_EXEC}" "${MPI_EXEC_NUMPROCS_FLAG}" "${nproc}" "${MPI_EXEC_ARGS_FLAG}" "${mpi_args}" "${test_exec}" "${test_args}")
-
-  # Register the test
-  add_test(${test_name} ${_mpi_cmd})
-
-endfunction(_ADD_PARALLEL_TEST)
-
-
-
-function(_ADD_TEST_LABELS test_name)
-
-  get_test_property(${test_name} LABELS labels)
-  if ("${labels}" STREQUAL "NOTFOUND")
-    unset(labels)
-  endif()
-
-  list(APPEND labels "${ARGN}")
-  list(REMOVE_DUPLICATES labels)
-  set_tests_properties(${test_name} PROPERTIES LABELS "${labels}")
-
-endfunction(_ADD_TEST_LABELS)
-
+endfunction(_APPEND_TEST_LABEL)
 
 function(_ADD_TEST_KIND_LABEL test_name kind_in)
 
@@ -81,51 +32,12 @@ function(_ADD_TEST_KIND_LABEL test_name kind_in)
   endforeach()
 
  if (match)
-    _add_test_labels("${test_name}" "${match}")
+    _append_test_label(${test_name} ${match})
   else()
-    message(FATAL_ERROR, "No, or invalid test kind specified.")
+    message(FATAL_ERROR "Invalid test label ${kind_in} (Valid Labels:${kind_prefixes})")
   endif()
 
-endfunction()
-
-
-function(_build_mpiexec_command executable)
-
-  # Check executable variable 
-  if ( NOT executable )
-    message(FATAL_ERROR "Must specify an executable in _build_mpiexec_command")
-  endif()
-  
-  # Parse the remaning arguments
-  set(optiotns     "")
-  set(oneValueArgs "NPROCS;OUTPUT")
-  set(multiValueArgs "EXEC_ARGS;MPIEXEC_ARGS")
-  cmake_parse_arguments(PARSE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-  # Need a return variable 
-  print_variable(PARSE_OUTPUT)
-  if ( NOT PARSE_OUTPUT )
-    message(FATAL_ERROR "Must specify an output variable in _build_mpiexec_command")
-  endif()
-
-  if ( NOT PARSE_NPROCS )
-    set(PARSE_NPROCS 1)
-  endif()
-
-  set(mpiexec_command "${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${PARSE_NPROCS} ${MPI_EXEC_PREFLAGS}")
-  foreach(arg ${PARSE_MPIEXEC_ARGS})
-    set(mpiexec_command "${mpiexec_command} ${arg}")
-  endforeach()
-
-  set(exec_command_args)
-  foreach (arg ${PARSE_EXEC_ARGS})
-    set(exec_command_args "${exec_command_args} ${arg}")
-  endforeach()
-
-  set(${PARSE_OUTPUT} "${mpiexec_command} ${executable} ${MPI_EXEC_POSTFLAGS} ${exec_command_args}" PARENT_SCOPE)
-
-endfunction(_build_mpiexec_command)
-
+endfunction(_ADD_TEST_KIND_LABEL)
 
 
 # Usage:
@@ -146,6 +58,8 @@ endfunction(_build_mpiexec_command)
 #  arg1 ...: Additional arguments for the test executable
 #
 # Keyword KIND is required and should be one of unit, int or reg. 
+#
+# 
 
 # Option PARALLEL signifies that this is a parallel job. This is also
 # implied by an NPROCS value > 1
@@ -155,7 +69,14 @@ endfunction(_build_mpiexec_command)
 #
 # Optional MPI_EXEC_ARGS keyword denotes extra arguments to give to
 # mpi. It is ignored for serial tests.
-
+#
+# Optional SOURCE_FILES keyword that defines a list of source files
+# required to build test_executable. An add_executable call will be made
+# if this option is active.
+#
+# Optional LINK_LIBS keyword defines a list of link libraries or link options
+# to link test_executable. An target_link_libraries call will be made if
+# this option is active.
 
 function(ADD_AMANZI_TEST test_name test_exec)
 
@@ -267,19 +188,17 @@ function(ADD_AMANZI_TEST test_name test_exec)
 
   # --- Add test properties
 
-  # Labels, This is a CMake list type
+  # Labels
   _add_test_kind_label(${test_name} ${AMANZI_TEST_KIND})
-  get_test_property(${test_name} LABELS test_labels)
   if ( AMANZI_TEST_PARALLEL AND AMANZI_TEST_NPROCS )
     if ( ${AMANZI_TEST_NPROCS} GREATER 1 )
-      list(APPEND test_labels PARALLEL)
+      _append_test_label(${test_name} PARALLEL)
     else()
-      list(APPEND test_labels SERIAL)
+      _append_test_label(${test_name} SERIAL)
     endif()  
   else()  
-    list(APPEND test_labels SERIAL)
+    _append_test_label(${test_name} SERIAL)
   endif()
-  set_tests_properties(${test_name} PROPERTIES LABELS "${test_labels}")
   
   # Remaining properties are single valued. Building 
   # test_properties as a list should get past the CMake parser.
