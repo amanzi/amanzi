@@ -20,22 +20,6 @@
 
 namespace Amanzi {
 
-/**
- * \class   TdtPair
- * \brief   Provides a convenient method for grouping a time with a specified
- *          timestep. This is used for reset times, but can be used anywhere.
- * \tparam  Storage type (typically a double)
- * \author  Nathan Barnett
- * \date    May 10, 2012
- */
-template <typename T>
-struct TdtPair {
-  TdtPair(T t_, T dt_) : t(t_), dt(dt_) {}
-  T t;   //!< Time
-  T dt;  //!< Timestep size
-}; 
-
-
 enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY };
 
 class MPC : public Teuchos::VerboseObject<MPC> {
@@ -103,7 +87,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Amanzi::Restart *restart;
  
   // time period control
-  std::stack<TdtPair<double> > reset_times_;
+  std::vector<std::pair<double, double> > reset_times_;  //!< pair<t, dt>
 
   // waypoint times control
   std::stack<double> waypoint_times_;

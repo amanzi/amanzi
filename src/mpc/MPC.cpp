@@ -261,15 +261,13 @@ void MPC::read_parameter_list()  {
       Exceptions::amanzi_throw(message);
     }
     
-    std::vector<std::pair<double, double> > sortable(0);
-    for (int i=0; i<reset_times.size(); ++i) {
-      sortable.push_back(std::make_pair(reset_times[i], reset_times_dt[i]));
+    reset_times_.resize(0);
+    Teuchos::Array<double>::iterator t  = reset_times.begin();
+    Teuchos::Array<double>::iterator dt = reset_times_dt.begin();
+    for (; t!=reset_times.end(); ++t, ++dt) {
+      reset_times_.push_back(std::make_pair(*t, *dt));
     }
-    std::sort(sortable.begin(), sortable.end());
-    for (std::vector<std::pair<double, double> >::reverse_iterator rit=sortable.rbegin(); rit<sortable.rend(); ++rit) {
-      TdtPair<double> p(rit->first, rit->second);
-      reset_times_.push(p);
-    }
+    std::sort(reset_times_.begin(), reset_times_.end());
   }
 }
 
@@ -327,8 +325,8 @@ void MPC::cycle_driver() {
         waypoint_times_.pop();
     }
     if (!reset_times_.empty()) {
-      while (reset_times_.top().t<t0)
-        reset_times_.pop();
+      while (reset_times_.front().first<t0)
+        reset_times_.erase(reset_times_.begin());
     }
   }
 
@@ -370,8 +368,8 @@ void MPC::cycle_driver() {
       
       // Update our reset times (delete the next one if we just did it)
       if (!reset_times_.empty()) {
-        if (S->get_time()>=reset_times_.top().t)
-          reset_times_.pop();
+        if (S->get_last_time()>=reset_times_.front().first)
+          reset_times_.erase(reset_times_.begin());
       }
       // Update our waypoint times (delete the next one if we just did it)
       if (!waypoint_times_.empty()) {
@@ -398,12 +396,14 @@ void MPC::cycle_driver() {
         }
 
         // make sure we hit any of the reset times exactly (not in steady mode)
-        if (ti_mode != STEADY && S->get_time() >= Tswitch) {
+        if (! ti_mode == STEADY) {
           if (!reset_times_.empty()) {
-	        // now we are trying to hit the next reset time exactly
-	        if (S->get_time()+2*flow_dT > reset_times_.top().t) {
-		      limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_.top().t);
-		      tslimiter = MPC_LIMITS;
+            if (reset_times_[1].first != Tswitch) {
+	          // now we are trying to hit the next reset time exactly
+	          if (S->get_time()+2*flow_dT > reset_times_[1].first) {
+		        limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[1].first);
+		        tslimiter = MPC_LIMITS;
+		      }
 		    }
 	      }
 	    }
@@ -468,13 +468,12 @@ void MPC::cycle_driver() {
       if (! ti_mode == STEADY) {
 	    if (!reset_times_.empty()) {
 	      // this is probably iffy...
-	      if (S->get_time() == reset_times_.top().t) {
+	      if (S->get_time() == reset_times_.front().first) {
 	        *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
-	        mpc_dT = reset_times_.top().dt;
+	        mpc_dT = reset_times_.front().second;
 	        tslimiter = MPC_LIMITS;
 	        // now reset the BDF2 integrator..
 	        FPK->InitTransient(S->get_time(), mpc_dT);
-	        break;
 	      }
 	    }
       }
