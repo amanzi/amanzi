@@ -104,9 +104,14 @@ if (BUILD_TESTS)
 	add_definitions("-DMSTK_HAVE_MPI")
 
         # Test: mpc-mstk
-        add_executable(test_mpc_mstk test/Main.cc test/test_driver.cpp)
-        target_link_libraries(test_mpc_mstk mpc mesh mstk_mesh chemistry_pk flow transport whetstone ${UnitTest_LIBRARIES})
-        add_amanzi_test(mpc-mstk test_mpc_mstk KIND int)
+	#add_executable(test_mpc_mstk test/Main.cc test/test_driver.cpp)
+	#target_link_libraries(test_mpc_mstk mpc mesh mstk_mesh chemistry_pk flow transport whetstone ${UnitTest_LIBRARIES})
+	#add_amanzi_test(mpc-mstk test_mpc_mstk KIND int)
+	add_amanzi_test(mpc-mstk test_mpc_mstk
+			SOURCE    test/Main.cc test/test_driver.cpp
+			LINK_LIBS mpc mesh mstk_mesh chemistry_pk flow transport whetstone ${UnitTest_LIBRARIES}
+	                KIND      int)
+
     
     endif()
 
