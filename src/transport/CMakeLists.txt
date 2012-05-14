@@ -132,7 +132,7 @@ if ( BUILD_TESTS )
 
         add_executable(transport_parallel_stk test/Main.cc test/transport_parallel_stk.cpp)
         target_link_libraries(transport_parallel_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_parallel_stk transport_parallel_stk NPROCS 4 KIND uint)
+        add_amanzi_test(transport_parallel_stk transport_parallel_stk NPROCS 4 KIND unit)
     endif()    
 endif()
 
