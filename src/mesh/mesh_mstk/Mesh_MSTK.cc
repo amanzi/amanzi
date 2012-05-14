@@ -1297,13 +1297,13 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
 
       if (MEnt_PType(mf) == PGHOST) {
 	if (ptype == GHOST || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(mf);
 	  faceids->push_back(lid-1);
 	}
       }
       else {
 	if (ptype == OWNED || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(mf);
 	  faceids->push_back(lid-1);
 	}
       }            
@@ -1319,13 +1319,13 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
 
       if (MEnt_PType(me) == PGHOST) {
 	if (ptype == GHOST || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(me);
 	  faceids->push_back(lid-1);
 	}
       }
       else {
 	if (ptype == OWNED || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(me);
 	  faceids->push_back(lid-1);
 	}
       }            
