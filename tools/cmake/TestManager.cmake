@@ -203,8 +203,8 @@ function(ADD_AMANZI_TEST test_name test_exec)
 
     if(MPI_EXEC_MAX_NUMPROCS AND AMANZI_TEST_PARALLEL)
       if ( "${MPI_EXEC_MAX_NUMPROCS}" LESS "${AMANZI_TEST_NPROCS}")
-message(WARNING "Test ${test_name} request too many nprocs (${AMANZI_TEST_NPROCS}). "
-                "Will skip this test.")
+        message(WARNING "Test ${test_name} request too many nprocs (${AMANZI_TEST_NPROCS}). "
+                        "Will skip this test.")
         return()
       endif()
     endif()
@@ -267,8 +267,22 @@ message(WARNING "Test ${test_name} request too many nprocs (${AMANZI_TEST_NPROCS
 
   # --- Add test properties
 
-  # Labels
-  set(test_properties LABELS ${AMANZI_TEST_KIND})
+  # Labels, This is a CMake list type
+  _add_test_kind_label(${test_name} ${AMANZI_TEST_KIND})
+  get_test_property(${test_name} LABELS test_labels)
+  if ( AMANZI_TEST_PARALLEL AND AMANZI_TEST_NPROCS )
+    if ( ${AMANZI_TEST_NPROCS} GREATER 1 )
+      list(APPEND test_labels PARALLEL)
+    else()
+      list(APPEND test_labels SERIAL)
+    endif()  
+  else()  
+    list(APPEND test_labels SERIAL)
+  endif()
+  set_tests_properties(${test_name} PROPERTIES LABELS "${test_labels}")
+  
+  # Remaining properties are single valued. Building 
+  # test_properties as a list should get past the CMake parser.
 
   # Timeout
   if ( TESTS_TIMEOUT_THRESHOLD )
@@ -285,7 +299,9 @@ message(WARNING "Test ${test_name} request too many nprocs (${AMANZI_TEST_NPROCS
      list(APPEND test_properties WILL_FAIL TRUE)
   endif() 
 
-  set_tests_properties(${test_name} PROPERTIES ${test_properties})
+  if ( test_properties )
+    set_tests_properties(${test_name} PROPERTIES ${test_properties})
+  endif()
 
 endfunction(ADD_AMANZI_TEST)
 
