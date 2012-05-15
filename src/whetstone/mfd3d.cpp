@@ -145,15 +145,18 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
   std::vector<int> fdirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
 
-  Tensor N(d, 2), NK(d, 2), Mv(d, 2);
-  Tensor K(permeability);
-
   AmanziMesh::Entity_ID_List nodes, corner_faces;
   mesh_->cell_get_nodes(cell, &nodes);
   int nnodes = nodes.size();
 
-  W.putScalar(0.0);
+  Tensor K(permeability);
   K.inverse();
+
+  // collect all corner matrices
+  std::vector<Tensor> Mv;
+  std::vector<double> cwgt;
+
+  Tensor N(d, 2), NK(d, 2), Mv_tmp(d, 2);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
@@ -169,17 +172,41 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
       int f = corner_faces[i];
       N.add_column(i, mesh_->face_normal(f));
     }
+    double cwgt_tmp = fabs(N.determinant());
+
     N.inverse();
     NK = N * K;
 
     N.transpose();
-    Mv = NK * N;
+    Mv_tmp = NK * N;
+    Mv.push_back(Mv_tmp);
 
-    for (int i = 0; i < d; i++) {  // assembling
+    for (int i = 0; i < d; i++) {
+      int f = corner_faces[i];
+      cwgt_tmp /= mesh_->face_area(f);
+    }
+    cwgt.push_back(cwgt_tmp);
+  }
+
+  // rescale corner weights
+  double factor = 0.0;
+  for (int n = 0; n < nnodes; n++) factor += cwgt[n];
+  factor = mesh_->cell_volume(cell) / factor;
+
+  for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
+
+  // assemble corner matrices
+  W.putScalar(0.0);
+  for (int n = 0; n < nnodes; n++) {
+    int v = nodes[n];
+    mesh_->node_get_cell_faces(v, cell, AmanziMesh::USED, &corner_faces);
+
+    Tensor& Mv_tmp = Mv[n];
+    for (int i = 0; i < d; i++) {
       int k = find_position(corner_faces[i], faces);
       for (int j = i; j < d; j++) {
         int l = find_position(corner_faces[j], faces);
-        W(k, l) += Mv(i, j);
+        W(k, l) += Mv_tmp(i, j) * cwgt[n];
         W(l, k) = W(k, l);
       }
     }

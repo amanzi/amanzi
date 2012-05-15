@@ -133,6 +133,26 @@ void Tensor::transpose()
 
 
 /* ******************************************************************
+* Determinant of second-order tensors.
+****************************************************************** */
+double Tensor::determinant()
+{
+  double det = 0.0;
+  if (rank_ == 2 && d_ == 2) {
+    det = data_[0] * data_[3] - data_[1] * data_[2];
+  } else if (rank_ == 2 && d_ == 3) {
+    det = data_[0] * data_[4] * data_[8] 
+        + data_[2] * data_[3] * data_[7] 
+        + data_[1] * data_[5] * data_[6] 
+        - data_[2] * data_[4] * data_[6] 
+        - data_[1] * data_[3] * data_[8] 
+        - data_[0] * data_[5] * data_[7]; 
+  }
+  return det;
+}
+
+
+/* ******************************************************************
 * Multiplication by a constant.
 ****************************************************************** */
 Tensor& Tensor::operator*=(const double& c)

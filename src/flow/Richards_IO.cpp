@@ -147,6 +147,8 @@ void Richards_PK::ProcessParameterList()
     mfd3d_method = FLOW_MFD3D_POLYHEDRA;
   } else if (mfd3d_method_name == "support operator") {
     mfd3d_method = FLOW_MFD3D_SUPPORT_OPERATOR;
+  } else if (mfd3d_method_name == "two-point flux") {
+    mfd3d_method = FLOW_MFD3D_TWO_POINT_FLUX;
   }
 
   // Time integrator for period I, temporary called steady-state time integrator
@@ -183,7 +185,7 @@ void Richards_PK::ProcessParameterList()
 
     if (sss_list.isSublist("time control")) {
       Teuchos::ParameterList& time_list = sss_list.sublist("time control");
-      T0_sss = time_list.get<double>("start time", -1e+9);
+      T0_sss = time_list.get<double>("start time", -1e+12);
       T1_sss = time_list.get<double>("end time", 0.0);
       dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
       dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);

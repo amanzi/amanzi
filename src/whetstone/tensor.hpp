@@ -38,6 +38,7 @@ class Tensor {
   double det();
   void inverse();
   void transpose();
+  double determinant();
 
   // elementary operators
   Tensor& operator*=(const double& c);
