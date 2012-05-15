@@ -1312,7 +1312,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
   }
   else {
     mf = (MEdge_ptr) cell_id_to_handle[cellid];
-    List_ptr fedges = MF_Edges(mr,1,0);
+    List_ptr fedges = MF_Edges(mf,1,0);
     idx = 0;
     while ((me = List_Next_Entry(fedges,&idx))) {
       if (!ME_UsesEntity(me,mv,MVERTEX)) continue;
