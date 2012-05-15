@@ -58,9 +58,11 @@ if (BUILD_TESTS)
     # Add the utils directory to the include paths
     include_directories(${ATK_SOURCE_DIR})
 
-    add_executable(test_utils test/Main.cc test/test_time_step_manager.cc)    
-    target_link_libraries(test_utils atk ${UnitTest_LIBRARIES})
-    add_amanzi_test(utils test_utils KIND unit)
+    ADD_AMANZI_TEST(utils test_utils
+      KIND unit
+      SOURCE test/Main.cc test/test_time_step_manager.cc
+      LINK_LIBS atk ${UnitTest_LIBRARIES} )
+
 endif()
 
 
