@@ -51,7 +51,7 @@
         <ParameterList name="Expert Settings">
           <Parameter name="do_multilevel_full" type="int" value="0"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
-          <Parameter name="richard_init_to_steady_verbose" type="int" value="1"/>
+          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
           <Parameter name="steady_max_iterations" type="int" value="15"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>
@@ -62,15 +62,17 @@
           <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.01"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
-          <Parameter name="steady_tolerance" type="double" value="1.e-12"/>
-          <Parameter name="steady_initial_time_step" type="double" value="1.e5"/>
-          <Parameter name="steady_maximum_time_steps" type="int" value="4000"/>
-          <Parameter name="steady_max_num_consecutive_success" type="int" value="3"/>
+          <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
+          <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
+          <Parameter name="steady_initial_time_step" type="double" value="9.467e6"/>
+          <Parameter name="steady_max_time_steps" type="int" value="4000"/>
+          <Parameter name="steady_max_num_consecutive_success" type="int" value="1"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
+          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
 
-          <Parameter name="richard_solver_verbose" type="int" value="0"/>
+          <Parameter name="richard_solver_verbose" type="int" value="2"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>

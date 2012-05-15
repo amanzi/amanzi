@@ -1107,7 +1107,6 @@ Diffusion::richard_iter (Real                   dt,
 			 const MultiFab* const* beta_dp,
 			 MultiFab*              umac,
 			 const bool             do_upwind,
-			 Real*                  err_nwt,
                          Diffusion::NewtonStepInfo& status) 
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_iter()");
@@ -1201,6 +1200,7 @@ Diffusion::richard_iter (Real                   dt,
           if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
               std::cout << tag << status.reason << std::endl;
           }
+	  status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
           return;
       }
 
@@ -1696,6 +1696,7 @@ Diffusion::richard_iter_p (Real                   dt,
           if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
               std::cout << tag << status.reason << std::endl;
           }
+	  status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
           return;
       }
 

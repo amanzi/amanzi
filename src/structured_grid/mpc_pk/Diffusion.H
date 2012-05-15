@@ -139,7 +139,6 @@ public:
                        const MultiFab* const* beta_dp,
                        MultiFab*              umac,
                        const bool             do_upwind,
-                       Real*                  err_nwt,
                        Diffusion::NewtonStepInfo& status); 
 
     void richard_composite_iter (Real                      dt,
@@ -165,7 +164,7 @@ public:
 			const MultiFab* const* beta_dp,
 			MultiFab*              umac,
 			const bool             do_upwind,
-                       Diffusion::NewtonStepInfo& status); 
+			Diffusion::NewtonStepInfo& status); 
 
     void richard_composite_iter_p (Real                      dt,
 				   int                       nlevs,
