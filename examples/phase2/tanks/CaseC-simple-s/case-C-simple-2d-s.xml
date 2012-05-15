@@ -51,7 +51,7 @@
         <ParameterList name="Expert Settings">
           <Parameter name="do_multilevel_full" type="int" value="0"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
-          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
+          <Parameter name="richard_init_to_steady_verbose" type="int" value="1"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
           <Parameter name="steady_max_iterations" type="int" value="15"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>
@@ -72,7 +72,7 @@
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
 
-          <Parameter name="richard_solver_verbose" type="int" value="2"/>
+          <Parameter name="richard_solver_verbose" type="int" value="0"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>

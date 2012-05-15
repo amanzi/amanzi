@@ -5076,7 +5076,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
             itr_nwt++;
             diffusion->richard_iter(dt,nc,gravity,density,res_fix,
                                     alpha,cmp_pcp1,cmp_pcp1_dp,
-                                    u_mac,do_upwind,&err_nwt,linear_status);
+                                    u_mac,do_upwind,linear_status);
             
             err_nwt = linear_status.residual_norm_post_ls;
 
@@ -8558,39 +8558,34 @@ PorousMedia::richard_sync ()
 	{
             diffusion->richard_iter(dt,nc,gravity,density,res_fix,
                                     alpha,cmp_pcp1,cmp_pcp1_dp,
-                                    u_mac_curr,do_upwind,&err_nwt,linear_status);    
+                                    u_mac_curr,do_upwind,linear_status);    
             
             err_nwt = linear_status.residual_norm_post_ls;
 
             if (linear_status.success) {
-                if (verbose > 1 && ParallelDescriptor::IOProcessor()) {
-                    std::cout << "Newton iteration linear solver failed" << "\n"; 
-                }
-                break;
+                if (verbose > 1 && ParallelDescriptor::IOProcessor())
+                    std::cout << "Newton iteration " << itr_nwt 
+                              << " : Error = "       << err_nwt << "\n"; 
+                if (model != model_list["richard"])
+                    scalar_adjust_constraint(0,ncomps-1);
+                FillStateBndry(pcTime,State_Type,0,ncomps);
+                calcCapillary(pcTime);
+                calcLambda(pcTime);
+                MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
+                P_new.mult(-1.0,1);
+                compute_vel_phase(u_mac_curr,0,pcTime);
+                calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
+                itr_nwt += 1;
+                if (verbose > 1)  check_minmax();
             }
-            
-            if (verbose > 1 && ParallelDescriptor::IOProcessor())
-                std::cout << "Newton iteration " << itr_nwt 
-                          << " : Error = "       << err_nwt << "\n"; 
-            if (model != model_list["richard"])
-                scalar_adjust_constraint(0,ncomps-1);
-            FillStateBndry(pcTime,State_Type,0,ncomps);
-            calcCapillary(pcTime);
-            calcLambda(pcTime);
-            MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
-            P_new.mult(-1.0,1);
-            compute_vel_phase(u_mac_curr,0,pcTime);
-            calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-            calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
-            itr_nwt += 1;
-            if (verbose > 1)  check_minmax();
 	}
     }
   else
     {
       MultiFab dalpha(grids,1,1);
       calc_richard_alpha(&dalpha,pcTime);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.status!="Finished")) 
 	{
             diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
                                       alpha,&dalpha,cmp_pcp1,cmp_pcp1_dp,
@@ -8599,28 +8594,22 @@ PorousMedia::richard_sync ()
 	    err_nwt = linear_status.residual_norm_post_ls;
 
             if (linear_status.success) {
-                if (verbose > 1 && ParallelDescriptor::IOProcessor()) {
-                    std::cout << "Newton iteration linear solver failed" << "\n"; 
-                }
-                break;
+                linear_status.success = true;
+                if (verbose > 1 && ParallelDescriptor::IOProcessor())
+                    std::cout << "Newton iteration " << itr_nwt 
+                              << " : Error = "       << err_nwt << "\n"; 
+                calcInvPressure (S_new,P_new); 
+                if (model != model_list["richard"])
+                    scalar_adjust_constraint(0,ncomps-1);
+                calcLambda(pcTime);
+                compute_vel_phase(u_mac_curr,0,pcTime);
+                calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
+                calc_richard_alpha(&dalpha,pcTime);
+                itr_nwt += 1;
+                if (verbose > 1)  check_minmax();
             }
-
-            if (verbose > 1 && ParallelDescriptor::IOProcessor())
-                std::cout << "Newton iteration " << itr_nwt 
-                          << " : Error = "       << err_nwt << "\n"; 
-            calcInvPressure (S_new,P_new); 
-            if (model != model_list["richard"])
-                scalar_adjust_constraint(0,ncomps-1);
-            calcLambda(pcTime);
-            compute_vel_phase(u_mac_curr,0,pcTime);
-            calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-            calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
-            calc_richard_alpha(&dalpha,pcTime);
-            itr_nwt += 1;
-            if (verbose > 1)  check_minmax();
         }
-      linear_status.status = "Finished";
-      linear_status.success = true;
     }
 
   PorousMedia::Reason retVal = RICHARD_SUCCESS;
