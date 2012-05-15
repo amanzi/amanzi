@@ -119,7 +119,7 @@
           <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
           <Parameter name="NKA max vectors" type="int" value="5"/>
           <Parameter name="Nonlinear solver max iterations" type="int" value="100"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="1e-4"/>
+          <Parameter name="Nonlinear solver tolerance" type="double" value="1e-5"/>
         </ParameterList>
       </ParameterList>
 
