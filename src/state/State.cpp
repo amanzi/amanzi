@@ -276,6 +276,7 @@ void State::create_storage()
   // create the Eptera_Vector objects
   water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  lambda =           Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
@@ -865,6 +866,13 @@ void State::set_horizontal_permeability( const Epetra_Vector& permeability_)
 void State::set_pressure(const Epetra_Vector& pressure_)
 {
   *pressure = pressure_;
+};
+
+
+/* *******************************************************************/
+void State::set_lambda(const Epetra_Vector& lambda_)
+{
+  *lambda = lambda_;
 };
 
 

@@ -1289,7 +1289,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
   if (cell_dimension() == 3) {
-    mr = (MFace_ptr) cell_id_to_handle[cellid];
+    mr = (MRegion_ptr) cell_id_to_handle[cellid];
     List_ptr rfaces = MR_Faces(mr);
     idx = 0;
     while ((mf = List_Next_Entry(rfaces,&idx))) {
@@ -1311,7 +1311,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
     List_Delete(rfaces);
   }
   else {
-    mf = (MEdge_ptr) cell_id_to_handle[cellid];
+    mf = (MFace_ptr) cell_id_to_handle[cellid];
     List_ptr fedges = MF_Edges(mf,1,0);
     idx = 0;
     while ((me = List_Next_Entry(fedges,&idx))) {
