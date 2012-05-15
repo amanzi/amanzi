@@ -503,9 +503,8 @@ protected:
   };
 
   PorousMedia::Reason richard_scalar_update (Real dt, 
-                                             int& total_nwt_iter,
-                                             Real& err_nwt,
-                                             MultiFab* u_mac = 0);
+                                  int& total_nwt_iter,
+                                  MultiFab* u_mac = 0);
 
   PorousMedia::Reason richard_composite_update (Real dt, 
                                                 int& total_nwt_iter);
@@ -1148,20 +1147,13 @@ protected:
   static Real steady_time_step_retry_factor_f;
   static int  steady_max_consecutive_failures_1;
   static int  steady_max_consecutive_failures_2;
-  static Real steady_abs_residual_tolerance;
-  static Real steady_rel_residual_tolerance;
-  static Real steady_abs_saturation_update_tolerance;
-  static Real steady_rel_saturation_update_tolerance;
-  static Real steady_abs_pressure_update_tolerance;
-  static Real steady_rel_pressure_update_tolerance;
+  static Real steady_tolerance;
   static Real steady_initial_time_step;
-  static Real steady_max_time_steps;
-  static Real steady_max_psuedo_time;
-  static int  steady_max_num_consecutive_residual_decreases;
+  static Real steady_maximum_time_steps;
+  static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
-  static int  steady_max_num_consecutive_residual_increases;
+  static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
-  static bool steady_use_petsc_dt_control;
     
   //
   // Newton step defaults

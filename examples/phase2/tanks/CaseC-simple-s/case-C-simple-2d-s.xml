@@ -51,7 +51,7 @@
         <ParameterList name="Expert Settings">
           <Parameter name="do_multilevel_full" type="int" value="0"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
-          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
+          <Parameter name="richard_init_to_steady_verbose" type="int" value="1"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
           <Parameter name="steady_max_iterations" type="int" value="15"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>
@@ -62,17 +62,15 @@
           <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.01"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
-          <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
-          <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
-          <Parameter name="steady_initial_time_step" type="double" value="9.467e6"/>
-          <Parameter name="steady_max_time_steps" type="int" value="4000"/>
-          <Parameter name="steady_max_num_consecutive_success" type="int" value="1"/>
+          <Parameter name="steady_tolerance" type="double" value="1.e-12"/>
+          <Parameter name="steady_initial_time_step" type="double" value="1.e8"/>
+          <Parameter name="steady_maximum_time_steps" type="int" value="4000"/>
+          <Parameter name="steady_max_num_consecutive_success" type="int" value="3"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
-          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
 
-          <Parameter name="richard_solver_verbose" type="int" value="2"/>
+          <Parameter name="richard_solver_verbose" type="int" value="0"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
@@ -118,7 +116,7 @@
 	    <Parameter name="rtol_b" type="double" value="1.e-4"/>
 	    <Parameter name="smooth_on_cg_unstable" type="int" value="1"/>
 	    <Parameter name="v" type="int" value="0"/>
-            <Parameter name="max_L0_growth" type="double" value="1.2"/>
+            <Parameter name="mg.max_L0_growth" type="double" value="1.2"/>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
@@ -194,22 +192,6 @@
     <ParameterList name="Concrete">
 
       <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.38"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="5.13e-13"/>
-        <Parameter name="Vertical" type="double" value="5.13e-13"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <!--  Here alpha (in units of 1/Pa) = Flachs alpha/(rho.g)=(2.954/(1000*9.81)) -->
-        <Parameter name="alpha" type="double" value="3.01e-4"/>
-        <Parameter name="Sr" type="double" value="0.354"/>
-        <Parameter name="m" type="double" value="0.291"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-      </ParameterList>
-      <Parameter name="Assigned Regions" type="Array string" value="{Tank}"/>
-
-      <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.168"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
@@ -221,6 +203,22 @@
         <Parameter name="alpha" type="double" value="2.130e-8"/>
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.485"/>
+        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+      </ParameterList>
+      <Parameter name="Assigned Regions" type="Array string" value="{Tank}"/>
+
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="0.38"/>
+      </ParameterList>
+      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+        <Parameter name="Horizontal" type="double" value="5.13e-13"/>
+        <Parameter name="Vertical" type="double" value="5.13e-13"/>
+      </ParameterList>
+      <ParameterList name="Capillary Pressure: van Genuchten">
+        <!--  Here alpha (in units of 1/Pa) = Flachs alpha/(rho.g)=(2.954/(1000*9.81)) -->
+        <Parameter name="alpha" type="double" value="3.01e-4"/>
+        <Parameter name="Sr" type="double" value="0.354"/>
+        <Parameter name="m" type="double" value="0.291"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array string" value="{Tank}"/>
@@ -251,11 +249,12 @@
 
     <ParameterList name="All">
       <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
-      <ParameterList name="IC: Linear Pressure">
+      <ParameterList name="IC: Flow">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Coordinate" type="Array double" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array double" value="{0,-9793.5192 }"/>
+        <Parameter name="Aqueous Volumetric Flux" type="double" value="-2E-10"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
