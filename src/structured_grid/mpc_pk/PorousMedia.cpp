@@ -5053,10 +5053,6 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
   calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
 
-  if (richard_solver_verbose>0 && ParallelDescriptor::IOProcessor()) {
-      std::cout << "   Richard solver Newton iterations... \n" ; 
-  }
-
   Diffusion::NewtonStepInfo linear_status;
   linear_status.success = true;
   linear_status.max_ls_iterations = richard_max_ls_iterations;
