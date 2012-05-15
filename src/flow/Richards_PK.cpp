@@ -233,9 +233,11 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   // (re)initialize pressure and saturation
   Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& lambda = FS->ref_lambda();
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
   *solution_cells = pressure;
+  *solution_faces = lambda;
 
   if (initialize_with_darcy) {
     double pmin = atm_pressure;
@@ -312,10 +314,12 @@ void Richards_PK::InitTransient(double T0, double dT0)
 
   // initialize pressure and saturation
   Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& lambda = FS->ref_lambda();
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
   *solution_cells = pressure;
+  *solution_faces = lambda;
 
-  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  //DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
@@ -421,6 +425,8 @@ void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
 
   Epetra_Vector& pressure = FS_MPC->ref_pressure();  // save pressure
   pressure = *solution_cells;
+  Epetra_Vector& lambda = FS_MPC->ref_lambda(); // save lambda
+  lambda = *solution_faces;
 
   // update saturations
   Epetra_Vector& ws = FS_MPC->ref_water_saturation();

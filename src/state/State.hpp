@@ -29,6 +29,7 @@ public:
 
   // access methods
   Teuchos::RCP<Epetra_Vector>       get_pressure ()         { return pressure; }; 
+  Teuchos::RCP<Epetra_Vector>       get_lambda ()           { return lambda; }
   Teuchos::RCP<Epetra_Vector>       get_darcy_flux ()       { return darcy_flux; };
   Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
   Teuchos::RCP<Epetra_Vector>       get_water_saturation () { return water_saturation; };
@@ -107,6 +108,7 @@ public:
   void set_vertical_permeability ( const Epetra_Vector& permeability_ );
   void set_horizontal_permeability ( const Epetra_Vector& permeability_ );
   void set_pressure ( const Epetra_Vector& pressure_ );
+  void set_lambda ( const Epetra_Vector& lambda_ );
   void set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ );
   void set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ );
   void set_material_ids ( const Epetra_Vector& material_ids_ );
@@ -279,6 +281,7 @@ private:
   // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  
   Teuchos::RCP<Epetra_Vector> pressure;
+  Teuchos::RCP<Epetra_Vector> lambda;
   Teuchos::RCP<Epetra_Vector> darcy_flux;
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
