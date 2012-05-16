@@ -69,9 +69,14 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+  // int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
+  int disc_method = AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR;
   ComputePreconditionerMFD(u, preconditioner, disc_method, Tp, dTp, true);
   ierr = 0;
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+     std::printf("Richards Flow: updating preconditioner at T(sec)=%9.4e dT(sec)=%9.4e\n", Tp, dTp);
+  }
 }
 
 

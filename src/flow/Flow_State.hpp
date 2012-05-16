@@ -53,7 +53,7 @@ class Flow_State {
   Teuchos::RCP<double> fluid_density() { return fluid_density_; }
   Teuchos::RCP<double> fluid_viscosity() { return fluid_viscosity_; }
   Teuchos::RCP<Epetra_Vector> pressure() { return pressure_; }
-  Teuchos::RCP<Epetra_Vector> lambda() { return lambda_;}
+  Teuchos::RCP<Epetra_Vector> lambda() { return lambda_; }
   Teuchos::RCP<Epetra_Vector> darcy_flux() { return darcy_flux_; }
 
   Teuchos::RCP<Epetra_Vector> vertical_permeability() { return vertical_permeability_; }

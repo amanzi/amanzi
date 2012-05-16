@@ -270,12 +270,14 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 /* ******************************************************************
 * Initialization analyzes status of matrix/preconditioner pair. 
 * BDF2 and BDF1 will eventually merge but are separated strictly 
-* (no code optimization) for the moment.     
+* (no code optimization) for the moment.  
+* WARNING: Initialization of lambda is done in MPC and may be 
+* erroneous in pure transient mode.
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Initializing Transient Flow: T(sec)=%9.4e dT(sec)=%9.4e\n", T0, dT0);
+     std::printf("Richards PK: initializing transient flow: T(sec)=%9.4e dT(sec)=%9.4e\n", T0, dT0);
   }
   Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
 
@@ -456,14 +458,18 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
 
 /* ******************************************************************
-* Saturatin should be in exact balance with Darcy fluxes in order to
+* Saturation should be in exact balance with Darcy fluxes in order to
 * have extrema dimishing property for concentrations. 
 ****************************************************************** */
 void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux, 
                                                 const Epetra_Vector& ws_prev, Epetra_Vector& ws)
 {
-  const Epetra_Vector& phi = FS->ref_porosity();
+  // create a disctributed flux vector
+  Epetra_Vector flux_d(mesh_->face_map(true));
+  for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
+  FS->combineGhostFace2MasterFace(flux_d);
 
+  const Epetra_Vector& phi = FS->ref_porosity();
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -475,7 +481,7 @@ void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux,
     double factor = dT / (phi[c] * mesh_->cell_volume(c));
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      ws[c] -= factor * flux[f] * dirs[n]; 
+      ws[c] -= factor * flux_d[f] * dirs[n]; 
     }
   }
 }
