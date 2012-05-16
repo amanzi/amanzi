@@ -65,6 +65,7 @@
           <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
           <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
           <Parameter name="steady_initial_time_step" type="double" value="9.467e6"/>
+          <Parameter name="steady_initial_time_step" type="double" value="9.467e5"/>
           <Parameter name="steady_max_time_steps" type="int" value="4000"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="1"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
@@ -78,11 +79,27 @@
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
-          <Parameter name="richard_monitor_linear_solve" type="int" value="1"/>
-          <Parameter name="richard_monitor_line_search" type="int" value="1"/>
+          <Parameter name="richard_monitor_line_search" type="int" value="0"/>
           <Parameter name="verbose" type="double" value="2"/>
 
         </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="Iterative Linear Solver Control">
+	<ParameterList name="Multigrid Algorithm">
+	  <ParameterList name="Expert Settings">
+	    <Parameter name="cg_solver" type="int" value="1"/>
+	    <Parameter name="maxiter" type="int" value="1000"/>
+	    <Parameter name="nu_0" type="int" value="4"/>
+	    <Parameter name="nu_1" type="int" value="8"/>
+	    <Parameter name="nu_2" type="int" value="16"/>
+	    <Parameter name="nu_f" type="int" value="16"/>
+	    <Parameter name="rtol_b" type="double" value="1.e-4"/>
+	    <Parameter name="smooth_on_cg_unstable" type="int" value="1"/>
+	    <Parameter name="v" type="int" value="0"/>
+            <Parameter name="max_L0_growth" type="double" value="1.2"/>
+	  </ParameterList>
+	</ParameterList>
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
@@ -106,22 +123,6 @@
         </ParameterList>
       </ParameterList>
       
-      <ParameterList name="Iterative Linear Solver Control">
-	<ParameterList name="Multigrid Algorithm">
-	  <ParameterList name="Expert Settings">
-	    <Parameter name="cg_solver" type="int" value="1"/>
-	    <Parameter name="maxiter" type="int" value="1000"/>
-	    <Parameter name="nu_0" type="int" value="4"/>
-	    <Parameter name="nu_1" type="int" value="8"/>
-	    <Parameter name="nu_2" type="int" value="16"/>
-	    <Parameter name="nu_f" type="int" value="16"/>
-	    <Parameter name="rtol_b" type="double" value="1.e-4"/>
-	    <Parameter name="smooth_on_cg_unstable" type="int" value="1"/>
-	    <Parameter name="v" type="int" value="0"/>
-            <Parameter name="max_L0_growth" type="double" value="1.2"/>
-	  </ParameterList>
-	</ParameterList>
-      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -251,12 +252,18 @@
 
     <ParameterList name="All">
       <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
-      <ParameterList name="IC: Flow">
+      <!-- <ParameterList name="IC: Flow"> -->
+      <!--   <Parameter name="Phase" type="string" value="Aqueous"/> -->
+      <!--   <Parameter name="Reference Value" type="double" value="101325"/> -->
+      <!--   <Parameter name="Reference Coordinate" type="Array double" value="{0,0}"/> -->
+      <!--   <Parameter name="Gradient Value" type="Array double" value="{0,-9793.5192 }"/> -->
+      <!--   <Parameter name="Aqueous Volumetric Flux" type="double" value="-2E-10"/> -->
+      <!-- </ParameterList> -->
+      <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Coordinate" type="Array double" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array double" value="{0,-9793.5192 }"/>
-        <Parameter name="Aqueous Volumetric Flux" type="double" value="-2E-10"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">

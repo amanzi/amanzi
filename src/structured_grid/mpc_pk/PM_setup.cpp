@@ -835,6 +835,7 @@ void PorousMedia::read_geometry()
   // set up  1+2*BL_SPACEDIM default regions
   bool generate_default_regions = true; pp.query("generate_default_regions",generate_default_regions);
   int nregion_DEF = 0;
+  regions.clear();
   if (generate_default_regions) {
       nregion_DEF = 1 + 2*BL_SPACEDIM;
       regions.resize(nregion_DEF);
@@ -943,6 +944,7 @@ PorousMedia::read_rock()
         BoxLib::Abort("At least one rock type must be defined.");
     }
     Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
+    rocks.clear();
     rocks.resize(nrock,PArrayManage);
 
     Array<std::string> material_regions;
@@ -1083,33 +1085,32 @@ PorousMedia::read_rock()
 
         BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
         
-        if (kappadata == 0)
-            kappadata = new MultiFab;
-        
-        kappadata->define(ba,BL_SPACEDIM,0,Fab_allocate);
-        
-        for (int i=0; i<rocks.size(); ++i) 
-        {
-            // these are temporary work around.   
-            // Should utilizes region to determine size.
-            Rock& r = rocks[i];
-            r.max_level = max_level;
-            r.n_cell = n_cell;
-            r.fratio = fratio;
-            r.problo = problo;
-            r.probhi = probhi;
-            r.build_kmap(*kappadata, gsfile);
-	}
-        
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished building kmap on finest level.  Writing..." << std::endl;
+        if (kappadata == 0) {
 
-        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-        VisMF::Write(*kappadata,kfile);
-
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished writing kmap..." << std::endl;
-
+            kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate);
+        
+            for (int i=0; i<rocks.size(); ++i) 
+            {
+                // these are temporary work around.   
+                // Should utilizes region to determine size.
+                Rock& r = rocks[i];
+                r.max_level = max_level;
+                r.n_cell = n_cell;
+                r.fratio = fratio;
+                r.problo = problo;
+                r.probhi = probhi;
+                r.build_kmap(*kappadata, gsfile);
+            }
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished building kmap on finest level.  Writing..." << std::endl;
+            
+            VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+            VisMF::Write(*kappadata,kfile);
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished writing kmap..." << std::endl;
+        }
     }
     
     if (build_full_pmap)
@@ -1119,34 +1120,34 @@ PorousMedia::read_rock()
 
         BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
         
-        if (phidata == 0)
-            phidata = new MultiFab;
-        
-        phidata->define(ba,1,0,Fab_allocate);
-        
-        for (int i=0; i<rocks.size(); ++i)
-        {
-            // these are temporary work around.   
-            // Should utilizes region to determine size.
-            Rock& r = rocks[i];
-            r.max_level = max_level;
-            r.n_cell = n_cell;
-            r.fratio = fratio;
-            r.problo = problo;
-            r.probhi = probhi;
-            r.build_pmap(*phidata, gsfile);
-	}
-        
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished building pmap on finest level.  Writing..." << std::endl;
+        if (phidata == 0) {
 
-        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-        VisMF::Write(*phidata,pfile);
+            phidata = new MultiFab(ba,1,0,Fab_allocate);
 
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished writing pmap..." << std::endl;
+            for (int i=0; i<rocks.size(); ++i)
+            {
+                // these are temporary work around.   
+                // Should utilizes region to determine size.
+                Rock& r = rocks[i];
+                r.max_level = max_level;
+                r.n_cell = n_cell;
+                r.fratio = fratio;
+                r.problo = problo;
+                r.probhi = probhi;
+                r.build_pmap(*phidata, gsfile);
+            }
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished building pmap on finest level.  Writing..." << std::endl;
+            
+            VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+            VisMF::Write(*phidata,pfile);
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished writing pmap..." << std::endl;
+        }
     }
-    
+
     if (ParallelDescriptor::IOProcessor()) {
         std::cout << "Rock name mapping in output: " << std::endl;
     }
@@ -1234,6 +1235,8 @@ void PorousMedia::read_prob()
   pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
   pb.query("steady_max_num_consecutive_increases",steady_max_num_consecutive_increases);
   pb.query("consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
+  pb.query("richard_monitor_linear_solve",richard_monitor_linear_solve);
+  pb.query("richard_monitor_linear_solve",richard_monitor_line_search);
   
   // Get timestepping parameters.
   pb.get("cfl",cfl);
@@ -1270,7 +1273,7 @@ void PorousMedia::read_prob()
   pb.query("visc_abs_tol",visc_abs_tol);
   pb.query("be_cn_theta",be_cn_theta);
   if (be_cn_theta > 1.0 || be_cn_theta < .5)
-    BoxLib::Abort("PorousMedia::read_params():Must have be_cn_theta <= 1.0 && >= .5");   
+    BoxLib::Abort("PorousMedia::read_prob():Must have be_cn_theta <= 1.0 && >= .5");   
   pb.query("harm_avg_cen2edge", def_harm_avg_cen2edge);
 
   // if capillary pressure flag is true, then we make sure 
@@ -1282,9 +1285,9 @@ void PorousMedia::read_prob()
 	{
 	  if (ParallelDescriptor::IOProcessor())
 	    {
-	      std::cerr << "PorousMedia::read_params: nphases != 2 && ncomps !=nphases "
+	      std::cerr << "PorousMedia::read_prob: nphases != 2 && ncomps !=nphases "
 			<< "although have_capillary == 1.\n ";
-	      BoxLib::Abort("PorousMedia::read_params()");
+	      BoxLib::Abort("PorousMedia::read_prob()");
 	    }
 	}
     }
@@ -1502,14 +1505,14 @@ void  PorousMedia::read_comp()
 		  std::cerr << "PorousMedia::variableSetUp:periodic in direction "
 			    << dir
 			    << " but low BC is not Interior\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	      if (hi_bc[dir] != Interior)
 		{
 		  std::cerr << "PorousMedia::variableSetUp:periodic in direction "
 			    << dir
 			    << " but high BC is not Interior\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	    } 
         }
@@ -1527,14 +1530,14 @@ void  PorousMedia::read_comp()
 		  std::cerr << "PorousMedia::variableSetUp:Interior bc in direction "
 			    << dir
 			    << " but not defined as periodic\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	      if (hi_bc[dir] == Interior)
 		{
 		  std::cerr << "PorousMedia::variableSetUp:Interior bc in direction "
 			    << dir
 			    << " but not defined as periodic\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	    }
         }
@@ -2342,5 +2345,4 @@ void PorousMedia::read_params()
     FORT_TCRPARAMS(&ntracers);
 
 }
-
 
