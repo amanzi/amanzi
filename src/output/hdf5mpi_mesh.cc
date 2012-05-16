@@ -95,7 +95,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   // write out coords
   // TODO(barker): add error handling: can't create/write
   parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file,
-                           "Mesh/Nodes", &IOgroup_, 
+                           (char*)"Mesh/Nodes", &IOgroup_, 
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete nodes;
   
@@ -107,7 +107,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   globaldims[1] = 1;
   localdims[1] = 1;
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file,
-                           "Mesh/NodeMap", &IOgroup_,
+                           (char*)"Mesh/NodeMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   
   
@@ -194,7 +194,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   }
   // write out connectivity
   parallelIO_write_dataset(cells, PIO_INTEGER, 2, globaldims, localdims, file, 
-                           "Mesh/MixedElements", &IOgroup_,
+                           (char*)"Mesh/MixedElements", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete cells;
   
@@ -209,7 +209,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   localdims[0] = ncells_local;
   localdims[1] = 1;
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file, 
-                           "Mesh/ElementMap", &IOgroup_,
+                           (char*)"Mesh/ElementMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete ids;
   
