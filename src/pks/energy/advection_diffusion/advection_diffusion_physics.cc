@@ -59,7 +59,7 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
   }
 
   // apply the advection operator and add to residual
-  advection_->Apply();
+  advection_->Apply(bc_flux_);
   int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {

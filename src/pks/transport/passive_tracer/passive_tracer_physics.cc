@@ -69,7 +69,7 @@ void PassiveTracer::AddAdvection_(Teuchos::RCP<CompositeVector> g, bool negate) 
   }
 
   // advect and add to residual
-  advection_->Apply();
+  advection_->Apply(bc_flux_);
   int c_owned = S_next_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {

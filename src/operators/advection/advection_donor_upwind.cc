@@ -41,7 +41,7 @@ void AdvectionDonorUpwind::set_flux(const Teuchos::RCP<const CompositeVector>& f
 };
 
 
-void AdvectionDonorUpwind::Apply() {
+void AdvectionDonorUpwind::Apply(const Teuchos::RCP<BoundaryFunction>& bc_flux) {
 
   field_->ScatterMasterToGhosted("cell"); // communicate the cells
 
@@ -59,6 +59,16 @@ void AdvectionDonorUpwind::Apply() {
       for (int i=0; i != num_dofs_; ++i) {
         (*field_)("face",i,f) = u * (*field_)("cell",i,c1);
       }
+    }
+  }
+
+  // patch up Neumann bcs -- only works for 1 dof?
+  for (BoundaryFunction::Iterator bc = bc_flux->begin();
+       bc!=bc_flux->end(); ++bc) {
+    if ((*upwind_cell_)[bc->first] >= 0) {
+      (*field_)("face",0,bc->first) = bc->second*mesh_->face_area(bc->second);
+    } else {
+      (*field_)("face",0,bc->first) = -bc->second*mesh_->face_area(bc->second);
     }
   }
 
