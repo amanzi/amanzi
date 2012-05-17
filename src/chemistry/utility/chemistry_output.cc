@@ -11,7 +11,7 @@ namespace amanzi {
 namespace chemistry {
 
 // global chem_out object, new/delete should be called from the driver!
-extern ChemistryOutput* chem_out;
+ChemistryOutput* chem_out = NULL;
 
 // default method to create and initialize the chemistry output object
 // with some sane defaults. Can be replaced by an driver if desired.
