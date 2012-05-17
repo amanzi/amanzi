@@ -44,7 +44,8 @@ endfunction(_ADD_TEST_KIND_LABEL)
 #
 # ADD_AMANZI_TEST(<test_name> <test_executable>
 #                  [arg1 ...]
-#                  KIND [unit | int | reg]
+#                  KIND [unit | int | reg | AMANZI ]
+#                  [AMANZI_INPUT file.xml]
 #                  [SOURCE file1 file2  ...]
 #                  [LINK_LIBS lib1 lib2 ...]
 #                  [PARALLEL] [EXPECTED_FAIL]
@@ -54,13 +55,17 @@ endfunction(_ADD_TEST_KIND_LABEL)
 #
 # Arguments:
 #  test_name: the name given to the resulting test in test reports
-#  test_executable: The test executable which performs the test
+#  test_executable: The test executable which performs the test. 
+#                   Required if KIND is unit, int or reg
 #  arg1 ...: Additional arguments for the test executable
 #
-# Keyword KIND is required and should be one of unit, int or reg. 
+# Keyword KIND is required and should be one of unit, int, reg or AMANZI.
+#         AMANZI is a special case where the test executable is
+#         set to the main Amanzi binary.
 #
-# 
-
+# KEYWORD AMANZI_INPUT is required if keyword KIND is set to AMANZI. This
+#         key word defines the Amanzi XML input file.
+#
 # Option PARALLEL signifies that this is a parallel job. This is also
 # implied by an NPROCS value > 1
 #
@@ -144,9 +149,17 @@ function(ADD_AMANZI_TEST test_name)
     set(test_exec "${dir}/${base}")
    
   else() 
-    
-    list(GET AMANZI_TEST_UNPARSED_ARGUMENTS 0 test_exec)
-    list(REMOVE_AT AMANZI_TEST_UNPARSED_ARGUMENTS 0)
+   
+    # Do not set if this variable is empty
+    if ( AMANZI_TEST_UNPARSED_ARGUMENTS )
+      list(GET AMANZI_TEST_UNPARSED_ARGUMENTS 0 test_exec)
+      list(REMOVE_AT AMANZI_TEST_UNPARSED_ARGUMENTS 0)
+    endif()  
+
+    # Throw an error if test_exec is not defined
+    if ( NOT test_exec )
+      message(FATAL_ERROR "Must define a test executable for ${test_name}")
+    endif()  
 
     # Create the executable if SOURCE is defined
     if(AMANZI_TEST_SOURCE)
