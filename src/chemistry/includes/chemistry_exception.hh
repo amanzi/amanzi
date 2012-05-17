@@ -69,6 +69,17 @@ class ChemistryInvalidSolution : public ChemistryException {
  private:
 };
 
+class ChemistryMemorySizeError : public ChemistryException {
+ public:
+  explicit ChemistryMemorySizeError(std::string error_message);
+  virtual ~ChemistryMemorySizeError() throw();
+
+ protected:
+  ChemistryMemorySizeError();
+
+ private:
+};
+
 }  // namespace chemistry
 }  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_EXCEPTION_HH_

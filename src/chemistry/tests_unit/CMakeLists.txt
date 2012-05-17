@@ -21,6 +21,7 @@ include_directories(${UnitTest_INCLUDE_DIRS})
 add_executable(chemistry_tests
                main.cc   
 	       test_string_tokenizer.cc
+	       test_chemistry_utilities.cc
 	       test_chemistry_exceptions.cc
 	       test_species.cc
 	       test_surface_site.cc	       

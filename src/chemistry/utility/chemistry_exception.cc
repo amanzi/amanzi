@@ -139,5 +139,25 @@ ChemistryInvalidSolution::~ChemistryInvalidSolution() throw() {
   /* end ~ChemistryInvalidSolution() */
 }
 
+/*******************************************************************************
+ **
+ ** ChemistryMemorySizeError
+ **
+ *******************************************************************************/
+
+ChemistryMemorySizeError::ChemistryMemorySizeError()
+    : ChemistryException() {
+  /* end ChemistryMemorySizeError() */
+}
+
+ChemistryMemorySizeError::ChemistryMemorySizeError(std::string error_message)
+    : ChemistryException(error_message) {
+  /* end ChemistryMemorySizeError(std::string) */
+}
+
+ChemistryMemorySizeError::~ChemistryMemorySizeError() throw() {
+  /* end ~ChemistryMemorySizeError() */
+}
+
 }  // namespace chemistry
 }  // namespace amanzi

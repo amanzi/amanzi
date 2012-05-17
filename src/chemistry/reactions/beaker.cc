@@ -871,7 +871,7 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
   }
 
   if (error) {
-    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
+    Exceptions::amanzi_throw(ChemistryMemorySizeError(error_stream.str()));
   }
 }  // end VerifyComponentSizes()
 
@@ -905,12 +905,6 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
 void Beaker::SetupActivityModel(std::string model,
                                 std::string pitzer_database,
                                 std::string jfunction_pitzer) {
-
-  if (model != ActivityModelFactory::unit &&
-      model != ActivityModelFactory::debye_huckel &&
-      model != ActivityModelFactory::pitzer_hwm) {
-    model = ActivityModelFactory::unit;
-  }
 
   delete activity_model_;
 
