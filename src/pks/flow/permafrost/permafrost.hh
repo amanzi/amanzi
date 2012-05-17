@@ -81,6 +81,8 @@ public:
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 private:
+  void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,

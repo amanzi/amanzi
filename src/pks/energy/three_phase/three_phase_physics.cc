@@ -159,8 +159,10 @@ void ThreePhase::AddAdvection_(const Teuchos::RCP<State> S,
     }
   }
 
-  // put the boundary fluxes in faces -- assumes all Dirichlet BC in temperature!
-  // NOTE this boundary flux is in enthalpy, while the BC is temperature.
+  // put the boundary fluxes in faces
+
+  // Dirichlet data
+  // NOTE this boundary flux is in enthalpy, while the Dirichlet BC is temperature.
   // MANY assumptions are coming in to play here... many more than I like.
   // h = n(T,p) * u_l(T) + p_l, and we are using:
   //  - p_l is assumed to be a mimetic discretization, and therefore has p on faces
@@ -192,7 +194,7 @@ void ThreePhase::AddAdvection_(const Teuchos::RCP<State> S,
   }
 
   // apply the advection operator and add to residual
-  advection_->Apply();
+  advection_->Apply(bc_flux_);
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
       (*g)("cell",c) -= (*field)("cell",c);

@@ -96,6 +96,7 @@ private:
   Teuchos::RCP<Operators::Advection> advection_;
   double cfl_;
   Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_;
+  Teuchos::RCP<BoundaryFunction> bc_flux_;
   Teuchos::RCP< std::vector<int> > bcs_dof_;
 
   // factory registration

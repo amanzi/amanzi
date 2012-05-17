@@ -218,6 +218,37 @@ void Permafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   */
 
   preconditioner_->UpdateMLPreconditioner();
+
+  // test_precon(t, up, h);
+};
+
+// Runs a very expensive FD test of the Jacobian and prints out an enorm
+//  measure of the error.
+void Permafrost::test_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+  Teuchos::RCP<TreeVector> dp = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> f2 = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> df = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> uold = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
+
+  double maxval = 0.0;
+
+  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c!=ncells; ++c) {
+    *unew = (*up);
+    fun(t-h, t, uold, unew, f1);
+
+    dp->PutScalar(0.0);
+    (*dp->data())("cell",0,c) = 0.0001;
+    unew->Update(1.0, *dp, 1.0);
+    fun(t-h, t, uold, unew, f2);
+
+    preconditioner_->Apply(*dp->data(), df->data());
+    df->Update(-1.0, *f2, 1.0, *f1, 1.0);
+    maxval = std::max(maxval, enorm(f1, df));
+  }
+  std::cout << "Testing PC with FD.  Error: " << maxval << std::endl;
 };
 
 }  // namespace Flow

@@ -218,7 +218,7 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
   }
 
   // apply the advection operator and add to residual
-  advection_->Apply();
+  advection_->Apply(bc_flux_);
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
       (*g)("cell",c) -= (*field)("cell",c);

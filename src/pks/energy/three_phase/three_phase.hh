@@ -77,6 +77,8 @@ public:
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 private:
+  void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
   // highest level terms in the conservation equation
   void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
   void AddAdvection_(const Teuchos::RCP<State> S,
