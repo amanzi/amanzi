@@ -48,6 +48,7 @@ endfunction(_ADD_TEST_KIND_LABEL)
 #                  [AMANZI_INPUT file.xml]
 #                  [SOURCE file1 file2  ...]
 #                  [LINK_LIBS lib1 lib2 ...]
+#                  [DEPENDS test1 test2 ...]
 #                  [PARALLEL] [EXPECTED_FAIL]
 #                  [NPROCS procs1 ... ]
 #                  [MPI_EXEC_ARGS arg1 ... ])
@@ -82,6 +83,9 @@ endfunction(_ADD_TEST_KIND_LABEL)
 # Optional LINK_LIBS keyword defines a list of link libraries or link options
 # to link test_executable. An target_link_libraries call will be made if
 # this option is active.
+#
+# Optional DEPENDS keyword defines a list of tests that should finish before
+# test_name
 
 function(ADD_AMANZI_TEST test_name)
 
@@ -95,7 +99,7 @@ function(ADD_AMANZI_TEST test_name)
   # Parse through the remaining options
   set(options PARALLEL EXPECTED_FAIL)
   set(oneValueArgs KIND AMANZI_INPUT)
-  set(multiValueArgs NPROCS SOURCE LINK_LIBS MPI_EXEC_ARGS)
+  set(multiValueArgs NPROCS SOURCE LINK_LIBS DEPENDS MPI_EXEC_ARGS)
   cmake_parse_arguments(AMANZI_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   # --- Check options
@@ -239,12 +243,11 @@ function(ADD_AMANZI_TEST test_name)
     _append_test_label(${test_name} SERIAL)
   endif()
 
-  if (AMANZI_TEST_AMANZI_INPUT)
-    _append_test_label(${test_name} AMANZI)
-    if ( TARGET amanzi )
-      message(STATUS "Amanzi target exists")
-      endif()
-  endif()  
+  # Add test dependencies
+  if ( AMANZI_TEST_DEPENDS )
+    set_tests_properties(${test_name} PROPERTIES
+                         DEPENDS "${AMANZI_TEST_DEPENDS}")
+  endif()		       
   
   # Remaining properties are single valued. Building 
   # test_properties as a list should get past the CMake parser.
