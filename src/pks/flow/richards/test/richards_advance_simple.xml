@@ -67,11 +67,15 @@
     </ParameterList>
 
     <ParameterList name="Time integrator">
-      <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-      <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-      <Parameter name="NKA max vectors" type="int" value="5"/>
-      <Parameter name="NKA drop tolerance" type="double" value="0.01"/>
-      <Parameter name="Minimum allowed time step" type="double" value="1.e-12"/>
+      <Parameter name="limit iterations" type="int" value="50"/>
+      <Parameter name="max iterations" type="int" value="20"/>
+      <Parameter name="min iterations" type="int" value="5"/>
+      <Parameter name="nonlinear tolerance" type="double" value="1.e-2"/>
+      <Parameter name="time step reduction factor" type="double" value="0.8"/>
+      <Parameter name="time step increase factor" type="double" value="1.2"/>
+      <Parameter name="max time step" type="double" value="1.e10"/>
+      <Parameter name="min time step" type="double" value="1.e-10"/>
+      <Parameter name="preconditioner lag iterations" type="int" value="1"/>
     </ParameterList>
 
     <Parameter name="Constant pressure" type="double" value="101325.0"/>
@@ -122,10 +126,26 @@
   </ParameterList>
 
   <ParameterList name="State">
-    <Parameter name="Constant porosity" type="double" value="0.3"/>
-    <Parameter name="Constant permeability" type="double" value="1.e-8"/>
-    <Parameter name="Constant temperature" type="double" value="293.15"/>
-    <Parameter name="atmospheric_pressure" type="double" value="101325.0"/>
-    <Parameter name="Gravity z" type="double" value="-9.80665"/>
+    <ParameterList name="Initial porosity">
+      <Parameter name="Constant" type="double" value="0.25"/>
+    </ParameterList>
+
+    <ParameterList name="Initial permeability">
+      <Parameter name="Constant" type="double" value="2.5e-12"/> <!-- m**2 -->
+    </ParameterList>
+
+    <ParameterList name="Initial atmospheric_pressure">
+      <Parameter name="Constant" type="double" value="101325.0"/>
+    </ParameterList>
+
+    <ParameterList name="Initial temperature">
+      <Parameter name="Constant" type="double" value="273.65"/>
+    </ParameterList>
+
+    <ParameterList name="Initial gravity">
+      <Parameter name="Constant x" type="double" value="0.0"/>
+      <Parameter name="Constant y" type="double" value="0.0"/>
+      <Parameter name="Constant z" type="double" value="-9.80665"/>
+    </ParameterList>
   </ParameterList>
 </ParameterList>
