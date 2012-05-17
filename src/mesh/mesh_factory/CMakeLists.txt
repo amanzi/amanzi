@@ -99,13 +99,22 @@ if (BUILD_TESTS)
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Test: test_mesh_factory
-   add_executable(test_mesh_factory 
-     test/Main.cc
-     test/test_mesh_file.cc 
-     test/test_mesh_framework.cc
-     test/test_mesh_factory.cc)
-   target_link_libraries(test_mesh_factory mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES})
-   add_amanzi_test(mesh_factory test_mesh_factory KIND uint)
+   add_amanzi_test(mesh_factory test_mesh_factory
+                   KIND unit
+		   SOURCE
+                         test/Main.cc
+                         test/test_mesh_file.cc 
+                         test/test_mesh_framework.cc
+                         test/test_mesh_factory.cc
+                   LINK_LIBS
+		         mesh_factory
+			 ${UnitTest_LIBRARIES}
+			 ${Boost_LIBRARIES})
+
+   # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
+   # previous call carries instructions to build the executable
+   # When n>1 procs used this test fails
+   #add_amanzi_test(mesh_factory_parallel test_mesh_factory NPROCS 2 KIND uint)
    add_amanzi_test(mesh_factory_parallel test_mesh_factory KIND uint)
 
 endif()

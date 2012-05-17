@@ -65,8 +65,9 @@ if (BUILD_TESTS)
   endif()
 
 # these are currently broken
-  add_executable(boundary_function_test test/boundary_function_test.cc)
-  target_link_libraries(boundary_function_test mesh_functions mesh_factory ${UnitTest_LIBRARIES})
-  add_amanzi_test(boundary_function_test boundary_function_test KIND unit)
+  add_amanzi_test(boundary_function_test boundary_function_test
+                  KIND unit
+                  SOURCE test/boundary_function_test.cc
+                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
 
 endif()
