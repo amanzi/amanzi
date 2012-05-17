@@ -20,7 +20,7 @@ endfunction(_APPEND_TEST_LABEL)
 
 function(_ADD_TEST_KIND_LABEL test_name kind_in)
 
-  set(kind_prefixes UNIT INT REG)
+  set(kind_prefixes UNIT INT REG AMANZI)
 
   string(TOUPPER "${kind_in}" kind)
 
@@ -78,7 +78,7 @@ endfunction(_ADD_TEST_KIND_LABEL)
 # to link test_executable. An target_link_libraries call will be made if
 # this option is active.
 
-function(ADD_AMANZI_TEST test_name test_exec)
+function(ADD_AMANZI_TEST test_name)
 
   # --- Initialize 
 
@@ -87,19 +87,18 @@ function(ADD_AMANZI_TEST test_name test_exec)
     message(FATAL_ERROR "Must define a test name.")
   endif()
 
-  # Check test_exec 
-  if ( NOT test_exec )
-    message(FATAL_ERROR "Must specify test executable name")
-  endif()
-
   # Parse through the remaining options
   set(options PARALLEL EXPECTED_FAIL)
-  set(oneValueArgs KIND)
+  set(oneValueArgs KIND AMANZI_INPUT)
   set(multiValueArgs NPROCS SOURCE LINK_LIBS MPI_EXEC_ARGS)
   cmake_parse_arguments(AMANZI_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  set(test_args    "${AMANZI_TEST_UNPARSED_ARGUMENTS}")
 
   # --- Check options
+
+  # Require a KIND value
+  if ( NOT AMANZI_TEST_KIND )
+    message(FATAL_ERROR "A test type has not been specified for ${test_name}.")
+  endif()
 
   # Force each test to parallel run if mpiexec is required
   if(TESTS_REQUIRE_MPIEXEC)
@@ -129,25 +128,52 @@ function(ADD_AMANZI_TEST test_name test_exec)
         return()
       endif()
     endif()
-  endif() 
-
-  # Require a KIND value
-  if ( NOT AMANZI_TEST_KIND )
-    message(FATAL_ERROR "A test type has not been specified for ${test_name}.")
   endif()
-
 
   # --- Define the test executable
 
-  # Add the source file definitions
-  if(AMANZI_TEST_SOURCE)
-    add_executable(${test_exec} ${AMANZI_TEST_SOURCE})
-  endif()
+  if ( "${AMANZI_TEST_KIND}" MATCHES "AMANZI" )
 
-  # Add link libraries
-  if(AMANZI_TEST_LINK_LIBS)
-    target_link_libraries(${test_exec} ${AMANZI_TEST_LINK_LIBS})
-  endif()
+    # In this case, we need the Amanzi target definition
+    if (NOT TARGET amanzi )
+      message(FATAL_ERROR "Can not define an Amanzi test before defining Amanzi binary")
+    endif()  
+
+    get_target_property(base amanzi OUTPUT_NAME)
+    get_target_property(dir  amanzi OUTPUT_DIRECTORY)
+    set(test_exec "${dir}/${base}")
+   
+  else() 
+    
+    list(GET AMANZI_TEST_UNPARSED_ARGUMENTS 0 test_exec)
+    list(REMOVE_AT AMANZI_TEST_UNPARSED_ARGUMENTS 0)
+
+    # Create the executable if SOURCE is defined
+    if(AMANZI_TEST_SOURCE)
+      add_executable(${test_exec} ${AMANZI_TEST_SOURCE})
+    endif()
+
+    # Add link libraries if needed
+    if(AMANZI_TEST_LINK_LIBS)
+      target_link_libraries(${test_exec} ${AMANZI_TEST_LINK_LIBS})
+    endif()
+
+  endif()  
+
+  
+  # --- Define the test arguments
+
+  set(test_args "${AMANZI_TEST_UNPARSED_ARGUMENTS}")
+  if ( "${AMANZI_TEST_KIND}" MATCHES "AMANZI" )
+    
+    # In this case, we need an Amanzi input file
+    if ( NOT AMANZI_TEST_AMANZI_INPUT )
+      message(FATAL_ERROR "Amanzi tests require an Amanzi input file")
+    endif()
+
+    set(test_args "--xml_file;${AMANZI_TEST_AMANZI_INPUT};${test_args}")
+
+  endif()  
 
   # --- Add test
 
@@ -199,6 +225,13 @@ function(ADD_AMANZI_TEST test_name test_exec)
   else()  
     _append_test_label(${test_name} SERIAL)
   endif()
+
+  if (AMANZI_TEST_AMANZI_INPUT)
+    _append_test_label(${test_name} AMANZI)
+    if ( TARGET amanzi )
+      message(STATUS "Amanzi target exists")
+      endif()
+  endif()  
   
   # Remaining properties are single valued. Building 
   # test_properties as a list should get past the CMake parser.
