@@ -237,7 +237,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
   *solution_cells = pressure;
-  *solution_faces = lambda;
+  *solution_faces = lambda;  // useless due to logic below (lipnikov@lanl.gov)
 
   if (initialize_with_darcy) {
     double pmin = atm_pressure;
