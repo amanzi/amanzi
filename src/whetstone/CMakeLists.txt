@@ -55,9 +55,10 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry mesh mesh_audit simple_mesh state whetstone)
 
     # Test 1: inverse mass matrix in darcy flow
-    add_executable(whetstone_darcy test/Main.cc test/whetstone_darcy.cpp)
-    target_link_libraries(whetstone_darcy ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(whetstone_darcy whetstone_darcy KIND unit)
+    add_amanzi_test(whetstone_darcy whetstone_darcy
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_darcy.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

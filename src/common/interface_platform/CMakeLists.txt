@@ -24,7 +24,9 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${CCSE_INCLUDE_DIRS})
+if ( CCSE_FOUND )
+  include_directories(${CCSE_INCLUDE_DIRS})
+endif()  
 
 #
 # interface library

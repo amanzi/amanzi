@@ -52,15 +52,22 @@ if (BUILD_TESTS)
    include_directories(${Teuchos_INCLUDE_DIRS})
 
    # Test: mesh_data
-   add_executable(test_mesh_data 
-                  test/Main.cc test/test_Coords.cc test/test_Data.cc test/test_Fields.cc 
-                  test/test_Side_set.cc test/test_Hex_mesh.cc)
-   target_link_libraries(test_mesh_data mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
-   add_amanzi_test(mesh_data test_mesh_data KIND unit)
+   add_amanzi_test(mesh_data test_mesh_data
+                   KIND unit
+                   SOURCE  
+                         test/Main.cc
+			 test/test_Coords.cc
+			 test/test_Data.cc
+			 test/test_Fields.cc 
+                         test/test_Side_set.cc
+			 test/test_Hex_mesh.cc
+                         LINK_LIBS mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
 
    # Test: mesh_hex 
-   add_executable(test_hex_mesh test/Main.cc test/test_Hex_mesh.cc)
-   target_link_libraries(test_hex_mesh mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
-   add_amanzi_test(mesh_data_parallel test_hex_mesh NPROCS 2 KIND unit)
+   add_amanzi_test(mesh_data_parallel test_hex_mesh
+		   KIND unit
+                   NPROCS 2 
+                   SOURCE test/Main.cc test/test_Hex_mesh.cc
+                   LINK_LIBS mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
 
 endif()

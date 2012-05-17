@@ -59,9 +59,9 @@ if (BUILD_TESTS)
     include_directories(${ATK_SOURCE_DIR})
 
     ADD_AMANZI_TEST(utils test_utils
-      KIND unit
-      SOURCE test/Main.cc test/test_time_step_manager.cc
-      LINK_LIBS atk ${UnitTest_LIBRARIES} )
+                    KIND unit
+                    SOURCE test/Main.cc test/test_time_step_manager.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES} )
 
 endif()
 

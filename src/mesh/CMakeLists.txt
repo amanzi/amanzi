@@ -96,31 +96,30 @@ if (BUILD_TESTS)
     endif()
 
 
-    # Test: mstk_mesh
-    add_executable(test_deform
-                   test/Main.cc 
-                   test/test_deform.cc)
-
-    target_link_libraries(test_deform geometry simple_mesh mesh_factory ${UnitTest_LIBRARIES})
-
+    # Test: mesh
+    set(test_src_files test/Main.cc test/test_deform.cc)
+    set(test_link_libs geometry simple_mesh mesh_factory ${UnitTest_LIBRARIES})
 
     # STK (Trilinos Package)
     if (ENABLE_STK_Mesh)
-      target_link_libraries(test_deform stk_mesh)
+      list(APPEND test_link_libs stk_mesh)
     endif(ENABLE_STK_Mesh)    
 
     # MOAB Mesh framework
     if (ENABLE_MOAB_Mesh)
-      target_link_libraries(test_deform moab_mesh)
+      list(APPEND test_link_libs moab_mesh)
     endif(ENABLE_MOAB_Mesh)    
     
     # MSTK Mesh framework
     if (ENABLE_MSTK_Mesh)
-      target_link_libraries(test_deform mstk_mesh)
+      list(APPEND test_link_libs mstk_mesh)
     endif(ENABLE_MSTK_Mesh)    
 
 
-    add_amanzi_test(mesh test_deform KIND unit)
+    add_amanzi_test(mesh test_deform
+                    KIND unit
+		    SOURCE ${test_src_files}
+		    LINK_LIBS ${test_link_libs})
 
 endif()
   
