@@ -492,9 +492,8 @@ void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux,
 ****************************************************************** */
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
-  double norm_udot;
   ComputePreconditionerMFD(u, matrix, mfd3d_method, T, 0.0, false);  // Calculate only stiffness matrix.
-  norm_udot = matrix->computeNegativeResidual(u, udot);
+  double norm_udot = matrix->computeNegativeResidual(u, udot);
 
   Epetra_Vector* udot_faces = FS->createFaceView(udot);
   udot_faces->PutScalar(0.0);

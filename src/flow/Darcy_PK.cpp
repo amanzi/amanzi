@@ -156,6 +156,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
+  num_itrs_sss = 0;
 
   Epetra_Vector& pressure = FS->ref_pressure();
   *solution_cells = pressure;
@@ -170,6 +171,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   set_time(T0, dT0);
+  num_itrs_trs = 0;
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }

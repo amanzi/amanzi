@@ -206,7 +206,7 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
       int k = find_position(corner_faces[i], faces);
       for (int j = i; j < d; j++) {
         int l = find_position(corner_faces[j], faces);
-        W(k, l) += Mv_tmp(i, j) * cwgt[n];
+        W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs[k] * fdirs[l];
         W(l, k) = W(k, l);
       }
     }
