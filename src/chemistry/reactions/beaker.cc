@@ -49,7 +49,8 @@ const double Beaker::water_density_kg_m3_default_ = 1000.0;
 const double Beaker::volume_default_ = 1.0;  // [m^3]
 
 Beaker::Beaker()
-    : verbosity_(kSilent),
+    : debug_(false),
+      verbosity_(kSilent),
       tolerance_(tolerance_default_),
       max_iterations_(max_iterations_default_),
       ncomp_(0),
@@ -267,7 +268,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
       rhs_.at(i) = residual_.at(i);
     }
 
-    if (verbosity() >= kDebugBeaker) {
+    if (debug()) {
       // geh
       message.str("");
       message << "\n- Iteration " << num_iterations << " --------\n";
@@ -275,14 +276,14 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
       DisplayResults();
     }
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("before scale", jacobian_, rhs_);
     }
 
     // scale the Jacobian
     ScaleRHSAndJacobian();
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("after scale", jacobian_, rhs_);
     }
     // for derivatives with respect to ln concentration, scale columns
@@ -291,14 +292,14 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
       jacobian_.ScaleColumn(i, primary_species().at(i).molality());
     }
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("before solve", jacobian_, rhs_);
     }
 
     // call solver
     lu_solver_.Solve(&jacobian_, &rhs_);
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("after solve", rhs_);
     }
 
@@ -307,7 +308,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // calculate maximum relative change in concentration over all species
     max_rel_change = CalculateMaxRelChangeInMolality();
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       message.str("");
       for (int i = 0; i < ncomp(); i++) {
         message << primary_species().at(i).name() << " "
@@ -344,7 +345,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     status_.converged = true;
   }
 
-  if (verbosity() >= kDebugBeaker) {
+  if (debug()) {
     message.str("");
     message << "Beaker::speciate: status.num_rhs_evaluations: " << status_.num_rhs_evaluations << std::endl;
     message << "Beaker::speciate: status.num_jacobian_evaluations: " << status_.num_jacobian_evaluations << std::endl;
@@ -417,14 +418,14 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
       rhs_.at(i) = residual_.at(i);
     }
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("before scale", jacobian_, rhs_);
     }
 
     // scale the Jacobian
     ScaleRHSAndJacobian();
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("after scale", jacobian_, rhs_);
     }
     // for derivatives with respect to ln concentration, scale columns
@@ -433,14 +434,14 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
       jacobian_.ScaleColumn(i, primary_species().at(i).molality());
     }
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("before solve", jacobian_, rhs_);
     }
 
     // solve J dlnc = r
     lu_solver_.Solve(&jacobian_, &rhs_);
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       print_linear_system("after solve", rhs_);
     }
 
@@ -451,7 +452,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // calculate maximum relative change in concentration over all species
     max_rel_change = CalculateMaxRelChangeInMolality();
 
-    if (verbosity() == kDebugBeaker) {
+    if (debug()) {
       message.str("");
       for (int i = 0; i < ncomp(); i++) {
         message << primary_species().at(i).name() << " " <<
@@ -581,9 +582,7 @@ int Beaker::GetPrimaryIndex(const std::string& name) const {
 
 void Beaker::Display(void) const {
   chem_out->Write(kVerbose, "-- Beaker description ------------------------------------------------\n");
-  if (verbosity() >= kVerbose) {
-    DisplayParameters();
-  }
+  DisplayParameters();
 
   DisplayPrimary();
 
@@ -920,7 +919,7 @@ void Beaker::SetupActivityModel(std::string model,
   activity_model_ = amf.Create(model, parameters,
                                primary_species(), aqComplexRxns_);
 
-  if (verbosity() == kDebugBeaker) {
+  if (debug()) {
     activity_model_->Display();
   }
 }  // end SetupActivityModel()
@@ -1340,13 +1339,11 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const
     charge_balance += aqueous_totals.at(i) * primary_species().at(i).charge();
   }
   if (std::fabs(charge_balance) > tolerance()) {
-    if (verbosity() > kTerse) {
-      std::stringstream message;
-      message << "WARNING: Beaker::CheckChargeBalance() :\n"
-              << "         charge balance = " << std::scientific
-              << charge_balance << std::fixed << std::endl;
-      chem_out->Write(kVerbose, message.str());
-    }
+    std::stringstream message;
+    message << "WARNING: Beaker::CheckChargeBalance() :\n"
+            << "         charge balance = " << std::scientific
+            << charge_balance << std::fixed << std::endl;
+    chem_out->Write(kWarning, message);
   }
 }  // end CheckChargeBalance()
 

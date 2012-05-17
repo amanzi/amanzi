@@ -171,6 +171,13 @@ class Beaker {
     return this->verbosity_;
   };
 
+  virtual void set_debug(const bool value) {
+    this->debug_ = value;
+  };
+  virtual bool debug(void) const {
+    return this->debug_;
+  };
+
   SolverStatus status(void) const {
     return this->status_;
   };
@@ -325,6 +332,7 @@ class Beaker {
   void DisplaySurfaceComplexes(void) const;
   void DisplaySorptionIsotherms(void) const;
 
+  bool debug_;
   Verbosity verbosity_;
   double tolerance_;
   unsigned int max_iterations_;
