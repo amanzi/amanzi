@@ -68,10 +68,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
-  if (out.get() && ! native && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {  
-    *out << "======================> dumping parameter list <======================" << std::endl;
-    Teuchos::writeParameterListToXmlOStream(new_list, *out);
-    *out << "======================> done dumping parameter list. <================"<<std::endl;
+  if (out.get() && ! native && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
+    std::string xmlFileName("native_spec.xml"); 
+    *out << "Amanzi: writing translated parameter list to the XML file native_spec.xml" << std::endl;
+    Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
+    //Teuchos::writeParameterListToXmlOStream(new_list, *out);
   }
 
 

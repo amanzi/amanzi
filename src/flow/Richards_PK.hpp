@@ -138,6 +138,7 @@ class Richards_PK : public Flow_PK {
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
   int block_picard;
+  int error_control;
 
   int ti_method_sss;  // Parameters for steady-state solution
   int num_itrs_sss, max_itrs_sss;

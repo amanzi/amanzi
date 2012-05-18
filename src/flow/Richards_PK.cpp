@@ -80,6 +80,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
   bdf2_dae = NULL;
   bdf1_dae = NULL;
   block_picard = 1;
+  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
   ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
   ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
@@ -258,6 +259,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   ti_method = ti_method_sss;
   num_itrs = 0;
   block_picard = 0;
+  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 
@@ -335,6 +337,8 @@ void Richards_PK::InitTransient(double T0, double dT0)
   ti_method = ti_method_trs;
   num_itrs = 0;
   block_picard = 0;
+  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
+                  FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }
