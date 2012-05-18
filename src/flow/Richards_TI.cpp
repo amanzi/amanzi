@@ -27,7 +27,7 @@ namespace AmanziFlow {
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  ComputePreconditionerMFD(u, matrix, mfd3d_method, Tp, 0.0, false);  // Calculate only stiffness matrix.
+  ComputePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -69,9 +69,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
-  // int disc_method = AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR;
-  ComputePreconditionerMFD(u, preconditioner, disc_method, Tp, dTp, true);
+  ComputePreconditionerMFD(u, preconditioner, Tp, dTp, true);
   ierr = 0;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {

@@ -142,13 +142,13 @@ void Richards_PK::ProcessParameterList()
 
   string mfd3d_method_name = rp_list.get<string>("Discretization method hint", "none");
   if (mfd3d_method_name == "monotone") {
-    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
+    mfd3d_method_ = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
   } else if (mfd3d_method_name == "none") {
-    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
+    mfd3d_method_ = FLOW_MFD3D_POLYHEDRA;
   } else if (mfd3d_method_name == "support operator") {
-    mfd3d_method = FLOW_MFD3D_SUPPORT_OPERATOR;
+    mfd3d_method_ = FLOW_MFD3D_SUPPORT_OPERATOR;
   } else if (mfd3d_method_name == "two-point flux") {
-    mfd3d_method = FLOW_MFD3D_TWO_POINT_FLUX;
+    mfd3d_method_ = FLOW_MFD3D_TWO_POINT_FLUX;
   }
 
   // Time integrator for period I, temporary called steady-state time integrator
@@ -211,9 +211,7 @@ void Richards_PK::ProcessParameterList()
     Teuchos::ParameterList& trs_list = rp_list.sublist("transient time integrator");
 
     string ti_method_name = trs_list.get<string>("method", "BDF2");
-    if (ti_method_name == "backward Euler") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
-    } else if (ti_method_name == "BDF1") {
+    if (ti_method_name == "BDF1") {
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
     } else if (ti_method_name == "BDF2") {
       ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;

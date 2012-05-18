@@ -121,10 +121,12 @@ class Flow_PK : public BDF2::fnBase {
   void addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
   // gravity members
-  void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
+  void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
+                            const Epetra_Vector& Krel_cells,
                             const Epetra_Vector& Krel_faces, 
                             Matrix_MFD* matrix);
-  void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
+  void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
+                                  const Epetra_Vector& Krel_cells,
                                   const Epetra_Vector& Krel_faces,
                                   Epetra_Vector& darcy_mass_flux);
 

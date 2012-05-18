@@ -211,6 +211,7 @@ SUITE(Darcy_PK) {
     DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
+    DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState();
     DPK->CommitState(DPK->flow_state());
 
@@ -248,6 +249,7 @@ SUITE(Darcy_PK) {
     DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
+    DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState();
     DPK->CommitState(DPK->flow_state());
 
@@ -279,6 +281,7 @@ SUITE(Darcy_PK) {
     DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
+    DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState();
     DPK->CommitState(DPK->flow_state());
 
@@ -313,6 +316,7 @@ SUITE(Darcy_Velocity) {
     DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
+    DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState();
     DPK->CommitState(DPK->flow_state());
 

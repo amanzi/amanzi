@@ -35,14 +35,12 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
 
   int itrs;
   for (itrs = 0; itrs < 20; itrs++) {
-    SetAbsolutePermeabilityTensor(K);
-
-    if (!is_matrix_symmetric) {  // Define K and Krel_faces
+    if (!is_matrix_symmetric) {
       CalculateRelativePermeabilityFace(*solution_old_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
+      Krel_cells->PutScalar(1.0);
+    } else {
       CalculateRelativePermeabilityCell(*solution_old_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+      Krel_faces->PutScalar(1.0);
     }
 
     // update boundary conditions
@@ -57,19 +55,18 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
         bc_markers, bc_values);
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+    matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
     matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
+    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
     AddTimeDerivative_MFDpicard(*solution_cells, *solution_old_cells, dTp, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
     rhs = matrix->rhs();
 
     // create preconditioner
-    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
-    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
+    preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
     preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
     AddTimeDerivative_MFD(*solution_old_cells, dTp, preconditioner);
     preconditioner->applyBoundaryConditions(bc_markers, bc_values);
     preconditioner->assembleGlobalMatrices();
@@ -143,14 +140,12 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
-    SetAbsolutePermeabilityTensor(K);
-
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
+      Krel_cells->PutScalar(1.0);
     } else {  // Define K and Krel_cells, Krel_faces is always one
       CalculateRelativePermeabilityCell(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+      Krel_faces->PutScalar(1.0);
     }
 
     // update boundary conditions
@@ -165,18 +160,17 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
         bc_markers, bc_values);
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+    matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
     matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
+    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
     AddTimeDerivative_MFDfake(*solution_cells, dT, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
 
     // create preconditioner
-    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
-    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
+    preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
     preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
     AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner);
     preconditioner->applyBoundaryConditions(bc_markers, bc_values);
     preconditioner->assembleGlobalMatrices();
