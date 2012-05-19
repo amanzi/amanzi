@@ -206,11 +206,13 @@
       <ParameterList name="Phase Components">
         <ParameterList name="Water">
           <Parameter name="Component Solutes" type="Array string" value="{Al+++,H+,HPO4-,SiO2(aq),UO2++}"/>
-	  <Parameter name="Minerals" type="Array string" value="{Kaolinite,Quartz,(UO2)3(PO4)2.4H2O}"/>
-	  <Parameter name="Sorption Sites" type="Array string" value="{>FeOH,>AlOH,>SiOH}"/>
         </ParameterList>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> <!-- Aqueous Phase -->
+    <ParameterList name="Solid">
+      <Parameter name="Minerals" type="Array string" value="{Kaolinite,Quartz,(UO2)3(PO4)2.4H2O}"/>
+      <Parameter name="Sorption Sites" type="Array string" value="{>FeOH,>AlOH,>SiOH}"/>
+    </ParameterList> <!-- Solid Phase -->
   </ParameterList> <!-- phase definitions -->
   
   <ParameterList name="Initial Conditions">

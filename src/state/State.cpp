@@ -263,6 +263,7 @@ void State::initialize_from_parameter_list()
       }
       set_total_component_concentration(tcc_const, region);
       set_free_ion_concentrations(free_ion_guess, region);
+      // activity coefficients...
       SetRegionMaterialChemistry(region, &sublist);
     }
   }

@@ -197,8 +197,9 @@ void init_global_info( Teuchos::ParameterList* plist ) {
   sorption_site_names_.clear();
 
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
-  if ( (++ phase_list.begin()) == phase_list.end() ) {
-    if (phase_list.isSublist(phase_name)) {
+  Teuchos::ParameterList::ConstIterator item;
+  for (item = phase_list.begin(); item != phase_list.end(); ++item) {
+    if (phase_list.name(item) == phase_name) {
       Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
       if (aqueous_list.isSublist("Phase Components")) {
         Teuchos::ParameterList phase_components = 
@@ -208,22 +209,27 @@ void init_global_info( Teuchos::ParameterList* plist ) {
               phase_components.sublist(phase_comp_name);
           comp_names = 
               water_components.get<Teuchos::Array<std::string> >("Component Solutes");
-          // this is the order that the chemistry expects
-          if (water_components.isParameter("Minerals")) {
-            mineral_names_ = water_components.get<Teuchos::Array<std::string> >("Minerals");
-          }
-          if (water_components.isParameter("Sorption Sites")) {
-            sorption_site_names_ = water_components.get<Teuchos::Array<std::string> >("Sorption Sites");
-          }
         }  // end water
       }  // end phase components
     }  // end Aqueous phase
-  } else {
-    std::stringstream message;
-    message << "Error: InputParserIS::init_global_info(): "
-            << "Only a single phase is supported on unstructured meshes at this time!\n" 
-            << phase_list << std::endl;
-    Exceptions::amanzi_throw(Errors::Message(message.str()));      
+    else if (phase_list.name(item) == "Solid") {
+      Teuchos::ParameterList solid_list = phase_list.sublist("Solid");
+      // this is the order that the chemistry expects
+      if (solid_list.isParameter("Minerals")) {
+        mineral_names_ = solid_list.get<Teuchos::Array<std::string> >("Minerals");
+      }
+      if (solid_list.isParameter("Sorption Sites")) {
+        sorption_site_names_ = solid_list.get<Teuchos::Array<std::string> >("Sorption Sites");
+      }
+    }  // end Solid phase
+    else {
+      std::stringstream message;
+      message << "Error: InputParserIS::init_global_info(): "
+              << "The only phases supported on unstructured meshes at this time are '"
+              << phase_name << "' and 'Solid'!\n" 
+              << phase_list << std::endl;
+      Exceptions::amanzi_throw(Errors::Message(message.str()));      
+    }
   }
  
   if (comp_names.size() > 0) {
@@ -732,7 +738,11 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
     Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
     int bc_counter = 0;
-    if ( (++ phase_list.begin()) == phase_list.end() ) {
+    // TODO: these simple checks for one transported phase will not
+    // work with the addition of the solid phase
+
+    //if ( (++ phase_list.begin()) == phase_list.end() ) {
+    if (true) {
       Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
 
       for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
@@ -1224,7 +1234,10 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
   // make sure there is only one phase
-  if ( (++ phase_list.begin()) == phase_list.end() ) {
+  //if ( (++ phase_list.begin()) == phase_list.end() ) {
+  // TODO: these simple checks for one transported phase will not work
+  // with the addition of the solid phase
+  if (true) {
     // write the array of component solutes
     stt_list.set<Teuchos::Array<std::string> >("Component Solutes", comp_names);
     stt_list.set<int>("Number of component concentrations", comp_names.size());
