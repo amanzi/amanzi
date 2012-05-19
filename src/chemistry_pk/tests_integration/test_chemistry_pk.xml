@@ -522,10 +522,11 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="test_chemistry_pk.bgd" />
-    <Parameter name="Verbosity" type="int" value="1" />
+    <Parameter name="Verbosity" type="Array string" value="{verbose, warning, error}" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
+    <Parameter name="Auxiliary Data" type="Array string" value="{pH}"/>
   </ParameterList> <!-- Chemistry -->
 
 

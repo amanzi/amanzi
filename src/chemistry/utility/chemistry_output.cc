@@ -76,6 +76,10 @@ void ChemistryOutput::RemoveLevel(const Verbosity& level) {
   verbosity_flags_.set(level, false);
 }  // end RemoveLevel()
 
+void ChemistryOutput::DumpFlags(void) const {
+  std::cout << "ChemistryOutput: bit flags: " << verbosity_flags_.to_string() << "\n";
+}  // end DumpBitSet()
+
 void ChemistryOutput::OpenFileStream(const std::string& file_name) {
   // close the current file if it exists
   CloseFileStream();

@@ -39,14 +39,6 @@ class Chemistry_PK {
   void commit_state(Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
-
-  Verbosity verbosity(void) const {
-    return this->verbosity_;
-  }
-  void set_verbosity(const Verbosity verbosity) {
-    this->verbosity_ = verbosity;
-  }
-
   void set_max_time_step(const double mts) {
     this->max_time_step_ = mts;
   }
@@ -82,12 +74,16 @@ class Chemistry_PK {
     return chemistry_state_->using_sorption();
   }
 
-  bool override_database(void) const {
-    return override_database_;
+  int using_sorption_isotherms(void) const {
+    return chemistry_state_->using_sorption_isotherms();
   }
 
-  void set_override_database(const bool value) {
-    override_database_ = value;
+  bool debug(void) const {
+    return debug_;
+  }
+
+  void set_debug(const bool value) {
+    debug_ = value;
   }
 
   // Ben: the following two routines provide the interface for
@@ -102,8 +98,7 @@ class Chemistry_PK {
  protected:
 
  private:
-  Verbosity verbosity_;
-  bool override_database_;
+  bool debug_;
   double max_time_step_;
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
@@ -128,12 +123,11 @@ class Chemistry_PK {
 
   void XMLParameters(void);
   void SetupAuxiliaryOutput(void);
-  void SizeBeakerComponents(void);
-  void CopyCellToBeakerComponents(
+  void SizeBeakerStructures(void);
+  void CopyCellStateToBeakerStructures(
       const int cell_id,
       Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyBeakerComponentsToCell(const int cell_id);
-  void CopyStateToBeakerParameters(const int cell_id);
+  void CopyBeakerStructuresToCellState(const int cell_id);
 };
 
 }  // namespace chemistry
