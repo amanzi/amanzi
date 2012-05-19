@@ -19,8 +19,8 @@
 ---- General Kinetics
     Reaction
   1.00 A(aq) <---> 1.00 B(aq)
-      R_f = 1.16e-06 * a_(A(aq))^(1.00)
-      R_b = 0.00e+00
+      R_f = 1.157410e-06 * a_(A(aq))^(1.000000)
+      R_b = 0.000000e+00
 ------------------------------------------------ Beaker description --
 --- Input Components -------------------------------------------------
 ---- Aqueous Components

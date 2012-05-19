@@ -1,15 +1,19 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "mineral.hh"
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "secondary_species.hh"
 #include "matrix_block.hh"
+#include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 Mineral::Mineral()
     : SecondarySpecies(),
@@ -93,41 +97,47 @@ void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_specie
 **
 */
 void Mineral::Display(void) const {
-  std::cout << "    " << name() << " = ";
+  std::stringstream message;
+  message << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << std::setprecision(2) << stoichiometry_[i] << " " << species_names_[i];
+    message << std::setprecision(2) << stoichiometry_[i] << " " << species_names_[i];
     if (i < species_names_.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
   if (SecondarySpecies::h2o_stoich_!=0.0) {
-    std::cout << " + ";
-    std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+    message << " + ";
+    message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
-  std::cout << std::endl;
-  std::cout << std::setw(40) << " "
-            << std::setw(10) << std::setprecision(5) << std::fixed << logK_
-            << std::setw(13) << std::scientific << molar_volume()
-            << std::setw(13) << std::fixed << gram_molecular_weight()
-            << std::setw(13) << specific_surface_area()
-            << std::setw(13) << std::fixed << volume_fraction()
-            << std::endl;
+  message << std::endl;
+  message << std::setw(40) << " "
+          << std::setw(10) << std::setprecision(5) << std::fixed << logK_
+          << std::setw(13) << std::scientific << molar_volume()
+          << std::setw(13) << std::fixed << gram_molecular_weight()
+          << std::setw(13) << specific_surface_area()
+          << std::setw(13) << std::fixed << volume_fraction()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void Mineral::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Q/K"
-            << std::setw(15) << "SI"
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << "Name"
+          << std::setw(15) << "Q/K"
+          << std::setw(15) << "SI"
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void Mineral::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << Q_over_K()
-            << std::fixed << std::setprecision(3)
-            << std::setw(15) << saturation_index()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << Q_over_K()
+          << std::fixed << std::setprecision(3)
+          << std::setw(15) << saturation_index()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry

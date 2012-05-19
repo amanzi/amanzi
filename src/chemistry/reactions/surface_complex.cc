@@ -1,13 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "surface_complex.hh"
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "matrix_block.hh"
+#include "chemistry_output.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 SurfaceComplex::SurfaceComplex() {
   species_names_.clear();
@@ -139,52 +143,60 @@ void SurfaceComplex::AddContributionToDTotal(
 }  // end AddContributionToDTotal()
 
 void SurfaceComplex::Display(void) const {
-  std::cout << "    " << name() << " = ";
-  std::cout << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
+  std::stringstream message;
+  message << "    " << name() << " = ";
+  message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
   if (h2o_stoichiometry_ > 0) {
-    std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+    message << h2o_stoichiometry_ << " " << "H2O" << " + ";
   }
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << stoichiometry_[i] << " " << species_names_[i];
+    message << stoichiometry_[i] << " " << species_names_[i];
     if (i < species_names_.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
-  std::cout << std::endl;
-  std::cout << std::setw(40) << " "
+  message << std::endl;
+  message << std::setw(40) << " "
             << std::setw(10) << logK_
             << std::setw(10) << charge()
             << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void SurfaceComplex::display(void) const {
-  std::cout << "    " << name() << " = ";
-  std::cout << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
+  std::stringstream message;
+  message << "    " << name() << " = ";
+  message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
   if (h2o_stoichiometry_ > 0) {
-    std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+    message << h2o_stoichiometry_ << " " << "H2O" << " + ";
   }
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << stoichiometry_[i] << " " << species_names_[i];
+    message << stoichiometry_[i] << " " << species_names_[i];
     if (i < species_names_.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
-  std::cout << std::endl;
-  std::cout << "     log K: " << logK_
+  message << std::endl;
+  message << "     log K: " << logK_
             << "\n     charge: " << charge() << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void SurfaceComplex::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Complex Name"
+  std::stringstream message;
+  message << std::setw(15) << "Complex Name"
             << std::setw(15) << "Concentration"
             << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceComplex::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << surface_concentration()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << surface_concentration()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry

@@ -1,13 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "surface_site.hh"
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
+#include "chemistry_output.hh"
 #include "block.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 SurfaceSite::SurfaceSite()
     : name_(""),
@@ -70,22 +74,28 @@ void SurfaceSite::display(void) const {
 }  // end display()
 
 void SurfaceSite::Display(void) const {
-  std::cout << std::setw(15) << name()
-            << std::setw(15) << molar_density()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::setw(15) << molar_density()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void SurfaceSite::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Site Name"
-            << std::setw(15) << "Free Conc."
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << "Site Name"
+          << std::setw(15) << "Free Conc."
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceSite::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << free_site_concentration()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << free_site_concentration()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry

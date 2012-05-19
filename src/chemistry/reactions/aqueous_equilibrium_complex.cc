@@ -3,13 +3,17 @@
 
 #include <cmath>
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
+#include "chemistry_output.hh"
 #include "matrix_block.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex()
     : SecondarySpecies() {
@@ -70,7 +74,6 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
   // TODO(bandre): because of memory layout, c loops should be for(i){for(j)}...?
 
   // column loop
-  std::cout.precision(15);
   for (int j = 0; j < ncomp(); j++) {
     int jcomp = species_ids_.at(j);
     double tempd = stoichiometry_.at(j) *
@@ -84,68 +87,76 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
 }  // end addContributionToDTotal()
 
 void AqueousEquilibriumComplex::display(void) const {
-  std::cout << "    " << name() << " = ";
+  std::stringstream message;
+  message << "    " << name() << " = ";
   // TODO(bandre): uncomment and update test output
   //   if (h2o_stoichiometry_ > 0) {
-  //     std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+  //     message << h2o_stoichiometry_ << " " << "H2O" << " + ";
   //   }
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << stoichiometry_.at(i) << " " << species_names_.at(i);
+    message << stoichiometry_.at(i) << " " << species_names_.at(i);
     if (i < species_names_.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
   if (SecondarySpecies::h2o_stoich_!=0.0) {
-  	  std::cout << " + ";
-  	  std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+  	  message << " + ";
+  	  message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
-  std::cout << std::endl;
-  std::cout << "        logK = " << logK_ << std::endl;
-  std::cout << "        charge = " << charge() << std::endl;
-  std::cout << "        mol wt = " << gram_molecular_weight() << std::endl;
+  message << std::endl;
+  message << "        logK = " << logK_ << std::endl;
+  message << "        charge = " << charge() << std::endl;
+  message << "        mol wt = " << gram_molecular_weight() << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end display()
 
 void AqueousEquilibriumComplex::Display(void) const {
-  std::cout << "    " << name() << " = "
+  std::stringstream message;
+  message << "    " << name() << " = "
             << std::fixed << std::setprecision(3);
   // TODO(bandre): uncomment and update test output
   //   if (h2o_stoichiometry_ > 0) {
-  //     std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+  //     message << h2o_stoichiometry_ << " " << "H2O" << " + ";
   //   }
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << stoichiometry_.at(i) << " " << species_names_.at(i);
+    message << stoichiometry_.at(i) << " " << species_names_.at(i);
     if (i < species_names_.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
   if (SecondarySpecies::h2o_stoich_!=0.0) {
-    	  std::cout << " + ";
-    	  std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+    	  message << " + ";
+    	  message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
-  std::cout << std::endl;
-  std::cout << std::setw(40) << " " << std::fixed
-            << std::setprecision(5) << std::setw(10) << logK_
-            << std::setprecision(2) << std::setw(8) << charge()
-            << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
-            << std::setprecision(2) << std::setw(8) << ion_size_parameter()
-            << std::endl;
+  message << std::endl;
+  message << std::setw(40) << " " << std::fixed
+          << std::setprecision(5) << std::setw(10) << logK_
+          << std::setprecision(2) << std::setw(8) << charge()
+          << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
+          << std::setprecision(2) << std::setw(8) << ion_size_parameter()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void AqueousEquilibriumComplex::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molality"
-            << std::setw(15) << "Activity Coeff"
-            << std::setw(15) << "Activity"
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << "Name"
+          << std::setw(15) << "Molality"
+          << std::setw(15) << "Activity Coeff"
+          << std::setw(15) << "Activity"
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void AqueousEquilibriumComplex::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << molality()
-            << std::setw(15) << act_coef()
-            << std::setw(15) << activity()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << molality()
+          << std::setw(15) << act_coef()
+          << std::setw(15) << activity()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry

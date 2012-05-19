@@ -68,6 +68,7 @@
 #include <cmath>
 #include <cstdlib>
 
+#include <sstream>
 #include <iostream>
 #include <sstream>
 
@@ -75,11 +76,14 @@
 #include "matrix_block.hh"
 #include "string_tokenizer.hh"
 #include "chemistry_verbosity.hh"
+#include "chemistry_output.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 KineticRateTST::KineticRateTST(void)
     : KineticRate(),
