@@ -150,7 +150,6 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   parameters.volume = volume_default_;  // m^3
 
   parameters.mineral_specific_surface_area.clear();
-  parameters.cation_exchange_capacity = -1.0;
   parameters.sorption_site_density.clear();
   parameters.isotherm_kd.clear();
   parameters.isotherm_langmuir_b.clear();
@@ -160,6 +159,9 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
 }  // end GetDefaultParameters()
 
 Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
+  // Extract data from the various chemistry objects and store them
+  // into a beaker parameters object that can be handed off to the
+  // driver.
   Beaker::BeakerParameters parameters;
 
   parameters.thermo_database_file.clear();
@@ -177,14 +179,53 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
   parameters.water_density = water_density_kg_m3();  // kg / m^3
   parameters.volume = volume();  // m^3
 
-  // TODO: loop over minerals and copy SSA.
+  parameters.mineral_specific_surface_area.resize(minerals_.size(), 0.0);
+  for (int m = 0; m < minerals_.size(); ++m) {
+    double ssa = minerals_.at(m).specific_surface_area();
+    parameters.mineral_specific_surface_area.at(m) = ssa;
+  }
 
-  // TODO: loop over isotherms....
+  if (sorption_isotherm_rxns_.size() > 0) {
+    parameters.isotherm_kd.resize(sorption_isotherm_rxns_.size(), 0.0);
+    parameters.isotherm_langmuir_b.resize(sorption_isotherm_rxns_.size(), 0.0);
+    parameters.isotherm_freundlich_n.resize(sorption_isotherm_rxns_.size(), 0.0);
+
+    std::vector<SorptionIsothermRxn>::const_iterator rxn;
+    for (rxn = sorption_isotherm_rxns_.begin(); 
+         rxn != sorption_isotherm_rxns_.end(); ++rxn) {
+      std::vector<double> params;
+      params = rxn->GetIsothermParameters();
+      parameters.isotherm_kd.at(rxn->species_id()) = params.at(0);
+      if (rxn->IsothermName() == "freundlich") {
+        parameters.isotherm_freundlich_n.at(rxn->species_id()) = params.at(1);
+      } else if (rxn->IsothermName() == "langmuir") {
+        parameters.isotherm_langmuir_b.at(rxn->species_id()) = params.at(1);
+      }
+    }
+  } else {
+    parameters.isotherm_kd.clear();
+    parameters.isotherm_langmuir_b.clear();
+    parameters.isotherm_freundlich_n.clear();
+  }
+
+  if (surfaceComplexationRxns_.size() > 0) {
+    parameters.sorption_site_density.resize(surfaceComplexationRxns_.size(), 0.0);
+    std::vector<SurfaceComplexationRxn>::const_iterator rxn;
+    for (rxn = surfaceComplexationRxns_.begin(); 
+         rxn != surfaceComplexationRxns_.end(); ++rxn) {
+      parameters.sorption_site_density.at(rxn->SiteId()) = rxn->GetSiteDensity();
+    }
+  } else {
+    parameters.sorption_site_density.clear();
+  }
 
   return parameters;
 }  // end GetCurrentParameters()
 
 void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
+  // Take a parameters object that was created by the driver, and map
+  // the data into the appropriate chemistry object, potentially over
+  // riding some of our internal database data.
   tolerance(parameters.tolerance);
   max_iterations(parameters.max_iterations);
   porosity(parameters.porosity);
@@ -206,9 +247,22 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
     }
   }
 
-  if (parameters.cation_exchange_capacity > 0.0) {
-    // do something here....
+  if (parameters.isotherm_kd.size() > 0) {
+    std::vector<SorptionIsothermRxn>::iterator rxn;
+    for (rxn = sorption_isotherm_rxns_.begin();
+         rxn != sorption_isotherm_rxns_.end(); ++rxn) {
+      std::vector<double> params(2, 0.0);
+      int id = rxn->species_id();
+      params.at(0) = parameters.isotherm_kd.at(id);
+      if (rxn->IsothermName() == "langmuir") {
+        params.at(1) = parameters.isotherm_langmuir_b.at(id);
+      } else if (rxn->IsothermName() == "freundlich") {
+        params.at(1) = parameters.isotherm_freundlich_n.at(id);
+      } // else linear --> do nothing
+      rxn->SetIsothermParameters(params);
+    }
   }
+
 }  // end SetParameters()
 
 //
@@ -242,6 +296,8 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   for (int i = 0; i < ncomp(); i++) {
     prev_molal_.at(i) = primary_species().at(i).molality();
   }
+
+  // TODO(bandre): update CEC from components!
 
   double max_rel_change;
   double max_residual;
@@ -390,6 +446,8 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // NOTE: SSA already updated by the call to UpdateParameters()!
   }
 
+  // TODO(bandre): update CEC from components!
+
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
   // iteration counter
@@ -504,7 +562,8 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
 
 void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
-  // Copy from the beaker memory back into a component struct
+  // Copy the beaker primary variables into a component struct that
+  // can be returned to the driver
   for (int i = 0; i < ncomp(); i++) {
     components->total.at(i) = total_.at(i);
     if (components->free_ion.size() > 0) {
@@ -528,29 +587,33 @@ void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
   if (to->total.size() != from.total.size()) {
     to->total.resize(from.total.size());
   }
-  if (to->free_ion.size() != from.free_ion.size()) {
-    to->free_ion.resize(from.free_ion.size());
-  }
-  if (to->total_sorbed.size() != from.total_sorbed.size()) {
-    to->total_sorbed.resize(from.total_sorbed.size());
-  }
-  if (to->minerals.size() != from.minerals.size()) {
-    to->minerals.resize(from.minerals.size());
-  }
-  if (to->ion_exchange_sites.size() != from.ion_exchange_sites.size()) {
-    to->ion_exchange_sites.resize(from.ion_exchange_sites.size());
-  }
   for (unsigned int i = 0; i < from.total.size(); i++) {
     to->total.at(i) = from.total.at(i);
+  }
+
+  if (to->free_ion.size() != from.free_ion.size()) {
+    to->free_ion.resize(from.free_ion.size());
   }
   for (unsigned int i = 0; i < from.free_ion.size(); i++) {
     to->free_ion.at(i) = from.free_ion.at(i);
   }
+
+  if (to->total_sorbed.size() != from.total_sorbed.size()) {
+    to->total_sorbed.resize(from.total_sorbed.size());
+  }
   for (unsigned int i = 0; i < from.total_sorbed.size(); i++) {
     to->total_sorbed.at(i) = from.total_sorbed.at(i);
   }
+
+  if (to->minerals.size() != from.minerals.size()) {
+    to->minerals.resize(from.minerals.size());
+  }
   for (unsigned int i = 0; i < from.minerals.size(); i++) {
     to->minerals.at(i) = from.minerals.at(i);
+  }
+
+  if (to->ion_exchange_sites.size() != from.ion_exchange_sites.size()) {
+    to->ion_exchange_sites.resize(from.ion_exchange_sites.size());
   }
   for (unsigned int i = 0; i < from.ion_exchange_sites.size(); i++) {
     to->ion_exchange_sites.at(i) = from.ion_exchange_sites.at(i);
@@ -875,6 +938,10 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
 }  // end VerifyComponentSizes()
 
 void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
+  // TODO(bandre): Not sure this is actually doing anything as currently
+  // used. Should be renamed ApplyComponentsToBeaker() or something
+  // similar, then repurposed to handle this behavior uniformly in the
+  // SimpleThermoDatabase::Setup(), ReactionStep() an Speciate() calls.
   unsigned int size = components.ion_exchange_sites.size();
   if (ion_exchange_rxns().size() == size) {
     // for now, we will set the size of total_sorbed = ncomp() if # sites > 0
@@ -1013,6 +1080,11 @@ void Beaker::UpdateActivityCoefficients(void) {
 }  // end UpdateActivityCoefficients
 
 void Beaker::UpdateKineticMinerals(void) {
+
+  // TODO(bandre): Need to move this into the N-R loop and cut the
+  // reaction rate or time step if volume fractions go negative. Right
+  // now we are just setting volume fraction to zero and introducing
+  // mass balance errors!
 
   // loop through the kinetic minerals list. Update the volume
   // fraction, specific surface area, etc
@@ -1359,11 +1431,12 @@ void Beaker::ValidateSolution() {
 
   // negative mineral volume fractions are bad...
   for (unsigned int m = 0; m < minerals_.size(); m++) {
-    if (minerals_.at(m).volume_fraction() < 0) {
+    if (minerals_.at(m).volume_fraction() < 0.0) {
       std::ostringstream error_stream;
       error_stream << "Beaker::ValidateSolution(): \n";
       error_stream << "   mineral " << minerals_.at(m).name()
-                   << " volume_fraction is negative." << std::endl;
+                   << " volume_fraction is negative: " 
+                   << minerals_.at(m).volume_fraction() << std::endl;
       Exceptions::amanzi_throw(ChemistryInvalidSolution(error_stream.str()));
     }
   }

@@ -24,9 +24,11 @@ struct SimulationParameters {
   double delta_time;  // [s]
   int num_time_steps;  // [-]
   int output_interval;  // [steps]
-  double cation_exchange_capacity;
   std::vector<double> mineral_ssa;  // specific surface area []
   std::vector<double> site_density;  // sorption site density []
+  std::vector<double> isotherm_kd;
+  std::vector<double> isotherm_langmuir_b;
+  std::vector<double> isotherm_freundlich_n;
 
   SimulationParameters()
       : description(""),
@@ -44,12 +46,11 @@ struct SimulationParameters {
         delta_time(1.0),
         num_time_steps(0),
         output_interval(1),
-        cation_exchange_capacity(-1.0),
         mineral_ssa(),
-        site_density() {
-    verbosity_names.clear();
-    mineral_ssa.clear();
-    site_density.clear();
+        site_density(),
+        isotherm_kd(),
+        isotherm_langmuir_b(),
+        isotherm_freundlich_n() {
   }
 };
 
@@ -77,7 +78,7 @@ static const std::string kIonExchangeSection("ion_exchange");
 
 static const std::string kSiteDensitySection("site_density");
 static const std::string kSpecificSurfaceAreaSection("specific_surface_area");
-static const std::string kCationExchangeCapacitySection("cation_exchange_capacity");
+static const std::string kIsothermSection("sorption_isotherms");
 
 int CommandLineOptions(int argc, char** argv,
                        std::string* verbosity_name,
@@ -116,8 +117,9 @@ void ParseComponentValue(const std::string& raw_line,
 
 void ModelSpecificParameters(const std::string model,
                              amanzi::chemistry::Beaker::BeakerParameters* parameters);
-void OverrideParameters(const SimulationParameters& simulation_params,
-                        amanzi::chemistry::Beaker::BeakerParameters* parameters);
+void CopySimulationParametersToBeakeParameters(
+    const SimulationParameters& simulation_params,
+    amanzi::chemistry::Beaker::BeakerParameters* parameters);
 
 void PrintInput(const SimulationParameters& params,
                 const amanzi::chemistry::Beaker::BeakerComponents& components);

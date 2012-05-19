@@ -76,7 +76,7 @@ void SurfaceSite::display(void) const {
 void SurfaceSite::Display(void) const {
   std::stringstream message;
   message << std::setw(15) << name()
-          << std::setw(15) << molar_density()
+          << std::setw(15) << std::scientific << molar_density()
           << std::endl;
   chem_out->Write(kVerbose, message);
 }  // end Display()

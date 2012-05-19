@@ -57,8 +57,15 @@ void Mineral::UpdateVolumeFraction(const double rate,
   // or vol_frac -= .... inorder to get the correct
   // dissolution/precipitation behavior.
 
+  // TODO(bandre): Right now we are just setting volume fraction to
+  // zero if they go negative, introducing mass balance errors! Need
+  // to adjust time step or reaction rate in the N-R solve!
+
   // delta_vf = [m^3/mole] * [moles/m^3/sec] * [sec]
   volume_fraction_ -= molar_volume() * rate * delta_time;
+  if (volume_fraction_ < 0.0) {
+    volume_fraction_ = 0.0;
+  }
   if (false) {
     std::stringstream message;
     message << name() << "::UpdateVolumeFraction() : \n"
