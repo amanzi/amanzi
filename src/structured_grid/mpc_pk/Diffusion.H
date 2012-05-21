@@ -55,8 +55,8 @@ public:
         Real residual_norm_post_ls;
         Real initial_residual_norm;
         Real initial_solution_norm;
-        bool monitor_linear_solve;
-        bool monitor_line_search;
+        int monitor_linear_solve;
+        int monitor_line_search;
     };
 
     Diffusion ();
@@ -150,8 +150,9 @@ public:
 				 PArray<MultiFab>&         alpha, 
 				 Array<PArray<MultiFab> >& beta,
 				 Array<PArray<MultiFab> >& beta_dp,
+                                 Array<MultiFab*>&         umac,
 				 const bool                do_upwind,
-				 Real*                     err_nwt);
+                                 Diffusion::NewtonStepInfo& status);
 
     void richard_iter_p(Real                   dt,
 			int                    nc,
@@ -176,8 +177,9 @@ public:
 				   PArray<MultiFab>&         dalpha, 
 				   Array<PArray<MultiFab> >& beta,
 				   Array<PArray<MultiFab> >& beta_dp,
+                                   Array<MultiFab*>&         umac,
 				   const bool                do_upwind,
-				   Real*                     err_nwt);
+                                   Diffusion::NewtonStepInfo& status); 
  
     void richard_iter_eqb (int                    nc,
 			   Real                   gravity,
@@ -324,17 +326,17 @@ public:
 		      const BCRec&          bc,
 		      bool bndry_already_filled = true);
 
-    MGT_Solver getOp (int                   comp,
-		      int                   nlevs,
-		      std::vector<Geometry> geom,
-		      std::vector<BoxArray> bav,
-		      std::vector<DistributionMapping> dmv,
-		      Array< Array<Real> >& xa,
-		      Array< Array<Real> >& xb,
-		      Real                  time,
-		      ViscBndry&            visc_bndry,
-		      const BCRec&          bc,
-		      bool	 bndry_already_filled = true);
+    MGT_Solver getOp (int                                     comp,
+                      int                                     nlevs,
+                      const std::vector<Geometry>&            geom,
+                      const std::vector<BoxArray>&            bav,
+                      const std::vector<DistributionMapping>& dmv,
+                      Array< Array<Real> >&                   xa,
+                      Array< Array<Real> >&                   xb,
+                      Real                                    time,
+                      ViscBndry&                              visc_bndry,
+                      const BCRec&                            bc,
+                      bool	                              bndry_already_filled=true);
 
     void coefs_fboxlib_mg (PArray<MultiFab>& acoefs,
 			   Array< PArray<MultiFab> >& bcoefs,

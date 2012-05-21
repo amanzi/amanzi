@@ -507,7 +507,8 @@ protected:
                                   MultiFab* u_mac = 0);
 
   PorousMedia::Reason richard_composite_update (Real dt, 
-                                                int& total_nwt_iter);
+                                                int& total_nwt_iter,
+                                                Array<MultiFab*>& u_mac);
 
   void richard_init_to_steady();
 
@@ -1129,6 +1130,7 @@ protected:
   static int  do_cpl_advect;
   static int  max_step;
   static Real stop_time;
+  static bool do_richard_sat_solve;
 
   static int  richard_solver_verbose;
 
@@ -1148,8 +1150,8 @@ protected:
   static int  steady_max_consecutive_failures_1;
   static int  steady_max_consecutive_failures_2;
   static Real steady_tolerance;
-  static Real steady_initial_time_step;
-  static Real steady_maximum_time_steps;
+  static Real steady_init_time_step;
+  static Real steady_max_time_steps;
   static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
   static int  steady_max_num_consecutive_increases;
@@ -1162,8 +1164,8 @@ protected:
   static Real richard_min_ls_factor;
   static Real richard_ls_acceptance_factor;
   static Real richard_ls_reduction_factor;
-  static bool richard_monitor_linear_solve;
-  static bool richard_monitor_line_search;
+  static int richard_monitor_linear_solve;
+  static int richard_monitor_line_search;
 
   //
   // Number of states

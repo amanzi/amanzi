@@ -919,6 +919,8 @@ Diffusion::residual_CPL (ViscBndry              visc_bndry,
 }
 
 #ifdef MG_USE_FBOXLIB
+static int cnt = 0;
+
 void 
 Diffusion::residual_richard (ABecLaplacian*         visc_op,
 			     Real                   dt,
@@ -978,7 +980,8 @@ Diffusion::residual_richard (ABecLaplacian*         visc_op,
       else
 	{
 	  MultiFab& S_new = caller->get_new_data(State_Type);
-	  MultiFab::Copy(Soln,S_new,0,0,1,0);
+          int nc = 0;
+	  MultiFab::Copy(Soln,S_new,nc,0,1,0);
 	}
       for (MFIter mfi(Soln); mfi.isValid(); ++mfi)
 	{
@@ -1013,6 +1016,7 @@ Diffusion::residual_richard (MGT_Solver&               mgt_solver,
   for (int lev = 0; lev < nlevs; lev++) 
     { 
       MultiFab::Add(*Rhs[lev],res_fix[lev],0,0,1,0);
+
       // gravity term
       const Real* dx   = parent->Geom(lev).CellSize();
       for (MFIter mfi(*Rhs[lev]); mfi.isValid(); ++mfi)
@@ -1148,6 +1152,7 @@ Diffusion::richard_iter (Real                   dt,
   visc_bndry.setScalarValues(bc,ref_ratio,&P_new);
   ABecLaplacian* visc_op = getViscOp(visc_bndry,a,b,0,0,beta,alpha,false);
   MultiFab::Copy(Rhs,res_fix,0,0,1,0);
+
   residual_richard(visc_op,dt*density[0],gravity,density,Rhs,&P_new,beta,alpha);
   status.initial_residual_norm = Rhs.norm2(0);
 
@@ -1402,9 +1407,13 @@ Diffusion::richard_composite_iter (Real                      dt,
 				   PArray<MultiFab>&         alpha, 
 				   Array<PArray<MultiFab> >& beta,
 				   Array<PArray<MultiFab> >& beta_dp,
+                                   Array<MultiFab*>&         umac,
 				   const bool                do_upwind,
-				   Real*                     err_nwt)
+                                   Diffusion::NewtonStepInfo& status)
 {
+  std::string tag = "       Newton step: ";
+  std::string tag_ls = "  line-search:  ";
+
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_composite_iter()");
   //
   // This routine solves the time-dependent richards equation based on 
@@ -1423,8 +1432,8 @@ Diffusion::richard_composite_iter (Real                      dt,
     {
       MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
       MultiFab& P = parent->getLevel(lev).get_new_data(Press_Type);
-      bav[lev]  = S.boxArray();
-      dmv[lev]  = S.DistributionMap();
+      bav[lev] = S.boxArray();
+      dmv[lev] = S.DistributionMap();
       geom[lev] = parent->Geom(lev+level);
 
       Rhs[lev]  = new MultiFab(bav[lev],1,0);
@@ -1435,6 +1444,8 @@ Diffusion::richard_composite_iter (Real                      dt,
       MultiFab::Copy(pctmp[lev],P,nc,0,1,1);
       
     }
+
+  // Why this??
   Real snorm = (*Soln[0]).norm2(0);
   
   ViscBndry visc_bndry;     
@@ -1466,11 +1477,14 @@ Diffusion::richard_composite_iter (Real                      dt,
   mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
   residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs,
 		   pctmp,beta,alpha,res_fix,Soln,visc_bndry);
-  Real prev_res_norm = (*Rhs[0]).norm2(0);
 
+  status.initial_residual_norm = (*Rhs[0]).norm2(0); 
+
+  if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+      std::cout << tag << "Initial residual norm: " << status.initial_residual_norm << std::endl;
+  }
   // preconditioning the residual.
-  // If beta_dp is the exact Jacobian, then this is the Newton step.
-  
+  // If beta_dp is the exact Jacobian, then this is the Newton step.  
   if (beta_dp.size() > 0)
     {
       for (int lev=0; lev<nlevs; lev++)
@@ -1486,14 +1500,43 @@ Diffusion::richard_composite_iter (Real                      dt,
       int  fill_bcs_for_gradient = 1; 
       mgt_solver.set_maxorder(2);
       mgt_solver.set_porous_coefficients(alpha, a2_p, beta_dp, b_dp, xa, xb, nc_opt);    
+
+      int linsol_status = 1;
       mgt_solver.solve(Soln, Rhs, S_tol, S_tol_abs, 
-		       fill_bcs_for_gradient, final_resnorm);
+		       fill_bcs_for_gradient, final_resnorm,linsol_status);
 
       for (int lev = nlevs-2; lev >= 0; lev--)
 	{
 	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
 	  pm->avgDown(Soln[lev],lev,Soln[lev+1],lev+1);
 	}
+
+      if (linsol_status!=0)
+      {
+          if (linsol_status==1) {
+              status.reason = "Linear iterations unstable";
+          }
+          else {
+              status.reason = "Linear iterations failed";
+          }
+          status.success = false;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+              std::cout << tag << status.reason;
+              if (status.monitor_linear_solve>1) {
+                  std::cout << " solver return code: " << linsol_status;
+              }
+              std::cout << std::endl;
+          }
+	  status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
+          return;
+      }
+      
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve final res=" << final_resnorm
+                    << std::endl;
+      }
     }
   
   // line search 
@@ -1521,14 +1564,13 @@ Diffusion::richard_composite_iter (Real                      dt,
       MultiFab::Add(*Stmp[lev],*Soln[lev],0,0,1,0);
       
       MultiFab* tmp_betatmp[BL_SPACEDIM];
-      MultiFab* tmp_umac = pm->u_mac_curr;
       for (int dir=0;dir<BL_SPACEDIM;dir++)
 	tmp_betatmp[dir] = &betatmp[dir][lev];
       pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
       pctmp[lev].mult(-1);
       MultiFab lambda(bav[lev],pm->ncomps,1);
       pm->calcLambda(&lambda,*Stmp[lev]);
-      pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
+      pm->calc_richard_coef(tmp_betatmp,&lambda,umac[lev],0,do_upwind);
       Rhsp1[lev] = new MultiFab(bav[lev],1,0);
     }
   mgt_solver.set_maxorder(2);
@@ -1536,50 +1578,96 @@ Diffusion::richard_composite_iter (Real                      dt,
   residual_richard(mgt_solver,dt*density[0],gravity,density,Rhsp1,
 		   pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
 
-  Real rhsp1_norm = (*Rhsp1[0]).norm2(0);
-  Real alphak = 1.0;
-  int iter = 0;
-  Real steplength_reduction_factor = 0.1;
-  while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
-    {
-        for (int lev=0; lev<nlevs; lev++)
-	  {
-	    (*Rhsp1[lev]).setVal(0.);
-	    (*Soln[lev]).mult(steplength_reduction_factor);
-	    MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
-	    MultiFab::Copy(*Stmp[lev],S,nc,0,1,1);
-	    MultiFab::Add(*Stmp[lev],*Soln[lev],0,0,1,0);
-      
-	    PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
 
-	    MultiFab* tmp_betatmp[BL_SPACEDIM];
-	    MultiFab* tmp_umac = pm->u_mac_curr;
-	    for (int dir=0;dir<BL_SPACEDIM;dir++)
+  status.residual_norm_post_ls = status.residual_norm_pre_ls = (*Rhsp1[0]).norm2(0);
+
+  if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
+      status.reason = "Full linear step accepted";
+      status.success = true;
+      status.status = "Finished";
+  }
+
+  status.ls_iterations = 0;
+  Real ls_factor_init = 1;
+  status.ls_factor = ls_factor_init;
+  while (status.status != "Finished")
+  {
+      status.ls_iterations++;
+      status.ls_factor *= status.ls_reduction_factor;
+      if (status.ls_factor < status.min_ls_factor) {
+          status.ls_factor = status.min_ls_factor;
+      }
+
+      for (int lev=0; lev<nlevs; lev++)
+      {
+          MultiFab::Copy(*Rhs[lev],*Soln[lev],0,0,1,1); // Rhs not used again, reuse here
+          Rhs[lev]->mult(status.ls_factor);
+
+          PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+          MultiFab& S = pm->get_new_data(State_Type);
+
+          MultiFab::Copy(*Stmp[lev],S,nc,0,1,1);
+          MultiFab::Add(*Stmp[lev],*Rhs[lev],0,0,1,1);
+
+          MultiFab* tmp_betatmp[BL_SPACEDIM];
+          for (int dir=0;dir<BL_SPACEDIM;dir++)
 	      tmp_betatmp[dir] = &betatmp[dir][lev];
+          
+          pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
+          pctmp[lev].mult(-1);
+          MultiFab lambda(bav[lev],pm->ncomps,1);
+          pm->calcLambda(&lambda,*Stmp[lev]);
+          pm->calc_richard_coef(tmp_betatmp,&lambda,umac[lev],0,do_upwind);
+      }
 
-	    MultiFab lambda(bav[lev],pm->ncomps,1);
-	    pm->calcLambda(&lambda,*Stmp[lev]);
-	    pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
-            pctmp[lev].mult(-1);
-	    pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
-	  }
-	mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
-	residual_richard(mgt_solver,dt*density[0],gravity,density,
-			 Rhsp1,pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
+      mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
+      residual_richard(mgt_solver,dt*density[0],gravity,density,
+                       Rhsp1,pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
+      status.residual_norm_post_ls = Rhsp1[0]->norm2(0);
 
-	rhsp1_norm = (*Rhsp1[0]).norm2(0);
-        alphak *= steplength_reduction_factor;
-        iter++;
-    }
+      if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+          std::cout << tag << tag_ls
+                    << "iter=" << status.ls_iterations
+                    << ", step length=" << status.ls_factor
+                    << ", old residual norm=" << status.initial_residual_norm
+                    << ", new residual norm=" << status.residual_norm_post_ls << '\n';
+      }
+
+      if (status.residual_norm_post_ls < status.initial_residual_norm * status.ls_acceptance_factor) {
+          status.reason = "LS-reduced step accepted";
+          status.success = true;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+              std::cout << tag << tag_ls << status.reason << std::endl;
+          }
+      }
+
+      if (status.ls_iterations >= status.max_ls_iterations) {
+          status.reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
+          status.success = false;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+              std::cout << tag << tag_ls << status.reason << std::endl;
+          }
+      }
+
+      if (status.ls_factor == status.min_ls_factor) {
+          status.reason = "Solution rejected.  Linear system solved, but ls_factor too small";
+          status.success = false;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+              std::cout << tag << tag_ls << status.reason << std::endl;
+          }
+      }
+  }
 
   for (int lev=0; lev<nlevs;lev++)
     {
-      MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
-      MultiFab::Copy(S,*Stmp[lev],0,nc,1,1);
+        PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+        MultiFab& S = pm->get_new_data(State_Type);
+        MultiFab::Copy(S,*Stmp[lev],0,nc,1,1);
+        MultiFab::Copy(S,*Rhsp1[0],0,pm->ncomps+pm->ntracers,1,0);
     }
-
-  // Compute the err_nwt
-  *err_nwt = rhsp1_norm/snorm;
 
   for (int lev = 0; lev < nlevs; lev++)
     {
@@ -1618,7 +1706,7 @@ Diffusion::richard_iter_p (Real                   dt,
   Real pnorm = P_new.norm2(0);
 
   // setup multifabs for solvers
-  MultiFab Rhs(grids,1,1);
+  MultiFab Rhs(grids,1,0);
   MultiFab Soln(grids,1,1);
   Rhs.setVal(0.);
   Soln.setVal(0.);
@@ -1634,6 +1722,7 @@ Diffusion::richard_iter_p (Real                   dt,
   IntVect ref_ratio   = level > 0 ? 
     parent->refRatio(level-1) : IntVect::TheUnitVector();
 
+  // FIXME: We should make a new getBndryData that takes the state_type
   ViscBndry visc_bndry;
   getBndryData(visc_bndry,nc,1,cur_time);
   visc_bndry.setScalarValues(bc,ref_ratio,&P_new);
@@ -1646,6 +1735,7 @@ Diffusion::richard_iter_p (Real                   dt,
   MultiFab lambda(grids,pm_level->ncomps,1);
   pm_level->calcInvPressure(Stmp,P_new);
   pm_level->calcLambda(&lambda,Stmp);
+
   MultiFab** betatmp;
   allocFluxBoxesLevel(betatmp,0,1);
   pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
@@ -1653,9 +1743,6 @@ Diffusion::richard_iter_p (Real                   dt,
   setBeta (visc_op,0,betatmp,false);
   MultiFab::Copy(Rhs,res_fix,0,0,1,0);
   residual_richard(visc_op,b,gravity,density,Rhs,&P_new,betatmp,alpha,&Stmp);
-
-
-  //residual_richard(visc_op,b,gravity,density,Rhs,&P_new,beta,alpha);
   status.initial_residual_norm = Rhs.norm2(0);
   
   if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
@@ -1713,7 +1800,11 @@ Diffusion::richard_iter_p (Real                   dt,
           status.success = false;
           status.status = "Finished";
           if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-              std::cout << tag << status.reason << std::endl;
+              std::cout << tag << status.reason;
+              if (status.monitor_linear_solve > 1) {
+                  std::cout << " solver return code: " << linsol_status << std::endl;
+              }
+              std::cout << std::endl;
           }
 	  status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
           return;
@@ -1728,8 +1819,6 @@ Diffusion::richard_iter_p (Real                   dt,
 
 
   // line search 
-  //MultiFab Stmp(grids,1,1);
-  //MultiFab ptmp(grids,1,1);
   MultiFab Rhsp1(grids,1,0);
   Stmp.setVal(0.);
   Rhsp1.setVal(0.);
@@ -1740,14 +1829,13 @@ Diffusion::richard_iter_p (Real                   dt,
   //MultiFab lambda(grids,pm_level->ncomps,1);
   pm_level->calcLambda(&lambda,Stmp);
   //MultiFab** betatmp;
-  allocFluxBoxesLevel(betatmp,0,1);
+  //allocFluxBoxesLevel(betatmp,0,1);
   pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
   // Compute residual
   setBeta (visc_op,0,betatmp,false);
   MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
   residual_richard(visc_op,b,gravity,density,Rhsp1,&ptmp,betatmp,alpha,&Stmp);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhsp1.norm2(0);
-  status.initial_solution_norm = P_new.norm2(nc);
 
   if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
       status.reason = "Full linear step accepted";
@@ -1758,19 +1846,10 @@ Diffusion::richard_iter_p (Real                   dt,
       }
   }
 
-  Real solution_norm = Soln.norm2(0);
-  if (status.status!="Finished"  &&  solution_norm < 1.e-12 * status.initial_solution_norm) {
-      status.reason = "Solution rejected.  Linear system solved, but solution norm too small";
-      status.success = false;
-      status.status = "Finished";
-      if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
-          std::cout << tag << status.reason << std::endl;
-      }
-  }
-
   status.ls_iterations = 0;
   Real ls_factor_init = 1;
   status.ls_factor = ls_factor_init;
+  MultiFab Ptmp(grids,1,1);
   while (status.status != "Finished")
   {
       status.ls_iterations++;
@@ -1779,22 +1858,11 @@ Diffusion::richard_iter_p (Real                   dt,
           status.ls_factor = status.min_ls_factor;
       }
 
-      MultiFab::Copy(Rhs,Soln,0,0,1,1); // Rhs not used again, reuse here
-      Rhs.mult(status.ls_factor);
-      Real solution_norm = Rhs.norm2(0);
-#if 0
-      if (solution_norm < 1.e-8 * status.initial_solution_norm) {
-          status.reason = "Solution rejected.  Linear system solved, but ls-scaled solution norm too small";
-          status.success = false;
-          status.status = "Finished";
-          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
-              std::cout << tag << status.reason << std::endl;
-          }
-      }
-#endif
+      MultiFab::Copy(Ptmp,Soln,0,0,1,1); // Rhs not used again, reuse here
+      Ptmp.mult(status.ls_factor);
 
       MultiFab::Copy(ptmp,P_new,nc,0,1,1);
-      MultiFab::Add(ptmp,Rhs,0,0,1,1);
+      MultiFab::Add(ptmp,Ptmp,0,0,1,1);
       pm_level->calcInvPressure(Stmp,ptmp);
       pm_level->calcLambda(&lambda,Stmp);
       pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
@@ -1860,81 +1928,130 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 				     PArray<MultiFab>&         dalpha, 
 				     Array<PArray<MultiFab> >& beta,
 				     Array<PArray<MultiFab> >& beta_dp,
+                                     Array<MultiFab*>&         umac,
 				     const bool                do_upwind,
-				     Real*                     err_nwt)
+                                     Diffusion::NewtonStepInfo& status)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_composite_iter()");
+
+  std::string tag = "       Newton step: ";
+  std::string tag_ls = "  line-search:  ";
   //
   // This routine solves the time-dependent richards equation based on 
   // composite solve.
   //
+  PArray<PorousMedia> pm(nlevs,PArrayNoManage);
+  for (int lev = 0; lev < nlevs; lev++) 
+  {
+      pm.set(lev,dynamic_cast<PorousMedia*>(&parent->getLevel(lev+level)));
+  }
 
   // setup multilevel objects
   Real b = dt*density[0];
-  MultiFab* Rhs[nlevs];
-  MultiFab* Soln[nlevs];
-  PArray<MultiFab> pctmp(nlevs, PArrayManage);
+  PArray<MultiFab> Rhs(nlevs);
+  PArray<MultiFab> Soln(nlevs);
   std::vector<BoxArray> bav(nlevs);
   std::vector<DistributionMapping> dmv(nlevs);
   std::vector<Geometry> geom(nlevs);    
-  for (int lev = 0; lev < nlevs; lev++) 
-    {
-      MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
-      MultiFab& P = parent->getLevel(lev).get_new_data(Press_Type);
-      bav[lev]  = S.boxArray();
-      dmv[lev]  = S.DistributionMap();
-      geom[lev] = parent->Geom(lev+level);
-
-      Rhs[lev]  = new MultiFab(bav[lev],1,0);
-      Soln[lev] = new MultiFab(bav[lev],1,1);
-      Rhs[lev]->setVal(0.);
-      MultiFab::Copy(*Soln[lev],S,nc,0,1,1);
-      pctmp.set(lev,new MultiFab(bav[lev],1,1));
-      MultiFab::Copy(pctmp[lev],P,nc,0,1,1);
-      
-    }
-  Real snorm = pctmp[0].norm2(0);
-  
-  ViscBndry visc_bndry;     
   const BCRec& bc     = caller->get_desc_lst()[Press_Type].getBC(0);
   const Real cur_time = caller->get_state_data(State_Type).curTime();
   IntVect ref_ratio   = level > 0 ? 
     parent->refRatio(level-1) : IntVect::TheUnitVector();
-  getBndryData(visc_bndry,nc,1,cur_time);
-  visc_bndry.setScalarValues(bc,ref_ratio,&pctmp[0]);
 
+  // Build some handy pointer arrays, and allocate work space for Soln, Rhs
+  PArray<MultiFab> Snew(nlevs,PArrayNoManage);
+  PArray<MultiFab> Pnew_p(nlevs,PArrayNoManage);
+  Array<MultiFab*> Rhs_p(Rhs.size());
+  Array<MultiFab*> Soln_p(Soln.size());
+  Array<MultiFab*> Snew_p(Snew.size());
+  Array<PArray<MultiFab> > beta_pp(BL_SPACEDIM);
+  Array<Array<MultiFab*> > beta_lp(nlevs);
+  PArray<MultiFab> lambda(nlevs);
+
+  for (int dir=0; dir<BL_SPACEDIM; dir++) {
+      beta_pp[dir].resize(nlevs, PArrayNoManage);
+  }
+
+  for (int lev = 0; lev < nlevs; lev++) 
+    {
+      MultiFab& S = pm[lev].get_new_data(State_Type);
+      MultiFab& P = pm[lev].get_new_data(Press_Type);
+      Pnew_p.set(lev,&P);
+      Snew.set(lev,&S);
+      Snew_p[lev] = &(Snew[lev]);
+
+      bav[lev] = S.boxArray();
+      dmv[lev] = S.DistributionMap();
+      geom[lev] = parent->Geom(lev+level);
+
+      beta_lp[lev].resize(BL_SPACEDIM);
+      for (int dir=0; dir<BL_SPACEDIM; dir++)
+      {
+          beta_lp[lev][dir] = &(beta[dir][lev]);
+	  beta_pp[dir].set(lev,&(beta[dir][lev]));
+      }
+
+      Rhs.set(lev, new MultiFab(bav[lev],1,0));
+      Rhs_p[lev] = &(Rhs[lev]);
+      Rhs[lev].setVal(0.);
+
+      Soln.set(lev, new MultiFab(bav[lev],1,1));
+      Soln_p[lev] = &(Soln[lev]);
+
+      lambda.set(lev, new MultiFab(bav[lev],pm[lev].ncomps,1));
+    }
+
+  // FIXME: Should rather do this with a modified getBndryData
+  ViscBndry visc_bndry;     
+  getBndryData(visc_bndry,nc,1,cur_time);
+  visc_bndry.setScalarValues(bc,ref_ratio,&(Pnew_p[0]));
+
+  // Build an MGT op/solver in order to evaluate the residual, requires (?) that a1_p point to allocated space
   int nc_opt = 2;
   Array< Array<Real> > xa(nlevs);
   Array< Array<Real> > xb(nlevs);
-  PArray<MultiFab> a1_p(nlevs,PArrayManage);
-  PArray<MultiFab> a2_p;
+  PArray<MultiFab> a1(nlevs,PArrayManage);
+  PArray<MultiFab> a2(nlevs,PArrayManage);
+  MultiFab** a1_p = new MultiFab* [nlevs]; // requires a "delete[] a1_p"
 
+  // FIXME: Should be unnecessary to allocate this space
   for (int lev=0; lev<nlevs; lev++)
     {
-      a1_p.set(lev,new MultiFab(alpha[lev].boxArray(),alpha[lev].nComp(),
+      a1.set(lev,new MultiFab(alpha[lev].boxArray(),alpha[lev].nComp(),
 				alpha[lev].nGrow()));
-      a1_p[lev].setVal(0.);
+      a1[lev].setVal(0.);
+      a1_p[lev] = &(a1[lev]);
+    }
+
+  for (int lev=0; lev<nlevs; lev++)
+    {  
+      pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev]); // Set sat from p
+      pm[lev].calcLambda(&lambda[lev],Snew[lev]);
+      pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
+      MultiFab::Copy(Rhs[lev],res_fix[lev],0,0,1,0);
     }
 
   MGT_Solver mgt_solver = getOp(0,nlevs,geom,bav,dmv, xa, xb,cur_time,
 				visc_bndry,bc,true);
-  
-  // Setup RHS
   mgt_solver.set_maxorder(2);
-  mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs,
-		   pctmp,beta,alpha,res_fix,Soln,visc_bndry);
-  Real prev_res_norm = (*Rhs[0]).norm2(0);
+  mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
+
+  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+		   Pnew_p,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
+  status.initial_residual_norm = Rhs[0].norm2(0);
+
+  if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+      std::cout << tag << "Initial residual norm: " << status.initial_residual_norm << std::endl;
+  }
 
   // preconditioning the residual.
-  // If beta_dp is the exact Jacobian, then this is the Newton step.
-  
+  // If beta_dp is the exact Jacobian, then this is the Newton step.  
   if (beta_dp.size() > 0)
     {
       for (int lev=0; lev<nlevs; lev++)
 	{
-	  (*Rhs[lev]).mult(-1.0);
-	  (*Soln[lev]).setVal(0.);
+	  Rhs[lev].mult(-1.0);
+	  Soln[lev].setVal(0.);
 	}
       Real a_dp = 1.0;
       Real b_dp = dt*density[0];   
@@ -1943,110 +2060,145 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       Real final_resnorm;
       int  fill_bcs_for_gradient = 1; 
       mgt_solver.set_maxorder(2);
-      mgt_solver.set_porous_coefficients(dalpha, a2_p, beta_dp, b_dp, xa, xb, nc_opt);    
-      mgt_solver.solve(Soln, Rhs, S_tol, S_tol_abs, 
-		       fill_bcs_for_gradient, final_resnorm);
+      mgt_solver.set_porous_coefficients(dalpha, a2, beta_dp, b_dp, xa, xb, nc_opt);    
+
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve init res=" << status.initial_residual_norm
+                    << std::endl;
+      }
+          
+      int linsol_status = 0;
+      mgt_solver.solve(Soln_p.dataPtr(), Rhs_p.dataPtr(), S_tol, S_tol_abs, 
+		       fill_bcs_for_gradient, final_resnorm,
+                       linsol_status);
 
       for (int lev = nlevs-2; lev >= 0; lev--)
 	{
 	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
-	  pm->avgDown(Soln[lev],lev,Soln[lev+1],lev+1);
+	  pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
 	}
+
+      if (linsol_status!=0)
+      {
+          if (linsol_status==1) {
+              status.reason = "Linear iterations unstable";
+          }
+          else {
+              status.reason = "Linear iterations failed";
+          }
+          status.success = false;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+              std::cout << tag << status.reason;
+              if (status.monitor_linear_solve > 1) {
+                  std::cout << " solver return code: " << linsol_status << std::endl;
+              }
+              std::cout << std::endl;
+          }
+	  status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
+          return;
+      }
+
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve final res=" << final_resnorm
+                    << std::endl;
+      }
     }
   
-  // line search 
-  MultiFab* Stmp[nlevs];
-  MultiFab* Ptmp[nlevs];
-  MultiFab* Rhsp1[nlevs];
-  Array<PArray<MultiFab> > betatmp(BL_SPACEDIM);
-
-  for (int dir=0; dir<BL_SPACEDIM; dir++)
-    betatmp[dir].resize(nlevs,PArrayNoManage);
-  
+  PArray<MultiFab> Ptmp(nlevs);
   for (int lev=0; lev<nlevs; lev++)
-    {  
-      PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+  {
+      Ptmp.set(lev, new MultiFab(bav[lev],1,1));
+      MultiFab::Copy(Ptmp[lev],Pnew_p[lev],0,0,1,1);
+      MultiFab::Add(Ptmp[lev],Soln[lev],0,0,1,0); // Now Ptmp has new trial pressure
+      pm[lev].calcInvPressure(Snew[lev],Ptmp[lev]);
+      pm[lev].calcLambda(&(lambda[lev]),Snew[lev]);
+      pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
+      MultiFab::Copy(Rhs[lev],res_fix[lev],0,0,1,0);
+  }
+  mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
+  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+		   Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
+  status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
 
-      for (int dir=0; dir<BL_SPACEDIM; dir++)
-	{
-	  BoxArray ba = bav[lev];
-	  ba.surroundingNodes(dir);
-	  betatmp[dir].set(lev, new MultiFab(ba,beta[dir][lev].nComp(),0));
-	}
+  if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
+      status.reason = "Full linear step accepted";
+      status.success = true;
+      status.status = "Finished";
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag << status.reason << std::endl;
+      }
+  }
 
-      Ptmp[lev] = new MultiFab(bav[lev],1,1);
-      Stmp[lev] = new MultiFab(bav[lev],1,1);
-      MultiFab& P = pm->get_new_data(Press_Type);
-      MultiFab::Copy(*Ptmp[lev],P,nc,0,1,1);
-      MultiFab::Add(*Ptmp[lev],*Soln[lev],0,0,1,0);
+  status.ls_iterations = 0;
+  Real ls_factor_init = 1;
+  status.ls_factor = ls_factor_init;
+  while (status.status != "Finished")
+  {
+      status.ls_iterations++;
+      status.ls_factor *= status.ls_reduction_factor;
+      if (status.ls_factor < status.min_ls_factor) {
+          status.ls_factor = status.min_ls_factor;
+      }
+
+      for (int lev=0; lev<nlevs; lev++)
+      {
+          MultiFab::Copy(Ptmp[lev],Soln[lev],0,0,1,1);
+          Ptmp[lev].mult(status.ls_factor);
+          MultiFab::Add(Ptmp[lev],Pnew_p[lev],0,0,1,1); // Now Ptmp has new trial pressure
+          
+          pm[lev].calcInvPressure(Snew[lev],Ptmp[lev]);
+          pm[lev].calcLambda(&(lambda[lev]),Snew[lev]);
+          pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
+          MultiFab::Copy(Rhs[lev],res_fix[lev],0,0,1,0);
+      }
+
+      mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
+      residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+                       Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
+      status.residual_norm_post_ls = Rhs[0].norm2(0);
       
-      MultiFab* tmp_betatmp[BL_SPACEDIM];
-      MultiFab* tmp_umac = pm->u_mac_curr;
-      for (int dir=0;dir<BL_SPACEDIM;dir++)
-	tmp_betatmp[dir] = &betatmp[dir][lev];
-      pm->calcInvPressure(*Stmp[lev],*Ptmp[lev]);
-      MultiFab lambda(bav[lev],pm->ncomps,1);
-      pm->calcLambda(&lambda,*Stmp[lev]);
-      pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
-      Rhsp1[lev] = new MultiFab(bav[lev],1,0);
-    }
-  mgt_solver.set_maxorder(2);
-  mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhsp1,
-		   pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
+      if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+          std::cout << tag << tag_ls
+                    << "iter=" << status.ls_iterations
+                    << ", step length=" << status.ls_factor
+                    << ", init residual norm=" << status.initial_residual_norm
+                    << ", new residual norm=" << status.residual_norm_post_ls << '\n';
+      }
 
-  Real rhsp1_norm = (*Rhsp1[0]).norm2(0);
-  Real alphak = 1.0;
-  int iter = 0;
-  Real steplength_reduction_factor = 0.1;
-  while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
-    {
-        for (int lev=0; lev<nlevs; lev++)
-	  {
-	    (*Rhsp1[lev]).setVal(0.);
-	    (*Soln[lev]).mult(steplength_reduction_factor);
-            alphak *= steplength_reduction_factor;
-	    MultiFab& P = parent->getLevel(lev).get_new_data(Press_Type);
-	    MultiFab::Copy(*Ptmp[lev],P,nc,0,1,1);
-	    MultiFab::Add(*Ptmp[lev],*Soln[lev],0,0,1,0);
-      
-	    PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+      if (status.residual_norm_post_ls < status.initial_residual_norm * status.ls_acceptance_factor) {
+          status.reason = "LS-reduced step accepted";
+          status.success = true;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+              std::cout << tag << tag_ls << status.reason << std::endl;
+          }
+      }
 
-	    MultiFab* tmp_betatmp[BL_SPACEDIM];
-	    MultiFab* tmp_umac = pm->u_mac_curr;
-	    for (int dir=0;dir<BL_SPACEDIM;dir++)
-	      tmp_betatmp[dir] = &betatmp[dir][lev];
-	    MultiFab lambda(bav[lev],pm->ncomps,1);
-	    pm->calcInvPressure(*Stmp[lev],*Ptmp[lev]);
-	    pm->calcLambda(&lambda,*Stmp[lev]);
-	    pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
-	    pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
-	  }
-	mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
-	residual_richard(mgt_solver,dt*density[0],gravity,density,
-			 Rhsp1,pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
+      if (status.ls_iterations >= status.max_ls_iterations) {
+          status.reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
+          status.success = false;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+              std::cout << tag << tag_ls << status.reason << std::endl;
+          }
+      }
 
-	rhsp1_norm = (*Rhsp1[0]).norm2(0);
-        alphak = 0.1*alphak;
-        iter++;
-    }
+      if (status.ls_factor == status.min_ls_factor) {
+          status.reason = "Solution rejected.  Linear system solved, but ls_factor too small";
+          status.success = false;
+          status.status = "Finished";
+          if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
+              std::cout << tag << tag_ls << status.reason << std::endl;
+          }
+      }
+  }
 
-  for (int lev=0; lev<nlevs;lev++)
-    {
-      MultiFab& P = parent->getLevel(lev).get_new_data(Press_Type);
-      MultiFab::Copy(P,*Ptmp[lev],0,nc,1,1);
-    }
-
-  // Compute the err_nwt
-  *err_nwt = rhsp1_norm/snorm;
-
-  for (int lev = 0; lev < nlevs; lev++)
-    {
-      delete Soln[lev];
-      delete Rhs[lev];
-      delete Stmp[lev];
-      delete Rhsp1[lev];
-    }
+  for (int lev=0; lev<nlevs;lev++) {
+      MultiFab::Copy(Pnew_p[lev],Ptmp[lev],0,nc,1,1);
+  }
 }
 
 void
@@ -2973,17 +3125,17 @@ Diffusion::getOp (int                   comp,
 }
 
 MGT_Solver
-Diffusion::getOp (int                              comp,
-		  int                              nlevs,
-		  std::vector<Geometry>            geom,
-		  std::vector<BoxArray>            bav,
-		  std::vector<DistributionMapping> dmv,
-		  Array< Array<Real> >&            xa,
-		  Array< Array<Real> >&            xb,
-		  Real                             time,
-		  ViscBndry&                       visc_bndry,
-		  const BCRec&                     bc, 
-		  bool	                           bndry_already_filled)
+Diffusion::getOp (int                                     comp,
+                  int                                     nlevs,
+                  const std::vector<Geometry>&            geom,
+                  const std::vector<BoxArray>&            bav,
+                  const std::vector<DistributionMapping>& dmv,
+                  Array< Array<Real> >&                   xa,
+                  Array< Array<Real> >&                   xb,
+                  Real                                    time,
+                  ViscBndry&                              visc_bndry,
+                  const BCRec&                            bc,
+                  bool	                                  bndry_already_filled)
 {
   bool nodal = false;
 
