@@ -1209,6 +1209,53 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
+      } else if ( bc.isSublist("BC: Seepage") ) {
+        Teuchos::ParameterList& bc_flux = bc.sublist("BC: Seepage");
+
+        Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
+        Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
+
+        if (! bc_flux.isParameter("Inward Mass Flux") )  {
+          // we can only handle mass fluxes right now
+          Exceptions::amanzi_throw(Errors::Message("In BC: Seepage we can only handle Inward Mass Flux"));
+        }
+
+        Teuchos::Array<double> flux;
+
+	flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
+	for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+        
+        std::stringstream ss;
+        ss << "BC " << bc_counter++;
+
+        Teuchos::ParameterList& tbc = ssf_list.sublist("seepage face").sublist(ss.str());
+        tbc.set<Teuchos::Array<std::string> >("regions", regions );
+
+
+        if ( times.size() == 1 ) {
+          Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");
+          tbcs.set<double>("value",flux[0]);
+        } else {
+          Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-tabular");
+
+          tbcs.set<Teuchos::Array<double> >("x values", times);
+          tbcs.set<Teuchos::Array<double> >("y values", flux);
+
+          std::vector<std::string> forms_(time_fns.size());
+
+          for (int i=0; i<time_fns.size(); i++)
+            if (time_fns[i] == "Linear") {
+              forms_[i] = "linear";
+            } else if (time_fns[i] == "Constant") {
+              forms_[i] = "constant";
+            } else {
+              Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+            }
+
+          Teuchos::Array<std::string> forms = forms_;
+          tbcs.set<Teuchos::Array<std::string> >("forms", forms);
+        }
+
       }
 
       // TODO...
