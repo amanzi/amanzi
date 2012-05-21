@@ -45,10 +45,11 @@ class ActivityModel {
       std::vector<AqueousEquilibriumComplex>* secondarySpecies,
       Species* water);
   virtual double Evaluate(const Species& species) = 0;
-  virtual void EvaluateVector(std::vector<double>& gamma,
-		                      double& actw,
- 		                      const std::vector<Species>& primarySpecies,
-		                      const std::vector<AqueousEquilibriumComplex>& secondarySpecies)=0;
+  virtual void EvaluateVector(
+      const std::vector<Species>& primarySpecies,
+      const std::vector<AqueousEquilibriumComplex>& secondarySpecies,
+      std::vector<double>* gamma,
+      double* actw) = 0;
 
   double ionic_strength(void) const {
     return this->I_;

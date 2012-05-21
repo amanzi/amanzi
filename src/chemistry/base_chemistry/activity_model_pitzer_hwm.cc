@@ -103,7 +103,7 @@ void ActivityModelPitzerHWM::Setup(
   // --------------------------------------------------------------------------
   // Read Pitzer coefficients database
   // --------------------------------------------------------------------------
-  ReadDataBase(parameters.database_filename, 
+  ReadDataBase(parameters.database_filename,
                primary_species, aqueous_complexes);
 }  // end Setup()
 
@@ -127,9 +127,10 @@ double ActivityModelPitzerHWM::Evaluate(const Species& species) {
   @details Compute the activity coefficients
 */
 void ActivityModelPitzerHWM::EvaluateVector(
-    std::vector<double>& gamma, double& water_activity,
     const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& aqueous_complexes) {
+    const std::vector<AqueousEquilibriumComplex>& aqueous_complexes,
+    std::vector<double>* gamma,
+    double* water_activity) {
   unsigned int number_species_(primary_species.size() + aqueous_complexes.size());
   // --------------------------------------------------------------------------
   // Check the number of species
@@ -160,18 +161,18 @@ void ActivityModelPitzerHWM::EvaluateVector(
     molality.at(isp) = (*i).molality();
   }
   ComputeQmatrices();
-  ComputeDebyeHuckelTerm(gamma, osmotic_coefficient, gclm);
-  ComputemQmProduct(gamma, osmotic_coefficient);
+  ComputeDebyeHuckelTerm(*gamma, osmotic_coefficient, gclm);
+  ComputemQmProduct(*gamma, osmotic_coefficient);
   ComputemQlmProduct(osmotic_coefficient);
-  ComputemQcmProduct(gamma, osmotic_coefficient);
-  ComputemTmmProduct(gamma, osmotic_coefficient);
+  ComputemQcmProduct(*gamma, osmotic_coefficient);
+  ComputemTmmProduct(*gamma, osmotic_coefficient);
   if (macinnes_scaled && index_cl_species > -1) {
-    gcl = gamma.at(index_cl_species);
+    gcl = gamma->at(index_cl_species);
     for (int i = 0; i < number_species; i++) if (i != index_h2o_species) {
-        gamma.at(i) *= pow((gcl / gclm), charge.at(i));
+        gamma->at(i) *= pow((gcl / gclm), charge.at(i));
       }
   }
-  water_activity = osmotic_coefficient;
+  *water_activity = osmotic_coefficient;
 }  // end EvaluateVector()
 
 /*!
@@ -1400,7 +1401,7 @@ void ActivityModelPitzerHWM::PushPrivateVectors() {
 
   @details Update virial coefficients with temperature and liquid pressure.
 */
-void ActivityModelPitzerHWM::Update(const double& temperature, 
+void ActivityModelPitzerHWM::Update(const double& temperature,
                                     const double& pressure) {
   for (std::vector<VirialCoefficient>::iterator i = beta0_virial.begin(); i != beta0_virial.end(); i++) {
     (*i).UpdateVirial(temperature, pressure);
