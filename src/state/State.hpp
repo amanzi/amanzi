@@ -66,6 +66,7 @@ public:
   void update_total_component_concentration(const Epetra_MultiVector&);
   void update_darcy_flux(const Epetra_Vector&);
   void update_pressure(const Epetra_Vector&);
+  void update_lambda(const Epetra_Vector&);
 
   // status methods
   status_type get_status () const { return status; };
@@ -102,6 +103,7 @@ public:
   // set methods 
   void set_darcy_flux ( const Epetra_Vector& darcy_flux_ );
   void set_water_saturation ( const Epetra_Vector& water_saturation_ );
+  void set_prev_water_saturation ( const Epetra_Vector& prev_water_saturation_ );
   void set_water_density ( const Epetra_Vector& water_density_ );
   void set_porosity ( const Epetra_Vector& porosity_ );
   void set_permeability ( const Epetra_Vector& permeability_ );

@@ -394,12 +394,15 @@ void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
   *darcy_flux = new_darcy_flux;
 }
 
-
 void State::update_pressure(const Epetra_Vector &new_pressure)
 {
   *pressure = new_pressure;
 }
 
+void State::update_lambda(const Epetra_Vector &new_lambda)
+{
+  *lambda = new_lambda;
+}
 
 /* *******************************************************************/
 void State::advance_time(double dT)
@@ -836,6 +839,10 @@ void State::set_water_saturation(const Epetra_Vector& water_saturation_)
   *water_saturation = water_saturation_;
 };
 
+void State::set_prev_water_saturation(const Epetra_Vector& prev_water_saturation_)
+{
+  *prev_water_saturation = prev_water_saturation_;
+};
 
 void State::set_porosity(const Epetra_Vector& porosity_)
 {

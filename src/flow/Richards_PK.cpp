@@ -456,8 +456,8 @@ void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
   Epetra_Vector& ws_prev = FS_MPC->ref_prev_water_saturation();
   ws_prev = ws;
 
-  CalculateConsistentSaturation(flux, ws_prev, ws);
-  // DeriveSaturationFromPressure(pressure, ws);
+  // CalculateConsistentSaturation(flux, ws_prev, ws);
+  DeriveSaturationFromPressure(pressure, ws);
 
   // DEBUG
   // writeGMVfile(FS_MPC);

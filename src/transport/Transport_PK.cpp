@@ -203,7 +203,6 @@ double Transport_PK::CalculateTransportDt()
   for (c = 0; c <= cmax_owned; c++) {
     outflux = total_outflux[c];
     if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * ws_prev[c] / outflux;
-
     dT = std::min(dT, dT_cell);
   }
   if (spatial_disc_order == 2) dT /= 2;
@@ -221,6 +220,7 @@ double Transport_PK::CalculateTransportDt()
   dT = std::min(dT, dT_debug);
 
   dT *= cfl_;
+
   return dT;
 }
 
