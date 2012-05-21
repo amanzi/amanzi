@@ -27,7 +27,7 @@ namespace AmanziFlow {
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  ComputePreconditionerMFD(u, matrix, mfd3d_method, Tp, 0.0, false);  // Calculate only stiffness matrix.
+  ComputePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -69,9 +69,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
-  // int disc_method = AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR;
-  ComputePreconditionerMFD(u, preconditioner, disc_method, Tp, dTp, true);
+  ComputePreconditionerMFD(u, preconditioner, Tp, dTp, true);
   ierr = 0;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
@@ -81,15 +79,29 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
 
 
 /* ******************************************************************
-* Check difference du between the predicted and converged solutions.                                                 
+* Check difference du between the predicted and converged solutions. 
 ****************************************************************** */
 double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 {
   double error_norm = 0.0;
-  for (int n = 0; n < u.MyLength(); n++) {
-    double tmp = fabs(du[n]) / (absolute_tol + relative_tol * fabs(u[n]));
-    error_norm = std::max<double>(error_norm, tmp);
+  if (error_control & FLOW_TI_ERROR_CONTROL_PRESSURE) {
+    for (int n = 0; n < u.MyLength(); n++) {
+      double tmp = fabs(du[n]) / (absolute_tol + relative_tol * fabs(u[n]));
+      error_norm = std::max<double>(error_norm, tmp);
+    }
+  } 
+
+  /*
+  if (error_control & FLOW_TI_ERROR_CONTROL_SATURATION) {
+    Epetra_Vector dSdP(mesh_->cell_map(false));
+    DerivedSdP(u, dSdP);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      double tmp = dSdP[c] * fabs(du[c]) * 1e+4;  // duty trick for testing ONLY (lipnikov@lanl.gov)
+      error_norm = std::max<double>(error_norm, tmp);
+    }
   }
+  */
 
 #ifdef HAVE_MPI
   double buf = error_norm;

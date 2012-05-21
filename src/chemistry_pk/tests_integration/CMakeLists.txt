@@ -32,16 +32,16 @@ include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 
-add_executable(chemistry_pk_tests
-               main.cc
-               test_chemistry_pk.cc)
-
-target_link_libraries(chemistry_pk_tests chemistry_pk state 
+add_amanzi_test(chemistry_pk chemistry_pk_tests
+                KIND int
+                SOURCE 
+		      main.cc
+                      test_chemistry_pk.cc
+                LINK_LIBS  chemistry_pk state 
                       simple_mesh error_handling exodus_reader 
 		      interface
                       ${UnitTest_LIBRARIES} 
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-add_amanzi_test(chemistry_pk chemistry_pk_tests KIND int)
 
 if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
   execute_process(COMMAND ${CMAKE_COMMAND} -E

@@ -193,6 +193,7 @@ void Flow_PK::addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
 void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
+                                   const Epetra_Vector& Krel_cells,
                                    const Epetra_Vector& Krel_faces,
                                    Matrix_MFD* matrix)
 {
@@ -214,7 +215,7 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * gravity) * normal) * dirs[n] * Krel_faces[f];
+      double outward_flux = ((K[c] * gravity) * normal) * dirs[n] * Krel_cells[c] * Krel_faces[f];
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
     }
@@ -226,6 +227,7 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
 void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
+                                         const Epetra_Vector& Krel_cells,
                                          const Epetra_Vector& Krel_faces,
                                          Epetra_Vector& darcy_mass_flux)
 {
@@ -246,7 +248,7 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       if (f < nfaces_owned && !flag[f]) {
-        darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
+        darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c] * Krel_faces[f];
         flag[f] = 1;
       }
     }

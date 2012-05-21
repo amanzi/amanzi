@@ -32,7 +32,7 @@ if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
                   copy_directory ${CHEM_SOURCE_DIR}/tests_regression/input 
                   ${CHEM_BINARY_DIR}/tests_regression/input) 
 endif()
-
+#add_amanzi_test(chemistry-regression ${BATCH_EXE_NAME} KIND REG) 
 
 #
 # OpenMP test program

@@ -62,20 +62,22 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${Teuchos_LIBRARIES})
 
-  add_executable(tPPH tParmParseHelpers.cpp)
-  target_link_libraries(tPPH ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(tPPH tPPH KIND unit)
+  add_amanzi_test(tPPH tPPH
+                  KIND unit
+                  SOURCE tParmParseHelpers.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E
                     copy ${STRUCTUREDUTILS_SOURCE_DIR}/sample.xml ${STRUCTUREDUTILS_BINARY_DIR})
   endif()
 
-  add_executable(tEC tEventCoord.cpp)
-  target_link_libraries(tEC ${structured_grid_libs} ${tpl_libs})
+  add_amanzi_test(tEC tEC
+                  KIND unit
+                  SOURCE tEventCoord.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(tEC tEC KIND unit)
 
 endif()
 

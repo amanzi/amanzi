@@ -84,32 +84,58 @@ if (BUILD_TESTS)
     #  for each test below. See ticket #333
 
     # Test: exodus_reader
-    add_executable(test_exodus test/Main.cc test/test_Reader.cc test/test_file_path.cc)
-    target_link_libraries(test_exodus exodus_reader ${UnitTest_LIBRARIES}
-                          ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY}) 
-    add_amanzi_test(exodus_reader test_exodus KIND unit)
-    # set_tests_properties(exodus_reader PROPERTIES WILL_FAIL true) -- lpritch This was commented out in the original file
-
+    add_amanzi_test(exodus_reader test_exodus
+                    KIND unit
+		    SOURCE 
+		          test/Main.cc 
+			  test/test_Reader.cc
+			  test/test_file_path.cc
+	            LINK_LIBS 
+		          exodus_reader
+			  ${UnitTest_LIBRARIES}
+                          ${Boost_FILESYSTEM_LIBRARY}
+                          ${Boost_SYSTEM_LIBRARY})
 
     # Test: test_pexodus_2
-    add_executable(test_pexodus_2 test/ParallelMain.cc 
-                   test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
-    target_link_libraries(test_pexodus_2 exodus_reader ${UnitTest_LIBRARIES} 
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_amanzi_test(pexodus_2proc test_pexodus_2 NPROCS 2 KIND int)
+    add_amanzi_test(pexodus_2proc test_pexodus_2
+                    KIND int
+		    NPROCS 2
+		    SOURCE 
+		          test/ParallelMain.cc 
+			  test/test_pread_checkit.cc
+			  test/test_file_path.cc
+	            LINK_LIBS 
+		          exodus_reader
+			  ${UnitTest_LIBRARIES}
+                          ${Boost_FILESYSTEM_LIBRARY}
+                          ${Boost_SYSTEM_LIBRARY})
 
     # Test: test_pexodus_3
-    add_executable(test_pexodus_3 test/ParallelMain.cc 
-                   test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
-    target_link_libraries(test_pexodus_3 exodus_reader ${UnitTest_LIBRARIES} 
-                          ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_amanzi_test(pexodus_3proc test_pexodus_3 NPROCS 3 KIND int)
+    add_amanzi_test(pexodus_3proc test_pexodus_3
+                    KIND int
+		    NPROCS 3
+		    SOURCE 
+		          test/ParallelMain.cc 
+			  test/test_pread_checkit.cc
+			  test/test_file_path.cc
+	            LINK_LIBS 
+		          exodus_reader
+			  ${UnitTest_LIBRARIES}
+                          ${Boost_FILESYSTEM_LIBRARY}
+                          ${Boost_SYSTEM_LIBRARY})
 
     # Test: test_pexodus_4       
-    add_executable(test_pexodus_4 test/ParallelMain.cc 
-                   test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
-    target_link_libraries(test_pexodus_4 exodus_reader  ${UnitTest_LIBRARIES}
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_amanzi_test(pexodus_4proc test_pexodus_4 NPROCS 4 KIND int)
-     
+    add_amanzi_test(pexodus_4proc test_pexodus_4
+                    KIND int
+		    NPROCS 4
+		    SOURCE 
+		          test/ParallelMain.cc 
+			  test/test_pread_checkit.cc
+			  test/test_file_path.cc
+	            LINK_LIBS 
+		          exodus_reader
+			  ${UnitTest_LIBRARIES}
+                          ${Boost_FILESYSTEM_LIBRARY}
+                          ${Boost_SYSTEM_LIBRARY})
+
 endif()

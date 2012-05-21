@@ -61,6 +61,10 @@ const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
 const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
 const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;  // rc1 compatibility
 
+const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
+const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
+const int FLOW_TI_ERROR_CONTROL_CONSISTENCY = 4;
+
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
 const int FLOW_HEX_EDGES = 12;
@@ -117,10 +121,12 @@ class Flow_PK : public BDF2::fnBase {
   void addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
   // gravity members
-  void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
+  void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
+                            const Epetra_Vector& Krel_cells,
                             const Epetra_Vector& Krel_faces, 
                             Matrix_MFD* matrix);
-  void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
+  void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
+                                  const Epetra_Vector& Krel_cells,
                                   const Epetra_Vector& Krel_faces,
                                   Epetra_Vector& darcy_mass_flux);
 
