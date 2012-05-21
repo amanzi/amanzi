@@ -345,10 +345,16 @@ void MPC::cycle_driver() {
   restart->dump_state(*S);
 
   if (flow_enabled) {
-    if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY) {
-      FPK->InitSteadyState(T0, dTsteady);
-    } else if (ti_mode == TRANSIENT) {
-      FPK->InitTransient(T0, dTtransient);
+    if (ti_mode == STEADY) {
+      FPK->InitSteadyState(S->get_time(), dTsteady);
+    } else if ( ti_mode == TRANSIENT ) {
+      FPK->InitTransient(S->get_time(), dTtransient);
+    } else if ( ti_mode == INIT_TO_STEADY ) {
+      if (S->get_time() < Tswitch) {
+	FPK->InitSteadyState(S->get_time(), dTsteady);
+      } else {
+	FPK->InitTransient(S->get_time(), dTtransient);
+      }
     }
   }
 
@@ -394,21 +400,21 @@ void MPC::cycle_driver() {
           limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
           tslimiter = MPC_LIMITS;
         }
-
+	
         // make sure we hit any of the reset times exactly (not in steady mode)
         if (! ti_mode == STEADY) {
           if (!reset_times_.empty()) {
-            if (reset_times_[1].first != Tswitch) {
+	    if (S->get_time() >=  Tswitch) {
               // now we are trying to hit the next reset time exactly
-              if (S->get_time()+2*flow_dT > reset_times_[1].first) {
-                limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[1].first);
+              if (S->get_time()+2*flow_dT > reset_times_[0].first) {
+                limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[0].first);
 		tslimiter = MPC_LIMITS;
               }
             }
           }
         }
       }
-	
+
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
           double transport_dT_tmp = TPK->CalculateTransportDt();
