@@ -840,7 +840,7 @@ void PorousMedia::read_geometry()
   regions.clear();
   if (generate_default_regions) {
       nregion_DEF = 1 + 2*BL_SPACEDIM;
-      regions.resize(nregion_DEF);
+      regions.resize(nregion_DEF,PArrayManage);
       regions.set(0, new   allRegion(problo,probhi));
       regions.set(1, new allBCRegion(0,0,problo,probhi));
       regions.set(2, new allBCRegion(0,1,problo,probhi));
@@ -866,7 +866,7 @@ void PorousMedia::read_geometry()
       Array<std::string> r_name;
       pp.getarr("regions",r_name,0,nregion_user);
       nregion += nregion_user;
-      regions.resize(nregion);
+      regions.resize(nregion,PArrayManage);
 
       for (int j=0; j<nregion_user; ++j)
       {

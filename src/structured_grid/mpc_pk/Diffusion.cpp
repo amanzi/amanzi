@@ -1948,8 +1948,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
   // setup multilevel objects
   Real b = dt*density[0];
-  PArray<MultiFab> Rhs(nlevs);
-  PArray<MultiFab> Soln(nlevs);
+  PArray<MultiFab> Rhs(nlevs,PArrayManage);
+  PArray<MultiFab> Soln(nlevs,PArrayManage);
   std::vector<BoxArray> bav(nlevs);
   std::vector<DistributionMapping> dmv(nlevs);
   std::vector<Geometry> geom(nlevs);    
@@ -1966,7 +1966,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   Array<MultiFab*> Snew_p(Snew.size());
   Array<PArray<MultiFab> > beta_pp(BL_SPACEDIM);
   Array<Array<MultiFab*> > beta_lp(nlevs);
-  PArray<MultiFab> lambda(nlevs);
+  PArray<MultiFab> lambda(nlevs,PArrayManage);
 
   for (int dir=0; dir<BL_SPACEDIM; dir++) {
       beta_pp[dir].resize(nlevs, PArrayNoManage);
@@ -2097,6 +2097,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
               std::cout << std::endl;
           }
 	  status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
+          delete[] a1_p;
           return;
       }
 
@@ -2107,7 +2108,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       }
     }
   
-  PArray<MultiFab> Ptmp(nlevs);
+  PArray<MultiFab> Ptmp(nlevs,PArrayManage);
   for (int lev=0; lev<nlevs; lev++)
   {
       Ptmp.set(lev, new MultiFab(bav[lev],1,1));
@@ -2199,6 +2200,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   for (int lev=0; lev<nlevs;lev++) {
       MultiFab::Copy(Pnew_p[lev],Ptmp[lev],0,nc,1,1);
   }
+
+  delete[] a1_p;
 }
 
 void
