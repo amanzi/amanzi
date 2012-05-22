@@ -68,6 +68,8 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Transport")          = create_Transport_List(plist);
   new_list.sublist("State")              = create_State_List(plist);
   new_list.sublist("Flow")               = create_Flow_List(plist);
+  new_list.sublist("Preconditioners")    = create_Preconditioners_List(plist);
+
   if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
     new_list.sublist("Chemistry") = CreateChemistryList(plist);
   }
@@ -795,6 +797,14 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   return trp_list;
 }
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
+Teuchos::ParameterList create_Preconditioners_List ( Teuchos::ParameterList* plist ) {
+  Teuchos::ParameterList prec_list;
+  prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
+  return prec_list;
+}
 
 /* ******************************************************************
 * Empty                                             
@@ -823,6 +833,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 
         // set some reasonable defaults...
         steady_time_integrator.set<std::string>("method","BDF1");
+
+	// link to the preconditioner for the steady state solver
+	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
 
         sti_error_control.set<double>("absolute error tolerance",1.0);
         sti_error_control.set<double>("relative error tolerance",0.0);
@@ -885,6 +898,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 
         // set some reasonable defaults...
         transient_time_integrator.set<std::string>("method","BDF1");
+	
+	// link to the preconditioner for the transient time integrator
+	transient_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
 
         tti_error_control.set<double>("absolute error tolerance",1.0);
         tti_error_control.set<double>("relative error tolerance",0.0);
@@ -942,9 +958,6 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
         Teuchos::ParameterList& flow_bc = richards_problem.sublist("boundary conditions");
         flow_bc = create_SS_FlowBC_List(plist);
 
-        // insert the diffusion preconditioner sublist
-        Teuchos::ParameterList &diffprecon = richards_problem.sublist("Diffusion Preconditioner");
-        diffprecon = create_DPC_List(plist);
       } else {
         // something's wrong
       }
