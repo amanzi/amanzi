@@ -36,9 +36,10 @@ double TimeStepManager::TimeStep(const double T, const double dT) const {
       case TimeEvent::SPS : {
         if ( T < i->start_ ) {
           next_T_this_event = i->start_;
-        } else if ( (i->stop_ == -1.0) || ( T <= i->stop_ - i->period_ ) ) {
+        } else if ( (i->stop_ == -1.0) || ( T < i->stop_) ) {
           double n_periods = floor( (T - i->start_ )/i->period_ );
-          next_T_this_event = i->start_ + (n_periods+1.0)*i->period_;
+          double tmp = i->start_ + (n_periods+1.0)*i->period_;
+	  if (tmp <= i->stop_) next_T_this_event = tmp;
         }
       }
       case TimeEvent::TIMES: {
@@ -46,13 +47,14 @@ double TimeStepManager::TimeStep(const double T, const double dT) const {
         for (std::vector<double>::const_iterator j=i->times_.begin(); j!=i->times_.end(); ++j) {
           if (*j > T) {
             next_T_this_event = *j;
-            exit;
+            break;
           }
         }
       }
     }
     next_T_all_events = std::min(next_T_all_events, next_T_this_event);
   }
+  if (next_T_all_events == 1e99) return dT;
   double time_remaining(next_T_all_events - T);
   if (dT >= time_remaining) {
     return time_remaining;
@@ -71,7 +73,7 @@ void TimeStepManager::print(std::ostream& os, double start, double end) const {
       case TimeEvent::SPS: {
         double time = i->start_;
         while (time <= end && time <= i->stop_) {
-          print_times.push_back(time);
+	  if (time >= start ) print_times.push_back(time);
           time += i->period_;
         }
       }
