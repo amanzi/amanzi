@@ -1180,6 +1180,7 @@ PorousMedia::richard_init_to_steady()
                 bool last_chance = false;
 
                 Real dt = steady_init_time_step;
+                Real steady_time_eps = 1.e-8*dt;
                 MultiFab tmp(grids,1,1);
                 MultiFab tmpP(grids,1,1);
                 MultiFab& S_new = get_new_data(State_Type);
@@ -1192,23 +1193,24 @@ PorousMedia::richard_init_to_steady()
  
                 bool first = true;
                 int k = 0;
-                bool continue_iterations = true;
                 bool solved = false;
-                while (!solved  &&  k < steady_max_time_steps  &&  continue_iterations)
+                bool continue_iterations = (!solved) && (k < steady_max_time_steps) && (total_psuedo_time<steady_max_psuedo_time);
+
+                PorousMedia::Reason ret;
+                while (continue_iterations)
                 {
                     MultiFab::Copy(tmp,S_new,nc,0,1,0);
                     tmp.mult(-1.0);
 
                     if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "  psuedo-time = " << total_psuedo_time 
-                                  << ", psuedo-iter=" << k << ", dt = " << dt << '\n';
+                        std::cout << tag << "  t=" << total_psuedo_time 
+                                  << ", n=" << k << ", dt=" << dt << '\n';
                     }
 
                     // FIXME: Put max iters inside ret structure....
                     // FIXME: Should we enable a single-level solve for a ml system
                     //  (grid sequencing, etc)?
                     int curr_nwt_iter = steady_limit_iterations;
-                    PorousMedia::Reason ret;
 
                     if (do_multilevel_full) {
                         Array<MultiFab*> velPhase(finest_level+1);
@@ -1224,7 +1226,15 @@ PorousMedia::richard_init_to_steady()
                     if (ret == RICHARD_SUCCESS)
                     {
                         k++;
+                        Real old_t = total_psuedo_time;
                         total_psuedo_time += dt;
+
+                        // Small adjustment to clean things up
+                        if ( std::abs(steady_max_psuedo_time-total_psuedo_time) < steady_time_eps ) {
+                            total_psuedo_time = steady_max_psuedo_time;
+                            dt = steady_max_psuedo_time-old_t;
+                        }                            
+
                         prev_abs_err = abs_err;
 
                         MultiFab::Add(tmp,S_new,nc,0,1,0);
@@ -1239,7 +1249,7 @@ PorousMedia::richard_init_to_steady()
                         }
                           
                         solved = ((abs_err <= steady_tolerance) || ((rel_err>0)  && (rel_err <= steady_tolerance)) );
-                        continue_iterations = (!solved) || (k < steady_max_time_steps);
+                        continue_iterations = (!solved) && (k < steady_max_time_steps) && (total_psuedo_time<steady_max_psuedo_time);
 
                         if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
                             std::cout << tag << "             - step accepted."
@@ -1356,14 +1366,19 @@ PorousMedia::richard_init_to_steady()
                         std::cout << tag << "      num_consecutive_increases: " << num_consecutive_increases << std::endl;
                         std::cout << tag << "      last_chance: " << last_chance << std::endl;
                     }
+
+                    dt = std::min(dt, steady_max_psuedo_time-total_psuedo_time);
                 }
-                if (solved) {
-                    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "Success!  Total psuedo-time to steady: " << total_psuedo_time << std::endl;
+
+                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+                    std::cout << tag << "Total psuedo-time advanced " << total_psuedo_time << std::endl;
+                }
+
+                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+                    if (solved) {
+                        std::cout << tag << "Success!  Steady solution found" << std::endl;
                     }
-                }
-                else {
-                    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+                    else {
                         std::cout << tag << "Warning: psuedo-time to steady iterations failed.  Continuing..." << std::endl;
                     }
                 }

@@ -1156,7 +1156,7 @@ protected:
   static Real steady_extra_time_step_increase_factor;
   static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
-    
+  static Real steady_max_psuedo_time;
   //
   // Newton step defaults
   //
