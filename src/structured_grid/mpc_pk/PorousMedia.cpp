@@ -5154,7 +5154,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   if (!linear_status.success) {
       retVal = RICHARD_LINEAR_FAIL;
   }
-  if (itr_nwt > max_itr_nwt) {
+  if (itr_nwt >= max_itr_nwt) {
       retVal = RICHARD_NEWTON_FAIL;
       if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
           std::cout << "     **************** Newton failed: too many iterations (max = " << max_itr_nwt << '\n'; 
@@ -5426,7 +5426,7 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, Array<Multi
   if (!linear_status.success) {
       retVal = RICHARD_LINEAR_FAIL;
   }
-  if (itr_nwt > max_itr_nwt) {
+  if (itr_nwt >= max_itr_nwt) {
       retVal = RICHARD_NEWTON_FAIL;
       if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
           std::cout << "     **************** Newton failed: too many iterations (max = " << max_itr_nwt << '\n'; 
