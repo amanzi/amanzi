@@ -54,21 +54,21 @@ ExternalProject_Add(${ExodusII_BUILD_TARGET}
 # --- Add the nemsis build step		  
 
 # Configure the build script
-set(NEMESIS_sh_build ${ExodusII_prefix_dir}/nemesis-build.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nemesis-build.sh.in
-               ${NEMESIS_sh_build}
-               @ONLY)
+#EXODUS-5.xset(NEMESIS_sh_build ${ExodusII_prefix_dir}/nemesis-build.sh)
+#EXODUS-5.xconfigure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nemesis-build.sh.in
+#EXODUS-5.x               ${NEMESIS_sh_build}
+#EXODUS-5.x               @ONLY)
 
 # Configure the CMake command file
-set(NEMESIS_cmake_build ${ExodusII_prefix_dir}/nemesis-build.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nemesis-build.cmake.in
-               ${NEMESIS_cmake_build}
-               @ONLY)
-set(NEMESIS_BUILD_COMMAND ${CMAKE_COMMAND} -P ${NEMESIS_cmake_build}) 
-
-ExternalProject_Add_Step(${ExodusII_BUILD_TARGET} nemesis
-                         COMMAND ${NEMESIS_BUILD_COMMAND}
-                         COMMENT "Building nemesis (ExodusII extension)"
-                         DEPENDEES install
-                         WORKING_DIRECTORY ${ExodusII_prefix}
-                         LOG TRUE)
+#EXODUS-5.xset(NEMESIS_cmake_build ${ExodusII_prefix_dir}/nemesis-build.cmake)
+#EXODUS-5.xconfigure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nemesis-build.cmake.in
+#EXODUS-5.x               ${NEMESIS_cmake_build}
+#EXODUS-5.x               @ONLY)
+#EXODUS-5.xset(NEMESIS_BUILD_COMMAND ${CMAKE_COMMAND} -P ${NEMESIS_cmake_build}) 
+#EXODUS-5.x
+#EXODUS-5.xExternalProject_Add_Step(${ExodusII_BUILD_TARGET} nemesis
+#EXODUS-5.x                         COMMAND ${NEMESIS_BUILD_COMMAND}
+#EXODUS-5.x                         COMMENT "Building nemesis (ExodusII extension)"
+#EXODUS-5.x                         DEPENDEES install
+#EXODUS-5.x                         WORKING_DIRECTORY ${ExodusII_prefix}
+#EXODUS-5.x                         LOG TRUE)

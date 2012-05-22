@@ -142,13 +142,12 @@ set(ASCEMIO_MD5_SUM       04d1fba6b566b38628f503a3d39c6883)
 #
 # TPL: ExodusII
 #
-set(ExodusII_VERSION_MAJOR 5)
-set(ExodusII_VERSION_MINOR 14)
+set(ExodusII_VERSION_MAJOR 4)
+set(ExodusII_VERSION_MINOR 98)
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
-#set(ExodusII_URL_STRING     "http://downloads.sourceforge.net/project/exodusii/exodusii/${ExodusII_VERSION}")
 set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar)
-set(ExodusII_MD5_SUM        ed150bd50cbb2fb9c6d5fe95a9d46eff) 
+set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
+set(ExodusII_MD5_SUM     4480e641d6ada58f5d8ecb7172e76791) 
 
 #
 # TPL: MSTK
