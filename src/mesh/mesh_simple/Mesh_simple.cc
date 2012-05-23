@@ -444,7 +444,7 @@ unsigned int Mesh_simple::num_entities (AmanziMesh::Entity_kind kind,
 void Mesh_simple::cell_get_faces (AmanziMesh::Entity_ID cell, 
 				  AmanziMesh::Entity_ID_List *faceids)  const 
 {
-  unsigned int offset = 6*cell;
+  unsigned int offset = (unsigned int) 6*cell;
 
   faceids->clear();
 
@@ -460,7 +460,7 @@ void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
                                            std::vector<int> *cfacedirs,
                                            const bool ordered) const
 {
-  unsigned int offset = 6*cellid;
+  unsigned int offset = (unsigned int) 6*cellid;
 
   faceids->clear();
   cfacedirs->clear();
@@ -477,7 +477,7 @@ void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
 void Mesh_simple::cell_get_nodes (AmanziMesh::Entity_ID cell, 
 				  AmanziMesh::Entity_ID_List *nodeids) const
 {
-  unsigned int offset = 8*cell;
+  unsigned int offset = (unsigned int) 8*cell;
 
   nodeids->clear();
 
@@ -491,7 +491,7 @@ void Mesh_simple::cell_get_nodes (AmanziMesh::Entity_ID cell,
 void Mesh_simple::face_get_nodes (AmanziMesh::Entity_ID face, 
 				  AmanziMesh::Entity_ID_List *nodeids) const
 {
-  unsigned int offset = 4*face;
+  unsigned int offset = (unsigned int) 4*face;
 
   nodeids->clear();
 
@@ -508,7 +508,7 @@ void Mesh_simple::face_get_nodes (AmanziMesh::Entity_ID face,
 void Mesh_simple::node_get_coordinates (const AmanziMesh::Entity_ID local_node_id, 
 					AmanziGeometry::Point *ncoords) const
 {
-  unsigned int offset = 3*local_node_id;
+  unsigned int offset = (unsigned int) 3*local_node_id;
 
   ncoords->init(3);
 
@@ -526,7 +526,7 @@ void Mesh_simple::face_get_coordinates (AmanziMesh::Entity_ID local_face_id,
   fcoords->clear();
 
   AmanziGeometry::Point xyz(3);
-  for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
+  for (std::vector<Entity_ID>::iterator it = node_indices.begin(); 
        it != node_indices.end(); ++it)
   {
     node_get_coordinates ( *it, &xyz);
@@ -538,14 +538,14 @@ void Mesh_simple::face_get_coordinates (AmanziMesh::Entity_ID local_face_id,
 void Mesh_simple::cell_get_coordinates (AmanziMesh::Entity_ID local_cell_id, 
 					std::vector<AmanziGeometry::Point> *ccoords) const
 {  
-  std::vector<unsigned int> node_indices(8);
+  std::vector<Entity_ID> node_indices(8);
 
   cell_get_nodes (local_cell_id, &node_indices);
 
   ccoords->clear();
 
   AmanziGeometry::Point xyz(3);
-  for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
+  for (std::vector<Entity_ID>::iterator it = node_indices.begin(); 
        it != node_indices.end(); ++it)
   {      
     node_get_coordinates ( *it, &xyz);
@@ -557,7 +557,7 @@ void Mesh_simple::cell_get_coordinates (AmanziMesh::Entity_ID local_cell_id,
 void Mesh_simple::cell_get_face_dirs (AmanziMesh::Entity_ID cell, 
 				      std::vector<int> *cfacedirs) const
 {
-  unsigned int offset = 6*cell;
+  unsigned int offset = (unsigned int) 6*cell;
 
   cfacedirs->clear();
   for (int i = 0; i < 6; i++) {
@@ -570,7 +570,7 @@ void Mesh_simple::cell_get_face_dirs (AmanziMesh::Entity_ID cell,
 void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
                                       const double *ncoord)
 {
-  unsigned int offset = 3*local_node_id;
+  unsigned int offset = (unsigned int) 3*local_node_id;
   int spdim = Mesh::space_dimension();
 
   ASSERT(ncoord != NULL);
@@ -585,7 +585,7 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
 void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
                                        const AmanziGeometry::Point ncoord)
 {
-  unsigned int offset = 3*local_node_id;
+  unsigned int offset = (unsigned int) 3*local_node_id;
 
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
   double coordarray[3] = {0.0,0.0,0.0};
@@ -605,7 +605,7 @@ void Mesh_simple::node_get_cells (const AmanziMesh::Entity_ID nodeid,
                                   const AmanziMesh::Parallel_type ptype,
                                   AmanziMesh::Entity_ID_List *cellids) const 
 {
-  unsigned int offset = 9*nodeid;
+  unsigned int offset = (unsigned int) 9*nodeid;
   unsigned int ncells = node_to_cell_[offset];
 
   cellids->clear();
@@ -622,7 +622,7 @@ void Mesh_simple::node_get_faces (const AmanziMesh::Entity_ID nodeid,
                                   const AmanziMesh::Parallel_type ptype,
                                   AmanziMesh::Entity_ID_List *faceids) const
 {
-  unsigned int offset = 13*nodeid;
+  unsigned int offset = (unsigned int) 13*nodeid;
   unsigned int nfaces = node_to_face_[offset];
 
   faceids->clear();
@@ -641,14 +641,14 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
                                        const AmanziMesh::Parallel_type ptype,
                                        AmanziMesh::Entity_ID_List *faceids) const
 {
-  unsigned int offset = 6*cellid;
+  unsigned int offset = (unsigned int) 6*cellid;
 
   faceids->clear();
 
   for (int i = 0; i < 6; i++) {
-    unsigned int cellfaceid = cell_to_face_[offset+i];
+    Entity_ID cellfaceid = cell_to_face_[offset+i];
 
-    unsigned int offset2 = 4*cellfaceid;
+    unsigned int offset2 = (unsigned int) 4*cellfaceid;
 
     Amanzi::AmanziMesh::Entity_ID_List fnodes;
     face_get_nodes(cellfaceid,&fnodes);
@@ -669,7 +669,7 @@ void Mesh_simple::face_get_cells (const AmanziMesh::Entity_ID faceid,
                                   const AmanziMesh::Parallel_type ptype,
                                   AmanziMesh::Entity_ID_List *cellids) const
 {
-  unsigned int offset = 2*faceid;
+  unsigned int offset = (unsigned int) 2*faceid;
 
   cellids->clear();
 
@@ -696,14 +696,14 @@ void Mesh_simple::cell_get_face_adj_cells(const AmanziMesh::Entity_ID cellid,
                                           const AmanziMesh::Parallel_type ptype,
                                           AmanziMesh::Entity_ID_List *fadj_cellids) const
 {
-  unsigned int offset = 6*cellid;
+  unsigned int offset = (unsigned int) 6*cellid;
 
   fadj_cellids->clear();
 
   for (int i = 0; i < 6; i++) {    
-    unsigned int faceid = cell_to_face_[offset];
+    Entity_ID faceid = cell_to_face_[offset];
 
-    unsigned int foffset = 2*faceid;
+    unsigned int foffset = (unsigned int) 2*faceid;
 
     int adjcell0 = face_to_cell_[foffset];
     if (adjcell0 != -1 && adjcell0 != cellid)
@@ -726,18 +726,18 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
                                           const AmanziMesh::Parallel_type ptype,
                                           AmanziMesh::Entity_ID_List *nadj_cellids) const
 {
-  unsigned int offset = 8*cellid;
+  unsigned int offset = (unsigned int) 8*cellid;
 
   nadj_cellids->clear();
   
   for (int i = 0; i < 8; i++) {
-    unsigned int nodeid = cell_to_node_[offset+i];
+    Entity_ID nodeid = cell_to_node_[offset+i];
 
-    unsigned int offset2 = 9*nodeid;
+    unsigned int offset2 = (unsigned int) 9*nodeid;
     unsigned int ncell = node_to_cell_[offset2];
 
     for (int j = 0; j < 8; j++) {
-      unsigned int nodecell = node_to_cell_[offset2+j];
+      Entity_ID nodecell = node_to_cell_[offset2+j];
       
       unsigned int found = 0;
       unsigned int size = nadj_cellids->size();
@@ -867,7 +867,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
   switch (kind) {
     case AmanziMesh::FACE:
       {
-      std::vector<unsigned int> ss;
+      std::vector<Set_ID> ss;
 
       // Does this set exist?
 
@@ -1109,7 +1109,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
       }
     case AmanziMesh::CELL:
       {
-      std::vector<unsigned int> cs; // cell set
+      std::vector<Set_ID> cs; // cell set
           
       int ncs = element_blocks_.size();
       bool found = false;
@@ -1174,7 +1174,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
       }
   case AmanziMesh::NODE:
     {
-      std::vector<unsigned int> ns;
+      std::vector<Set_ID> ns;
 
       // Does this set exist?
 
