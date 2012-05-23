@@ -66,12 +66,12 @@
           <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
           <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
           <Parameter name="steady_init_time_step" type="double" value="9.467e5"/>
-          <Parameter name="steady_max_time_steps" type="int" value="500"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="1"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
+          <Parameter name="steady_max_time_steps" type="int" value="10"/>
 
           <Parameter name="richard_solver_verbose" type="int" value="0"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>

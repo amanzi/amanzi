@@ -1133,6 +1133,30 @@ PorousMedia::initData ()
 }
 
 void
+PorousMedia::BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs)
+{
+    nld.max_num_Jacobian_reuse = 3;
+    nld.max_nl_iterations = steady_limit_iterations;
+    nld.max_nl_residual_norm = -1;
+    nld.Hcoeffs.resize(BL_SPACEDIM);
+    nld.Jacobian.resize(BL_SPACEDIM);
+    for (int dir = 0; dir < BL_SPACEDIM; dir++) {
+        nld.Hcoeffs[dir].resize(nlevs,PArrayManage);
+        nld.Jacobian[dir].resize(nlevs,PArrayManage);
+        for (int lev = 0; lev < nlevs; lev++) {
+            BoxArray grids = BoxArray(parent->getLevel(slev+lev).boxArray()).surroundingNodes(dir);
+            nld.Hcoeffs[dir].set(lev, new MultiFab(grids,1,0));
+            nld.Jacobian[dir].set(lev, new MultiFab(grids,3,0));
+        }
+    }
+    nld.velPhase.resize(nlevs);
+    for (int lev = 0; lev <nlevs; lev++) {
+        nld.velPhase[lev] = dynamic_cast<PorousMedia*>(&parent->getLevel(slev+lev))->u_mac_curr;
+    }
+}
+
+
+void
 PorousMedia::richard_init_to_steady()
 {
 #ifdef MG_USE_FBOXLIB
@@ -1197,6 +1221,14 @@ PorousMedia::richard_init_to_steady()
                 bool continue_iterations = (!solved) && (k < steady_max_time_steps) && (total_psuedo_time<steady_max_psuedo_time);
 
                 PorousMedia::Reason ret;
+                RichardNLSdata nld;
+
+                // Build nl solver context
+                if (do_multilevel_full) {
+                    int nlevs = parent->finestLevel() - level + 1;
+                    BuildRichardNLSdata(nld,0,nlevs);
+                }
+
                 while (continue_iterations)
                 {
                     MultiFab::Copy(tmp,S_new,nc,0,1,0);
@@ -1213,11 +1245,7 @@ PorousMedia::richard_init_to_steady()
                     int curr_nwt_iter = steady_limit_iterations;
 
                     if (do_multilevel_full) {
-                        Array<MultiFab*> velPhase(finest_level+1);
-                        for (int lev = 0; lev <= finest_level; lev++) {
-                            velPhase[lev] = dynamic_cast<PorousMedia*>(&parent->getLevel(lev))->u_mac_curr;
-                        }
-                        ret = richard_composite_update(dt,curr_nwt_iter,velPhase);
+                        ret = richard_composite_update(dt,curr_nwt_iter,nld);
                     }
                     else {
                         ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
@@ -1281,7 +1309,7 @@ PorousMedia::richard_init_to_steady()
                             num_consecutive_success = 0;
                         }
                         
-                        if (num_consecutive_increases > steady_max_num_consecutive_increases) {
+                        if (num_consecutive_increases >= steady_max_num_consecutive_increases) {
                             dt *= steady_consecutive_increase_reduction_factor;
                         }
                         else {
@@ -2450,12 +2478,9 @@ PorousMedia::advance_multilevel_richard (Real time,
   //
   int curr_nwt_iter;
   int nlevs = parent->finestLevel() - level + 1;
-
-  Array<MultiFab*> velPhase(nlevs);
-  for (int lev = 0; lev < nlevs; lev++) {
-      velPhase[lev] = dynamic_cast<PorousMedia*>(&parent->getLevel(lev))->u_mac_curr;
-  }
-  PorousMedia::Reason ret = richard_composite_update(dt,curr_nwt_iter,velPhase);
+  RichardNLSdata nld;
+  PorousMedia::BuildRichardNLSdata(nld,0,nlevs);
+  PorousMedia::Reason ret = richard_composite_update(dt,curr_nwt_iter,nld);
   BL_ASSERT(ret == RICHARD_SUCCESS);
 
   for (int lev=0; lev<nlevs; lev++)
@@ -5262,7 +5287,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 // Richard equation: Time-dependent solver.  Only doing a first-order implicit scheme
 //
 PorousMedia::Reason 
-PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, Array<MultiFab*>& u_mac_local)
+PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSdata& nl_data)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_composite_update()");
   BL_ASSERT(have_capillary == 1);
@@ -5272,24 +5297,28 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, Array<Multi
   int nlevs = parent->finestLevel() - level + 1;
   int nc = 0;
 
+  Array<MultiFab*>& u_mac_local = nl_data.velPhase;
+  Array < PArray <MultiFab> >& cmp_pcp1 = nl_data.Hcoeffs;
+  Array < PArray <MultiFab> >& cmp_pcp1_dp = nl_data.Jacobian;
+
+
   // Create a nlevs-level array for the coefficients
   PArray <MultiFab> alpha(nlevs,PArrayManage);
   PArray <MultiFab> res_fix(nlevs,PArrayManage);
-  Array < PArray <MultiFab> > cmp_pcp1(BL_SPACEDIM);
-  Array < PArray <MultiFab> > cmp_pcp1_dp(BL_SPACEDIM);
     
-  for (int dir=0; dir<BL_SPACEDIM; dir++)
-    {
-      cmp_pcp1[dir].resize(nlevs,PArrayManage);
-      cmp_pcp1_dp[dir].resize(nlevs,PArrayManage);
-    }
-
   int do_upwind = 1;
   int  max_itr_nwt = total_nwt_iter;
   Real max_err_nwt = 1e-6;
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
+
+  bool do_Jacobian_eval = false;
+  if (nl_data.num_Jacobian_reuses_remaining == 0) {
+      do_Jacobian_eval = true;
+      nl_data.num_Jacobian_reuses_remaining = nl_data.max_num_Jacobian_reuse;
+  }
+
   for (int lev=0; lev<nlevs; lev++)
   {
       PorousMedia&    fine_lev   = getLevel(lev);
@@ -5314,8 +5343,6 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, Array<Multi
       {
 	BoxArray ba = fine_grids;
 	ba.surroundingNodes(dir);
-	cmp_pcp1[dir].set(lev, new MultiFab(ba,1,0));
-	cmp_pcp1_dp[dir].set(lev, new MultiFab(ba,3,0));
 	tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
 	tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
       }
@@ -5324,8 +5351,17 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, Array<Multi
 
       fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
 				 u_mac_local[lev],0,do_upwind,pcTime);
-      fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-				u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+      if (do_Jacobian_eval)
+      {
+          std::cout << "*************************************************  computing Jacobian" << std::endl;
+          fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
+                                    u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+      }
+      else {
+          std::cout << "*************************************************  reusing Jacobian" << std::endl;
+      }
+
+
       if (do_richard_sat_solve) 
 	{
             // FIXME: pulled from above after calcLambda

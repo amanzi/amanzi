@@ -123,6 +123,15 @@ public:
   friend class Diffusion;
   friend class Observation;
 
+    struct RichardNLSdata {
+        int max_num_Jacobian_reuse, num_Jacobian_reuses_remaining;
+        int max_nl_iterations, nl_iterations_taken;
+        Real max_nl_residual_norm, nl_residual_norm;        
+        Array < PArray <MultiFab> > Hcoeffs;
+        Array < PArray <MultiFab> > Jacobian;
+        Array <MultiFab*> velPhase;
+    };
+
   PorousMedia ();
 
   PorousMedia (Amr&            papa,
@@ -355,6 +364,8 @@ public:
 
 protected:
 
+  void BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs);
+
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
     
   void init_rock_properties (); // Initialize the rock properties
@@ -508,7 +519,7 @@ protected:
 
   PorousMedia::Reason richard_composite_update (Real dt, 
                                                 int& total_nwt_iter,
-                                                Array<MultiFab*>& u_mac);
+                                                RichardNLSdata& nl_data);
 
   void richard_init_to_steady();
 
