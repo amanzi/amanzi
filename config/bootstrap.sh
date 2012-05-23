@@ -85,6 +85,9 @@ unstructured=$TRUE
 stk_mesh=$TRUE
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
+amanzi_branch=default
+test_suite=$FALSE
+netcdf4=${TRUE}
 
 
 
@@ -235,6 +238,8 @@ Configuration:
                           configuration.
 
   --debug                 build debug TPLs and Amanzi binaries.
+
+  --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
   
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
@@ -245,6 +250,7 @@ Value in brackets indicates default setting.
   stk_mesh                build the STK Mesh Toolkit ['"${stk_mesh}"']
   mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
+  test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
 
 Tool definitions:
 
@@ -309,6 +315,8 @@ Build Features:
     stk_mesh            ='"${stk_mesh}"'
     mstk_mesh           ='"${mstk_mesh}"'
     moab_mesh           ='"${moab_mesh}"'
+    test_suite          ='"${test_suite}"'
+    netcdf4             ='"${netcdf4}"'
 
 Directories:
     prefix                 ='"${prefix}"'
@@ -365,6 +373,10 @@ function parse_argv()
 
       --no-color)
                  no_color=${TRUE}
+                 ;;
+
+      --branch=*)
+                 amanzi_branch=`parse_option_with_equal ${opt} 'branch'`
                  ;;
 
       --with-c-compiler=*)
@@ -613,6 +625,21 @@ function ascem_hg_clone
   fi
 }
 
+function hg_change_branch()
+{
+  branch=$1
+  save_dir=`pwd`
+  cd ${amanzi_source_dir}
+  status_message "Updating ${amanzi_source_dir} to branch ${branch}"
+  ${hg_binary} update ${branch}
+  if [ $? -ne 0 ]; then
+    error_message "Failed to update ${amanzi_source_dir} to branch ${branch}"
+    exit_now 30
+  fi
+  cd ${save_dir}
+ 
+}
+
 # MPI Check
 function check_mpi_root
 {
@@ -856,6 +883,10 @@ check_compilers
 # Check the cmake, hg and curl tools
 check_tools
 
+# Change the branch
+hg_change_branch ${amanzi_branch}
+
+
 # Now build the TPLs if the config file is not defined
 if [ -z "${tpl_config_file}" ]; then
 
@@ -879,6 +910,7 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
                 -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
                 -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+                -DENABLE_NETCDF4:BOOL=${netcdf4} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -912,10 +944,23 @@ if [ -z "${tpl_config_file}" ]; then
 
 else 
 
+  status_message "Checking configuration file ${tpl_config_file}"
+
   if [ ! -e "${tpl_config_file}" ]; then
-    error_message "Configure file ${amanzi_config_file} does not exist!"
+    error_message "Configure file ${amanzi_config_file} does not exist"
     exit_now 30
   fi
+
+  if [ ! -r "${tpl_config_file}" ]; then
+    error_message "Configure file ${tpl_config_file} is not readable"
+    exit_now 30
+  fi
+
+  if [ ! -f "${tpl_config_file}" ]; then
+    error_message "Configure file ${tpl_config_file} is not a regular file"
+    exit_now 30
+  fi
+
 
 fi
 
@@ -951,6 +996,16 @@ if [ $? -ne 0 ]; then
   exit_now 50
 fi
 status_message "Amanzi build complete"
+
+# Amanzi Test Suite
+if [ "${test_suite}" -eq "${TRUE}" ]; then
+  status_message "Run Amanzi test suite"
+  make test
+  if [ $? -ne 0 ]; then
+    error_message "Amanzi test suite failed"
+    exit_now 30
+  fi
+fi
 
 # Amanzi Install
 make install
