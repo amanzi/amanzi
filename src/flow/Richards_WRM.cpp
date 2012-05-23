@@ -29,7 +29,7 @@ void Richards_PK::CalculateRelativePermeabilityCell(const Epetra_Vector& p)
     std::vector<AmanziMesh::Set_ID> block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    std::vector<unsigned int>::iterator i;
+    AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[*i];
       (*Krel_cells)[*i] = WRM[mb]->k_relative(pc);
@@ -152,10 +152,10 @@ void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
 
-    std::vector<unsigned int> block(ncells);
+    AmanziMesh::Entity_ID_List block(ncells);
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    std::vector<unsigned int>::iterator i;
+    AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[*i];
       ds[*i] = -WRM[mb]->dSdPc(pc);  // Negative sign indicates that dSdP = -dSdPc.
@@ -173,10 +173,10 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
 
-    std::vector<unsigned int> block(ncells);
+    AmanziMesh::Entity_ID_List block(ncells);
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    std::vector<unsigned int>::iterator i;
+    AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[*i];
       s[*i] = WRM[mb]->saturation(pc);
@@ -194,10 +194,10 @@ void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
 
-    std::vector<unsigned int> block(ncells);
+    AmanziMesh::Entity_ID_List block(ncells);
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    std::vector<unsigned int>::iterator i;
+    AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       double pc = WRM[mb]->capillaryPressure(s[*i]);
       p[*i] = atm_pressure - pc;
@@ -215,13 +215,13 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
 
-    std::vector<unsigned int> block(ncells);
+    AmanziMesh::Entity_ID_List block(ncells);
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     double pc = atm_pressure - pmin;
     double s0 = WRM[mb]->saturation(pc);
 
-    std::vector<unsigned int>::iterator i;
+    AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       if (p[*i] < pmin) p[*i] = s0;
     }
@@ -238,10 +238,10 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Ep
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
 
-    std::vector<unsigned int> block(ncells);
+    AmanziMesh::Entity_ID_List block(ncells);
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    std::vector<unsigned int>::iterator i;
+    AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       if (p[*i] < pmin) {
         double pc = WRM[mb]->capillaryPressure(s0);

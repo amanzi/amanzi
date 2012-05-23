@@ -339,7 +339,7 @@ void Flow_State::set_permeability(double Kh, double Kv)
 
 void Flow_State::set_permeability(double Kh, double Kv, const string region)
 {
-  std::vector<unsigned int> block;
+  AmanziMesh::Entity_ID_List block;
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   int ncells = block.size();
 
