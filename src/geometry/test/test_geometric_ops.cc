@@ -29,8 +29,8 @@ TEST(Geometric_Ops)
   std::vector<unsigned int> nfnodes;
   for (int i = 0; i < 6; i++) nfnodes.push_back(4);
 
-  double hex_fnodes[6][4] = {{0,3,2,1},{1,2,6,5},{5,6,7,4},
-                             {0,4,7,3},{0,1,5,4},{2,3,7,6}};
+  int hex_fnodes[6][4] = {{0,3,2,1},{1,2,6,5},{5,6,7,4},
+                          {0,4,7,3},{0,1,5,4},{2,3,7,6}};
 
   double hex_ccoords1[8][3] = {{0.0,0.0,0.0},{1.0,0.0,0.0},
                               {1.0,1.0,0.0},{0.0,1.0,0.0},
