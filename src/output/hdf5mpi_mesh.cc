@@ -171,7 +171,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   int idx = 0;
   for (int i=0; i<ncells_local; i++) {
     int conn_len(each_conn[i]);
-    std::vector<unsigned int> xe(conn_len);
+    AmanziMesh::Entity_ID_List xe(conn_len);
     mesh_maps.cell_to_nodes(i, xe.begin(), xe.end());
     // store cell type id
     type = mesh_maps.cell_get_type(i);
