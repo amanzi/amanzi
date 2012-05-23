@@ -599,6 +599,7 @@ unsigned int Mesh_MSTK::num_entities (const Entity_kind kind,
   default:
     std::cerr << "Count requested for unknown entity type" << std::endl;
   }
+  return 0;
 }
 
 
@@ -3076,7 +3077,7 @@ void Mesh_MSTK::init_set_info() {
 
 void Mesh_MSTK::collapse_degen_edges() {
   const int topoflag=1;
-  std::vector<unsigned int> *orig_vids;
+  std::vector<Entity_ID> *orig_vids;
   int idx, idx2, evgid0, evgid1;
   MVertex_ptr ev0, ev1, vkeep, vdel;
   MEdge_ptr edge;
@@ -3114,7 +3115,7 @@ void Mesh_MSTK::collapse_degen_edges() {
 	idx2 = 0;
 	while ((region = List_Next_Entry(eregs,&idx2))) {
 
-	  orig_vids = new std::vector<unsigned int>;
+	  orig_vids = new std::vector<Entity_ID>;
 
           List_ptr rverts = MR_Vertices(region);
           
@@ -3140,7 +3141,7 @@ void Mesh_MSTK::collapse_degen_edges() {
 	idx2 = 0;
 	while ((face = List_Next_Entry(efaces,&idx2))) {
 
-	  orig_vids = new std::vector<unsigned int>;
+	  orig_vids = new std::vector<Entity_ID>;
 
           List_ptr fverts = MF_Vertices(face,1,0);
           

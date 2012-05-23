@@ -18,7 +18,7 @@ TEST(MSTK_HEX_GEN_4x4x4)
 {
 
   int i, j, k, err, nc, nf, nv;
-  unsigned int faces[6], nodes[8];
+  Amanzi::AmanziMesh::Set_ID faces[6], nodes[8];
   int facedirs[6];
 
   int NV = 64;
@@ -41,7 +41,7 @@ TEST(MSTK_HEX_GEN_4x4x4)
   CHECK_EQUAL(NC,nc);
 
 
-  std::vector<unsigned int>  c2f(6);
+  std::vector<Amanzi::AmanziMesh::Set_ID>  c2f(6);
   std::vector<int> c2fdirs(6);
   Epetra_Map cell_map(mesh.cell_epetra_map(false));
   Epetra_Map face_map(mesh.face_epetra_map(false));
