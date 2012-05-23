@@ -36,7 +36,7 @@ add_definitions("-DUSE_MPI")
 file(GLOB src_files "*.cc")
 add_library(functions ${src_files})
 add_install_library(functions)
-target_link_libraries(functions error_handling ${Teuchos_LIBRARIES})
+target_link_libraries(functions error_handling ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
 #
 # Install Targets
@@ -61,26 +61,26 @@ if (BUILD_TESTS)
 
   add_amanzi_test(concrete-functions all-function-test
                   KIND unit
-		  SOURCE test/all-function-test.cc
-		  LINK_LIBS functions ${UnitTest_LIBRARIES})
+  SOURCE test/all-function-test.cc
+  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(function-factory function-factory-test
                   KIND unit
                   SOURCE test/function-factory-test.cc
-		  LINK_LIBS functions ${UnitTest_LIBRARIES})
+                  LINK_LIBS functions ${UnitTest_LIBRARIES})
  
   add_amanzi_test(concrete-color-function all-color-function-test
                   KIND unit
-		  SOURCE test/all-color-function-test.cc
-		  LINK_LIBS functions ${UnitTest_LIBRARIES})
+                  SOURCE test/all-color-function-test.cc
+                  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(color-function-factory color-function-factory-test
                   KIND unit
-		  SOURCE test/color-function-factory-test.cc
-		  LINK_LIBS 
-		           functions
-			   ${UnitTest_LIBRARIES}
-			   ${Teuchos_LIBRARIES}
-			   ${Epetra_LIBRARIES})
+                  SOURCE test/color-function-factory-test.cc
+                  LINK_LIBS 
+                         functions
+                         ${UnitTest_LIBRARIES}
+                         ${Teuchos_LIBRARIES}
+                         ${Epetra_LIBRARIES})
 
 endif()
