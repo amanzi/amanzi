@@ -36,7 +36,7 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: whetstone
 #
-add_library(whetstone mfd3d.cpp tensor.cpp)
+add_library(whetstone mfd3d.cpp mfd3d_vag.cpp tensor.cpp)
 include_directories(${WHETSTONE_SOURCE_DIR})
 #target_link_libraries(whetstone geometry mesh mesh_data error_handling ${Epetra_LIBRARIES})
 
