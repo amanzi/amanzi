@@ -206,6 +206,12 @@ The remaining `"Flow`" parameters are
   `"Upwind with Darcy flux`", `"Arithmetic mean`" and `"Cell centered`". The first three
   calculate the relative permeability on mesh interfaces.
 
+* `"Discretization method hint`" [string] helps to select the best discretization. 
+  It will go away with the next release of WhetStone. The available options are
+  `"none`", `"support operator`", and `"monotone`". The second options reproduces 
+  discretization implemented in RC1. The last option is recommended for orthogonal
+  meshes. 
+
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
   Here is an example:
@@ -229,7 +235,6 @@ nonlinear solvers during steady state time integration. Here is an example:
       <Parameter name="method" type="string" value="Picard"/>
       <Parameter name="initialize with darcy" type="string" value="yes"/>
       <Parameter name="clipping saturation value" type="double" value="0.98"/>
-
       <Parameter name="preconditoner" type="string" value="Trilinos ML">
 
       <ParameterList name="nonlinear solver BDF1">
@@ -243,11 +248,8 @@ nonlinear solvers during steady state time integration. Here is an example:
 
 The parameters used here are
 
-* `"Discretization method hint`" [string] helps to select the best discretization. 
-  It will go away with the next release of WhetStone. The available options are
-  `"none`", `"support operator`", and `"monotone`". The second options reproduces 
-  discretization implemented in RC1. The last option is recommended for orthogonal
-  meshes. 
+* `"method`" [string] defines time integration method. The available options are 
+  `"BDF1`", `"BDF2`", and `"Picard`".
 
 * `"initialize with darcy`" [string] solves the fully saturated problem with the 
   boundary continious avaluated at time T=0. The solution defines a new pressure
@@ -258,10 +260,7 @@ The parameters used here are
   of pressure. By default, the pressure threshold is equal to the atmospheric pressure.
   The new pressure is calculated based of the defined saturation value. Default is 0.6.
 
-* `"method`" [string] defines time integration method. The available options are 
-  `"BDF1`", `"BDF2`", and `"Picard`".
-
-* The remaining parameters will be moved to list `"Solvers`" and `"Preconditioners`"   
+* `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".   
 
 Transient Time Integratior
 -----------------------------
@@ -270,6 +269,7 @@ The sublist `"transient time integrator`" defines parameters controling linear a
 nonlinear solvers during steady state time integration. Its parameters similar to 
 that n the sublist `"steady state time integrator`" except for parameters controling
 pressure re-initialization.
+
 
 Transport
 =========
@@ -323,26 +323,49 @@ The `"Transport`" parameters useful for developers are:
   divergence-free condition. The defult value is 1e-6.
 
 
-Solvers
-=======
+Linear and Nonlinear Solvers
+============================
 
 Version 2 of the native input spec introduces this sublist.
+It constans sublists for various linear an nonlinear solvers such as BDF1 and AztecOO.
+Here is and example:
+
+.. code-block:: xml
+
+     <ParameterList name="Solvers">
+       <ParameterList name="GMRES via AztecOO">
+            ... 
+       </ParameterList>
+
+       <ParameterList name="BDF1">
+       ...
+       </ParameterList>
+
+       <ParameterList name="BDF2">
+       ...
+       </ParameterList>
+     </ParameterList>
+
+Names `"GMRES via AztecOO`", `"BDF1`", and `"BDF2`" are selected by the user.
+They can be used by a process kernel lists to define a solver.
 
 
 Preconditioners
 ===============
 
 Version 2 of the native input spec introduces this sublist. It contains sublists for various
-preconditioners required by a simulation. At the momennt, we support only `"ML`" sublist.
-Here is an example:
+preconditioners required by a simulation. At the moment, we support only Trilinos multilevel 
+preconditioner. Here is an example:
 
 .. code-block:: xml
 
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
-          <Parameter name="ML output" type="int" value="0"/>
-          <Parameter name="aggregation: damping factor" type="double" value="1.33333"/>
-          ... 
+          <ParameterList name="ML Parameters">
+            <Parameter name="ML output" type="int" value="0"/>
+            <Parameter name="aggregation: damping factor" type="double" value="1.33333"/>
+            ... 
+         </ParameterList>
        </ParameterList>
 
        <ParameterList name="Trilinos ML 2">
@@ -353,6 +376,9 @@ Here is an example:
        ...
        </ParameterList>
      </ParameterList>
+
+Names `"Trilinos ML`", `"Trilinos ML 2`", and `"External AMG`" are selected by the user.
+They can be used by a process kernel lists to define a preconditioner.
 
 
 Mesh
