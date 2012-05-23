@@ -1135,7 +1135,7 @@ PorousMedia::initData ()
 void
 PorousMedia::BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs)
 {
-    nld.max_num_Jacobian_reuse = 3;
+    nld.max_num_Jacobian_reuse = 0;
     nld.max_nl_iterations = steady_limit_iterations;
     nld.max_nl_residual_norm = -1;
     nld.Hcoeffs.resize(BL_SPACEDIM);
@@ -5314,7 +5314,7 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
   Real pcTime = state[State_Type].curTime();
 
   bool do_Jacobian_eval = false;
-  if (nl_data.num_Jacobian_reuses_remaining == 0) {
+  if (nl_data.num_Jacobian_reuses_remaining-- <= 0) {
       do_Jacobian_eval = true;
       nl_data.num_Jacobian_reuses_remaining = nl_data.max_num_Jacobian_reuse;
   }
@@ -5353,14 +5353,9 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
 				 u_mac_local[lev],0,do_upwind,pcTime);
       if (do_Jacobian_eval)
       {
-          std::cout << "*************************************************  computing Jacobian" << std::endl;
           fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
                                     u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
       }
-      else {
-          std::cout << "*************************************************  reusing Jacobian" << std::endl;
-      }
-
 
       if (do_richard_sat_solve) 
 	{
