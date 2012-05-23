@@ -24,15 +24,37 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
 
   FS = FS_MPC;
-  dp_list = flow_list.sublist("Darcy Problem");
+
+  // extract important sublists
+  Teuchos::ParameterList flow_list;
+  if (global_list.isSublist("Flow")) {
+    flow_list = global_list.sublist("Flow");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Flow> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (flow_list.isSublist("Darcy Problem")) {
+    dp_list_ = flow_list.sublist("Darcy Problem");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Darcy Problem> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (global_list.isSublist("Preconditioners")) {
+    preconditioner_list_ = global_list.sublist("Preconditioners");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Preconditioners> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
 
@@ -145,7 +167,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
 
   // Preconditioner
-  Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
   preconditioner->init_ML_preconditioner(ML_list);
 
   flow_status_ = FLOW_STATUS_INIT;

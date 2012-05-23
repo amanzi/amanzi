@@ -155,13 +155,12 @@ void MPC::mpc_init() {
   // flow...
   if (flow_enabled) {
     FS = Teuchos::rcp(new AmanziFlow::Flow_State(S));
-    Teuchos::ParameterList flow_parameter_list = parameter_list.sublist("Flow");
 
     flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(flow_parameter_list, FS));
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
     } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(flow_parameter_list, FS));
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else {
       cout << "MPC: unknown flow model: " << flow_model << endl;
       throw std::exception();

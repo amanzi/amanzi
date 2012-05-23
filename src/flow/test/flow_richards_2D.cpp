@@ -64,8 +64,7 @@ TEST(FLOW_2D_RICHARDS) {
   FS->set_gravity(-1.0);
 
   // create Richards process kernel
-  ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
-  Richards_PK* RPK = new Richards_PK(flow_list, FS);
+  Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);

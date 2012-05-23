@@ -63,8 +63,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   FS->set_gravity(-1.0);
 
   // create Richards process kernel
-  ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
-  Darcy_PK* DPK = new Darcy_PK(flow_list, FS);
+  Darcy_PK* DPK = new Darcy_PK(parameter_list, FS);
   DPK->set_standalone_mode(true);
   DPK->InitPK();
   DPK->InitSteadyState(0.0, 1e-8);

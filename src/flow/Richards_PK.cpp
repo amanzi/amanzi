@@ -36,15 +36,32 @@ namespace AmanziFlow {
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC)
+Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);
 
   FS = FS_MPC;
-  if (flow_list.isSublist("Richards Problem")) {
-    rp_list = flow_list.sublist("Richards Problem");
+
+  // extract two critical sublists 
+  Teuchos::ParameterList flow_list;
+  if (global_list.isSublist("Flow")) {
+    flow_list = global_list.sublist("Flow");
   } else {
-    Errors::Message msg("Flow does not have <Richards Problem> sublist.");
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Flow> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (flow_list.isSublist("Richards Problem")) {
+    rp_list_ = flow_list.sublist("Richards Problem");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Richards Problem> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (global_list.isSublist("Preconditioners")) {
+    preconditioner_list_ = global_list.sublist("Preconditioners");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Preconditioner> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -200,31 +217,31 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
      std::printf("Richards Flow: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
-     if (initialize_with_darcy) {
+    if (initialize_with_darcy) {
        std::printf("Richards Flow: initializing with a clipped Darcy pressure\n");
        std::printf("Richards Flow: clipping saturation value =%5.2g\n", clip_saturation);
      }
   }
 
-  Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
 
   preconditioner->setSymmetryProperty(is_matrix_symmetric);
   preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
   preconditioner->init_ML_preconditioner(ML_list);
 
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    Teuchos::ParameterList solver_list = rp_list.sublist("steady state time integrator").sublist("nonlinear solver BDF2");
+    Teuchos::ParameterList solver_list = rp_list_.sublist("steady state time integrator").sublist("nonlinear solver BDF2");
     if (solver_list.isSublist("VerboseObject"))
-       solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+       solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
 
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
-    Teuchos::ParameterList solver_list = rp_list.sublist("steady state time integrator").sublist("nonlinear solver BDF1");
+    Teuchos::ParameterList solver_list = rp_list_.sublist("steady state time integrator").sublist("nonlinear solver BDF1");
     if (solver_list.isSublist("VerboseObject"))
-        solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+        solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
@@ -292,7 +309,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
      std::printf("Richards PK: initializing transient flow: T(sec)=%9.4e dT(sec)=%9.4e\n", T0, dT0);
   }
-  Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_trs_).sublist("ML Parameters");
 
   preconditioner->setSymmetryProperty(is_matrix_symmetric);
   preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
@@ -301,9 +318,9 @@ void Richards_PK::InitTransient(double T0, double dT0)
   if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
     if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset BDF2 is to delete it.
 
-    Teuchos::ParameterList solver_list = rp_list.sublist("transient time integrator").sublist("nonlinear solver BDF2");
+    Teuchos::ParameterList solver_list = rp_list_.sublist("transient time integrator").sublist("nonlinear solver BDF2");
     if (solver_list.isSublist("VerboseObject"))
-        solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+        solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
     bdf2_dae = new BDF2::Dae(*this, *super_map_);
@@ -312,9 +329,9 @@ void Richards_PK::InitTransient(double T0, double dT0)
   } else if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF1) {
     if (bdf1_dae != NULL) delete bdf1_dae;  // the only way to reset BDF1 is to delete it
 
-    Teuchos::ParameterList solver_list = rp_list.sublist("transient time integrator").sublist("nonlinear solver BDF1");
+    Teuchos::ParameterList solver_list = rp_list_.sublist("transient time integrator").sublist("nonlinear solver BDF1");
     if (solver_list.isSublist("VerboseObject"))
-        solver_list.sublist("VerboseObject") = rp_list.sublist("VerboseObject");
+        solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
     bdf1_dae = new BDF1Dae(*this, *super_map_);

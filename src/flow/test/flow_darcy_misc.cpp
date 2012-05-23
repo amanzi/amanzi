@@ -60,10 +60,10 @@ class DarcyProblem {
     S = new State(state_list, mesh);
     S->set_time(0.0);
 
-    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
-    DPK = new Darcy_PK(flow_list, FS);
+    DPK = new Darcy_PK(parameter_list, FS);
 
+    Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
   }
 

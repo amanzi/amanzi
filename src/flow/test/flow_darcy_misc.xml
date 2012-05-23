@@ -86,29 +86,9 @@
       <Parameter name="atmospheric pressure" type="double" value="1"/>
       <Parameter name="Discretization method hint" type="string" value="none"/>
 
-      <ParameterList name="Diffusion Preconditioner">
-          <ParameterList name="ML Parameters">
-          <Parameter name="ML output" type="int" value="0"/>
-          <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
-          <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-          <Parameter name="aggregation: threshold" type="double" value="0"/>
-          <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
-          <Parameter name="coarse: max size" type="int" value="128"/>
-          <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-          <Parameter name="cycle applications" type="int" value="2"/>
-          <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-          <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-          <Parameter name="max levels" type="int" value="40"/>
-          <Parameter name="prec type" type="string" value="MGW"/>
-          <Parameter name="smoother: damping factor" type="double" value="1"/>
-          <Parameter name="smoother: pre or post" type="string" value="both"/>
-          <Parameter name="smoother: sweeps" type="int" value="2"/>
-          <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="Direct solve"/>
+        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
         <ParameterList name="linear solver"> 
           <Parameter name="iterative method" type="string" value="CGS"/>
@@ -136,6 +116,30 @@
         <ParameterList name="static head">
           <!-- Will be populated by the code -->
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="Preconditioners">
+    <ParameterList name="Trilinos ML">
+      <ParameterList name="ML Parameters">
+        <Parameter name="ML output" type="int" value="0"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
+        <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+        <Parameter name="aggregation: threshold" type="double" value="0"/>
+        <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+        <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+        <Parameter name="max levels" type="int" value="40"/>
+        <Parameter name="prec type" type="string" value="MGW"/>
+        <Parameter name="smoother: damping factor" type="double" value="1"/>
+        <Parameter name="smoother: pre or post" type="string" value="both"/>
+        <Parameter name="smoother: sweeps" type="int" value="2"/>
+        <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

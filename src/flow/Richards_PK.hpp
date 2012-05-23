@@ -37,7 +37,7 @@ namespace AmanziFlow {
 
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC);
+  Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
   ~Richards_PK();
 
   // main methods
@@ -106,7 +106,7 @@ class Richards_PK : public Flow_PK {
   double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
   // control methods
-  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
+  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   void PrintStatistics() const;
   
   // access methods
@@ -118,7 +118,8 @@ class Richards_PK : public Flow_PK {
   int num_nonlinear_steps;
 
  private:
-  Teuchos::ParameterList rp_list;
+  Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList rp_list_;
 
   AmanziGeometry::Point gravity_;
   double rho, mu;
@@ -141,12 +142,14 @@ class Richards_PK : public Flow_PK {
   int error_control;
 
   int ti_method_sss;  // Parameters for steady-state solution
+  std::string preconditioner_name_sss_;
   int num_itrs_sss, max_itrs_sss;
   double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
   int initialize_with_darcy;
 
   int ti_method_trs;  // Parameters for transient solution
+  std::string preconditioner_name_trs_;
   double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;

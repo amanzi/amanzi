@@ -26,15 +26,17 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Darcy_PK::ProcessParameterList()
 {
+  Errors::Message msg;
+
   // create verbosity list if it does not exist
-  if (!dp_list.isSublist("VerboseObject")) {
+  if (! dp_list_.isSublist("VerboseObject")) {
     Teuchos::ParameterList verbosity_list;
     verbosity_list.set<std::string>("Verbosity Level", "none");
-    dp_list.set("VerboseObject", verbosity_list);
+    dp_list_.set("VerboseObject", verbosity_list);
   }
 
   // extract verbosity level
-  Teuchos::ParameterList verbosity_list = dp_list.get<Teuchos::ParameterList>("VerboseObject");
+  Teuchos::ParameterList verbosity_list = dp_list_.get<Teuchos::ParameterList>("VerboseObject");
   std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
   if (verbosity_name == "none") {
     verbosity = FLOW_VERBOSITY_NONE;
@@ -48,13 +50,10 @@ void Darcy_PK::ProcessParameterList()
     verbosity = FLOW_VERBOSITY_EXTREME;
   }
 
-  Teuchos::ParameterList preconditioner_list;
-  preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
-
-  atm_pressure = dp_list.get<double>("atmospheric pressure");
+  atm_pressure = dp_list_.get<double>("atmospheric pressure");
 
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list.sublist("boundary conditions", true));
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list_.sublist("boundary conditions", true));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.createPressure();
@@ -71,8 +70,8 @@ void Darcy_PK::ProcessParameterList()
   bc_seepage->Compute(time);
 
   // Create the source object if any
-  if (dp_list.isSublist("source terms")) {
-    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list.sublist("source terms", true));
+  if (dp_list_.isSublist("source terms")) {
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
 
@@ -82,7 +81,7 @@ void Darcy_PK::ProcessParameterList()
   }
 
   // discretization method
-  string mfd3d_method_name = dp_list.get<string>("Discretization method hint", "monotone");
+  string mfd3d_method_name = dp_list_.get<string>("Discretization method hint", "monotone");
   if (mfd3d_method_name == "monotone") {
     mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
   } else if (mfd3d_method_name == "none") {
@@ -94,11 +93,24 @@ void Darcy_PK::ProcessParameterList()
   T_internal = (standalone_mode) ? T_internal : T_physical;
 
   // Time integrator for period I, temporary called steady state time integrator
-  Teuchos::ParameterList& sss_list = dp_list.sublist("steady state time integrator");
+  Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");
   Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
 
   max_itrs_sss = solver_list.get<int>("maximal number of iterations", 100);
   convergence_tol_sss = solver_list.get<double>("error tolerance", 1e-12);
+
+  if (sss_list.isParameter("preconditioner")) {
+    preconditioner_name_sss_ = sss_list.get<string>("preconditioner");
+  } else {
+    msg << "Darcy Problem: steady state time integrator does not define a preconditioner.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (! preconditioner_list_.isSublist(preconditioner_name_sss_)) {
+    msg << "Darcy Problem: steady state preconditioner does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+
 }
 
 }  // namespace AmanziFlow
