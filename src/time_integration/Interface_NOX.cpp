@@ -5,9 +5,9 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#include "dbc.hh"
+// #include "dbc.hh"
 
-#include "Flow_PK.hpp"
+// #include "Flow_PK.hpp"
 #include "Interface_NOX.hpp"
 
 namespace Amanzi {
@@ -18,7 +18,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 bool Interface_NOX::computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType flag)
 {
-  FPK_->NOX_ComputeF(x, f);
+  for (int i=0; i<x.MyLength(); i++) f[i] = x[i] - 1;
   return true;
 }
 
@@ -32,7 +32,7 @@ bool Interface_NOX::computePreconditioner(
   // We assume the input operator is the same one we handed to NOX.
   //ASSERT(&M == &(FPK_->NOX_Precon())); XXX
 
-  if (lag_count_ == 0) FPK_->NOX_ComputePrecon(x);
+//   if (lag_count_ == 0) FPK_->NOX_ComputePrecon(x);
   lag_count_++;
   lag_count_ %= lag_prec_;
 
