@@ -1418,43 +1418,64 @@ Diffusion::richard_composite_iter (Real                      dt,
   //
   // This routine solves the time-dependent richards equation based on 
   // composite solve.
-  //
+  // 
+  PArray<PorousMedia> pm(nlevs,PArrayNoManage);
+  for (int lev = 0; lev < nlevs; lev++) 
+  {
+      pm.set(lev,dynamic_cast<PorousMedia*>(&parent->getLevel(lev+level)));
+  }
 
   // setup multilevel objects
   Real b = dt*density[0];
-  MultiFab* Rhs[nlevs];
-  MultiFab* Soln[nlevs];
-  PArray<MultiFab> pctmp(nlevs, PArrayManage);
+  PArray<MultiFab> Rhs(nlevs,PArrayManage);
+  PArray<MultiFab> Soln(nlevs,PArrayManage);
   std::vector<BoxArray> bav(nlevs);
   std::vector<DistributionMapping> dmv(nlevs);
-  std::vector<Geometry> geom(nlevs);    
+  std::vector<Geometry> geom(nlevs); 
+  const BCRec& bc     = caller->get_desc_lst()[Press_Type].getBC(0);
+  const Real cur_time = caller->get_state_data(State_Type).curTime();
+  IntVect ref_ratio   = level > 0 ? 
+    parent->refRatio(level-1) : IntVect::TheUnitVector();   
+
+  // Build some handy pointer arrays, and allocate work space for Soln, Rhs
+  PArray<MultiFab> Snew(nlevs,PArrayNoManage);
+  PArray<MultiFab> Pnew_p(nlevs,PArrayNoManage);
+  Array<MultiFab*> Rhs_p(Rhs.size());
+  Array<MultiFab*> Soln_p(Soln.size());
+  Array<MultiFab*> Snew_p(Snew.size());
+  Array<Array<MultiFab*> > beta_lp(nlevs);
+  PArray<MultiFab> lambda(nlevs,PArrayManage);
+
   for (int lev = 0; lev < nlevs; lev++) 
     {
-      MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
-      MultiFab& P = parent->getLevel(lev).get_new_data(Press_Type);
+      MultiFab& S = pm[lev].get_new_data(State_Type);
+      MultiFab& P = pm[lev].get_new_data(Press_Type);
+      Pnew_p.set(lev,&P);
+      Snew.set(lev,&S);
+      Snew_p[lev] = &(Snew[lev]);
+
       bav[lev] = S.boxArray();
       dmv[lev] = S.DistributionMap();
       geom[lev] = parent->Geom(lev+level);
 
-      Rhs[lev]  = new MultiFab(bav[lev],1,0);
-      Soln[lev] = new MultiFab(bav[lev],1,1);
-      Rhs[lev]->setVal(0.);
-      MultiFab::Copy(*Soln[lev],S,nc,0,1,1);
-      pctmp.set(lev,new MultiFab(bav[lev],1,1));
-      MultiFab::Copy(pctmp[lev],P,nc,0,1,1);
-      
-    }
+      beta_lp[lev].resize(BL_SPACEDIM);
+      for (int dir=0; dir<BL_SPACEDIM; dir++)
+	beta_lp[lev][dir] = &(beta[dir][lev]);
 
-  // Why this??
-  Real snorm = (*Soln[0]).norm2(0);
+      Rhs.set(lev,new MultiFab(bav[lev],1,0));
+      Rhs_p[lev] = &(Rhs[lev]);
+      Rhs[lev].setVal(0.);
+
+
+      Soln.set(lev, new MultiFab(bav[lev],1,1));
+      Soln_p[lev] = &(Soln[lev]);
+      
+      lambda.set(lev, new MultiFab(bav[lev],pm[lev].ncomps,1));
+    }
   
   ViscBndry visc_bndry;     
-  const BCRec& bc     = caller->get_desc_lst()[Press_Type].getBC(0);
-  const Real cur_time = caller->get_state_data(State_Type).curTime();
-  IntVect ref_ratio   = level > 0 ? 
-    parent->refRatio(level-1) : IntVect::TheUnitVector();
   getBndryData(visc_bndry,nc,1,cur_time);
-  visc_bndry.setScalarValues(bc,ref_ratio,&pctmp[0]);
+  visc_bndry.setScalarValues(bc,ref_ratio,&(Pnew_p[0]));
 
   int nc_opt = 2;
   Array< Array<Real> > xa(nlevs);
@@ -1475,10 +1496,10 @@ Diffusion::richard_composite_iter (Real                      dt,
   // Setup RHS
   mgt_solver.set_maxorder(2);
   mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs,
-		   pctmp,beta,alpha,res_fix,Soln,visc_bndry);
+  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+		   Pnew_p,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
 
-  status.initial_residual_norm = (*Rhs[0]).norm2(0); 
+  status.initial_residual_norm = Rhs[0].norm2(0); 
 
   if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
       std::cout << tag << "Initial residual norm: " << status.initial_residual_norm << std::endl;
@@ -1489,8 +1510,8 @@ Diffusion::richard_composite_iter (Real                      dt,
     {
       for (int lev=0; lev<nlevs; lev++)
 	{
-	  (*Rhs[lev]).mult(-1.0);
-	  (*Soln[lev]).setVal(0.);
+	  Rhs[lev].mult(-1.0);
+	  Soln[lev].setVal(0.);
 	}
 
       Real b_dp = dt*density[0];   
@@ -1501,15 +1522,18 @@ Diffusion::richard_composite_iter (Real                      dt,
       mgt_solver.set_maxorder(2);
       mgt_solver.set_porous_coefficients(alpha, a2_p, beta_dp, b_dp, xa, xb, nc_opt);    
 
-      int linsol_status = 1;
-      mgt_solver.solve(Soln, Rhs, S_tol, S_tol_abs, 
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve init res=" << status.initial_residual_norm
+                    << std::endl;
+      }
+          
+      int linsol_status = 0;
+      mgt_solver.solve(Soln_p.dataPtr(), Rhs_p.dataPtr(), S_tol, S_tol_abs, 
 		       fill_bcs_for_gradient, final_resnorm,linsol_status);
 
       for (int lev = nlevs-2; lev >= 0; lev--)
-	{
-	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
-	  pm->avgDown(Soln[lev],lev,Soln[lev+1],lev+1);
-	}
+	pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
 
       if (linsol_status!=0)
       {
@@ -1540,51 +1564,32 @@ Diffusion::richard_composite_iter (Real                      dt,
     }
   
   // line search 
-  MultiFab* Stmp[nlevs];
-  MultiFab* Rhsp1[nlevs];
-  Array<PArray<MultiFab> > betatmp(BL_SPACEDIM);
-
-  for (int dir=0; dir<BL_SPACEDIM; dir++)
-    betatmp[dir].resize(nlevs,PArrayNoManage);
-  
+  PArray<MultiFab> Stmp(nlevs,PArrayManage);
+  Array<MultiFab*> Stmp_p(Stmp.size());
   for (int lev=0; lev<nlevs; lev++)
     {  
-      PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+      Stmp.set(lev, new MultiFab(bav[lev],1,1));
+      Stmp_p[lev] = &(Stmp[lev]);
+      MultiFab::Copy(Stmp[lev],Snew[lev],nc,0,1,1);
+      MultiFab::Add(Stmp[lev],Soln[lev],0,0,1,0);
 
-      for (int dir=0; dir<BL_SPACEDIM; dir++)
-	{
-	  BoxArray ba = bav[lev];
-	  ba.surroundingNodes(dir);
-	  betatmp[dir].set(lev, new MultiFab(ba,beta[dir][lev].nComp(),0));
-	}
-
-      Stmp[lev]  = new MultiFab(bav[lev],1,1);
-      MultiFab& S = pm->get_new_data(State_Type);
-      MultiFab::Copy(*Stmp[lev],S,nc,0,1,1);
-      MultiFab::Add(*Stmp[lev],*Soln[lev],0,0,1,0);
-      
-      MultiFab* tmp_betatmp[BL_SPACEDIM];
-      for (int dir=0;dir<BL_SPACEDIM;dir++)
-	tmp_betatmp[dir] = &betatmp[dir][lev];
-      pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
-      pctmp[lev].mult(-1);
-      MultiFab lambda(bav[lev],pm->ncomps,1);
-      pm->calcLambda(&lambda,*Stmp[lev]);
-      pm->calc_richard_coef(tmp_betatmp,&lambda,umac[lev],0,do_upwind);
-      Rhsp1[lev] = new MultiFab(bav[lev],1,0);
+      pm[lev].calcCapillary(&Pnew_p[lev],Stmp[lev]);
+      Pnew_p[lev].mult(-1);
+      pm[lev].calcLambda(&(lambda[lev]),Stmp[lev]);
+      pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
     }
-  mgt_solver.set_maxorder(2);
-  mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhsp1,
-		   pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
-
-
-  status.residual_norm_post_ls = status.residual_norm_pre_ls = (*Rhsp1[0]).norm2(0);
+  mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
+  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+		   Pnew_p,beta,alpha,res_fix,Stmp_p.dataPtr(),visc_bndry);
+  status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
 
   if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
       status.reason = "Full linear step accepted";
       status.success = true;
       status.status = "Finished";
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag << status.reason << std::endl;
+      }
   }
 
   status.ls_iterations = 0;
@@ -1600,36 +1605,25 @@ Diffusion::richard_composite_iter (Real                      dt,
 
       for (int lev=0; lev<nlevs; lev++)
       {
-          MultiFab::Copy(*Rhs[lev],*Soln[lev],0,0,1,1); // Rhs not used again, reuse here
-          Rhs[lev]->mult(status.ls_factor);
+          MultiFab::Copy(Stmp[lev],Soln[lev],nc,0,1,1);
+	  Stmp[lev].mult(status.ls_factor);
+          MultiFab::Add(Stmp[lev],Snew[lev],0,0,1,1);
 
-          PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
-          MultiFab& S = pm->get_new_data(State_Type);
-
-          MultiFab::Copy(*Stmp[lev],S,nc,0,1,1);
-          MultiFab::Add(*Stmp[lev],*Rhs[lev],0,0,1,1);
-
-          MultiFab* tmp_betatmp[BL_SPACEDIM];
-          for (int dir=0;dir<BL_SPACEDIM;dir++)
-	      tmp_betatmp[dir] = &betatmp[dir][lev];
-          
-          pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
-          pctmp[lev].mult(-1);
-          MultiFab lambda(bav[lev],pm->ncomps,1);
-          pm->calcLambda(&lambda,*Stmp[lev]);
-          pm->calc_richard_coef(tmp_betatmp,&lambda,umac[lev],0,do_upwind);
+	  pm[lev].calcCapillary(&Pnew_p[lev],Stmp[lev]);
+	  Pnew_p[lev].mult(-1);
+	  pm[lev].calcLambda(&(lambda[lev]),Stmp[lev]);
+	  pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
       }
-
-      mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
-      residual_richard(mgt_solver,dt*density[0],gravity,density,
-                       Rhsp1,pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
-      status.residual_norm_post_ls = Rhsp1[0]->norm2(0);
+      mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
+      residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+		       Pnew_p,beta,alpha,res_fix,Stmp_p.dataPtr(),visc_bndry);
+      status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
 
       if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
           std::cout << tag << tag_ls
                     << "iter=" << status.ls_iterations
                     << ", step length=" << status.ls_factor
-                    << ", old residual norm=" << status.initial_residual_norm
+                    << ", init residual norm=" << status.initial_residual_norm
                     << ", new residual norm=" << status.residual_norm_post_ls << '\n';
       }
 
@@ -1662,21 +1656,7 @@ Diffusion::richard_composite_iter (Real                      dt,
   }
 
   for (int lev=0; lev<nlevs;lev++)
-    {
-        PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
-        MultiFab& S = pm->get_new_data(State_Type);
-        MultiFab::Copy(S,*Stmp[lev],0,nc,1,1);
-        MultiFab::Copy(S,*Rhsp1[0],0,pm->ncomps+pm->ntracers,1,0);
-    }
-
-  for (int lev = 0; lev < nlevs; lev++)
-    {
-      delete Soln[lev];
-      delete Rhs[lev];
-      delete Stmp[lev];
-      delete Rhsp1[lev];
-    }
-
+    MultiFab::Copy(Snew[lev],Stmp[lev],0,nc,1,1);
 }
 
 void
