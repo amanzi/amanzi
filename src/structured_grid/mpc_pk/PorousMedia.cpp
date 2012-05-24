@@ -1002,15 +1002,16 @@ PorousMedia::initData ()
                 // Init to fully saturated...solve
                 sdat.setVal(density[0],0);
 #endif
-
+		
                 FArrayBox& cdat = (*cpl_coef)[mfi];
                 const int n_cpl_coef = cpl_coef->nComp();
                 DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
+		/*
                 FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
                            density.dataPtr(),&ncomps, 
                            c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
                            dx, &vals[1], &gravity);
-                
+		*/
                 FArrayBox& kdat = (*kr_coef)[mfi];
                 FArrayBox& kpdat = kpedge[BL_SPACEDIM-1][mfi];
                 const int n_kr_coef = kr_coef->nComp();
@@ -1029,6 +1030,8 @@ PorousMedia::initData ()
 		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
 				(*kappa)[mfi],(*cpl_coef)[mfi],grids[idx],
 				s_bc);
+		  P_new[mfi].copy((*pcnp1_cc)[mfi]);
+		  P_new[mfi].mult(-1.0);
 		}
 	    }
             else
