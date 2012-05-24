@@ -805,7 +805,8 @@ protected:
 			 const Real time,
 			 const int  nc = 0,
 			 const int do_upwind = 0,
-			 const bool do_n = true);
+			 const bool do_n = true,
+                         Real  contParm = 0);
 
   //
   // Calculate the dt term in the jacobian for p-formulation

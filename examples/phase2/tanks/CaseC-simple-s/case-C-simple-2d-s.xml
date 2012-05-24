@@ -94,10 +94,6 @@
 	  <ParameterList name="Expert Settings">
 	    <Parameter name="cg_solver" type="int" value="1"/>
 	    <Parameter name="maxiter" type="int" value="1000"/>
-	    <!-- <Parameter name="nu_0" type="int" value="4"/> -->
-	    <!-- <Parameter name="nu_1" type="int" value="8"/> -->
-	    <!-- <Parameter name="nu_2" type="int" value="16"/> -->
-	    <!-- <Parameter name="nu_f" type="int" value="16"/> -->
 	    <Parameter name="nu_0" type="int" value="2"/>
 	    <Parameter name="nu_1" type="int" value="2"/>
 	    <Parameter name="nu_2" type="int" value="16"/>

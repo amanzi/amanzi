@@ -1685,7 +1685,7 @@ c :: ------------------------------------------------------------
      &     krcoef,DIMS(krcoef),nkrcoef,
      &     cplcoef,DIMS(cplcoef),ncplcoef,
      &     lo,hi,domlo,domhi,dx, bc, 
-     &     inflow_bc_lo,inflow_bc_hi,deps,do_upwind)
+     &     inflow_bc_lo,inflow_bc_hi,deps,do_upwind,contParm)
 
       implicit none
 
@@ -1731,6 +1731,7 @@ c :: ------------------------------------------------------------
       REAL_T  kappa(DIMV(kappa))
       REAL_T  deps
       logical do_upwind
+      REAL_T  contParm
 
       integer i,j,k,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
