@@ -41,6 +41,9 @@ void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
   Mff_cells_.clear();
 
+  int ok;
+  nokay_ = npassed_ = 0;
+
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -50,18 +53,23 @@ void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        mfd.darcy_mass_inverse_hex(c, K[c], Mff);
+        ok = mfd.darcy_mass_inverse_hex(c, K[c], Mff);
       else
-        mfd.darcy_mass_inverse(c, K[c], Mff);
+        ok = mfd.darcy_mass_inverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
-      mfd.darcy_mass_inverse_diagonal(c, K[c], Mff);
+      ok = mfd.darcy_mass_inverse_diagonal(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
-      mfd.darcy_mass_inverse_SO(c, K[c], Mff);
+      ok = mfd.darcy_mass_inverse_SO(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
+      ok = mfd.darcy_mass_inverse_optimized(c, K[c], Mff);
     } else {
-      mfd.darcy_mass_inverse(c, K[c], Mff);
+      ok = mfd.darcy_mass_inverse(c, K[c], Mff);
     }
 
     Mff_cells_.push_back(Mff);
+
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) nokay_++;
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_PASSED) npassed_++;
   }
 }
 

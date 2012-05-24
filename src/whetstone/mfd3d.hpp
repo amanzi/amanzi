@@ -36,6 +36,7 @@ namespace WhetStone {
 
 const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
 const int WHETSTONE_ELEMENTAL_MATRIX_WRONG = 1;
+const int WHETSTONE_ELEMENTAL_MATRIX_PASSED = 2;
 
 class MFD3D { 
  public:

@@ -191,6 +191,12 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix->createMFDmassMatrices(mfd3d_method, K);
 
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    double pokay = 100 * matrix->nokay() / double(ncells_owned);
+    double ppassed = 100 * matrix->npassed() / double(ncells_owned);
+    std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
+  }
+
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 }
 

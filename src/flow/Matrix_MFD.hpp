@@ -88,6 +88,9 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
+  double nokay() { return nokay_; }
+  double npassed() { return npassed_; }
+
  private:
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
@@ -115,6 +118,8 @@ class Matrix_MFD : public Epetra_Operator {
 
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
+
+  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 
  private:
   void operator=(const Matrix_MFD& matrix);

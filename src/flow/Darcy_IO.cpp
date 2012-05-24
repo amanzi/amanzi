@@ -82,11 +82,7 @@ void Darcy_PK::ProcessParameterList()
 
   // discretization method
   string mfd3d_method_name = dp_list_.get<string>("Discretization method hint", "monotone");
-  if (mfd3d_method_name == "monotone") {
-    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (mfd3d_method_name == "none") {
-    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
-  }
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method); 
 
   // Set up internal clock.
   double T_physical = FS->get_time();

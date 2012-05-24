@@ -195,15 +195,6 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
     CalculateKVectorUnit(gravity_, Kgravity_unit);
   }
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    if (mfd3d_method_ == FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
-      std::printf("Richards Flow: discretization method is tailored for orthogonal hexes.\n");
-    } else if (mfd3d_method_ == FLOW_MFD3D_POLYHEDRA) {
-      std::printf("Richards Flow: discretization method is for generic polyhedra.\n");
-    } else if (mfd3d_method_ == FLOW_MFD3D_SUPPORT_OPERATOR) {
-      std::printf("Richards Flow: discretization method from RC1.\n");
-    }
-  }
   flow_status_ = FLOW_STATUS_INIT;
 }
 
@@ -216,19 +207,25 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards Flow: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+    std::printf("Richards Flow: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
     if (initialize_with_darcy) {
        std::printf("Richards Flow: initializing with a clipped Darcy pressure\n");
        std::printf("Richards Flow: clipping saturation value =%5.2g\n", clip_saturation);
      }
   }
 
-  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
+  // set up new preconditioner
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_sss_);
+  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
+
+  string mfd3d_method_name = tmp_list.get<string>("discretization method", "two point flux approximation");
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner->setSymmetryProperty(is_matrix_symmetric);
   preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
   preconditioner->init_ML_preconditioner(ML_list);
 
+  // set up new time integration or solver
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
     Teuchos::ParameterList solver_list = rp_list_.sublist("steady state time integrator").sublist("nonlinear solver BDF2");
     if (solver_list.isSublist("VerboseObject"))
@@ -259,6 +256,12 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
   matrix->createMFDmassMatrices(mfd3d_method_, K);
   preconditioner->createMFDmassMatrices(mfd3d_method_preconditioner_, K);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    double pokay = 100 * matrix->nokay() / double(ncells_owned);
+    double ppassed = 100 * matrix->npassed() / double(ncells_owned);
+    std::printf("Richards PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
+  }
 
   // (re)initialize pressure and saturation
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -309,7 +312,13 @@ void Richards_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
      std::printf("Richards PK: initializing transient flow: T(sec)=%9.4e dT(sec)=%9.4e\n", T0, dT0);
   }
-  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_trs_).sublist("ML Parameters");
+
+  // set up new preconditioner
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
+  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
+
+  string mfd3d_method_name = tmp_list.get<string>("discretization method", "two point flux approximation");
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner->setSymmetryProperty(is_matrix_symmetric);
   preconditioner->symbolicAssembleGlobalMatrices(*super_map_);

@@ -60,6 +60,7 @@ const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
 const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
 const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
 const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;  // rc1 compatibility
+const int FLOW_MFD3D_OPTIMIZED = 6;
 
 const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
 const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
@@ -146,6 +147,9 @@ class Flow_PK : public BDF2::fnBase {
   // miscallenous members
   Epetra_Map* createSuperMap();
   void identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
+
+  // io members
+  void ProcessStringMFD3D(const std::string name, int* method);
 
  public:
   int ncells_owned, ncells_wghost;

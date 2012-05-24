@@ -25,15 +25,15 @@ Authors: Neil Carlson (version 1)
 #include "BDF2_Dae.hpp"
 #include "BDF1_Dae.hh"
 
-#include "Flow_State.hpp"
 #include "Flow_PK.hpp"
 #include "Flow_BC_Factory.hpp"
 #include "Matrix_MFD.hpp"
 #include "WaterRetentionModel.hpp"
 
-
 namespace Amanzi {
 namespace AmanziFlow {
+
+class Flow_State;  // forward declarations
 
 class Richards_PK : public Flow_PK {
  public:
@@ -70,7 +70,6 @@ class Richards_PK : public Flow_PK {
   void update_norm(double rtol, double atol) {};
 
   // other main methods
-  void ProcessParameterList();
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
   void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
@@ -90,6 +89,10 @@ class Richards_PK : public Flow_PK {
 
   void CalculateConsistentSaturation(const Epetra_Vector& flux, 
                                      const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+
+  // io members
+  void ProcessParameterList();
+  void ProcessStringTimeIntegration(const std::string name, int* method);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);

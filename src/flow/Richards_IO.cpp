@@ -138,33 +138,14 @@ void Richards_PK::ProcessParameterList()
   }
 
   string mfd3d_method_name = rp_list_.get<string>("Discretization method hint", "none");
-  if (mfd3d_method_name == "monotone") {
-    mfd3d_method_ = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (mfd3d_method_name == "none") {
-    mfd3d_method_ = FLOW_MFD3D_POLYHEDRA;
-  } else if (mfd3d_method_name == "support operator") {
-    mfd3d_method_ = FLOW_MFD3D_SUPPORT_OPERATOR;
-  } else if (mfd3d_method_name == "two-point flux") {
-    mfd3d_method_ = FLOW_MFD3D_TWO_POINT_FLUX;
-  }
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
 
   // Time integrator for period I, temporary called steady-state time integrator
   if (rp_list_.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
 
     string ti_method_name = sss_list.get<string>("method", "Picard");
-    if (ti_method_name == "Picard") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
-    } else if (ti_method_name == "backward Euler") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
-    } else if (ti_method_name == "BDF1") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
-    } else if (ti_method_name == "BDF2") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
-    } else {
-      msg << "Richards Problem: steady state defines an unknown time integration method.";
-      Exceptions::amanzi_throw(msg);
-    }
+    ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
 
     if (sss_list.isParameter("preconditioner")) {
       preconditioner_name_sss_ = sss_list.get<string>("preconditioner");
@@ -219,17 +200,8 @@ void Richards_PK::ProcessParameterList()
   if (rp_list_.isSublist("transient time integrator")) {
     Teuchos::ParameterList& trs_list = rp_list_.sublist("transient time integrator");
 
-    string ti_method_name = trs_list.get<string>("method", "BDF2");
-    if (ti_method_name == "BDF1") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
-    } else if (ti_method_name == "BDF2") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
-    } else if (ti_method_name == "Picard") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
-    } else {
-      msg << "Richards Problem: transient sublist defines an unknown time integration method.";
-      Exceptions::amanzi_throw(msg);
-    }
+    string ti_method_name = trs_list.get<string>("method", "BDF1");
+    ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
 
     if (trs_list.isParameter("preconditioner")) {
       preconditioner_name_trs_ = trs_list.get<string>("preconditioner");
@@ -266,6 +238,27 @@ void Richards_PK::ProcessParameterList()
     }
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Warning: Richards Problem has no sublist <transient time integration>.\n");
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the time integration method.
+**************************************************************** */
+void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "Picard") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
+  } else if (name == "backward Euler") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
+  } else if (name == "BDF1") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
+  } else if (name == "BDF2") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+  } else {
+    msg << "Richards Problem: unknown time integration method has been specified.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

@@ -49,7 +49,7 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: flow
 #
-add_library(flow Flow_PK.cpp Flow_State.cpp 
+add_library(flow Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
                  Flow_BC_Factory.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
                  Darcy_PK.cpp Darcy_IO.cpp 
                  Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp

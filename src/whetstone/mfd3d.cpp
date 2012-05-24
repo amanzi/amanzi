@@ -15,6 +15,8 @@ Usage:
 #include <vector>
 
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #include "Mesh.hh"
@@ -568,28 +570,129 @@ int MFD3D::stability_optimized(int cell, const Tensor& T,
                                Teuchos::SerialDenseMatrix<int, double>& Mc,
                                Teuchos::SerialDenseMatrix<int, double>& M)
 {
-  /* 1. Find a null space of N^T save in columns of matrix D/V
-     2. Calculate vectors C
-     3. Form a linear system for parameters
-     4. Find its solution
-     5. Project it of positive quadrant
-     6. Calculate stability term D A D^T
+  int d = mesh_->space_dimension();
+  int nrows = N.numRows();
+  int ncols = N.numCols();
 
-     vector<real>   S(nRow);
-     array2D<real>  V(nCol, nCol, (lint)0);
-     vector<real>   work(lwork);
-     GESVD('N', 'A', nRow, nCol, ScalarType *A, const OrdinalType lda, 
-           MagnitudeType *S, ScalarType *U, const OrdinalType ldu, ScalarType *V, 
-           const OrdinalType ldv, ScalarType *WORK, const OrdinalType lwork, 
-           MagnitudeType *RWORK, OrdinalType *info); 
-     dgesvd_("N", "A", &nRow,  &nCol,  
-             A, &nRow, S.getData(), &U, &ldu, V.getA(), &ldv,   
-             work.getData(), &lwork, &info);
+  // find null space of N^T
+  Teuchos::SerialDenseMatrix<int, double> U(nrows, nrows);
+  int info, size = 5 * d + 2 * nrows;
+  double V, S[ncols], work[size];
 
-     for( i=nRow,k=0; i<nCol; i++,k++ )
-     for( j=0;        j<nCol; j++ )  N(j, k) = V(i, j);
-  */
-  return 0;
+  Teuchos::LAPACK<int, double> lapack;
+  lapack.GESVD('A', 'N', nrows, ncols, N.values(), nrows,  // N = u s v
+               S, U.values(), nrows, &V, 1, work, size, 
+               NULL, &info); 
+
+  // calculate vectors C and C0
+  int mrows = nrows * (nrows - 1) / 2;
+  int mcols = nrows - ncols;
+  int nparam = (mcols + 1) * mcols / 2;
+  Teuchos::SerialDenseMatrix<int, double> C(mrows, nparam);
+  Teuchos::SerialDenseVector<int, double> F(mrows);
+
+  int m, n = 0;
+  for (int k = ncols; k < nrows; k++) {
+    m = 0;  // calculate off-diagonal entries of M_kk = U_k * U_k^T
+    for (int i = 0; i < nrows; i++) 
+      for (int j = i+1; j < nrows; j++) C(m++, n) = U(i, k) * U(j, k);
+    n++; 
+  }
+
+  for (int k = ncols; k < nrows; k++) {
+    for (int l = k+1; l < nrows; l++) {
+      m = 0;  // calculate off-diagonal entries of M_kk + M_ll - M_kl - M_lk 
+      for (int i = 0; i < nrows; i++) { 
+        for (int j = i+1; j < nrows; j++) {
+          C(m, n) = C(m, k-ncols) + C(m, l-ncols) - U(i, k) * U(j, l) - U(i, l) * U(j, k);
+          m++;
+        }
+      }
+      n++;
+    }
+  }
+
+  m = 0;
+  for (int i = 0; i < nrows; i++) { 
+    for (int j = i+1; j < nrows; j++) F(m++) = -Mc(i, j);
+  }
+
+  // Form a linear system for parameters
+  Teuchos::SerialDenseMatrix<int, double> A(nparam, nparam);
+  Teuchos::SerialDenseVector<int, double> G(nparam);
+
+  A.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, C, C, 0.0);
+  G.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, C, F, 0.0);
+
+  // Find parameters
+  lapack.POSV('U', nparam, 1, A.values(), nparam, G.values(), nparam, &info);
+
+  // project solution on the positive quadrant and convert to matrix
+  Teuchos::SerialDenseMatrix<int, double> P(mcols, mcols);
+
+  int status = WHETSTONE_ELEMENTAL_MATRIX_OK;
+  for (int loop = 0; loop < 3; loop++) {
+    if (loop == 1) {   
+      for (int i = 0; i < mcols; i++) G(i) = std::max<double>(G(i), 0.0);
+      status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
+    } else if (loop == 2) {
+      for (int i = mcols; i < nparam; i++) G(i) = std::max<double>(G(i), 0.0);
+      status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
+    }
+
+    for (int k = 0; k < mcols; k++) P(k, k) = G(k);
+
+    n = mcols;
+    for (int k = 0; k < mcols; k++) {
+      for (int l = k+1; l < mcols; l++) {
+        P(k, k) += G(n);
+        P(l, l) += G(n);
+        P(l, k) = P(k, l) = -G(n);
+        n++;  
+      }
+    }
+
+    int ok;
+    for (int k = 0; k < mcols; k++) {  // check strict diagonal dominance
+      ok = 0;
+      double scale = P(k, k);
+      if (scale <= 0.0) break;
+
+      double sum = 0.0;
+      for (int l = 0; l < mcols; l++) sum += fabs(P(k, l));
+      if (sum > scale * 1.9) break;
+
+      ok = 1; 
+    }
+    
+    if (ok) break;
+  }
+
+  // project solution on the positive quadrant and convert to matrix
+  for (int i = 0; i < nparam; i++) G(i) = std::max<double>(G(i), 0.0);
+
+  // add stability term U G U^T
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
+  }
+
+  Teuchos::SerialDenseMatrix<int, double> UP(nrows, mcols);
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < mcols; j++) {
+      double& entry = UP(i, j);
+      for (int k = 0; k < mcols; k++) entry += U(i, k+ncols) * P(k, j);
+    }
+  }
+
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i; j < nrows; j++) {
+      double& entry = M(i, j);
+      for (int k = 0; k < mcols; k++) entry += UP(i, k) * U(j, k+ncols);
+      M(j, i) = M(i, j); 
+    }
+  }
+
+  return status;
 }
 
 

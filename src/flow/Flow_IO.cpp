@@ -22,30 +22,23 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
-/* ******************************************************************
-* Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
-****************************************************************** */
-void Flow_PK::processParameterList()
-{
-  Teuchos::ParameterList flow_list;
-  flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-}
-
-
 /* ****************************************************************
-* Printing information about Flow status
+* Process string for the discretization method.
 **************************************************************** */
-void Flow_PK::print_statistics() const
+void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
 {
-  if (!MyPID && verbosity_level > 0) {
-    cout << "Flow PK:" << endl;
-    cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
-    cout << "    Verbosity level = " << verbosity_level << endl;
-    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+  if (name == "monotone") {
+    *method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
+  } else if (name == "support operator") {
+    *method = FLOW_MFD3D_SUPPORT_OPERATOR;
+  } else if (name == "two point flux approximation") {
+    *method = FLOW_MFD3D_TWO_POINT_FLUX;
+  } else if (name == "optimized") {
+    *method = FLOW_MFD3D_OPTIMIZED;
+  } else {
+    *method = FLOW_MFD3D_POLYHEDRA;
   }
 }
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
