@@ -599,6 +599,7 @@ unsigned int Mesh_MSTK::num_entities (const Entity_kind kind,
   default:
     std::cerr << "Count requested for unknown entity type" << std::endl;
   }
+  return 0;
 }
 
 
@@ -1289,7 +1290,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
   if (cell_dimension() == 3) {
-    mr = (MFace_ptr) cell_id_to_handle[cellid];
+    mr = (MRegion_ptr) cell_id_to_handle[cellid];
     List_ptr rfaces = MR_Faces(mr);
     idx = 0;
     while ((mf = List_Next_Entry(rfaces,&idx))) {
@@ -1297,13 +1298,13 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
 
       if (MEnt_PType(mf) == PGHOST) {
 	if (ptype == GHOST || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(mf);
 	  faceids->push_back(lid-1);
 	}
       }
       else {
 	if (ptype == OWNED || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(mf);
 	  faceids->push_back(lid-1);
 	}
       }            
@@ -1311,21 +1312,21 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
     List_Delete(rfaces);
   }
   else {
-    mf = (MEdge_ptr) cell_id_to_handle[cellid];
-    List_ptr fedges = MF_Edges(mr,1,0);
+    mf = (MFace_ptr) cell_id_to_handle[cellid];
+    List_ptr fedges = MF_Edges(mf,1,0);
     idx = 0;
     while ((me = List_Next_Entry(fedges,&idx))) {
       if (!ME_UsesEntity(me,mv,MVERTEX)) continue;
 
       if (MEnt_PType(me) == PGHOST) {
 	if (ptype == GHOST || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(me);
 	  faceids->push_back(lid-1);
 	}
       }
       else {
 	if (ptype == OWNED || ptype == USED) {
-	  lid = MEnt_ID(ment);
+	  lid = MEnt_ID(me);
 	  faceids->push_back(lid-1);
 	}
       }            
@@ -3076,7 +3077,7 @@ void Mesh_MSTK::init_set_info() {
 
 void Mesh_MSTK::collapse_degen_edges() {
   const int topoflag=1;
-  std::vector<unsigned int> *orig_vids;
+  std::vector<Entity_ID> *orig_vids;
   int idx, idx2, evgid0, evgid1;
   MVertex_ptr ev0, ev1, vkeep, vdel;
   MEdge_ptr edge;
@@ -3114,7 +3115,7 @@ void Mesh_MSTK::collapse_degen_edges() {
 	idx2 = 0;
 	while ((region = List_Next_Entry(eregs,&idx2))) {
 
-	  orig_vids = new std::vector<unsigned int>;
+	  orig_vids = new std::vector<Entity_ID>;
 
           List_ptr rverts = MR_Vertices(region);
           
@@ -3140,7 +3141,7 @@ void Mesh_MSTK::collapse_degen_edges() {
 	idx2 = 0;
 	while ((face = List_Next_Entry(efaces,&idx2))) {
 
-	  orig_vids = new std::vector<unsigned int>;
+	  orig_vids = new std::vector<Entity_ID>;
 
           List_ptr fverts = MF_Vertices(face,1,0);
           

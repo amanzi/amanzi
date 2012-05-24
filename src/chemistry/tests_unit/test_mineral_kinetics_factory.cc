@@ -53,7 +53,7 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
   MineralKineticsFactoryTest::MineralKineticsFactoryTest()
       : mkf_(),
       kinetic_rate_(NULL),
-      rate_data_("log10_rate_constant -9.0 moles_m2_sec", ";"),
+      rate_data_("log10_rate_constant -9.0 moles/m^2/sec", ";"),
       H_p(0, "H+", 1.0, 1.0079, 9.0),
       OH_m(1, "OH-", -1.0, 17.0073, 3.5),
       Ca_pp(2, "Ca++", 2.0, 40.0780, 6.0),
@@ -146,4 +146,12 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_verify_mineral_invalid) {
     CHECK_THROW(mkf_.VerifyMineralName("Pyrite", minerals_), ac::ChemistryException);
   }  // end TEST_FIXTURE()
+
+  TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_set_debug) {
+    // if we set the debug flag on the factory, the resulting kinetic
+    // rate objects should have the debug flag set
+    mkf_.set_debug(true);
+    RunTest("TST");
+    CHECK_EQUAL(kinetic_rate_->debug(), true);
+  }
 }  // end SUITE(GeochemistryTestMineralKineticsFactory)

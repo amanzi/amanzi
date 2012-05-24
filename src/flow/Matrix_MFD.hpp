@@ -40,7 +40,7 @@ class Matrix_MFD : public Epetra_Operator {
   void setSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   void createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void createMFDrhsVectors();
-  void createMFDstiffnessMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K, Epetra_Vector& Krel_faces);
+  void createMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
   void rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
   void applyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
@@ -88,6 +88,9 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
+  double nokay() { return nokay_; }
+  double npassed() { return npassed_; }
+
  private:
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
@@ -95,6 +98,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   bool flag_symmetry_;
 
+  std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
   std::vector<double> Acc_cells_;  // duplication may be useful later
@@ -114,6 +118,8 @@ class Matrix_MFD : public Epetra_Operator {
 
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
+
+  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 
  private:
   void operator=(const Matrix_MFD& matrix);

@@ -183,9 +183,10 @@ SUITE(RESTART) {
     S0.set_water_density(99.9);
     S0.set_viscosity(0.22);
 
-    Epetra_Vector face_vector(S0.get_mesh().face_epetra_map(false));
-    face_vector.Random();
-    S0.set_darcy_flux(face_vector);
+    Epetra_Vector* face_vector = new Epetra_Vector(S0.get_mesh().face_epetra_map(false));
+    face_vector->Random();
+    S0.set_darcy_flux(*face_vector);
+    delete face_vector;
 
     Epetra_Vector* cell_vector = new Epetra_Vector(S0.get_mesh().cell_epetra_map(false));
     cell_vector->Random();
@@ -200,7 +201,12 @@ SUITE(RESTART) {
     cell_vector = new Epetra_Vector(S0.get_mesh().cell_epetra_map(false));
     cell_vector->Random();
     S0.set_pressure(*cell_vector);
-    delete cell_vector;    
+    delete cell_vector;
+
+    face_vector = new Epetra_Vector(S0.get_mesh().face_epetra_map(false));
+    face_vector->Random();
+    S0.set_lambda(*face_vector);
+    delete face_vector;
 
     cell_vector = new Epetra_Vector(S0.get_mesh().cell_epetra_map(false));
     cell_vector->Random();
@@ -236,7 +242,6 @@ SUITE(RESTART) {
     delete cell_multivector;
 
     R.dump_state(S0);
-
 
     // now read the file into a new state object
 
@@ -293,6 +298,15 @@ SUITE(RESTART) {
     for (int i=0; i<s0_size; i++) 
       {
   	CHECK_EQUAL((*S0.get_pressure())[i],(*S1.get_pressure())[i]);
+      }    
+
+    s0_size = S0.get_lambda()->MyLength();
+    s1_size = S1.get_lambda()->MyLength();
+    CHECK_EQUAL(s0_size, s1_size);
+
+    for (int i=0; i<s0_size; i++) 
+      {
+  	CHECK_EQUAL((*S0.get_lambda())[i],(*S1.get_lambda())[i]);
       }    
 
     s0_size = S0.get_porosity()->MyLength();

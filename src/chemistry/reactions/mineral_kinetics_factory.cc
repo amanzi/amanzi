@@ -12,7 +12,7 @@
 #include "kinetic_rate.hh"
 #include "species.hh"
 #include "string_tokenizer.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
 
@@ -22,7 +22,7 @@ namespace chemistry {
 const std::string MineralKineticsFactory::kTST = "TST";
 
 MineralKineticsFactory::MineralKineticsFactory(void)
-    : verbosity_(kSilent) {
+    : debug_(false) {
 }  // end MineralKineticsFactory constructor
 
 MineralKineticsFactory::~MineralKineticsFactory(void) {
@@ -51,7 +51,7 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
   }
 
   if (kinetic_rate != NULL) {
-    kinetic_rate->set_verbosity(verbosity());
+    kinetic_rate->set_debug(debug());
     // TODO(bandre): get rid of the dynamic cast...?
     kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral),
                         rate_data, primary_species);

@@ -276,6 +276,7 @@ void State::create_storage()
   // create the Eptera_Vector objects
   water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  lambda =           Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
@@ -419,7 +420,7 @@ void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
   //mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
   //cell_ids.begin(),cell_ids.end());
@@ -427,7 +428,7 @@ void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
   mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
 
-  for (std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
+  for (Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
     v[*c] = value;
   }
 }
@@ -446,12 +447,12 @@ void State::set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
   mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
 
-  for(std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
+  for(Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
     v[*c] = x[*c];
   }
 }
@@ -469,11 +470,11 @@ void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector&
   unsigned int mesh_block_size = mesh_maps->get_set_size(region,
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
   mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
 
-  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end();  c++) {
+  for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end();  c++) {
     const Amanzi::AmanziGeometry::Point& p = mesh_maps->cell_centroid(*c);
     v[*c] = fun(&p[0]);
   }
@@ -492,12 +493,12 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
   mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                      cell_ids.begin(),cell_ids.end());
 
-  for( std::vector<unsigned int>::iterator c = cell_ids.begin();
+  for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin();
        c != cell_ids.end();  c++) {
     v[*c] = value;
   }
@@ -519,12 +520,12 @@ void State::set_darcy_flux(const double* u, const int mesh_block_id)
   int dim = mesh_maps->space_dimension();
   Amanzi::AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
   mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                      cell_ids.begin(),cell_ids.end());
 
-  for (std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
+  for (Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
     mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -555,12 +556,12 @@ void State::set_darcy_flux(const double* u, const std::string region)
   int dim = mesh_maps->space_dimension();
   Amanzi::AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
   mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
 
-  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
+  for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
     mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -761,7 +762,7 @@ double State::point_value(const std::string& point_region, const std::string& na
   double value(0.0);
   double volume(0.0);
 
-  std::vector<unsigned int> cell_ids(mesh_block_size);
+  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
   mesh_maps->get_set_entities(point_region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
                               &cell_ids);
@@ -777,22 +778,31 @@ double State::point_value(const std::string& point_region, const std::string& na
   }
   
   // extract the value if it is a component
-  if ( comp_no.find(var) != comp_no.end() )  {
+  if (comp_no.find(var) != comp_no.end())  {
     value = 0.0;
     volume = 0.0;
     for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
-      value += (*(*total_component_concentration)( comp_no[var] ))[ic] *  mesh_maps->cell_volume(ic);
+      value += (*(*total_component_concentration)(comp_no[var]))[ic] * mesh_maps->cell_volume(ic);
       
       volume += mesh_maps->cell_volume(ic);
     }
-  } else if ( var == "Volumetric water content" ) {
+  } else if (var == "Volumetric water content") {
     value = 0.0;
     volume = 0.0;
     
     for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
       value += (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }
+  } else if (var == "Aqueous pressure") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*pressure)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
   } else {
@@ -856,6 +866,13 @@ void State::set_horizontal_permeability( const Epetra_Vector& permeability_)
 void State::set_pressure(const Epetra_Vector& pressure_)
 {
   *pressure = pressure_;
+};
+
+
+/* *******************************************************************/
+void State::set_lambda(const Epetra_Vector& lambda_)
+{
+  *lambda = lambda_;
 };
 
 

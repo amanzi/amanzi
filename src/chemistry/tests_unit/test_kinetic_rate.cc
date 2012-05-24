@@ -94,7 +94,7 @@ SUITE(GeochemistryTestsKineticRate) {
     void AddContributionToJacobian(const ac::SpeciesArray& primary_species,
                                    const std::vector<ac::Mineral>& minerals,
                                    const double por_den_sat_vol,
-                                   ac::Block* J) {
+                                   ac::MatrixBlock* J) {
       static_cast<void>(primary_species);
       static_cast<void>(minerals);
       static_cast<void>(por_den_sat_vol);
@@ -126,11 +126,11 @@ SUITE(GeochemistryTestsKineticRate) {
     CHECK_EQUAL(rate.name(), "abc123");
   }
 
-  // can we set the verbosity?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_verbosity) {
+  // can we set the debug flag?
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_debug) {
     MockKineticRate rate;
-    rate.set_verbosity(ac::kVerbose);
-    CHECK_EQUAL(rate.verbosity(), ac::kVerbose);
+    rate.set_debug(true);
+    CHECK_EQUAL(rate.debug(), true);
   }
 
   // does SetSpeciesIds function work?

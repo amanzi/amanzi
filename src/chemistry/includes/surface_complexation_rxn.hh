@@ -13,7 +13,7 @@ namespace amanzi {
 namespace chemistry {
 
 // forward declarations from chemistry
-class Block;
+class MatrixBlock;
 
 class SurfaceComplexationRxn {
  public:
@@ -26,13 +26,19 @@ class SurfaceComplexationRxn {
   // add complexes to the reaction
   void AddSurfaceComplex(SurfaceComplex surface_complex);
   void UpdateSiteDensity(const double);
+  double GetSiteDensity(void) const {
+    return surface_site_.at(0).molar_density();
+  }
+  SpeciesId SiteId(void) const {
+    return surface_site_.at(0).identifier();
+  }
   // update sorbed concentrations
   void Update(const std::vector<Species>& primarySpecies);
   // add stoichiometric contribution of complex to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to sorbed dtotal
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
-                               Block* dtotal);
+                               MatrixBlock* dtotal);
   // If the free site stoichiometry in any of the surface complexes
   // is not equal to 1., we must use Newton's method to solve for
   // the free site concentration.  This function determines if this

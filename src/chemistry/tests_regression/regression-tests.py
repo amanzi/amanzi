@@ -48,7 +48,6 @@ def get_configuration(options):
     config.read(options.config_file)
 
     # all sections except 'setup' and 'suites' are tests
-    test_names = config.sections()
     if not config.has_section('setup'):
         raise Exception("""
 Config file must contain a \'setup\' section with the following fields:
@@ -58,19 +57,21 @@ input dir :
 input suffix :
 results dir : 
 """)
-    test_names.remove('setup')
     setup = config.items('setup')
     setup = convert_list_to_dictionary(setup)
 
-    if config.has_section('suites'):
-        test_names.remove('suites')
-    else:
+    if not config.has_section('suites'):
         config.add_section('suites')
         config.set('suites', 'none', "")
     available_suites = config.items('suites')
     available_suites = convert_list_to_dictionary(available_suites)
 
     # extract the test sections
+    test_names = config.sections()
+    test_names.remove('setup')
+    if config.has_section('suites'):
+        test_names.remove('suites')
+
     available_tests = {}
     for t in test_names:
         available_tests[t] = config.items(t)
@@ -144,6 +145,10 @@ def run_tests(options, tests_to_run):
         if options.verbose or not options.do_tests:
             print 80*'-'
             print "Running test \'{0}\' with the command:\n\t{1}".format(r, cmdline)
+            verification_name = None
+            if 'verification' in test_info:
+                verification_name = test_info['verification']
+            print "    verification problem : {0}".format(verification_name)
         else:
             print "{0} ....".format(r),
         if options.do_tests:

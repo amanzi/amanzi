@@ -142,19 +142,19 @@ Calcite              =  1.00 Ca++  -1.00 H+  1.00 HCO3-  ;     1.8487 ;  100.087
 Chalcedony           =  1.00 SiO2(aq)  ;    -3.7281 ;  60.0843 ;   22.688 ;   1.0 
 
 <Mineral Kinetics
-# name               ; TST ; log10_rate_constant double     moles_m2_sec 
+# name               ; TST ; log10_rate_constant double     moles/m^2/sec 
 
-Gibbsite             ; TST ; log10_rate_constant      -14.0 moles_m2_sec 
-Quartz               ; TST ; log10_rate_constant      -18.0 moles_m2_sec 
-K-Feldspar           ; TST ; log10_rate_constant    -16.699 moles_m2_sec 
-Jurbanite            ; TST ; log10_rate_constant      -14.0 moles_m2_sec 
-Ferrihydrite         ; TST ; log10_rate_constant      -14.0 moles_m2_sec 
-Kaolinite            ; TST ; log10_rate_constant    -16.699 moles_m2_sec 
-Schoepite            ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
-(UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
-Soddyite             ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
-Calcite              ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
-Chalcedony           ; TST ; log10_rate_constant      -14.0 moles_m2_sec 
+Gibbsite             ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
+Quartz               ; TST ; log10_rate_constant      -18.0 moles/m^2/sec 
+K-Feldspar           ; TST ; log10_rate_constant    -16.699 moles/m^2/sec 
+Jurbanite            ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
+Ferrihydrite         ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
+Kaolinite            ; TST ; log10_rate_constant    -16.699 moles/m^2/sec 
+Schoepite            ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
+(UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
+Soddyite             ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
+Calcite              ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
+Chalcedony           ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
 
 <Surface Complex Sites
 # name               ; surface_density

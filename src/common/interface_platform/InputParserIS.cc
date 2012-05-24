@@ -68,6 +68,8 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Transport")          = create_Transport_List(plist);
   new_list.sublist("State")              = create_State_List(plist);
   new_list.sublist("Flow")               = create_Flow_List(plist);
+  new_list.sublist("Preconditioners")    = create_Preconditioners_List(plist);
+
   if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
     new_list.sublist("Chemistry") = CreateChemistryList(plist);
   }
@@ -197,8 +199,9 @@ void init_global_info( Teuchos::ParameterList* plist ) {
   sorption_site_names_.clear();
 
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
-  if ( (++ phase_list.begin()) == phase_list.end() ) {
-    if (phase_list.isSublist(phase_name)) {
+  Teuchos::ParameterList::ConstIterator item;
+  for (item = phase_list.begin(); item != phase_list.end(); ++item) {
+    if (phase_list.name(item) == phase_name) {
       Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
       if (aqueous_list.isSublist("Phase Components")) {
         Teuchos::ParameterList phase_components = 
@@ -208,22 +211,27 @@ void init_global_info( Teuchos::ParameterList* plist ) {
               phase_components.sublist(phase_comp_name);
           comp_names = 
               water_components.get<Teuchos::Array<std::string> >("Component Solutes");
-          // this is the order that the chemistry expects
-          if (water_components.isParameter("Minerals")) {
-            mineral_names_ = water_components.get<Teuchos::Array<std::string> >("Minerals");
-          }
-          if (water_components.isParameter("Sorption Sites")) {
-            sorption_site_names_ = water_components.get<Teuchos::Array<std::string> >("Sorption Sites");
-          }
         }  // end water
       }  // end phase components
     }  // end Aqueous phase
-  } else {
-    std::stringstream message;
-    message << "Error: InputParserIS::init_global_info(): "
-            << "Only a single phase is supported on unstructured meshes at this time!\n" 
-            << phase_list << std::endl;
-    Exceptions::amanzi_throw(Errors::Message(message.str()));      
+    else if (phase_list.name(item) == "Solid") {
+      Teuchos::ParameterList solid_list = phase_list.sublist("Solid");
+      // this is the order that the chemistry expects
+      if (solid_list.isParameter("Minerals")) {
+        mineral_names_ = solid_list.get<Teuchos::Array<std::string> >("Minerals");
+      }
+      if (solid_list.isParameter("Sorption Sites")) {
+        sorption_site_names_ = solid_list.get<Teuchos::Array<std::string> >("Sorption Sites");
+      }
+    }  // end Solid phase
+    else {
+      std::stringstream message;
+      message << "Error: InputParserIS::init_global_info(): "
+              << "The only phases supported on unstructured meshes at this time are '"
+              << phase_name << "' and 'Solid'!\n" 
+              << phase_list << std::endl;
+      Exceptions::amanzi_throw(Errors::Message(message.str()));      
+    }
   }
  
   if (comp_names.size() > 0) {
@@ -703,8 +711,8 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
       }
 
       // continue to set some reasonable defaults
+      trp_list.sublist("VerboseObject") = create_Verbosity_List("high");
       trp_list.set<std::string>("enable internal tests", "no");
-      trp_list.set<int>("verbosity level", 0);
       trp_list.set<double>("CFL",1.0);
       trp_list.set<std::string>("flow mode","transient");
 
@@ -732,7 +740,11 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
     Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
     int bc_counter = 0;
-    if ( (++ phase_list.begin()) == phase_list.end() ) {
+    // TODO: these simple checks for one transported phase will not
+    // work with the addition of the solid phase
+
+    //if ( (++ phase_list.begin()) == phase_list.end() ) {
+    if (true) {
       Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
 
       for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
@@ -785,6 +797,14 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   return trp_list;
 }
 
+/* ******************************************************************
+* Empty                                             
+****************************************************************** */
+Teuchos::ParameterList create_Preconditioners_List ( Teuchos::ParameterList* plist ) {
+  Teuchos::ParameterList prec_list;
+  prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
+  return prec_list;
+}
 
 /* ******************************************************************
 * Empty                                             
@@ -813,6 +833,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 
         // set some reasonable defaults...
         steady_time_integrator.set<std::string>("method","BDF1");
+
+	// link to the preconditioner for the steady state solver
+	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
 
         sti_error_control.set<double>("absolute error tolerance",1.0);
         sti_error_control.set<double>("relative error tolerance",0.0);
@@ -875,6 +898,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 
         // set some reasonable defaults...
         transient_time_integrator.set<std::string>("method","BDF1");
+	
+	// link to the preconditioner for the transient time integrator
+	transient_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
 
         tti_error_control.set<double>("absolute error tolerance",1.0);
         tti_error_control.set<double>("relative error tolerance",0.0);
@@ -932,9 +958,6 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
         Teuchos::ParameterList& flow_bc = richards_problem.sublist("boundary conditions");
         flow_bc = create_SS_FlowBC_List(plist);
 
-        // insert the diffusion preconditioner sublist
-        Teuchos::ParameterList &diffprecon = richards_problem.sublist("Diffusion Preconditioner");
-        diffprecon = create_DPC_List(plist);
       } else {
         // something's wrong
       }
@@ -1199,6 +1222,53 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
+      } else if ( bc.isSublist("BC: Seepage") ) {
+        Teuchos::ParameterList& bc_flux = bc.sublist("BC: Seepage");
+
+        Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
+        Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
+
+        if (! bc_flux.isParameter("Inward Mass Flux") )  {
+          // we can only handle mass fluxes right now
+          Exceptions::amanzi_throw(Errors::Message("In BC: Seepage we can only handle Inward Mass Flux"));
+        }
+
+        Teuchos::Array<double> flux;
+
+	flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
+	for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+        
+        std::stringstream ss;
+        ss << "BC " << bc_counter++;
+
+        Teuchos::ParameterList& tbc = ssf_list.sublist("seepage face").sublist(ss.str());
+        tbc.set<Teuchos::Array<std::string> >("regions", regions );
+
+
+        if ( times.size() == 1 ) {
+          Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");
+          tbcs.set<double>("value",flux[0]);
+        } else {
+          Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-tabular");
+
+          tbcs.set<Teuchos::Array<double> >("x values", times);
+          tbcs.set<Teuchos::Array<double> >("y values", flux);
+
+          std::vector<std::string> forms_(time_fns.size());
+
+          for (int i=0; i<time_fns.size(); i++)
+            if (time_fns[i] == "Linear") {
+              forms_[i] = "linear";
+            } else if (time_fns[i] == "Constant") {
+              forms_[i] = "constant";
+            } else {
+              Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+            }
+
+          Teuchos::Array<std::string> forms = forms_;
+          tbcs.set<Teuchos::Array<std::string> >("forms", forms);
+        }
+
       }
 
       // TODO...
@@ -1224,7 +1294,10 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
   // make sure there is only one phase
-  if ( (++ phase_list.begin()) == phase_list.end() ) {
+  //if ( (++ phase_list.begin()) == phase_list.end() ) {
+  // TODO: these simple checks for one transported phase will not work
+  // with the addition of the solid phase
+  if (true) {
     // write the array of component solutes
     stt_list.set<Teuchos::Array<std::string> >("Component Solutes", comp_names);
     stt_list.set<int>("Number of component concentrations", comp_names.size());

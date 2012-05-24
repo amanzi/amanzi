@@ -24,15 +24,37 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
 
   FS = FS_MPC;
-  dp_list = flow_list.sublist("Darcy Problem");
+
+  // extract important sublists
+  Teuchos::ParameterList flow_list;
+  if (global_list.isSublist("Flow")) {
+    flow_list = global_list.sublist("Flow");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Flow> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (flow_list.isSublist("Darcy Problem")) {
+    dp_list_ = flow_list.sublist("Darcy Problem");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Darcy Problem> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (global_list.isSublist("Preconditioners")) {
+    preconditioner_list_ = global_list.sublist("Preconditioners");
+  } else {
+    Errors::Message msg("Flow_PK: input parameter list does not specify <Preconditioners> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
 
@@ -138,11 +160,14 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Allocate data for relative permeability (for consistency).
+  Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   Krel_faces = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
+
+  Krel_cells->PutScalar(1.0);
   Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
 
   // Preconditioner
-  Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
   preconditioner->init_ML_preconditioner(ML_list);
 
   flow_status_ = FLOW_STATUS_INIT;
@@ -156,9 +181,21 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
+  num_itrs_sss = 0;
 
   Epetra_Vector& pressure = FS->ref_pressure();
   *solution_cells = pressure;
+
+  // initialize mass matrices
+  SetAbsolutePermeabilityTensor(K);
+  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
+  matrix->createMFDmassMatrices(mfd3d_method, K);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    double pokay = 100 * matrix->nokay() / double(ncells_owned);
+    double ppassed = 100 * matrix->npassed() / double(ncells_owned);
+    std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
+  }
 
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 }
@@ -170,6 +207,12 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   set_time(T0, dT0);
+  num_itrs_trs = 0;
+
+  // initialize mass matrices
+  SetAbsolutePermeabilityTensor(K);
+  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
+  matrix->createMFDmassMatrices(mfd3d_method, K);
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }
@@ -184,14 +227,10 @@ int Darcy_PK::AdvanceToSteadyState()
 {
   solver->SetAztecOption(AZ_output, AZ_none);
 
-  // work-around limited support for tensors
-  SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
-
   // calculate and assemble elemental stifness matrices
-  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
   matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_faces, matrix);
+  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   matrix->computeSchurComplement(bc_markers, bc_values);
@@ -228,6 +267,8 @@ int Darcy_PK::Advance(double dT_MPC)
     T_internal = (standalone_mode) ? T_internal : T_physical;
   }
 
+  solver->SetAztecOption(AZ_output, AZ_none);
+
   // update boundary conditions and source terms
   double time = T_internal;
   bc_pressure->Compute(time);
@@ -242,14 +283,10 @@ int Darcy_PK::Advance(double dT_MPC)
       *solution_cells, atm_pressure,
       bc_markers, bc_values);
 
-  // work-around limited support for tensors
-  SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
-
   // calculate and assemble elemental stifness matrices
-  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
   matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_faces, matrix);
+  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
   AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
@@ -284,9 +321,9 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // calculate darcy mass flux
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
   matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 
   // DEBUG

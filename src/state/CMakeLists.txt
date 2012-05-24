@@ -70,15 +70,21 @@ if (BUILD_TESTS)
     include_directories(${STATE_SOURCE_DIR})
 
     # Copy test subdirectory for out of source builds
-    if (NOT (STATE_SOURCE_DIR STREQUAL STATE_BINARY_DIR))
+    if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
           copy_directory ${STATE_SOURCE_DIR}/test ${STATE_BINARY_DIR}/test) 
     endif()
     
-    set(amanzi_libs geometry mesh state)
-     
-    add_executable(test_state test/Main.cc test/test_restart.cpp test/test_vis.cpp)
-    target_link_libraries(test_state state stk_mesh ${UnitTest_LIBRARIES} z)
-    add_amanzi_test(state test_state KIND int)
+    #set(amanzi_libs geometry mesh state)
+    
+    if ( ENABLE_STK_Mesh )
+      add_amanzi_test(state test_state
+                      KIND int
+                      SOURCE
+	  	          test/Main.cc
+	 		  test/test_restart.cpp
+	 		  test/test_vis.cpp
+                      LINK_LIBS state stk_mesh ${UnitTest_LIBRARIES})
+    endif()
 
 endif()

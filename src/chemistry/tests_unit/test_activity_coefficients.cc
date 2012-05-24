@@ -102,9 +102,13 @@ void ActivityModelTest::RunTest(const std::string name, double * gamma) {
     }
   }
   *gamma = -1.0;  // final value should always be > 0
-  std::string dummy_pitzer_1(" ");
-  std::string dummy_pitzer_2(" ");
-  activity_model_ = amf_.Create(activity_model_name(), dummy_pitzer_1, species_, aqueous_complexes_,dummy_pitzer_2);
+
+  ac::ActivityModel::ActivityModelParameters parameters;
+  parameters.database_filename = "";
+  parameters.pitzer_jfunction = "";
+
+  activity_model_ = amf_.Create(activity_model_name(), parameters, 
+                                species_, aqueous_complexes_);
   activity_model_->CalculateIonicStrength(species_, aqueous_complexes_);
   *gamma = activity_model_->Evaluate(species_.at(index));
 }  // end ActivityModelTest::RunTest()

@@ -26,17 +26,18 @@ ActivityModelFactory::ActivityModelFactory() {
 ActivityModelFactory::~ActivityModelFactory() {
 }  // end ActivityModelFactory destructor
 
-ActivityModel* ActivityModelFactory::Create(const std::string& model,
-		                                    const std::string& database,
-		                                    std::vector<Species>& prim,
-		                                    std::vector<AqueousEquilibriumComplex>& sec,
-		                                    const std::string& jfunction_pitzer) {
+ActivityModel* ActivityModelFactory::Create(
+    const std::string& model,
+    const ActivityModel::ActivityModelParameters& parameters,
+    const std::vector<Species>& primary_species,
+    const std::vector<AqueousEquilibriumComplex>& secondary_species) {
+
   ActivityModel* activity_model = NULL;
 
   if (model == debye_huckel) {
     activity_model = new ActivityModelDebyeHuckel();
   } else if (model == pitzer_hwm) {
-    activity_model = new ActivityModelPitzerHWM(database,prim,sec,jfunction_pitzer);
+    activity_model = new ActivityModelPitzerHWM();
   } else if (model == unit) {
     activity_model = new ActivityModelUnit();
   } else {
@@ -62,6 +63,7 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model,
     // TODO(bandre): set the name in the object constructor so we can
     // verify that the correct object was created.
     activity_model->name(model);
+    activity_model->Setup(parameters, primary_species, secondary_species);
   }
   return activity_model;
 }  // end Create()

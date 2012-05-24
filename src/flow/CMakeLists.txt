@@ -49,7 +49,7 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: flow
 #
-add_library(flow Flow_PK.cpp Flow_State.cpp 
+add_library(flow Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
                  Flow_BC_Factory.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
                  Darcy_PK.cpp Darcy_IO.cpp 
                  Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp
@@ -109,58 +109,69 @@ if (BUILD_TESTS)
         add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
  
         # Test: transient Darcy flow 
-        add_executable(flow_darcy_2D test/Main.cc test/flow_darcy_2D.cpp)
-        target_link_libraries(flow_darcy_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_darcy_2D flow_darcy_2D KIND int)
+        add_amanzi_test(flow_darcy_2D flow_darcy_2D
+	                KIND int
+                        SOURCE test/Main.cc test/flow_darcy_2D.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow with a source
-        add_executable(flow_darcy_well test/Main.cc test/flow_darcy_well.cpp)
-        target_link_libraries(flow_darcy_well ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_darcy_well flow_darcy_well KIND int)
+        add_amanzi_test(flow_darcy_well flow_darcy_well
+	                KIND int
+                        SOURCE test/Main.cc test/flow_darcy_well.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: miscaleneous Richards flow routines
-        add_executable(flow_richards_convergence test/Main.cc test/flow_richards_convergence.cpp)
-        target_link_libraries(flow_richards_convergence ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_richards_convergence flow_richards_convergence KIND int)
+        add_amanzi_test(flow_richards_convergence flow_richards_convergence
+	                KIND int
+                        SOURCE test/Main.cc test/flow_richards_convergence.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: 2D Richards
-        add_executable(flow_richards_2D test/Main.cc test/flow_richards_2D.cpp)
-        target_link_libraries(flow_richards_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_richards_2D flow_richards_2D KIND unit)
+        add_amanzi_test(flow_richards_2D flow_richards_2D
+	                KIND unit
+                        SOURCE test/Main.cc test/flow_richards_2D.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_executable(flow_richards_seepage test/Main.cc test/flow_richards_seepage.cpp)
-        target_link_libraries(flow_richards_seepage ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_richards_seepage flow_richards_seepage KIND unit)
+        add_amanzi_test(flow_richards_seepage flow_richards_seepage
+	                KIND unit
+                        SOURCE test/Main.cc test/flow_richards_seepage.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: pseudo-1D Richards
-        add_executable(flow_richards_bc_cribs test/Main.cc test/flow_richards_bc_cribs.cpp)
-        target_link_libraries(flow_richards_bc_cribs ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs KIND unit)
+        add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
+	                KIND unit
+                        SOURCE test/Main.cc test/flow_richards_bc_cribs.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
     set(amanzi_libs geometry mesh mesh_factory simple_mesh state flow whetstone)
  
     # Test: van Genuchten flow routines
-    add_executable(flow_vanGenuchten test/Main.cc test/flow_vanGenuchten.cpp)
-    target_link_libraries(flow_vanGenuchten ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_vanGenuchten flow_vanGenuchten KIND int)
+    add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
+                    KIND int
+                    SOURCE test/Main.cc test/flow_vanGenuchten.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: flow-bc-factory
-    add_executable(flow_bc_factory test/flow_bc_factory.cc)
-    target_link_libraries(flow_bc_factory ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_bc_factory flow_bc_factory KIND unit)
+    add_amanzi_test(flow_bc_factory flow_bc_factory
+                    KIND unit
+                    SOURCE test/flow_bc_factory.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
     set(amanzi_libs geometry mesh mesh_factory simple_mesh flow state whetstone solvers output)
     
-    add_executable(flow_richards_tensor test/Main.cc test/flow_richards_tensor.cpp)
-    target_link_libraries(flow_richards_tensor ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_richards_tensor flow_richards_tensor KIND unit)
+    add_amanzi_test(flow_richards_tensor flow_richards_tensor
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_tensor.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_STK_Mesh )
-        add_executable(flow_richards_3D test/Main.cc test/flow_richards_3D.cpp)
-        target_link_libraries(flow_richards_3D ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_richards_3D flow_richards_3D KIND unit)
+        add_amanzi_test(flow_richards_3D flow_richards_3D
+	                KIND unit
+                        SOURCE test/Main.cc test/flow_richards_3D.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     endif()
 endif()
 

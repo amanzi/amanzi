@@ -26,11 +26,14 @@
 #include "secondary_species.hh"
 #include "mineral.hh"
 #include "string_tokenizer.hh"
+#include "chemistry_output.hh"
 
 namespace amanzi {
 namespace chemistry {
 
-class Block;
+extern ChemistryOutput* chem_out;
+
+class MatrixBlock;
 
 class KineticRateTST : public KineticRate {
  public:
@@ -43,13 +46,13 @@ class KineticRateTST : public KineticRate {
   void Update(const SpeciesArray& primary_species,
               const std::vector<Mineral>& minerals);
   void AddContributionToResidual(const std::vector<Mineral>& minerals,
-                                 const double por_den_sat_vol,
+                                 const double bulk_volume,
                                  std::vector<double> *residual);
 
   void AddContributionToJacobian(const SpeciesArray& primary_species,
                                  const std::vector<Mineral>& minerals,
-                                 const double por_den_sat_vol,
-                                 Block* J);
+                                 const double bulk_volume_vol,
+                                 MatrixBlock* J);
   void Display(void) const;
 
   void ParseParameters(const StringTokenizer& rate);

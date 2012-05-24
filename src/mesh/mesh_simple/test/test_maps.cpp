@@ -30,11 +30,11 @@ TEST(MAPS) {
   cout << "number of nodes = " << Mm.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED) << endl;
 
   vector<double> x(24);
-  vector<unsigned int> nodes(8);
-  vector<unsigned int> faces(6);
+  vector<Amanzi::AmanziMesh::Entity_ID> nodes(8);
+  vector<Amanzi::AmanziMesh::Entity_ID> faces(6);
   vector<int> face_dirs(6);
   
-  for (unsigned int i=0; i<Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED); i++)
+  for (Amanzi::AmanziMesh::Entity_ID i=0; i<Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED); i++)
     {
 
       cout << "cell_to_nodes" << endl;

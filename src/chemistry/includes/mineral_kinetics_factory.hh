@@ -15,7 +15,6 @@
 
 #include "species.hh"
 #include "mineral.hh"
-#include "verbosity.hh"
 #include "string_tokenizer.hh"
 
 namespace amanzi {
@@ -37,17 +36,17 @@ class MineralKineticsFactory {
                               const std::vector<Mineral>& minerals) const;
 
 
-  void set_verbosity(const Verbosity s_verbosity) {
-    this->verbosity_ = s_verbosity;
+  void set_debug(const bool value) {
+    this->debug_ = value;
   };
-  Verbosity verbosity(void) const {
-    return this->verbosity_;
+  bool debug(void) const {
+    return this->debug_;
   };
 
  protected:
 
  private:
-  Verbosity verbosity_;
+  bool debug_;
   static const std::string kTST;
 };
 

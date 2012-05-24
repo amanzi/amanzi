@@ -125,8 +125,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
     }
-    // verbosity should be set after the constructor is finished....
-    CHECK_EQUAL(0, cpk_->verbosity());
+    // debug flag should be set after the constructor is finished....
+    CHECK_EQUAL(false, cpk_->debug());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize) {
@@ -134,11 +134,11 @@ SUITE(GeochemistryTestsChemistryPK) {
     // object correctly based on the xml input....
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+      amanzi::chemistry::chem_out->AddLevel("silent");
       cpk_->InitializeChemistry();
-    } catch (ac::ChemistryException chem_error) {
-      std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
+      throw e;
     }
     // assume all is right with the world if we exited w/o an error
     CHECK_EQUAL(0, 0);
@@ -147,9 +147,11 @@ SUITE(GeochemistryTestsChemistryPK) {
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+      amanzi::chemistry::chem_out->AddLevel("silent");
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
+      throw e;
     }
     std::vector<std::string> names;
     cpk_->set_chemistry_output_names(&names);
@@ -158,6 +160,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_set_component_names) {
     cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+    amanzi::chemistry::chem_out->AddLevel("silent");
     cpk_->InitializeChemistry();
     std::vector<std::string> names;
     cpk_->set_component_names(&names);

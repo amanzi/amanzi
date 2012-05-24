@@ -1,25 +1,54 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "chemistry/includes/matrix_block.hh"
+
+#include "matrix_block.hh"
 
 #include <cmath>
 
-#include <iostream>
+#include <sstream>
 #include <iomanip>
+
+#include "chemistry_output.hh"
 
 namespace amanzi {
 namespace chemistry {
 
-MatrixBlock::MatrixBlock() : size_(0),
-                             A_(NULL) {
-}
+MatrixBlock::MatrixBlock() 
+  : size_(0),
+    A_(NULL) {
+}  // end MatrixBlock()
 
-MatrixBlock::MatrixBlock(int n) {
-  set_size(n);
+MatrixBlock::MatrixBlock(const int size) 
+    : size_(size),
+      A_(NULL) {
+  AllocateMemory();
+}  // end MatrixBlock(size)
+
+MatrixBlock::~MatrixBlock() {
+  FreeMemory();
+}  // end ~MatrixBlock
+
+void MatrixBlock::Resize(const int new_size) {
+  FreeMemory();
+  set_size(new_size);
+  AllocateMemory();
+}  // end Resize(new_size)
+
+void MatrixBlock::AllocateMemory(void) {
   A_ = new double*[size()];
   for (int i = 0; i < size(); i++) {
     A_[i] = new double[size()];
   }
-}
+}  // end AllocateMemory()
+
+void MatrixBlock::FreeMemory(void) {
+  if (A_) {
+    for (int i = 0; i < size(); i++) {
+      delete [] A_[i];
+    }
+    delete [] A_;
+  }
+  A_ = NULL;
+}  // end FreeMemory()
 
 void MatrixBlock::Zero() {
   for (int i = 0; i < size(); i++) {
@@ -80,15 +109,6 @@ void MatrixBlock::SetValues(double** values) {
 
 void MatrixBlock::SetValues(MatrixBlock* b) {
   double** B = b->GetValues();
-  for (int i = 0; i < size(); i++) {
-    for (int j = 0; j < size(); j++) {
-      A_[i][j] = B[i][j];
-    }
-  }
-}
-
-void MatrixBlock::SetValues(Block* b) {
-  double** B = b->getValues();
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
       A_[i][j] = B[i][j];
@@ -187,25 +207,31 @@ void MatrixBlock::AddValues(int ioffset, int joffset, MatrixBlock* b, double sca
   }
 }
 
-void MatrixBlock::Print() {
+void MatrixBlock::Print() const {
+  std::stringstream message;
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
       if (std::fabs(A_[j][i]) > 0.) {
-        std::cout << i << " " << j << " : "
+        // TODO(bandre): is the [j][i] indexing here intentional for comparison to fortran...?
+        message << i << " " << j << " : "
                   << std::scientific << A_[j][i] << std::endl;
       }
     }
   }
+  chem_out->Write(kVerbose, message);
 }
 
-MatrixBlock::~MatrixBlock() {
-  if (A_) {
-    for (int i = 0; i < size(); i++) {
-      delete [] A_[i];
+void MatrixBlock::Print_ij() const {
+  std::stringstream message;
+  for (int i = 0; i < size(); i++) {
+    for (int j = 0; j < size(); j++) {
+      if (std::fabs(A_[i][j]) > 0.) {
+        message << i << " " << j << " : "
+                  << std::scientific << A_[i][j] << std::endl;
+      }
     }
-    delete [] A_;
   }
-  A_ = NULL;
+  chem_out->Write(kVerbose, message);
 }
 
 }  // namespace chemistry

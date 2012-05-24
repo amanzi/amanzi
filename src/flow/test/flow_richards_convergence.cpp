@@ -123,9 +123,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     State* S = new State(state_list, mesh);
     S->set_time(0.0);
 
-    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
-    Richards_PK* RPK = new Richards_PK(flow_list, FS);
+    Richards_PK* RPK = new Richards_PK(parameter_list, FS);
     RPK->set_standalone_mode(true);
 
     RPK->InitPK();  // setup the problem

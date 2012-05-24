@@ -203,8 +203,14 @@ The remaining `"Flow`" parameters are
 
 * `"Relative permeability method`" [string] defines a method for calculating relative
   premeability. The available self-explanatory options `"Upwind with gravity`",
-  `"Upwind with Darcy flux`", `"Arithmetic mean`" and `"Cell centered`". the first three
+  `"Upwind with Darcy flux`", `"Arithmetic mean`" and `"Cell centered`". The first three
   calculate the relative permeability on mesh interfaces.
+
+* `"Discretization method hint`" [string] helps to select the best discretization. 
+  It will go away with the next release of WhetStone. The available options are
+  `"none`", `"support operator`", and `"monotone`". The second options reproduces 
+  discretization implemented in RC1. The last option is recommended for orthogonal
+  meshes. 
 
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
@@ -215,6 +221,54 @@ The remaining `"Flow`" parameters are
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="medium"/>
     </ParameterList>
+
+
+Steady State Time Integratior
+-----------------------------
+
+The sublist `"steady state time integrator`" defines parameters controling linear and 
+nonlinear solvers during steady state time integration. Here is an example:
+
+.. code-block:: xml
+
+    <ParameterList name="steady state time integrator">
+      <Parameter name="method" type="string" value="Picard"/>
+      <Parameter name="initialize with darcy" type="string" value="yes"/>
+      <Parameter name="clipping saturation value" type="double" value="0.98"/>
+      <Parameter name="preconditoner" type="string" value="Trilinos ML">
+
+      <ParameterList name="nonlinear solver BDF1">
+      ...
+      </ParameterList>
+ 
+      <ParameterList name="nonlinear solver BDF2">
+      ...
+      </ParameterList>
+    </ParameterList>
+
+The parameters used here are
+
+* `"method`" [string] defines time integration method. The available options are 
+  `"BDF1`", `"BDF2`", and `"Picard`".
+
+* `"initialize with darcy`" [string] solves the fully saturated problem with the 
+  boundary continious avaluated at time T=0. The solution defines a new pressure
+  and saturation.
+
+* `"clipping saturation value`" [double] is an experimental option. It is used 
+  after re-initialization described in the previous bullet to cut-off small values 
+  of pressure. By default, the pressure threshold is equal to the atmospheric pressure.
+  The new pressure is calculated based of the defined saturation value. Default is 0.6.
+
+* `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".   
+
+Transient Time Integratior
+-----------------------------
+
+The sublist `"transient time integrator`" defines parameters controling linear and 
+nonlinear solvers during steady state time integration. Its parameters similar to 
+that n the sublist `"steady state time integrator`" except for parameters controling
+pressure re-initialization.
 
 
 Transport
@@ -269,18 +323,151 @@ The `"Transport`" parameters useful for developers are:
   divergence-free condition. The defult value is 1e-6.
 
 
-Solvers
-=======
+Linear and Nonlinear Solvers
+============================
 
 Version 2 of the native input spec introduces this sublist.
+It constans sublists for various linear an nonlinear solvers such as BDF1 and AztecOO.
+Here is and example:
+
+.. code-block:: xml
+
+     <ParameterList name="Solvers">
+       <ParameterList name="GMRES via AztecOO">
+            ... 
+       </ParameterList>
+
+       <ParameterList name="BDF1">
+       ...
+       </ParameterList>
+
+       <ParameterList name="BDF2">
+       ...
+       </ParameterList>
+     </ParameterList>
+
+Names `"GMRES via AztecOO`", `"BDF1`", and `"BDF2`" are selected by the user.
+They can be used by a process kernel lists to define a solver.
+
 
 Preconditioners
 ===============
 
-Version 2 of the native input spec introduces this sublist.
+Version 2 of the native input spec introduces this sublist. It contains sublists for various
+preconditioners required by a simulation. At the moment, we support only Trilinos multilevel 
+preconditioner. Here is an example:
+
+.. code-block:: xml
+
+     <ParameterList name="Preconditoners">
+       <ParameterList name="Trilinos ML">
+          <ParameterList name="ML Parameters">
+            <Parameter name="ML output" type="int" value="0"/>
+            <Parameter name="aggregation: damping factor" type="double" value="1.33333"/>
+            ... 
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="Trilinos ML 2">
+       ...
+       </ParameterList>
+
+       <ParameterList name="External AMG">
+       ...
+       </ParameterList>
+     </ParameterList>
+
+Names `"Trilinos ML`", `"Trilinos ML 2`", and `"External AMG`" are selected by the user.
+They can be used by a process kernel lists to define a preconditioner.
+
 
 Mesh
 ====
+
+Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface.  "Mesh`" is used to select between the following options:
+
+* `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures.
+
+* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus 2`" (see example), `"MSTK`" (see example), `"MOAB`" (see example).  Amanzi also provides a rudmentary capability to generate unstructured meshes automatically.
+
+Usage:
+
+* [SU] `"Mesh`" [list] accepts either (1) `"Structured`", or (2) `"Unstructured`" to indicate the meshing option that Amanzi will use
+
+ * [S] `"Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
+
+  * [S] `"Domain Low Coordinate`" [Array double] Location of low corner of domain
+
+  * [S] `"Domain High Coordinate`" [Array double] Location of high corner of domain
+
+  * [S] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+
+ * [U] `"Unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
+
+  * [U] `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
+
+   * [U] `"File`" [string] name of pre-generated mesh file. Note that in the case of an Exodus II mesh file, the suffix of the serial mesh file must be .exo. When running in serial the code will read this file directly. When running in parallel, the code will instead read the partitioned files, that have been generated with a Nemesis tool. There is no need to change the file name in this case as the code will automatically load the proper files. 
+
+   * [U] `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
+
+  * [U] `"Generate Mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
+
+   * [U] `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
+
+    * [U] `"Domain Low Coordinate`" [Array double] Location of low corner of domain
+
+    * [U] `"Domain High Coordinate`" [Array double] Location of high corner of domain
+
+    * [U] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+
+   * [U] `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
+
+    * [U] `"Framework`" [string] one of "stk::mesh", "MSTK",
+      "MOAB" or "Simple". 
+    * [U] `"Verify Mesh`" [bool] true or false. 
+
+
+Example of `"Structured`" mesh:
+
+.. code-block:: xml
+
+   <ParameterList name="Mesh">
+     <ParameterList name="Structured"/>
+       <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+       <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+       <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+     </ParameterList>   
+   </ParameterList>
+
+Example of `"Unstructured`" mesh generated internally:
+
+.. code-block:: xml
+
+   <ParameterList name="Mesh">
+     <ParameterList name="Unstructured"/>
+       <ParameterList name="Generate Mesh"/>
+         <ParameterList name="Uniform Structured"/>
+           <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+           <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+           <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+         </ParameterList>   
+       </ParameterList>   
+     </ParameterList>   
+   </ParameterList>
+
+Example of `"Unstructured`" mesh read from an external file:
+
+.. code-block:: xml
+
+    <ParameterList name="Mesh">
+      <ParameterList name="Unstructured">
+        <ParameterList name="Read Mesh File">
+          <Parameter name="File" type="string" value="mesh_filename"/>
+          <Parameter name="Format" type="string" value="Exodus II"/>
+        </ParameterList>   
+      </ParameterList>   
+    </ParameterList>
+
 
 Regions
 =======================================

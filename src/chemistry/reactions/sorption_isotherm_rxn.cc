@@ -7,7 +7,7 @@
 #include <sstream>
 
 #include "chemistry_exception.hh"
-#include "block.hh"
+#include "matrix_block.hh"
 
 #include "exceptions.hh"
 
@@ -28,6 +28,14 @@ SorptionIsothermRxn::SorptionIsothermRxn(const SpeciesName species_name,
 SorptionIsothermRxn::~SorptionIsothermRxn() {
 }
 
+std::vector<double> SorptionIsothermRxn::GetIsothermParameters(void) const {
+  return isotherm_->GetParameters();
+}
+
+void SorptionIsothermRxn::SetIsothermParameters(const std::vector<double>& params) {
+  isotherm_->SetParameters(params);
+}
+
 void SorptionIsothermRxn::Update(const std::vector<Species>& primarySpecies) {
   sorbed_concentration_= (*isotherm_).Evaluate(primarySpecies.at(species_id_));
 }  // end Update()
@@ -38,8 +46,8 @@ void SorptionIsothermRxn::AddContributionToTotal(std::vector<double> *total) {
 
 void SorptionIsothermRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
-  dtotal->addValue(species_id_,species_id_,
+    MatrixBlock* dtotal) {
+  dtotal->AddValue(species_id_,species_id_,
       (*isotherm_).EvaluateDerivative(primarySpecies.at(species_id_)));
 }  // end AddContributionToDTotal()
 

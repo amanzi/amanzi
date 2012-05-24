@@ -92,6 +92,22 @@ class Chemistry_State {
     return simulation_state_->using_sorption();
   }
 
+  Teuchos::RCP<Epetra_MultiVector> isotherm_kd() const {
+    return simulation_state_->isotherm_kd();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n() const {
+    return simulation_state_->isotherm_freundlich_n();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b() const {
+    return simulation_state_->isotherm_langmuir_b();
+  }
+
+  bool using_sorption_isotherms(void) const {
+    return simulation_state_->use_sorption_isotherms();
+  }
+
  private:
   Teuchos::RCP<State> simulation_state_;
 

@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "matrix_block.hh"
 #include "chemistry_exception.hh"
 
 #include "exceptions.hh"
@@ -109,7 +110,7 @@ void SecondarySpecies::AddContributionToTotal(std::vector<double> *total) {
 
 void SecondarySpecies::AddContributionToDTotal(
     const std::vector<Species>& primary_species,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
 }  // end addContributionToDTotal()

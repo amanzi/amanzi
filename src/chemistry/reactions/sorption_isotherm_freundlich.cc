@@ -35,6 +35,19 @@ double SorptionIsothermFreundlich::Evaluate(const Species& primarySpecies) {
   return KD() * std::pow(primarySpecies.activity(), one_over_n());
 }  // end Evaluate()
 
+std::vector<double> SorptionIsothermFreundlich::GetParameters(void) const {
+  std::vector<double> params;
+  params.resize(2, 0.0);
+  params.at(0) = KD();
+  params.at(1) = n();
+  return params;
+}  // end GetParameters()
+
+void SorptionIsothermFreundlich::SetParameters(const std::vector<double>& params) {
+  set_KD(params.at(0));
+  set_n(params.at(1));
+}  // end SetParameters()
+
 double SorptionIsothermFreundlich::EvaluateDerivative(
     const Species& primarySpecies) {
   // Csorb = KD * activity^(1/n)

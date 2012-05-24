@@ -14,7 +14,7 @@ namespace amanzi {
 namespace chemistry {
 
 // forward declarations from chemistry
-class Block;
+class MatrixBlock;
 
 class SorptionIsothermRxn {
  public:
@@ -24,12 +24,24 @@ class SorptionIsothermRxn {
                       SorptionIsotherm *isotherm);
   ~SorptionIsothermRxn();
 
+  std::vector<double> GetIsothermParameters(void) const;
+
+  void SetIsothermParameters(const std::vector<double>& params);
+
+  std::string IsothermName(void) const {
+    return isotherm_->name();
+  }
+
+  SpeciesId species_id(void) const {
+    return species_id_;
+  }
+
   void Update(const std::vector<Species>& primarySpecies);
   // add sorbed concentration to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
   // add sorbed concentration to sorbed total
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
-                               Block* dtotal);
+                               MatrixBlock* dtotal);
   void Display(void) const;
 
   void CleanMemory(void) {

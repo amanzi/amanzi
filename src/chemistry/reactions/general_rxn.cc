@@ -3,13 +3,17 @@
 
 #include <cmath>
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
-#include "block.hh"
+#include "chemistry_output.hh"
+#include "matrix_block.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 GeneralRxn::GeneralRxn() {
   ncomp_ = 0;
@@ -128,7 +132,7 @@ void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
 }  // end addContributionToResidual()
 
 void GeneralRxn::addContributionToJacobian(
-    Block* J,
+    MatrixBlock* J,
     const std::vector<Species> primarySpecies,
     double por_den_sat_vol) {
 
@@ -145,7 +149,7 @@ void GeneralRxn::addContributionToJacobian(
           por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
-        J->addValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
+        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
       }
     }  // end columns
   }  // end forward expression
@@ -160,22 +164,24 @@ void GeneralRxn::addContributionToJacobian(
           por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
-        J->addValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
+        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
       }
     }  // end columns
   }  // end backward expression
 }  // end addContributionToJacobian()
 
 void GeneralRxn::display(void) const {
+  std::stringstream message;
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << stoichiometry_.at(i) << " " << species_names_.at(i);
+    message << stoichiometry_.at(i) << " " << species_names_.at(i);
     if (i < species_names_.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
-  std::cout << std::endl;
-  std::cout << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
-  std::cout << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
+  message << std::endl;
+  message << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
+  message << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end display()
 
 void GeneralRxn::Display(void) const {
@@ -183,57 +189,59 @@ void GeneralRxn::Display(void) const {
   // stoichiometries, products have positive stoichiometries....
   // write them in standard chemistry notation by printing -stoich
 
+  std::stringstream message;
 
   // write the overall reaction
   // reactants:
-  std::cout << std::setw(6);
+  message << std::setw(6) << std::fixed << std::setprecision(2);
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     if (stoichiometry_.at(i) < 0) { 
-      std::cout << -stoichiometry_.at(i) << " " << species_names_.at(i);
+      message << -stoichiometry_.at(i) << " " << species_names_.at(i);
       if (i < forward_species_ids_.size() - 1) {
-        std::cout << " + ";
+        message << " + ";
       }
     }
   }
-
-  std::cout << " <---> ";
+  
+  message << " <---> ";
   // products
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     if (stoichiometry_.at(i) > 0) { 
-      std::cout << stoichiometry_.at(i) << " " << species_names_.at(i);
+      message << stoichiometry_.at(i) << " " << species_names_.at(i);
       if (i < species_names_.size() - 1) {
-        std::cout << " + ";
+        message << " + ";
       }
     }
   }
-  std::cout << std::endl;
+  message << std::endl;
+  message << std::setprecision(6);
   // write the forward rate expression....
-  std::cout << std::setw(12) << "    R_f = "
-            << std::scientific << this->kf_ << std::fixed;
+  message << std::setw(12) << "    R_f = "
+          << std::scientific << this->kf_ << std::fixed;
   if (forward_species_ids_.size() > 0 && this->kf_ > 0.0) {
-    std::cout << " * ";
-
+    message << " * ";
+    
     for (unsigned int i = 0; i < forward_species_ids_.size(); i++) {
-      std::cout << "a_(" << species_names_[i] << ")^("
-                << -stoichiometry_[i] << ")";
+      message << "a_(" << species_names_[i] << ")^("
+              << -stoichiometry_[i] << ")";
       if (i < forward_species_ids_.size() - 1) {
-        std::cout << " * ";
+        message << " * ";
       }
     }
   }
-  std::cout << std::endl << std::setw(12) << "    R_b = "
-            << std::scientific << this->kb_ << std::fixed;
+  message << std::endl << std::setw(12) << "    R_b = "
+          << std::scientific << this->kb_ << std::fixed;
   if (backward_species_ids_.size() > 0 && this->kb_ > 0.0) {
-    std::cout << " * ";
+    message << " * ";
     for (unsigned int i = 0; i < backward_species_ids_.size(); i++) {
-      std::cout << "a_(" << species_names_[i] << ")^("
-                << -stoichiometry_[i] << ")";
+      message << "a_(" << species_names_[i] << ")^("
+              << -stoichiometry_[i] << ")";
       if (i < backward_species_ids_.size() - 1) {
-        std::cout << " * ";
+        message << " * ";
       }
     }
   }
-
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 }  // namespace chemistry

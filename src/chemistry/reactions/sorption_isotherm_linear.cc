@@ -24,6 +24,17 @@ void SorptionIsothermLinear::Init(const double KD) {
   set_KD(KD);
 }
 
+std::vector<double> SorptionIsothermLinear::GetParameters(void) const {
+  std::vector<double> params;
+  params.resize(1, KD());
+  return params;
+}  // end GetParameters()
+
+void SorptionIsothermLinear::SetParameters(const std::vector<double>& params) {
+  set_KD(params.at(0));
+}  // end SetParameters()
+
+
 double SorptionIsothermLinear::Evaluate(const Species& primarySpecies ) {
   // Csorb = KD * activity
   // Units:

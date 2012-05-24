@@ -29,14 +29,14 @@ void Richards_PK::ProcessParameterList()
   Errors::Message msg;
 
   // create verbosity list if it does not exist
-  if (!rp_list.isSublist("VerboseObject")) {
+  if (!rp_list_.isSublist("VerboseObject")) {
     Teuchos::ParameterList verbosity_list;
     verbosity_list.set<std::string>("Verbosity Level", "none");
-    rp_list.set("VerboseObject", verbosity_list);
+    rp_list_.set("VerboseObject", verbosity_list);
   }
 
   // extract verbosity level
-  Teuchos::ParameterList verbosity_list = rp_list.get<Teuchos::ParameterList>("VerboseObject");
+  Teuchos::ParameterList verbosity_list = rp_list_.get<Teuchos::ParameterList>("VerboseObject");
   std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
   if (verbosity_name == "none") {
     verbosity = FLOW_VERBOSITY_NONE;
@@ -50,11 +50,8 @@ void Richards_PK::ProcessParameterList()
     verbosity = FLOW_VERBOSITY_EXTREME;
   }
 
-  Teuchos::ParameterList preconditioner_list;
-  preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
-
   // Relative permeability method
-  std::string method_name = rp_list.get<string>("Relative permeability method", "Upwind with gravity");
+  std::string method_name = rp_list_.get<string>("Relative permeability method", "Upwind with gravity");
   if (method_name == "Upwind with gravity") {
     Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (method_name == "Cell centered") {
@@ -66,8 +63,8 @@ void Richards_PK::ProcessParameterList()
   }
 
   // Miscaleneous
-  if (rp_list.isParameter("atmospheric pressure")) {
-    atm_pressure = rp_list.get<double>("atmospheric pressure");
+  if (rp_list_.isParameter("atmospheric pressure")) {
+    atm_pressure = rp_list_.get<double>("atmospheric pressure");
   } else {
     msg << "Richards Problem: no <atmospheric pressure> entry.";
     Exceptions::amanzi_throw(msg);
@@ -75,7 +72,7 @@ void Richards_PK::ProcessParameterList()
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list.sublist("boundary conditions", true)));
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list_.sublist("boundary conditions", true)));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.createPressure();
@@ -95,11 +92,11 @@ void Richards_PK::ProcessParameterList()
   bc_seepage->Compute(time);
 
   // Create water retention models
-  if (!rp_list.isSublist("Water retention models")) {
+  if (! rp_list_.isSublist("Water retention models")) {
     msg << "There is no Water retention models list";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList& vG_list = rp_list.sublist("Water retention models");
+  Teuchos::ParameterList& vG_list = rp_list_.sublist("Water retention models");
 
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = vG_list.begin(); i != vG_list.end(); i++) {
@@ -140,28 +137,25 @@ void Richards_PK::ProcessParameterList()
     }
   }
 
-  string mfd3d_method_name = rp_list.get<string>("Discretization method hint", "none");
-  if (mfd3d_method_name == "monotone") {
-    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (mfd3d_method_name == "none") {
-    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
-  }
+  string mfd3d_method_name = rp_list_.get<string>("Discretization method hint", "none");
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
 
   // Time integrator for period I, temporary called steady-state time integrator
-  if (rp_list.isSublist("steady state time integrator")) {
-    Teuchos::ParameterList& sss_list = rp_list.sublist("steady state time integrator");
+  if (rp_list_.isSublist("steady state time integrator")) {
+    Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
 
     string ti_method_name = sss_list.get<string>("method", "Picard");
-    if (ti_method_name == "Picard") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
-    } else if (ti_method_name == "backward Euler") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
-    } else if (ti_method_name == "BDF1") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
-    } else if (ti_method_name == "BDF2") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+    ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
+
+    if (sss_list.isParameter("preconditioner")) {
+      preconditioner_name_sss_ = sss_list.get<string>("preconditioner");
     } else {
-      msg << "Richards Problem: steady state defines an unknown time integration method.";
+      msg << "Richards Problem: steady state time integrator does not define a preconditioner.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if (! preconditioner_list_.isSublist(preconditioner_name_sss_)) {
+      msg << "Richards Problem: steady state preconditioner does not exist.";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -181,7 +175,7 @@ void Richards_PK::ProcessParameterList()
 
     if (sss_list.isSublist("time control")) {
       Teuchos::ParameterList& time_list = sss_list.sublist("time control");
-      T0_sss = time_list.get<double>("start time", -1e+9);
+      T0_sss = time_list.get<double>("start time", -1e+12);
       T1_sss = time_list.get<double>("end time", 0.0);
       dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
       dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);
@@ -203,20 +197,21 @@ void Richards_PK::ProcessParameterList()
   }
 
   // Time integrator for period II, called transient time integrator
-  if (rp_list.isSublist("transient time integrator")) {
-    Teuchos::ParameterList& trs_list = rp_list.sublist("transient time integrator");
+  if (rp_list_.isSublist("transient time integrator")) {
+    Teuchos::ParameterList& trs_list = rp_list_.sublist("transient time integrator");
 
-    string ti_method_name = trs_list.get<string>("method", "BDF2");
-    if (ti_method_name == "backward Euler") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
-    } else if (ti_method_name == "BDF1") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
-    } else if (ti_method_name == "BDF2") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
-    } else if (ti_method_name == "Picard") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
+    string ti_method_name = trs_list.get<string>("method", "BDF1");
+    ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
+
+    if (trs_list.isParameter("preconditioner")) {
+      preconditioner_name_trs_ = trs_list.get<string>("preconditioner");
     } else {
-      msg << "Richards Problem: transient sublist defines an unknown time integration method.";
+      msg << "Richards Problem: transient time integrator does not define a preconditioner.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if (! preconditioner_list_.isSublist(preconditioner_name_trs_)) {
+      msg << "Richards Problem: transient preconditioner does not exist.";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -243,6 +238,27 @@ void Richards_PK::ProcessParameterList()
     }
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Warning: Richards Problem has no sublist <transient time integration>.\n");
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the time integration method.
+**************************************************************** */
+void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "Picard") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
+  } else if (name == "backward Euler") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
+  } else if (name == "BDF1") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
+  } else if (name == "BDF2") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+  } else {
+    msg << "Richards Problem: unknown time integration method has been specified.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

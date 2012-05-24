@@ -10,7 +10,6 @@
 
 #include "activity_model.hh"
 #include "aqueous_equilibrium_complex.hh"
-#include "block.hh"
 #include "general_rxn.hh"
 #include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
@@ -18,7 +17,10 @@
 #include "species.hh"
 #include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"
-#include "verbosity.hh"
+#include "lu_solver.hh"
+#include "matrix_block.hh"
+#include "chemistry_output.hh"
+#include "chemistry_verbosity.hh"
 
 #ifdef GLENN
 #include "chemistry/includes/direct_solver.hh"
@@ -38,7 +40,7 @@ class Beaker {
   struct BeakerComponents {
     std::vector<double> free_ion;  // molality
     std::vector<double> minerals;  // volume fractions
-    std::vector<double> ion_exchange_sites;
+    std::vector<double> ion_exchange_sites;  // CEC
     std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
   };
@@ -62,11 +64,8 @@ class Beaker {
     double volume;  // [m^3]
 
     // the following parameters will be read in from the database file
-    // but can be overridden by the driver, e.g. when amanzi needs spatially
-    // dependent chemistry parameters! Need some logic to be smart about this....
-    bool override_database;
+    // but can be overridden by the driver if their size > 0....
     std::vector<double> mineral_specific_surface_area;
-    double cation_exchange_capacity;
     std::vector<double> sorption_site_density;
     std::vector<double> isotherm_kd;
     std::vector<double> isotherm_freundlich_n;
@@ -80,28 +79,31 @@ class Beaker {
     bool converged;
   };
 
-  // resizes matrix and vectors for nonlinear system
-  void resize();
-  void resize(int ncomp);
+  //
+  // public routines that may need to be accessed by the driver
+  //
 
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
-  void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
-  void VerifyComponentSizes(const Beaker::BeakerComponents& components);
-  void CheckChargeBalance(const std::vector<double>& aqueous_totals);
-  void SetComponents(const Beaker::BeakerComponents& components);
   void UpdateComponents(Beaker::BeakerComponents* components);
 
-  void addPrimarySpecies(const Species& s);
-  void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
-  void AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex);
-  void addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
-  void addMineral(const Mineral& m);
-  void AddMineralKineticRate(KineticRate* rate);
-  void addGeneralRxn(const GeneralRxn& r);
-  void addSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
-  void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
+  BeakerParameters GetDefaultParameters(void) const;
+  BeakerParameters GetCurrentParameters(void) const;
+  void SetParameters(const BeakerParameters& parameters);
+  void CopyComponents(const Beaker::BeakerComponents& from,
+                      Beaker::BeakerComponents* to);
+
+  void GetPrimaryNames(std::vector<std::string>* names) const;
+  int GetPrimaryIndex(const std::string& name) const;
+
+  void Display(void) const;
+  void DisplayComponents(const BeakerComponents& components) const;
+  void DisplayTotalColumnHeaders(void) const;
+  void DisplayTotalColumns(const double time, 
+                           const BeakerComponents& total) const;
+  void DisplayResults(void) const;
+
 
   bool HaveKinetics(void) const;
 
@@ -113,83 +115,15 @@ class Beaker {
   int ReactionStep(BeakerComponents* components, const BeakerParameters& parameters,
                    double dt);
 
-  void updateActivityCoefficients();
-  void initializeMolalities(double initial_molality);
-  void initializeMolalities(const std::vector<double>& initial_molalities);
-
-  // equilibrium chemistry
-  // update activities, equilibrium complex concentrations, etc.
-  void updateEquilibriumChemistry(void);
-  void calculateTotal(void);
-  void calculateTotal(std::vector<double> *total,
-                      std::vector<double> *total_sorbed);
-  // calculate block of Jacobian corresponding to derivatives of total with
-  // respect to free-ion
-  void calculateDTotal(void);
-  void calculateDTotal(Block* dtotal, Block* dtotal_sorbed);
-  // kinetic chemistry
-  void updateKineticChemistry(void);
-  void addKineticChemistryToResidual(std::vector<double> *residual);
-  void addKineticChemistryToJacobian(Block* J);
-  // accumulation terms
-  void addAccumulation(std::vector<double> *residual);
-  void addAccumulation(const std::vector<double>& total,
-                       const std::vector<double>& total_sorbed,
-                       std::vector<double> *residual);
-  void addAccumulationDerivative(Block* J);
-  void addAccumulationDerivative(Block* J, Block* dtotal, Block* dtotal_sorbed);
-  void calculateFixedAccumulation(const std::vector<double>& total,
-                                  const std::vector<double>& total_sorbed,
-                                  std::vector<double> *fixed_accumulation);
-  // residual and Jacobian
-  void calculateResidual(std::vector<double> *residual,
-                         const std::vector<double>& fixed_residual);
-  void calculateJacobian(Block* J);
-
-  // utilities for updating solution, convergence checks
-  void updateMolalitiesWithTruncation(std::vector<double>* update,
-                                      std::vector<double>* prev_solution,
-                                      double max_change);
-  double calculateMaxRelChangeInMolality(const std::vector<double>& prev_molal);
-  // solvers
-  void scaleRHSAndJacobian(double* rhs, Block* J);
-  void scaleRHSAndJacobian(std::vector<double>* rhs, Block* J);
-  void solveLinearSystem(Block* A, std::vector<double>* b);
-
   virtual void display(void) const;
   void print_results(void) const;
   void print_results(double time) const;
-  void print_linear_system(const std::string& s, Block* A, std::vector<double> vector);
+  void print_linear_system(const std::string& s, 
+                           const MatrixBlock& A, 
+                           const std::vector<double>& vector) const;
+  void print_linear_system(const std::string& s, 
+                           const std::vector<double>& vector) const;
 
-  void GetPrimaryNames(std::vector<std::string>* names) const;
-  int GetPrimaryIndex(const std::string& name) const;
-
-  void Display(void) const;
-  void DisplayParameters(void) const;
-  void DisplayPrimary(void) const;
-  void DisplayAqueousEquilibriumComplexes(void) const;
-  void DisplayGeneralKinetics(void) const;
-  void DisplayMinerals(void) const;
-  void DisplayMineralKinetics(void) const;
-  void DisplayIonExchangeRxns(void) const;
-  void DisplayIonExchangeSites(void) const;
-  void DisplayIonExchangeComplexes(void) const;
-  void DisplaySurfaceSites(void) const;
-  void DisplaySurfaceComplexes(void) const;
-  void DisplaySorptionIsotherms(void) const;
-  void DisplayComponents(const BeakerComponents& components) const;
-  void DisplayTotalColumnHeaders(void) const;
-  void DisplayTotalColumns(const double time, 
-                           const BeakerComponents& total) const;
-  void DisplayResults(void) const;
-
-  bool override_database(void) const {
-    return override_database_;
-  }
-
-  void ncomp(int i) {
-    this->ncomp_ = i;
-  }
   int ncomp(void) const {
     return this->ncomp_;
   }
@@ -236,11 +170,13 @@ class Beaker {
     return this->verbosity_;
   };
 
-  BeakerParameters GetDefaultParameters(void) const;
-  BeakerParameters GetCurrentParameters(void) const;
-  void SetParameters(const BeakerParameters& parameters);
-  void CopyComponents(const Beaker::BeakerComponents& from,
-                      Beaker::BeakerComponents* to);
+  virtual void set_debug(const bool value) {
+    this->debug_ = value;
+  };
+  virtual bool debug(void) const {
+    return this->debug_;
+  };
+
   SolverStatus status(void) const {
     return this->status_;
   };
@@ -249,16 +185,48 @@ class Beaker {
     return this->minerals_;
   };
 
- protected:
-  // update discretization and flow parameters
-  // water_density [kg/m^3]
-  // volume [m^3]
-  void updateParameters(const BeakerParameters& parameters, double dt);
+  const std::vector<Species>& primary_species(void) const {
+    return this->primary_species_;
+  };
+  const std::vector<IonExchangeRxn>& ion_exchange_rxns(void) const {
+    return this->ion_exchange_rxns_;
+  };
+  const std::vector<double>& total(void) const {
+    return this->total_;
+  };
+  const std::vector<double>& total_sorbed(void) const {
+    return this->total_sorbed_;
+  };
 
-  void override_database(const bool value) {
-    this->override_database_ = value;
+  const std::vector<double>& fixed_accumulation(void) const {
+    return this->fixed_accumulation_;
   }
 
+  const std::vector<double>& prev_molal(void) const {
+    return this->prev_molal_;
+  }
+
+ protected:
+  // resizes matrix and vectors for nonlinear system
+  void ResizeInternalMemory(const int size);
+
+  void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
+  void VerifyComponentSizes(const Beaker::BeakerComponents& components) const;
+  void SetComponents(const Beaker::BeakerComponents& components);
+
+  void AddPrimarySpecies(const Species& s);
+  void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
+  void AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex);
+  void AddAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
+  void AddMineral(const Mineral& m);
+  void AddMineralKineticRate(KineticRate* rate);
+  void AddGeneralRxn(const GeneralRxn& r);
+  void AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
+  void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
+
+  void ncomp(int i) {
+    this->ncomp_ = i;
+  }
   void tolerance(double value) {
     this->tolerance_ = value;
   }
@@ -301,24 +269,70 @@ class Beaker {
   void update_por_sat_den_vol(void);
 
 
-  const std::vector<Species>& primary_species(void) const {
-    return this->primarySpecies_;
-  };
-  const std::vector<IonExchangeRxn>& ion_exchange_rxns(void) const {
-    return this->ion_exchange_rxns_;
-  };
-  const std::vector<double>& total(void) const {
-    return this->total_;
-  };
-  const std::vector<double>& total_sorbed(void) const {
-    return this->total_sorbed_;
-  };
+ private:
 
+  void CheckChargeBalance(const std::vector<double>& aqueous_totals) const;
+
+  // update discretization and flow parameters
+  // water_density [kg/m^3]
+  // volume [m^3]
+  void UpdateParameters(const BeakerParameters& parameters, double dt);
+
+  void UpdateActivityCoefficients(void);
+  void UpdateKineticMinerals(void);
+  void InitializeMolalities(double initial_molality);
+  void InitializeMolalities(const std::vector<double>& initial_molalities);
+
+  // equilibrium chemistry
+  // update activities, equilibrium complex concentrations, etc.
+  void UpdateEquilibriumChemistry(void);
+  void CalculateTotal(void);
+
+  // calculate block of Jacobian corresponding to derivatives of total with
+  // respect to free-ion
+  void CalculateDTotal(void);
+
+  // kinetic chemistry
+  void UpdateKineticChemistry(void);
+  void AddKineticChemistryToResidual(void);
+  void AddKineticChemistryToJacobian(void);
+
+  // accumulation terms
+  void AddAccumulation(const std::vector<double>& total,
+                       const std::vector<double>& total_sorbed,
+                       std::vector<double> *residual);
+  void AddAccumulationDerivative(MatrixBlock* J, MatrixBlock* dtotal, MatrixBlock* dtotal_sorbed);
+  void CalculateFixedAccumulation(const std::vector<double>& total,
+                                  const std::vector<double>& total_sorbed,
+                                  std::vector<double> *fixed_accumulation);
+  // residual and Jacobian
+  void CalculateResidual(void);
+  void CalculateJacobian(void);
+
+  // utilities for updating solution, convergence checks
+  void UpdateMolalitiesWithTruncation(double max_change);
+  double CalculateMaxRelChangeInMolality(void);
   void ValidateSolution(void);
 
- private:
+  // solvers
+  void ScaleRHSAndJacobian(void);
+
+  // output
+  void DisplayParameters(void) const;
+  void DisplayPrimary(void) const;
+  void DisplayAqueousEquilibriumComplexes(void) const;
+  void DisplayGeneralKinetics(void) const;
+  void DisplayMinerals(void) const;
+  void DisplayMineralKinetics(void) const;
+  void DisplayIonExchangeRxns(void) const;
+  void DisplayIonExchangeSites(void) const;
+  void DisplayIonExchangeComplexes(void) const;
+  void DisplaySurfaceSites(void) const;
+  void DisplaySurfaceComplexes(void) const;
+  void DisplaySorptionIsotherms(void) const;
+
+  bool debug_;
   Verbosity verbosity_;
-  bool override_database_;
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species
@@ -327,13 +341,13 @@ class Beaker {
   std::vector<double> total_;  // [mol/L]
   // Matrix block containing derivative of total concentration w/respec to
   // free-ion
-  Block* dtotal_;  // [kg water/sec]
+  MatrixBlock dtotal_;  // [kg water/sec]
 
   // Sorbed phase total component concentrations for basis species
   std::vector<double> total_sorbed_;  // [mol/m^3 bulk]
   // Matrix block containing derivative of total sorbed concentration
   // w/respec to free-ion
-  Block* dtotal_sorbed_;  // [kg water/sec]
+  MatrixBlock dtotal_sorbed_;  // [kg water/sec]
 
   // common parameters among reactions
   double porosity_;            // [m^3 pore / m^3 bulk]
@@ -352,7 +366,7 @@ class Beaker {
   double por_sat_den_vol_;
 
   Species water_;
-  std::vector<Species> primarySpecies_;  // list of primary species
+  std::vector<Species> primary_species_;  // list of primary species
   std::vector<Mineral> minerals_;  // list of mineral species
 
   ActivityModel* activity_model_;
@@ -366,23 +380,24 @@ class Beaker {
   std::vector<SorptionIsothermRxn> sorption_isotherm_rxns_;
 
   // solver data structures
-  std::vector<double> fixed_accumulation;  // fixed (time t) portion of accumulation term
-  std::vector<double> residual;       // entire residual [mol/sec]
-  std::vector<double> prev_molal;     // previous molality of primary species
+  std::vector<double> fixed_accumulation_;  // fixed (time t) portion of accumulation term
+  std::vector<double> residual_;       // entire residual [mol/sec]
+  std::vector<double> prev_molal_;     // previous molality of primary species
 
-  std::vector<double> rhs;            // right-hand-side of system
-  std::vector<int> indices;           // array for pivoting in LU
-  Block* J;                           // Jacobian [kg water/sec]
+  std::vector<double> rhs_;            // right-hand-side of system
+  MatrixBlock jacobian_;              // Jacobian [kg water/sec]
 
   SolverStatus status_;
   void ResetStatus(void);
-  static const double tolerance_default;
-  static const unsigned int max_iterations_default;
-  static const double porosity_default;
-  static const double saturation_default;
-  static const double water_density_kg_m3_default;
-  static const double volume_default;
+  static const double tolerance_default_;
+  static const unsigned int max_iterations_default_;
+  static const double porosity_default_;
+  static const double saturation_default_;
+  static const double water_density_kg_m3_default_;
+  static const double volume_default_;
 
+  LUSolver lu_solver_;
+  
 #ifdef GLENN
   DirectSolver* solver;
 #endif

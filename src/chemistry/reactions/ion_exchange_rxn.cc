@@ -8,7 +8,7 @@
 #include <sstream>
 
 #include "chemistry_exception.hh"
-#include "block.hh"
+#include "matrix_block.hh"
 
 #include "exceptions.hh"
 
@@ -148,7 +148,7 @@ void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
 
 void IonExchangeRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
 
   // sum up charges
   double sumZX = 0.;
@@ -175,7 +175,7 @@ void IonExchangeRxn::AddContributionToDTotal(
       else {
         value = -ionx->concentration()*temp*ionx2->X()/primarySpecies[jcomp].molality();
       }
-      dtotal->addValue(icomp,jcomp,value);
+      dtotal->AddValue(icomp,jcomp,value);
     }
   }
 }  // end AddContributionToDTotal()

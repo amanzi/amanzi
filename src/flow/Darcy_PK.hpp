@@ -33,7 +33,7 @@ namespace AmanziFlow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC);
+  Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
   ~Darcy_PK();
 
   // main methods
@@ -64,7 +64,7 @@ class Darcy_PK : public Flow_PK {
 
   // control methods
   void PrintStatistics() const;
-  void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list = dp_list_new; }
+  void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
 
   // access methods
   Epetra_Vector& ref_solution_faces() { return *solution_faces; }
@@ -75,7 +75,8 @@ class Darcy_PK : public Flow_PK {
   AmanziGeometry::Point& gravity() { return gravity_; }
 
  private:
-  Teuchos::ParameterList dp_list;
+  Teuchos::ParameterList dp_list_;
+  Teuchos::ParameterList preconditioner_list_;
 
   AmanziGeometry::Point gravity_;
   double rho_, mu_;
@@ -93,6 +94,7 @@ class Darcy_PK : public Flow_PK {
   Matrix_MFD* preconditioner;
 
   int num_itrs_sss, max_itrs_sss;  // Parameters for steady state solution
+  std::string preconditioner_name_sss_;
   double convergence_tol_sss, residual_sss;
 
   int num_itrs_trs;  // Pramaters for transient solver

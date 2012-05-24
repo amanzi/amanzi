@@ -5,7 +5,7 @@
 #include <string>
 
 #include "beaker.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 int CommandLineOptions(int argc, char** argv,
                        amanzi::chemistry::Verbosity* verbosity);

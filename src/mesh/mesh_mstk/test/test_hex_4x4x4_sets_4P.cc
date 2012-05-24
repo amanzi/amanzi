@@ -72,7 +72,7 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
                                   "ZLO FACE Plane", 
 				 "YLO FACE Box"};
 
-  unsigned int expfsetids[4]={101,30004,0,0};
+  Amanzi::AmanziMesh::Set_ID expfsetids[4]={101,30004,0,0};
 
   int fsetsize, expfsetsizes[4][4] = {{0,2,0,2},
 				      {1,1,1,2},

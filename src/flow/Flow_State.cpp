@@ -44,6 +44,7 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   fluid_density_ = Teuchos::rcp(new double);
   fluid_viscosity_ = Teuchos::rcp(new double);
   pressure_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  lambda_ = Teuchos::rcp(new Epetra_Vector(fmap));
   darcy_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
   darcy_velocity_ = Teuchos::rcp(new Epetra_MultiVector(fmap, dim));
 
@@ -72,6 +73,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   fluid_density_ = S->get_density();
   fluid_viscosity_ = S->get_viscosity();
   pressure_ = S->get_pressure();
+  lambda_ = S->get_lambda();
   darcy_flux_ = S->get_darcy_flux();
   darcy_velocity_ = S->get_darcy_velocity();
 
@@ -97,6 +99,7 @@ Flow_State::Flow_State(State& S)
   fluid_density_ = S.get_density();
   fluid_viscosity_ = S.get_viscosity();
   pressure_ = S.get_pressure();
+  lambda_ = S.get_lambda();
   darcy_flux_ = S.get_darcy_flux();
   darcy_velocity_ = S.get_darcy_velocity();
 
@@ -128,6 +131,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
     fluid_density_ = FS.fluid_density();
     fluid_viscosity_ = FS.fluid_viscosity();
     pressure_ = FS.pressure();
+    lambda_ = FS.lambda();
     darcy_flux_ = FS.darcy_flux();
 
     gravity_ = FS.gravity();
@@ -149,6 +153,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
 
     // allocate memory for the next state
     pressure_ = Teuchos::rcp(new Epetra_Vector(FS.ref_pressure()));
+    lambda_ = Teuchos::rcp(new Epetra_Vector(FS.ref_lambda()));
     darcy_flux_ = Teuchos::rcp(new Epetra_Vector(FS.ref_darcy_flux()));
     water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_water_saturation()));
     prev_water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_prev_water_saturation()));
@@ -334,7 +339,7 @@ void Flow_State::set_permeability(double Kh, double Kv)
 
 void Flow_State::set_permeability(double Kh, double Kv, const string region)
 {
-  std::vector<unsigned int> block;
+  AmanziMesh::Entity_ID_List block;
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   int ncells = block.size();
 

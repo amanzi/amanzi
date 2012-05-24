@@ -956,7 +956,7 @@ The following initial condition parameterizations are supported:
 
 The following boundary condition parameterizations are supported:
 
-* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Inward Volumetric Flux`" [double], `"Inward Mass Flux`" [double], `"Outward Volumetric Flux`" [double] or `"Outward Mass Flux`" [double]. Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward or outward refers to the flux being in the direction of the inward or outward normal to each face of the boundary region, respectively.
+* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Inward Volumetric Flux`" [Array double], `"Inward Mass Flux`" [Array double], `"Outward Volumetric Flux`" [Array double] or `"Outward Mass Flux`" [Array double]. Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward or outward refers to the flux being in the direction of the inward or outward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" and `"Outward Mass Flux`" are supported.)
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
@@ -968,9 +968,9 @@ The following boundary condition parameterizations are supported:
 
 * `"BC: Linear Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
-* `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
+* [U] `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
-* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
+* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [Array double] (see below)
 
 * `"BC: Impermeable`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 

@@ -36,7 +36,7 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: whetstone
 #
-add_library(whetstone mfd3d.cpp tensor.cpp)
+add_library(whetstone mfd3d.cpp mfd3d_vag.cpp tensor.cpp)
 include_directories(${WHETSTONE_SOURCE_DIR})
 #target_link_libraries(whetstone geometry mesh mesh_data error_handling ${Epetra_LIBRARIES})
 
@@ -55,9 +55,10 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry mesh mesh_audit simple_mesh state whetstone)
 
     # Test 1: inverse mass matrix in darcy flow
-    add_executable(whetstone_darcy test/Main.cc test/whetstone_darcy.cpp)
-    target_link_libraries(whetstone_darcy ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(whetstone_darcy whetstone_darcy KIND unit)
+    add_amanzi_test(whetstone_darcy whetstone_darcy
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_darcy.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

@@ -9,10 +9,8 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 #
-# ben's test program
+# batch chemistry drivers and test program
 #
-set(GEOCHEM_EXE_NAME geochemistryTest)
-set(GEOCHEM_EXE_SRCS geochemistry_test.cc)
 
 set(BATCH_EXE_NAME batch_chem)
 
@@ -26,9 +24,6 @@ set(GEOCHEM_LIBS
 )
 
 
-add_executable(${GEOCHEM_EXE_NAME} ${GEOCHEM_EXE_SRCS})
-target_link_libraries(${GEOCHEM_EXE_NAME} ${GEOCHEM_LIBS} error_handling)
-
 add_executable(${BATCH_EXE_NAME} ${BATCH_EXE_SRCS})
 target_link_libraries(${BATCH_EXE_NAME} ${GEOCHEM_LIBS} error_handling)
 
@@ -37,7 +32,7 @@ if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
                   copy_directory ${CHEM_SOURCE_DIR}/tests_regression/input 
                   ${CHEM_BINARY_DIR}/tests_regression/input) 
 endif()
-
+#add_amanzi_test(chemistry-regression ${BATCH_EXE_NAME} KIND REG) 
 
 #
 # OpenMP test program

@@ -1,6 +1,6 @@
 # pflotran database preprocessing :
-#        date : 20120229   152649.701
-#       input : ascem-2012-farea.in
+#        date : 20120521  13   142632.286
+#       input : ascem-2012-farea-batch.in
 
 <Primary Species
 H+  ;   9.00 ;   1.00 ;   1.01
@@ -61,24 +61,24 @@ UO2OSi(OH)3+ =   2.00 H2O  -1.00 H+   1.00 SiO2(aq)   1.00 UO2++  ;    2.48100 ;
   1.00 tritium <->  ;   1.00 tritium ;  -1.78577E-09 ;  ;   0.00000E+00
 
 <Minerals
-Schoepite =   3.00 H2O  -2.00 H+   1.00 UO2++  ;   4.83330E+00 ;   3.22058E+02 ;   6.60800E-05 ;   1.00000E+00
-Kaolinite =   5.00 H2O  -6.00 H+   2.00 Al+++   2.00 SiO2(aq)  ;   6.81010E+00 ;   2.58160E+02 ;   9.95200E-05 ;   1.00000E+00
-Gibbsite =   3.00 H2O  -3.00 H+   1.00 Al+++  ;   7.75600E+00 ;   7.80036E+01 ;   3.19560E-05 ;   1.00000E+00
-Jurbanite =   6.00 H2O  -1.00 H+   1.00 Al+++   1.00 SO4--  ;  -3.23000E+00 ;   2.30064E+02 ;   1.26000E-04 ;   1.00000E+00
-Basaluminite =  15.00 H2O -10.00 H+   4.00 Al+++   1.00 SO4--  ;   2.22510E+01 ;   4.64140E+02 ;   2.18934E-04 ;   1.00000E+00
-Opal =   1.00 SiO2(aq)  ;  -3.00500E+00 ;   6.00840E+01 ;   2.90000E-05 ;   1.00000E+00
-Quartz =   1.00 SiO2(aq)  ;  -3.99930E+00 ;   6.00843E+01 ;   2.26880E-05 ;   1.00000E+00
-Goethite =   2.00 H2O  -3.00 H+   1.00 Fe+++  ;   5.34500E-01 ;   8.88537E+01 ;   2.08200E-05 ;   1.00000E+00
+Schoepite =   3.00 H2O  -2.00 H+   1.00 UO2++  ;   4.83330E+00 ;   3.22058E+02 ;   6.60800E+01 ;   1.00000E+00
+Kaolinite =   5.00 H2O  -6.00 H+   2.00 Al+++   2.00 SiO2(aq)  ;   6.81010E+00 ;   2.58160E+02 ;   9.95200E+01 ;   1.00000E+00
+Gibbsite =   3.00 H2O  -3.00 H+   1.00 Al+++  ;   7.75600E+00 ;   7.80036E+01 ;   3.19560E+01 ;   1.00000E+00
+Jurbanite =   6.00 H2O  -1.00 H+   1.00 Al+++   1.00 SO4--  ;  -3.23000E+00 ;   2.30064E+02 ;   1.26000E+02 ;   1.00000E+00
+Basaluminite =  15.00 H2O -10.00 H+   4.00 Al+++   1.00 SO4--  ;   2.22510E+01 ;   4.64140E+02 ;   2.18934E+02 ;   1.00000E+00
+Opal =   1.00 SiO2(aq)  ;  -3.00500E+00 ;   6.00840E+01 ;   2.90000E+01 ;   1.00000E+00
+Quartz =   1.00 SiO2(aq)  ;  -3.99930E+00 ;   6.00843E+01 ;   2.26880E+01 ;   1.00000E+00
+Goethite =   2.00 H2O  -3.00 H+   1.00 Fe+++  ;   5.34500E-01 ;   8.88537E+01 ;   2.08200E+01 ;   1.00000E+00
 
 <Mineral Kinetics
-Schoepite ; TST ; log10_rate_constant   3.01030E-01 moles_m2_sec 
-Kaolinite ; TST ; log10_rate_constant     -Infinity moles_m2_sec  ; H+   7.77000E-01 H+  -4.72000E-01 
-Gibbsite ; TST ; log10_rate_constant  -1.15000E+01 moles_m2_sec 
-Jurbanite ; TST ; log10_rate_constant  -8.00000E+00 moles_m2_sec 
-Basaluminite ; TST ; log10_rate_constant  -8.00000E+00 moles_m2_sec 
-Opal ; TST ; log10_rate_constant  -1.21350E+01 moles_m2_sec 
-Quartz ; TST ; log10_rate_constant  -1.33450E+01 moles_m2_sec 
-Goethite ; TST ; log10_rate_constant  -7.94000E+00 moles_m2_sec 
+Schoepite ; TST ; log10_rate_constant   3.01030E-01 moles/cm^2/sec 
+Kaolinite ; TST ; log10_rate_constant     -Infinity moles/cm^2/sec  ; H+   7.77000E-01 H+  -4.72000E-01 
+Gibbsite ; TST ; log10_rate_constant  -1.15000E+01 moles/cm^2/sec 
+Jurbanite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
+Basaluminite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
+Opal ; TST ; log10_rate_constant  -1.21350E+01 moles/cm^2/sec 
+Quartz ; TST ; log10_rate_constant  -1.33450E+01 moles/cm^2/sec 
+Goethite ; TST ; log10_rate_constant  -7.94000E+00 moles/cm^2/sec 
 
 <Ion Exchange Sites
 X- ; -1.0 ; Kaolinite
@@ -109,3 +109,5 @@ H+X = 1.0 H+  1.00 X-  ;   2.51189E-02
 >SiOH2+ =   1.00 >SiOH  1.00 H+ ;  -7.20000E+00 ;  -1.00
 >SiO- =   1.00 >SiOH -1.00 H+ ;   7.20000E+00 ;  -1.00
 >SiONa =   1.00 >SiOH -1.00 H+  1.00 Na+ ;   6.80000E+00 ;   0.00
+
+<Isotherms

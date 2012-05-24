@@ -88,7 +88,7 @@ SUITE(GeochemistryTestsSecondarySpecies) {
     }  // end addContributionToTotal()
 
     void AddContributionToDTotal(const std::vector<ac::Species>& primary_species,
-                                 ac::Block* dtotal) {
+                                 ac::MatrixBlock* dtotal) {
       static_cast<void>(primary_species);
       static_cast<void>(dtotal);
     }  // end addContributionToDTotal()

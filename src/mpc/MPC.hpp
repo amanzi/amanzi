@@ -87,14 +87,10 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Amanzi::Restart *restart;
  
   // time period control
-  Teuchos::Array<double> reset_times_;
-  Teuchos::Array<double> reset_times_dt_;
-    
-  // observation times control
-  Teuchos::Array<double> observation_times_;   
-    Teuchos::Array<double> visualization_times_;
-    // waypoint times control
-    Teuchos::Array<double> waypoint_times_;
+  std::vector<std::pair<double, double> > reset_times_;  //!< pair<t, dt>
+
+  // waypoint times control
+  std::stack<double> waypoint_times_;
 };
     
 } // namespace Amanzi

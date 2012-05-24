@@ -30,7 +30,7 @@ class Mesh
   mutable bool geometry_precomputed;
   mutable std::vector<double> cell_volumes, face_areas;
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
-    face_centroids, face_normals;
+    face_centroids, face_normal0, face_normal1;
   AmanziGeometry::GeometricModelPtr geometric_model_;
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
@@ -43,7 +43,8 @@ class Mesh
   int compute_face_geometry(const Entity_ID faceid, 
                             double *area, 
                             AmanziGeometry::Point *centroid, 
-                            AmanziGeometry::Point *normal) const;
+                            AmanziGeometry::Point *normal0,
+                            AmanziGeometry::Point *normal1) const;
 
 
  protected:
@@ -355,8 +356,21 @@ class Mesh
 
   // Normal to face
   // The vector is normalized and then weighted by the area of the face
+  //
+  // If recompute is TRUE, then the normal is recalculated using current
+  // face coordinates but not stored. (If the recomputed normal must be
+  // stored, then call recompute_geometric_quantities). 
+  //
+  // If cellid is not specified, the normal is the natural normal of
+  // the face. If cellid is specified, the normal is the outward normal
+  // with respect to the cell. In planar and solid meshes, the normal
+  // with respect to the cell on one side of the face is just the
+  // negative of the normal with respect to the cell on the other
+  // side. In general surfaces meshes, this will not be true at C1
+  // discontinuities
 
-  AmanziGeometry::Point face_normal (const Entity_ID faceid, const bool recompute=false) const;
+
+  AmanziGeometry::Point face_normal (const Entity_ID faceid, const bool recompute=false, const Entity_ID cellid=-1) const;
 
   // Point in cell
 
@@ -448,12 +462,12 @@ class Mesh
 
   // Get set ID from set name - returns 0 if no match is found
   
-  unsigned int set_id_from_name(const std::string setname) const;
+  Set_ID set_id_from_name(const std::string setname) const;
 
 
   // Get set name from set ID - returns 0 if no match is found
   
-  std::string set_name_from_id(const int setid) const;
+  std::string set_name_from_id(const Set_ID setid) const;
 
 
   // Get number of entities of type 'category' in set
@@ -516,57 +530,57 @@ class Mesh
 
   // Temporary routines for backward compatibility
 
-  void cell_to_faces (unsigned int cell,
-                      std::vector<unsigned int>::iterator begin,
-                      std::vector<unsigned int>::iterator end) const;
+  void cell_to_faces (Entity_ID cell,
+                      Entity_ID_List::iterator begin,
+                      Entity_ID_List::iterator end) const;
 
-  void cell_to_faces (unsigned int cell,
-                      unsigned int* begin, unsigned int *end) const;
+  void cell_to_faces (Entity_ID cell,
+                      Entity_ID* begin, Entity_ID *end) const;
 
 
-  void cell_to_face_dirs (unsigned int cell,
+  void cell_to_face_dirs (Entity_ID cell,
                           std::vector<int>::iterator begin,
                           std::vector<int>::iterator end) const;
-  void cell_to_face_dirs (unsigned int cell,
+  void cell_to_face_dirs (Entity_ID cell,
                           int * begin, int * end) const;
 
 
 
-  void cell_to_nodes (unsigned int cell,
-                      std::vector<unsigned int>::iterator begin,
-                      std::vector<unsigned int>::iterator end) const;
-  void cell_to_nodes (unsigned int cell,
-                      unsigned int * begin, unsigned int * end) const;
+  void cell_to_nodes (Entity_ID cell,
+                      Entity_ID_List::iterator begin,
+                      Entity_ID_List::iterator end) const;
+  void cell_to_nodes (Entity_ID cell,
+                      Entity_ID * begin, Entity_ID * end) const;
 
 
 
 
-  void face_to_nodes (unsigned int face,
-                      std::vector<unsigned int>::iterator begin,
-                      std::vector<unsigned int>::iterator end) const;
-  void face_to_nodes (unsigned int face,
-                      unsigned int * begin, unsigned int * end) const;
+  void face_to_nodes (Entity_ID face,
+                      Entity_ID_List::iterator begin,
+                      Entity_ID_List::iterator end) const;
+  void face_to_nodes (Entity_ID face,
+                      Entity_ID * begin, Entity_ID * end) const;
 
 
 
-  void node_to_coordinates (unsigned int node,
+  void node_to_coordinates (Entity_ID node,
                             std::vector<double>::iterator begin,
                             std::vector<double>::iterator end) const;
-  void node_to_coordinates (unsigned int node,
+  void node_to_coordinates (Entity_ID node,
                             double * begin,
                             double * end) const;
 
-  void face_to_coordinates (unsigned int face,
+  void face_to_coordinates (Entity_ID face,
                             std::vector<double>::iterator begin,
                             std::vector<double>::iterator end) const;
-  void face_to_coordinates (unsigned int face,
+  void face_to_coordinates (Entity_ID face,
                             double * begin,
                             double * end) const;
 
-  void cell_to_coordinates (unsigned int cell,
+  void cell_to_coordinates (Entity_ID cell,
                             std::vector<double>::iterator begin,
                             std::vector<double>::iterator end) const;
-  void cell_to_coordinates (unsigned int cell,
+  void cell_to_coordinates (Entity_ID cell,
                             double * begin,
                             double * end) const;
 
@@ -591,23 +605,23 @@ class Mesh
                                Parallel_type ptype) const;
 
 
-  void get_set (unsigned int set_id, Entity_kind kind,
+  void get_set (Set_ID set_id, Entity_kind kind,
                 Parallel_type ptype,
-                std::vector<unsigned int>::iterator begin,
-                std::vector<unsigned int>::iterator end) const;
-  void get_set (unsigned int set_id, Entity_kind kind,
+                Entity_ID_List::iterator begin,
+                Entity_ID_List::iterator end) const;
+  void get_set (Set_ID set_id, Entity_kind kind,
                 Parallel_type ptype,
-                unsigned int * begin,
-                unsigned int * end) const;
+                Entity_ID * begin,
+                Entity_ID * end) const;
 
   // Id numbers
   // DEPRECATED - DO NOT USE
   void get_set_ids (Entity_kind kind,
-                    std::vector<unsigned int>::iterator begin,
-                    std::vector<unsigned int>::iterator end) const;
+                    Entity_ID_List::iterator begin,
+                    Entity_ID_List::iterator end) const;
   void get_set_ids (Entity_kind kind,
-                    unsigned int * begin,
-                    unsigned int * end) const;
+                    Entity_ID * begin,
+                    Entity_ID * end) const;
 
 }; // End class Mesh
 

@@ -133,6 +133,9 @@ int Richards_PK::AdvanceSteadyState_Picard()
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
+  Epetra_Vector* solution_old_cells = FS->createCellView(solution_old);
+  Epetra_Vector* solution_new_cells = FS->createCellView(solution_new);
+
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
@@ -152,29 +155,26 @@ int Richards_PK::AdvanceSteadyState_Picard()
   double L2norm, L2error = 1.0;
 
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
-    SetAbsolutePermeabilityTensor(K);
-
-    if (!is_matrix_symmetric) {  // Define K and Krel_faces
+    if (!is_matrix_symmetric) {
       CalculateRelativePermeabilityFace(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
+      Krel_cells->PutScalar(1.0);
+    } else {
       CalculateRelativePermeabilityCell(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+      Krel_faces->PutScalar(1.0);
     }
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+    matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
     matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
+    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
     rhs = matrix->rhs();  // export RHS from the matrix class
 
     // create preconditioner
-    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
-    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
+    preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
     preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
+    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
     preconditioner->applyBoundaryConditions(bc_markers, bc_values);
     preconditioner->assembleGlobalMatrices();
     preconditioner->computeSchurComplement(bc_markers, bc_values);
@@ -196,15 +196,11 @@ int Richards_PK::AdvanceSteadyState_Picard()
     double linear_residual = solver->TrueResidual();
 
     // update relaxation
-    double relaxation = 0.2;
-    for (int c = 0; c < ncells_owned; c++) {
-      double diff = fabs(solution_new[c] - solution_old[c]);
-      double umax = std::max(fabs(solution_new[c]), fabs(solution_old[c]));
-      if (diff > 5e-3 * umax) relaxation = std::min(relaxation, 5e-3 * umax / diff);
-    }
+    double relaxation;
+    relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n",
+      std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%11.6e, relax=%8.3e)  solver(%8.3e, %4d)\n",
           itrs, L2error, L2norm, relaxation, linear_residual, num_itrs);
     }
 
@@ -220,6 +216,30 @@ int Richards_PK::AdvanceSteadyState_Picard()
 
   num_nonlinear_steps = itrs;
   return 0;
+}
+
+
+/* ******************************************************************
+* Calculate relazation factor.                                                       
+****************************************************************** */
+double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew)
+{ 
+  Epetra_Vector dSdP(mesh_->cell_map(false));
+  DerivedSdP(uold, dSdP);
+
+  double relaxation = 1.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    double diff = dSdP[c] * fabs(unew[c] - uold[c]);
+    if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double diff = fabs(unew[c] - uold[c]);
+    double umax = std::max(fabs(unew[c]), fabs(uold[c]));
+    if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+  }
+
+  return relaxation;
 }
 
 }  // namespace AmanziFlow

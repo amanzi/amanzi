@@ -15,13 +15,13 @@
 
 #include "species.hh"
 #include "secondary_species.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {
 
 // forward declarations from chemistry
-class Block;
+class MatrixBlock;
 
 class Mineral : public SecondarySpecies {
  public:
@@ -42,7 +42,7 @@ class Mineral : public SecondarySpecies {
   virtual void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                       Block* dtotal);
+                                       MatrixBlock* dtotal);
 
   void Display(void) const;
   void DisplayResultsHeader(void) const;
@@ -54,27 +54,30 @@ class Mineral : public SecondarySpecies {
   double saturation_index(void) const {
     return std::log10(Q_over_K());
   };  // SI = log10(Q/Keq)
+
   double molar_volume(void) const {
     return this->molar_volume_;
   }
-  double surface_area(void) const {
-    return this->surface_area_;
-  }
+
   double specific_surface_area(void) const {
     return this->specific_surface_area_;
   }
-  double volume_fraction(void) const {
-    return this->volume_fraction_;
-  }
-
-  void set_volume_fraction(const double d) {
-    this->volume_fraction_ = d;
-  }
-  void UpdateSurfaceAreaFromVolumeFraction(const double total_volume);
-
   void set_specific_surface_area(const double d) { 
     this->specific_surface_area_ = d;
   }
+
+  void UpdateSpecificSurfaceArea(void);
+
+  double volume_fraction(void) const {
+    return this->volume_fraction_;
+  }
+  void set_volume_fraction(const double d) {
+    this->volume_fraction_ = d;
+  }
+
+  void UpdateVolumeFraction(const double rate,
+                            const double delta_time);
+
 
   void set_verbosity(const Verbosity verbosity) {
     this->verbosity_ = verbosity;
@@ -88,16 +91,10 @@ class Mineral : public SecondarySpecies {
  private:
   Verbosity verbosity_;
   double saturation_index_;
-  double molar_volume_;     // [cm^3 / moles]
-  double specific_surface_area_;  // [m^2/g]
-  double surface_area_;      // [m^2 mineral surface / m^3 mineral]
+  double molar_volume_;     // [m^3 / moles]
+  double specific_surface_area_;  // [m^2 mineral / m^3 bulk]
   double volume_fraction_;   // [m^3 mineral / m^3 bulk]
 
-  void set_surface_area(const double d) {
-    this->surface_area_ = d;
-  }
-  // void molar_volume(double d) { this->molar_volume_ = d; }
-  // void set_specific_surface_area(const double d) { this->specific_surface_area_ = d; }
 };
 
 }  // namespace chemistry

@@ -26,6 +26,7 @@ namespace Amanzi {
     void write_vector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
     void write_vector(const Epetra_Vector& vec, const std::string name ) const;
     bool is_disabled() const;
+    void set_start_time(const double t0);
 
   private:    
     void read_parameters(Teuchos::ParameterList& plist);
@@ -40,7 +41,6 @@ namespace Amanzi {
     bool  hasCycleData_;
     Teuchos::Array<int> steps;
     std::stack<double>  visualization_times_;
-
 
     Amanzi::HDF5_MPI *viz_output; 
 

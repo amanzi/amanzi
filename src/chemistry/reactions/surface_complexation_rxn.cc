@@ -7,13 +7,16 @@
 #include <iomanip>
 #include <sstream>
 
+#include "matrix_block.hh"
+#include "chemistry_output.hh"
 #include "chemistry_exception.hh"
-#include "block.hh"
 
 #include "exceptions.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
@@ -132,7 +135,7 @@ void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) 
 
 void SurfaceComplexationRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
   // All referenced equations #s are from the pflotran chemistry implementation
   // document by Peter Lichtner
 
@@ -174,7 +177,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
       for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
         double dPsij_dmi = dSi_mi * srfcplx->stoichiometry(jcomp);
-        dtotal->addValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
+        dtotal->AddValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
       }
     }
   }
@@ -207,8 +210,10 @@ void SurfaceComplexationRxn::display(void) const {
 }  // end display()
 
 void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "---"
+  std::stringstream message;
+  message << std::setw(15) << "---"
             << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceComplexationRxn::DisplayResults(void) const {

@@ -25,19 +25,19 @@ Authors: Neil Carlson (version 1)
 #include "BDF2_Dae.hpp"
 #include "BDF1_Dae.hh"
 
-#include "Flow_State.hpp"
 #include "Flow_PK.hpp"
 #include "Flow_BC_Factory.hpp"
 #include "Matrix_MFD.hpp"
 #include "WaterRetentionModel.hpp"
 
-
 namespace Amanzi {
 namespace AmanziFlow {
 
+class Flow_State;  // forward declarations
+
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC);
+  Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
   ~Richards_PK();
 
   // main methods
@@ -70,7 +70,6 @@ class Richards_PK : public Flow_PK {
   void update_norm(double rtol, double atol) {};
 
   // other main methods
-  void ProcessParameterList();
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
   void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
@@ -85,21 +84,32 @@ class Richards_PK : public Flow_PK {
                                    Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, int disc_method,
+  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix,
                                 double Tp, double dTp, bool flag_update_ML);
 
+  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
+                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+
+  // io members
+  void ProcessParameterList();
+  void ProcessStringTimeIntegration(const std::string name, int* method);
+
+  // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
 
+  // initization members
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
 
   void InitializePressureHydrostatic(const double T);
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
+  double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
+
   // control methods
-  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
+  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   void PrintStatistics() const;
   
   // access methods
@@ -111,7 +121,8 @@ class Richards_PK : public Flow_PK {
   int num_nonlinear_steps;
 
  private:
-  Teuchos::ParameterList rp_list;
+  Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList rp_list_;
 
   AmanziGeometry::Point gravity_;
   double rho, mu;
@@ -131,14 +142,17 @@ class Richards_PK : public Flow_PK {
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
   int block_picard;
+  int error_control;
 
   int ti_method_sss;  // Parameters for steady-state solution
+  std::string preconditioner_name_sss_;
   int num_itrs_sss, max_itrs_sss;
   double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
   int initialize_with_darcy;
 
   int ti_method_trs;  // Parameters for transient solution
+  std::string preconditioner_name_trs_;
   double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;
@@ -168,7 +182,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability
 
-  int mfd3d_method;
+  int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 

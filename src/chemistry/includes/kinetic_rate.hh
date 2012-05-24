@@ -15,12 +15,14 @@
 #include "secondary_species.hh"
 #include "mineral.hh"
 #include "string_tokenizer.hh"
-#include "verbosity.hh"
+#include "chemistry_output.hh"
 
 namespace amanzi {
 namespace chemistry {
 
-class Block;
+extern ChemistryOutput* chem_out;
+
+class MatrixBlock;
 
 class KineticRate {
  public:
@@ -32,12 +34,12 @@ class KineticRate {
   virtual void Update(const SpeciesArray& primary_species,
                       const std::vector<Mineral>& minerals) = 0;
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
-                                         const double por_den_sat_vol,
+                                         const double bulk_volume,
                                          std::vector<double> *residual) = 0;
   virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
-                                         const double por_den_sat_vol,
-                                         Block* J) = 0;
+                                         const double bulk_volume,
+                                         MatrixBlock* J) = 0;
   virtual void Display(void) const = 0;
 
   virtual void ParseParameters(const StringTokenizer& rate_parameters) = 0;
@@ -51,11 +53,12 @@ class KineticRate {
 
   void DisplayReaction(void) const;
 
-  void set_verbosity(const Verbosity s_verbosity) {
-    this->verbosity_ = s_verbosity;
+  void set_debug(const bool value) {
+    this->debug_ = value;
   };
-  Verbosity verbosity(void) const {
-    return this->verbosity_;
+
+  bool debug(void) const {
+    return this->debug_;
   };
   std::string name(void) const {
     return this->name_;
@@ -63,6 +66,10 @@ class KineticRate {
   SpeciesId identifier(void) const {
     return this->identifier_;
   };
+
+  double reaction_rate(void) const {
+    return this->reaction_rate_;
+  }
 
  protected:
   KineticRate(void);
@@ -74,14 +81,19 @@ class KineticRate {
     this->identifier_ = in_id;
   };
 
+  void set_reaction_rate(const double rate) {
+    this->reaction_rate_ = rate;
+  };
+
   std::vector<SpeciesName> reactant_names;
   std::vector<double> reactant_stoichiometry;
   std::vector<SpeciesId> reactant_ids;
 
  private:
-  Verbosity verbosity_;
+  bool debug_;
   std::string name_;
-  SpeciesId identifier_;
+  SpeciesId identifier_;  // the index identifier of the associated mineral!
+  double reaction_rate_;  // volumetric rate: [moles/sec/m^3 bulk]
 };
 
 }  // namespace chemistry

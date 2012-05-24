@@ -4,7 +4,8 @@
 # Replaces each @VAR@ with value of ${VAR}
 
 # Source and build locations
-exodusii_src_dir=@ExodusII_source_dir@/exodus
+#Exodus-5.xexodusii_src_dir=@ExodusII_source_dir@/exodus
+exodusii_src_dir=@ExodusII_source_dir@
 exodusii_build_dir=@ExodusII_build_dir@
 
 # NETCDF

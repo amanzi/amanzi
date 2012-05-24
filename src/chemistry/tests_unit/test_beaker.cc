@@ -10,7 +10,7 @@
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "activity_model_factory.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 
 SUITE(BeakerTests) {
@@ -18,6 +18,9 @@ SUITE(BeakerTests) {
   using amanzi::chemistry::SimpleThermoDatabase;
   using amanzi::chemistry::ActivityModelFactory;
   using amanzi::chemistry::ChemistryException;
+  using amanzi::chemistry::ChemistryUnrecoverableError;
+  using amanzi::chemistry::ChemistryMemorySizeError;
+  using amanzi::chemistry::ChemistryInvalidInput;
 
   TEST(CheckBadComponentSizes) {
     SimpleThermoDatabase chem;
@@ -38,19 +41,21 @@ SUITE(BeakerTests) {
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
 
-    parameters.thermo_database_file = "test/input/carbonate.bgd";
+    parameters.thermo_database_file = "carbonate.bgd";
     parameters.activity_model_name = ActivityModelFactory::unit;
 
-    bool have_exception = false;
+    bool correct_exception = false;
 
     try {
       // should throw an error
       chem.Setup(components, parameters);
+    } catch (ChemistryMemorySizeError& e) {
+      correct_exception = true;
     } catch (ChemistryException& e) {
-      have_exception = true;
+    } catch (std::exception& e) {
     }
 
-    CHECK_EQUAL(true, have_exception);
+    CHECK(correct_exception);
   }  // end TEST(CheckBadComponentSizes)
 
 
@@ -73,15 +78,19 @@ SUITE(BeakerTests) {
     parameters.thermo_database_file = "test_drivers/input/bad_database_file.bgd";
     parameters.activity_model_name = ActivityModelFactory::unit;
 
-    bool have_exception = false;
+    bool correct_exception = false;
 
     try {
       // should throw an error
       chem.Setup(components, parameters);
+    } catch (ChemistryUnrecoverableError& e) {
+    } catch (ChemistryInvalidInput& e) {
+      correct_exception = true;
     } catch (ChemistryException& e) {
-      have_exception = true;
+    } catch (std::exception& e) {
     }
-    CHECK_EQUAL(true, have_exception);
+
+    CHECK(correct_exception);
   }  // end TEST(CheckBadDatabaseFile)
 
   TEST(CheckBadActivityModel) {
@@ -99,17 +108,21 @@ SUITE(BeakerTests) {
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
 
-    parameters.thermo_database_file = "test_drivers/input/carbonate.bgd";
+    parameters.thermo_database_file = "carbonate.bgd";
     parameters.activity_model_name = "bad activity model name";
 
-    bool have_exception = false;
+    bool correct_exception = false;
 
     try {
       // should throw an error
       chem.Setup(components, parameters);
+    } catch (ChemistryUnrecoverableError& e) {
+    } catch (ChemistryInvalidInput& e) {
+      correct_exception = true;
     } catch (ChemistryException& e) {
-      have_exception = true;
+    } catch (std::exception& e) {
     }
-    CHECK_EQUAL(true, have_exception);
+
+    CHECK(correct_exception);
   }  // end TEST(CheckBadActivityModel)
 }  // end SUITE(BeakerTests)

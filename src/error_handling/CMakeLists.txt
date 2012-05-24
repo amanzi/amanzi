@@ -48,18 +48,12 @@ if (BUILD_TESTS)
   # Add UnitTest include directory
   include_directories(${UnitTest_INCLUDE_DIRS})
 
-  # Define the test executable
-  # File containing the 'main' symbol should be listed first
-  add_executable(test_error_handling 
-                 test/Main.cc test/test_exceptions.cc test/test_dbc.cc test/test_errors.cc)
-  
-  # Define the links this binary needs
-  target_link_libraries(test_error_handling error_handling ${UnitTest_LIBRARIES})
-
-  # Add the executable to the 'make test' target
-  # this command does nothing if enable_testing() is not 
-  # called in a parent CMakeLists.txt file 
-  add_amanzi_test(error test_error_handling KIND unit)
+  # Create the error test suite
+  file(GLOB error_test_files RELATIVE ${DBC_SOURCE_DIR} "${DBC_SOURCE_DIR}/test/test*.cc")
+  add_amanzi_test(error test_error_handling
+                  KIND unit
+		  SOURCE test/Main.cc ${error_test_files}
+		  LINK_LIBS error_handling ${UnitTest_LIBRARIES})
 
 endif()
 
