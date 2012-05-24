@@ -274,8 +274,11 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
   //  Solve the nonlinear BCE system.
   u = up;  // Initial solution guess is the predictor.
+  
+    
   try {
-    solve_bce(tnew, h, u0, u);
+//     solve_bce(tnew, h, u0, u);
+    solve_bce_jfnk(tnew, h, u0, u);
   }
   catch (int itr) { 
     // we end up in here either if the solver took too many iterations, 
@@ -449,10 +452,14 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
 void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vector& u) {
 	
+  int NumMyElements = u.MyLength();
+  for (int i=0;i<NumMyElements;i++) u[i] = 1;
+	
+	
+  NOX::Epetra::Vector nox_u(u);
+  
 
-	
-  const NOX::Epetra::Vector& nox_uo = dynamic_cast<NOX::Epetra::Vector&> (u0);
-	
+  	
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
@@ -497,7 +504,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   dirParams.set("Method", "Newton");
   Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
     newtonParams.set("Forcing Term Method", "Constant");
-    //newtonParams.set("Forcing Term Method", "Type 1");
+//     newtonParams.set("Forcing Term Method", "Type 1");
     //newtonParams.set("Forcing Term Method", "Type 2");
     //newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
     //newtonParams.set("Forcing Term Maximum Tolerance", 0.1);
@@ -519,7 +526,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   lsParams.set("Max Iterations", 800);  
   lsParams.set("Tolerance", 1e-4); 
   lsParams.set("Preconditioner", "None");
-  //lsParams.set("Preconditioner", "Ifpack");
+//   lsParams.set("Preconditioner", "Ifpack");
   lsParams.set("Max Age Of Prec", 5); 
 
   // Create the interface between the test problem and the nonlinear solver
@@ -528,18 +535,20 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   
 //   AmanziFlow::Flow_PK* flow_problem = dynamic_cast<AmanziFlow::Flow_PK*> &fn;
   
+  
+  
   const Teuchos::RCP<NOX::Epetra::Interface::Required> interface = 
-    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn));
+    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, u0, h));
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
   //Teuchos::RCP<Epetra_RowMatrix> Analytic = Problem.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
   Teuchos::RCP<NOX::Epetra::MatrixFree> MF = 
-    Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, nox_uo));
+    Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, nox_u));
 //   3. Finite Difference (Epetra_RowMatrix)
   Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
-    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_uo));
+    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_u));
 
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
@@ -548,13 +557,13 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq, iJac, MF,
-						      nox_uo));
+						      nox_u));
 
   // Create the Group
   Teuchos::RCP<NOX::Epetra::Group> grp =
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, nox_uo, 
+    Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, nox_u, 
 					linSys)); 
-// 
+//        
   // Create the convergence tests
   Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
@@ -601,16 +610,24 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     u = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 // 
 //   // End Nonlinear Solver **************************************
+    
+     // Output the parameter list
+  if (utils.isPrintType(NOX::Utils::Parameters)) {
+    utils.out() << endl << "Final Parameters" << endl
+	 << "****************" << endl;
+    solver->getList().print(utils.out());
+    utils.out() << endl;
+  }
 // 
 //    // Print solution
   char file_name[25];
   FILE *ifp;
   int MyPID = 0;
-  int NumMyElements = u.MyLength();
+  
   (void) sprintf(file_name, "output.%d",MyPID);
   ifp = fopen(file_name, "w");
   for (int i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%E\n", u[i]);
+    fprintf(ifp, "%d %E\n", i, u[i]);
   fclose(ifp);
 
   exit(0);

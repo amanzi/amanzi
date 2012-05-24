@@ -18,7 +18,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 bool Interface_NOX::computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType flag)
 {
-  for (int i=0; i<x.MyLength(); i++) f[i] = x[i] - 1;
+  for (int i=0; i<x.MyLength(); i++) f[i] = x[i]*x[i] - 9;
   return true;
 }
 

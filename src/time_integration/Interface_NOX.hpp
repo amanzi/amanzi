@@ -22,7 +22,7 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
                       public NOX::Epetra::Interface::Jacobian,
                       public NOX::Epetra::Interface::Preconditioner {
  public:
-  Interface_NOX(BDF2::fnBase* FPK) : FPK_(FPK), lag_prec_(1), lag_count_(0) {};
+  Interface_NOX(BDF2::fnBase* FPK, const Epetra_Vector& uprev, double dt) : FPK_(FPK), u0(uprev), lag_prec_(1), lag_count_(0) {  deltaT = dt;};
   ~Interface_NOX() {};
 
   // required interface members
@@ -37,7 +37,9 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
 
  private:
   BDF2::fnBase* FPK_;
+  const Epetra_Vector& u0;	// value at the previous time step
 
+  double deltaT;		// time step
   int lag_prec_;  // the preconditioner is lagged this many times before it is recomputed
   int lag_count_; // this counts how many times the preconditioner has been lagged
 };

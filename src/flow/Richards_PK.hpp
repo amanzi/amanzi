@@ -68,6 +68,8 @@ class Richards_PK : public Flow_PK {
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
   void update_norm(double rtol, double atol) {};
+  
+
 
   // other main methods
   void ProcessParameterList();

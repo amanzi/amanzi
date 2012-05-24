@@ -27,6 +27,9 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 
 #include "Mesh.hh"
 #include "Point.hh"
+// class Mesh;
+// class Point;
+
 
 #include "tensor.hpp"
 

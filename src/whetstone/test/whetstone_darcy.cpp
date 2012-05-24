@@ -19,6 +19,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh_simple.hh"
 #include "MeshAudit.hh"
 
+#include "Mesh.hh"
+#include "Point.hh"
+
 #include "mfd3d.hpp"
 #include "tensor.hpp"
 
