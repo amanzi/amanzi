@@ -37,7 +37,7 @@ class CommandInterface:
             list_args = shlex.split(args)
         else:
             raise TypeError, 'args must be of type list or str'
-
+        self.args = list_args 
         return list_args
 
     def _build_run_command(self):
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     cmd = Command(command,args=args)
     cmd._dump_state()
 
-
+    yacmd = Command('which','h5diff')
 
     bad_cmd=Command('dummy_exe')
     bad_cmd._dump_state()

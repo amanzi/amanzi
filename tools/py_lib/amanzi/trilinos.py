@@ -273,21 +273,20 @@ class ParameterList(ElementTree):
         result = None
         search_list = []
         try:
-            serach_list = self.iterfind(_ParameterListTag)
+            search_list = self.iterfind(_ParameterListTag)
         except AttributeError:
             search_list = self.getiterator(tag=_ParameterListTag)
 
         for node in search_list:
-            print node
-            node_name = node.get_name()
+            node_name = node.get('name')
             if node_name == target:
                 result = node
                 break
                  
         if result == None:
-            print 'Could not find sublist with name=' + name
+            print 'Could not find sublist with name=' + target
         else:
-            list_name = result.get_name()
+            list_name = result.get('name')
             sublist = ParameterList(list_name)
             sublist._setroot(result)
          
@@ -306,7 +305,7 @@ class ParameterList(ElementTree):
             search_list = self.getiterator(_ParameterTag)
 
         for node in search_list:
-            node_name = node.get_name()
+            node_name = node.get('name')
             if node_name == target:
                 result =  node
                 break
