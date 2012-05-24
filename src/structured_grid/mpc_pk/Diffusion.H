@@ -40,6 +40,25 @@ public:
 
     enum SolveMode {PREDICTOR, CORRECTOR, ONEPASS};
 
+    struct NewtonStepInfo
+    {
+        std::string status;
+        bool success;
+        std::string reason;
+        int ls_iterations;
+        int max_ls_iterations;
+        Real min_ls_factor;
+        Real ls_acceptance_factor;
+        Real ls_factor;
+        Real ls_reduction_factor;
+        Real residual_norm_pre_ls;
+        Real residual_norm_post_ls;
+        Real initial_residual_norm;
+        Real initial_solution_norm;
+        int monitor_linear_solve;
+        int monitor_line_search;
+    };
+
     Diffusion ();
 
     Diffusion (Amr*               Parent,
@@ -111,16 +130,16 @@ public:
 
 #ifdef MG_USE_FBOXLIB
     void richard_iter (Real                   dt,
-		       int                    nc,
-		       Real                   gravity,
-		       Array<Real>            density,
-		       MultiFab&              res_fix,
-		       const MultiFab*        alpha,
-		       const MultiFab* const* beta,
-		       const MultiFab* const* beta_dp,
-		       MultiFab*              umac,
-		       const bool             do_upwind,
-		       Real*                  err_nwt); 
+                       int                    nc,
+                       Real                   gravity,
+                       const Array<Real>&     density,
+                       const MultiFab&        res_fix,
+                       const MultiFab*        alpha,
+                       const MultiFab* const* beta,
+                       const MultiFab* const* beta_dp,
+                       MultiFab*              umac,
+                       const bool             do_upwind,
+                       Diffusion::NewtonStepInfo& status); 
 
     void richard_composite_iter (Real                      dt,
 				 int                       nlevs,
@@ -131,8 +150,9 @@ public:
 				 PArray<MultiFab>&         alpha, 
 				 Array<PArray<MultiFab> >& beta,
 				 Array<PArray<MultiFab> >& beta_dp,
+                                 Array<MultiFab*>&         umac,
 				 const bool                do_upwind,
-				 Real*                     err_nwt);
+                                 Diffusion::NewtonStepInfo& status);
 
     void richard_iter_p(Real                   dt,
 			int                    nc,
@@ -145,7 +165,7 @@ public:
 			const MultiFab* const* beta_dp,
 			MultiFab*              umac,
 			const bool             do_upwind,
-			Real*                  err_nwt); 
+			Diffusion::NewtonStepInfo& status); 
 
     void richard_composite_iter_p (Real                      dt,
 				   int                       nlevs,
@@ -157,8 +177,9 @@ public:
 				   PArray<MultiFab>&         dalpha, 
 				   Array<PArray<MultiFab> >& beta,
 				   Array<PArray<MultiFab> >& beta_dp,
+                                   Array<MultiFab*>&         umac,
 				   const bool                do_upwind,
-				   Real*                     err_nwt);
+                                   Diffusion::NewtonStepInfo& status); 
  
     void richard_iter_eqb (int                    nc,
 			   Real                   gravity,
@@ -305,17 +326,17 @@ public:
 		      const BCRec&          bc,
 		      bool bndry_already_filled = true);
 
-    MGT_Solver getOp (int                   comp,
-		      int                   nlevs,
-		      std::vector<Geometry> geom,
-		      std::vector<BoxArray> bav,
-		      std::vector<DistributionMapping> dmv,
-		      Array< Array<Real> >& xa,
-		      Array< Array<Real> >& xb,
-		      Real                  time,
-		      ViscBndry&            visc_bndry,
-		      const BCRec&          bc,
-		      bool	 bndry_already_filled = true);
+    MGT_Solver getOp (int                                     comp,
+                      int                                     nlevs,
+                      const std::vector<Geometry>&            geom,
+                      const std::vector<BoxArray>&            bav,
+                      const std::vector<DistributionMapping>& dmv,
+                      Array< Array<Real> >&                   xa,
+                      Array< Array<Real> >&                   xb,
+                      Real                                    time,
+                      ViscBndry&                              visc_bndry,
+                      const BCRec&                            bc,
+                      bool	                              bndry_already_filled=true);
 
     void coefs_fboxlib_mg (PArray<MultiFab>& acoefs,
 			   Array< PArray<MultiFab> >& bcoefs,

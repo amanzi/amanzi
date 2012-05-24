@@ -55,12 +55,15 @@ process_events(bool& write_plotfile_after_step,
 
 
 void
-PMAmr::init (Real strt_time,
+PMAmr::init (Real strt_time_,
              Real stop_time)
 {
+    strt_time = strt_time_;
+
     if (!restart_file.empty() && restart_file != "init")
     {
         restart(restart_file);
+        cumtime = strt_time;
     }
     else
     {
@@ -103,6 +106,10 @@ PMAmr::coarseTimeStep (Real stop_time)
                                   post_regrid_flag);
     }
 
+    if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())
+    {
+        std::cout << "\nBEGIN TRANSIENT INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
+    }
 
     bool write_plot, write_check;
     Array<int> observations_to_process;

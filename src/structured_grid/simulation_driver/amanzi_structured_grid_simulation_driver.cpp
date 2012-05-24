@@ -37,7 +37,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     BoxLib::Initialize(argc,argv,false,mpi_comm);
     if (input_parameter_list.isParameter("PPfile"))
       {
-	std::string PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
+	const std::string& PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
 	ParmParse::Initialize(argc,argv,PPfile.c_str());
       }
 
@@ -51,7 +51,11 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     else
       converted_parameter_list = input_parameter_list;
 
-    Teuchos::writeParameterListToXmlFile(converted_parameter_list,"tmpfile");
+    if (input_parameter_list.isParameter("EchoXMLfile"))
+      {
+        const std::string& EchoXMLfile = Teuchos::getParameter<std::string>(input_parameter_list, "EchoXMLfile");
+        Teuchos::writeParameterListToXmlFile(converted_parameter_list,EchoXMLfile);
+      }
 
     BoxLib::Initialize_ParmParse(converted_parameter_list);
 

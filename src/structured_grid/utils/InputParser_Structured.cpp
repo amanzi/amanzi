@@ -286,7 +286,7 @@ namespace Amanzi {
 
                 PLoptions Topt(tran_list,reqL,reqP,true,false); 
                 const Array<std::string> ToptP = Topt.OptParms();
-                struc_out_list.set<double>("start_time", tran_list.get<double>(Start_str));
+                struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
                 struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
                 double dt_init = -1;
                 double dt_init_mult = -1;
@@ -316,20 +316,18 @@ namespace Amanzi {
                 }
 
                 if (dt_init > 0) {
-                    double fac = (dt_init_mult > 0  ?  dt_init_mult  :  1);
-                    struc_out_list.set<double>("dt_init", dt_init*fac);
+                    prob_out_list.set<double>("dt_init", dt_init);
                 }
-                else {
-                    if (dt_init_mult > 0) {
-                        prob_out_list.set<double>("init_shrink", dt_init_mult);
-                    }
+
+                if (dt_init_mult > 0) {
+                    prob_out_list.set<double>("init_shrink", dt_init_mult);
                 } 
 
                 if (change_max > 0) {                        
                     prob_out_list.set<double>("change_max", change_max);
                 }
 
-                if (step_max>0) {
+                if (step_max>=0) {
                     struc_out_list.set<int>("max_step", step_max);
                 }
                 
@@ -963,14 +961,14 @@ namespace Amanzi {
                 mtest.insert(MTEST::value_type("Regions_Assigned",false));
         
                 std::string label = rlist.name(i);
-                std::string _label = underscore(label);
-                    
-                // Add this rock label to list of rocks
-                arrayrock.push_back(_label);
-
                 const ParameterEntry& entry = rlist.getEntry(label);
             
                 if (entry.isList()) {
+                    std::string _label = underscore(label);
+                    
+                    // Add this rock label to list of rocks
+                    arrayrock.push_back(_label);
+
                     ParameterList rsublist;
                     const ParameterList& rslist = rlist.sublist(label);
                     for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) 

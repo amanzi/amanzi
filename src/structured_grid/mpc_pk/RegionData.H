@@ -16,6 +16,7 @@ public:
                const PArray<Region>& regions,
                const std::string&    typeStr,
                Real                  val);
+    virtual ~RegionData() {}
 
     const PArray<Region>& Regions() const {return regions;}
     std::string Type() const {return type;}
@@ -57,6 +58,7 @@ public:
                     const PArray<Region>&    regions,
                     const std::string&       typeStr,
                     int                      nComp);
+    virtual ~ArrayRegionData() {}
     
     virtual Array<Real> time() const;
 

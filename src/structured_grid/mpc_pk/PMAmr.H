@@ -16,6 +16,8 @@ public:
 
     static EventCoord& eventCoord() {return event_coord;}
 
+    Real StartTime() const {return strt_time;}
+
 protected:
     static EventCoord event_coord;
 
@@ -25,6 +27,8 @@ private:
     //
     PMAmr (const PMAmr& rhs);
     PMAmr& operator= (const PMAmr& rhs);
+
+    Real strt_time;
 };
 
 #endif /*_PMAmr_H_*/

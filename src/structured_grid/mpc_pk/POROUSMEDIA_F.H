@@ -381,7 +381,7 @@ extern "C" {
 			 const int* domlo, const int* domhi, 
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
-			 const Real* deps, const int* do_upwind);
+			 const Real* deps, const int* do_upwind, const Real* contParm);
 
   void FORT_RICHARD_NJAC2(const Real* dfx, ARLIM_P(dfxlo), ARLIM_P(dfxhi),
 			  const Real* dfy, ARLIM_P(dfylo), ARLIM_P(dfyhi),
