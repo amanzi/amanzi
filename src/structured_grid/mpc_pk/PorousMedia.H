@@ -123,14 +123,74 @@ public:
   friend class Diffusion;
   friend class Observation;
 
+  enum Reason
+  {
+      RICHARD_SUCCESS, 
+      RICHARD_NEWTON_FAIL,
+      RICHARD_LINEAR_FAIL
+  };
+
     struct RichardNLSdata {
-        int max_num_Jacobian_reuse, num_Jacobian_reuses_remaining;
-        int max_nl_iterations, nl_iterations_taken;
-        Real max_nl_residual_norm, nl_residual_norm;        
+        RichardNLSdata(int slev, int nlevs, Amr* amrp);
+        void SetMaxNewtonIterations(int max_iter);
+        void SetMaxJacobianReuse(int max_num_reuse);
+        void SetMaxConsecutiveFails(int max_num);
+        void SetDtRetryFactor(Real factor);
+        void SetMaxConsecutiveFails2(int max_num);
+        void SetDtRetryFactor2(Real factor);
+        void SetDtRetryFactorF(Real factor);
+        void SetMaxConsecutiveErrIncrease(int max_num);
+        void SetConsecutiveErrIncreaseDtReduction(Real factor);
+
+        void SetMaxNewtonIterationsForDt(int max_iter);
+        void SetMaxConsecutiveSuccess(int max_num);
+        void SetDtIncreaseFactor(Real factor);
+        void SetMinNewtonIterationsForDt(int max_iter);
+        void SetDtIncreaseFactor2(Real factor);
+        void SetMinNewtonIterationsForDt2(int max_iter);
+        void SetDtReductionFactor(Real factor);
+
+        bool UpdateJacobian(int lev);
+        void ResetJacobianCounter(int lev);
+        void ResetJacobianCounter();
+        int NLIterationsTaken() {return nl_iterations_taken;}
+        int MaxNLIterations() {return max_nl_iterations;}
+        void operator++() {nl_iterations_taken++;}
+        void operator++(int) {nl_iterations_taken++;}
+        void ResetCounters();
+
+        bool AdjustDt(Real                dt, 
+                      PorousMedia::Reason nl_solver_status, 
+                      Real                abs_err, 
+                      Real                rel_err, 
+                      Real&               new_dt); // Note: return bool for whether run should stop
+
         Array < PArray <MultiFab> > Hcoeffs;
         Array < PArray <MultiFab> > Jacobian;
         Array <MultiFab*> velPhase;
+
+    private:
+        void Build(Amr* amrp);
+        int start_level, end_level;
+        int max_num_Jacobian_reuse;
+        Array<int> num_Jacobian_reuses_remaining;
+        int max_nl_iterations, nl_iterations_taken;
+        Real max_nl_residual_norm, nl_residual_norm; 
+
+        int max_num_consecutive_success, num_consecutive_success;
+        int max_num_consecutive_failures_1, num_consecutive_failures_1;
+        int max_num_consecutive_failures_2, num_consecutive_failures_2;
+        int max_num_consecutive_increases, num_consecutive_increases;
+        Real consecutive_increase_reduction_factor;
+        int min_nl_iterations_for_dt, min_nl_iterations_for_dt_2, max_nl_iterations_for_dt;
+        Real time_step_increase_factor, time_step_increase_factor_2, time_step_reduction_factor;
+        Real time_step_retry_factor, time_step_retry_factor_2, time_step_retry_factor_f;
+        bool last_chance;
+        Real prev_abs_err;
+        bool first;
     };
+
+    RichardNLSdata BuildInitNLS();
 
   PorousMedia ();
 
@@ -506,19 +566,11 @@ protected:
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
-  enum Reason
-  {
-      RICHARD_SUCCESS, 
-      RICHARD_NEWTON_FAIL,
-      RICHARD_LINEAR_FAIL
-  };
-
   PorousMedia::Reason richard_scalar_update (Real dt, 
                                   int& total_nwt_iter,
                                   MultiFab* u_mac = 0);
 
   PorousMedia::Reason richard_composite_update (Real dt, 
-                                                int& total_nwt_iter,
                                                 RichardNLSdata& nl_data);
 
   void richard_init_to_steady();
@@ -1151,10 +1203,12 @@ protected:
   static bool do_richard_init_to_steady;
   static int  richard_init_to_steady_verbose;
   static int  steady_min_iterations;
+  static int  steady_min_iterations_2;
   static int  steady_max_iterations;
   static int  steady_limit_iterations;
   static Real steady_time_step_reduction_factor;
   static Real steady_time_step_increase_factor;
+  static Real steady_time_step_increase_factor_2;
   static Real steady_time_step_retry_factor_1;
   static Real steady_time_step_retry_factor_2;
   static Real steady_time_step_retry_factor_f;

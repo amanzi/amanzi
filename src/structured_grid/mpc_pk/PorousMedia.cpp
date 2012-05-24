@@ -1132,29 +1132,236 @@ PorousMedia::initData ()
   old_intersect_new          = grids;
 }
 
-void
-PorousMedia::BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs)
+PorousMedia::RichardNLSdata::RichardNLSdata(int slev, int nlevs, Amr* amrp)
+    : start_level(slev), end_level(slev+nlevs-1),
+      num_Jacobian_reuses_remaining(nlevs,0)
 {
-    nld.max_num_Jacobian_reuse = 0;
-    nld.max_nl_iterations = steady_limit_iterations;
-    nld.max_nl_residual_norm = -1;
-    nld.Hcoeffs.resize(BL_SPACEDIM);
-    nld.Jacobian.resize(BL_SPACEDIM);
-    for (int dir = 0; dir < BL_SPACEDIM; dir++) {
-        nld.Hcoeffs[dir].resize(nlevs,PArrayManage);
-        nld.Jacobian[dir].resize(nlevs,PArrayManage);
-        for (int lev = 0; lev < nlevs; lev++) {
-            BoxArray grids = BoxArray(parent->getLevel(slev+lev).boxArray()).surroundingNodes(dir);
-            nld.Hcoeffs[dir].set(lev, new MultiFab(grids,1,0));
-            nld.Jacobian[dir].set(lev, new MultiFab(grids,3,0));
-        }
-    }
-    nld.velPhase.resize(nlevs);
-    for (int lev = 0; lev <nlevs; lev++) {
-        nld.velPhase[lev] = dynamic_cast<PorousMedia*>(&parent->getLevel(slev+lev))->u_mac_curr;
+    // Set solver defaults
+    max_num_Jacobian_reuse = 0;
+    max_nl_iterations = 20;
+    max_nl_residual_norm = -1;    
+    max_num_consecutive_success = 0;
+    max_num_consecutive_failures_1 = 3;
+    max_num_consecutive_failures_2 = 4;
+    max_num_consecutive_increases = 15;
+    consecutive_increase_reduction_factor = 0.4;
+    min_nl_iterations_for_dt = 6;
+    min_nl_iterations_for_dt_2 = 3;
+    max_nl_iterations_for_dt = 10;
+    time_step_increase_factor = 1.5;
+    time_step_increase_factor_2 = 10;
+    time_step_reduction_factor = 0.8;
+    time_step_retry_factor = 0.5;
+    time_step_retry_factor_2 = 0.1;
+    time_step_retry_factor_f = 0.01;
+
+    ResetCounters();
+
+    // Allocate necessary memory and setup pointers
+    Build(amrp);
+}
+
+void PorousMedia::RichardNLSdata::SetMaxConsecutiveFails(int max_num) {max_num_consecutive_failures_1=max_num;}
+void PorousMedia::RichardNLSdata::SetDtRetryFactor(Real factor) {time_step_retry_factor = factor;}
+void PorousMedia::RichardNLSdata::SetMaxConsecutiveFails2(int max_num) {max_num_consecutive_failures_2=max_num;}
+void PorousMedia::RichardNLSdata::SetDtRetryFactor2(Real factor) {time_step_retry_factor_2 = factor;}
+void PorousMedia::RichardNLSdata::SetDtRetryFactorF(Real factor) {time_step_retry_factor_f = factor;}
+void PorousMedia::RichardNLSdata::SetMaxConsecutiveErrIncrease(int max_incr) {max_num_consecutive_increases=max_incr;}
+void PorousMedia::RichardNLSdata::SetConsecutiveErrIncreaseDtReduction(Real redux) {consecutive_increase_reduction_factor=redux;}
+void PorousMedia::RichardNLSdata::SetMaxConsecutiveSuccess(int max_num) {max_num_consecutive_success=max_num;}
+void PorousMedia::RichardNLSdata::SetMaxNewtonIterations(int max_iter) {max_nl_iterations=max_iter;}
+void PorousMedia::RichardNLSdata::SetMaxJacobianReuse(int max_num_reuse) {max_num_Jacobian_reuse=max_num_reuse;}
+void PorousMedia::RichardNLSdata::ResetJacobianCounter(int lev) {num_Jacobian_reuses_remaining[lev]=max_num_Jacobian_reuse;}
+void PorousMedia::RichardNLSdata::SetMaxNewtonIterationsForDt(int max_iter) {max_nl_iterations_for_dt=max_iter;}
+void PorousMedia::RichardNLSdata::SetMinNewtonIterationsForDt(int min_iter) {min_nl_iterations_for_dt=min_iter;}
+void PorousMedia::RichardNLSdata::SetMinNewtonIterationsForDt2(int min_iter) {min_nl_iterations_for_dt_2=min_iter;}
+void PorousMedia::RichardNLSdata::SetDtIncreaseFactor(Real factor) {time_step_increase_factor=factor;}
+void PorousMedia::RichardNLSdata::SetDtIncreaseFactor2(Real factor) {time_step_increase_factor_2=factor;}
+void PorousMedia::RichardNLSdata::SetDtReductionFactor(Real factor) {time_step_reduction_factor=factor;}
+
+void
+PorousMedia::RichardNLSdata::ResetCounters()
+{
+    ResetJacobianCounter();
+    nl_iterations_taken = 0;
+    nl_residual_norm = -1; 
+    num_consecutive_success = 0;
+    num_consecutive_failures_1 = 0;
+    num_consecutive_failures_2 = 0;
+    num_consecutive_increases = 0;
+    last_chance = false;;
+    prev_abs_err = -1;
+    first = true;
+}
+
+void
+PorousMedia::RichardNLSdata::ResetJacobianCounter()
+{
+    int nlevs = end_level - start_level +1;
+    for (int lev=0; lev<nlevs; ++lev) {
+        ResetJacobianCounter(lev);
     }
 }
 
+bool
+PorousMedia::RichardNLSdata::UpdateJacobian(int lev)
+{
+    bool do_Jacobian_eval = false;
+    num_Jacobian_reuses_remaining[lev]--;
+    if (num_Jacobian_reuses_remaining[lev] <= 0) {
+        do_Jacobian_eval = true;
+        num_Jacobian_reuses_remaining[lev] = max_num_Jacobian_reuse;
+    }
+    return do_Jacobian_eval;
+}
+void
+PorousMedia::RichardNLSdata::Build(Amr* amrp)
+{
+    Hcoeffs.resize(BL_SPACEDIM);
+    Jacobian.resize(BL_SPACEDIM);
+    int nlevs = end_level - start_level + 1;
+    for (int dir = 0; dir < BL_SPACEDIM; dir++) {
+        Hcoeffs[dir].resize(nlevs,PArrayManage);
+        Jacobian[dir].resize(nlevs,PArrayManage);
+        for (int lev = 0; lev < nlevs; lev++) {
+            BoxArray grids = BoxArray(amrp->getLevel(start_level+lev).boxArray()).surroundingNodes(dir);
+            Hcoeffs[dir].set(lev, new MultiFab(grids,1,0));
+            Jacobian[dir].set(lev, new MultiFab(grids,3,0));
+        }
+    }
+    velPhase.resize(nlevs);
+    for (int lev = 0; lev <nlevs; lev++) {
+        velPhase[lev] = dynamic_cast<PorousMedia*>(&amrp->getLevel(start_level+lev))->u_mac_curr;
+    }
+}
+
+bool
+PorousMedia::RichardNLSdata::AdjustDt(Real                dt, 
+                                      PorousMedia::Reason nl_solver_status, 
+                                      Real                abs_err, 
+                                      Real                rel_err, 
+                                      Real&               dt_new) // Note: return bool for whether run should stop
+{
+    dt_new = dt;
+
+    if (nl_solver_status == RICHARD_SUCCESS)
+    {
+        num_consecutive_failures_1 = 0;
+        num_consecutive_failures_2 = 0;
+        last_chance = false;
+
+        // abs_err increase or decrease?
+        if (first) {
+            num_consecutive_increases = 0;
+            num_consecutive_success = 0;
+            first = false;
+        }
+        else {
+
+            if (abs_err > prev_abs_err) {
+                num_consecutive_increases++;
+                num_consecutive_success = 0;
+            }
+            else {
+                num_consecutive_success++;
+                num_consecutive_increases = 0;
+            }
+        }
+
+        if (num_consecutive_increases >= max_num_consecutive_increases) {
+            ResetJacobianCounter();
+            dt_new = dt*consecutive_increase_reduction_factor;
+        }
+        else {
+            if (nl_iterations_taken < min_nl_iterations_for_dt && 
+                (prev_abs_err <= 0  ||   prev_abs_err > abs_err) ) {
+                
+                if (num_consecutive_success >= max_num_consecutive_success)
+                {
+                    num_consecutive_success = 0;
+                    Real fac = time_step_increase_factor;
+                    if (nl_iterations_taken < min_nl_iterations_for_dt_2) {
+                        fac = time_step_increase_factor_2;
+                    }
+                    dt_new = dt * fac;
+                }
+            }
+            else {
+                ResetJacobianCounter();
+                num_consecutive_success = 0;
+            }
+                            
+            if (nl_iterations_taken > max_nl_iterations_for_dt )
+            {
+                ResetJacobianCounter();
+                dt_new = dt * time_step_reduction_factor;
+            }
+        }
+
+        prev_abs_err = abs_err;
+
+    }
+    else {
+
+        // step was rejected
+        num_consecutive_success = 0;
+        ResetJacobianCounter();
+        num_consecutive_failures_1++;
+
+        if (num_consecutive_failures_1 <= steady_max_consecutive_failures_1)
+        {
+            dt_new = dt * steady_time_step_retry_factor_1;
+        }
+        else
+        {
+            num_consecutive_failures_2++;
+
+            if (num_consecutive_failures_2 <= steady_max_consecutive_failures_2)
+            {
+                dt_new = dt * steady_time_step_retry_factor_2;
+            }
+            else
+            {
+                if (last_chance)  return false;
+                dt_new = dt * steady_time_step_retry_factor_f;
+                last_chance = true;
+            }
+        }
+    }
+
+    return true;
+}
+
+PorousMedia::RichardNLSdata
+PorousMedia::BuildInitNLS()
+{
+    int nlevs = parent->finestLevel() - level + 1;
+    RichardNLSdata nld(0,nlevs,parent);
+    nld.SetMaxJacobianReuse(0); // Currently switched off because it didnt seem to buy anything
+    
+    nld.SetMaxConsecutiveFails(steady_max_consecutive_failures_1);
+    nld.SetDtRetryFactor(steady_time_step_retry_factor_1);
+    
+    nld.SetMaxConsecutiveFails2(steady_max_consecutive_failures_2);
+    nld.SetDtRetryFactor2(steady_time_step_retry_factor_2);
+    nld.SetDtRetryFactorF(steady_time_step_retry_factor_f);
+    
+    nld.SetMinNewtonIterationsForDt(steady_min_iterations);
+    nld.SetDtIncreaseFactor(steady_time_step_increase_factor);
+    nld.SetMinNewtonIterationsForDt2(steady_min_iterations_2);
+    nld.SetDtIncreaseFactor2(steady_time_step_increase_factor_2);
+    
+    nld.SetMaxNewtonIterationsForDt(steady_max_iterations);
+    nld.SetDtReductionFactor(steady_time_step_reduction_factor);
+    
+    nld.SetMaxNewtonIterations(steady_limit_iterations);
+    
+    nld.SetMaxConsecutiveErrIncrease(steady_max_num_consecutive_increases);
+    nld.SetConsecutiveErrIncreaseDtReduction(steady_consecutive_increase_reduction_factor);
+    
+    nld.SetMaxConsecutiveSuccess(steady_max_num_consecutive_success);
+    return nld;
+}
 
 void
 PorousMedia::richard_init_to_steady()
@@ -1197,77 +1404,59 @@ PorousMedia::richard_init_to_steady()
                         - getLevel(k).get_state_data(0).prevTime();
                 }
 
-                int num_consecutive_failures_1 = 0;
-                int num_consecutive_failures_2 = 0;
-                int num_consecutive_increases = 0;
-                int num_consecutive_success = 0;
-                bool last_chance = false;
+                Real dt_init = steady_init_time_step;
+                Real t_max = steady_max_psuedo_time;
+                int k_max = steady_max_time_steps;
+                Real t_eps = 1.e-8*dt_init;
 
-                Real dt = steady_init_time_step;
-                Real steady_time_eps = 1.e-8*dt;
                 MultiFab tmp(grids,1,1);
                 MultiFab tmpP(grids,1,1);
                 MultiFab& S_new = get_new_data(State_Type);
                 int nc = 0; // Component of water in state
 
-                Real total_psuedo_time = 0;
                 Real prev_abs_err, init_abs_err;
                 Real rel_err = -1;
                 Real abs_err = -1;
- 
+
+                Real dt = dt_init;
+                Real t = 0;
                 bool first = true;
                 int k = 0;
                 bool solved = false;
-                bool continue_iterations = (!solved) && (k < steady_max_time_steps) && (total_psuedo_time<steady_max_psuedo_time);
-
+                bool continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
+ 
                 PorousMedia::Reason ret;
-                RichardNLSdata nld;
+                RichardNLSdata nld = BuildInitNLS(); // Build the context for the nonlinear multilevel solve for the init
 
-                // Build nl solver context
-                if (do_multilevel_full) {
-                    int nlevs = parent->finestLevel() - level + 1;
-                    BuildRichardNLSdata(nld,0,nlevs);
-                }
-
+                int total_num_Newton_iterations = 0;
+                int total_rejected_Newton_steps = 0;
                 while (continue_iterations)
                 {
                     MultiFab::Copy(tmp,S_new,nc,0,1,0);
                     tmp.mult(-1.0);
 
                     if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "  t=" << total_psuedo_time 
+                        std::cout << tag << "  t=" << t 
                                   << ", n=" << k << ", dt=" << dt << '\n';
                     }
 
-                    // FIXME: Put max iters inside ret structure....
-                    // FIXME: Should we enable a single-level solve for a ml system
-                    //  (grid sequencing, etc)?
-                    int curr_nwt_iter = steady_limit_iterations;
-
                     if (do_multilevel_full) {
-                        ret = richard_composite_update(dt,curr_nwt_iter,nld);
+                        nld.ResetCounters();
+                        ret = richard_composite_update(dt,nld);
+                        total_num_Newton_iterations += nld.NLIterationsTaken();
                     }
                     else {
+                        int curr_nwt_iter = steady_limit_iterations;
                         ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+                        total_num_Newton_iterations += curr_nwt_iter;
                     }
+
 
                     if (ret == RICHARD_SUCCESS)
                     {
-                        k++;
-                        Real old_t = total_psuedo_time;
-                        total_psuedo_time += dt;
-
-                        // Small adjustment to clean things up
-                        if ( std::abs(steady_max_psuedo_time-total_psuedo_time) < steady_time_eps ) {
-                            total_psuedo_time = steady_max_psuedo_time;
-                            dt = steady_max_psuedo_time-old_t;
-                        }                            
-
                         prev_abs_err = abs_err;
-
                         MultiFab::Add(tmp,S_new,nc,0,1,0);
                         abs_err = tmp.norm2(0);
-
                         if (first){
                             init_abs_err = abs_err;
                             first = false;
@@ -1275,139 +1464,38 @@ PorousMedia::richard_init_to_steady()
                         else {
                             rel_err = abs_err / init_abs_err;
                         }
-                          
-                        solved = ((abs_err <= steady_tolerance) || ((rel_err>0)  && (rel_err <= steady_tolerance)) );
-                        continue_iterations = (!solved) && (k < steady_max_time_steps) && (total_psuedo_time<steady_max_psuedo_time);
-
-                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
-                            std::cout << tag << "             - step accepted."
-                                      << "   newton iters=" << curr_nwt_iter << ", "
-                                      << "   abs_err=" << abs_err;
-                            if (rel_err > 0) {
-                                std::cout << ", rel_err=" << rel_err;
-                            }
-                            std::cout << std::endl;
-                        }
-
-
-                        num_consecutive_failures_1 = 0;
-                        num_consecutive_failures_2 = 0;
-                        last_chance = false;
-
-                        if (prev_abs_err > 0) {
-                            if (abs_err > prev_abs_err) {
-                                num_consecutive_increases++;
-                                num_consecutive_success = 0;
-                            }
-                            else {
-                                num_consecutive_success++;
-                                num_consecutive_increases = 0;
-                            }
-                        }
-                        else {
-                            num_consecutive_increases = 0;
-                            num_consecutive_success = 0;
-                        }
-                        
-                        if (num_consecutive_increases >= steady_max_num_consecutive_increases) {
-                            dt *= steady_consecutive_increase_reduction_factor;
-                        }
-                        else {
-
-                            if (curr_nwt_iter < steady_min_iterations && 
-                                prev_abs_err > 0  &&  prev_abs_err > abs_err) {
-
-                                if (num_consecutive_success >= steady_max_num_consecutive_success) {
-                                    num_consecutive_success = 0;
-                                    dt *= steady_time_step_increase_factor;
-                                }
-                            }
-                            else {
-                                num_consecutive_success = 0;
-                            }
-                            
-                            if (curr_nwt_iter > steady_max_iterations ) {
-                                dt *= steady_time_step_reduction_factor;
-                            }
-                        }
                     }
                     else {
 
-                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                        {
-                            std::cout << tag << "             - step rejected: ";
-                            if (ret == RICHARD_LINEAR_FAIL) {
-                                std::cout << " - linear solver failure ";
-                            }
-                            else if ( ret == RICHARD_NEWTON_FAIL) {
-                                std::cout << tag << " - nonlinear solver failure ";
-                            }
-                            std::cout << std::endl;
-                        }
-
-                        num_consecutive_success = 0;
-
-                        if (last_chance) {
-                            continue_iterations = false;
-                        }
-                        else {
-                            num_consecutive_failures_1++;
-                            tmp.mult(-1.0);
-                            MultiFab::Copy(S_new,tmp,0,0,1,1); // Set S_new to old solution
-                            
-                            if (num_consecutive_failures_1 <= steady_max_consecutive_failures_1) {
-                                dt *= steady_time_step_retry_factor_1;
-                                if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                    std::cout << tag << " - **********  Note: this failure level 1, scaling dt by " 
-                                              << steady_time_step_retry_factor_1
-                                              << " and retrying" << std::endl;
-                            }
-                            else {
-                                num_consecutive_failures_2++;
-
-                                if (num_consecutive_failures_2 <= steady_max_consecutive_failures_2) {
-                                    dt *= steady_time_step_retry_factor_2;
-                                    if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                        std::cout << tag << " - **********  Note: this is failure level 2, scaling dt by "
-                                                  << steady_time_step_retry_factor_2
-                                                  << " and retrying" << std::endl;
-                                }
-                                else {
-                                    
-                                    if (! last_chance) {
-                                        last_chance = true;
-                                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                            std::cout << tag << " - **********  Note: this is failure level 3, scaling dt by "
-                                                      << steady_time_step_retry_factor_f
-                                                      << " and retrying one last time..." << std::endl;
-                                    }
-                                }
-                            }
-                        }
+                        total_rejected_Newton_steps++;
                     }
 
-                    if (richard_init_to_steady_verbose>2 &&  ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "    Iteration status counters: " << std::endl;
-                        std::cout << tag << "      num_consecutive_success: " << num_consecutive_success << std::endl;
-                        std::cout << tag << "      num_consecutive_failures_1: " << num_consecutive_failures_1 << std::endl;
-                        std::cout << tag << "      num_consecutive_failures_2: " << num_consecutive_failures_2 << std::endl;
-                        std::cout << tag << "      num_consecutive_increases: " << num_consecutive_increases << std::endl;
-                        std::cout << tag << "      last_chance: " << last_chance << std::endl;
+                    Real dt_new;
+                    bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
+
+                    if (ret == RICHARD_SUCCESS)
+                    {
+                        k++;
+                        t += dt;
+                        solved = ((abs_err <= steady_tolerance) || ((rel_err>0)  && (rel_err <= steady_tolerance)) );
+                        continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
                     }
 
-                    dt = std::min(dt, steady_max_psuedo_time-total_psuedo_time);
+                    dt = std::min(dt_new, t_max-t);
                 }
 
                 if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                    std::cout << tag << "Total psuedo-time advanced " << total_psuedo_time << std::endl;
+                    std::cout << tag << " Total psuedo-time advanced: " << t << " in " << k << " steps" << std::endl;
+                    std::cout << tag << "      Newton iters: " << total_num_Newton_iterations << std::endl;
+                    std::cout << tag << "      Rejected steps: " << total_rejected_Newton_steps << std::endl;
                 }
 
                 if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
                     if (solved) {
-                        std::cout << tag << "Success!  Steady solution found" << std::endl;
+                        std::cout << tag << " Success!  Steady solution found" << std::endl;
                     }
                     else {
-                        std::cout << tag << "Warning: psuedo-time to steady iterations failed.  Continuing..." << std::endl;
+                        std::cout << tag << " Warning: solution is not steady.  Continuing..." << std::endl;
                     }
                 }
 
@@ -2476,11 +2564,10 @@ PorousMedia::advance_multilevel_richard (Real time,
   // 
   // Time stepping for richard's equation
   //
-  int curr_nwt_iter;
   int nlevs = parent->finestLevel() - level + 1;
-  RichardNLSdata nld;
-  PorousMedia::BuildRichardNLSdata(nld,0,nlevs);
-  PorousMedia::Reason ret = richard_composite_update(dt,curr_nwt_iter,nld);
+  RichardNLSdata nld(0,nlevs,parent);
+  PorousMedia::Reason ret = richard_composite_update(dt,nld);
+  int curr_nwt_iter = nld.NLIterationsTaken();
   BL_ASSERT(ret == RICHARD_SUCCESS);
 
   for (int lev=0; lev<nlevs; lev++)
@@ -5287,7 +5374,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 // Richard equation: Time-dependent solver.  Only doing a first-order implicit scheme
 //
 PorousMedia::Reason 
-PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSdata& nl_data)
+PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_composite_update()");
   BL_ASSERT(have_capillary == 1);
@@ -5307,17 +5394,10 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
   PArray <MultiFab> res_fix(nlevs,PArrayManage);
     
   int do_upwind = 1;
-  int  max_itr_nwt = total_nwt_iter;
+  int  max_itr_nwt = nl_data.MaxNLIterations();
   Real max_err_nwt = 1e-6;
-  int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
-
-  bool do_Jacobian_eval = false;
-  if (nl_data.num_Jacobian_reuses_remaining-- <= 0) {
-      do_Jacobian_eval = true;
-      nl_data.num_Jacobian_reuses_remaining = nl_data.max_num_Jacobian_reuse;
-  }
 
   for (int lev=0; lev<nlevs; lev++)
   {
@@ -5351,7 +5431,8 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
 
       fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
 				 u_mac_local[lev],0,do_upwind,pcTime);
-      if (do_Jacobian_eval)
+
+      if (nl_data.UpdateJacobian(lev))
       {
           fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
                                     u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
@@ -5379,9 +5460,9 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
 
   if (do_richard_sat_solve)
     {
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.success)) 
+        while ((nl_data.NLIterationsTaken() < nl_data.MaxNLIterations()) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
-          itr_nwt++;
+          nl_data++;
 	  diffusion->richard_composite_iter(dt,nlevs,nc,gravity,density,res_fix,
 					    alpha,cmp_pcp1,cmp_pcp1_dp,u_mac_local,
 					    do_upwind,linear_status); 
@@ -5410,8 +5491,10 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
 	      fine_lev.compute_vel_phase(u_mac_local[lev],0,pcTime);
 	      fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
 					 u_mac_local[lev],0,do_upwind,pcTime);
-	      fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-					u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+              if (nl_data.UpdateJacobian(lev)) {
+                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
+                                            u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+              }
  	    }
         }
     }
@@ -5427,9 +5510,9 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
 	  fine_lev.calc_richard_alpha(&dalpha[lev],pcTime);
 	}
 
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.success)) 
+      while ((nl_data.NLIterationsTaken() < nl_data.MaxNLIterations()) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
-          itr_nwt++;
+          nl_data++;
 	  diffusion->richard_composite_iter_p(dt,nlevs,nc,gravity,density,res_fix,
                                               alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
                                               u_mac_local,do_upwind,linear_status); 
@@ -5461,8 +5544,10 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
               fine_lev.compute_vel_phase(u_mac_local[lev],0,pcTime);
               fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
                                          u_mac_local[lev],0,do_upwind,pcTime);
-              fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-                                        u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+              if (nl_data.UpdateJacobian(lev)) {
+                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
+                                            u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+              }
               fine_lev.calc_richard_alpha(&dalpha[lev],pcTime);
           }
 	}
@@ -5472,10 +5557,11 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
   if (!linear_status.success) {
       retVal = RICHARD_LINEAR_FAIL;
   }
-  if (itr_nwt >= max_itr_nwt) {
+  if (nl_data.NLIterationsTaken() >= nl_data.MaxNLIterations()) {
       retVal = RICHARD_NEWTON_FAIL;
       if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
-          std::cout << "     **************** Newton failed: too many iterations (max = " << max_itr_nwt << '\n'; 
+          std::cout << "     **************** Newton failed: too many iterations (max = "
+                    << nl_data.MaxNLIterations() << '\n'; 
   }
 
   if (retVal != RICHARD_SUCCESS) {
@@ -5483,11 +5569,10 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter, RichardNLSd
   }
 
   if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor() && retVal == RICHARD_SUCCESS) {
-      std::cout << "     Newton converged in " << itr_nwt << " iterations (max = "
-                << total_nwt_iter << ") with err: " 
+      std::cout << "     Newton converged in " << nl_data.NLIterationsTaken() << " iterations (max = "
+                << nl_data.MaxNLIterations() << ") with err: " 
                 << err_nwt << " (tol = " << max_err_nwt << ")\n";
   }
-  total_nwt_iter = itr_nwt;
 
 
   Real run_time = ParallelDescriptor::second() - strt_time;
