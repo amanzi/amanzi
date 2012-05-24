@@ -247,8 +247,8 @@ int MFD3D::darcy_mass_inverse_optimized(int cell, const Tensor& permeability,
   int ok = L2_consistency_inverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  stability_optimized(cell, permeability, R, Wc, W);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  ok = stability_optimized(cell, R, Wc, W);
+  return ok;
 }
 
 
@@ -565,7 +565,7 @@ int MFD3D::stability_monotone_hex(int cell, const Tensor& T,
 * matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 ****************************************************************** */
-int MFD3D::stability_optimized(int cell, const Tensor& T,
+int MFD3D::stability_optimized(int cell,
                                Teuchos::SerialDenseMatrix<int, double>& N,
                                Teuchos::SerialDenseMatrix<int, double>& Mc,
                                Teuchos::SerialDenseMatrix<int, double>& M)
@@ -576,8 +576,8 @@ int MFD3D::stability_optimized(int cell, const Tensor& T,
 
   // find null space of N^T
   Teuchos::SerialDenseMatrix<int, double> U(nrows, nrows);
-  int info, size = 5 * d + 2 * nrows;
-  double V, S[ncols], work[size];
+  int info, size = 5 * d + 3 * nrows;
+  double V, S[nrows], work[size];
 
   Teuchos::LAPACK<int, double> lapack;
   lapack.GESVD('A', 'N', nrows, ncols, N.values(), nrows,  // N = u s v
@@ -652,24 +652,11 @@ int MFD3D::stability_optimized(int cell, const Tensor& T,
       }
     }
 
-    int ok;
-    for (int k = 0; k < mcols; k++) {  // check strict diagonal dominance
-      ok = 0;
-      double scale = P(k, k);
-      if (scale <= 0.0) break;
-
-      double sum = 0.0;
-      for (int l = 0; l < mcols; l++) sum += fabs(P(k, l));
-      if (sum > scale * 1.9) break;
-
-      ok = 1; 
-    }
-    
-    if (ok) break;
+    // check SPD property (we use allocated memory)
+    Teuchos::SerialDenseMatrix<int, double> Ptmp(P);
+    lapack.SYEV('N', 'U', mcols, Ptmp.values(), mcols, S, work, size, &info); 
+    if (S[0] > 0.0) break;
   }
-
-  // project solution on the positive quadrant and convert to matrix
-  for (int i = 0; i < nparam; i++) G(i) = std::max<double>(G(i), 0.0);
 
   // add stability term U G U^T
   for (int i = 0; i < nrows; i++) {

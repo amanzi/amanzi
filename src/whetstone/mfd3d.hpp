@@ -83,7 +83,7 @@ class MFD3D {
   int stability_monotone_hex(int cell, const Tensor& T,
                              Teuchos::SerialDenseMatrix<int, double>& Mc,
                              Teuchos::SerialDenseMatrix<int, double>& M);
-  int stability_optimized(int cell, const Tensor& T,
+  int stability_optimized(int cell,
                           Teuchos::SerialDenseMatrix<int, double>& N,
                           Teuchos::SerialDenseMatrix<int, double>& Mc,
                           Teuchos::SerialDenseMatrix<int, double>& M);
