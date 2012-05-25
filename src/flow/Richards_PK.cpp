@@ -258,9 +258,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   preconditioner->createMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    double pokay = 100 * matrix->nokay() / double(ncells_owned);
-    double ppassed = 100 * matrix->npassed() / double(ncells_owned);
-    std::printf("Richards PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
+    int nokay = matrix->nokay();
+    int npassed = matrix->npassed();
+    std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
   // (re)initialize pressure and saturation

@@ -140,12 +140,6 @@ void Flow_PK::UpdateBoundaryConditions(
       }
     }
   }
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Richards PK: assigned zero flux boundary condition to%7d faces\n", missed);
-  }
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    std::printf("Richards PK: number of influx seepage faces is %9d\n", nseepage);
-  }
 
   // verify that the algebraic problem is consistent
 #ifdef HAVE_MPI
@@ -153,10 +147,26 @@ void Flow_PK::UpdateBoundaryConditions(
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
   if (! flag_essential_bc) {
-     Errors::Message msg; 
-     msg << "Flow PK: No essential boundary conditions, the solver may fail.";
-     Exceptions::amanzi_throw(msg);
+    Errors::Message msg; 
+    msg << "Flow PK: No essential boundary conditions, the solver may fail.";
+    Exceptions::amanzi_throw(msg);
   }
+
+  // verbose output
+  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+#ifdef HAVE_MPI
+    int missed_tmp = missed, nseepage_tmp = nseepage;
+    mesh_->get_comm()->SumAll(&missed_tmp, &missed, 1);
+    mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
+#endif
+    if (MyPID == 0) {
+      std::printf("Richards PK: number of influx seepage faces is %9d\n", nseepage);
+    }
+  }
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
+    std::printf("Richards PK: assigned zero flux boundary condition to%7d faces\n", missed);
+  }
+
 }
 
 

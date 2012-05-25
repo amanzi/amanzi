@@ -68,9 +68,18 @@ void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
     Mff_cells_.push_back(Mff);
 
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
+      Errors::Message msg("Matrix_MFD: unexpected failure of LAPACK in WhetStone.");
+      Exceptions::amanzi_throw(msg);
+    }
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) nokay_++;
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_PASSED) npassed_++;
   }
+
+  // sum up the numbers across processors
+  int nokay_tmp = nokay_, npassed_tmp = npassed_;
+  mesh_->get_comm()->SumAll(&nokay_tmp, &nokay_, 1);
+  mesh_->get_comm()->SumAll(&npassed_tmp, &npassed_, 1);
 }
 
 
