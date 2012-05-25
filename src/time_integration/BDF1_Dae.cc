@@ -14,6 +14,7 @@
 #include "BDF1_Dae.hh"
 #include "BDF2_SolutionHistory.hpp"
 #include "BDF2_fnBase.hpp"
+#include "Matrix_MFD.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -556,20 +557,18 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
   lsParams.set("Aztec Solver", "GMRES");  
   lsParams.set("Max Iterations", 800);  
-  lsParams.set("Tolerance", 1e-4); 
-  lsParams.set("Preconditioner", "None");
+  lsParams.set("Tolerance", 1e-1); 
+//   lsParams.set("Preconditioner", "None");
 //   lsParams.set("Preconditioner", "Ifpack");
-  lsParams.set("Max Age Of Prec", 5); 
+  lsParams.set("Max Age Of Prec", 0); 
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
   // NOX_Epetra_Interface
   
-//   AmanziFlow::Flow_PK* flow_problem = dynamic_cast<AmanziFlow::Flow_PK*> &fn;
+
   
-  
-  
-  const Teuchos::RCP<NOX::Epetra::Interface::Required> interface = 
+  const Teuchos::RCP<AmanziFlow::Interface_NOX> interface = 
     Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, u0, t, h));
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
@@ -579,16 +578,23 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<NOX::Epetra::MatrixFree> MF = 
     Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, nox_u));
 //   3. Finite Difference (Epetra_RowMatrix)
-  Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
-      Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_u));
+//   Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
+//       Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_u));
 
+   Teuchos::RCP<AmanziFlow::Matrix_MFD> MFD = 
+      Teuchos::rcp(new AmanziFlow::Matrix_MFD());
+      
+//     AmanziFlow::Matrix_MFD* MFD;
+    
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = MF;
-  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
+  
+    
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iJac,  MF, iPrec, FD, nox_u));
+						      iJac,  MF, iPrec, *MFD, nox_u));
 
   // Create the Group
   Teuchos::RCP<NOX::Epetra::Group> grp =
@@ -605,13 +611,13 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
   Teuchos::RCP<NOX::StatusTest::Combo> converged =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(200));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(2000));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 

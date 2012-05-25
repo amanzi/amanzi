@@ -47,12 +47,11 @@ bool Interface_NOX::computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType 
 bool Interface_NOX::computePreconditioner(
     const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params)
 {
-  // We assume the input operator is the same one we handed to NOX.
-  //ASSERT(&M == &(FPK_->NOX_Precon())); XXX
-
-//   if (lag_count_ == 0) FPK_->NOX_ComputePrecon(x);
+ 
   lag_count_++;
   lag_count_ %= lag_prec_;
+  
+  FPK_->compute_precon(time, deltaT, x, M, params);
 
   return true;
 }

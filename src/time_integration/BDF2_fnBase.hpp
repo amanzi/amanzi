@@ -1,6 +1,8 @@
 #ifndef _BDF2_FNBASE_HPP_
 #define _BDF2_FNBASE_HPP_
 
+class Epetra_Operator;
+
 namespace BDF2 {
 
   // this is the interface definition for the BDF2 class
@@ -24,6 +26,9 @@ namespace BDF2 {
 
     // updates the preconditioner
     virtual void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc) = 0;
+    
+    // interface for NOX
+    virtual void compute_precon(const double t, const double dt, const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params){return;};
 
     // check the admissibility of a solution
     // override with the actual admissibility check

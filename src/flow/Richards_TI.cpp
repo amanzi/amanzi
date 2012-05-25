@@ -79,6 +79,23 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
   }
 }
 
+void Richards_PK::compute_precon(const double t, const double dt, const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params){
+
+  std::cout << "Enter  compute_precon\n";
+  exit(0);
+  int disc_method = AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR;
+  ComputePreconditionerMFD(x, preconditioner, disc_method, t, dt, true);
+  
+  Epetra_Operator *Mptr = &M;
+  
+  Mptr = static_cast<Epetra_Operator*>(preconditioner);
+  
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+     std::printf("Richards Flow: updating preconditioner at T(sec)=%9.4e dT(sec)=%9.4e\n", t, dt);
+  }
+	
+}
+
 
 /* ******************************************************************
 * Check difference du between the predicted and converged solutions.                                                 

@@ -68,6 +68,7 @@ class Richards_PK : public Flow_PK {
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
   void update_norm(double rtol, double atol) {};
+  void compute_precon(const double t, const double dt, const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params);
   
 
 
