@@ -277,8 +277,10 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
     
   try {
+
 //     solve_bce(tnew, h, u0, u);
     solve_bce_jfnk(tnew, h, u0, u);
+//     exit(0);
   }
   catch (int itr) { 
     // we end up in here either if the solver took too many iterations, 
@@ -305,6 +307,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  
+  Timer ttotal;
+  
+  ttotal.start();
 
   fpa->nka_restart();
 
@@ -434,6 +440,24 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     if (error < state.ntol)   {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
+
+	ttotal.stop();
+  
+        std::cout << "nonlinear solver takes: " << ttotal << std::endl;
+	
+	//    // Print solution
+	char file_name[25];
+	FILE *ifp;
+	int MyPID = 0;
+	
+	(void) sprintf(file_name, "output_nka.%d",MyPID);
+	ifp = fopen(file_name, "w");
+	for (int i=0; i<u.MyLength(); i++)
+	fprintf(ifp, "%d %E\n", i, u[i]);
+	fclose(ifp);
+
+	exit(0);
+
       }
 
       if ((itr < state.minitr) || (itr > state.maxitr)) {
@@ -441,24 +465,32 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       }
 
       if (divergence_count > 0) throw state.maxitr+1;
-
+      
+      
+  
       return;
     }
   }
   while (true);
+  
+  
 
 }
 
 
 void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vector& u) {
 	
+  Timer ttotal;
+  
+  ttotal.start();
+	
   int NumMyElements = u.MyLength();
-  for (int i=0;i<NumMyElements;i++) u[i] = 1;
+//   for (int i=0;i<NumMyElements;i++) u[i] = 1;
 	
 	
   NOX::Epetra::Vector nox_u(u);
   
-
+//   nox_u =  u;
   	
   // Begin Nonlinear Solver ************************************
 
@@ -476,13 +508,13 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 //   printParams.set("MyPID", MyPID); 
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
-  printParams.set("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning);
+//   printParams.set("Output Information", 
+// 			NOX::Utils::OuterIteration + 
+// 			NOX::Utils::OuterIterationStatusTest + 
+// 			NOX::Utils::InnerIteration +
+// 			NOX::Utils::Parameters + 
+// 			NOX::Utils::Details + 
+// 			NOX::Utils::Warning);
 
   // Create printing utilities
   NOX::Utils utils(printParams);
@@ -506,7 +538,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     newtonParams.set("Forcing Term Method", "Constant");
 //     newtonParams.set("Forcing Term Method", "Type 1");
     //newtonParams.set("Forcing Term Method", "Type 2");
-    //newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
+//     newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
     //newtonParams.set("Forcing Term Maximum Tolerance", 0.1);
   //dirParams.set("Method", "Steepest Descent");
   //Teuchos::ParameterList& sdParams = dirParams.sublist("Steepest Descent");
@@ -538,7 +570,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   
   
   const Teuchos::RCP<NOX::Epetra::Interface::Required> interface = 
-    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, u0, h));
+    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, u0, t, h));
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
@@ -548,7 +580,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, nox_u));
 //   3. Finite Difference (Epetra_RowMatrix)
   Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
-    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_u));
+      Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_u));
 
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
@@ -556,8 +588,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq, iJac, MF,
-						      nox_u));
+						      iJac,  MF, iPrec, FD, nox_u));
 
   // Create the Group
   Teuchos::RCP<NOX::Epetra::Group> grp =
@@ -568,19 +599,19 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
   Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-2));
+    Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-7));
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
   Teuchos::RCP<NOX::StatusTest::Combo> converged =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(200));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 
@@ -597,11 +628,16 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<NOX::Solver::Generic> solver = 
     NOX::Solver::buildSolver(grp, combo, finalParamsPtr);
   NOX::StatusTest::StatusType status = solver->solve();
+  
+//   interface -> printTime();
 
-  if (status == NOX::StatusTest::Converged)
+  if (status == NOX::StatusTest::Converged){
     utils.out() << "Test Passed!" << endl;
+    throw solver->getNumIterations();
+  }
   else {
     utils.out() << "Nonlinear solver failed to converge!" << endl;
+    throw state.maxitr+1;
    }
 
   // Get the Epetra_Vector with the final solution from the solver
@@ -611,25 +647,35 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 // 
 //   // End Nonlinear Solver **************************************
     
-     // Output the parameter list
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << endl << "Final Parameters" << endl
-	 << "****************" << endl;
-    solver->getList().print(utils.out());
-    utils.out() << endl;
-  }
-// 
-//    // Print solution
-  char file_name[25];
-  FILE *ifp;
-  int MyPID = 0;
+//      // Output the parameter list
+//   if (utils.isPrintType(NOX::Utils::Parameters)) {
+//     utils.out() << endl << "Final Parameters" << endl
+// 	 << "****************" << endl;
+//     solver->getList().print(utils.out());
+//     utils.out() << endl;
+//   }
+// // 
+    
+    
+    
+    
+    
+    ttotal.stop();
   
-  (void) sprintf(file_name, "output.%d",MyPID);
-  ifp = fopen(file_name, "w");
-  for (int i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d %E\n", i, u[i]);
-  fclose(ifp);
-
+    std::cout << "nonlinear solver takes: " << ttotal << std::endl;
+    
+    
+//    // Print solution
+//   char file_name[25];
+//   FILE *ifp;
+//   int MyPID = 0;
+//   
+//   (void) sprintf(file_name, "output_jfnk.%d",MyPID);
+//   ifp = fopen(file_name, "w");
+//   for (int i=0; i<NumMyElements; i++)
+//     fprintf(ifp, "%d %E\n", i, u[i]);
+//   fclose(ifp);
+// 
   exit(0);
 	
 }

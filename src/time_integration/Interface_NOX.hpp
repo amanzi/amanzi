@@ -22,13 +22,20 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
                       public NOX::Epetra::Interface::Jacobian,
                       public NOX::Epetra::Interface::Preconditioner {
  public:
-  Interface_NOX(BDF2::fnBase* FPK, const Epetra_Vector& uprev, double dt) : FPK_(FPK), u0(uprev), lag_prec_(1), lag_count_(0) {  deltaT = dt;};
+  Interface_NOX(BDF2::fnBase* FPK, const Epetra_Vector& uprev, double time_, double dt) : 
+		FPK_(FPK), u0(uprev), lag_prec_(1), lag_count_(0) {
+			time = time_;
+			deltaT = dt;
+			fun_eval = 0;
+			fun_eval_time = 0;
+		};
   ~Interface_NOX() {};
 
   // required interface members
   bool computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType flag);
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& J) { assert(false); }
   bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params);
+  void printTime();
 
   inline void setPrecLag(int lag_prec) { lag_prec_ = lag_prec;}
   inline void resetPrecLagCounter() { lag_count_ = 0; }
@@ -39,9 +46,11 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
   BDF2::fnBase* FPK_;
   const Epetra_Vector& u0;	// value at the previous time step
 
-  double deltaT;		// time step
+  double deltaT, time;		// time step
   int lag_prec_;  // the preconditioner is lagged this many times before it is recomputed
   int lag_count_; // this counts how many times the preconditioner has been lagged
+  int fun_eval;
+  double  fun_eval_time;
 };
 
 }  // namespace AmanziFlow
