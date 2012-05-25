@@ -207,10 +207,10 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    std::printf("Richards Flow: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+    std::printf("Richards PK: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
     if (initialize_with_darcy) {
-       std::printf("Richards Flow: initializing with a clipped Darcy pressure\n");
-       std::printf("Richards Flow: clipping saturation value =%5.2g\n", clip_saturation);
+       std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
+       std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
      }
   }
 
@@ -276,10 +276,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     InitializePressureHydrostatic(T0);
     ClipHydrostaticPressure(pmin, clip_saturation, *solution);
     pressure = *solution_cells;
-  } else {
-    DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   }
 
+  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
@@ -560,6 +559,7 @@ void Richards_PK::ComputePreconditionerMFD(
 {
   // setup absolute and compute relative permeabilities
   Epetra_Vector* u_cells = FS->createCellView(u);
+  Epetra_Vector* u_faces = FS->createFaceView(u);
 
   if (!is_matrix_symmetric) {
     CalculateRelativePermeabilityFace(*u_cells);
@@ -576,7 +576,7 @@ void Richards_PK::ComputePreconditionerMFD(
   bc_seepage->Compute(Tp);
   UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
-      *u_cells, atm_pressure,
+      *u_faces, atm_pressure,
       bc_markers, bc_values);
 
   // setup a new algebraic problem
@@ -686,7 +686,7 @@ void Richards_PK::InitializePressureHydrostatic(const double Tp)
   bc_seepage->Compute(Tp);
   UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, atm_pressure,
+      *solution_faces, atm_pressure,
       bc_markers, bc_values);
 
   // set fully saturated media
@@ -724,7 +724,7 @@ void Richards_PK::InitializePressureHydrostatic(const double Tp)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->TrueResidual();
-    std::printf("Richards Flow: initial pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Richards PK: initial pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
   delete solver_tmp;

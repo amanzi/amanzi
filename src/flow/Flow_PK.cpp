@@ -79,7 +79,7 @@ Epetra_Map* Flow_PK::createSuperMap()
 void Flow_PK::UpdateBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
-    const Epetra_Vector& pressure_cells, const double atm_pressure,
+    const Epetra_Vector& pressure_faces, const double atm_pressure,
     std::vector<int>& bc_markers, std::vector<double>& bc_values)
 {
   int flag_essential_bc = 0;
@@ -109,15 +109,14 @@ void Flow_PK::UpdateBoundaryConditions(
     bc_values[f] = bc->second;
   }
 
-  AmanziMesh::Entity_ID_List cells;
+  int nseepage = 0;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    int c = cells[0];  // Assume that face and cell are on the same processor.
 
-    if (pressure_cells[c] < atm_pressure) {
+    if (pressure_faces[f] < atm_pressure) {
       bc_markers[f] = FLOW_BC_FACE_FLUX;
       bc_values[f] = bc->second;
+      nseepage++;
     } else {
       bc_markers[f] = FLOW_BC_FACE_PRESSURE;
       bc_values[f] = atm_pressure;
@@ -126,6 +125,7 @@ void Flow_PK::UpdateBoundaryConditions(
   }
 
   // mark missing boundary conditions as zero flux conditions
+  AmanziMesh::Entity_ID_List cells;
   int missed = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers[f] == FLOW_BC_FACE_NULL) {
@@ -141,7 +141,10 @@ void Flow_PK::UpdateBoundaryConditions(
     }
   }
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Richards Flow: assigned zero flux boundary condition to%7d faces\n", missed);
+    std::printf("Richards PK: assigned zero flux boundary condition to%7d faces\n", missed);
+  }
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    std::printf("Richards PK: number of influx seepage faces is %9d\n", nseepage);
   }
 
   // verify that the algebraic problem is consistent

@@ -145,13 +145,12 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   T_internal = (standalone_mode) ? T_internal : T_physical;
 
   double time = T_internal;
-  bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
   UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, atm_pressure,
+      *solution_faces, atm_pressure,
       bc_markers, bc_values);
 
   // Process other fundamental structures
@@ -280,7 +279,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   UpdateBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, atm_pressure,
+      *solution_faces, atm_pressure,
       bc_markers, bc_values);
 
   // calculate and assemble elemental stifness matrices

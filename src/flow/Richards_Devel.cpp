@@ -27,6 +27,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
   Epetra_Vector solution_new(*solution);
 
   Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->createCellView(solution_old));
+  Teuchos::RCP<Epetra_Vector> solution_old_faces = Teuchos::rcp(FS->createFaceView(solution_old));
   Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->createCellView(solution_new));
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
@@ -51,7 +52,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     bc_seepage->Compute(time);
     UpdateBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_old_cells, atm_pressure,
+        *solution_old_faces, atm_pressure,
         bc_markers, bc_values);
 
     // create algebraic problem
@@ -154,7 +155,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     bc_seepage->Compute(time);
     UpdateBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_cells, atm_pressure,
+        *solution_faces, atm_pressure,
         bc_markers, bc_values);
 
     // create algebraic problem
