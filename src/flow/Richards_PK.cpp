@@ -290,7 +290,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   ti_method = ti_method_sss;
   num_itrs = 0;
   block_picard = 0;
-  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE;
+  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
+                  FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
 
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 

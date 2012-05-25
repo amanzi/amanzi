@@ -82,15 +82,10 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     int num_itrs = solver->NumIters();
     double linear_residual = solver->TrueResidual();
 
-    /*
-    int ndof = ncells_owned + nfaces_owned;
-    for (int c = 0; c < ndof; c++) {
-      solution_new[c] = (solution_old[c] + solution_new[c]) / 2;
-    }
-    */
-
     // error analysis
-    double error = ErrorNorm(solution_old, solution_new);
+    Epetra_Vector solution_diff(*solution_old_cells);
+    solution_diff.Update(-1.0, *solution_new_cells, 1.0);
+    double error = ErrorNormSTOMP(*solution_old_cells, solution_diff);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Picard:%4d   Pressure(error=%9.4e)  solver(%8.3e, %4d)\n",
@@ -130,6 +125,9 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
+
+  Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->createCellView(solution_old));
+  Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->createCellView(solution_new));
 
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
@@ -189,7 +187,9 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
 
     // error estimates
     double sol_norm = FS->normLpCell(solution_new, 2.0);
-    L2error = ErrorNorm(solution_old, solution_new);
+    Epetra_Vector solution_diff(*solution_old_cells);
+    solution_diff.Update(-1.0, *solution_new_cells, 1.0);
+    L2error = ErrorNormPicardExperimental(*solution_old_cells, solution_diff);
 
     if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess.
       dT /= 10;
@@ -265,21 +265,21 @@ void Richards_PK::AddTimeDerivative_MFDfake(
 
 
 /* ******************************************************************
-* Check difference between solutions at times T and T+dT.                                                 
+* Check difference du between the predicted and converged solutions.                                            
 ****************************************************************** */
-double Richards_PK::ErrorNorm(const Epetra_Vector& uold, const Epetra_Vector& unew)
+double Richards_PK::ErrorNormPicardExperimental(const Epetra_Vector& u, const Epetra_Vector& du)
 {
-  double error_norm = 0.0;
-  for (int n = 0; n < ncells_owned; n++) {
-    double tmp = fabs(uold[n] - unew[n]) / (absolute_tol + relative_tol * abs(uold[n]));
-    error_norm = std::max<double>(error_norm, tmp);
+  double error_p = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
+    error_p = std::max<double>(error_p, tmp);
   }
 
 #ifdef HAVE_MPI
-  double buf = error_norm;
-  uold.Comm().MaxAll(&buf, &error_norm, 1);  // find the global maximum
+  double buf = error_p;
+  u.Comm().MaxAll(&buf, &error_p, 1);  // find the global maximum
 #endif
-  return error_norm;
+  return error_p;
 }
 
 }  // namespace AmanziFlow

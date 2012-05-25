@@ -137,7 +137,7 @@ void Richards_PK::ProcessParameterList()
     }
   }
 
-  string mfd3d_method_name = rp_list_.get<string>("Discretization method hint", "none");
+  string mfd3d_method_name = rp_list_.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
 
   // Time integrator for period I, temporary called steady-state time integrator

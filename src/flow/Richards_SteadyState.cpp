@@ -140,21 +140,23 @@ int Richards_PK::AdvanceSteadyState_Picard()
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
-  // update boundary conditions
+  // update steady state boundary conditions
   double time = 0.0;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_head->Compute(time);
-  bc_seepage->Compute(time);
-  UpdateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, atm_pressure,
-      bc_markers, bc_values);
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
+    // update dynamic boundary conditions
+    bc_seepage->Compute(time);
+    UpdateBoundaryConditions(
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_cells, atm_pressure,
+        bc_markers, bc_values);
+
     if (!is_matrix_symmetric) {
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);

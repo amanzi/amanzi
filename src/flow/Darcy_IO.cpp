@@ -81,7 +81,7 @@ void Darcy_PK::ProcessParameterList()
   }
 
   // discretization method
-  string mfd3d_method_name = dp_list_.get<string>("Discretization method hint", "monotone");
+  string mfd3d_method_name = dp_list_.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method); 
 
   // Set up internal clock.

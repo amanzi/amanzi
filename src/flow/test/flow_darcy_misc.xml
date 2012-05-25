@@ -84,7 +84,7 @@
       </ParameterList>
 
       <Parameter name="atmospheric pressure" type="double" value="1"/>
-      <Parameter name="Discretization method hint" type="string" value="none"/>
+      <Parameter name="discretization method" type="string" value="generic mfd"/>
 
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="Direct solve"/>

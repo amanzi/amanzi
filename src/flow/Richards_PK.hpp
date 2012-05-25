@@ -59,7 +59,9 @@ class Richards_PK : public Flow_PK {
 
   // methods for experimental time integration
   int PicardStep(double T, double dT, double& dTnext);
-  double ErrorNorm(const Epetra_Vector& uold, const Epetra_Vector& unew);
+  double ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du);
+  double ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du);
+  double ErrorNormPicardExperimental(const Epetra_Vector& uold, const Epetra_Vector& unew);
  
   // methods required for time integration
   void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
