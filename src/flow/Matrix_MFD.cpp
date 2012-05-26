@@ -32,7 +32,7 @@ Matrix_MFD::~Matrix_MFD()
 * Calculate elemental inverse mass matrices. 
 * WARNING: The original Aff matrices are destroyed.                                            
 ****************************************************************** */
-void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
@@ -86,7 +86,7 @@ void Matrix_MFD::createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
-void Matrix_MFD::createMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
+void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
                                             Epetra_Vector& Krel_faces)
 {
   int dim = mesh_->space_dimension();
@@ -134,7 +134,7 @@ void Matrix_MFD::createMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
 /* ******************************************************************
 * May be used in the future.                                            
 ****************************************************************** */
-void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
+void Matrix_MFD::RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
                                              const Epetra_Vector& new_scale)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -158,7 +158,7 @@ void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
 /* ******************************************************************
 * Simply allocates memory.                                           
 ****************************************************************** */
-void Matrix_MFD::createMFDrhsVectors()
+void Matrix_MFD::CreateMFDrhsVectors()
 {
   Ff_cells_.clear();
   Fc_cells_.clear();
@@ -184,7 +184,7 @@ void Matrix_MFD::createMFDrhsVectors()
 * Applies boundary conditions to elemental stiffness matrices and
 * creates elemental rigth-hand-sides.                                           
 ****************************************************************** */
-void Matrix_MFD::applyBoundaryConditions(
+void Matrix_MFD::ApplyBoundaryConditions(
     std::vector<int>& bc_markers, std::vector<double>& bc_values)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -228,7 +228,7 @@ void Matrix_MFD::applyBoundaryConditions(
 * If matrix is non-symmetric, we generate transpose of the matrix 
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
-void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
+void Matrix_MFD::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
@@ -272,8 +272,8 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
     Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
 
   rhs_ = Teuchos::rcp(new Epetra_Vector(super_map));
-  rhs_cells_ = Teuchos::rcp(FS->createCellView(*rhs_));
-  rhs_faces_ = Teuchos::rcp(FS->createFaceView(*rhs_));
+  rhs_cells_ = Teuchos::rcp(FS->CreateCellView(*rhs_));
+  rhs_faces_ = Teuchos::rcp(FS->CreateFaceView(*rhs_));
 }
 
 
@@ -282,7 +282,7 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 * assemble them into four global matrices. 
 * We need an auxiliary GHOST-based vector to assemble the RHS.
 ****************************************************************** */
-void Matrix_MFD::assembleGlobalMatrices()
+void Matrix_MFD::AssembleGlobalMatrices()
 {
   Aff_->PutScalar(0.0);
 
@@ -324,7 +324,7 @@ void Matrix_MFD::assembleGlobalMatrices()
       rhs_faces_wghost[f] += Ff_cells_[c][n];
     }
   }
-  FS->combineGhostFace2MasterFace(rhs_faces_wghost, Add);
+  FS->CombineGhostFace2MasterFace(rhs_faces_wghost, Add);
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) (*rhs_faces_)[f] = rhs_faces_wghost[f];
@@ -334,7 +334,7 @@ void Matrix_MFD::assembleGlobalMatrices()
 /* ******************************************************************
 * Compute the face Schur complement of 2x2 block matrix.
 ****************************************************************** */
-void Matrix_MFD::computeSchurComplement(
+void Matrix_MFD::ComputeSchurComplement(
     std::vector<int>& bc_markers, std::vector<double>& bc_values)
 {
   Sff_->PutScalar(0.0);
@@ -377,7 +377,7 @@ void Matrix_MFD::computeSchurComplement(
 /* ******************************************************************
 * Linear algebra operations with matrices: r = f - A * x                                                 
 ****************************************************************** */
-double Matrix_MFD::computeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
+double Matrix_MFD::ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
 {
   Apply(solution, residual);
   residual.Update(1.0, *rhs_, -1.0);
@@ -391,7 +391,7 @@ double Matrix_MFD::computeResidual(const Epetra_Vector& solution, Epetra_Vector&
 /* ******************************************************************
 * Linear algebra operations with matrices: r = A * x - f                                                 
 ****************************************************************** */
-double Matrix_MFD::computeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
+double Matrix_MFD::ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
 {
   Apply(solution, residual);
   residual.Update(-1.0, *rhs_, 1.0);
@@ -405,7 +405,7 @@ double Matrix_MFD::computeNegativeResidual(const Epetra_Vector& solution, Epetra
 /* ******************************************************************
 * Initialization of the preconditioner                                                 
 ****************************************************************** */
-void Matrix_MFD::init_ML_preconditioner(Teuchos::ParameterList& ML_list_)
+void Matrix_MFD::InitML_Preconditioner(Teuchos::ParameterList& ML_list_)
 {
   ML_list = ML_list_;
   MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
@@ -415,7 +415,7 @@ void Matrix_MFD::init_ML_preconditioner(Teuchos::ParameterList& ML_list_)
 /* ******************************************************************
 * Rebuild ML preconditioner.                                                 
 ****************************************************************** */
-void Matrix_MFD::update_ML_preconditioner()
+void Matrix_MFD::UpdateML_Preconditioner()
 {
   if (MLprec->IsPreconditionerComputed()) MLprec->DestroyPreconditioner();
   MLprec->SetParameterList(ML_list);
@@ -535,11 +535,11 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 * once (using flag) and in exactly the same manner as in routine
 * Flow_PK::addGravityFluxes_DarcyFlux.
 ****************************************************************** */
-void Matrix_MFD::deriveDarcyMassFlux(const Epetra_Vector& solution,
+void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
                                      const Epetra_Import& face_importer,
                                      Epetra_Vector& darcy_mass_flux)
 {
-  Epetra_Vector* solution_faces = FS->createFaceView(solution);
+  Epetra_Vector* solution_faces = FS->CreateFaceView(solution);
 #ifdef HAVE_MPI
   Epetra_Vector solution_faces_wghost(mesh_->face_map(true));
   solution_faces_wghost.Import(*solution_faces, face_importer, Insert);
@@ -583,7 +583,7 @@ void Matrix_MFD::deriveDarcyMassFlux(const Epetra_Vector& solution,
 * Derive Darcy velocity in cells. 
 * WARNING: It cannot be consistent with the Darcy flux.                                                 
 ****************************************************************** */
-void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_flux,
+void Matrix_MFD::DeriveDarcyVelocity(const Epetra_Vector& darcy_flux,
                                      const Epetra_Import& face_importer,
                                      Epetra_MultiVector& darcy_velocity) const
 {

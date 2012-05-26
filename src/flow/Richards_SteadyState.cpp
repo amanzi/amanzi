@@ -133,8 +133,8 @@ int Richards_PK::AdvanceSteadyState_Picard()
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
-  Epetra_Vector* solution_old_cells = FS->createCellView(solution_old);
-  Epetra_Vector* solution_new_cells = FS->createCellView(solution_new);
+  Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
+  Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
@@ -166,24 +166,24 @@ int Richards_PK::AdvanceSteadyState_Picard()
     }
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
+    matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
+    matrix->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix->AssembleGlobalMatrices();
     rhs = matrix->rhs();  // export RHS from the matrix class
 
     // create preconditioner
-    preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
-    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->assembleGlobalMatrices();
-    preconditioner->computeSchurComplement(bc_markers, bc_values);
-    preconditioner->update_ML_preconditioner();
+    preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
+    preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->AssembleGlobalMatrices();
+    preconditioner->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner->UpdateML_Preconditioner();
 
     // check convergence of non-linear residual
-    L2error = matrix->computeResidual(solution_new, residual);
+    L2error = matrix->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
     rhs->Norm2(&L2norm);
     L2error /= L2norm;

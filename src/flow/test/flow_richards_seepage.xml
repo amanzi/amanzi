@@ -58,17 +58,19 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="atmospheric pressure" type="double" value="101325"/>
+      <Parameter name="discretization method" type="string" value="monotone mfd"/>
+
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
-
-      <Parameter name="atmospheric pressure" type="double" value="101325"/>
-      <Parameter name="Discretization method hint" type="string" value="monotone"/>
 
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="Picard"/>
         <Parameter name="initialize with darcy" type="string" value="yes"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
         <ParameterList name="error control">
           <Parameter name="absolute error tolerance" type="double" value="10.0"/>
@@ -82,12 +84,6 @@
           <Parameter name="end time" type="double" value="1.0e+10"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximal time step" type="double" value="1.0e+8"/>
-        </ParameterList>
-
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-9"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
         </ParameterList>
 
         <ParameterList name="nonlinear solver BDF2">
@@ -112,8 +108,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Water retention model for Material 1">
@@ -173,6 +167,15 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO GMRES">
+      <Parameter name="error tolerance" type="double" value="1e-9"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="200"/>
     </ParameterList>
   </ParameterList>
 

@@ -28,7 +28,7 @@ void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
   ComputePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
-  matrix->computeNegativeResidual(u, f);  // compute A*u - g
+  matrix->ComputeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
@@ -98,7 +98,7 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du)
 {
   double error, error_p = 1e+99, error_s = 1e+99;
-  if (error_control & FLOW_TI_ERROR_CONTROL_PRESSURE) {
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
       double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
@@ -106,7 +106,7 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
     }
   } 
 
-  if (error_control & FLOW_TI_ERROR_CONTROL_SATURATION) {
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     Epetra_Vector dSdP(mesh_->cell_map(false));
     DerivedSdP(u, dSdP);
 

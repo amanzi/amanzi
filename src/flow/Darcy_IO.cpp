@@ -61,7 +61,7 @@ void Darcy_PK::ProcessParameterList()
   bc_flux = bc_factory.createMassFlux();
   bc_seepage = bc_factory.createSeepageFace();
 
-  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);
+  ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
 
   double time = T_internal;
   bc_pressure->Compute(time);
@@ -90,24 +90,48 @@ void Darcy_PK::ProcessParameterList()
 
   // Time integrator for period I, temporary called steady state time integrator
   Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");
-  Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
-
-  max_itrs_sss = solver_list.get<int>("maximal number of iterations", 100);
-  convergence_tol_sss = solver_list.get<double>("error tolerance", 1e-12);
 
   if (sss_list.isParameter("preconditioner")) {
     preconditioner_name_sss_ = sss_list.get<string>("preconditioner");
   } else {
-    msg << "Darcy Problem: steady state time integrator does not define a preconditioner.";
+    msg << "Darcy PK: steady state time integrator does not define a preconditioner.";
     Exceptions::amanzi_throw(msg);
   }
 
   if (! preconditioner_list_.isSublist(preconditioner_name_sss_)) {
-    msg << "Darcy Problem: steady state preconditioner does not exist.";
+    msg << "Darcy PK: steady state preconditioner does not exist.";
     Exceptions::amanzi_throw(msg);
   }
 
+  std::string linear_solver_name;
+  if (sss_list.isParameter("linear solver")) {
+    linear_solver_name = sss_list.get<string>("linear solver");
+  } else {
+    msg << "Darcy PK: steady state time integrator does not define <linear solver>.";
+    Exceptions::amanzi_throw(msg);
+  }
+  ProcessStringLinearSolver(linear_solver_name, &max_itrs_sss, &convergence_tol_sss);
 }
+
+
+/* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Darcy_PK::ProcessStringLinearSolver(
+    const std::string name, int* max_itrs, double* convergence_tol)
+{
+  Errors::Message msg;
+
+  if (! solver_list_.isSublist(name)) {
+    msg << "Richards PK: steady state linear solver does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
+  *max_itrs = tmp_list.get<int>("maximal number of iterations", 100);
+  *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

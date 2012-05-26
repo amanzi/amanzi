@@ -59,17 +59,19 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="atmospheric pressure" type="double" value="10.0"/>
+      <Parameter name="discretization method" type="string" value="monotone mfd"/>
+
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
-
-      <Parameter name="atmospheric pressure" type="double" value="0.0"/>
-      <Parameter name="discretization method" type="string" value="monotone mfd"/>
 
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="BDF2"/>
         <Parameter name="initialize with darcy" type="string" value="yes"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
         <ParameterList name="error control">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
@@ -85,12 +87,6 @@
           <Parameter name="maximal time step" type="double" value="1.0"/>
         </ParameterList>
 
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
         <ParameterList name="nonlinear solver BDF2">
           <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
           <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
@@ -99,8 +95,6 @@
           <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
         </ParameterList>
       </ParameterList>
-
-      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Water Retention Model for Material 1">
@@ -152,9 +146,19 @@
     </ParameterList>
   </ParameterList>
 
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO GMRES">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="400"/>
+    </ParameterList>
+  </ParameterList>
+
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
+      <Parameter name="discretization method" type="string" value="monotone mfd"/>
       <ParameterList name="ML Parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -174,10 +178,6 @@
         <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
       </ParameterList>
     </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="State">
-    <!-- State is not used in the unit test -->
   </ParameterList>
 </ParameterList>
 

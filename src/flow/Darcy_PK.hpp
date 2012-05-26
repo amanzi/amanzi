@@ -57,10 +57,12 @@ class Darcy_PK : public Flow_PK {
   void update_norm(double rtol, double atol) {};
 
   // other main methods
-  void ProcessParameterList();
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-
   void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+
+  // io members
+  void ProcessParameterList();
+  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
 
   // control methods
   void PrintStatistics() const;
@@ -77,6 +79,7 @@ class Darcy_PK : public Flow_PK {
  private:
   Teuchos::ParameterList dp_list_;
   Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList solver_list_;
 
   AmanziGeometry::Point gravity_;
   double rho_, mu_;

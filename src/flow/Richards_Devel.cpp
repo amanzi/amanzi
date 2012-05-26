@@ -26,9 +26,9 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
   Epetra_Vector solution_old(*solution);
   Epetra_Vector solution_new(*solution);
 
-  Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->createCellView(solution_old));
-  Teuchos::RCP<Epetra_Vector> solution_old_faces = Teuchos::rcp(FS->createFaceView(solution_old));
-  Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->createCellView(solution_new));
+  Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->CreateCellView(solution_old));
+  Teuchos::RCP<Epetra_Vector> solution_old_faces = Teuchos::rcp(FS->CreateFaceView(solution_old));
+  Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->CreateCellView(solution_new));
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
@@ -56,23 +56,23 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
         bc_markers, bc_values);
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
+    matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
     AddTimeDerivative_MFDpicard(*solution_cells, *solution_old_cells, dTp, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
+    matrix->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix->AssembleGlobalMatrices();
     rhs = matrix->rhs();
 
     // create preconditioner
-    preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
+    preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
     AddTimeDerivative_MFD(*solution_old_cells, dTp, preconditioner);
-    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->assembleGlobalMatrices();
-    preconditioner->computeSchurComplement(bc_markers, bc_values);
-    preconditioner->update_ML_preconditioner();
+    preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->AssembleGlobalMatrices();
+    preconditioner->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner->UpdateML_Preconditioner();
 
     // call AztecOO solver
     solver->SetRHS(&*rhs);  // AztecOO modifies the right-hand-side.
@@ -127,8 +127,8 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
 
-  Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->createCellView(solution_old));
-  Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->createCellView(solution_new));
+  Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->CreateCellView(solution_old));
+  Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->CreateCellView(solution_new));
 
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
@@ -159,22 +159,22 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
         bc_markers, bc_values);
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
+    matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
     AddTimeDerivative_MFDfake(*solution_cells, dT, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
+    matrix->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix->AssembleGlobalMatrices();
 
     // create preconditioner
-    preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
+    preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
     AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner);
-    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->assembleGlobalMatrices();
-    preconditioner->computeSchurComplement(bc_markers, bc_values);
-    preconditioner->update_ML_preconditioner();
+    preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->AssembleGlobalMatrices();
+    preconditioner->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner->UpdateML_Preconditioner();
 
     // call AztecOO solver
     rhs = matrix->rhs();

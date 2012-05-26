@@ -63,19 +63,18 @@ TEST(FLOW_2D_RICHARDS) {
   FS->set_fluid_density(1.0);
   FS->set_gravity(-1.0);
 
+  Epetra_Vector& p = FS->ref_pressure();
+  for (int c = 0; c < p.MyLength(); c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    p[c] = xc[1] * (xc[1] + 2.0);
+  }
+
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
-
-  // create the initial pressure function
-  Epetra_Vector& p = FS->ref_pressure();
-
-  for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    p[c] = xc[1] * (xc[1] + 2.0);
-  }
+  RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
   // solve the problem
   RPK->AdvanceToSteadyState();
@@ -87,6 +86,11 @@ TEST(FLOW_2D_RICHARDS) {
     GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
     GMV::close_data_file();
   }
+
+  // check the pressure 
+  int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells; c++) CHECK(p[c] > 0.0 && p[c] < 2.0);
+
 
   delete RPK;
 }

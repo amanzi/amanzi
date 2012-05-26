@@ -94,6 +94,7 @@ class Richards_PK : public Flow_PK {
   // io members
   void ProcessParameterList();
   void ProcessStringTimeIntegration(const std::string name, int* method);
+  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -109,7 +110,8 @@ class Richards_PK : public Flow_PK {
 
   double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
-  // control methods
+  // control method
+  void ResetErrorControl(double error) { error_control_ = error; }
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   void PrintStatistics() const;
   
@@ -123,6 +125,7 @@ class Richards_PK : public Flow_PK {
 
  private:
   Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList solver_list_;
   Teuchos::ParameterList rp_list_;
 
   AmanziGeometry::Point gravity_;
@@ -143,7 +146,7 @@ class Richards_PK : public Flow_PK {
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
   int block_picard;
-  int error_control;
+  int error_control_;
 
   int ti_method_sss;  // Parameters for steady-state solution
   std::string preconditioner_name_sss_;

@@ -47,21 +47,28 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   if (global_list.isSublist("Flow")) {
     flow_list = global_list.sublist("Flow");
   } else {
-    Errors::Message msg("Flow_PK: input parameter list does not specify <Flow> sublist.");
+    Errors::Message msg("Richards PK: input parameter list does not have <Flow> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (flow_list.isSublist("Richards Problem")) {
     rp_list_ = flow_list.sublist("Richards Problem");
   } else {
-    Errors::Message msg("Flow_PK: input parameter list does not specify <Richards Problem> sublist.");
+    Errors::Message msg("Richards PK: input parameter list does not have <Richards Problem> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (global_list.isSublist("Preconditioners")) {
     preconditioner_list_ = global_list.sublist("Preconditioners");
   } else {
-    Errors::Message msg("Flow_PK: input parameter list does not specify <Preconditioner> sublist.");
+    Errors::Message msg("Richards PK: input parameter list does not have <Preconditioners> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (global_list.isSublist("Solvers")) {
+    solver_list_ = global_list.sublist("Solvers");
+  } else {
+    Errors::Message msg("Richards PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -69,7 +76,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   dim = mesh_->space_dimension();
 
   // Create the combined cell/face DoF map.
-  super_map_ = createSuperMap();
+  super_map_ = CreateSuperMap();
 
   // Other fundamental physical quantaties
   rho = *(FS->fluid_density());
@@ -97,7 +104,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   bdf2_dae = NULL;
   bdf1_dae = NULL;
   block_picard = 1;
-  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE;
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
   ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
   ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
@@ -157,8 +164,8 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Create the solution (pressure) vector.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  solution_cells = Teuchos::rcp(FS->createCellView(*solution));
-  solution_faces = Teuchos::rcp(FS->createFaceView(*solution));
+  solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
+  solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
   rhs = matrix->rhs();  // import rhs from the matrix
 
@@ -176,8 +183,8 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   // Process other fundamental structures
   K.resize(ncells_owned);
   is_matrix_symmetric = (Krel_method == FLOW_RELATIVE_PERM_CENTERED);
-  matrix->setSymmetryProperty(is_matrix_symmetric);
-  matrix->symbolicAssembleGlobalMatrices(*super_map_);
+  matrix->SetSymmetryProperty(is_matrix_symmetric);
+  matrix->SymbolicAssembleGlobalMatrices(*super_map_);
 
   // Allocate data for relative permeability
   const Epetra_Map& cmap = mesh_->cell_map(true);
@@ -221,9 +228,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "two point flux approximation");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
-  preconditioner->setSymmetryProperty(is_matrix_symmetric);
-  preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner->init_ML_preconditioner(ML_list);
+  preconditioner->SetSymmetryProperty(is_matrix_symmetric);
+  preconditioner->SymbolicAssembleGlobalMatrices(*super_map_);
+  preconditioner->InitML_Preconditioner(ML_list);
 
   // set up new time integration or solver
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
@@ -254,8 +261,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-  matrix->createMFDmassMatrices(mfd3d_method_, K);
-  preconditioner->createMFDmassMatrices(mfd3d_method_preconditioner_, K);
+  matrix->CreateMFDmassMatrices(mfd3d_method_, K);
+  preconditioner->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int nokay = matrix->nokay();
@@ -289,14 +296,14 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   ti_method = ti_method_sss;
   num_itrs = 0;
   block_picard = 0;
-  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
-                  FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
+                   FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
 
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 
   // DEBUG
   // AdvanceToSteadyState();
-  // CommitStateForTransport(FS); CommitState(FS); writeGMVfile(FS); exit(0);
+  // CommitStateForTransport(FS); CommitState(FS); WriteGMVfile(FS); exit(0);
 }
 
 
@@ -320,9 +327,9 @@ void Richards_PK::InitTransient(double T0, double dT0)
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "two point flux approximation");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
-  preconditioner->setSymmetryProperty(is_matrix_symmetric);
-  preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner->init_ML_preconditioner(ML_list);
+  preconditioner->SetSymmetryProperty(is_matrix_symmetric);
+  preconditioner->SymbolicAssembleGlobalMatrices(*super_map_);
+  preconditioner->InitML_Preconditioner(ML_list);
 
   if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
     if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset BDF2 is to delete it.
@@ -356,8 +363,8 @@ void Richards_PK::InitTransient(double T0, double dT0)
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-  matrix->createMFDmassMatrices(mfd3d_method_, K);
-  preconditioner->createMFDmassMatrices(mfd3d_method_preconditioner_, K);
+  matrix->CreateMFDmassMatrices(mfd3d_method_, K);
+  preconditioner->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
   // initialize pressure and saturation
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -380,8 +387,8 @@ void Richards_PK::InitTransient(double T0, double dT0)
   ti_method = ti_method_trs;
   num_itrs = 0;
   block_picard = 0;
-  error_control = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
-                  FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
+                   FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }
@@ -467,9 +474,9 @@ int Richards_PK::Advance(double dT_MPC)
 void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
 {
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
+  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
   Epetra_Vector& pressure = FS_MPC->ref_pressure();  // save pressure
@@ -514,7 +521,7 @@ void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux,
   // create a disctributed flux vector
   Epetra_Vector flux_d(mesh_->face_map(true));
   for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
-  FS->combineGhostFace2MasterFace(flux_d);
+  FS->CombineGhostFace2MasterFace(flux_d);
 
   const Epetra_Vector& phi = FS->ref_porosity();
   AmanziMesh::Entity_ID_List faces;
@@ -540,9 +547,9 @@ void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux,
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   ComputePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
-  double norm_udot = matrix->computeNegativeResidual(u, udot);
+  double norm_udot = matrix->ComputeNegativeResidual(u, udot);
 
-  Epetra_Vector* udot_faces = FS->createFaceView(udot);
+  Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
   udot_faces->PutScalar(0.0);
 
   return norm_udot;
@@ -558,8 +565,8 @@ void Richards_PK::ComputePreconditionerMFD(
     double Tp, double dTp, bool flag_update_ML)
 {
   // setup absolute and compute relative permeabilities
-  Epetra_Vector* u_cells = FS->createCellView(u);
-  Epetra_Vector* u_faces = FS->createFaceView(u);
+  Epetra_Vector* u_cells = FS->CreateCellView(u);
+  Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
   if (!is_matrix_symmetric) {
     CalculateRelativePermeabilityFace(*u_cells);
@@ -580,15 +587,15 @@ void Richards_PK::ComputePreconditionerMFD(
       bc_markers, bc_values);
 
   // setup a new algebraic problem
-  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
+  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
   if (flag_update_ML) AddTimeDerivative_MFD(*u_cells, dTp, matrix);
-  matrix->applyBoundaryConditions(bc_markers, bc_values);
-  matrix->assembleGlobalMatrices();
+  matrix->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix->AssembleGlobalMatrices();
   if (flag_update_ML) {
-    matrix->computeSchurComplement(bc_markers, bc_values);
-    matrix->update_ML_preconditioner();
+    matrix->ComputeSchurComplement(bc_markers, bc_values);
+    matrix->UpdateML_Preconditioner();
   }
 
   // DEBUG
@@ -694,19 +701,19 @@ void Richards_PK::InitializePressureHydrostatic(const double Tp)
   Krel_faces->PutScalar(1.0);
 
   // calculate and assemble elemental stifness matrices
-  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-  matrix->applyBoundaryConditions(bc_markers, bc_values);
-  matrix->assembleGlobalMatrices();
+  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
+  matrix->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix->AssembleGlobalMatrices();
 
-  preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  preconditioner->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
-  preconditioner->applyBoundaryConditions(bc_markers, bc_values);
-  preconditioner->assembleGlobalMatrices();
-  preconditioner->computeSchurComplement(bc_markers, bc_values);
-  preconditioner->update_ML_preconditioner();
+  preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  preconditioner->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
+  preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
+  preconditioner->AssembleGlobalMatrices();
+  preconditioner->ComputeSchurComplement(bc_markers, bc_values);
+  preconditioner->UpdateML_Preconditioner();
 
   // solve symmetric problem
   solver_tmp->SetUserOperator(matrix);
@@ -736,7 +743,7 @@ void Richards_PK::InitializePressureHydrostatic(const double Tp)
 ****************************************************************** */
 void Richards_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity)
 {
-  matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
+  matrix->DeriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 
 

@@ -115,18 +115,18 @@ class Flow_PK : public BDF2::fnBase {
       const Epetra_Vector& pressure_faces, const double atm_pressure,
       std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
-  void applyBoundaryConditions(std::vector<int>& bc_markers,
+  void ApplyBoundaryConditions(std::vector<int>& bc_markers,
                                std::vector<double>& bc_values,
                                Epetra_Vector& pressure_faces);
 
-  void addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
+  void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
   // gravity members
-  void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
+  void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
                             const Epetra_Vector& Krel_cells,
                             const Epetra_Vector& Krel_faces, 
                             Matrix_MFD* matrix);
-  void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
+  void AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
                                   const Epetra_Vector& Krel_cells,
                                   const Epetra_Vector& Krel_faces,
                                   Epetra_Vector& darcy_mass_flux);
@@ -136,17 +136,17 @@ class Flow_PK : public BDF2::fnBase {
   int flow_status() { return flow_status_; }
 
   // control members
-  void validate_boundary_conditions(
+  void ValidateBoundaryConditions(
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; }
-  void writeGMVfile(Teuchos::RCP<Flow_State> FS) const;
+  void WriteGMVfile(Teuchos::RCP<Flow_State> FS) const;
  
   void set_time(double T0, double dT0) { T_internal = T0; dT = dT0; }
   void set_verbosity(int level) { verbosity = level; }
 
   // miscallenous members
-  Epetra_Map* createSuperMap();
-  void identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
+  Epetra_Map* CreateSuperMap();
+  void IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
   // io members
   void ProcessStringMFD3D(const std::string name, int* method);

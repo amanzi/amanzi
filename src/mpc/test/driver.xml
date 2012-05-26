@@ -98,6 +98,14 @@
     </ParameterList>    
   </ParameterList> <!-- End MPC -->
 
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="400"/>
+    </ParameterList>
+  </ParameterList>  <!-- End Solvers -->
+
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
       <ParameterList name="ML Parameters">
@@ -168,15 +176,13 @@
 
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
-      </ParameterList>
-      
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       
       <ParameterList name="steady state time integrator">
         <Parameter name="method" type="string" value="backward Euler"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO CG"/>
 	
         <ParameterList name="error control">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
@@ -192,12 +198,6 @@
           <Parameter name="maximal time step" type="double" value="1.0"/>
         </ParameterList>
 
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
         <ParameterList name="nonlinear solver BDF2">
           <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
           <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
@@ -210,8 +210,6 @@
       <ParameterList name="transient time integrator">
       <!-- Is not used for this test -->
       </ParameterList>
-
-      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="boundary conditions">
 	<ParameterList name="pressure">

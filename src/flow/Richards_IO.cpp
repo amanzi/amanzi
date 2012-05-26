@@ -51,14 +51,14 @@ void Richards_PK::ProcessParameterList()
   }
 
   // Relative permeability method
-  std::string method_name = rp_list_.get<string>("Relative permeability method", "Upwind with gravity");
-  if (method_name == "Upwind with gravity") {
+  std::string method_name = rp_list_.get<string>("relative permeability", "upwind with gravity");
+  if (method_name == "upwind with gravity") {
     Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (method_name == "Cell centered") {
+  } else if (method_name == "cell centered") {
     Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_CENTERED;
-  } else if (method_name == "Upwind with Darcy flux") {
+  } else if (method_name == "upwind with Darcy flux") {
     Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (method_name == "Arithmetic mean") {
+  } else if (method_name == "arithmetic mean") {
     Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
   }
 
@@ -80,7 +80,7 @@ void Richards_PK::ProcessParameterList()
   bc_flux = bc_factory.createMassFlux();
   bc_seepage = bc_factory.createSeepageFace();
 
-  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);
+  ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
 
   double T_physical = FS->get_time();  // set-up internal clock
   T_internal = (standalone_mode) ? T_internal : T_physical;
@@ -147,20 +147,29 @@ void Richards_PK::ProcessParameterList()
     string ti_method_name = sss_list.get<string>("method", "Picard");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
 
+    initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
+    clip_saturation = sss_list.get<double>("clipping saturation value", 0.6);
+
     if (sss_list.isParameter("preconditioner")) {
       preconditioner_name_sss_ = sss_list.get<string>("preconditioner");
     } else {
-      msg << "Richards Problem: steady state time integrator does not define a preconditioner.";
+      msg << "Richards PK: steady state time integrator does not define <preconditioner>.";
       Exceptions::amanzi_throw(msg);
     }
 
     if (! preconditioner_list_.isSublist(preconditioner_name_sss_)) {
-      msg << "Richards Problem: steady state preconditioner does not exist.";
+      msg << "Richards PK: steady state preconditioner does not exist.";
       Exceptions::amanzi_throw(msg);
     }
 
-    initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
-    clip_saturation = sss_list.get<double>("clipping saturation value", 0.6);
+    std::string linear_solver_name;
+    if (sss_list.isParameter("linear solver")) {
+      linear_solver_name = sss_list.get<string>("linear solver");
+    } else {
+      msg << "Richards PK: steady state time integrator does not define <linear solver>.";
+      Exceptions::amanzi_throw(msg);
+    }
+    ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
 
     if (sss_list.isSublist("error control")) {
       Teuchos::ParameterList& err_list = sss_list.sublist("error control");
@@ -181,15 +190,6 @@ void Richards_PK::ProcessParameterList()
       dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);
     } else {
       msg << "Richards Problem: steady state time integrator has no <time control> sublist.";
-      Exceptions::amanzi_throw(msg);
-    }
-
-    if (sss_list.isSublist("linear solver")) {
-      Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
-      max_itrs = solver_list.get<int>("maximal number of iterations", 100);
-      convergence_tol = solver_list.get<double>("error tolerance", 1e-12);
-    } else {
-      msg << "Richards Problem: steady state time integrator has no <linear solver> sublist.";
       Exceptions::amanzi_throw(msg);
     }
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
@@ -260,6 +260,25 @@ void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* meth
     msg << "Richards Problem: unknown time integration method has been specified.";
     Exceptions::amanzi_throw(msg);
   }
+}
+
+
+/* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Richards_PK::ProcessStringLinearSolver(
+    const std::string name, int* max_itrs, double* convergence_tol)
+{
+  Errors::Message msg;
+
+  if (! solver_list_.isSublist(name)) {
+    msg << "Richards PK: steady state linear solver does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
+  *max_itrs = tmp_list.get<int>("maximal number of iterations", 100);
+  *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
 }
 
 

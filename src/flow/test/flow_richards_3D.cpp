@@ -21,8 +21,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh.hh"
-#include "Mesh_STK.hh"
+#include "Mesh_MSTK.hh"
+#include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
@@ -41,34 +41,42 @@ TEST(FLOW_3D_RICHARDS) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) cout << "Test: 3D parallel Richards" << endl;
+
+  if (MyPID == 0) cout << "Test: 3D Richards, 2-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_3D.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  // create a mesh framework
+  // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
-  ParameterList unstructured_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
-  ParameterList mesh_list = unstructured_list.get<ParameterList>("Generate Mesh");
-  RCP<Mesh> mesh = rcp(new Mesh_STK(mesh_list, &comm, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, &comm, gm));
 
-  // create flow state
-  ParameterList state_list = parameter_list.get<ParameterList>("State");
-  State* S = new State(state_list, mesh);
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
+  // create and populate flow state
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+  FS->set_permeability(0.1, 2.0, "Material 1");
+  FS->set_permeability(0.5, 0.5, "Material 2");
+  FS->set_porosity(0.2);
+  FS->set_fluid_viscosity(1.0);
+  FS->set_fluid_density(1.0);
+  FS->set_gravity(-1.0);
+
+  Epetra_Vector& p = FS->ref_pressure();
+  for (int c = 0; c < p.MyLength(); c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    p[c] = xc[2] * (xc[2] + 2.0);
+  }
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
-  RPK->PrintStatistics();
+  RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
   // solve the problem
-  S->set_time(0.0);
   RPK->AdvanceToSteadyState();
   RPK->CommitStateForTransport(FS);
 
@@ -76,11 +84,13 @@ TEST(FLOW_3D_RICHARDS) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
-    GMV::write_cell_data(*(S->get_vertical_permeability()), 0, "vert_permeability");
     GMV::close_data_file();
   }
 
-  delete gm;
+  // check the pressure 
+  int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells; c++) CHECK(p[c] > 0.0 && p[c] < 2.0);
+
+
   delete RPK;
-  delete S;
 }
