@@ -84,7 +84,7 @@ void Permafrost::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
 
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     // calculate water content of each phase and at each time
     double wc_liq1 = (*n_liq1)(c) * (*sat_liq1)(c);
@@ -145,7 +145,7 @@ void Permafrost::DensityLiquid_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& rho_liq,
         const Teuchos::RCP<CompositeVector>& n_liq) {
 
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   double Mw = eos_liquid_->molar_mass();
   for (int c=0; c!=c_owned; ++c) {
     double rho = eos_liquid_->MassDensity(temp("cell",0,c), pres("cell",0,c));
@@ -166,7 +166,7 @@ void Permafrost::UpdateViscosityLiquid_(const Teuchos::RCP<State>& S) {
 void Permafrost::ViscosityLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& visc_liq) {
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     (*visc_liq)("cell",0,c) = eos_liquid_->Viscosity(temp("cell",0,c));
   }
@@ -192,7 +192,7 @@ void Permafrost::DensityGas_(const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<CompositeVector>& rho_gas,
                            const Teuchos::RCP<CompositeVector>& n_gas) {
 
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     double p_sat = eos_gas_->SaturatedVaporPressure(temp("cell",0,c));
     (*mol_frac_gas)("cell",0,c) = p_sat/p_atm;
@@ -220,7 +220,7 @@ void Permafrost::DensityIce_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& rho_ice,
         const Teuchos::RCP<CompositeVector>& n_ice) {
 
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   double Mw = eos_ice_->molar_mass();
   for (int c=0; c!=c_owned; ++c) {
     double rho = eos_ice_->MassDensity(temp("cell",0,c), pres("cell",0,c));
@@ -251,7 +251,7 @@ void Permafrost::UpdateSaturation_(const Teuchos::RCP<State>& S) {
   // store unfrozen saturation S*(pc_gl) in sat_gas, this is 1/B
   UnfrozenSaturation_(S, *pres, *p_atm, sat_gas);
 
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     // see notes, section 1.2.2
     double A = 1.0/(*sat_ice)("cell",0,c);
@@ -276,11 +276,11 @@ void Permafrost::UnfrozenSaturation_(const Teuchos::RCP<State>& S,
     // get the owned cells in that region
     std::string region = (*wrm)->first;
     int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<unsigned int> cells(ncells);
+    std::vector<int> cells(ncells);
     S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
-    for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
       (*sat_star)("cell",0,*c) = (*wrm)->second->saturation(p_atm - pres("cell",0,*c));
     }
   }
@@ -295,11 +295,11 @@ void Permafrost::DUnfrozenSaturationDp_(const Teuchos::RCP<State>& S,
     // get the owned cells in that region
     std::string region = (*wrm)->first;
     int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<unsigned int> cells(ncells);
+    std::vector<int> cells(ncells);
     S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
-    for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
       (*dsat_star)("cell",0,*c) = -(*wrm)->second->d_saturation(p_atm - pres("cell",0,*c));
     }
   }
@@ -324,10 +324,10 @@ void Permafrost::FrozenSaturation_(const Teuchos::RCP<State>& S,
     // get the owned cells in that region
     std::string region = (*wrm)->first;
     int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<unsigned int> cells(ncells);
+    std::vector<int> cells(ncells);
     S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
-    for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
       // use a pc model to evaluate the ice pressure and then rescale it to
       // the gas-liquid retention curve.  See notes eqns 6 and 9.
       double pc_rescaled = pc_ice_liq_model_->CapillaryPressure(temp("cell",0,*c), (*dens_ice)("cell",0,*c));
@@ -356,11 +356,11 @@ void Permafrost::RelativePermeability_(const Teuchos::RCP<State>& S,
     // get the owned cells in that region
     std::string region = (*wrm)->first;
     int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<unsigned int> cells(ncells);
+    std::vector<int> cells(ncells);
     S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
-    for (std::vector<unsigned int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
       double pc = (*wrm)->second->capillaryPressure(sat_liq("cell",0,*c));
       (*rel_perm)("cell",0,*c) = (*wrm)->second->k_relative(pc);
     }
@@ -396,7 +396,7 @@ void Permafrost::AddGravityFluxes_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -433,11 +433,11 @@ void Permafrost::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int f_used = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_used = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   std::vector<bool> done(f_used, false);
 
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();

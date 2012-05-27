@@ -69,7 +69,7 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   S->RequireField("pressure", names2, locations2, 1, true); // need pressure on faces for BC
 
   // abs conductivity tensor
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   Ke_.resize(c_owned);
   for (int c=0; c!=c_owned; ++c) Ke_[c].init(S->mesh()->space_dimension(),1);
 
@@ -216,7 +216,7 @@ void TwoPhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& temp) {
   AmanziMesh::Entity_ID_List cells;
 
-  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
     S->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);

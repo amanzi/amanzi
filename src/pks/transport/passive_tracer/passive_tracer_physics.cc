@@ -36,7 +36,7 @@ void PassiveTracer::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   double dt = S_next_->time() - S_inter_->time();
 
   int c_min = S_->mesh()->cell_map(true).MinLID();
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=c_min; c != c_min+c_owned; ++c) {
     double mols_tracer0 = (*poro0)(c) * (*sat_liq0)(c) * (*conc0)(c);
     double mols_tracer1 = (*poro1)(c) * (*sat_liq1)(c) * (*conc1)(c);
@@ -70,7 +70,7 @@ void PassiveTracer::AddAdvection_(Teuchos::RCP<CompositeVector> g, bool negate) 
 
   // advect and add to residual
   advection_->Apply(bc_flux_);
-  int c_owned = S_next_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
       (*g)("cell",c) -= (*field)("cell",c);

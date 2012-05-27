@@ -157,7 +157,7 @@ void DarcyProblem::init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh>& mesh,
 
   MD.resize(mesh->cell_map(true).NumMyElements());
   for (int j = 0; j < MD.size(); ++j) {
-    mesh->cell_to_coordinates((unsigned int) j, xBegin, xEnd);
+    mesh->cell_to_coordinates((int) j, xBegin, xEnd);
     MD[j].update(x);
   }
 }
@@ -274,7 +274,7 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   Fface.PutScalar(0.0);
   for (int j = 0; j < Pcell.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
+    mesh_->cell_to_faces((int) j, (int*) cface, (int*) cface+6);
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
@@ -364,7 +364,7 @@ void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVecto
 
   }
   for (int j = 0; j < Pcell.MyLength(); ++j) {
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
+    mesh_->cell_to_faces((int) j, (int*) cface, (int*) cface+6);
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     double K = (k_[j] / mu_);
     MD_[j].diff_op(K, Pcell[j], aux1, dummy, aux2);
@@ -386,7 +386,7 @@ void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, dou
   /// should verify F.Map() is FaceMap()
 
   int fdirs[6];
-  unsigned int cface[6];
+  int cface[6];
   double aux1[6], aux2[6], gflux[6], dummy;
 
   // Create a view into the cell pressure segment of P.
@@ -403,7 +403,7 @@ void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, dou
   Epetra_IntVector count(FaceMap(true)); // fills with 0
 
   // Process-local assembly of the face mass fluxes.
-  for (unsigned int j = 0; j < Pcell_own.MyLength(); ++j) {
+  for (int j = 0; j < Pcell_own.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
     mesh_->cell_to_faces(j, cface, cface+6);
     // Gather the local face pressures int AUX1.

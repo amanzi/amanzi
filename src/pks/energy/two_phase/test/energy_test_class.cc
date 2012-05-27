@@ -43,7 +43,7 @@ void EnergyTest::commit_step() {
 void EnergyTest::initialize_owned() {
   Teuchos::RCP<CompositeVector> temp = S0->GetFieldData("temperature", "energy");
 
-  int c_owned = S0->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S0->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     for (int lcv_comp=0; lcv_comp != num_components; ++lcv_comp) {

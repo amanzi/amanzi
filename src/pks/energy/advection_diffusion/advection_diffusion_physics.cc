@@ -27,7 +27,7 @@ void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
 
   // NOTE: gas and liquid are done in a ?? basis, but rock is done in a mass basis
 
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     // add the time derivative of energy density to the residual
     (*g)("cell",0,c) += ((*temp1)("cell",0,c)*(*cell_volume1)(c)
@@ -60,7 +60,7 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
 
   // apply the advection operator and add to residual
   advection_->Apply(bc_flux_);
-  int c_owned = S_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
       (*g)("cell",c) -= (*field)("cell",c);

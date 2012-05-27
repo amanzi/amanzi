@@ -82,7 +82,7 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
 
   // abs perm tensor
   variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_.resize(c_owned);
   for (int c=0; c!=c_owned; ++c) K_[c].init(S->mesh()->space_dimension(),1);
 
@@ -346,7 +346,7 @@ void Permafrost::CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
 
   rel_perm_faces->PutScalar(0.0);
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
 
@@ -375,7 +375,7 @@ void Permafrost::CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<Sta
   std::vector<int> dirs;
 
   rel_perm_faces->PutScalar(0.0);
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
 
@@ -400,7 +400,7 @@ void Permafrost::CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP
   AmanziMesh::Entity_ID_List cells;
 
   rel_perm_faces->PutScalar(0.0);
-  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=f_owned; ++f) {
     S->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
     for (int n=0; n!=cells.size(); ++n) (*rel_perm_faces)(f) += rel_perm_cells(cells[n]);
@@ -412,7 +412,7 @@ void Permafrost::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
   AmanziMesh::Entity_ID_List cells;
 
-  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
     S->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);

@@ -16,6 +16,6 @@ if ( BUILD_TESTS )
 
   # Test: miscaleneous transport routines
   add_executable(transport_test test/Main.cc test/transport_test_class.cc test/transport_advance_simple.cc)
-  target_link_libraries(transport_test ${pk_factory} amanzi_data_structures pk_transport_passive_tracer advection amanzi_solvers amanzi_time_integration amanzi_mesh amanzi_cell_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state ${Amanzi_TPL_UnitTest_LIBRARIES})
+  target_link_libraries(transport_test ${pk_factory} amanzi_data_structures pk_transport_passive_tracer advection amanzi_solvers amanzi_time_integration amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state ${Amanzi_TPL_UnitTest_LIBRARIES})
 
 endif()

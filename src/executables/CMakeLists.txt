@@ -61,7 +61,7 @@ target_link_libraries(ats
                       amanzi_time_integration
                       amanzi_mesh
                       amanzi_mesh_functions
-                      amanzi_cell_geometry
+                      amanzi_geometry
                       amanzi_mesh_factory
                       amanzi_input
                       amanzi_interface
