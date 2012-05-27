@@ -26,19 +26,16 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="Picard"/>
+        <Parameter name="time integration method" type="string" value="Picard"/>
         <Parameter name="initialize with darcy" type="string" value="yes"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
-        <ParameterList name="error control">
+        <ParameterList name="Picard">
           <Parameter name="absolute error tolerance" type="double" value="100"/>
           <Parameter name="relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="convergence tolerance" type="double" value="1e-12"/>
           <Parameter name="maximal number of iterations" type="int" value="600"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1e+10"/>
           <Parameter name="initial time step" type="double" value="1e-7"/>

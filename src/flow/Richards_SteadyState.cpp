@@ -149,7 +149,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
-  while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     UpdateBoundaryConditions(

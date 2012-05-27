@@ -2,7 +2,7 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <!--  REGIONS  -->
+  <!-- REGIONS -->
   <ParameterList name="Regions">
     <ParameterList name="Material 1">
       <ParameterList name="Region: Box">
@@ -16,7 +16,6 @@
         <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array double" value="{0.0,0.5,-1.0}"/>
@@ -61,36 +60,29 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="BDF1"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
         <Parameter name="initialize with darcy" type="string" value="yes"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
-        <ParameterList name="error control">
-          <Parameter name="absolute error tolerance" type="double" value="0.1"/>
-          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
+        <ParameterList name="BDF1">
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
           <Parameter name="initial time step" type="double" value="0.01"/>
           <Parameter name="maximal time step" type="double" value="1.0"/>
-        </ParameterList>
 
-        <ParameterList name="nonlinear solver BDF1">
-          <Parameter name="max iterations" type="int" value="5"/>
-          <Parameter name="min iterations" type="int" value="2"/>
-          <Parameter name="limit iterations" type="int" value="12"/>
-          <Parameter name="nonlinear tolerance" type="double" value="0.1"/>
-          <Parameter name="error abs tol" type="double" value="1"/>
-          <Parameter name="error rel tol" type="double" value="0"/>
-          <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
-          <Parameter name="time step increase factor" type="double" value="1.2"/>
-          <Parameter name="time step reduction factor" type="double" value="0.5"/>
-          <Parameter name="max time step" type="double" value="1e+08"/>
+          <ParameterList name="BDF1 parameters">
+            <Parameter name="max iterations" type="int" value="5"/>
+            <Parameter name="min iterations" type="int" value="2"/>
+            <Parameter name="limit iterations" type="int" value="12"/>
+            <Parameter name="nonlinear tolerance" type="double" value="0.1"/>
+            <Parameter name="error abs tol" type="double" value="1"/>
+            <Parameter name="error rel tol" type="double" value="0"/>
+            <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
+            <Parameter name="time step reduction factor" type="double" value="0.5"/>
+            <Parameter name="max time step" type="double" value="1.0"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
 

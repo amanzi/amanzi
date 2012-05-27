@@ -67,31 +67,9 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="backward Euler"/>
+        <Parameter name="time integration method" type="string" value="none"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO CG"/>
-
-        <ParameterList name="error control">
-          <Parameter name="absolute error tolerance" type="double" value="0.1"/>
-          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
-          <Parameter name="start time" type="double" value="0.0"/>
-          <Parameter name="end time" type="double" value="100.0"/>
-          <Parameter name="initial time step" type="double" value="0.1"/>
-          <Parameter name="maximal time step" type="double" value="1.0"/>
-        </ParameterList>
-
-        <ParameterList name="nonlinear solver BDF2">
-          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-          <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
@@ -158,11 +136,6 @@
       </ParameterList>
     </ParameterList>
         <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-  </ParameterList>
-
-
-  <ParameterList name="State">
-    <!-- State is not used in the unit test -->
   </ParameterList>
 </ParameterList>
 

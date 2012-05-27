@@ -95,6 +95,13 @@ class Richards_PK : public Flow_PK {
   void ProcessParameterList();
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringRelativePermeability(const std::string name, int* method);
+  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
+  std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
+  void ProcessSublistTimeIntegration(
+    Teuchos::ParameterList& list, const std::string name,
+    double* absolute_tol, double* relative_tol, double* residual_tol, int* max_itrs,
+    double* T0, double* T1, double* dT0, double* dTmax);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -124,9 +131,9 @@ class Richards_PK : public Flow_PK {
   int num_nonlinear_steps;
 
  private:
-  Teuchos::ParameterList preconditioner_list_;
-  Teuchos::ParameterList solver_list_;
   Teuchos::ParameterList rp_list_;
+  Teuchos::ParameterList solver_list_;
+  Teuchos::ParameterList preconditioner_list_;
 
   AmanziGeometry::Point gravity_;
   double rho, mu;
@@ -151,13 +158,13 @@ class Richards_PK : public Flow_PK {
   int ti_method_sss;  // Parameters for steady-state solution
   std::string preconditioner_name_sss_;
   int num_itrs_sss, max_itrs_sss;
-  double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
+  double absolute_tol_sss, relative_tol_sss, residual_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
   int initialize_with_darcy;
 
   int ti_method_trs;  // Parameters for transient solution
   std::string preconditioner_name_trs_;
-  double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
+  double absolute_tol_trs, relative_tol_trs, residual_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;
 

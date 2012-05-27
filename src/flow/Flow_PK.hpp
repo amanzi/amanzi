@@ -46,9 +46,6 @@ const int FLOW_TIME_INTEGRATION_BDF1 = 3;
 const int FLOW_TIME_INTEGRATION_BDF2 = 4;
 const double FLOW_INITIAL_DT = 1e-8;
 
-const int FLOW_TIME_INTEGRATION_MAX_ITERATIONS = 100;
-const double FLOW_TIME_INTEGRATION_TOLERANCE = 1e-6;
-
 const int FLOW_RELATIVE_PERM_CENTERED = 1; 
 const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 2; 
 const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
@@ -65,6 +62,11 @@ const int FLOW_MFD3D_OPTIMIZED = 6;
 const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
 const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
 const int FLOW_TI_ERROR_CONTROL_CONSISTENCY = 4;
+
+const double FLOW_TI_ABSOLUTE_TOLERANCE = 1e-4;  // defaults for time integrations
+const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
+const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
+const int FLOW_TI_MAX_ITERATIONS = 400;
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
@@ -150,6 +152,7 @@ class Flow_PK : public BDF2::fnBase {
 
   // io members
   void ProcessStringMFD3D(const std::string name, int* method);
+  void ProcessStringVerbosity(const std::string name, int* verbosity);
 
  public:
   int ncells_owned, ncells_wghost;

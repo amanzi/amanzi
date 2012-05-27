@@ -841,118 +841,84 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
         // create sublists for the steady state time integrator
         Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady state time integrator");
-        Teuchos::ParameterList& sti_error_control = steady_time_integrator.sublist("error control");
-        Teuchos::ParameterList& sti_time_control = steady_time_integrator.sublist("time control");
-        Teuchos::ParameterList& sti_nonlinear_bdf2 = steady_time_integrator.sublist("nonlinear solver BDF2");
-        Teuchos::ParameterList& sti_nonlinear_bdf1 = steady_time_integrator.sublist("nonlinear solver BDF1");
-
-        // set some reasonable defaults...
-        steady_time_integrator.set<std::string>("method","BDF1");
+        steady_time_integrator.set<std::string>("time integration method","BDF1");
+        Teuchos::ParameterList& sti_bdf1 = steady_time_integrator.sublist("BDF1");
+        Teuchos::ParameterList& sti_bdf1_param = sti_bdf1.sublist("BDF1 parameters");
 
 	// link to preconditioner and linear solver for the steady state time integration
 	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
 	steady_time_integrator.set<std::string>("linear solver", "AztecOO");
-
-        sti_error_control.set<double>("absolute error tolerance",1.0);
-        sti_error_control.set<double>("relative error tolerance",0.0);
-        sti_error_control.set<double>("convergence tolerance",1e-12);
-        sti_error_control.set<int>("maximal number of iterations",400);
-
-        sti_time_control.set<double>("start time",0.0);
-        sti_time_control.set<double>("end time",1e+10);
-        sti_time_control.set<double>("initial time step",1e-7);
-        sti_time_control.set<double>("maximal time step",1e+7);
-
-        sti_nonlinear_bdf2.set<int>("Nonlinear solver max iterations", 10);
-        sti_nonlinear_bdf2.set<int>("NKA max vectors", 10);
-        sti_nonlinear_bdf2.set<int>("Maximum number of BDF tries", 20);
-        sti_nonlinear_bdf2.set<double>("Nonlinear solver tolerance", 0.01);
-        sti_nonlinear_bdf2.set<double>("NKA drop tolerance", 5.0e-2);
 
 	bool have_unstructured_algorithm_sublist(false);
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
           if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
             have_unstructured_algorithm_sublist = true;
             Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-	    sti_nonlinear_bdf1.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
-	    sti_nonlinear_bdf1.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
-            sti_nonlinear_bdf1.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
-            sti_nonlinear_bdf1.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
-            sti_nonlinear_bdf1.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
-            sti_nonlinear_bdf1.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
-	    sti_nonlinear_bdf1.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
-	    sti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
-	    sti_nonlinear_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
-	    sti_nonlinear_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
+	    sti_bdf1_param.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
+	    sti_bdf1_param.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
+            sti_bdf1_param.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
+            sti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
+            sti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
+            sti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
+	    sti_bdf1_param.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
+	    sti_bdf1_param.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
+	    sti_bdf1_param.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
+	    sti_bdf1_param.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
          } 
 	}
 	if (have_unstructured_algorithm_sublist == false) {
           // set some probably not so good defaults for the steady computation
-	  sti_nonlinear_bdf1.set<int>("max iterations",10);
-	  sti_nonlinear_bdf1.set<int>("min iterations",5);
-	  sti_nonlinear_bdf1.set<int>("limit iterations",20);
-	  sti_nonlinear_bdf1.set<double>("nonlinear tolerance",1.0);
-	  sti_nonlinear_bdf1.set<double>("time step reduction factor",0.8);
-	  sti_nonlinear_bdf1.set<double>("time step increase factor",1.2);
-	  sti_nonlinear_bdf1.set<double>("max time step", 1.0e+8);
-	  sti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", 5);
-	  sti_nonlinear_bdf1.set<double>("error abs tol", 1.0);
-	  sti_nonlinear_bdf1.set<double>("error rel tol", 0.0);	    
+	  sti_bdf1_param.set<int>("max iterations",10);
+	  sti_bdf1_param.set<int>("min iterations",5);
+	  sti_bdf1_param.set<int>("limit iterations",20);
+	  sti_bdf1_param.set<double>("nonlinear tolerance",1.0);
+	  sti_bdf1_param.set<double>("time step reduction factor",0.8);
+	  sti_bdf1_param.set<double>("time step increase factor",1.2);
+	  sti_bdf1_param.set<double>("max time step", 1.0e+8);
+	  sti_bdf1_param.set<int>("max preconditioner lag iterations", 5);
+	  sti_bdf1_param.set<double>("error abs tol", 1.0);
+	  sti_bdf1_param.set<double>("error rel tol", 0.0);	    
         }
 
         // crerate sublists for the transient time integrator
         Teuchos::ParameterList& transient_time_integrator = richards_problem.sublist("transient time integrator");
-        Teuchos::ParameterList& tti_error_control = transient_time_integrator.sublist("error control");
-        Teuchos::ParameterList& tti_time_control = transient_time_integrator.sublist("time control");
-        Teuchos::ParameterList& tti_nonlinear_bdf2 = transient_time_integrator.sublist("nonlinear solver BDF2");
-        Teuchos::ParameterList& tti_nonlinear_bdf1 = transient_time_integrator.sublist("nonlinear solver BDF1");
+        transient_time_integrator.set<std::string>("time integration method", "BDF1");
+        Teuchos::ParameterList& tti_bdf1 = transient_time_integrator.sublist("BDF1");
+        Teuchos::ParameterList& tti_bdf1_param = tti_bdf1.sublist("BDF1 parameters");
 
-        // set some reasonable defaults...
-        transient_time_integrator.set<std::string>("method","BDF1");
-	
 	// link to preconditioner and linear solver for the transient time integrator
 	transient_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
 	transient_time_integrator.set<std::string>("linear solver", "AztecOO");
-
-        tti_error_control.set<double>("absolute error tolerance",1.0);
-        tti_error_control.set<double>("relative error tolerance",0.0);
-        tti_error_control.set<double>("convergence tolerance",1e-12);
-        tti_error_control.set<int>("maximal number of iterations",400);
-
-        tti_time_control.set<double>("start time",0.0);
-        tti_time_control.set<double>("end time",1e+10);
-        tti_time_control.set<double>("initial time step",1e-7);
-        tti_time_control.set<double>("maximal time step",1e+7);
 
 	have_unstructured_algorithm_sublist = false;
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
           if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
 	    have_unstructured_algorithm_sublist = true;
 	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-	    tti_nonlinear_bdf1.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
-	    tti_nonlinear_bdf1.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
-            tti_nonlinear_bdf1.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
-            tti_nonlinear_bdf1.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
-            tti_nonlinear_bdf1.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
-            tti_nonlinear_bdf1.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
-	    tti_nonlinear_bdf1.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
-	    tti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", num_list.get<int>("transient max preconditioner lag iterations",5));
-	    tti_nonlinear_bdf1.set<double>("error abs tol", num_list.get<double>("transient error abs tol",1.0));
-	    tti_nonlinear_bdf1.set<double>("error rel tol", num_list.get<double>("transient error rel tol",0.0));
+	    tti_bdf1_param.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
+	    tti_bdf1_param.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
+            tti_bdf1_param.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
+            tti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
+            tti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
+            tti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
+	    tti_bdf1_param.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
+	    tti_bdf1_param.set<int>("max preconditioner lag iterations", num_list.get<int>("transient max preconditioner lag iterations",5));
+	    tti_bdf1_param.set<double>("error abs tol", num_list.get<double>("transient error abs tol",1.0));
+	    tti_bdf1_param.set<double>("error rel tol", num_list.get<double>("transient error rel tol",0.0));
          } 
 	}
 	if (have_unstructured_algorithm_sublist == false) {
           // set some probably not so good defaults for the steady computation
-	  tti_nonlinear_bdf1.set<int>("max iterations",10);
-	  tti_nonlinear_bdf1.set<int>("min iterations",5);
-	  tti_nonlinear_bdf1.set<int>("limit iterations",20);
-	  tti_nonlinear_bdf1.set<double>("nonlinear tolerance",1.0);
-	  tti_nonlinear_bdf1.set<double>("time step reduction factor",0.8);
-	  tti_nonlinear_bdf1.set<double>("time step increase factor",1.2);
-	  tti_nonlinear_bdf1.set<double>("max time step", 1.0e+8);
-	  tti_nonlinear_bdf1.set<int>("max preconditioner lag iterations", 5);
-	  tti_nonlinear_bdf1.set<double>("error abs tol", 1.0);
-	  tti_nonlinear_bdf1.set<double>("error rel tol", 0.0);	    
+	  tti_bdf1_param.set<int>("max iterations",10);
+	  tti_bdf1_param.set<int>("min iterations",5);
+	  tti_bdf1_param.set<int>("limit iterations",20);
+	  tti_bdf1_param.set<double>("nonlinear tolerance",1.0);
+	  tti_bdf1_param.set<double>("time step reduction factor",0.8);
+	  tti_bdf1_param.set<double>("time step increase factor",1.2);
+	  tti_bdf1_param.set<double>("max time step", 1.0e+8);
+	  tti_bdf1_param.set<int>("max preconditioner lag iterations", 5);
+	  tti_bdf1_param.set<double>("error abs tol", 1.0);
+	  tti_bdf1_param.set<double>("error rel tol", 0.0);	    
         }
 
 

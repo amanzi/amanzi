@@ -101,7 +101,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
 
   if (itrs < 10) {
     *solution = solution_new;
-    dTnext = dT * 1.25;
+    dTnext = dT * 1.2;
     return itrs;
   } else if (itrs < 15) {
     *solution = solution_new;
@@ -109,7 +109,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     return itrs;
   } else if (itrs < 19) {
     *solution = solution_new;
-    dTnext = dT * 0.8;
+    dTnext = dT * 0.5;
     *solution = solution_new;
   }
 
@@ -138,7 +138,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
 
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
-  while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);

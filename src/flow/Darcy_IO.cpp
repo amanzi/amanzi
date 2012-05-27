@@ -38,19 +38,9 @@ void Darcy_PK::ProcessParameterList()
   // extract verbosity level
   Teuchos::ParameterList verbosity_list = dp_list_.get<Teuchos::ParameterList>("VerboseObject");
   std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
-  if (verbosity_name == "none") {
-    verbosity = FLOW_VERBOSITY_NONE;
-  } else if (verbosity_name == "low") {
-    verbosity = FLOW_VERBOSITY_LOW;
-  } else if (verbosity_name == "medium") {
-    verbosity = FLOW_VERBOSITY_MEDIUM;
-  } else if (verbosity_name == "high") {
-    verbosity = FLOW_VERBOSITY_HIGH;
-  } else if (verbosity_name == "extreme") {
-    verbosity = FLOW_VERBOSITY_EXTREME;
-  }
-
-  atm_pressure = dp_list_.get<double>("atmospheric pressure");
+  ProcessStringVerbosity(verbosity_name, &verbosity);
+ 
+  atm_pressure = dp_list_.get<double>("atmospheric pressure", 101325.0);
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list_.sublist("boundary conditions", true));

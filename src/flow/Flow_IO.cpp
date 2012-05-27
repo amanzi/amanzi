@@ -25,6 +25,25 @@ namespace AmanziFlow {
 /* ****************************************************************
 * Process string for the discretization method.
 **************************************************************** */
+void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
+{
+  if (name == "none") {
+    *verbosity = FLOW_VERBOSITY_NONE;
+  } else if (name == "low") {
+    *verbosity = FLOW_VERBOSITY_LOW;
+  } else if (name == "medium") {
+    *verbosity = FLOW_VERBOSITY_MEDIUM;
+  } else if (name == "high") {
+    *verbosity = FLOW_VERBOSITY_HIGH;
+  } else if (name == "extreme") {
+    *verbosity = FLOW_VERBOSITY_EXTREME;
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the discretization method.
+**************************************************************** */
 void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
 {
   if (name == "monotone mfd") {
@@ -41,7 +60,6 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
     *method = FLOW_MFD3D_POLYHEDRA;
   }
 }
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
