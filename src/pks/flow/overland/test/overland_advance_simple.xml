@@ -132,19 +132,27 @@
       <Parameter name="Constant" type="double" value="0.25"/>
     </ParameterList>
 
+    <ParameterList name="Initial density_liquid">
+      <Parameter name="Constant" type="double" value="1000."/>
+    </ParameterList>
+
+    <ParameterList name="Initial molar_density_liquid">
+      <Parameter name="Constant" type="double" value="55.55555555555555555555"/>
+    </ParameterList>
+
+    <ParameterList name="Initial viscosity_liquid">
+      <Parameter name="Constant" type="double" value="8.9e-4"/>
+    </ParameterList>
+
+    <ParameterList name="Initial pressure">
+      <Parameter name="Constant" type="double" value="101325.0"/>
+    </ParameterList>
+
     <ParameterList name="Initial permeability">
       <Parameter name="Constant" type="double" value="2.5e-12"/> <!-- m**2 -->
     </ParameterList>
 
     <ParameterList name="Initial atmospheric_pressure">
-      <Parameter name="Constant" type="double" value="101325.0"/>
-    </ParameterList>
-
-    <ParameterList name="Initial temperature">
-      <Parameter name="Constant" type="double" value="273.65"/>
-    </ParameterList>
-
-    <ParameterList name="Initial pressure">
       <Parameter name="Constant" type="double" value="101325.0"/>
     </ParameterList>
 
