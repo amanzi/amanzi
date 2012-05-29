@@ -173,6 +173,7 @@ bool Amanzi::Vis::dump_requested(const int cycle, const double time)
  * \param[in]  t0 - the initial time step
  */
 void Amanzi::Vis::set_start_time(const double t0) {
-  while (visualization_times_.top()<t0) visualization_times_.pop();
+  if (visualization_times_.size() > 0) 
+    while (visualization_times_.top()<t0) visualization_times_.pop();
 }
 

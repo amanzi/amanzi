@@ -91,6 +91,7 @@ void Amanzi::Restart::dump_state(State& S, bool force)
       restart_output->writeDataReal(*S.get_lambda(),"lambda");
       restart_output->writeDataReal(*S.get_porosity(),"porosity");
       restart_output->writeDataReal(*S.get_water_saturation(),"water saturation");
+      restart_output->writeDataReal(*S.get_prev_water_saturation(),"previous water saturation");
       restart_output->writeDataReal(*S.get_water_density(),"water density");
       restart_output->writeDataReal(*S.get_horizontal_permeability(),"horizontal permeability");
       restart_output->writeDataReal(*S.get_vertical_permeability(),"vertical permeability");
@@ -111,6 +112,7 @@ void Amanzi::Restart::dump_state(State& S, bool force)
       
       
       restart_output->writeAttrReal(S.get_time(),"time");
+      restart_output->writeAttrReal(S.get_last_time(),"last time");
       restart_output->writeAttrInt(S.get_cycle(),"cycle");
       
       restart_output->writeAttrReal((*S.get_gravity())[0],"gravity x");
@@ -176,6 +178,8 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   S.set_number_of_minerals(idummy);
 
   // read the attributes
+  restart_input->readAttrReal(dummy,"last time");
+  S.set_time(dummy);
   restart_input->readAttrReal(dummy,"time");
   S.set_time(dummy);  
 
@@ -205,6 +209,11 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   S.set_water_saturation(*cell_vector);
   delete cell_vector;
   
+  cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
+  restart_input->readData(*cell_vector,"previous water saturation");
+  S.set_prev_water_saturation(*cell_vector);
+  delete cell_vector;  
+
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
   restart_input->readData(*cell_vector,"water density");
   S.set_water_density(*cell_vector);

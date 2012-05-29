@@ -836,6 +836,12 @@ void State::set_water_saturation(const Epetra_Vector& water_saturation_)
 };
 
 
+void State::set_prev_water_saturation(const Epetra_Vector& prev_water_saturation_)
+{
+  *prev_water_saturation = prev_water_saturation_;
+};
+
+
 void State::set_porosity(const Epetra_Vector& porosity_)
 {
   *porosity = porosity_;
