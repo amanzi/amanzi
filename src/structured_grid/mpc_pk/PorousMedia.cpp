@@ -5473,8 +5473,6 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
       MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
       for (int dir=0;dir<BL_SPACEDIM;dir++)
       {
-	BoxArray ba = fine_grids;
-	ba.surroundingNodes(dir);
 	tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
 	tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
       }
@@ -9461,8 +9459,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			       const Real      time,
 			       const int       nc,
 			       const int       do_upwind,
-			       const bool      do_richard_sat_solve,
-                               Real            contParm)
+			       const bool      do_richard_sat_solve)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_jac()");
 
@@ -9622,7 +9619,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			      cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
 			      lo, hi, domlo, domhi, dx, bc.dataPtr(), 
 			      rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
-			      &deps, &do_upwind, &contParm);
+			      &deps, &do_upwind);
 	  else
 	    {
 	      deps = 1.e-8;

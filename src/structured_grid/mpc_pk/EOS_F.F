@@ -499,6 +499,13 @@ c ::: -----------------------------------------------------------
       REAL_T  m,n,twom
       REAL_T  sat(ncomps),satl
 
+      REAL_T k_st, k_st1, k_sat, msat, mt, ds, dels, dels1, vgk, sa
+      REAL_T sThresh
+
+      vgk(m,sa) = sqrt(sa)*(one-(one-sa**(one/m))**m)**2
+
+      sThresh = 0.999d0
+
       call get_st(sat,s,rho,sres,ncomps)
 
       if (kr_type .eq. 0) then 
@@ -512,6 +519,24 @@ c ::: -----------------------------------------------------------
             kr(i) = sat(i)*sat(i)
          end do
       elseif (kr_type .eq. 3) then
+
+#if 0
+         m = kr_coef
+         if (sat(1) .le. sThresh) then
+            kr(1) = vgk(m,sat(1))
+         else
+            k_st = vgk(m,sThresh)
+            ds = (one - sThresh)*1.d-3
+            k_st1 = vgk(m,sThresh+ds)
+            msat = (k_st - one)/(one - sThresh)
+            mt = -(k_st1-k_st)/ds
+            dels = one - sat(1)
+            dels1 = one - sThresh
+            kr(1) = one + dels*dels * msat/dels1 + 
+     &           dels*dels * (dels-dels1) * (mt-2*msat) 
+     &           / (dels1*dels1)
+         endif
+#else
 c
 c     Van Genuchten-Gualem function
 c     - typical well-behaved value is m = 0.5, while for ASCEM:   m = .28 
@@ -526,6 +551,9 @@ c
          alpha_scale = dsqrt(alpha)*(one-(one-alpha**n)**m)**2
          kr(1) = sqrt(alpha*sat(1))*(one-(one-(alpha*sat(1))**n)**m)**2
          kr(1) = kr(1)/alpha_scale
+
+c         kr(1) = sqrt(sat(1))*(one-(one-(sat(1))**n)**m)**2
+#endif
 c     # no scaling for the gas permeability function, add checks in the derivatives
 c     # to avoid blow-up
 c     # In order to write the gas permeability function in terms of s_eff, we write

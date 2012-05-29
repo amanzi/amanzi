@@ -2033,7 +2033,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 	  Rhs[lev].mult(-1.0);
 	  Soln[lev].setVal(0.);
 	}
-      Real a_dp = 1.0;
       Real b_dp = dt*density[0];   
       const Real S_tol     = visc_tol;
       const Real S_tol_abs = visc_abs_tol;
@@ -2053,11 +2052,11 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 		       fill_bcs_for_gradient, final_resnorm,
                        linsol_status);
 
-      for (int lev = nlevs-2; lev >= 0; lev--)
-	{
-	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
-	  pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
-	}
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve init res=" << status.initial_residual_norm
+                    << std::endl;
+      }
 
       if (linsol_status!=0)
       {
@@ -2080,6 +2079,14 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           delete[] a1_p;
           return;
       }
+      
+      status.success = true;
+      status.status = "Finished";
+      for (int lev = nlevs-2; lev >= 0; lev--)
+	{
+	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+	  pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
+	}
 
       if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
           std::cout << tag 
