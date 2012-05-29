@@ -68,7 +68,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // Create the combined cell/face DoF map.
   super_map_ = CreateSuperMap();
 
-  // Other fundamental physical quantaties
+  // Other fundamental physical quantities
   rho_ = *(FS->fluid_density());
   mu_ = *(FS->fluid_viscosity());
   gravity_.init(dim);
@@ -148,14 +148,14 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
 
-  double T_physical = FS->get_time();  // set-up internal clock 
-  T_internal = (standalone_mode) ? T_internal : T_physical;
+  T_physics = FS->get_time();  // set-up internal clock 
+  T_internal = (standalone_mode) ? T_internal : T_physics;
 
   double time = T_internal;
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  UpdateBoundaryConditions(
+  ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure,
       bc_markers, bc_values);
@@ -269,8 +269,8 @@ int Darcy_PK::Advance(double dT_MPC)
 {
   dT = dT_MPC;
   if (num_itrs_trs == 0) {  // set-up internal clock
-    double T_physical = FS->get_time();
-    T_internal = (standalone_mode) ? T_internal : T_physical;
+    T_physics = FS->get_time();
+    T_internal = (standalone_mode) ? T_internal : T_physics;
   }
 
   solver->SetAztecOption(AZ_output, AZ_none);
@@ -284,7 +284,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   if (src_sink != NULL) src_sink->Compute(time);
 
-  UpdateBoundaryConditions(
+  ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure,
       bc_markers, bc_values);

@@ -33,6 +33,11 @@ int Richards_PK::AdvanceToSteadyState()
     ierr = AdvanceSteadyState_BDF2();
   }
 
+  Epetra_Vector& ws = FS->ref_water_saturation();
+  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
+  DeriveSaturationFromPressure(*solution_cells, ws);
+  ws_prev = ws;
+
   if (ierr == 0) flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
   return ierr;
 }
@@ -152,7 +157,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
   while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
-    UpdateBoundaryConditions(
+    ProcessBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
         *solution_faces, atm_pressure,
         bc_markers, bc_values);

@@ -111,7 +111,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
 
   // boundary condition members
-  void UpdateBoundaryConditions(
+  void ProcessBoundaryConditions(
       BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
       BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
       const Epetra_Vector& pressure_faces, const double atm_pressure,
@@ -163,7 +163,7 @@ class Flow_PK : public BDF2::fnBase {
  
   Teuchos::RCP<Flow_State> FS;
   
-  double T_internal, dT, dT0, dTnext;
+  double T_internal, T_physics, dT, dT0, dTnext;
   int flow_status_;
   int standalone_mode;
  

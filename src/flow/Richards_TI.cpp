@@ -73,7 +73,7 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
   ierr = 0;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards Flow: updating preconditioner at T(sec)=%9.4e dT(sec)=%9.4e\n", Tp, dTp);
+     std::printf("Richards Flow: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   }
 }
 

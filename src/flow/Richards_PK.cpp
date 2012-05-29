@@ -25,6 +25,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 #include "Matrix_Audit.hpp"
 
 #include "Flow_BC_Factory.hpp"
+#include "Flow_State.hpp"
 #include "boundary_function.hh"
 #include "Richards_PK.hpp"
 
@@ -177,8 +178,8 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
 
-  double T_physical = FS->get_time();
-  T_internal = (standalone_mode) ? T_internal : T_physical;
+  T_physics = FS->get_time();
+  T_internal = (standalone_mode) ? T_internal : T_physics;
 
   // Process other fundamental structures
   K.resize(ncells_owned);
@@ -279,8 +280,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   *solution_faces = lambda;  // useless due to logic below (lipnikov@lanl.gov)
 
   if (initialize_with_darcy) {
+    SolveFullySaturatedProblem(T0, *solution);
     double pmin = atm_pressure;
-    InitializePressureHydrostatic(T0);
     ClipHydrostaticPressure(pmin, clip_saturation, *solution);
     pressure = *solution_cells;
   }
@@ -317,7 +318,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 void Richards_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards PK: initializing transient flow: T(sec)=%9.4e dT(sec)=%9.4e\n", T0, dT0);
+     std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
   }
 
   // set up new preconditioner
@@ -366,14 +367,15 @@ void Richards_PK::InitTransient(double T0, double dT0)
   matrix->CreateMFDmassMatrices(mfd3d_method_, K);
   preconditioner->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
-  // initialize pressure and saturation
+  // initialize pressure
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
-  Epetra_Vector& water_saturation = FS->ref_water_saturation();
   *solution_cells = pressure;
   *solution_faces = lambda;
-
   //DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+
+  // initialize saturations
+  Epetra_Vector& water_saturation = FS->ref_water_saturation();
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
@@ -414,8 +416,8 @@ int Richards_PK::Advance(double dT_MPC)
   dT = dT_MPC;
 
   if (num_itrs == 0) {  // set-up internal clock
-    double T_physical = FS->get_time();
-    T_internal = (standalone_mode) ? T_internal : T_physical;
+    T_physics = FS->get_time();
+    T_internal = (standalone_mode) ? T_internal : T_physics;
   }
 
   double time = T_internal;
@@ -469,31 +471,49 @@ int Richards_PK::Advance(double dT_MPC)
 
 /* ******************************************************************
 * Transfer part of the internal data needed by transport to the 
-* flow state FS_MPC. MPC may request to populate the original FS. 
+* flow state FS_MPC. MPC may request to populate the original FS.
+* The consistency condition is enforced by solving a steady state 
+* problem with a mass source.
 ****************************************************************** */
 void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
 {
-  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
-  for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
-
-  Epetra_Vector& pressure = FS_MPC->ref_pressure();  // save pressure
+  // save cell-based and face-based pressures 
+  Epetra_Vector& pressure = FS_MPC->ref_pressure();
   pressure = *solution_cells;
-  Epetra_Vector& lambda = FS_MPC->ref_lambda(); // save lambda
+  Epetra_Vector& lambda = FS_MPC->ref_lambda();
   lambda = *solution_faces;
 
   // update saturations
   Epetra_Vector& ws = FS_MPC->ref_water_saturation();
   Epetra_Vector& ws_prev = FS_MPC->ref_prev_water_saturation();
-  ws_prev = ws;
 
-  // CalculateConsistentSaturation(flux, ws_prev, ws);
+  ws_prev = ws;
   DeriveSaturationFromPressure(pressure, ws);
 
+  // calculate consistent flux
+  /*
+  Epetra_Vector solution_tmp(*solution);
+  const Epetra_Vector& phi = FS_MPC->ref_porosity();
+
+  if (flow_status_ >= FLOW_STATUS_TRANSIENT_STATE_INIT) {
+    Epetra_Vector mass_source(mesh_->cell_map(false));
+    for (int c = 0; c < ncells_owned; c++) {
+      double volume = mesh_->cell_volume(c);
+      mass_source[c] = -(ws[c] - ws_prev[c]) * rho * phi[c] * volume / dT;
+    }
+    SolveSteadyStateProblem(T_physics, mass_source, solution_tmp);
+  }
+  */
+
+  // calculate Darcy flux as diffusive part + advective part.
+  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
+  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);  // We remove dT from mass matrices.
+  matrix->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
+  for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
+
   // DEBUG
-  // writeGMVfile(FS_MPC);
+  // WriteGMVfile(FS_MPC);
 }
 
 
@@ -508,36 +528,6 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
   DeriveDarcyVelocity(flux, velocity);
-}
-
-
-/* ******************************************************************
-* Saturation should be in exact balance with Darcy fluxes in order to
-* have extrema dimishing property for concentrations. 
-****************************************************************** */
-void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux, 
-                                                const Epetra_Vector& ws_prev, Epetra_Vector& ws)
-{
-  // create a disctributed flux vector
-  Epetra_Vector flux_d(mesh_->face_map(true));
-  for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
-  FS->CombineGhostFace2MasterFace(flux_d);
-
-  const Epetra_Vector& phi = FS->ref_porosity();
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    ws[c] = ws_prev[c];
-    double factor = dT / (phi[c] * mesh_->cell_volume(c));
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      ws[c] -= factor * flux_d[f] * dirs[n]; 
-    }
-  }
 }
 
 
@@ -564,27 +554,12 @@ void Richards_PK::ComputePreconditionerMFD(
     const Epetra_Vector& u, Matrix_MFD* matrix,
     double Tp, double dTp, bool flag_update_ML)
 {
-  // setup absolute and compute relative permeabilities
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
-  if (!is_matrix_symmetric) {
-    CalculateRelativePermeabilityFace(*u_cells);
-    Krel_cells->PutScalar(1.0);
-  } else {
-    CalculateRelativePermeabilityCell(*u_cells);
-    Krel_faces->PutScalar(1.0);
-  }
-
-  // update boundary conditions
-  bc_pressure->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_head->Compute(Tp);
-  bc_seepage->Compute(Tp);
-  UpdateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *u_faces, atm_pressure,
-      bc_markers, bc_values);
+  // call bundeled code
+  CalculateRelativePermeability(u);
+  UpdateBoundaryConditions(Tp, *u_faces);
 
   // setup a new algebraic problem
   matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
@@ -674,67 +649,6 @@ void Richards_PK::AddTimeDerivative_MFD(
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
-}
-
-
-/* ******************************************************************
-* Initialize saturated pressure solutions using boundary conditions 
-* at time Tp.
-* WARNING: data in vectors Krel and rhs are destroyed.
-****************************************************************** */
-void Richards_PK::InitializePressureHydrostatic(const double Tp)
-{
-  AztecOO* solver_tmp = new AztecOO;
-
-  // update boundary conditions
-  bc_pressure->Compute(Tp);
-  bc_head->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_seepage->Compute(Tp);
-  UpdateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_faces, atm_pressure,
-      bc_markers, bc_values);
-
-  // set fully saturated media
-  Krel_cells->PutScalar(1.0);
-  Krel_faces->PutScalar(1.0);
-
-  // calculate and assemble elemental stifness matrices
-  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-  matrix->ApplyBoundaryConditions(bc_markers, bc_values);
-  matrix->AssembleGlobalMatrices();
-
-  preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  preconditioner->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
-  preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
-  preconditioner->AssembleGlobalMatrices();
-  preconditioner->ComputeSchurComplement(bc_markers, bc_values);
-  preconditioner->UpdateML_Preconditioner();
-
-  // solve symmetric problem
-  solver_tmp->SetUserOperator(matrix);
-  solver_tmp->SetPrecOperator(preconditioner);
-  solver_tmp->SetAztecOption(AZ_solver, AZ_cg);
-  solver_tmp->SetAztecOption(AZ_output, AZ_none);
-  solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
-
-  Epetra_Vector b(*(matrix->rhs()));
-  solver_tmp->SetRHS(&b);
-
-  solver_tmp->SetLHS(&*solution);
-  solver_tmp->Iterate(max_itrs, convergence_tol);
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    int num_itrs = solver_tmp->NumIters();
-    double linear_residual = solver_tmp->TrueResidual();
-    std::printf("Richards PK: initial pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
-  }
-
-  delete solver_tmp;
 }
 
 

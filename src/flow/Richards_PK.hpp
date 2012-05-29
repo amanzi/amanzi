@@ -73,6 +73,8 @@ class Richards_PK : public Flow_PK {
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
+
+  void CalculateRelativePermeability(const Epetra_Vector& u);
   void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
   void CalculateRelativePermeabilityFace(const Epetra_Vector& p);
   void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
@@ -88,8 +90,13 @@ class Richards_PK : public Flow_PK {
   void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix,
                                 double Tp, double dTp, bool flag_update_ML);
 
-  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
-                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+  void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
+
+  // linear problems and solvers
+  void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix, bool add_preconditioner);
+  void AssembleTransientProblem_MFD(Matrix_MFD* matrix, double dTp, Epetra_Vector& p, bool add_preconditioner);
+  void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
+  void SolveTransientProblem(double T, double dT, Epetra_Vector& u);
 
   // io members
   void ProcessParameterList();
@@ -110,8 +117,6 @@ class Richards_PK : public Flow_PK {
 
   // initization members
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
-
-  void InitializePressureHydrostatic(const double T);
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
@@ -126,6 +131,10 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
+
+  // developement members
+  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
+                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
 
  public:
   int num_nonlinear_steps;

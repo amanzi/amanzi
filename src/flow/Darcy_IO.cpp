@@ -75,8 +75,8 @@ void Darcy_PK::ProcessParameterList()
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method); 
 
   // Set up internal clock.
-  double T_physical = FS->get_time();
-  T_internal = (standalone_mode) ? T_internal : T_physical;
+  T_physics = FS->get_time();
+  T_internal = (standalone_mode) ? T_internal : T_physics;
 
   // Time integrator for period I, temporary called steady state time integrator
   Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");

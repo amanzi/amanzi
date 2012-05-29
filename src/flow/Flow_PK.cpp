@@ -38,7 +38,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   dim = mesh_->space_dimension();
   MyPID = 0;
 
-  T_internal = dT = 0.0;
+  T_internal = T_physics = dT = 0.0;
   standalone_mode = false;
 
   ncells_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -76,7 +76,7 @@ Epetra_Map* Flow_PK::CreateSuperMap()
 /* ******************************************************************
 * Add a boundary marker to used faces.                                          
 ****************************************************************** */
-void Flow_PK::UpdateBoundaryConditions(
+void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_faces, const double atm_pressure,
