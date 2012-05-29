@@ -14,3 +14,7 @@
 
       namelist /fortin/ probtype, denerr, adverr
       save /probdt1/, /probdt2/, /probdt3/, /probdt4/, /probdt5/
+
+      REAL_T sThresh
+      common /eoscom/ sThresh
+      save /eoscom/

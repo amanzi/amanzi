@@ -1062,6 +1062,12 @@ namespace Amanzi {
             rock_list.set("rock",arrayrock);
             std::string kp_file="kp";
             std::string pp_file="pp";
+
+            if (rlist.isParameter("Saturation Threshold For Kr")) {
+                double saturation_threshold_for_vg_Kr;
+                saturation_threshold_for_vg_Kr = rlist.get<double>("Saturation Threshold For Kr");
+                rock_list.set("saturation_threshold_for_vg_Kr",saturation_threshold_for_vg_Kr);
+            }
         
             if (rlist.isParameter("Permeability Output File"))
                 kp_file = rlist.get<std::string>("Permeability Output File");

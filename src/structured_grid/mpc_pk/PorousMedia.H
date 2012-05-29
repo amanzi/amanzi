@@ -988,6 +988,8 @@ protected:
   static MultiFab*   phidata;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
+  static Real        saturation_threshold_for_vg_Kr;
+
 
   // Phases and components
   static int nphases;

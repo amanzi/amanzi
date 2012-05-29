@@ -7,6 +7,7 @@
 #    define FORT_RECINITDATA recinitdata
 #    define FORT_INITPARAMS  initparams
 #    define FORT_TCRPARAMS   tcrparams
+#    define FORT_KR_INIT     krinit
 #    define FORT_ONE_N_FILL  onenfill
 #    define FORT_ALL_N_FILL  allnfill
 #    define FORT_ALL_T_FILL  alltfill
@@ -36,6 +37,7 @@
 #    define FORT_RECINITDATA RECINITDATA
 #    define FORT_INITPARAMS  INITPARAMS
 #    define FORT_TCRPARAMS   TCRPARAMS
+#    define FORT_KR_INIT     KRINIT
 #    define FORT_MK_MACCOEF  MKMACCOEF
 #    define FORT_MK_MACDIVU  MKMACDIVU
 #    define FORT_ONE_N_FILL  ONENFILL
@@ -67,6 +69,7 @@
 #    define FORT_RECINITDATA recinitdata
 #    define FORT_INITPARAMS  initparams
 #    define FORT_TCRPARAMS   tcrparams
+#    define FORT_KR_INIT     krinit
 #    define FORT_MK_MACCOEF  mkmaccoef
 #    define FORT_MK_MACDIVU  mkmacdivu
 #    define FORT_ONE_N_FILL  onenfill
@@ -98,6 +101,7 @@
 #    define FORT_RECINITDATA recinitdata_
 #    define FORT_INITPARAMS  initparams_
 #    define FORT_TCRPARAMS   tcrparams_
+#    define FORT_KR_INIT     krinit_
 #    define FORT_MK_MACCOEF  mkmaccoef_
 #    define FORT_MK_MACDIVU  mkmacdivu_
 #    define FORT_ONE_N_FILL  onenfill_
@@ -147,6 +151,8 @@
 			   Real* muval, int* phaseidx,Real* gravity);
     
      void FORT_TCRPARAMS (int* ntracers);
+
+     void FORT_KR_INIT (Real* sThresh);
 
      void FORT_COREREACT_PARAMS(int*nreact, Real* rhosec); 
     

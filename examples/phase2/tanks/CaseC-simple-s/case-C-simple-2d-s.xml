@@ -178,6 +178,7 @@
 
     <Parameter name="Permeability Output File" type="string" value="case-C-simple-2d-s/kp"/>
     <Parameter name="Porosity Output File" type="string" value="case-C-simple-2d-s/pp"/>
+    <Parameter name="Saturation Threshold For Kr" type="double" value="-0.99"/>
 
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">
