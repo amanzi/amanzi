@@ -104,6 +104,7 @@ class Richards_PK : public Flow_PK {
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
   void ProcessStringRelativePermeability(const std::string name, int* method);
   void VerifyStringMualemBurdine(const std::string name);
+  void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);

@@ -232,6 +232,7 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
 void Richards_PK::VerifyStringMualemBurdine(const std::string name)
 {
   Errors::Message msg;
+  if (name != "Mualem" && name != "Burdine") {
     msg << "Richards PK: supported relative permeability models are Mualem and Burdine.";
     Exceptions::amanzi_throw(msg);
   }
@@ -241,7 +242,7 @@ void Richards_PK::VerifyStringMualemBurdine(const std::string name)
 /* ****************************************************************
 * Verify string for the relative permeability model.
 **************************************************************** */
-void Richards_PK::VerifyWRMparameters(m, alpha, sr, pc0)
+void Richards_PK::VerifyWRMparameters(double m, double alpha, double sr, double pc0)
 {
   Errors::Message msg;
   if (m < 0.0 || alpha < 0.0 || sr < 0.0 || pc0 < 0.0) {
