@@ -18,6 +18,9 @@ Authors: Neil Carlson (version 1)
 namespace Amanzi {
 namespace AmanziFlow {
 
+const int FLOW_WRM_MUALEM = 1;
+const int FLOW_WRM_BURDINE = 2;
+
 /* ******************************************************************
 * Setup fundamental parameters for this model.
 * Default value of the regularization interval is pc0 = 0.                                           
@@ -29,15 +32,22 @@ WRM_vanGenuchten::WRM_vanGenuchten(
   n_ = 1.0 / (1.0 - m_);
   set_region(region);
 
+  if (krel_function == "Mualem")
+    function_ = FLOW_WRM_MUALEM;
+  else
+    function_ = FLOW_WRM_BURDINE;
+
   factor_dSdPc_ = -m_ * n_ * alpha_ * (1.0 - sr_);
-
+  a_ = b_ = 0;
+  
   if (pc0 > 0) {
-    se_pc0 = pow(1.0 + pow(alpha_*pc0_, n_), -m_);
-    f_pc0 = sqrt(se_pc0) * pow(1.0 - pow(1.0 - pow(se_pc0, 1.0/m_), m_), 2);
-    fab = (f_pc0 - 1.0) / pc0_;
+    double k0 = k_relative(pc0);
+    double k0p = dKdPc(pc0);
+    double pc0_2 = pc0 * pc0;
+    double pc0_3 = pc0_2 * pc0;
 
-    se_pc1 = pow(1.0 + pow(alpha_ * (pc0_ + 1.0), n_), -m_);
-    f_pc1 = sqrt(se_pc1) * pow(1.0 - pow(1.0 - pow(se_pc1, 1.0/m_), m_), 2);
+    a_ = (3 * k0 - k0p * pc0) / pc0_2;
+    b_ = (3 * k0p * pc0 - 2 * k0) / pc0_3;
   }
 }
 
@@ -49,13 +59,19 @@ WRM_vanGenuchten::WRM_vanGenuchten(
 ****************************************************************** */
 double WRM_vanGenuchten::k_relative(double pc)
 {
-  if (pc > pc0_) {
+  if (pc >= pc0_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
-    return sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m_), m_), 2.0);
+    if (function_ == FLOW_WRM_MUALEM) {
+      return sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m_), m_), 2.0);
+    } else {
+      return se * se * (1.0 - pow(1.0 - pow(se, 1.0/m_), m_));     
+    }
   } else if (pc <= 0.0) {
     return 1.0;
   } else {
-    return 1.0 + pc*pc * fab/pc0_ + pc*pc * (pc-pc0_) * (f_pc1-f_pc0-2*fab) / (pc0_*pc0_);
+    double pc_2 = pc * pc;
+    double pc_3 = pc_2 * pc;
+    return 1.0 + a_ * pc_2 + b_ * pc_3;
   }
 }
 
@@ -97,6 +113,30 @@ double WRM_vanGenuchten::capillaryPressure(double s)
 {
   double se = (s - sr_) / (1.0 - sr_);
   return (pow(pow(se, -1.0/m_) - 1.0, 1/n_)) / alpha_;
+}
+
+
+/* ******************************************************************
+* Derivative of the original relative permeability w.r.t. saturation.                                     
+****************************************************************** */
+double WRM_vanGenuchten::dKdPc(double pc)
+{
+  if (pc > 0.0) {
+    double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
+    double dsdp = dSdPc(pc);
+
+    double x = pow(se, 1.0 / m_);
+    double y = pow(1.0 - x, m_);
+    double dkds;
+    if (function_ == FLOW_WRM_MUALEM)
+      dkds = (1.0 - y) * (1.0 - y + 2 * x * y / (1.0 - x)) / sqrt(se);
+    else
+      dkds = (2 * (1.0 - y) + x / (1.0 - x)) * se; 
+
+    return dkds * dsdp;
+  } else {
+    return 0.0;
+  }
 }
 
 }  // namespace AmanziFlow

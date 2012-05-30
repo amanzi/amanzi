@@ -103,6 +103,8 @@ class Richards_PK : public Flow_PK {
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
   void ProcessStringRelativePermeability(const std::string name, int* method);
+  void VerifyStringMualemBurdine(const std::string name);
+
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
   void ProcessSublistTimeIntegration(

@@ -102,7 +102,8 @@ void Richards_PK::ProcessParameterList()
         double alpha = wrm_list.get<double>("van Genuchten alpha");
         double sr = wrm_list.get<double>("van Genuchten residual saturation");
         double pc0 = wrm_list.get<double>("regularization interval", 0.0);
-        std::string krel_function = wrm_list.get<std::string>("relative permeability function", "Mualem");
+        std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+        VerifyStringMualemBurdine(krel_function);
 
         WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, alpha, sr, krel_function, pc0));
 
@@ -113,7 +114,8 @@ void Richards_PK::ProcessParameterList()
         double alpha = wrm_list.get<double>("Brooks Corey alpha");
         double sr = wrm_list.get<double>("Brooks Corey residual saturation");
         double pc0 = wrm_list.get<double>("regularization interval", 0.0);
-        std::string krel_function = wrm_list.get<std::string>("relative permeability function", "Mualem");
+        std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+        VerifyStringMualemBurdine(krel_function);
 
         WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, alpha, sr, krel_function, pc0));
 
@@ -223,6 +225,19 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
 
 
 /* ****************************************************************
+* Verify string for the relative permeability model.
+**************************************************************** */
+void Richards_PK::VerifyStringMualemBurdine(const std::string name)
+{
+  Errors::Message msg;
+  if (name != "Mualem" && name != "Burdine") {
+    msg << "Richards PK: supported relative permeability models are Mualem and Burdine.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
 * Process string for the time integration method.
 **************************************************************** */
 void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* method)
@@ -237,7 +252,7 @@ void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* meth
   } else if (name == "BDF2") {
     *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
   } else {
-    msg << "Richards Problem: unknown time integration method has been specified.";
+    msg << "Richards PK: unknown time integration method has been specified.";
     Exceptions::amanzi_throw(msg);
   }
 }

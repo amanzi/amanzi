@@ -32,14 +32,15 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   double residualSaturation() { return sr_; }
 
  private:
-  double m_;  // van Genuchten parameters: m, n, alpha
-  double n_; 
-  const double alpha_; 
-  const double sr_;  // van Genuchten residual saturation
+  double dKdPc(double pc);
+
+ private:
+  double m_, n_, alpha_;  // van Genuchten parameters
+  const double sr_;  // residual saturation
+  int function_;  // relative permeability model
 
   const double pc0_;  // regularization threshold (ususally 0 to 500 Pa)
-  double factor_dSdPc_;  // frequently used constant
-  double se_pc0, se_pc1, f_pc0, f_pc1, fab; 
+  double a_, b_, factor_dSdPc_;  // frequently used constant
 };
 
 }  // namespace AmanziFlow

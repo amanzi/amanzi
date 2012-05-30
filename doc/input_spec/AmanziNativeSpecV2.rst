@@ -90,8 +90,10 @@ User defines water retention models in sublist `"Water retention models`". It co
 e.g. `"Model 1`", `"Model 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
 inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
-The available models are `"van Genuchten`" and `"fake`". The later is used to set up an analytical
-solution for convergence study. An example of the van Genuchten model specification is:
+The available models are `"van Genuchten`", `"Brooks corey`", and `"fake`". 
+The later is used to set up an analytical solution for convergence study. 
+the available models for relative permeability are `"Mualem`" (default) and `"Burdine`".
+An example of the van Genuchten model specification is:
 
 .. code-block:: xml
 
@@ -101,6 +103,7 @@ solution for convergence study. An example of the van Genuchten model specificat
        <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
        <Parameter name="van Genuchten m" type="double" value="0.28571"/>
        <Parameter name="van Genuchten residual saturation" type="double" value="0.103"/>
+       <Parameter name="relative permeability model" type="string" value="Mualem"/>
     </ParameterList>
 
 
@@ -232,7 +235,7 @@ nonlinear solvers during steady state time integration. Here is an example:
 .. code-block:: xml
 
     <ParameterList name="steady state time integrator">
-      <Parameter name="method" type="string" value="Picard"/>
+      <Parameter name="time integration method" type="string" value="Picard"/>
       <Parameter name="initialize with darcy" type="string" value="yes"/>
       <Parameter name="clipping saturation value" type="double" value="0.98"/>
       <Parameter name="preconditoner" type="string" value="Trilinos ML">

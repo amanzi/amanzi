@@ -28,14 +28,11 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
   Epetra_Vector* solution_old_faces = FS->CreateFaceView(solution_old);
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
-  // w^k = S(p^k), e.g. w^0 = ws_prev, w^{k-1} = ws
-  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
-  Epetra_Vector ws(ws_prev);
-
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
+  double error0;
   int itrs;
   for (itrs = 0; itrs < 20; itrs++) {
     CalculateRelativePermeability(solution_old);
@@ -62,17 +59,8 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     preconditioner->ComputeSchurComplement(bc_markers, bc_values);
     preconditioner->UpdateML_Preconditioner();
 
-    // add saturation derivative to the rhs
-    /*
-    DeriveSaturationFromPressure(*solution_old_cells, ws);
-    for (int c=0; c < ncells_owned; c++) {
-      double dsdt = (ws[c] - ws_prev[c]) / dTp;
-      (*rhs)[c] -= dsdt; 
-    }
-    */
-    solver->SetRHS(&*rhs);
-
     // call AztecOO solver
+    solver->SetRHS(&*rhs);
     solution_new = solution_old;  // initial solution guess
     solver->SetLHS(&solution_new);
 
