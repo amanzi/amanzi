@@ -32,20 +32,36 @@ WRM_BrooksCorey::WRM_BrooksCorey(
   } else if (krel_function == "Burdine") {
     factor_ = -2.0 - 3.0 * lambda_;
   }
+
+  a_ = b_ = 0;
+  
+  if (pc0 > 0) {
+    double k0 = k_relative(pc0);
+    double k0p = dKdPc(pc0);
+    double pc0_2 = pc0 * pc0;
+    double pc0_3 = pc0_2 * pc0;
+
+    a_ = (3 * k0 - k0p * pc0) / pc0_2;
+    b_ = (3 * k0p * pc0 - 2 * k0) / pc0_3;
+  }
 }
 
 
 /* ******************************************************************
 * Relative permeability formula: input is capillary pressure pc.
 * The original curve is regulized on interval (0, pc0) using the 
-* Hermite interpolant of order 3.       
+* Hermite interpolant of order 3. Formulas (3.14)-(3.15).   
 ****************************************************************** */
 double WRM_BrooksCorey::k_relative(double pc)
 {
-  if (pc > 0.0) {
+  if (pc >= pc0_) {
     return pow(alpha_ * pc, -factor_);
-  } else {
+  } else if (pc <= 0.0) {
     return 1.0;
+  } else {
+    double pc_2 = pc * pc;
+    double pc_3 = pc_2 * pc;
+    return 1.0 + a_ * pc_2 + b_ * pc_3;
   }
 }
 
@@ -84,6 +100,19 @@ double WRM_BrooksCorey::capillaryPressure(double s)
 {
   double se = (s - sr_) / (1.0 - sr_);
   return pow(se, -1.0/alpha_) / alpha_;
+}
+
+
+/* ******************************************************************
+* Derivative of the original relative permeability w.r.t. capillary pressure.                                     
+****************************************************************** */
+double WRM_BrooksCorey::dKdPc(double pc)
+{
+  if (pc > 0.0) {
+    return -factor_ * pow(alpha_ * pc, -factor_ - 1.0);
+  } else {
+    return 0.0;
+  }
 }
 
 }  // namespace AmanziFlow

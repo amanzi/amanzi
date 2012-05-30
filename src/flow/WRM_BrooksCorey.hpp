@@ -31,12 +31,15 @@ class WRM_BrooksCorey : public WaterRetentionModel {
   double residualSaturation() { return sr_; }
 
  private:
+  double dKdPc(double pc);
+
+ private:
   double lambda_, alpha_;  // Brooks and Corey parameters: lambda, alpha
   double sr_;  // residual saturation
   int krel_function_;  // Mualem or Burdine
 
-  double pc0_;  // regularization threshold (ususally 0 to 500 Pa)
-  double factor_;  // frequently used constant
+  double pc0_;  // regularization threshold (usually 0 to 500 Pa)
+  double a_, b_, factor_;  // frequently used constant
 };
 
 }  // namespace AmanziFlow

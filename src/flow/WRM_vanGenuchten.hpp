@@ -39,7 +39,7 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   const double sr_;  // residual saturation
   int function_;  // relative permeability model
 
-  const double pc0_;  // regularization threshold (ususally 0 to 500 Pa)
+  const double pc0_;  // regularization threshold (usually 0 to 500 Pa)
   double a_, b_, factor_dSdPc_;  // frequently used constant
 };
 

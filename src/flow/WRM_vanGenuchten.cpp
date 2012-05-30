@@ -55,7 +55,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(
 /* ******************************************************************
 * Relative permeability formula: input is capillary pressure pc.
 * The original curve is regulized on interval (0, pc0) using the 
-* Hermite interpolant of order 3.       
+* Hermite interpolant of order 3. Formulas (3.11)-(3.12).     
 ****************************************************************** */
 double WRM_vanGenuchten::k_relative(double pc)
 {
@@ -117,7 +117,7 @@ double WRM_vanGenuchten::capillaryPressure(double s)
 
 
 /* ******************************************************************
-* Derivative of the original relative permeability w.r.t. saturation.                                     
+* Derivative of the original relative permeability w.r.t. capillary pressure.                                     
 ****************************************************************** */
 double WRM_vanGenuchten::dKdPc(double pc)
 {
