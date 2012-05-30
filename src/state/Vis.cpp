@@ -7,7 +7,7 @@
 
 
 Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
-    plist(plist_), disabled(false), comm(comm_), hasTimeData_(false), hasCycleData_(false)
+    plist(plist_), disabled(false), comm(comm_), hasCycleData_(false)
 { 
   read_parameters(plist);
 
@@ -16,7 +16,7 @@ Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
 }
 
 // this constructor makes an object that will not create any output
-Amanzi::Vis::Vis (): disabled(true), hasTimeData_(false), hasCycleData_(false)
+Amanzi::Vis::Vis (): disabled(true), hasCycleData_(false)
 {
 }
 
@@ -25,27 +25,44 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 {
   filebasename = plist.get<string>("File Name Base","amanzi_vis");
   
-  if (plist.isParameter("Visualization Times")) {
-    Teuchos::Array<double>vis_times = plist.get<Teuchos::Array<double> >("Visualization Times"); 
-    // To improve lookup speed while running, we will put these in a stack 
-    for (Teuchos::Array<double>::reverse_iterator rit=vis_times.rbegin(); rit<vis_times.rend(); ++rit) {
-      visualization_times_.push(*rit);
+  // get the time start period stop data and discrete times
+  if (plist.isSublist("time start period stop")) {
+    Teuchos::ParameterList& tsps_list = plist.sublist("time start period stop");
+    for (Teuchos::ParameterList::ConstIterator it = tsps_list.begin(); it != tsps_list.end(); ++it) {
+      std::string name = it->first;
+      if (tsps_list.isSublist(name)) {
+	Teuchos::ParameterList& itlist = tsps_list.sublist(name);
+	if (itlist.isParameter("start period stop")) {
+	  Teuchos::Array<double> sps = itlist.get<Teuchos::Array<double> >("start period stop");
+	  time_sps.push_back(sps.toVector());
+	}
+	if (itlist.isParameter("times")) {
+	  Teuchos::Array<double> vtimes = itlist.get<Teuchos::Array<double> >("times");
+	  times.push_back(vtimes.toVector());
+	}
+      }
     }
-    hasTimeData_ = true;
   }
-  
-  // Grab the cycle parameter list that we wrote in InputParserIS.cc
-  if ( plist.isSublist("Cycle Data") ) {
-    Teuchos::ParameterList &ilist = plist.sublist("Cycle Data");
-      
-    interval = ilist.get<int>("Interval");
-    start = ilist.get<int>("Start");
-    end = ilist.get<int>("End");
-      
-    if (ilist.isParameter("Steps")) {
-      steps = ilist.get<Teuchos::Array<int> >("Steps");
+  // Grab the cycle start period stop data
+  if ( plist.isSublist("cycle start period stop") ) {
+    Teuchos::ParameterList &sps_list = plist.sublist("cycle start period stop");
+    // for now we only allow one cycle start period stop entry
+    if ( ++ sps_list.begin() == sps_list.end() ) {
+      std::string name = sps_list.begin()->first;
+      if ( sps_list.isSublist(name)) {
+	if (sps_list.sublist(name).isParameter("start period stop")) {
+	  Teuchos::Array<int> sps = sps_list.sublist(name).get<Teuchos::Array<int> >("start period stop");
+	  interval = sps[1];
+	  start = sps[0];
+	  end = sps[2];
+	  hasCycleData_ = true;
+	}
+	if (sps_list.sublist(name).isParameter("cycles")) {
+	  steps = sps_list.sublist(name).get<Teuchos::Array<int> >("cycles");
+	  hasCycleData_ = true;
+	}
+      }
     }
-    hasCycleData_ = true;
   }
 }
 
@@ -115,6 +132,25 @@ bool Amanzi::Vis::is_disabled() const
   return disabled;
 }
 
+void Amanzi::Vis::register_with_time_step_manager(TimeStepManager& TSM) {
+  if (plist.isParameter("times")) {
+    Teuchos::Array<double> times = plist.get<Teuchos::Array<double> >("times");
+    TSM.RegisterTimeEvent(times.toVector());
+  }
+  if (plist.isSublist("time start period stop")) {
+    Teuchos::ParameterList &sps_list = plist.sublist("time start period stop");
+    for (Teuchos::ParameterList::ConstIterator it = sps_list.begin(); it != sps_list.end(); ++it) {
+      std::string name = it->first;
+      if ( sps_list.isSublist(name)) {
+	Teuchos::ParameterList& itlist = sps_list.sublist(name);
+	Teuchos::Array<double> sps = itlist.get<Teuchos::Array<double> >("start period stop");
+	TSM.RegisterTimeEvent(sps[0],sps[1],sps[2]);
+      }
+    }
+  }
+}
+
+
 /**
  * \fn         dump_requested
  * \brief      Visualization dumps can be specified at time steps or at certain times.
@@ -129,18 +165,30 @@ bool Amanzi::Vis::is_disabled() const
  */
 bool Amanzi::Vis::dump_requested(const int cycle, const double time)
 {
-  if (!is_disabled())
-  {
-    if (hasTimeData_) {
-      // Test time (e.g. t=34.65s)
-      if (!visualization_times_.empty() && time!=-std::numeric_limits<double>::max()) {
-        // If the current timestep is equal to the one on the stack, dump
-        if (abs(visualization_times_.top()-time) < 1.0e-7) {
-          visualization_times_.pop();
-          return true;
-        }
+  if (!is_disabled())  {
+    // loop over the start period stop triplets
+    for (std::vector<std::vector<double> >::const_iterator it = time_sps.begin(); it != time_sps.end(); ++it) {
+      double start = (*it)[0];
+      double period = (*it)[1];
+      double stop = (*it)[2];
+      if (Amanzi::near_equal(time,start)) return true;
+      if (time > start && (stop == -1.0 || time <= stop)) {
+	double n_periods = floor( (time - start )/period );
+	double tmp = start + n_periods*period;
+	if (Amanzi::near_equal(time,tmp)) return true;
       }
     }
+    
+    // loop over the time arrays 
+    for (std::vector<std::vector<double> >::const_iterator it = times.begin(); it != times.end(); ++it) {
+      for (std::vector<double>::const_iterator j= (*it).begin(); j!=(*it).end(); ++j) {
+	if (Amanzi::near_equal(*j,time)) {
+	  return true;
+	}    
+      }
+    }
+
+
     if (hasCycleData_) {
       // Test time step (e.g. n=16)
       if (steps.size() > 0) {
@@ -163,17 +211,3 @@ bool Amanzi::Vis::dump_requested(const int cycle, const double time)
   // if none of the conditions apply we do not write a visualization dump
   return false;
 }
-
-/**
- * \fn         set_start_time
- * \brief      When starting from a restart, in particular, the Time Macro provided
- *             may fill the visualization stop points array with times before the
- *             simulation start time. It is necessary to remove these early points
- *
- * \param[in]  t0 - the initial time step
- */
-void Amanzi::Vis::set_start_time(const double t0) {
-  if (visualization_times_.size() > 0) 
-    while (visualization_times_.top()<t0) visualization_times_.pop();
-}
-

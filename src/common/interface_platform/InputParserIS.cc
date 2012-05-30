@@ -321,73 +321,30 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       // Cycle Macro  
       if ( vis_list.isParameter("Cycle Macro") ) {
         std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
-        Teuchos::ParameterList &cdata = vis_list.sublist("Cycle Data");
         Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
-
-        cdata.set("Start",cm[0]);
-        cdata.set("End",cm[2]);
-        cdata.set("Interval",cm[1]);
-
+	
+	vis_list.sublist("cycle start period stop").sublist(cycle_macro).set("start period stop",cm);
+	
         // delete the cycle macro
         vis_list.remove("Cycle Macro");
       }
       
       // Time Macro
       // Iterate through the array
-          if ( vis_list.isParameter("Time Macro") ) {
-            std::string time_macro = vis_list.get<std::string>("Time Macro");
-            // Create a local parameter list and store the time macro (3 doubles)
-            Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
-            if (time_macro_list.isParameter("Start_Period_Stop")) {
-              vis_list.set("Start_Period_Stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
-              // Grab the times for start, stop, and period
-              Teuchos::Array<double> startPeriodStop = Teuchos::getParameter<Teuchos::Array<double> >(time_macro_list, "Start_Period_Stop");
-              // Since the Teuchos array is a reference, we copy into modifiable variables
-              double start  = startPeriodStop[0];
-              double stop   = startPeriodStop[2];;
-              double period = startPeriodStop[1];
-              // If the stop time from the macro is -1, we have to look elsewhere for the end time
-              if ( stop==-1 ) {
-                if (plist->isSublist("Execution Control")) {
-                  if ( plist->sublist("Execution Control").isSublist("Time Integration Mode") ) {
-                    Teuchos::ParameterList time_integration_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
-                    if (time_integration_mode_list.isSublist("Steady")) {
-                      stop = time_integration_mode_list.sublist("Steady").get<double>("End");
-                    } else if (time_integration_mode_list.isSublist("Transient")) {
-                      stop = time_integration_mode_list.sublist("Transient").get<double>("End");
-                    } else if (time_integration_mode_list.isSublist("Initialize To Steady")) {
-                      stop = time_integration_mode_list.sublist("Initialize To Steady").get<double>("End");
-                    } else {
-                      //throw Exception - no end time value
-                      Exceptions::amanzi_throw(Errors::Message("There is not an end time specified."));
-                    }
-                  }
-                }
-              }
-
-              for (double j=start; j<=stop; j+=period)
-                visualizationPoints.push_back(j);
-            }
-            if (time_macro_list.isParameter("Values")) {
-              vis_list.set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
-              Teuchos::Array<double> values = time_macro_list.get<Teuchos::Array<double> >("Values");
-              visualizationPoints.insert( visualizationPoints.end(), values.begin(), values.end() );
-            }
-            vis_list.remove("Time Macro");
+      if ( vis_list.isParameter("Time Macro") ) {
+	std::string time_macro = vis_list.get<std::string>("Time Macro");
+	// Create a local parameter list and store the time macro (3 doubles)
+	Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
+	if (time_macro_list.isParameter("Start_Period_Stop")) {
+	  vis_list.sublist("time start period stop").sublist(time_macro).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+	}
+	if (time_macro_list.isParameter("Values")) {
+	  vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+	}
+	vis_list.remove("Time Macro");
       }
     }
   }
-
-  // Sort the array of observation points and remove any identical ones
-  std::sort( visualizationPoints.begin(), visualizationPoints.end() );
-  // Remove points that are too close together
-  const double epsilon = 1E-6;
-  Teuchos::Array<double>::iterator it =
-      std::remove_if( visualizationPoints.begin()+1, visualizationPoints.end(),
-                      bind(compareEpsilon<double>, _1, epsilon) );
-  visualizationPoints.resize( it - visualizationPoints.begin() );
-  vis_list.set<Teuchos::Array<double> >("Visualization Times", visualizationPoints);
-
   return vis_list;
 }
 
