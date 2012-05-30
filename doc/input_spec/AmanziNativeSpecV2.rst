@@ -824,10 +824,14 @@ at intervals corresponding to the numerical time step values; writes are control
   * `"File Name Base`" [string]
   
   * `"cycle start period stop`" [list] this is a list of start period stop definitions for cycles, each of which must be a sublist
+
+   * CSPS [list] can accept the only the parameter `"start period stop`".
     
-    * `"start period stop`" [Array int] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
+    *  `"start period stop`" [Array int] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
 
   * `"time start period stop`" [list] this is a list of start period stop definitions, each of which must be a sublist
+
+   * TSPS [list] can accept only the parameter `"start period stop`".
 
     * `"start period stop`" [Array double] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
