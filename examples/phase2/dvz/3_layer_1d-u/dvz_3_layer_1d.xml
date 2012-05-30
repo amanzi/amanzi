@@ -21,7 +21,7 @@
         <Parameter name="Start Times" type="Array double" value="{6.1729344E10, 6.173178481E10, 6.173705521E10}"/>
         <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10}"/>
       </ParameterList>
-      <Parameter name="Verbosity" type="string" value="Low"/>
+      <Parameter name="Verbosity" type="string" value="High"/>
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
@@ -32,7 +32,7 @@
           <Parameter name="steady max iterations" type="int" value="15"/>
           <Parameter name="steady min iterations" type="int" value="10"/>
           <Parameter name="steady limit iterations" type="int" value="20"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1.0"/>
+          <Parameter name="steady nonlinear tolerance" type="double" value="1e-4"/>
           <Parameter name="steady max time step" type="double" value="6.0e+10"/>
           <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
@@ -40,7 +40,7 @@
           <Parameter name="transient max iterations" type="int" value="15"/>
           <Parameter name="transient min iterations" type="int" value="10"/>
           <Parameter name="transient limit iterations" type="int" value="20"/>
-          <Parameter name="transient nonlinear tolerance" type="double" value="1.0"/>
+          <Parameter name="transient nonlinear tolerance" type="double" value="1e-4"/>
           <Parameter name="transient max time step" type="double" value="6.0e+10"/>
           <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
