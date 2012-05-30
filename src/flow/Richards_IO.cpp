@@ -100,9 +100,10 @@ void Richards_PK::ProcessParameterList()
 
         double m = wrm_list.get<double>("van Genuchten m");
         double alpha = wrm_list.get<double>("van Genuchten alpha");
-        double sr = wrm_list.get<double>("van Genuchten residual saturation");
+        double sr = wrm_list.get<double>("residual saturation");
         double pc0 = wrm_list.get<double>("regularization interval", 0.0);
         std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+        VerifyWRMparameters(m, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
         WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, alpha, sr, krel_function, pc0));
@@ -112,9 +113,10 @@ void Richards_PK::ProcessParameterList()
 
         double lambda = wrm_list.get<double>("Brooks Corey lambda");
         double alpha = wrm_list.get<double>("Brooks Corey alpha");
-        double sr = wrm_list.get<double>("Brooks Corey residual saturation");
+        double sr = wrm_list.get<double>("residual saturation");
         double pc0 = wrm_list.get<double>("regularization interval", 0.0);
         std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+        VerifyWRMparameters(lambda, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
         WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, alpha, sr, krel_function, pc0));
@@ -230,9 +232,25 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
 void Richards_PK::VerifyStringMualemBurdine(const std::string name)
 {
   Errors::Message msg;
-  if (name != "Mualem" && name != "Burdine") {
     msg << "Richards PK: supported relative permeability models are Mualem and Burdine.";
     Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
+* Verify string for the relative permeability model.
+**************************************************************** */
+void Richards_PK::VerifyWRMparameters(m, alpha, sr, pc0)
+{
+  Errors::Message msg;
+  if (m < 0.0 || alpha < 0.0 || sr < 0.0 || pc0 < 0.0) {
+    msg << "Richards PK: Negative parameter in one of the water retention models.";
+    Exceptions::amanzi_throw(msg);    
+  }
+  if (sr > 1.0) {
+    msg << "Richards PK: residula saturation is greater than 1.";
+    Exceptions::amanzi_throw(msg);    
   }
 }
 

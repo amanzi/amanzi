@@ -993,7 +993,7 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
       wrm_sublist.set<std::string>("Region",*i);
       wrm_sublist.set<double>("van Genuchten m", m);
       wrm_sublist.set<double>("van Genuchten alpha",alpha);
-      wrm_sublist.set<double>("van Genuchten residual saturation", Sr);
+      wrm_sublist.set<double>("residual saturation", Sr);
       wrm_sublist.set<double>("regularization interval", krel_smooth);
     }
   }
