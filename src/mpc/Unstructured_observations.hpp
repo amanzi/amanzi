@@ -6,6 +6,7 @@
 
 #include "ObservationData.H"
 #include "State.hpp"
+#include "time_step_manager.hh"
 
 namespace Amanzi {
 
@@ -40,6 +41,7 @@ namespace Amanzi {
 
     void make_observations(State& state);
     bool observation_requested(double time, double last_time, Teuchos::Array<double>& T, Teuchos::Array<double>& SPS);
+    void register_with_time_step_manager(TimeStepManager& TSM);
   private:
     
     Amanzi::ObservationData& observation_data;

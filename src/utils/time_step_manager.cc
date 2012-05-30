@@ -34,8 +34,8 @@ void TimeStepManager::RegisterTimeEvent(double time) {
         } else if ( (i->stop_ == -1.0) || (T < i->stop_) ) {
           double n_periods = floor( (T - i->start_ )/i->period_ );
           double tmp = i->start_ + (n_periods+1.0)*i->period_;
-	  if (tmp <= i->stop_) next_T_this_event = tmp;
-        }
+	  if (i->stop_ == -1.0 || tmp <= i->stop_) next_T_this_event = tmp;
+	}
       }
       case TimeEvent::TIMES: {
         // we assume that i->times_ is ordered with unique elements       
@@ -67,7 +67,7 @@ void TimeStepManager::print(std::ostream& os, double start, double end) const {
     switch (i->Type()) {
       case TimeEvent::SPS: {
         double time = i->start_;
-        while (time <= end && time <= i->stop_) {
+        while (time <= end && (i->stop_ == -1.0 || time <= i->stop_) ) {
           print_times.push_back(time);
           time += i->period_;
         }
