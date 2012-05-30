@@ -56,7 +56,7 @@ add_library(flow Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
                  Richards_SteadyState.cpp Richards_Picard.cpp Richards_AztecOO.cpp 
                  Richards_Bundles.cpp Richards_Devel.cpp 
                  Matrix_MFD.cpp Matrix_VAG.cpp 
-                 WRM_vanGenuchten.cpp WRM_fake.cpp)
+                 WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
 add_install_library(flow)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 list(REVERSE flow_tpl_libs)

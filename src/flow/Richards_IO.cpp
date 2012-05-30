@@ -14,6 +14,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 #include <string>
 
 #include "WRM_vanGenuchten.hpp"
+#include "WRM_BrooksCorey.hpp"
 #include "WRM_fake.hpp"
 #include "Richards_PK.hpp"
 
@@ -97,12 +98,24 @@ void Richards_PK::ProcessParameterList()
       if (wrm_list.get<string>("Water retention model") == "van Genuchten") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
 
-        double vG_m = wrm_list.get<double>("van Genuchten m");
-        double vG_alpha = wrm_list.get<double>("van Genuchten alpha");
-        double vG_sr = wrm_list.get<double>("van Genuchten residual saturation");
-        double vG_pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        double m = wrm_list.get<double>("van Genuchten m");
+        double alpha = wrm_list.get<double>("van Genuchten alpha");
+        double sr = wrm_list.get<double>("van Genuchten residual saturation");
+        double pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        std::string krel_function = wrm_list.get<std::string>("relative permeability function", "Mualem");
 
-        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr, vG_pc0));
+        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, alpha, sr, krel_function, pc0));
+
+      } else if (wrm_list.get<string>("Water retention model") == "Brooks Corey") {
+        std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
+
+        double lambda = wrm_list.get<double>("Brooks Corey lambda");
+        double alpha = wrm_list.get<double>("Brooks Corey alpha");
+        double sr = wrm_list.get<double>("Brooks Corey residual saturation");
+        double pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        std::string krel_function = wrm_list.get<std::string>("relative permeability function", "Mualem");
+
+        WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, alpha, sr, krel_function, pc0));
 
       } else if (wrm_list.get<string>("Water retention model") == "fake") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
