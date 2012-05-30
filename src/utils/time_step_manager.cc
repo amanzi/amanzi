@@ -1,19 +1,14 @@
 #include "time_step_manager.hh"
 #include <iostream>
 #include <algorithm>
-#include <cmath>
 
 namespace Amanzi {
-
-bool near_equal (double x, double y) {
-  return (fabs(x-y)<1e-12*std::max(fabs(x),fabs(y)));
-}
 
 void TimeStepManager::RegisterTimeEvent(double start, double period, double stop) {
   timeEvents_.push_back(TimeEvent(start, period, stop));
 }
 
-void TimeStepManager::RegisterTimeEvent(const std::vector<double>& times) {
+void TimeStepManager::RegisterTimeEvent(std::vector<double> times) {
   // make sure we only admit sorted arrays with unique entries
   std::vector<double> loc_times;
   loc_times = times;
@@ -26,17 +21,17 @@ void TimeStepManager::RegisterTimeEvent(double time) {
   timeEvents_.push_back(TimeEvent(time));
 }
 
-double TimeStepManager::TimeStep(const double T, const double dT) const {
+  double TimeStepManager::TimeStep(double T, double dT) const {
   double next_T_all_events(1e99);
   // loop over all events to find the next event time
   for (std::list<TimeEvent>::const_iterator i = timeEvents_.begin(); i != timeEvents_.end(); ++i) {
     double next_T_this_event(1e99);
     // there are two possible types of events
     switch (i->Type()) {
-      case TimeEvent::SPS : {
+      case TimeEvent::SPS: {
         if ( T < i->start_ ) {
           next_T_this_event = i->start_;
-        } else if ( (i->stop_ == -1.0) || ( T < i->stop_) ) {
+        } else if ( (i->stop_ == -1.0) || (T < i->stop_) ) {
           double n_periods = floor( (T - i->start_ )/i->period_ );
           double tmp = i->start_ + (n_periods+1.0)*i->period_;
 	  if (tmp <= i->stop_) next_T_this_event = tmp;
@@ -73,7 +68,7 @@ void TimeStepManager::print(std::ostream& os, double start, double end) const {
       case TimeEvent::SPS: {
         double time = i->start_;
         while (time <= end && time <= i->stop_) {
-	  if (time >= start ) print_times.push_back(time);
+          print_times.push_back(time);
           time += i->period_;
         }
       }
