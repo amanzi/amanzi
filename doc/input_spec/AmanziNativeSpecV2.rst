@@ -823,7 +823,7 @@ at intervals corresponding to the numerical time step values; writes are control
 
   * `"File Name Base`" [string]
   
-  * `"cycle start period stop`" [list] this is a list of start period stop definitions for cycles, each of which must be a sublist
+  * `"cycle start period stop`" [list] this is a list of start period stop definitions for cycles, each of which must be a sublist. Currently there can only be one sublist.
 
    * CSPS [list] can accept the only the parameter `"start period stop`".
     
