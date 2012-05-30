@@ -646,10 +646,13 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
 
     if ( exe_sublist.isParameter("Flow Model") ) {
       if ( exe_sublist.get<std::string>("Flow Model") == "Off" ) {
-        mpc_list.set<std::string>("disable Flow_PK", "yes");
+	mpc_list.set<std::string>("disable Flow_PK", "yes");
       } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" ) {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Richards");
+      } else if (exe_sublist.get<std::string>("Flow Model") == "Steady State Richards") {
+        mpc_list.set<std::string>("disable Flow_PK", "no");
+        mpc_list.set<std::string>("Flow model","Steady State Richards");	
       } else {
         Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards or Off"));
       }
@@ -832,7 +835,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady" ) {
 
-      } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ) {
+      } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ||
+		  plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady State Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<std::string>("Relative permeability method", "upwind with Darcy flux");
         // this one should come from the input file...

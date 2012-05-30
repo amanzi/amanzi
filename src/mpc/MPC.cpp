@@ -161,11 +161,16 @@ void MPC::mpc_init() {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
     } else if (flow_model == "Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
+    } else if (flow_model == "Steady State Richards") {
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else {
       cout << "MPC: unknown flow model: " << flow_model << endl;
       throw std::exception();
     }
     FPK->InitPK();
+  }
+  if (flow_model == "Steady State Richards") {
+    *out << "Flow will be off during the transient phase" << std::endl;
   }
   // done creating auxilary state objects and  process models
 
@@ -346,13 +351,15 @@ void MPC::cycle_driver() {
   if (flow_enabled) {
     if (ti_mode == STEADY) {
       FPK->InitSteadyState(S->get_time(), dTsteady);
-    } else if ( ti_mode == TRANSIENT ) {
+    } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
       FPK->InitTransient(S->get_time(), dTtransient);
     } else if ( ti_mode == INIT_TO_STEADY ) {
       if (S->get_time() < Tswitch) {
 	FPK->InitSteadyState(S->get_time(), dTsteady);
       } else {
-	FPK->InitTransient(S->get_time(), dTtransient);
+	if (flow_model !=std::string("Steady State Richards")) {
+	  FPK->InitTransient(S->get_time(), dTtransient);
+	}
       }
     }
   }
@@ -382,36 +389,47 @@ void MPC::cycle_driver() {
           waypoint_times_.pop();
       }
 
+      // catch the switchover time to transient
       if (flow_enabled) {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
 	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
 	  }
-	  FPK->InitTransient(S->get_time(), dTtransient);	
+	  // only init the transient problem if we need to 
+	  if (flow_model != std::string("Steady State Richards")) {
+	    FPK->InitTransient(S->get_time(), dTtransient);
+	  }
 	}
       }
       
+      // find the flow time step
       if (flow_enabled) {
-        flow_dT = FPK->CalculateFlowDt();
+	// only if we are actually running with flow
 
-        // adjust the time step, so that we exactly hit the switchover time
-        if (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
-          limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
-          tslimiter = MPC_LIMITS;
-        }
-	
-        // make sure we hit any of the reset times exactly (not in steady mode)
-        if (! ti_mode == STEADY) {
-          if (!reset_times_.empty()) {
-	    if (S->get_time() >=  Tswitch) {
-              // now we are trying to hit the next reset time exactly
-              if (S->get_time()+2*flow_dT > reset_times_[0].first) {
-                limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[0].first);
-		tslimiter = MPC_LIMITS;
-              }
-            }
-          }
-        }
+	if ((ti_mode == STEADY) || 
+	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
+	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch))) {
+	  flow_dT = FPK->CalculateFlowDt();
+	  
+	  // adjust the time step, so that we exactly hit the switchover time
+	  if (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
+	    limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
+	    tslimiter = MPC_LIMITS;
+	  }
+	  
+	  // make sure we hit any of the reset times exactly (not in steady mode)
+	  if (! ti_mode == STEADY) {
+	    if (!reset_times_.empty()) {
+	      if (S->get_time() >=  Tswitch) {
+		// now we are trying to hit the next reset time exactly
+		if (S->get_time()+2*flow_dT > reset_times_[0].first) {
+		  limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[0].first);
+		  tslimiter = MPC_LIMITS;
+		}
+	      }
+	    }
+	  }
+	}
       }
 
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
@@ -450,6 +468,7 @@ void MPC::cycle_driver() {
 	tslimiter = MPC_LIMITS;
       }
       
+      // make sure we reset the timestep at switchover time
       if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
 	mpc_dT = std::min( mpc_dT, dTtransient );
 	tslimiter = MPC_LIMITS; 
@@ -487,20 +506,24 @@ void MPC::cycle_driver() {
       // time step info after we've advanced steady flow
       // first advance flow
       if (flow_enabled) {
-        bool redo(false);
-        do {
-          redo = false;
-          try {
-            FPK->Advance(mpc_dT);
-          } 
-          catch (int itr) {
-            mpc_dT = 0.5*mpc_dT;
-            redo = true;
-            tslimiter = FLOW_LIMITS;
-            *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
-          }
-        } while (redo);
-        FPK->CommitStateForTransport(FS);
+	if ((ti_mode == STEADY) ||
+	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
+	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch))) {
+	  bool redo(false);
+	  do {
+	    redo = false;
+	    try {
+	      FPK->Advance(mpc_dT);
+	    } 
+	    catch (int itr) {
+	      mpc_dT = 0.5*mpc_dT;
+	      redo = true;
+	      tslimiter = FLOW_LIMITS;
+	      *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
+	    }
+	  } while (redo);
+	  FPK->CommitStateForTransport(FS);
+	}
       }
 
       // write some info about the time step we are about to take
