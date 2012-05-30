@@ -193,6 +193,7 @@ void Richards_PK::ProcessSublistTimeIntegration(
 **************************************************************** */
 void Richards_PK::ProcessStringRelativePermeability(const std::string name, int* method)
 {
+  Errors::Message msg;
   if (name == "upwind with gravity") {
     *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (name == "cell centered") {
@@ -201,6 +202,9 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
     *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (name == "arithmetic mean") {
     *method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+  } else {
+    msg << "Richards Problem: unknown relative permeability method has been specified.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

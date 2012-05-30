@@ -834,7 +834,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
       } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
-        richards_problem.set<std::string>("Relative permeability method", "Upwind with Darcy flux");
+        richards_problem.set<std::string>("Relative permeability method", "upwind with Darcy flux");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         richards_problem.set<double>("atmospheric pressure", 101325.0);

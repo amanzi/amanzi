@@ -490,21 +490,6 @@ void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
   ws_prev = ws;
   DeriveSaturationFromPressure(pressure, ws);
 
-  // calculate consistent flux
-  /*
-  Epetra_Vector solution_tmp(*solution);
-  const Epetra_Vector& phi = FS_MPC->ref_porosity();
-
-  if (flow_status_ >= FLOW_STATUS_TRANSIENT_STATE_INIT) {
-    Epetra_Vector mass_source(mesh_->cell_map(false));
-    for (int c = 0; c < ncells_owned; c++) {
-      double volume = mesh_->cell_volume(c);
-      mass_source[c] = -(ws[c] - ws_prev[c]) * rho * phi[c] * volume / dT;
-    }
-    SolveSteadyStateProblem(T_physics, mass_source, solution_tmp);
-  }
-  */
-
   // calculate Darcy flux as diffusive part + advective part.
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);  // We remove dT from mass matrices.
