@@ -129,35 +129,35 @@
           <Parameter name="Region ID" type="int" value="0"/>
           <Parameter name="van Genuchten m" type="double" value="0.392"/>
           <Parameter name="van Genuchten alpha" type="double" value="6.33e-5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0609"/>	   
+          <Parameter name="residual saturation" type="double" value="0.0609"/>	   
         </ParameterList>
         <ParameterList name="Water retention model 1">
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="Region ID" type="int" value="1"/>
           <Parameter name="van Genuchten m" type="double" value="0.386"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.961e-5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.213"/>	   
+          <Parameter name="residual saturation" type="double" value="0.213"/>	   
         </ParameterList>
         <ParameterList name="Water retention model 2">
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="Region ID" type="int" value="2"/>
           <Parameter name="van Genuchten m" type="double" value="0.456"/>
           <Parameter name="van Genuchten alpha" type="double" value="6.84e-5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.2595"/>	   
+          <Parameter name="residual saturation" type="double" value="0.2595"/>	   
         </ParameterList>
         <ParameterList name="Water retention model 4">
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="Region ID" type="int" value="3"/>
           <Parameter name="van Genuchten m" type="double" value="0.469"/>
           <Parameter name="van Genuchten alpha" type="double" value="9.39e-5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0837"/>	   
+          <Parameter name="residual saturation" type="double" value="0.0837"/>	   
         </ParameterList>
         <ParameterList name="Water retention model 5">
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="Region ID" type="int" value="4"/>
           <Parameter name="van Genuchten m" type="double" value="0.658"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.008e-3"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0774"/>	   
+          <Parameter name="residual saturation" type="double" value="0.0774"/>	   
         </ParameterList>
       </ParameterList>
 

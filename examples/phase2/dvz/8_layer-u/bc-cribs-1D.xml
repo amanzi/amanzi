@@ -220,7 +220,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="1"/>
           <Parameter name="van Genuchten m" type="double" value="0.2857"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.9401e-4"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.103"/> 
+          <Parameter name="residual saturation" type="double" value="0.103"/> 
         </ParameterList>
 
 	<!-- Hanford Course Sand -->
@@ -229,7 +229,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="2"/>
           <Parameter name="van Genuchten m" type="double" value="0.5115"/>
           <Parameter name="van Genuchten alpha" type="double" value="7.3518e-4"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.074"/> 
+          <Parameter name="residual saturation" type="double" value="0.074"/> 
         </ParameterList>
 
 	<!-- Hanford Fine Sand -->
@@ -238,7 +238,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="3"/>
           <Parameter name="van Genuchten m" type="double" value="0.6011"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.1443e-4"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.089"/> 
+          <Parameter name="residual saturation" type="double" value="0.089"/> 
         </ParameterList>
 
 	<!-- Hanford Gravel -->
@@ -247,7 +247,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="4"/>
           <Parameter name="van Genuchten m" type="double" value="0.4203"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.7358e-4"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.134"/> 
+          <Parameter name="residual saturation" type="double" value="0.134"/> 
         </ParameterList>
 
 	<!-- Cold Creek Unit - caliche -->
@@ -256,7 +256,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="5"/>
           <Parameter name="van Genuchten m" type="double" value="0.5554"/>
           <Parameter name="van Genuchten alpha" type="double" value="5.1054e-5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.097"/> 
+          <Parameter name="residual saturation" type="double" value="0.097"/> 
         </ParameterList>
 
 	<!-- Cold Creek Unit - gravel -->
@@ -265,7 +265,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="6"/>
           <Parameter name="van Genuchten m" type="double" value="0.4203"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.7358e-4"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.134"/> 
+          <Parameter name="residual saturation" type="double" value="0.134"/> 
         </ParameterList>
 
 	<!-- Ringold Lower Mud -->
@@ -274,7 +274,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="7"/>
           <Parameter name="van Genuchten m" type="double" value="0.5554"/>
           <Parameter name="van Genuchten alpha" type="double" value="5.1054e-5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.097"/> 
+          <Parameter name="residual saturation" type="double" value="0.097"/> 
         </ParameterList>
 
 	<!-- Ringold - Wooded Island -->
@@ -283,7 +283,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="8"/>
           <Parameter name="van Genuchten m" type="double" value="0.3976"/>
           <Parameter name="van Genuchten alpha" type="double" value="8.1687e-5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.135"/> 
+          <Parameter name="residual saturation" type="double" value="0.135"/> 
         </ParameterList>
 
       </ParameterList>
