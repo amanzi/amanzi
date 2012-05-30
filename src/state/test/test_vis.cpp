@@ -17,16 +17,30 @@ SUITE(VISUALIZATION) {
     plist.set<string>("File Name Base","visdump");
     plist.set<int>("File Name Digits",5);
 
-    Teuchos::ParameterList& i1_ = plist.sublist("Cycle Data");
+    Teuchos::ParameterList& clist = plist.sublist("cycle start period stop").sublist("some name");
+    Teuchos::Array<int> csps(3);
+    csps[0] = 0;
+    csps[1] = 4;
+    csps[2] = 10;
+    clist.set<Teuchos::Array<int> >("start period stop", csps);
     
-    i1_.set<int>("Start",0);
-    i1_.set<int>("End",10);
-    i1_.set<int>("Interval",4);
+    Teuchos::ParameterList& tlist = plist.sublist("time start period stop").sublist("some name");
+    Teuchos::Array<double> tsps(3);
+    tsps[0] = 0.0;
+    tsps[1] = 4.0;
+    tsps[2] = 10.0;
+    tlist.set<Teuchos::Array<double> >("start period stop", tsps);    
+
+    Teuchos::ParameterList& t2list = plist.sublist("time start period stop").sublist("some other name");   
+    Teuchos::Array<double> times(2);
+    times[0] = 1.0;
+    times[1] = 3.0;
+    t2list.set<Teuchos::Array<double> >("times",times);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Vis V(plist, &comm);
 
-    
+
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
     
@@ -39,7 +53,24 @@ SUITE(VISUALIZATION) {
 	cycles[ic] = V.dump_requested(ic);
       }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
+
+    // test the time sps stuff
+    CHECK_EQUAL(true, V.dump_requested(0.0));
+    CHECK_EQUAL(true, V.dump_requested(1.0));
+    CHECK_EQUAL(true, V.dump_requested(3.0));
+    CHECK_EQUAL(true, V.dump_requested(4.0));
+    CHECK_EQUAL(true, V.dump_requested(8.0));
+    
+    CHECK_EQUAL(false, V.dump_requested(0.5));
+    CHECK_EQUAL(false, V.dump_requested(1.1));
+    CHECK_EQUAL(false, V.dump_requested(3.2));
+    CHECK_EQUAL(false, V.dump_requested(3.99));
+    CHECK_EQUAL(false, V.dump_requested(10.0));    
+
   }
+
+
+
 
 
 

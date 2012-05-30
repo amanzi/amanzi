@@ -819,30 +819,38 @@ Visualization Data
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
 at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
 
-* [SU] `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
+* `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
 
-  * [SU] `"File Name Base`" [string]
+  * `"File Name Base`" [string]
   
-  * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+  * `"cycle start period stop`" [list] this is a list of start period stop definitions for cycles, each of which must be a sublist
+    
+    * `"start period stop`" [Array int] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
 
-  * [SU] `"Variables`" [string] can accept a list of field quantities to include in the file
+  * `"time start period stop`" [list] this is a list of start period stop definitions, each of which must be a sublist
 
+    * `"start period stop`" [Array double] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times`" an array of discrete times that at which a visualization dump shall be written.
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Cycle Macros">
-    <ParameterList name="Every-10">
-      <Parameter name="Start_Period" type="Array int" value="{0, 10}"/>
-    </ParameterList>
-  </ParameterList>
-
   <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
-    <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macro" type="string" value="Every-10"}>
-    <Parameter name="Variable Macro" type="string" value="{Aqueous Pressure, Moisture Content"}>
+  
+    <ParameterList name="cycle start period stop">
+      <ParameterList name="some unique name">
+        <Parameter name="start period stop" type="Array int" value="{0, 100, -1}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="time start period stop">
+      <ParameterList name="some unique name">
+        <Parameter name="start period stop" type="Array double" value="{0.0, 10.0, -1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <Parameter name="times" type="Array double" value="{100.0, 300.0, 450.0}"/>
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.

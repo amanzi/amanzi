@@ -163,8 +163,12 @@ void Amanzi::Vis::register_with_time_step_manager(TimeStepManager& TSM) {
  * \param[in]  time - optional (e.g. t=34.65s)
  * \returns    bool - true if the current time/step is a visualization point
  */
-bool Amanzi::Vis::dump_requested(const int cycle, const double time)
-{
+bool Amanzi::Vis::dump_requested(const int cycle, const double time) {
+  return dump_requested(cycle) || dump_requested(time);
+}
+
+
+bool Amanzi::Vis::dump_requested(const double time) {
   if (!is_disabled())  {
     // loop over the start period stop triplets
     for (std::vector<std::vector<double> >::const_iterator it = time_sps.begin(); it != time_sps.end(); ++it) {
@@ -187,8 +191,13 @@ bool Amanzi::Vis::dump_requested(const int cycle, const double time)
 	}    
       }
     }
+  }
+  return false;
+}
 
 
+bool Amanzi::Vis::dump_requested(const int cycle) {
+  if (!is_disabled())  {  
     if (hasCycleData_) {
       // Test time step (e.g. n=16)
       if (steps.size() > 0) {

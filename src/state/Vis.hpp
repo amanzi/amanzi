@@ -23,7 +23,9 @@ namespace Amanzi {
     void create_files (const Amanzi::AmanziMesh::Mesh& mesh);
     void create_timestep (const double& time, const int& cycle);
     void finalize_timestep () const;
-    bool dump_requested(const int cycle, const double time=-std::numeric_limits<double>::max());
+    bool dump_requested(const int cycle);
+    bool dump_requested(const double time);
+    bool dump_requested(const int cycle, const double time);
     void write_vector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
     void write_vector(const Epetra_Vector& vec, const std::string name ) const;
     bool is_disabled() const;
