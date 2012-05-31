@@ -30,7 +30,7 @@
     <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="CaseC_rev3/chk00000"/> -->
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
-    <Parameter name="Chemistry Model" type="string" value="Off"/>
+    <Parameter name="Chemistry Model" type="string" value="On"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
         <Parameter name="Start" type="double" value="0"/>
@@ -197,6 +197,15 @@
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array string" value="{SoilLower, SoilUpper, SoilRight}"/>
 
+      <ParameterList name="Mineralogy">
+        <ParameterList name="m2">
+          <Parameter name="Volume Fraction" type="double" value="0.7"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.4"/>
+        </ParameterList>
+      </ParameterList>
+      <Parameter name="Cation Exchange Capacity" type="double" value="0.7"/>
+
+
     </ParameterList>
 
     <ParameterList name="Concrete">
@@ -217,11 +226,43 @@
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array string" value="{Tank}"/>
 
+      <ParameterList name="Mineralogy">
+        <ParameterList name="m1 1">
+          <Parameter name="Volume Fraction" type="double" value="0.7"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.4"/>
+        </ParameterList>
+        <ParameterList name="m2">
+          <Parameter name="Volume Fraction" type="double" value="0.5"/>
+          <Parameter name="Specific Surface Area" type="double" value="0.1"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Surface Complexation Sites">
+        <ParameterList name="s 2">
+          <Parameter name="Site Density" type="double" value="0.7"/>
+        </ParameterList>
+      </ParameterList>
+      <Parameter name="Cation Exchange Capacity" type="double" value="0.7"/>
+
+      <ParameterList name="Sorption Isotherms">
+        <ParameterList name="Aqueous">
+          <ParameterList name="Water">
+            <ParameterList name="Tracer">
+              <Parameter name="Kd" type="double" value="0.7"/>
+              <Parameter name="Langmuir b" type="double" value="0.6"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
     </ParameterList>
 
   </ParameterList>
 
   <ParameterList name="Phase Definitions">
+    <ParameterList name="Solid">
+      <Parameter name="Minerals" type="Array string" value="{m1 1, m2, m3}"/>
+      <Parameter name="Sorption Sites" type="Array string" value="{s1, s 2}"/>
+    </ParameterList>
     <ParameterList name="Aqueous">
       <ParameterList name="Phase Properties">
         <ParameterList name="Density: Uniform">
@@ -262,6 +303,7 @@
             <ParameterList name="Tracer">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0"/>
+                <Parameter name="Free Ion Guess" type="double" value="0"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -314,6 +356,19 @@
     </ParameterList>
 
   </ParameterList>
+
+  <ParameterList name="Chemistry">"
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple"/>  <!--"simple"-->
+    <Parameter name="Thermodynamic Database File" type="string" value="chem_thermo_file"/>
+    <Parameter name="Verbosity" type="string" value="errors"/>  <!--"silent", "terse", "verbose", "warnings", "errors"-->
+    <Parameter name="Activity Model" type="string" value="debye-huckel"/>  <!--"unit", "debye-huckel"-->
+    <Parameter name="Tolerance" type="float" value="1.e-8"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="20"/>
+    <Parameter name="Output File Name" type="string" value="chem_log_file"/>
+    <Parameter name="Use Standard Out" type="bool" value="true"/>
+    <Parameter name="Auxiliary Data" type="Array string" value="{pH}"/>
+  </ParameterList>
+    
 
     <ParameterList name="Output">
       <ParameterList name="Time Macros"/>
