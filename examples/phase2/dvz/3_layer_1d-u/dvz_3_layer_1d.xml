@@ -254,8 +254,8 @@
         </ParameterList>
       </ParameterList> 
       <ParameterList name="Time Macros">
-         <ParameterList name="Annual">
-            <Parameter name="Start_Period_Stop" type="Array double" value="{0, 31557600.,-1}"/>
+         <ParameterList name="Every 100 years">
+            <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3155760000.,-1}"/>
          </ParameterList>
       </ParameterList>
       <ParameterList name="Variable Macros"/>
@@ -264,7 +264,7 @@
         <Parameter name="File Name Base" type="string" value="plot"/>
         <Parameter name="File Name Digits" type="string" value="5"/>
 <!--	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/> -->
- 	<Parameter name="Time Macro" type="string" value="Annual"/> 
+ 	<Parameter name="Time Macro" type="string" value="Every 100 years"/> 
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_1000_year"/> -->
       </ParameterList>
@@ -272,7 +272,7 @@
         <Parameter name="File Name Base" type="string" value="checkpoint"/>
         <Parameter name="File Name Digit" type="int" value="5"/>
 	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
-<!-- 	<Parameter name="Time Macro" type="string" value="Annual"/> -->
+<!-- 	<Parameter name="Time Macro" type="string" value="Every 100 years"/> -->
 <!--    <Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_1000_year"/> -->
       </ParameterList>

@@ -124,9 +124,9 @@ bool Unstructured_observations::observation_requested(double time, double last_t
     for (std::vector<std::vector<double> >::const_iterator i=SPS.begin(); i!=SPS.end(); ++i) {
       if  (time >= (*i)[0] && ((*i)[2] == -1.0 || time <= (*i)[2])) {
         if (Amanzi::near_equal(time,(*i)[0])) return true;
-        int n0 = floor((last_time - (*i)[0])/(*i)[1]);
-        int n1 = floor((time - (*i)[0])/(*i)[1]);
-        if (n0+1 == n1) return true;
+	double n_periods = floor((time - (*i)[0])/(*i)[1]);
+	double tmp = (*i)[0] + n_periods*(*i)[1];	
+	if (Amanzi::near_equal(time,tmp)) return true;
       }
     }
   }
