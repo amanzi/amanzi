@@ -734,63 +734,61 @@ Cycle macros specify a rule to generate or list cycle values.  They are defined 
 
 
 
-Observation Data (must be reviewed)
-===================================
+Observation Data
+================
 
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-* [SU] `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
-  * [SU] `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
 
-  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"times`", and TSPS (see below).
 
-    * [SU] `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
+    * `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
 
-    * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
+    * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
-    * [SU] `"Region`" [string] the label of a user-defined region
+    * `"Region`" [string] the label of a user-defined region
 
-    * [SU] `"Time Macro`" [string] one of the labeled time macros (see below)
+    * `"time start period stop`" [list] contains possibly several sublists that contain serparate start period stop definitions.
 
-    * [SU] `"Cycle Macro`" [string] one of the labeled time macros (see below)
+      * TSPS [list] user defined label, a sublist that contains one parameter, the start period stop definition
+
+        * `"start period stop`" [Array double] the first entry is the start time, the second it the time period, and the third the stop time, or -1 for an indifinite stop time. 
+
+    * `"times`" [Array double] an array of observation times.
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
-* [SU] `"Observation Data: Point`" returns the value of the field quantity at a point
+* `"Observation Data: Point`" returns the value of the field quantity at a point
 
-* `"Observation Data: Mean`" returns the mean value of the field quantities over the region specified
-
-* [SU] `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
-
-* `"Observation Data: Cummulative Integral`" returns the integral of the field quantity, accumulated over the intervals defined by the time macro
-
-* `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
+* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
 
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Time Macros">
-    <ParameterList name="Annual">
-      <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7,-1}"/>
-    </ParameterList>
-  </ParameterList>
-
   <ParameterList name="Observation Data">
     <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="Integrated Mass">
-      <Parameter name="Region" type="string" value="All"/>
-      <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
-      <Parameter name="Variables" type="Array string" value="{Volumetric Water Content, Tc-99 Aqueous Concentration}"/>
-      <Parameter name="Time Macro" type="string" value="Annual"/>
+    <ParameterList name="Point value">
+      <Parameter name="Region" type="string" value="some point"/>
+      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+      <Parameter name="Variable" type="Array string" value="Volumetric water content"/>
+      <Parameter name="times" type="Array doulbe" value="{100000.0, 200000.0}"/>
+      <ParameterList name="time start period stop"/>
+         <ParameterList name="some name">
+	    <Parameter name="start period stop" type="Array double" value="{0.0, 1000.0, 100000}"/>
+	 </ParameterList>
+         <ParameterList name="some other name">
+	    <Parameter name="start period stop" type="Array double" value="{200000.0, 2000.0, -1.0}"/>
+	 </ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
-
-In this example, the user requests an annual report of the integrated volume of water and aqueous solute concentration over the entire domain.
 
 
 Checkpoint Data

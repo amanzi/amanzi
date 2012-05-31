@@ -257,8 +257,6 @@ void MPC::cycle_driver() {
   // register the final time
   TSM.RegisterTimeEvent(T1);
 
-  TSM.print(std::cout, 0.0, 1e8); std::cout << std::endl;
-
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
 
@@ -405,9 +403,7 @@ void MPC::cycle_driver() {
       mpc_dT = std::min(std::min(flow_dT, transport_dT), chemistry_dT);
 
       // take the mpc time step as the min of the last limiter and itself 
-      *out << mpc_dT;
       mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
-      *out << " " << mpc_dT << std::endl;
 
       // figure out who limits the time step
       if (mpc_dT == flow_dT) {
