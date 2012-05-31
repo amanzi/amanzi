@@ -308,7 +308,11 @@ void MPC::cycle_driver() {
 	reset_times_dt_.erase(reset_times_dt_.begin());
       }
     }
+  } else { // no restart, we will call the PKs to allow them to init their auxilary data
+    FPK->InitializeAuxiliaryData();
   }
+    
+
 
   // write visualization output as requested
   if (chemistry_enabled) {

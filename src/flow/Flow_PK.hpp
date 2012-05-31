@@ -110,6 +110,8 @@ class Flow_PK : public BDF2::fnBase {
   virtual void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) = 0;
   virtual void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
 
+  virtual void InitializeAuxiliaryData() { };
+
   // boundary condition members
   void ProcessBoundaryConditions(
       BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
