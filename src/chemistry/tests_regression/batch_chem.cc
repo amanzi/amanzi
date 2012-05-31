@@ -609,7 +609,8 @@ void SetupTextOutput(const SimulationParameters& simulation_params,
                      double* time_units_conversion) {
   // are we writting to observations to a text file?
   if (ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "true") ||
-      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "yes")) {
+      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "yes") ||
+      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "on")) {
     // generate the output file name:
     size_t position = input_file_name.find_last_of('.');
     std::string text_output_name = input_file_name.substr(0, position) + ".txt";

@@ -853,7 +853,8 @@ void Beaker::ResizeInternalMemory(const int size) {
   dtotal_.Resize(ncomp());
 
   if (surfaceComplexationRxns_.size() > 0 ||
-      sorption_isotherm_rxns_.size() > 0) {
+      sorption_isotherm_rxns_.size() > 0 ||
+      ion_exchange_rxns_.size() > 0) {
     total_sorbed_.resize(ncomp(), 0.0);
     dtotal_sorbed_.Resize(ncomp());
     dtotal_sorbed_.Zero();
@@ -929,7 +930,9 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
   // resized in resize(), even if there is no sorption!
   if (this->total_sorbed().size() != components.total_sorbed.size()) {
     error = true;
-    error_stream << "total_sorbed.size and components.total_sorbed.size do not match.\n";
+    error_stream << "total_sorbed.size(" << this->total_sorbed().size()
+                 << ") and components.total_sorbed.size("
+                 << components.total_sorbed.size() << ") do not match.\n";
   }
 
   if (error) {
@@ -1412,7 +1415,7 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const
   }
   if (std::fabs(charge_balance) > tolerance()) {
     std::stringstream message;
-    message << "WARNING: Beaker::CheckChargeBalance() :\n"
+    message << "WARNING: Beaker::CheckChargeBalance() : "
             << "         charge balance = " << std::scientific
             << charge_balance << std::fixed << std::endl;
     chem_out->Write(kWarning, message);
