@@ -774,12 +774,12 @@ Example:
 
   <ParameterList name="Observation Data">
     <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="Point value">
-      <Parameter name="Region" type="string" value="some point"/>
+    <ParameterList name="some observation name">
+      <Parameter name="Region" type="string" value="some point region name"/>
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-      <Parameter name="Variable" type="Array string" value="Volumetric water content"/>
+      <Parameter name="Variable" type="string" value="Volumetric water content"/>
       <Parameter name="times" type="Array doulbe" value="{100000.0, 200000.0}"/>
-      <ParameterList name="time start period stop"/>
+      <ParameterList name="time start period stop">
          <ParameterList name="some name">
 	    <Parameter name="start period stop" type="Array double" value="{0.0, 1000.0, 100000}"/>
 	 </ParameterList>
