@@ -19,8 +19,8 @@ namespace AmanziFlow {
 
 class WRM_BrooksCorey : public WaterRetentionModel {
  public:
-  explicit WRM_BrooksCorey(std::string region, double lambda, double alpha, double sr, 
-                           std::string krel_function, double pc0 = 0.0);
+  explicit WRM_BrooksCorey(std::string region, double lambda, double l, double alpha, 
+                           double sr, std::string krel_function, double pc0 = 0.0);
   ~WRM_BrooksCorey() {};
   
   // required methods from the base class
@@ -34,7 +34,7 @@ class WRM_BrooksCorey : public WaterRetentionModel {
   double dKdPc(double pc);
 
  private:
-  double lambda_, alpha_;  // Brooks and Corey parameters: lambda, alpha
+  double lambda_, l_, alpha_;  // Brooks and Corey parameters: lambda, alpha
   double sr_;  // residual saturation
   int krel_function_;  // Mualem or Burdine
 

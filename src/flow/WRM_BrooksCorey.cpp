@@ -23,12 +23,13 @@ namespace AmanziFlow {
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
 WRM_BrooksCorey::WRM_BrooksCorey(
-    std::string region, double lambda, double alpha, double sr, std::string krel_function, double pc0)
-    : lambda_(lambda), alpha_(alpha), sr_(sr), pc0_(pc0)
+    std::string region, double lambda, double l, double alpha, 
+    double sr, std::string krel_function, double pc0)
+    : lambda_(lambda), l_(l), alpha_(alpha), sr_(sr), pc0_(pc0)
 {
   set_region(region);
   if (krel_function == "Mualem") {
-    factor_ = -2.0 - 2.5 * lambda_;
+    factor_ = -2.0 - (l_ + 2.0) * lambda_;
   } else if (krel_function == "Burdine") {
     factor_ = -2.0 - 3.0 * lambda_;
   }
@@ -55,7 +56,7 @@ WRM_BrooksCorey::WRM_BrooksCorey(
 double WRM_BrooksCorey::k_relative(double pc)
 {
   if (pc >= pc0_) {
-    return pow(alpha_ * pc, -factor_);
+    return pow(alpha_ * pc, factor_);
   } else if (pc <= 0.0) {
     return 1.0;
   } else {
@@ -86,7 +87,7 @@ double WRM_BrooksCorey::saturation(double pc)
 double WRM_BrooksCorey::dSdPc(double pc)
 {
   if (pc > 0.0) {
-    return pow(alpha_ * pc, -lambda_ - 1.0) * (1.0 - sr_) * alpha_;
+    return -pow(alpha_ * pc, -lambda_ - 1.0) * (1.0 - sr_) * alpha_ * lambda_;
   } else {
     return 0.0;
   }
@@ -109,7 +110,7 @@ double WRM_BrooksCorey::capillaryPressure(double s)
 double WRM_BrooksCorey::dKdPc(double pc)
 {
   if (pc > 0.0) {
-    return -factor_ * pow(alpha_ * pc, -factor_ - 1.0);
+    return factor_ * pow(alpha_ * pc, factor_ - 1.0);
   } else {
     return 0.0;
   }

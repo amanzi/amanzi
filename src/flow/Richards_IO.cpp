@@ -100,26 +100,28 @@ void Richards_PK::ProcessParameterList()
 
         double m = wrm_list.get<double>("van Genuchten m");
         double alpha = wrm_list.get<double>("van Genuchten alpha");
+        double l = wrm_list.get<double>("van Genuchten l", 0.5);
         double sr = wrm_list.get<double>("residual saturation");
         double pc0 = wrm_list.get<double>("regularization interval", 0.0);
         std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
         VerifyWRMparameters(m, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
-        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, alpha, sr, krel_function, pc0));
+        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
 
       } else if (wrm_list.get<string>("Water retention model") == "Brooks Corey") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
 
         double lambda = wrm_list.get<double>("Brooks Corey lambda");
         double alpha = wrm_list.get<double>("Brooks Corey alpha");
+        double l = wrm_list.get<double>("Brooks Corey l", 0.5);
         double sr = wrm_list.get<double>("residual saturation");
         double pc0 = wrm_list.get<double>("regularization interval", 0.0);
         std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
         VerifyWRMparameters(lambda, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
-        WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, alpha, sr, krel_function, pc0));
+        WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, l, alpha, sr, krel_function, pc0));
 
       } else if (wrm_list.get<string>("Water retention model") == "fake") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block

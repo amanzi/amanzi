@@ -26,8 +26,9 @@ const int FLOW_WRM_BURDINE = 2;
 * Default value of the regularization interval is pc0 = 0.                                           
 ****************************************************************** */
 WRM_vanGenuchten::WRM_vanGenuchten(
-    std::string region, double m, double alpha, double sr, std::string krel_function, double pc0)
-    : m_(m), alpha_(alpha), sr_(sr), pc0_(pc0)
+    std::string region, double m, double l, double alpha, 
+    double sr, std::string krel_function, double pc0)
+    : m_(m), l_(l), alpha_(alpha), sr_(sr), pc0_(pc0)
 {
   n_ = 1.0 / (1.0 - m_);
   set_region(region);
@@ -41,7 +42,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(
   a_ = b_ = 0;
   
   if (pc0 > 0) {
-    double k0 = k_relative(pc0);
+    double k0 = k_relative(pc0) - 1.0;
     double k0p = dKdPc(pc0);
     double pc0_2 = pc0 * pc0;
     double pc0_3 = pc0_2 * pc0;
@@ -62,7 +63,7 @@ double WRM_vanGenuchten::k_relative(double pc)
   if (pc >= pc0_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     if (function_ == FLOW_WRM_MUALEM) {
-      return sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m_), m_), 2.0);
+      return pow(se, l_) * pow(1.0 - pow(1.0 - pow(se, 1.0/m_), m_), 2.0);
     } else {
       return se * se * (1.0 - pow(1.0 - pow(se, 1.0/m_), m_));     
     }
@@ -129,7 +130,7 @@ double WRM_vanGenuchten::dKdPc(double pc)
     double y = pow(1.0 - x, m_);
     double dkds;
     if (function_ == FLOW_WRM_MUALEM)
-      dkds = (1.0 - y) * (1.0 - y + 2 * x * y / (1.0 - x)) / sqrt(se);
+      dkds = (1.0 - y) * (l_ * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, l_ - 1.0);
     else
       dkds = (2 * (1.0 - y) + x / (1.0 - x)) * se; 
 

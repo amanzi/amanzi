@@ -20,8 +20,8 @@ namespace AmanziFlow {
 
 class WRM_vanGenuchten : public WaterRetentionModel {
  public:
-  explicit WRM_vanGenuchten(std::string region, double m, double alpha, double sr, 
-                            std::string krel_function, double pc0 = 0.0);
+  explicit WRM_vanGenuchten(std::string region, double m, double l, double alpha, 
+                            double sr, std::string krel_function, double pc0 = 0.0);
   ~WRM_vanGenuchten() {};
   
   // required methods from the base class
@@ -35,7 +35,7 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   double dKdPc(double pc);
 
  private:
-  double m_, n_, alpha_;  // van Genuchten parameters
+  double m_, n_, l_, alpha_;  // van Genuchten parameters
   const double sr_;  // residual saturation
   int function_;  // relative permeability model
 
