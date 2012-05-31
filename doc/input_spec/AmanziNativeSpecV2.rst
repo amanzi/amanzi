@@ -140,6 +140,18 @@ An example of the van Genuchten model specification is:
        <Parameter name="relative permeability model" type="string" value="Mualem"/>
     </ParameterList>
 
+    <ParameterList name="Model 2">
+       <Parameter name="Region" type="string" value="Bottom Half"/>
+       <Parameter name="Water retention model" type="string" value="Brooks Corey"/>
+       <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
+       <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
+       <Parameter name="Brooks Corey l" type="double" value="0.51"/>
+       <Parameter name="residual saturation" type="double" value="0.103"/>
+       <Parameter name="regularization interval" type="double" value="0.0"/>
+       <Parameter name="relative permeability model" type="string" value="Burdine"/>
+    </ParameterList>
+
+
 Amanzi performs rudimentary checks of validity of the provided parameters.
 
 

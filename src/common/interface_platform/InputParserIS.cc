@@ -923,15 +923,16 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
     if (cp_list.isSublist("Capillary Pressure: van Genuchten")) {
       Teuchos::ParameterList vG_list = cp_list.sublist("Capillary Pressure: van Genuchten");
       std::string rel_perm = vG_list.get<std::string>("Relative Permeability");
-      if (rel_perm != "Mualem") {
+      if (rel_perm != "Mualem" && rel_perm != "Burdine") {
         std::stringstream ss;
-        ss << "Currently we can only deal with Mualem as the relative permeability model";
+        ss << "Currently we only have Mualem or Burdine as the relative permeability models";
         Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
       }
 
       double alpha = vG_list.get<double>("alpha");
       double Sr = vG_list.get<double>("Sr");
       double m = vG_list.get<double>("m");
+      double ell = vG_list.get<double>("ell",0.5);
       double krel_smooth = vG_list.get<double>("krel smoothing interval", 0.0);
       if (krel_smooth < 0.0) {
         Exceptions::amanzi_throw(Errors::Message("If krel smoothing interval is specified it must be positive."));
@@ -951,27 +952,28 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
         wrm_sublist.set<std::string>("Water retention model", "van Genuchten");
         wrm_sublist.set<std::string>("Region",*i);
         wrm_sublist.set<double>("van Genuchten m", m);
+        wrm_sublist.set<double>("van Genuchten l", ell);
         wrm_sublist.set<double>("van Genuchten alpha",alpha);
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
-        wrm_sublist.set<std::string>("Relative Permeability", "Mualem");
+        wrm_sublist.set<std::string>("Relative Permeability", rel_perm);
       }
     } else if (cp_list.isSublist("Capillary Pressure: Brooks Corey")) {
       Teuchos::ParameterList& BC_list = cp_list.sublist("Capillary Pressure: Brooks Corey");
 
       std::string rel_perm = BC_list.get<std::string>("Relative Permeability");
-      if (rel_perm != "Mualem") {
+      if (rel_perm != "Mualem" && rel_perm != "Burdine") {
         std::stringstream ss;
-        ss << "Currently we can only deal with Mualem as the relative permeability model";
+        ss << "Currently we only have Mualem or Burdine as the relative permeability models";
         Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
-      }      
-      
+      }
+
       double lambda      = BC_list.get<double>("lambda");
       double alpha       = BC_list.get<double>("alpha");
-      double ell         = BC_list.get<double>("ell");
+      double ell         = BC_list.get<double>("ell",0.5);
       double Sr          = BC_list.get<double>("Sr");
       double krel_smooth = BC_list.get<double>("krel smoothing interval",0.0);
-      
+
       if (krel_smooth < 0.0) {
         Exceptions::amanzi_throw(Errors::Message("If krel smoothing interval is specified it must be positive."));
       }
@@ -985,15 +987,15 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
         ss << "Water Retention Model for " << *i;
 
         Teuchos::ParameterList& wrm_sublist = wrm_list.sublist(ss.str());
-      
+
         wrm_sublist.set<std::string>("Water retention model", "Brooks Corey");
         wrm_sublist.set<std::string>("Region",*i);
         wrm_sublist.set<double>("Brooks Corey lambda", lambda);
         wrm_sublist.set<double>("Brooks Corey alpha",alpha);
-        wrm_sublist.set<double>("Brooks Corey l",ell); 
+        wrm_sublist.set<double>("Brooks Corey l",ell);
         wrm_sublist.set<double>("residual saturation", Sr);
-        wrm_sublist.set<double>("regularization interval", krel_smooth);        
-        wrm_sublist.set<std::string>("Relative Permeability", "Mualem");
+        wrm_sublist.set<double>("regularization interval", krel_smooth);
+        wrm_sublist.set<std::string>("Relative Permeability", rel_perm);
       }
     } else {
       // not implemented error
