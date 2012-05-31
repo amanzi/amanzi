@@ -8,11 +8,15 @@ Authors: Neil Carlson (version 1)
 #ifndef __INTERFACE_NOX_HPP__
 #define __INTERFACE_NOX_HPP__
 
+
 #include "exceptions.hh"
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
 #include "BDF2_Dae.hpp"
+#include "Flow_State.hpp"
+#include "Epetra_Map.h"
+#include "Epetra_Operator.h"
 
 
 namespace Amanzi {
@@ -34,7 +38,7 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
   // required interface members
   bool computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType flag);
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& J) { assert(false); }
-  bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params);
+  bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params=NULL);
   void printTime();
 
   inline void setPrecLag(int lag_prec) { lag_prec_ = lag_prec;}
@@ -51,6 +55,31 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
   int lag_count_; // this counts how many times the preconditioner has been lagged
   int fun_eval;
   double  fun_eval_time;
+};
+
+class Preconditioner_Test : public Epetra_Operator{
+	public:			    
+		Preconditioner_Test(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->mesh();}
+		~Preconditioner_Test(){};
+		
+		// required methods
+	int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X; return 0;};
+	int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X;  return 0 ;};
+	bool UseTranspose() const { return false; }
+	int SetUseTranspose(bool) { return 1; }
+	
+	const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
+	const Epetra_Map& OperatorDomainMap() const { return map; }
+	const Epetra_Map& OperatorRangeMap() const { return map; }
+
+	const char* Label() const { return strdup("Preconditioner Test"); }
+	double NormInf() const { return 0.0; }
+	bool HasNormInf() const { return false; }
+	
+	private:
+		Teuchos::RCP<Flow_State> FS;
+		Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+		Epetra_Map map;
 };
 
 }  // namespace AmanziFlow

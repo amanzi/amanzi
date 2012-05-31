@@ -82,7 +82,7 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
 void Richards_PK::compute_precon(const double t, const double dt, const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params){
 
   std::cout << "Enter  compute_precon\n";
-  exit(0);
+//   exit(0);
   int disc_method = AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR;
   ComputePreconditionerMFD(x, preconditioner, disc_method, t, dt, true);
   

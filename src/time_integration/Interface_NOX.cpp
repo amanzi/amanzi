@@ -47,11 +47,13 @@ bool Interface_NOX::computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType 
 bool Interface_NOX::computePreconditioner(
     const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params)
 {
- 
+
+  std::cout<< "computePreconditioner\n"; 	
+	
   lag_count_++;
   lag_count_ %= lag_prec_;
   
-  FPK_->compute_precon(time, deltaT, x, M, params);
+//   FPK_->compute_precon(time, deltaT, x, M, params);
 
   return true;
 }
@@ -62,6 +64,8 @@ void Interface_NOX::printTime(){
 	std::cout<<"Function evalution took "<<fun_eval_time<<"seconds"<<std::endl;
 	
 }
+
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
