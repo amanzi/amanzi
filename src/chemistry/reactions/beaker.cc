@@ -768,7 +768,7 @@ void Beaker::DisplayResults(void) const {
 
   if (ion_exchange_rxns_.size() > 0) {
     chem_out->Write(kVerbose, "---- Ion Exchange Sites\n");
-    ion_exchange_rxns_[0].DisplayResultsHeader();
+    ion_exchange_rxns_.at(0).site().DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
       ion_exchange_rxns_.at(i).site().DisplayResults();
     }
@@ -776,7 +776,7 @@ void Beaker::DisplayResults(void) const {
 
   if (ion_exchange_rxns_.size() > 0) {
     chem_out->Write(kVerbose, "---- Ion Exchange Complexes\n");
-    ion_exchange_rxns_[0].DisplayResultsHeader();
+    ion_exchange_rxns_.at(0).ionx_complexes().at(0).DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
       for (unsigned int j = 0; j < ion_exchange_rxns_.at(i).ionx_complexes().size(); j++) {
         (ion_exchange_rxns_.at(i).ionx_complexes())[j].DisplayResults();

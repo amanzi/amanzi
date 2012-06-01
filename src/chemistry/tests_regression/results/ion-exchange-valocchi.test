@@ -96,10 +96,10 @@
            Name            Q/K             SI
          Halite    3.29704e-04         -3.482
 ---- Ion Exchange Sites
-            ---
+           Name            CEC
              X-            750
 ---- Ion Exchange Complexes
-            ---
+           Name              X  Concentration
           Na+X     2.14868e-01    1.61151e+02
          Ca++X     3.78136e-01    1.41801e+02
          Mg++X     4.08778e-01    1.53292e+02
