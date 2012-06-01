@@ -1468,7 +1468,7 @@ c :: ------------------------------------------------------------
      &     cplcoef,DIMS(cplcoef),ncplcoef,
      &     lo,hi,domlo,domhi,dx, bc, 
      &     inflow_bc_lo,inflow_bc_hi,deps,
-     &     do_upwind, contParm)
+     &     do_upwind)
 
       implicit none
 
@@ -1508,7 +1508,6 @@ c :: ------------------------------------------------------------
       REAL_T  kappa(DIMV(kappa))
       REAL_T  deps
       integer do_upwind
-      REAL_T  contParm
 
       integer i, j,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
@@ -1519,8 +1518,6 @@ c :: ------------------------------------------------------------
 c
 c     gravity is nonzero only in the y direction
 c
-      contParm = MIN(1.d0, MAX(0.d0, contParm))
-
       grav = -rhoval(1)*gravity
       bx = zero
       by = zero
