@@ -694,46 +694,6 @@ two intervals are speicified by the `"Time Functions`" parameter.  Thus, the val
 
 
 
-Time and Cycle specification (must be reviewed)
-================================================
-
-The user must specify when the various types of output are desired.  For Observation Data, this can be in terms of physical time.  For Visualization Data or Checkpoint Data, this can only be in terms of cycle number.  We support the definition of useful macros to specify these quantities.  One must specify the quantity over which these operators must function.  For example, you may want the integral of Moisture Content at various times as Observation Data, or the molar concentration of a solute at periodic cycles as Visualization Data.  The quantities must be identified from the standardized set:
-
-* Available field quantities
-
- * Volumetric water content [volume water / bulk volume]
- * Aqueous saturation [volume water / volume pore space]
- * Aqueous pressure [Pa]
- * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
- * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
- * MaterialID
-
-Note that MaterialID will be treated as a double that is unique to each defined material.  Its value will be generated internal to Amanzi.  The log file will be appended with the (material name)->(integer) mapping used.  Also note that this list tacitly assumes the presence of Aqueous Water as one of the transported components.  Presently, it is an error if the `"Phase Definition`" above does not sufficiently define this component.
-
-
-Time macros specify a rule to generate a list of time values.  They are defined in the parameter list `"Time Macros`":
-
-* [SU] `"Time Macros`" [list] can accept multiple lists for user-named macros TMACRO
-
- * [S] TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
-
-  * [SU] `"Values`" [Array double] values of time, or 
-
-  * [SU] `"Start_Period_Stop`" [Array double] values of start time (ts), period (dt) and (optionally) end time (te) to generate times, t=ts + dt*i, for any integer i. If stop time is less than start time, the time intervals have no ending.
-
-
-Cycle macros specify a rule to generate or list cycle values.  They are defined in the parameter list `"Cycle Macros`":
-
-* [SU] `"Cycle Macros`" [list] can accept multiple lists for user-named macros CMACRO
-
- * [SU] CMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
-
-  * [SU] `"Values`" [Array int] values of cycle number, or 
-
-  * [SU] `"Start_Period_Stop`" [Array int] values of start cycle (cs), period (dc) and (optionally) end cycle (ce) to generate cycle numbers, c=cs + dc*i, for any integer i. If stop cycle < 0, the cycle intervals will not end.
-
-
-
 Observation Data
 ================
 
@@ -746,7 +706,15 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"times`", and TSPS (see below).
 
-    * `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
+    * `"Variables`" [Array string] a list of field quantities taken from the list of 
+      available field quantities:
+
+      * Volumetric water content [volume water / bulk volume]
+      * Aqueous saturation [volume water / volume pore space]
+      * Aqueous pressure [Pa]
+      * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
+      * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
+      * MaterialID
 
     * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
@@ -797,30 +765,30 @@ Checkpoint Data
 A user may request periodic dumps of Amanzi Checkpoint Data.  The user has no explicit control over the content of these files, but has the guarantee that the Amanzi run will be reproducible (with accuracies determined
 by machine round errors and randomness due to execution in a parallel computing environment).  Therefore, output controls for Checkpoint Data are limited to file name generation and writing frequency, by numerical cycle number.
 
-* [SU] `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
+* `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] 
+  used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
 
-  * [SU] `"File Name Base`" [string]
+  * `"File Name Base`" [string]
 
-  * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
-
+  * `"Cycle Data`" [list] can accept a start cycle [int], interval between check points [int], 
+    and the final cycle [int].
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Cycle Macros">
-    <ParameterList name="Every-5">
-      <Parameter name="Start_Period" type="Array int" value="{0, 5}"/>
+  <ParameterList name="Checkpoint Data">
+    <Parameter name="File Name Base" type="string" value="chkpoint"/>
+    <Parameter name="File Name Digits" type="int" value="5"/>
+
+    <ParameterList name="Cycle Data">
+      <Parameter name="Start" type="int" value="0"/>
+      <Parameter name="Interval" type="int" value="100"/>
+      <Parameter name="End" type="int" value="-1"/>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Checkpoint Data">
-    <Parameter name="File Name Base" type="string" value="chk"/>
-    <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macro" type="string" value="Every-5"/>
-  </ParameterList>
-
-In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
+In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 100.
 
 
 
