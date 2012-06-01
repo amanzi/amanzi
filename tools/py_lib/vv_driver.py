@@ -20,9 +20,18 @@ parser = OptionParser()
 parser.add_option("-i", "--input-file", dest="input", 
                   help="Amanzi input file",metavar="FILE")
 
+# STDOUT file
+parser.add_option("-o", "--output", dest="output",
+                  help="Redirect STDOUT to file", metavar="FILE")
+
+# STDERR file
+parser.add_option("-e", "--error", dest="error",
+                  help="Redirect STDERR to file", metavar="FILE")
+
 # Number of processors
 parser.add_option("-n", "--nprocs", dest="nprocs", 
                   help="Number of processors",metavar="NUM")
+
 
 # HDF5 Difference Binary (h5diff)
 parser.add_option("--h5diff", dest="h5diff",
@@ -57,31 +66,45 @@ else:
   if not os.path.exists(options.h5diff):
     raise ValueError, options.h5diff + ' does not exist'
 
-# --- Define the output file patterns
+
+
+# --- Run amanzi
+print '>>>>>>>>> LAUNCHING AMANZI <<<<<<<<'
+amanzi_binary='/home/lpritch/amanzi/bin/amanzi'
+amanzi=amanzi.interface.AmanziInterface(input=options.input,
+                                        binary=amanzi_binary,
+					output=options.output,
+				        error=options.error	
+					)
+amanzi.nprocs=options.nprocs
+amanzi.run()
+print 'Amanzi exit code ' + str(amanzi.exit_code)
+print '>>>>>>>>> Amanzi RUN COMPLETE <<<<<<<<'
+
+# --- Process output
+
+# - Define the output file patterns
 
 # Grab the sublists in the input file
-exec_ctrl = input_tree.find_sublist('Execution Control')
 output_ctrl = input_tree.find_sublist('Output')
-viz_ctrl = output_ctrl.find_sublist('Visualization Data')
+viz_ctrl    = output_ctrl.find_sublist('Visualization Data')
 
-# File base name and number of digits
+# File base name 
 output_basename=viz_ctrl.find_parameter('File Name Base')
-output_ndigits=viz_ctrl.find_parameter('File Name Digits')
 
 # Build the regular expression for globbing
-output_regex=output_basename.get('value')
-i=1
-if i > int(output_ndigits.get('value')):
-  print 'yes'
-while i <= int(output_ndigits.get('value')):
-  output_regex = output_regex + '[0-9]'
-  i = i + 1
-print 'Search for output files matching \'' + output_regex + '\''
+output_regex=output_basename.get_value()
+output_regex=output_regex+'_data.h5'
 
-# Search for files
+
+print '>>>>>>>> Processing Amanzi Output <<<<<<<<'
+print 'Search for output files matching pattern \'' + output_regex + '\''
 output_files=glob.glob(output_regex)
 if len(output_files) == 0:
   print 'No output files found'
+else:
+  for file in output_files:
+    print 'Will process output file ' + file
+print '>>>>>>>> Processing Amanzi Output COMPLETE <<<<<<<<'
 
-
-sys.exit(0)
+sys.exit(amanzi.exit_code)
