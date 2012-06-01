@@ -27,8 +27,8 @@ namespace AmanziFlow {
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  ComputePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
-  matrix->ComputeNegativeResidual(u, f);  // compute A*u - g
+  ComputePreconditionerMFD(u, matrix_, Tp, 0.0, false);  // Calculate only stiffness matrix.
+  matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
@@ -59,37 +59,21 @@ void Richards_PK::fun(
 ****************************************************************** */
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
-  preconditioner->ApplyInverse(X, Y);
+  preconditioner_->ApplyInverse(X, Y);
 }
 
 
 /* ******************************************************************
-* Compute new preconditioner B(p, dT_prec). For BDFx method, we need
-* a separate memory allocation.                                              
+* Update new preconditioner B(p, dT_prec).                                   
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  ComputePreconditionerMFD(u, preconditioner, Tp, dTp, true);
+  ComputePreconditionerMFD(u, preconditioner_, Tp, dTp, true);
   ierr = 0;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards Flow: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
+     std::printf("Richards PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   }
-}
-
-void Richards_PK::compute_precon(const double t, const double dt, const Epetra_Vector& x, Teuchos::ParameterList* params){
-
-  std::cout << "Enter  compute_precon\n";
-//   exit(0);
-  int disc_method = AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR;
-  
-  ComputePreconditionerMFD(x, preconditioner, t, dt, true);
-  
- 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards Flow: updating preconditioner at T(sec)=%9.4e dT(sec)=%9.4e\n", t, dt);
-  }
-	
 }
 
 

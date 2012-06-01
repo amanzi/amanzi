@@ -37,7 +37,7 @@ class Darcy_PK : public Flow_PK {
   ~Darcy_PK();
 
   // main methods
-  void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
@@ -59,7 +59,7 @@ class Darcy_PK : public Flow_PK {
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-  void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
 
   // io members
   void ProcessParameterList();
@@ -94,8 +94,8 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Import> face_importer_;
 
   AztecOO* solver;
-  Matrix_MFD* matrix;
-  Matrix_MFD* preconditioner;
+  Matrix_MFD* matrix_;
+  Matrix_MFD* preconditioner_;
 
   int num_itrs_sss, max_itrs_sss;  // Parameters for steady state solution
   std::string preconditioner_name_sss_;

@@ -170,24 +170,24 @@ int Richards_PK::AdvanceToSteadyState_Picard()
     }
 
     // create algebraic problem
-    matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    matrix->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-    matrix->ApplyBoundaryConditions(bc_markers, bc_values);
-    matrix->AssembleGlobalMatrices();
-    rhs = matrix->rhs();  // export RHS from the matrix class
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->AssembleGlobalMatrices();
+    rhs = matrix_->rhs();  // export RHS from the matrix class
 
     // create preconditioner
-    preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    preconditioner->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
-    preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->AssembleGlobalMatrices();
-    preconditioner->ComputeSchurComplement(bc_markers, bc_values);
-    preconditioner->UpdateML_Preconditioner();
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->UpdateML_Preconditioner();
 
     // check convergence of non-linear residual
-    L2error = matrix->ComputeResidual(solution_new, residual);
+    L2error = matrix_->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
     rhs->Norm2(&L2norm);
     L2error /= L2norm;

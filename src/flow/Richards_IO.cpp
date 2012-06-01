@@ -42,7 +42,7 @@ void Richards_PK::ProcessParameterList()
   ProcessStringVerbosity(verbosity_name, &verbosity);
 
   // Process main one-line options (not sublists)
-  std::string krel_method_name = rp_list_.get<string>("relative permeability", "upwind with gravity");
+  std::string krel_method_name = rp_list_.get<string>("relative permeability");
   ProcessStringRelativePermeability(krel_method_name, &Krel_method);
  
   atm_pressure = rp_list_.get<double>("atmospheric pressure", 101325.0);

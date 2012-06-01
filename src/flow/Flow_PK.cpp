@@ -207,7 +207,7 @@ void Flow_PK::AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
                                    const Epetra_Vector& Krel_cells,
                                    const Epetra_Vector& Krel_faces,
-                                   Matrix_MFD* matrix)
+                                   Matrix_MFD* matrix_operator)
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim);
@@ -220,8 +220,8 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-    double& Fc = matrix->Fc_cells()[c];
+    Epetra_SerialDenseVector& Ff = matrix_operator->Ff_cells()[c];
+    double& Fc = matrix_operator->Fc_cells()[c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];

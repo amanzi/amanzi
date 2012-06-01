@@ -9,13 +9,11 @@
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_Vector.H"
 
-#include "Interface_NOX.hpp"
-#include "Richards_PK.hpp"
+// #include "Interface_NOX.hpp"
 
 #include "BDF1_Dae.hh"
 #include "BDF2_SolutionHistory.hpp"
 #include "BDF2_fnBase.hpp"
-#include "Matrix_MFD.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -456,19 +454,15 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       }
 
       if (divergence_count > 0) throw state.maxitr+1;
-      
-      
-  
+
       return;
     }
   }
   while (true);
-  
-  
-
 }
 
 
+/* BROKEN  
 void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vector& u) {
 	
   Timer ttotal;
@@ -558,7 +552,6 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   // NOX_Epetra_Interface
   
 
-  
   const Teuchos::RCP<AmanziFlow::Interface_NOX> interface = 
     Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, u0, t, h));
 
@@ -576,16 +569,14 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
    AmanziFlow::Richards_PK *RPK_ptr = static_cast<AmanziFlow::Richards_PK *> (&fn);
 
    Teuchos::RCP<AmanziFlow::Matrix_MFD> Prec_Test = 
-      Teuchos::rcp(RPK_ptr->GetPreconditioner());
-//    AmanziFlow::Matrix_MFD* Prec_Test = RPK_ptr->GetPreconditioner();
+      Teuchos::rcp(RPK_ptr->preconditioner());
+//    AmanziFlow::Matrix_MFD* Prec_Test = RPK_ptr->preconditioner();
+
+//    Teuchos::RCP<Epetra_Operator> MFD_operator = Teuchos::rcp(&MFD);
+
+//    Epetra_Operator* MFD_oper = static_cast<Epetra_Operator*> (&*MFD);
       
-//      Teuchos::RCP<Epetra_Operator> MFD_operator = Teuchos::rcp(&MFD);
-      
-//       Epetra_Operator* MFD_oper = static_cast<Epetra_Operator*> (&*MFD);
-      
-      
-      
-//     AmanziFlow::Matrix_MFD* MFD;
+//    AmanziFlow::Matrix_MFD* MFD;
     
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
@@ -681,8 +672,6 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     
     
     
-    
-    
     ttotal.stop();
   
     std::cout << "nonlinear solver takes: " << ttotal << std::endl;
@@ -700,8 +689,9 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 //   fclose(ifp);
 // 
  
-	
 }
+
+*/
 
 
 void BDF1Dae::write_bdf1_stepping_statistics() {

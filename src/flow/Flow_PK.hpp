@@ -98,7 +98,7 @@ class Flow_PK : public BDF2::fnBase {
 
   // main methods
   void Init(Teuchos::RCP<Flow_State> FS_MPC);
-  virtual void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL) = 0;
+  virtual void InitPK() = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
 

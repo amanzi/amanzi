@@ -40,7 +40,7 @@ class Richards_PK : public Flow_PK {
   ~Richards_PK();
 
   // main methods
-  void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
@@ -68,11 +68,9 @@ class Richards_PK : public Flow_PK {
   void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
-  void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
   void update_norm(double rtol, double atol) {};
-  void compute_precon(const double t, const double dt, const Epetra_Vector& x, Teuchos::ParameterList* params);
-  
-
+  void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
+  // void compute_precon(double T, double dT, const Epetra_Vector& u, Teuchos::ParameterList* prec_list);
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
@@ -85,20 +83,20 @@ class Richards_PK : public Flow_PK {
   void CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
   void CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
 
-  void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
-  void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDpicard(Epetra_Vector& pressure_cells, 
-                                   Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix);
+                                   Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix_operator);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix,
+  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix_operator,
                                 double Tp, double dTp, bool flag_update_ML);
 
   void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
 
   // linear problems and solvers
-  void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix, bool add_preconditioner);
-  void AssembleTransientProblem_MFD(Matrix_MFD* matrix, double dTp, Epetra_Vector& p, bool add_preconditioner);
+  void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner);
+  void AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp, Epetra_Vector& p, bool add_preconditioner);
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
   void SolveTransientProblem(double T, double dT, Epetra_Vector& u);
 
@@ -143,7 +141,7 @@ class Richards_PK : public Flow_PK {
   void CalculateConsistentSaturation(const Epetra_Vector& flux, 
                                      const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
-  Matrix_MFD* GetPreconditioner() {return preconditioner;}
+  Matrix_MFD* preconditioner() { return preconditioner_; }
 
  public:
   int num_nonlinear_steps;
@@ -164,8 +162,8 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Import> face_importer_;
 
   AztecOO* solver;  // Linear solver data
-  Matrix_MFD* matrix;
-  Matrix_MFD* preconditioner;
+  Matrix_MFD* matrix_;
+  Matrix_MFD* preconditioner_;
   double convergence_tol;
 
   BDF2::Dae* bdf2_dae;  // Time intergrators

@@ -54,16 +54,16 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
 /* ******************************************************************
 * A wrapper for generating a steady state problem. 
 ****************************************************************** */
-void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix, bool add_preconditioner)
+void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner)
 { 
-  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-  matrix->ApplyBoundaryConditions(bc_markers, bc_values);
-  matrix->AssembleGlobalMatrices();
+  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_operator->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_operator);
+  matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_operator->AssembleGlobalMatrices();
 
   if (add_preconditioner) {
-    matrix->ComputeSchurComplement(bc_markers, bc_values);
+    matrix_operator->ComputeSchurComplement(bc_markers, bc_values);
   }
 
   // DEBUG
@@ -76,18 +76,18 @@ void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix, bool add_pr
 /* ******************************************************************
 * A wrapper for generating a transient problem.  
 ****************************************************************** */
-void Richards_PK::AssembleTransientProblem_MFD(Matrix_MFD* matrix, double dTp,
+void Richards_PK::AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp,
                                                Epetra_Vector& p, bool add_preconditioner)
 { 
-  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-  AddTimeDerivative_MFD(p, dTp, matrix);
-  matrix->ApplyBoundaryConditions(bc_markers, bc_values);
-  matrix->AssembleGlobalMatrices();
+  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_operator->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_operator);
+  AddTimeDerivative_MFD(p, dTp, matrix_operator);
+  matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_operator->AssembleGlobalMatrices();
 
   if (add_preconditioner) {
-    matrix->ComputeSchurComplement(bc_markers, bc_values);
+    matrix_operator->ComputeSchurComplement(bc_markers, bc_values);
   }
 }
 

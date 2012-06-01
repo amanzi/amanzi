@@ -56,25 +56,25 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
         bc_markers, bc_values);
 
     // create algebraic problem
-    matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    matrix->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-    AddTimeDerivative_MFDfake(*solution_cells, dT, matrix);
-    matrix->ApplyBoundaryConditions(bc_markers, bc_values);
-    matrix->AssembleGlobalMatrices();
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddTimeDerivative_MFDfake(*solution_cells, dT, matrix_);
+    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
-    preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    preconditioner->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
-    AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner);
-    preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->AssembleGlobalMatrices();
-    preconditioner->ComputeSchurComplement(bc_markers, bc_values);
-    preconditioner->UpdateML_Preconditioner();
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner_);
+    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->UpdateML_Preconditioner();
 
     // call AztecOO solver
-    rhs = matrix->rhs();
+    rhs = matrix_->rhs();
     Epetra_Vector b(*rhs);
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
@@ -123,10 +123,10 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
 * Adds time derivative to cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
 void Richards_PK::AddTimeDerivative_MFDfake(
-    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
+    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
 {
-  std::vector<double>& Acc_cells = matrix->Acc_cells();
-  std::vector<double>& Fc_cells = matrix->Fc_cells();
+  std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
+  std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);

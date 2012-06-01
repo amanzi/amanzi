@@ -40,20 +40,20 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   Krel_faces->PutScalar(1.0);
 
   // calculate and assemble elemental stiffness matrices
-  AssembleSteadyStateProblem_MFD(matrix, false);
-  AssembleSteadyStateProblem_MFD(preconditioner, true);
-  preconditioner->UpdateML_Preconditioner();
+  AssembleSteadyStateProblem_MFD(matrix_, false);
+  AssembleSteadyStateProblem_MFD(preconditioner_, true);
+  preconditioner_->UpdateML_Preconditioner();
 
   // solve symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
-  solver_tmp->SetUserOperator(matrix);
-  solver_tmp->SetPrecOperator(preconditioner);
+  solver_tmp->SetUserOperator(matrix_);
+  solver_tmp->SetPrecOperator(preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, AZ_cg);
   solver_tmp->SetAztecOption(AZ_output, AZ_none);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
-  Epetra_Vector b(*(matrix->rhs()));
+  Epetra_Vector b(*(matrix_->rhs()));
   solver_tmp->SetRHS(&b);
 
   solver_tmp->SetLHS(&*solution);
@@ -89,20 +89,20 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
       bc_markers, bc_values);
 
   // calculate and assemble elemental stiffness matrices
-  AssembleTransientProblem_MFD(matrix, dTp, u, false);
-  AssembleTransientProblem_MFD(preconditioner, dTp, u, true);
-  preconditioner->UpdateML_Preconditioner();
+  AssembleTransientProblem_MFD(matrix_, dTp, u, false);
+  AssembleTransientProblem_MFD(preconditioner_, dTp, u, true);
+  preconditioner_->UpdateML_Preconditioner();
 
   // solve symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
-  solver_tmp->SetUserOperator(matrix);
-  solver_tmp->SetPrecOperator(preconditioner);
+  solver_tmp->SetUserOperator(matrix_);
+  solver_tmp->SetPrecOperator(preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
   solver_tmp->SetAztecOption(AZ_output, AZ_none);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
-  Epetra_Vector b(*(matrix->rhs()));
+  Epetra_Vector b(*(matrix_->rhs()));
   solver_tmp->SetRHS(&b);
 
   solver_tmp->SetLHS(&u);

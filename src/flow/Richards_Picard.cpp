@@ -41,23 +41,23 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
     UpdateBoundaryConditions(time, *solution_old_faces);
 
     // create algebraic problem
-    matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    matrix->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix);
-    matrix->ApplyBoundaryConditions(bc_markers, bc_values);
-    matrix->AssembleGlobalMatrices();
-    rhs = matrix->rhs();
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix_);
+    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->AssembleGlobalMatrices();
+    rhs = matrix_->rhs();
 
     // create preconditioner
-    preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    preconditioner->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
-    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner);
-    preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->AssembleGlobalMatrices();
-    preconditioner->ComputeSchurComplement(bc_markers, bc_values);
-    preconditioner->UpdateML_Preconditioner();
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
+    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->UpdateML_Preconditioner();
 
     // call AztecOO solver
     solver->SetRHS(&*rhs);
