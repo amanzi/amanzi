@@ -21,7 +21,7 @@ void TimeStepManager::RegisterTimeEvent(double time) {
   timeEvents_.push_back(TimeEvent(time));
 }
 
-  double TimeStepManager::TimeStep(double T, double dT) const {
+double TimeStepManager::TimeStep(double T, double dT) const {
   double next_T_all_events(1e99);
   // loop over all events to find the next event time
   for (std::list<TimeEvent>::const_iterator i = timeEvents_.begin(); i != timeEvents_.end(); ++i) {
@@ -29,13 +29,14 @@ void TimeStepManager::RegisterTimeEvent(double time) {
     // there are two possible types of events
     switch (i->Type()) {
       case TimeEvent::SPS: {
-        if ( T < i->start_ ) {
+        if ( T < i->start_ && !Amanzi::near_equal(T,i->start_)) {
           next_T_this_event = i->start_;
-        } else if ( (i->stop_ == -1.0) || (T < i->stop_) ) {
+        } else if ( (i->stop_ == -1.0) || (T <= i->stop_ || Amanzi::near_equal(T,i->stop_) ) ) {
           double n_periods = floor( (T - i->start_ )/i->period_ );
+          if (Amanzi::near_equal(n_periods+1.0,(T - i->start_ )/i->period_)) n_periods += 1.0;
           double tmp = i->start_ + (n_periods+1.0)*i->period_;
-	  if (i->stop_ == -1.0 || tmp <= i->stop_) next_T_this_event = tmp;
-	}
+          if (i->stop_ == -1.0 || tmp <= i->stop_) next_T_this_event = tmp;
+        }
       }
       case TimeEvent::TIMES: {
         // we assume that i->times_ is ordered with unique elements       

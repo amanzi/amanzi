@@ -267,7 +267,7 @@ void MPC::cycle_driver() {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-  // TSM.print(*out,0.0, 20.0); *out << std::endl;  
+  // TSM.print(*out,0.0, 20.0); *out << std::endl;
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
