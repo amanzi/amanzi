@@ -43,6 +43,10 @@ CHEMISTRY
 END
 
 :=========================== solver options ===================================
+TIMESTEPPER TRANSPORT
+  MAX_STEPS -1
+END
+
 LINEAR_SOLVER TRANSPORT
   SOLVER DIRECT
 END
