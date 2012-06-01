@@ -257,6 +257,8 @@ void MPC::cycle_driver() {
   // register the final time
   TSM.RegisterTimeEvent(T1);
 
+
+
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
 
@@ -264,7 +266,9 @@ void MPC::cycle_driver() {
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-  
+
+  TSM.print(*out,0.0, 20.0); *out << std::endl;  
+
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
   }
@@ -326,6 +330,8 @@ void MPC::cycle_driver() {
   // write a restart dump if requested (determined in dump_state)
   restart->dump_state(*S);
 
+  
+  
   if (flow_enabled) {
     if (ti_mode == STEADY) {
       FPK->InitSteadyState(S->get_time(), dTsteady);

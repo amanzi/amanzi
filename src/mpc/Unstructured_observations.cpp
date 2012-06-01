@@ -105,7 +105,9 @@ void Unstructured_observations::register_with_time_step_manager(TimeStepManager&
       for (std::vector<std::vector<double> >::const_iterator j=(i->second).sps.begin(); 
            j!=(i->second).sps.end(); ++j) {
         if (j->size() == 3) {
-          TSM.RegisterTimeEvent((*j)[0], (*j)[1], (*j)[3]);
+	  std::cout << "registering " << (*j)[0] << " " << (*j)[1] << " " << (*j)[2] << std::endl;
+
+          TSM.RegisterTimeEvent((*j)[0], (*j)[1], (*j)[2]);
         }
       }
     }
