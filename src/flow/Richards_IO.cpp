@@ -62,10 +62,7 @@ void Richards_PK::ProcessParameterList()
 
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
 
-  T_physics = FS->get_time();  // set-up internal clock
-  T_internal = (standalone_mode) ? T_internal : T_physics;
-
-  double time = T_internal;
+  double time = T_physics;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
@@ -351,7 +348,6 @@ void Richards_PK::PrintStatistics() const
 {
   if (!MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;
-    cout << "  Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "  Verbosity level = " << verbosity << endl;
     cout << "  Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
     cout << "  Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;

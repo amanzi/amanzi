@@ -21,7 +21,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_MSTK.hh"
+#include "Mesh_STK.hh"
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
@@ -52,7 +52,7 @@ TEST(FLOW_3D_RICHARDS) {
   // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, &comm, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_STK(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, &comm, gm));
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
@@ -71,7 +71,6 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-  RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
   RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);

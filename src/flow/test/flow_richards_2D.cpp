@@ -71,7 +71,6 @@ TEST(FLOW_2D_RICHARDS) {
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-  RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
   RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);

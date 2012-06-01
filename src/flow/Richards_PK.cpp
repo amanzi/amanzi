@@ -8,6 +8,12 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 
 Authors: Neil Carlson (nnc@lanl.gov), 
          Konstantin Lipnikov (lipnikov@lanl.gov)
+
+Usage: Richards_PK FPK(parameter_list, flow_state);
+       FPK->InitPK();
+       FPK->Initialize();  // optional
+       FPK->InitSteadyState(T, dT);
+       FPK->InitTransient(T, dT);
 */
 
 #include <vector>
@@ -40,7 +46,6 @@ namespace AmanziFlow {
 Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);
-
   FS = FS_MPC;
 
   // extract two critical sublists 
@@ -115,8 +120,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   relative_tol_sss = relative_tol_trs = 1e-5;
   initialize_with_darcy = 0;
 
-  mfd3d_method_ = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
-  mfd3d_method_preconditioner_ = FLOW_MFD3D_TWO_POINT_FLUX;
+  mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
+  mfd3d_method_preconditioner_ = FLOW_MFD3D_OPTIMIZED;
 
   Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
 
@@ -178,8 +183,8 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
 
-  T_physics = FS->get_time();
-  T_internal = (standalone_mode) ? T_internal : T_physics;
+  double time = FS->get_time();
+  if (time >= 0.0) T_physics = time;
 
   // Process other fundamental structures
   K.resize(ncells_owned);
@@ -204,6 +209,30 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   }
 
   flow_status_ = FLOW_STATUS_INIT;
+}
+
+
+/* ******************************************************************
+* Initialization of auxiliary variables (lambda and two saturations).
+* WARNING: Flow_PK may use complex initialization of the remaining 
+* state variables.
+****************************************************************** */
+void Richards_PK::InitializeAuxiliaryData()
+{
+  // pressures
+  Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& lambda = FS->ref_lambda();
+  DeriveFaceValuesFromCellValues(pressure, lambda);
+
+  double time = T_physics;
+  UpdateBoundaryConditions(time, lambda);
+
+  // saturations
+  Epetra_Vector& ws = FS->ref_water_saturation();
+  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
+
+  DeriveSaturationFromPressure(pressure, ws);
+  ws_prev = ws;
 }
 
 
@@ -277,7 +306,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
 
   *solution_cells = pressure;
-  *solution_faces = lambda;  // useless due to logic below (lipnikov@lanl.gov)
+  *solution_faces = lambda;
 
   if (initialize_with_darcy) {
     SolveFullySaturatedProblem(T0, *solution);
@@ -286,7 +315,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     pressure = *solution_cells;
   }
 
-  DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  //DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
@@ -320,6 +349,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
      std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
   }
+  set_time(T0, dT0);
 
   // set up new preconditioner
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
@@ -372,7 +402,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
   Epetra_Vector& lambda = FS->ref_lambda();
   *solution_cells = pressure;
   *solution_faces = lambda;
-  //DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
 
   // initialize saturations
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
@@ -382,10 +411,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
   absolute_tol = absolute_tol_trs;
   relative_tol = relative_tol_trs;
 
-  dT = dT0_trs;
-  T_internal = T0_trs;
-
-  set_time(T0, dT0);  // overrides data in input file
   ti_method = ti_method_trs;
   num_itrs = 0;
   block_picard = 0;
@@ -414,13 +439,10 @@ double Richards_PK::CalculateFlowDt()
 int Richards_PK::Advance(double dT_MPC)
 {
   dT = dT_MPC;
+  double time = FS->get_time();
+  if (time >= 0.0) T_physics = time;
 
-  if (num_itrs == 0) {  // set-up internal clock
-    T_physics = FS->get_time();
-    T_internal = (standalone_mode) ? T_internal : T_physics;
-  }
-
-  double time = T_internal;
+  time = T_physics;
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     ComputeUDot(time, *solution, udot);
@@ -446,14 +468,14 @@ int Richards_PK::Advance(double dT_MPC)
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
-    T_internal = bdf2_dae->most_recent_time();
+    T_physics = bdf2_dae->most_recent_time();
 
   } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     bdf1_dae->bdf1_step(dT, *solution, dTnext);
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
 
-    T_internal = bdf1_dae->most_recent_time();
+    T_physics = bdf1_dae->most_recent_time();
 
   } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     if (block_picard == 0) {

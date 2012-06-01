@@ -105,12 +105,11 @@ class Flow_PK : public BDF2::fnBase {
   virtual double CalculateFlowDt() = 0;
   virtual int Advance(double dT) = 0; 
   virtual int AdvanceToSteadyState() = 0;
+  virtual void InitializeAuxiliaryData() = 0;
 
   virtual void CommitState(Teuchos::RCP<Flow_State> FS) = 0;
   virtual void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) = 0;
   virtual void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
-
-  virtual void InitializeAuxiliaryData() { };
 
   // boundary condition members
   void ProcessBoundaryConditions(
@@ -142,10 +141,9 @@ class Flow_PK : public BDF2::fnBase {
   // control members
   void ValidateBoundaryConditions(
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
-  inline void set_standalone_mode(bool mode) { standalone_mode = mode; }
   void WriteGMVfile(Teuchos::RCP<Flow_State> FS) const;
  
-  void set_time(double T0, double dT0) { T_internal = T0; dT = dT0; }
+  void set_time(double T0, double dT0) { T_physics = T0; dT = dT0; }
   void set_verbosity(int level) { verbosity = level; }
   
   // miscallenous members
@@ -165,9 +163,8 @@ class Flow_PK : public BDF2::fnBase {
  
   Teuchos::RCP<Flow_State> FS;
   
-  double T_internal, T_physics, dT, dT0, dTnext;
+  double T_physics, dT, dTnext;
   int flow_status_;
-  int standalone_mode;
  
   int dim;
 

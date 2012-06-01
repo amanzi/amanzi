@@ -267,7 +267,7 @@ void MPC::cycle_driver() {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-  TSM.print(*out,0.0, 20.0); *out << std::endl;  
+  //TSM.print(*out,0.0, 20.0); *out << std::endl;
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
@@ -435,6 +435,7 @@ void MPC::cycle_driver() {
           if (S->get_time() == reset_times_.front()) {
             *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
             mpc_dT = reset_times_dt_.front();
+	    mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
             tslimiter = MPC_LIMITS;
 	    // now reset the flow time integrator..
 	    FPK->InitTransient(S->get_time(), mpc_dT);
@@ -489,6 +490,7 @@ void MPC::cycle_driver() {
         *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
         *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);
 	*out << " " << limitstring;
+	//*out << " " << S->get_time() << " " << mpc_dT;
         *out << std::endl;
       }
       // ==============================================================

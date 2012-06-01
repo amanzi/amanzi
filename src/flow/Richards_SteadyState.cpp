@@ -22,15 +22,18 @@ namespace AmanziFlow {
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState()
 {
+  T_physics = T0_sss;
+  dT = dT0_sss;
+
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
-    ierr = AdvanceSteadyState_Picard();
+    ierr = AdvanceToSteadyState_Picard();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
-    ierr = AdvanceSteadyState_BackwardEuler();
+    ierr = AdvanceToSteadyState_BackwardEuler();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
-    ierr = AdvanceSteadyState_BDF1();
+    ierr = AdvanceToSteadyState_BDF1();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    ierr = AdvanceSteadyState_BDF2();
+    ierr = AdvanceToSteadyState_BDF2();
   }
 
   Epetra_Vector& ws = FS->ref_water_saturation();
@@ -46,14 +49,12 @@ int Richards_PK::AdvanceToSteadyState()
 /* ******************************************************************* 
 * Performs one time step of size dT using first-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceSteadyState_BDF1()
+int Richards_PK::AdvanceToSteadyState_BDF1()
 {
-  T_internal = T0_sss;
-  dT = dT0_sss;
   bool last_step = false;
 
   int itrs = 0;
-  while (itrs < max_itrs_sss && T_internal < T1_sss) {
+  while (itrs < max_itrs_sss && T_physics < T1_sss) {
     if (itrs == 0) {  // initialization of BDF1
       Epetra_Vector udot(*super_map_);
       ComputeUDot(T0_sss, *solution, udot);
@@ -68,11 +69,11 @@ int Richards_PK::AdvanceSteadyState_BDF1()
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
 
-    T_internal = bdf1_dae->most_recent_time();
+    T_physics = bdf1_dae->most_recent_time();
     dT = dTnext;
     itrs++;
 
-    double Tdiff = T1_sss - T_internal;
+    double Tdiff = T1_sss - T_physics;
     if (dTnext > Tdiff) {
       dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
       last_step = true;
@@ -88,14 +89,12 @@ int Richards_PK::AdvanceSteadyState_BDF1()
 /* ******************************************************************* 
 * Performs one time step of size dT using second-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceSteadyState_BDF2()
+int Richards_PK::AdvanceToSteadyState_BDF2()
 {
-  T_internal = T0_sss;
-  dT = dT0_sss;
   bool last_step = false;
 
   int itrs = 0;
-  while (itrs < max_itrs_sss && T_internal < T1_sss) {
+  while (itrs < max_itrs_sss && T_physics < T1_sss) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
       ComputeUDot(T0_sss, *solution, udot);
@@ -110,11 +109,11 @@ int Richards_PK::AdvanceSteadyState_BDF2()
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
-    T_internal = bdf2_dae->most_recent_time();
+    T_physics = bdf2_dae->most_recent_time();
     dT = dTnext;
     itrs++;
 
-    double Tdiff = T1_sss - T_internal;
+    double Tdiff = T1_sss - T_physics;
     if (dTnext > Tdiff) {
       dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
       last_step = true;
@@ -132,7 +131,7 @@ int Richards_PK::AdvanceSteadyState_BDF2()
 * relative permeabilities do not depend explicitly on time.
 * This is the experimental method.                                                 
 ****************************************************************** */
-int Richards_PK::AdvanceSteadyState_Picard()
+int Richards_PK::AdvanceToSteadyState_Picard()
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
@@ -146,7 +145,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // update steady state boundary conditions
-  double time = 0.0;
+  double time = T_physics;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_head->Compute(time);
@@ -217,7 +216,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
       solution_old[c] = solution_new[c];
     }
 
-    T_internal += dT;
+    T_physics += dT;
     itrs++;
   }
 

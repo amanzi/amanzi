@@ -749,7 +749,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
       } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ||
                   plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady State Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
-        richards_problem.set<std::string>("Relative permeability method", "upwind with Darcy flux");
+        richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         richards_problem.set<double>("atmospheric pressure", 101325.0);
@@ -911,7 +911,7 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
         wrm_sublist.set<double>("van Genuchten alpha",alpha);
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
-        wrm_sublist.set<std::string>("Relative Permeability", rel_perm);
+        wrm_sublist.set<std::string>("relative permeability model", rel_perm);
       }
     } else if (cp_list.isSublist("Capillary Pressure: Brooks Corey")) {
       Teuchos::ParameterList& BC_list = cp_list.sublist("Capillary Pressure: Brooks Corey");
@@ -950,7 +950,7 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
         wrm_sublist.set<double>("Brooks Corey l",ell);
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
-        wrm_sublist.set<std::string>("Relative Permeability", rel_perm);
+        wrm_sublist.set<std::string>("relative permeability model", rel_perm);
       }
     } else {
       // not implemented error
