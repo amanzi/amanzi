@@ -83,7 +83,7 @@ namespace
 //
 // The num_state_type actually varies with model.
 //
-// Add 2 if do_chem == 1 later.
+// Add 2 if do_chem>0 later.
 //
 int PorousMedia::num_state_type;
 //
@@ -719,7 +719,7 @@ PorousMedia::variableSetUp ()
           solute_data_names.push_back("Kd");
           solute_data_names.push_back("Freundlich_n");
           solute_data_names.push_back("Langmuir_b");
-          if (do_chem!=0) {
+          if (do_chem>0) {
               solute_data_names.push_back("Free_Ion_Guess");
               solute_data_names.push_back("Activity_Coefficient");
           }
@@ -1130,7 +1130,7 @@ PorousMedia::read_rock()
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
                               rkrType,rkrParam,rcplType,rcplParam,rregions));
                   
-        if (ntracers>0 && do_chem!=0) {
+        if (ntracers>0 && do_chem>0) {
             Array<std::pair<std::string,Real> > parameters;
             parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 0));
             parameters.push_back(std::make_pair<std::string,Real>(                  "Kd", 0));
@@ -1150,7 +1150,7 @@ PorousMedia::read_rock()
             }
         }
 
-        if (nminerals>0 && do_chem!=0) {
+        if (nminerals>0 && do_chem>0) {
             Array<std::pair<std::string,Real> > parameters;
             parameters.push_back(std::make_pair<std::string,Real>(       "Volume_Fraction", 0));
             parameters.push_back(std::make_pair<std::string,Real>("Specific_Surface_Area", 0));
@@ -1166,7 +1166,7 @@ PorousMedia::read_rock()
             }
         }
         
-        if (nsorption_sites>0 && do_chem!=0) {
+        if (nsorption_sites>0 && do_chem>0) {
             Array<std::pair<std::string,Real> > parameters;
             parameters.push_back(std::make_pair<std::string,Real>("Site_Density", 0));
 
@@ -1181,7 +1181,7 @@ PorousMedia::read_rock()
             }
         }
 
-        if (ncation_exchange>0 && do_chem!=0) {
+        if (ncation_exchange>0 && do_chem>0) {
             Array<std::pair<std::string,Real> > parameters;
             parameters.push_back(std::make_pair<std::string,Real>("Cation_Exchange_Capacity", 0));
             for (int j=0; j<parameters.size(); ++j) {
@@ -2029,7 +2029,7 @@ void  PorousMedia::read_tracer()
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          if (do_chem > 0  ||  do_tracer_transport == 1) {
+          if (do_chem>0  ||  do_tracer_transport == 1) {
               std::string g="Total"; ppr.query("group",g); // FIXME: is this relevant anymore?
               group_map[g].push_back(i+ncomps);
           }
@@ -2400,7 +2400,7 @@ void  PorousMedia::read_chem()
       
 #ifdef AMANZI
   // get input file name, create SimpleThermoDatabase, process
-  if (do_chem > 0)
+  if (do_chem>0)
     {
 
         ParmParse ppm("mineral");

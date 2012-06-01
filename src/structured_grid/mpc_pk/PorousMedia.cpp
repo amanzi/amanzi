@@ -180,7 +180,7 @@ PorousMedia::variableCleanUp ()
   source_array.clear();
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       chemSolve.clear();
       components.clear();
@@ -1095,7 +1095,7 @@ PorousMedia::initData ()
         }
     }
 
-    if (ntracers>0 && do_chem!=0) {
+    if (ntracers>0 && do_chem>0) {
         const Real* dx = geom.CellSize();
         MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
         for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
@@ -1127,7 +1127,7 @@ PorousMedia::initData ()
         }
     }
 
-    if (nminerals>0 && do_chem!=0) {
+    if (nminerals>0 && do_chem>0) {
         const Real* dx = geom.CellSize();
         MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
         for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
@@ -1159,7 +1159,7 @@ PorousMedia::initData ()
         }
     }
         
-    if (nsorption_sites>0 && do_chem!=0) {
+    if (nsorption_sites>0 && do_chem>0) {
         const Real* dx = geom.CellSize();
         MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
         for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
@@ -1191,7 +1191,7 @@ PorousMedia::initData ()
         }
     }
         
-    if (ncation_exchange>0 && do_chem!=0) {
+    if (ncation_exchange>0 && do_chem>0) {
         const Real* dx = geom.CellSize();
         MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
         for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
@@ -1257,7 +1257,7 @@ PorousMedia::initData ()
             mac_project(u_mac_curr,rhs_RhoD,cur_time);
         
 #ifdef AMANZI
-        if (do_chem > -1)
+        if (do_chem>0)
         {
             get_new_data(FuncCount_Type).setVal(1);
             
@@ -1782,7 +1782,7 @@ PorousMedia::init (AmrLevel& old)
     }
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       MultiFab& FC_new  = get_new_data(FuncCount_Type); 
       
@@ -1839,7 +1839,7 @@ PorousMedia::init ()
   U_cor.setVal(0.);
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       FillCoarsePatch(get_new_data(FuncCount_Type),0,cur_time,FuncCount_Type,0,1);
     }
@@ -2032,7 +2032,7 @@ PorousMedia::advance_setup (Real time,
   u_mac_prev = dummy;
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       aux_boundary_data_old.setVal(1.e30);
     }
@@ -2108,10 +2108,10 @@ PorousMedia::advance (Real time,
     FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
     FillStateBndry (pcTime,Press_Type,0,1);
     //
-    // If do_chem <= -1, then no reaction.
+    // If do_chem==0, then no reaction.
     // Otherwise, type of reactions depends on magnitude of do_chem.
     //
-    if (do_chem > -1)
+    if (do_chem>0)
       {
 	if (do_full_strang)
 	  {
@@ -2197,7 +2197,7 @@ PorousMedia::advance (Real time,
     is_grid_changed_after_regrid = false;
     
     // second half of the strang splitting
-    if (do_chem > -1)
+    if (do_chem>0)
       {      
 	if (do_full_strang)
 	  {
@@ -2297,9 +2297,9 @@ PorousMedia::multilevel_advance (Real time,
 
     }
     
-    // If do_chem <= -1, then no reaction.
+    // If do_chem==0, then no reaction.
     // Otherwise, type of reactions depends on magnitude of have_corereact.
-    if (do_chem > -1)
+    if (do_chem>0)
       {
 	if (do_full_strang)
 	  {
@@ -2364,7 +2364,7 @@ PorousMedia::multilevel_advance (Real time,
   //
   // second half of the strang splitting
   //
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       if (do_full_strang)
 	{
@@ -2531,7 +2531,7 @@ PorousMedia::advance_incompressible (Real time,
       // Add the advective and other terms to get scalars at t^{n+1}.
       scalar_update(dt,0,ncomps,corrector);
 
-      if (do_chem > -1)
+      if (do_chem>0)
 	{
 	  if (do_full_strang)
 	    strang_chem(S_new,dt/2.0);
@@ -4666,7 +4666,7 @@ PorousMedia::strang_chem (MultiFab&  state,
 
 #else /* Not AMANZI */
 
-        if (do_chem == 0)
+        if (do_chem==0)
         {
             MultiFab tmp;
             tmp.define(state.boxArray(),ncomps,0,Fab_allocate);
@@ -8979,7 +8979,7 @@ PorousMedia::avgDown ()
   // Average down the cell-centered velocity at the new time.
   //
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       MultiFab& FC_crse = get_new_data(FuncCount_Type);
       MultiFab& FC_fine = fine_lev.get_new_data(FuncCount_Type);
