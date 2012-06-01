@@ -170,7 +170,6 @@ namespace Amanzi {
 	  }
         }
 
-
         //
         // convert execution control to structured format
         //
@@ -378,11 +377,48 @@ namespace Amanzi {
 		  prob_out_list.set<double>("max_dt", dt_max);
 		}
             }
+            else if (t_list.isSublist(init_to_steady_str))
+            {
+                MyAbort("Initalize To Steady not yet completely implemented");
+
+                const ParameterList& tran_list = t_list.sublist(init_to_steady_str);
+
+                reqP.clear(); reqL.clear();
+                std::map<std::string,double> optP;
+                std::string Start_str =                 "Start";                    reqP.push_back(Start_str);
+                std::string Switch_str =                "Switch";                   reqP.push_back(Switch_str);
+                std::string End_str =                   "End";                      reqP.push_back(End_str);
+                std::string Steady_Init_Time_Step_str = "Steady Initial Time Step"; reqP.push_back(Steady_Init_Time_Step_str);
+
+                // Set defaults for optional parameters
+                std::string Transient_Init_Time_Step_str = "Transient Initial Time Step";  optP[Transient_Init_Time_Step_str] = -1;
+                std::string Init_Time_Step_Mult_str =      "Initial Time Step Multiplier"; optP[Init_Time_Step_Mult_str]      = -1;
+
+                // Extract/set required parameters
+                PLoptions Topt(tran_list,reqL,reqP,true,false); 
+                for (int i=0; i<reqP.size(); ++i) {
+                    prob_out_list.set<double>(underscore(init_to_steady_str+" "+reqP[i]), tran_list.get<double>(reqP[i]));
+                }
+
+                // Extract optional parameters
+                const Array<std::string> ToptP = Topt.OptParms();
+                for (int i=0; i<ToptP.size(); ++i) {
+                    if (optP.find(ToptP[i]) != optP.end()) {
+                        optP[ToptP[i]] = tran_list.get<double>(ToptP[i]); // replace default value
+                    }
+                    else {
+                        MyAbort("Unrecognized option under \""+init_to_steady_str+"\": \""+ToptP[i]+"\"" );
+                    }
+                }
+
+                for (std::map<std::string,double>::const_iterator it=optP.begin(); it!=optP.end(); ++it) {
+                    prob_out_list.set<double>(underscore(init_to_steady_str+" "+it->first), it->second);
+                }
+            }
             else {
                 std::cout << t_list << std::endl;
                 MyAbort("No recognizable value for \"" + tim_str + "\"");
             }
-
 
             // Deal with optional settings
             const Array<std::string> optL = ECopt.OptLists();

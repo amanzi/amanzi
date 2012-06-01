@@ -5708,6 +5708,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
                   fine_lev.scalar_adjust_constraint(0,ncomps-1);
 
               fine_lev.FillStateBndry(pcTime,Press_Type,0,1);
+              fine_lev.calcInvPressure(S_lev,P_lev); 
               fine_lev.calcLambda(pcTime);
 
               MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
