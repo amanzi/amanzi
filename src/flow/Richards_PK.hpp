@@ -69,7 +69,7 @@ class Richards_PK : public Flow_PK {
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
   void update_norm(double rtol, double atol) {};
-  void compute_precon(const double t, const double dt, const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params);
+  void compute_precon(const double t, const double dt, const Epetra_Vector& x, Teuchos::ParameterList* params);
   
 
 
@@ -141,6 +141,8 @@ class Richards_PK : public Flow_PK {
   // developement members
   void CalculateConsistentSaturation(const Epetra_Vector& flux, 
                                      const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+  
+  Matrix_MFD* GetPreconditioner() {return preconditioner;}
 
  public:
   int num_nonlinear_steps;

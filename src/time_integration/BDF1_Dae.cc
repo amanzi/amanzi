@@ -280,8 +280,8 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     
   try {
 
-//     solve_bce(tnew, h, u0, u);
-    solve_bce_jfnk(tnew, h, u0, u);
+    solve_bce(tnew, h, u0, u);
+//     solve_bce_jfnk(tnew, h, u0, u);
 //     exit(0);
   }
   catch (int itr) { 
@@ -294,9 +294,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
       hnext = std::min(state.hinc * h, state.hlimit);
       state.usable_pc = false;
     } else if (itr > state.mitr) {
-      
-      std::cout << itr << "restore the original u\n";
-      exit(0);
       u = usav;  // restore the original u
       state.usable_pc = false;
       hnext = std::min(h, state.hlimit);
@@ -448,20 +445,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
 	ttotal.stop();
   
-        std::cout << "nonlinear solver takes: " << ttotal << std::endl;
+        	
 	
-	//    // Print solution
-	char file_name[25];
-	FILE *ifp;
-	int MyPID = 0;
 	
-	(void) sprintf(file_name, "output_nka.%d",MyPID);
-	ifp = fopen(file_name, "w");
-	for (int i=0; i<u.MyLength(); i++)
-	fprintf(ifp, "%d %E\n", i, u[i]);
-	fclose(ifp);
-
-	exit(0);
 
       }
 
@@ -589,8 +575,9 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     
    AmanziFlow::Richards_PK *RPK_ptr = static_cast<AmanziFlow::Richards_PK *> (&fn);
 
-   Teuchos::RCP<AmanziFlow::Preconditioner_Test> Prec_Test = 
-      Teuchos::rcp(new AmanziFlow::Preconditioner_Test(RPK_ptr->FS, RPK_ptr->super_map()));
+   Teuchos::RCP<AmanziFlow::Matrix_MFD> Prec_Test = 
+      Teuchos::rcp(RPK_ptr->GetPreconditioner());
+//    AmanziFlow::Matrix_MFD* Prec_Test = RPK_ptr->GetPreconditioner();
       
 //      Teuchos::RCP<Epetra_Operator> MFD_operator = Teuchos::rcp(&MFD);
       
@@ -612,6 +599,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						     iJac,  MF, iPrec, Prec_Test, nox_u));
+// 						      iReq, MF, iPrec, nox_u));
 
   // Create the Group
   Teuchos::RCP<NOX::Epetra::Group> grp =

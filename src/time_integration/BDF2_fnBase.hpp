@@ -28,7 +28,7 @@ namespace BDF2 {
     virtual void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc) = 0;
     
     // interface for NOX
-    virtual void compute_precon(const double t, const double dt, const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params){return;};
+    virtual void compute_precon(const double t, const double dt, const Epetra_Vector& x, Teuchos::ParameterList* params){return;};
 
     // check the admissibility of a solution
     // override with the actual admissibility check

@@ -54,7 +54,7 @@ bool Interface_NOX::computePreconditioner(
   lag_count_++;
   lag_count_ %= lag_prec_;
   
-   FPK_->compute_precon(time, deltaT, x, M, params);
+   FPK_->compute_precon(time, deltaT, x, params);
 
   return true;
 }
