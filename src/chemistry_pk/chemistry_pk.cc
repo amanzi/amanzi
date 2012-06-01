@@ -131,7 +131,7 @@ void Chemistry_PK::InitializeChemistry(void) {
 
     // solve for initial free-ion concentrations
     chem_->Speciate(beaker_components_, beaker_parameters_);
-    chem_->UpdateComponents(&beaker_components_);
+    chem_->CopyBeakerToComponents(&beaker_components_);
     if (debug()) {
       chem_out->Write(kVerbose, "\nTest solution of initial conditions in cell 0:\n");
       chem_->DisplayResults();
@@ -162,7 +162,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     try {
       // solve for initial free-ion concentrations
       chem_->Speciate(beaker_components_, beaker_parameters_);
-      chem_->UpdateComponents(&beaker_components_);
+      chem_->CopyBeakerToComponents(&beaker_components_);
     } catch (ChemistryException& geochem_error) {
       std::cout << geochem_error.what() << std::endl;
       Exceptions::amanzi_throw(geochem_error);

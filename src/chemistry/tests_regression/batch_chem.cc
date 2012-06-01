@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
 
       // solve for free-ion concentrations
       chem->Speciate(components, parameters);
-      chem->UpdateComponents(&components);
+      chem->CopyBeakerToComponents(&components);
       if (simulation_params.verbosity >= ac::kTerse) {
         chem->DisplayResults();
       }

@@ -278,26 +278,13 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   ResetStatus();
   UpdateParameters(parameters, 0.0);
   CheckChargeBalance(components.total);
-  // initialize free-ion concentrations, these are actual
-  // concentrations, so the value must be positive or ln(free_ion)
-  // will return a nan!
-  if (components.free_ion.size() > 0) {
-    InitializeMolalities(components.free_ion);
-  } else {
-    InitializeMolalities(1.e-9);
-  }
 
-  for (unsigned int m = 0; m < minerals_.size(); m++) {
-    minerals_.at(m).set_volume_fraction(components.minerals.at(m));
-    // NOTE: SSA already updated by the call to UpdateParameters()!
-  }
+  CopyComponentsToBeaker(components);
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++) {
     prev_molal_.at(i) = primary_species().at(i).molality();
   }
-
-  // TODO(bandre): update CEC from components!
 
   double max_rel_change;
   double max_residual;
@@ -428,25 +415,12 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   UpdateParameters(parameters, dt);
   CheckChargeBalance(components->total);
 
-  // initialize free-ion concentrations, these are actual
-  // concentrations, so the value must be positive or ln(free_ion)
-  // will return a nan!
-  if (components->free_ion.size() > 0) {
-    InitializeMolalities(components->free_ion);
-    // testing only    InitializeMolalities(1.e-9);
-  }
+  CopyComponentsToBeaker(*components);
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++) {
     prev_molal_.at(i) = primary_species().at(i).molality();
   }
-
-  for (unsigned int m = 0; m < minerals_.size(); m++) {
-    minerals_.at(m).set_volume_fraction(components->minerals.at(m));
-    // NOTE: SSA already updated by the call to UpdateParameters()!
-  }
-
-  // TODO(bandre): update CEC from components!
 
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
@@ -542,7 +516,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: tolerance = " << tolerance() << std::endl;
     error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
     // update before leaving so that we can see the erroneous values!
-    UpdateComponents(components);
+    CopyBeakerToComponents(components);
     Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
   }
 
@@ -554,33 +528,38 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // update total concentrations
   UpdateEquilibriumChemistry();
   UpdateKineticMinerals();
-  UpdateComponents(components);
+  CopyBeakerToComponents(components);
   ValidateSolution();
 
   return num_iterations;
 }  // end ReactionStep()
 
 
-void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
+void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
   // Copy the beaker primary variables into a component struct that
   // can be returned to the driver
   for (int i = 0; i < ncomp(); i++) {
     components->total.at(i) = total_.at(i);
-    if (components->free_ion.size() > 0) {
-      components->free_ion.at(i) = primary_species().at(i).molality();
+
+    if (!components->free_ion.size() > 0) {
+      components->free_ion.resize(ncomp(), 1.0e-9);
     }
+    components->free_ion.at(i) = primary_species().at(i).molality();
+
     if (components->total_sorbed.size() > 0 &&
         total_sorbed_.size() > 0) {
       components->total_sorbed.at(i) = total_sorbed_.at(i);
     }
   }
+
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     components->minerals.at(m) = minerals_.at(m).volume_fraction();
   }
+
   for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
     components->ion_exchange_sites.at(i) = ion_exchange_rxns_.at(i).site().cation_exchange_capacity();
   }
-}  // end UpdateComponents()
+}  // end CopyBeakerToComponents()
 
 void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents* to) {
@@ -940,24 +919,31 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
   }
 }  // end VerifyComponentSizes()
 
-void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
-  // TODO(bandre): Not sure this is actually doing anything as currently
-  // used. Should be renamed ApplyComponentsToBeaker() or something
-  // similar, then repurposed to handle this behavior uniformly in the
-  // SimpleThermoDatabase::Setup(), ReactionStep() an Speciate() calls.
+void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) {
+  // initialize free-ion concentrations, these are actual
+  // concentrations, so the value must be positive or ln(free_ion)
+  // will return a nan!
+  if (components.free_ion.size() > 0) {
+    InitializeMolalities(components.free_ion);
+  } else {
+    InitializeMolalities(1.e-9);
+  }
+
   unsigned int size = components.ion_exchange_sites.size();
   if (ion_exchange_rxns().size() == size) {
-    // for now, we will set the size of total_sorbed = ncomp() if # sites > 0
     for (unsigned int ies = 0; ies < size; ies++) {
       ion_exchange_rxns_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
     }
   } else {
     std::ostringstream error_stream;
-    error_stream << "Beaker::SetComponents(): \n";
-    error_stream << "ion_exchange_sites.size and components.ion_exchange_sites.size do not match.\n";
+    error_stream << "Beaker::CopyComponentsToBeaker(): \n";
+    error_stream << "ion_exchange_sites.size(" << ion_exchange_rxns().size()
+                 << ") and components.ion_exchange_sites.size(" << size 
+                 << ") do not match.\n";
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
+  // NOTE: SSA updated by the call to UpdateParameters()!
   size = components.minerals.size();
   if (minerals().size() == size) {
     for (unsigned int m = 0; m < size; m++) {
@@ -965,11 +951,13 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
     }
   } else {
     std::ostringstream error_stream;
-    error_stream << "Beaker::SetComponents(): \n";
-    error_stream << "minerals.size and components.minerals.size do not match.\n";
+    error_stream << "Beaker::CopyComponentsToBeaker(): \n";
+    error_stream << "minerals.size(" << minerals().size()
+                 << ") and components.minerals.size(" << size 
+                 << ") do not match.\n";
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
-}  // end SetComponents()
+}  // end CopyComponentsToBeaker()
 
 void Beaker::SetupActivityModel(std::string model,
                                 std::string pitzer_database,
