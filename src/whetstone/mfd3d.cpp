@@ -15,6 +15,8 @@ Usage:
 #include <vector>
 
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #include "Mesh.hh"
@@ -30,9 +32,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D::darcy_mass(int cell,
-                       Tensor& permeability,
-                       Teuchos::SerialDenseMatrix<int, double>& M)
+int MFD3D::darcy_mass(int cell, const Tensor& permeability,
+                      Teuchos::SerialDenseMatrix<int, double>& M)
 {
   int d = mesh_->space_dimension();
 
@@ -58,8 +59,7 @@ int MFD3D::darcy_mass(int cell,
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse(int cell,
-                              Tensor& permeability,
+int MFD3D::darcy_mass_inverse(int cell, const Tensor& permeability,
                               Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
@@ -83,8 +83,7 @@ int MFD3D::darcy_mass_inverse(int cell,
 /* ******************************************************************
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse_hex(int cell,
-                                  Tensor& permeability,
+int MFD3D::darcy_mass_inverse_hex(int cell, const Tensor& permeability,
                                   Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
@@ -110,8 +109,7 @@ int MFD3D::darcy_mass_inverse_hex(int cell,
 * This is a debug version of the above routine for a scalar tensor
 * and an orthogonal brick element.
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse_diagonal(int cell,
-                                       Tensor& permeability,
+int MFD3D::darcy_mass_inverse_diagonal(int cell, const Tensor& permeability,
                                        Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
@@ -135,8 +133,7 @@ int MFD3D::darcy_mass_inverse_diagonal(int cell,
 /* ******************************************************************
 * Second-generation MFD method as inlemented in RC1.
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse_SO(int cell,
-                                 Tensor& permeability,
+int MFD3D::darcy_mass_inverse_SO(int cell, const Tensor& permeability,
                                  Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
@@ -206,7 +203,7 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
       int k = find_position(corner_faces[i], faces);
       for (int j = i; j < d; j++) {
         int l = find_position(corner_faces[j], faces);
-        W(k, l) += Mv_tmp(i, j) * cwgt[n];
+        W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs[k] * fdirs[l];
         W(l, k) = W(k, l);
       }
     }
@@ -232,103 +229,26 @@ int MFD3D::darcy_mass_inverse_SO(int cell,
 
 
 /* ******************************************************************
-* A harmonic point is a unique point on a plane seprating two 
-* materials where (a) continuity conditions are satisfied for 
-* continuous piecewise linear pressure functions and (b) pressure 
-* value is a convex combination of two neighboring cell-based 
-* prossures.
+* Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
-void MFD3D::calculate_harmonic_points(int face,
-                                      std::vector<Tensor>& T,
-                                      AmanziGeometry::Point& harmonic_point,
-                                      double& harmonic_point_weight)
+int MFD3D::darcy_mass_inverse_optimized(int cell, const Tensor& permeability,
+                                        Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
 
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(face, AmanziMesh::USED, &cells);
-  int ncells = cells.size();
-
-  if (ncells == 1) {
-    harmonic_point = mesh_->face_centroid(face);
-  } else {
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(face);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(face);
-
-    const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(cells[0]);
-    const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(cells[1]);
-
-    AmanziGeometry::Point Tn1(d), Tn2(d);
-    Tn1 = T[cells[0]] * normal;
-    Tn2 = T[cells[1]] * normal;
-
-    double d1 = fabs(normal * (fm - cm1));
-    double d2 = fabs(normal * (fm - cm2));
-    double t1 = fabs(normal * Tn1);
-    double t2 = fabs(normal * Tn2);
-
-    double det = t1 * d2 + t2 * d1;
-    harmonic_point_weight = t1 * d2 / det;
-
-    AmanziGeometry::Point v1(d), v2(d);
-    double area = mesh_->face_area(face);
-    v1 = area * Tn1 - t1 * normal / area;
-    v2 = area * Tn2 - t2 * normal / area;
-    harmonic_point = harmonic_point_weight * cm1
-                   + (1 - harmonic_point_weight) * cm2
-                   + (d1 * d2 / det) * (v2 - v1);
-  }
-}
-
-
-/* ******************************************************************
-* Dispesion flux is based on values at first d harmonic points. 
-* The flux is scaled by the area of corresponding subface (facet).
-* The case of Dirichlet-Neumann corner has to be implemented 
-* separately using array bc_face_id().(lipnikov@lanl.gov).
-****************************************************************** */
-int MFD3D::dispersion_corner_fluxes(int node,
-                                    int cell,
-                                    Tensor& dispersion,
-                                    std::vector<AmanziGeometry::Point>& corner_points,
-                                    double cell_value,
-                                    std::vector<double>& corner_values,
-                                    std::vector<double>& corner_fluxes)
-{
-  int d = mesh_->space_dimension();
-
-  AmanziMesh::Entity_ID_List faces, nodes;
-  mesh_->node_get_cell_faces(node, cell, AmanziMesh::USED, &faces);
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> fdirs;
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
   int nfaces = faces.size();
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
-  // gradient calculation grad(C) = X^{-1} * d_values
-  Tensor X(d, 2);
-  AmanziGeometry::Point dp[d];
+  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
+  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
 
-  for (int i = 0; i < d; i++) {
-    (dp[i]).init(d);
-    dp[i] = corner_points[i] - cm;
-    for (int j = 0; j < d; j++) X(j, i) = (dp[i])[j];
-  }
-  X.inverse();
+  int ok = L2_consistency_inverse(cell, permeability, R, Wc);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  AmanziGeometry::Point gradient(d), dvalues(d);
-  for (int i = 0; i < d; i++) dvalues[i] = corner_values[i] - cell_value;
-  gradient = X * dvalues;
-  gradient = dispersion * gradient;
-
-  corner_fluxes.clear();
-  for (int i = 0; i < nfaces; i++) {  // calculate corner fluxes
-    int f = faces[i];
-    mesh_->face_get_nodes(f, &nodes);
-    int nnodes = nodes.size();
-
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    corner_fluxes.push_back((gradient * normal) / nnodes);
-  }
-
-  return 0;
+  ok = stability_optimized(cell, R, Wc, W);
+  return ok;
 }
 
 
@@ -337,8 +257,7 @@ int MFD3D::dispersion_corner_fluxes(int node,
 * Only upper triangular part of Mc is calculated.
 * Darcy flux is scaled by area!
 ****************************************************************** */
-int MFD3D::L2_consistency(int cell,
-                          Tensor& T,
+int MFD3D::L2_consistency(int cell, const Tensor& T,
                           Teuchos::SerialDenseMatrix<int, double>& N,
                           Teuchos::SerialDenseMatrix<int, double>& Mc)
 {
@@ -385,8 +304,7 @@ int MFD3D::L2_consistency(int cell,
 * fluxes. Only the upper triangular part of Wc is calculated.
 * Darcy flux is scaled by area!
 ****************************************************************** */
-int MFD3D::L2_consistency_inverse(int cell,
-                                  Tensor& T,
+int MFD3D::L2_consistency_inverse(int cell, const Tensor& T,
                                   Teuchos::SerialDenseMatrix<int, double>& R,
                                   Teuchos::SerialDenseMatrix<int, double>& Wc)
 {
@@ -430,8 +348,7 @@ int MFD3D::L2_consistency_inverse(int cell,
 * Consistency condition for stiffness matrix in heat conduction. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
-int MFD3D::H1_consistency(int cell,
-                          Tensor& T,
+int MFD3D::H1_consistency(int cell, const Tensor& T,
                           Teuchos::SerialDenseMatrix<int, double>& N,
                           Teuchos::SerialDenseMatrix<int, double>& Ac)
 {
@@ -509,8 +426,7 @@ int MFD3D::H1_consistency(int cell,
 * Consistency condition for stifness matrix in geomechanics. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
-int MFD3D::H1_consistency_elasticity(int cell,
-                                     Tensor& T,
+int MFD3D::H1_consistency_elasticity(int cell, const Tensor& T,
                                      Teuchos::SerialDenseMatrix<int, double>& N,
                                      Teuchos::SerialDenseMatrix<int, double>& Ac)
 {
@@ -558,8 +474,7 @@ void MFD3D::stability_scalar(int cell,
 /* ******************************************************************
 * A simple monotone stability term for a 2D or 3D brick element. 
 ****************************************************************** */
-int MFD3D::stability_monotone_hex(int cell,
-                                  Tensor& T,
+int MFD3D::stability_monotone_hex(int cell, const Tensor& T,
                                   Teuchos::SerialDenseMatrix<int, double>& Mc,
                                   Teuchos::SerialDenseMatrix<int, double>& M)
 {
@@ -642,6 +557,139 @@ int MFD3D::stability_monotone_hex(int cell,
     }
   }
   return 0;
+}
+
+
+/* ******************************************************************
+* A simple optimization procedure that must return a diagonal mass
+* matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
+* The algorithm minimizes off-diagonal entries in the mass matrix.
+****************************************************************** */
+int MFD3D::stability_optimized(int cell,
+                               Teuchos::SerialDenseMatrix<int, double>& N,
+                               Teuchos::SerialDenseMatrix<int, double>& Mc,
+                               Teuchos::SerialDenseMatrix<int, double>& M)
+{
+  int d = mesh_->space_dimension();
+  int nrows = N.numRows();
+  int ncols = N.numCols();
+
+  // find null space of N^T
+  Teuchos::SerialDenseMatrix<int, double> U(nrows, nrows);
+  int info, size = 5 * d + 3 * nrows;
+  double V, S[nrows], work[size];
+
+  Teuchos::LAPACK<int, double> lapack;
+  lapack.GESVD('A', 'N', nrows, ncols, N.values(), nrows,  // N = u s v
+               S, U.values(), nrows, &V, 1, work, size, 
+               NULL, &info);
+  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+  // calculate vectors C and C0
+  int mrows = nrows * (nrows - 1) / 2;
+  int mcols = nrows - ncols;
+  int nparam = (mcols + 1) * mcols / 2;
+  Teuchos::SerialDenseMatrix<int, double> C(mrows, nparam);
+  Teuchos::SerialDenseVector<int, double> F(mrows);
+
+  int m, n = 0;
+  for (int k = ncols; k < nrows; k++) {
+    m = 0;  // calculate off-diagonal entries of M_kk = U_k * U_k^T
+    for (int i = 0; i < nrows; i++) 
+      for (int j = i+1; j < nrows; j++) C(m++, n) = U(i, k) * U(j, k);
+    n++; 
+  }
+
+  for (int k = ncols; k < nrows; k++) {
+    for (int l = k+1; l < nrows; l++) {
+      m = 0;  // calculate off-diagonal entries of M_kk + M_ll - M_kl - M_lk 
+      for (int i = 0; i < nrows; i++) { 
+        for (int j = i+1; j < nrows; j++) {
+          C(m, n) = C(m, k-ncols) + C(m, l-ncols) - U(i, k) * U(j, l) - U(i, l) * U(j, k);
+          m++;
+        }
+      }
+      n++;
+    }
+  }
+
+  m = 0;
+  for (int i = 0; i < nrows; i++) { 
+    for (int j = i+1; j < nrows; j++) F(m++) = -Mc(i, j);
+  }
+
+  // Form a linear system for parameters
+  Teuchos::SerialDenseMatrix<int, double> A(nparam, nparam);
+  Teuchos::SerialDenseVector<int, double> G(nparam);
+
+  A.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, C, C, 0.0);
+  G.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, C, F, 0.0);
+
+  // Find parameters
+  lapack.POSV('U', nparam, 1, A.values(), nparam, G.values(), nparam, &info);
+  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+  // project solution on the positive quadrant and convert to matrix
+  Teuchos::SerialDenseMatrix<int, double> P(mcols, mcols);
+
+  int status = WHETSTONE_ELEMENTAL_MATRIX_OK;
+  for (int loop = 0; loop < 3; loop++) {
+    if (loop == 1) {   
+      for (int i = 0; i < mcols; i++) G(i) = std::max<double>(G(i), 0.0);
+      status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
+    } else if (loop == 2) {
+      for (int i = mcols; i < nparam; i++) G(i) = std::max<double>(G(i), 0.0);
+      status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
+    }
+
+    for (int k = 0; k < mcols; k++) P(k, k) = G(k);
+
+    n = mcols;
+    for (int k = 0; k < mcols; k++) {
+      for (int l = k+1; l < mcols; l++) {
+        P(k, k) += G(n);
+        P(l, l) += G(n);
+        P(l, k) = P(k, l) = -G(n);
+        n++;  
+      }
+    }
+
+    // check SPD property (we use allocated memory)
+    Teuchos::SerialDenseMatrix<int, double> Ptmp(P);
+    lapack.SYEV('N', 'U', mcols, Ptmp.values(), mcols, S, work, size, &info); 
+    if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+    if (S[0] > 0.0) {
+      break;
+    } else if (loop == 2) {
+      double trace = 0.0;
+      for (int k = 0; k < nrows; k++) trace += Mc(k, k);
+      for (int k = 0; k < mcols; k++) if (P(k, k) == 0.0) P(k, k) = trace / (d * nrows);
+    }
+  }
+
+  // add stability term U G U^T
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
+  }
+
+  Teuchos::SerialDenseMatrix<int, double> UP(nrows, mcols);
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < mcols; j++) {
+      double& entry = UP(i, j);
+      for (int k = 0; k < mcols; k++) entry += U(i, k+ncols) * P(k, j);
+    }
+  }
+
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i; j < nrows; j++) {
+      double& entry = M(i, j);
+      for (int k = 0; k < mcols; k++) entry += UP(i, k) * U(j, k+ncols);
+      M(j, i) = M(i, j); 
+    }
+  }
+
+  return status;
 }
 
 

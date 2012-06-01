@@ -28,7 +28,7 @@ TEST(NUMBERING) {
   // Write node coordinates
   std::cout << "Node coordinates..." << std::endl;
   double x[3];
-  for (unsigned int j = 0; j < 8; ++j) {
+  for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 8; ++j) {
     std::cout << j << ":";
     mesh->node_to_coordinates(j, x, x+3);
     for (int i = 0; i < 3; ++i) std::cout << " " << x[i];
@@ -37,9 +37,9 @@ TEST(NUMBERING) {
   std::cout << std::endl;
   
   // Write face-node connectivity
-  unsigned int fnode[8];
+  Amanzi::AmanziMesh::Entity_ID fnode[8];
   std::cout << "Face node connectivity..." << std::endl;
-  for (unsigned int j = 0; j < 6; ++j) {
+  for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 6; ++j) {
     mesh->face_to_nodes(j, fnode, fnode+4);
     std::cout << j << ":";
     for (int i = 0; i < 4; ++i) std::cout << " " << fnode[i];
@@ -48,9 +48,9 @@ TEST(NUMBERING) {
   std::cout << std::endl;
   
   // Write cell-node connectivity
-  unsigned int cnode[8];
+  Amanzi::AmanziMesh::Entity_ID cnode[8];
   std::cout << "Cell node connectivity..." << std::endl;
-  for (unsigned int j = 0; j < 1; ++j) {
+  for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 1; ++j) {
     mesh->cell_to_nodes(j, cnode, cnode+8);
     std::cout << j << ":";
     for (int i = 0; i < 8; ++i) std::cout << " " << cnode[i];
@@ -59,7 +59,7 @@ TEST(NUMBERING) {
   std::cout << std::endl;
   
   // Write cell face-node connectivity
-  //  unsigned int cface[6];
+  //  Amanzi::AmanziMesh::Entity_ID cface[6];
   //  int fdir[6];
   Amanzi::AmanziMesh::Entity_ID_List cface;
   std::vector<int> fdir;

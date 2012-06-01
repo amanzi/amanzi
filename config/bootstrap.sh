@@ -56,6 +56,7 @@ cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
 parallel_jobs=2
+build_type=Release
 
 # Compiler definitions
 build_c_compiler=
@@ -77,6 +78,19 @@ tpl_install_prefix=${dflt_install_prefix}/tpls
 
 # Color output display
 no_color=$FALSE
+
+# Amanzi build configuration
+structured=$TRUE
+unstructured=$TRUE
+stk_mesh=$TRUE
+mstk_mesh=$TRUE
+moab_mesh=$FALSE
+amanzi_branch=default
+test_suite=$FALSE
+netcdf4=${TRUE}
+
+
+
 
 # ---------------------------------------------------------------------------- #
 #
@@ -164,6 +178,34 @@ function download_file()
 }
 
 # Command line functions
+function set_feature()
+{
+  feature=$1
+  action=$2
+
+  if echo $action | grep "disable" > /dev/null 2>/dev/null; then
+    eval "${feature}=$FALSE"
+    
+  fi
+  if echo $action | grep "enable" > /dev/null 2>/dev/null; then
+    eval "${feature}=$TRUE"
+  fi
+  echo ${!feature}
+
+}
+function parse_feature()
+{
+  feature_opt=$1
+
+  if echo ${feature_opt} | grep "^--disable-" > /dev/null 2> /dev/null; then
+    echo ${feature_opt} | sed "s/^--disable-//"
+  fi
+  if echo ${feature_opt} | grep "^--enable-" > /dev/null 2> /dev/null; then
+    echo ${feature_opt} | sed "s/^--enable-//"
+  fi
+    
+}
+
 function parse_option_with_equal()
 {
   a=$1
@@ -191,7 +233,24 @@ Configuration:
 
   --tpl-config-file=FILE  define a CMake TPL configuration file. If this
                           option is selected, '"$0"' will NOT build the TPLs.
+
+  --opt                   build optimized TPLs and Amanzi binaries. This the default
+                          configuration.
+
+  --debug                 build debug TPLs and Amanzi binaries.
+
+  --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
   
+Build features:
+Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
+Value in brackets indicates default setting.
+
+  structured              build structured mesh capability ['"${structured}"']    
+  unstructured            build unstructured mesh capability ['"${unstructured}"']
+  stk_mesh                build the STK Mesh Toolkit ['"${stk_mesh}"']
+  mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
+  moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
+  test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
 
 Tool definitions:
 
@@ -246,8 +305,18 @@ Compilers:
     build_fort_compiler ='"${build_fort_compiler}"'
 
 Build configuration:
+    build_type          ='"${build_type}"'
     tpl_config_file     ='"${tpl_config_file}"'
     parallel            ='"${parallel_jobs}"'
+
+Build Features:   
+    structured          ='"${structured}"'
+    unstructured        ='"${unstructured}"'
+    stk_mesh            ='"${stk_mesh}"'
+    mstk_mesh           ='"${mstk_mesh}"'
+    moab_mesh           ='"${moab_mesh}"'
+    test_suite          ='"${test_suite}"'
+    netcdf4             ='"${netcdf4}"'
 
 Directories:
     prefix                 ='"${prefix}"'
@@ -283,9 +352,31 @@ function parse_argv()
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal ${opt} 'parallel'`
                  ;;
+      
+      --opt)
+                 build_type=Release
+                 ;;
+
+      --debug)
+                 build_type=Debug
+                 ;;
+
+      --disable-*)
+                 feature=`parse_feature ${opt}`
+                 set_feature ${feature} 'disable'
+                 ;;
+
+      --enable-*)
+                 feature=`parse_feature ${opt}`
+                 set_feature ${feature} 'enable'
+                 ;;
 
       --no-color)
                  no_color=${TRUE}
+                 ;;
+
+      --branch=*)
+                 amanzi_branch=`parse_option_with_equal ${opt} 'branch'`
                  ;;
 
       --with-c-compiler=*)
@@ -534,6 +625,21 @@ function ascem_hg_clone
   fi
 }
 
+function hg_change_branch()
+{
+  branch=$1
+  save_dir=`pwd`
+  cd ${amanzi_source_dir}
+  status_message "Updating ${amanzi_source_dir} to branch ${branch}"
+  ${hg_binary} update ${branch}
+  if [ $? -ne 0 ]; then
+    error_message "Failed to update ${amanzi_source_dir} to branch ${branch}"
+    exit_now 30
+  fi
+  cd ${save_dir}
+ 
+}
+
 # MPI Check
 function check_mpi_root
 {
@@ -542,9 +648,9 @@ function check_mpi_root
     mpi_root_env="${MPIROOT} ${MPI_ROOT} ${MPIHOME} ${MPI_HOME} ${MPI_PREFIX}"
     for env_try in ${mpi_root_env}; do
       if [ -e "${env_try}" ]; then
-	mpi_root_dir="${env_try}"
-	status_message "Located MPI installation in ${mpi_root_dir}"
-	break
+mpi_root_dir="${env_try}"
+status_message "Located MPI installation in ${mpi_root_dir}"
+break
       fi
     done
 
@@ -652,7 +758,7 @@ function define_fort_compiler
       fort_search_list="${fort_search_list} ${FC}"
     fi
 
-    fort_search_list="${fort_search_list} ${known_fort_compilers}"
+    fort_search_list="${fort_search_list} ${known_fortran_compilers}"
     for fort_try in ${fort_search_list}; do
       status_message "Searching for ${fort_try}"
       full_fort_try=`which ${fort_try} 2>/dev/null`
@@ -741,6 +847,14 @@ function define_build_directories
 
 }
 
+function define_install_directories
+{
+  # The prefix option overrides the other install choices
+  if [ ! -z  "${prefix}" ] ; then
+    amanzi_install_prefix=${prefix}
+    tpl_install_prefix=${prefix}/tpls
+  fi
+}    
 #
 # End functions
 # ---------------------------------------------------------------------------- #
@@ -754,8 +868,10 @@ function define_build_directories
 array=( "$@" )
 parse_argv "${array[@]}"
 
+# Define the install directories 
+define_install_directories
 
-# Create the directories
+# Create the build directories
 define_build_directories
 
 # Check the MPI root value 
@@ -766,6 +882,10 @@ check_compilers
 
 # Check the cmake, hg and curl tools
 check_tools
+
+# Change the branch
+hg_change_branch ${amanzi_branch}
+
 
 # Now build the TPLs if the config file is not defined
 if [ -z "${tpl_config_file}" ]; then
@@ -780,10 +900,17 @@ if [ -z "${tpl_config_file}" ]; then
   # Configure the TPL build
   cd ${tpl_build_dir}
   ${cmake_binary} \
+                -DCMAKE_BUILD_TYPE:STRING=${build_type} \
                 -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
                 -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
                 -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
                 -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
+                -DENABLE_Structured:BOOL=${structured} \
+                -DENABLE_Unstructured:BOOL=${unstructured} \
+                -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
+                -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
+                -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+                -DENABLE_NETCDF4:BOOL=${netcdf4} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -817,10 +944,23 @@ if [ -z "${tpl_config_file}" ]; then
 
 else 
 
-  if [ ! -e "${tpl_config_file}"]; then
-    error_message "Configure file ${amanzi_config_file} does not exist!"
+  status_message "Checking configuration file ${tpl_config_file}"
+
+  if [ ! -e "${tpl_config_file}" ]; then
+    error_message "Configure file ${amanzi_config_file} does not exist"
     exit_now 30
   fi
+
+  if [ ! -r "${tpl_config_file}" ]; then
+    error_message "Configure file ${tpl_config_file} is not readable"
+    exit_now 30
+  fi
+
+  if [ ! -f "${tpl_config_file}" ]; then
+    error_message "Configure file ${tpl_config_file} is not a regular file"
+    exit_now 30
+  fi
+
 
 fi
 
@@ -829,10 +969,18 @@ status_message "Build Amanzi with configure file ${tpl_config_file}"
 
 # Amanzi Configure
 cd ${amanzi_build_dir}
+
+# -- Amanzi Mesh options
+
+
 ${cmake_binary} \
-              -C ${tpl_config_file} \
-              -D CMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
-	      -D ENABLE_Strucutured:BOOL=OFF \
+              -C${tpl_config_file} \
+              -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
+              -DENABLE_Structured:BOOL=${structured} \
+              -DENABLE_Unstructured:BOOL=${unstructured} \
+              -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
+              -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
+              -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
               ${amanzi_source_dir}
 
 if [ $? -ne 0 ]; then
@@ -848,6 +996,16 @@ if [ $? -ne 0 ]; then
   exit_now 50
 fi
 status_message "Amanzi build complete"
+
+# Amanzi Test Suite
+if [ "${test_suite}" -eq "${TRUE}" ]; then
+  status_message "Run Amanzi test suite"
+  make test
+  if [ $? -ne 0 ]; then
+    error_message "Amanzi test suite failed"
+    exit_now 30
+  fi
+fi
 
 # Amanzi Install
 make install

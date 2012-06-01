@@ -33,6 +33,11 @@ int Richards_PK::AdvanceToSteadyState()
     ierr = AdvanceSteadyState_BDF2();
   }
 
+  Epetra_Vector& ws = FS->ref_water_saturation();
+  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
+  DeriveSaturationFromPressure(*solution_cells, ws);
+  ws_prev = ws;
+
   if (ierr == 0) flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
   return ierr;
 }
@@ -133,58 +138,57 @@ int Richards_PK::AdvanceSteadyState_Picard()
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
-  Epetra_Vector* solution_old_cells = FS->createCellView(solution_old);
-  Epetra_Vector* solution_new_cells = FS->createCellView(solution_new);
+  Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
+  Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
-  // update boundary conditions
+  // update steady state boundary conditions
   double time = 0.0;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_head->Compute(time);
-  bc_seepage->Compute(time);
-  UpdateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, atm_pressure,
-      bc_markers, bc_values);
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
-  while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
-    SetAbsolutePermeabilityTensor(K);
+  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
+    // update dynamic boundary conditions
+    bc_seepage->Compute(time);
+    ProcessBoundaryConditions(
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_faces, atm_pressure,
+        bc_markers, bc_values);
 
-    if (!is_matrix_symmetric) {  // Define K and Krel_faces
+    if (!is_matrix_symmetric) {
       CalculateRelativePermeabilityFace(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
+      Krel_cells->PutScalar(1.0);
+    } else {
       CalculateRelativePermeabilityCell(*solution_cells);
-      for (int c = 0; c < K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+      Krel_faces->PutScalar(1.0);
     }
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
+    matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
+    matrix->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix->AssembleGlobalMatrices();
     rhs = matrix->rhs();  // export RHS from the matrix class
 
     // create preconditioner
-    int disc_method = AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX;
-    preconditioner->createMFDstiffnessMatrices(disc_method, K, *Krel_faces);
-    preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, preconditioner);
-    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->assembleGlobalMatrices();
-    preconditioner->computeSchurComplement(bc_markers, bc_values);
-    preconditioner->update_ML_preconditioner();
+    preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
+    preconditioner->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner->AssembleGlobalMatrices();
+    preconditioner->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner->UpdateML_Preconditioner();
 
     // check convergence of non-linear residual
-    L2error = matrix->computeResidual(solution_new, residual);
+    L2error = matrix->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
     rhs->Norm2(&L2norm);
     L2error /= L2norm;
@@ -203,7 +207,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n",
+      std::printf("Richards PK: Picard:%4d  Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e,%4d)\n",
           itrs, L2error, L2norm, relaxation, linear_residual, num_itrs);
     }
 

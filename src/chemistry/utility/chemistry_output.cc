@@ -11,7 +11,7 @@ namespace amanzi {
 namespace chemistry {
 
 // global chem_out object, new/delete should be called from the driver!
-extern ChemistryOutput* chem_out;
+ChemistryOutput* chem_out = NULL;
 
 // default method to create and initialize the chemistry output object
 // with some sane defaults. Can be replaced by an driver if desired.
@@ -75,6 +75,10 @@ void ChemistryOutput::AddLevel(const Verbosity& level) {
 void ChemistryOutput::RemoveLevel(const Verbosity& level) {
   verbosity_flags_.set(level, false);
 }  // end RemoveLevel()
+
+void ChemistryOutput::DumpFlags(void) const {
+  std::cout << "ChemistryOutput: bit flags: " << verbosity_flags_.to_string() << "\n";
+}  // end DumpBitSet()
 
 void ChemistryOutput::OpenFileStream(const std::string& file_name) {
   // close the current file if it exists

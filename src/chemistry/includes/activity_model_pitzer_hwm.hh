@@ -34,9 +34,10 @@ class ActivityModelPitzerHWM : public ActivityModel {
              const std::vector<AqueousEquilibriumComplex>& secondary_species);
 
   double Evaluate(const Species& species);
-  void EvaluateVector(std::vector<double>& gamma, double& water_activity,
-		              const std::vector<Species>& primary_species,
-		              const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
+  void EvaluateVector(const std::vector<Species>& prim, 
+                      const std::vector<AqueousEquilibriumComplex>& sec,
+                      std::vector<double>* gamma,
+                      double* actw);
   void Display(void) const;
 
   private:

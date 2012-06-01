@@ -37,29 +37,29 @@ class Matrix_MFD : public Epetra_Operator {
   ~Matrix_MFD();
 
   // main methods
-  void setSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
-  void createMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
-  void createMFDrhsVectors();
-  void createMFDstiffnessMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K, Epetra_Vector& Krel_faces);
-  void rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
-  void applyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
+  void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
+  void CreateMFDrhsVectors();
+  void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
+  void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
+  void ApplyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
-  void symbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
-  void assembleGlobalMatrices();
-  void computeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+  void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
+  void AssembleGlobalMatrices();
+  void ComputeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
-  double computeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
-  double computeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+  double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+  double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
 
-  void deriveDarcyMassFlux(const Epetra_Vector& solution, 
+  void DeriveDarcyMassFlux(const Epetra_Vector& solution, 
                            const Epetra_Import& face_importer, 
                            Epetra_Vector& darcy_mass_flux);
-  void deriveDarcyVelocity(const Epetra_Vector& darcy_mass_flux, 
+  void DeriveDarcyVelocity(const Epetra_Vector& darcy_mass_flux, 
                            const Epetra_Import& face_importer, 
                            Epetra_MultiVector& darcy_velocity) const;
 
-  void init_ML_preconditioner(Teuchos::ParameterList& ML_list);
-  void update_ML_preconditioner();
+  void InitML_Preconditioner(Teuchos::ParameterList& ML_list);
+  void UpdateML_Preconditioner();
 
   // required methods
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -88,6 +88,9 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
+  double nokay() { return nokay_; }
+  double npassed() { return npassed_; }
+
  private:
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
@@ -95,6 +98,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   bool flag_symmetry_;
 
+  std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
   std::vector<double> Acc_cells_;  // duplication may be useful later
@@ -114,6 +118,8 @@ class Matrix_MFD : public Epetra_Operator {
 
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
+
+  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 
  private:
   void operator=(const Matrix_MFD& matrix);

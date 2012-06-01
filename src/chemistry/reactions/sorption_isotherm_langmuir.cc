@@ -28,6 +28,20 @@ void SorptionIsothermLangmuir::Init(const double K, const double b) {
   set_b(b);
 }
 
+std::vector<double> SorptionIsothermLangmuir::GetParameters(void) const {
+  std::vector<double> params;
+  params.resize(2, 0.0);
+  params.at(0) = K();
+  params.at(1) = b();
+  return params;
+}  // end GetParameters()
+
+void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) {
+  set_K(params.at(0));
+  set_b(params.at(1));
+}  // end SetParameters()
+
+
 double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
   // Csorb = K * activity * b / (1 + K * activity)
   // Units:

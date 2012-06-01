@@ -4,10 +4,15 @@
 #include <cmath>
 
 #include <iostream>
+#include <sstream>
 #include <iomanip>
+
+#include "chemistry_output.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 IonExchangeSite::IonExchangeSite()
     : name_(),
@@ -36,23 +41,29 @@ IonExchangeSite::~IonExchangeSite() {
 }  // end IonExchangeSite destructor
 
 void IonExchangeSite::Display(void) const {
-  std::cout << std::setw(15) << name()
-            << std::setw(20) << mineral_name()
-            << std::setw(10) << std::fixed << charge()
-            << std::setw(10) << std::scientific << cation_exchange_capacity()
-            << std::fixed << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::setw(20) << mineral_name()
+          << std::setw(10) << std::fixed << charge()
+          << std::setw(10) << std::scientific << cation_exchange_capacity()
+          << std::fixed << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void IonExchangeSite::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "CEC"
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << "Name"
+          << std::setw(15) << "CEC"
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void IonExchangeSite::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::setw(15) << cation_exchange_capacity()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::setw(15) << cation_exchange_capacity()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry

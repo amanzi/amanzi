@@ -50,18 +50,18 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Copy test directory files if an out of source build
-    if (NOT (${TIME_INTEGRATION_SOURCE_DIR} EQUAL ${TIME_INTEGRATION_BINARY_DIR}))
+    if (NOT (${ATK_SOURCE_DIR} EQUAL ${ATK_BINARY_DIR}))
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${TIME_INTEGRATION_SOURCE_DIR}/test ${TIME_INTEGRATION_BINARY_DIR}/test) 
+          copy_directory ${ATK_SOURCE_DIR}/test ${ATK_BINARY_DIR}/test) 
     endif()
 
     # Add the utils directory to the include paths
     include_directories(${ATK_SOURCE_DIR})
 
     ADD_AMANZI_TEST(utils test_utils
-      KIND unit
-      SOURCE test/Main.cc test/test_time_step_manager.cc
-      LINK_LIBS atk ${UnitTest_LIBRARIES} )
+                    KIND unit
+                    SOURCE test/Main.cc test/test_time_step_manager.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES} )
 
 endif()
 

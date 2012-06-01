@@ -30,18 +30,27 @@ int Mesh::compute_geometric_quantities() const {
 
   for (int i = 0; i < nfaces; i++) {
     double area;
-    AmanziGeometry::Point centroid(spacedim), normal(spacedim);
+    AmanziGeometry::Point centroid(spacedim), normal0(spacedim), 
+      normal1(spacedim);
     
-    compute_face_geometry(i,&area,&centroid,&normal);
+    // normal0 and normal1 are outward normals of the face with
+    // respect to the cell0 and cell1 of the face. The natural normal
+    // of the face points out of cell0 and into cell1. If one of these
+    // cells do not exist, then the normal is the null vector.
+
+    compute_face_geometry(i,&area,&centroid,&normal0,&normal1);
   
     face_areas.push_back(area);
     face_centroids.push_back(centroid);
-    face_normals.push_back(normal);
+    face_normal0.push_back(normal0);  
+    face_normal1.push_back(normal1);  
   }
 
   geometry_precomputed = true;
 
-} // Mesh::precompute_geometric_quantities
+  return 1;
+
+} // Mesh::compute_geometric_quantities
 
 
 
@@ -55,7 +64,7 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume, AmanziGe
     // and send it into the polyhedron volume and centroid
     // calculation routine
     
-    std::vector<Entity_ID> faces;
+    Entity_ID_List faces;
     std::vector<unsigned int> nfnodes;
     std::vector<int> fdirs;
     std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
@@ -101,9 +110,15 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume, AmanziGe
 } // Mesh::compute_cell_geometry
 
 
-int Mesh::compute_face_geometry(const Entity_ID faceid, double *area, AmanziGeometry::Point *centroid, AmanziGeometry::Point *normal) const {
+  int Mesh::compute_face_geometry(const Entity_ID faceid, double *area, 
+                                  AmanziGeometry::Point *centroid, 
+                                  AmanziGeometry::Point *normal0, 
+                                  AmanziGeometry::Point *normal1) const {
 
   AmanziGeometry::Point_List fcoords;
+
+  (*normal0).set(0.0L);
+  (*normal1).set(0.0L);
 
   if (celldim == 3) {
 
@@ -116,8 +131,36 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area, AmanziGeom
       
     AmanziGeometry::polygon_get_area_centroid(fcoords,area,centroid);
       
-    *normal = AmanziGeometry::polygon_get_normal(fcoords);
-    *normal *= *area;
+
+    AmanziGeometry::Point normal = AmanziGeometry::polygon_get_normal(fcoords);
+    normal *= *area;
+
+    Entity_ID_List cellids;    
+    face_get_cells(faceid, USED, &cellids);
+    
+    for (int i = 0; i < cellids.size(); i++) {
+      Entity_ID_List cellfaceids;
+      std::vector<int> cellfacedirs;
+      int dir = 1;
+      
+      cell_get_faces_and_dirs(cellids[i], &cellfaceids, &cellfacedirs);
+
+      bool found = false;
+      for (int j = 0; j < cellfaceids.size(); j++) {
+        if (cellfaceids[j] == faceid) {
+          found = true;
+          dir = cellfacedirs[j];
+          break;
+        }
+      }
+
+      ASSERT(found);
+
+      if (dir == 1)
+        *normal0 = normal;
+      else
+        *normal1 = -normal;
+    }
 
     return 1;
   }
@@ -132,9 +175,36 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area, AmanziGeom
       
       *centroid = 0.5*(fcoords[0]+fcoords[1]);
       
-      *normal = AmanziGeometry::Point(evec[1],-evec[0]);
+      AmanziGeometry::Point normal = AmanziGeometry::Point(evec[1],-evec[0]);
 
-      return 1;
+      Entity_ID_List cellids;
+      face_get_cells(faceid, USED, &cellids);
+      
+      for (int i = 0; i < cellids.size(); i++) {
+        Entity_ID_List cellfaceids;
+        std::vector<int> cellfacedirs;
+        int dir = 1;
+        
+        cell_get_faces_and_dirs(cellids[i], &cellfaceids, &cellfacedirs);
+        
+        bool found = false;
+        for (int j = 0; j < cellfaceids.size(); j++) {
+          if (cellfaceids[j] == faceid) {
+            found = true;
+            dir = cellfacedirs[j];
+            break;
+          }
+        }
+        
+        ASSERT(found);
+        
+        if (dir == 1)
+          *normal0 = normal;
+        else
+          *normal1 = -normal;
+      }
+      
+       return 1;
     }
     else {  // Surface mesh - cells are 2D, coordinates are 3D
 
@@ -148,6 +218,42 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area, AmanziGeom
 
       *centroid = 0.5*(fcoords[0]+fcoords[1]);
 
+      Entity_ID_List cellids;
+      face_get_cells(faceid, USED, &cellids);
+      
+      for (int i = 0; i < cellids.size(); i++) {
+        Entity_ID_List cellfaceids;
+        std::vector<int> cellfacedirs;
+        int dir = 1;
+        
+        cell_get_faces_and_dirs(cellids[i], &cellfaceids, &cellfacedirs);
+        
+        bool found = false;
+        for (int j = 0; j < cellfaceids.size(); j++) {
+          if (cellfaceids[j] == faceid) {
+            found = true;
+            dir = cellfacedirs[j];
+            break;
+          }
+        }
+        
+        ASSERT(found);
+
+        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids[cellids[i]];
+        AmanziGeometry::Point trinormal = cvec^evec;
+
+        AmanziGeometry::Point normal = evec^trinormal;
+        
+        double len = norm(normal);
+        normal /= len;
+        normal *= *area;
+ 
+        if (dir == 1)
+          *normal0 = normal;
+        else
+          *normal1 = normal; // Note that we are not flipping the sign here
+      }      
+ 
       return 1;
     }
 
@@ -190,8 +296,9 @@ double Mesh::face_area(const Entity_ID faceid, const bool recompute) const {
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim), normal(spacedim);
-      compute_face_geometry(faceid, &area, &centroid, &normal);
+      AmanziGeometry::Point centroid(spacedim);
+      AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
+      compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
       return area;
     }
     else
@@ -232,8 +339,9 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim), normal(spacedim);
-      compute_face_geometry(faceid, &area, &centroid, &normal);
+      AmanziGeometry::Point centroid(spacedim);
+      AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
+      compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
       return centroid;
     }
     else
@@ -244,31 +352,91 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
 
 // Normal to face
 // The vector is normalized and then weighted by the area of the face
+//
+// If recompute is TRUE, then the normal is recalculated using current
+// face coordinates but not stored. (If the recomputed normal must be
+// stored, then call recompute_geometric_quantities). 
+//
+// If cellid is not specified, the normal is the natural normal of the face
+// If cellid is specified, the normal is the outward normal with respect
+// to the cell. In planar and solid meshes, the normal with respect to 
+// the cell on one side of the face is just the negative of the normal 
+// with respect to the cell on the other side. In general surfaces meshes,
+// this will not be true at C1 discontinuities
 
-AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute) const {
 
+AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid) const {
+
+  AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
+    
   if (!geometry_precomputed) {
     compute_geometric_quantities();
-    return face_normals[faceid];
+
+    normal0 = face_normal0[faceid];
+    normal1 = face_normal1[faceid];
   }
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim), normal(spacedim);
-      compute_face_geometry(faceid, &area, &centroid, &normal);
-      return normal;
+      AmanziGeometry::Point centroid(spacedim);
+      AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
+      compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
     }
-    else
-      return face_normals[faceid];
+    else {      
+      normal0 = face_normal0[faceid];
+      normal1 = face_normal1[faceid];
+    }
   }
-  
+
+  if (cellid == -1) {
+    // Just the natural normal of the face
+    // Since normal0 and normal1 are outward facing normals with respect
+    // to their respective cells, we can return normal0 as is but have
+    // to negate normal1.
+
+    if (L22(normal0) != 0.0)
+      return normal0;
+    else {
+      ASSERT(L22(normal1) != 0.0);
+      return -normal1;
+    }
+  }
+  else {
+    Entity_ID_List faceids;
+    std::vector<int> face_dirs;
+
+    cell_get_faces_and_dirs(cellid, &faceids, &face_dirs);
+
+    int nf = faceids.size();
+    bool found = false;
+    int dir = 1;
+    for (int i = 0; i < nf; i++)
+      if (faceids[i] == faceid) {
+        dir = face_dirs[i];
+        found = true;
+        break;
+      }
+    
+    ASSERT(found);
+    
+    if (dir == 1) {
+      ASSERT(L22(normal0) != 0.0);
+      return normal0;
+    }
+    else {
+      ASSERT(L22(normal1) != 0.0);
+      return normal1;
+    }
+  }
+
+  return normal0;
 }
 
 
 
 // Get set ID given the name of the set - return 0 if no match is found
 
-unsigned int Mesh::set_id_from_name(const std::string setname) const
+Set_ID Mesh::set_id_from_name(const std::string setname) const
 {
   if (!geometric_model_) return 0;
 
@@ -306,7 +474,7 @@ std::string Mesh::set_name_from_id(const int setid) const
 
 // Is there a set with this id and entity type
 
-bool Mesh::valid_set_id(unsigned int id, Entity_kind kind) const
+bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 {
 
   if (!geometric_model_) return false;
@@ -410,15 +578,15 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
 
 
 
-void Mesh::cell_to_faces (unsigned int cell,
-                          std::vector<unsigned int>::iterator begin,
-                          std::vector<unsigned int>::iterator end) const
+void Mesh::cell_to_faces (Entity_ID cell,
+                          Entity_ID_List::iterator begin,
+                          Entity_ID_List::iterator end) const
 {
   cell_to_faces (cell, &(*begin), &(*end));
 };
 
-void Mesh::cell_to_faces (unsigned int cell,
-                          unsigned int* begin, unsigned int *end) const
+void Mesh::cell_to_faces (Entity_ID cell,
+                          Entity_ID* begin, Entity_ID *end) const
 {
   Entity_ID_List cfaces;
 
@@ -429,13 +597,13 @@ void Mesh::cell_to_faces (unsigned int cell,
 };
 
 
-void Mesh::cell_to_face_dirs (unsigned int cell,
+void Mesh::cell_to_face_dirs (Entity_ID cell,
                               std::vector<int>::iterator begin,
                               std::vector<int>::iterator end) const
 {
   cell_to_face_dirs (cell, &(*begin), &(*end));
 };
-void Mesh::cell_to_face_dirs (unsigned int cell,
+void Mesh::cell_to_face_dirs (Entity_ID cell,
                               int * begin, int * end) const
 {
   vector<int> cfdirs;
@@ -448,14 +616,14 @@ void Mesh::cell_to_face_dirs (unsigned int cell,
 
 
 
-void Mesh::cell_to_nodes (unsigned int cell,
-                          std::vector<unsigned int>::iterator begin,
-                          std::vector<unsigned int>::iterator end) const
+void Mesh::cell_to_nodes (Entity_ID cell,
+                          Entity_ID_List::iterator begin,
+                          Entity_ID_List::iterator end) const
 {
   cell_to_nodes (cell, &(*begin), &(*end));
 };
-void Mesh::cell_to_nodes (unsigned int cell,
-                          unsigned int * begin, unsigned int * end) const
+void Mesh::cell_to_nodes (Entity_ID cell,
+                          Entity_ID * begin, Entity_ID * end) const
 {
   Entity_ID_List cnodes;
 
@@ -468,14 +636,14 @@ void Mesh::cell_to_nodes (unsigned int cell,
 
 
 
-void Mesh::face_to_nodes (unsigned int face,
-                          std::vector<unsigned int>::iterator begin,
-                          std::vector<unsigned int>::iterator end) const
+void Mesh::face_to_nodes (Entity_ID face,
+                          Entity_ID_List::iterator begin,
+                          Entity_ID_List::iterator end) const
 {
   face_to_nodes(face, &(*begin), &(*end));
 };
-void Mesh::face_to_nodes (unsigned int face,
-                          unsigned int * begin, unsigned int * end) const
+void Mesh::face_to_nodes (Entity_ID face,
+                          Entity_ID * begin, Entity_ID * end) const
 {
   Entity_ID_List fnodes;
 
@@ -487,13 +655,13 @@ void Mesh::face_to_nodes (unsigned int face,
 
 
 
-void Mesh::node_to_coordinates (unsigned int node,
+void Mesh::node_to_coordinates (Entity_ID node,
                                 std::vector<double>::iterator begin,
                                 std::vector<double>::iterator end) const
 {
   node_to_coordinates (node, &(*begin), &(*end));
 };
-void Mesh::node_to_coordinates (unsigned int node,
+void Mesh::node_to_coordinates (Entity_ID node,
                                 double * begin,
                                 double * end) const
 {
@@ -505,13 +673,13 @@ void Mesh::node_to_coordinates (unsigned int node,
   for (int i = 0; i < xyz.dim(); i++) begin[i] = xyz[i];
 };
 
-void Mesh::face_to_coordinates (unsigned int face,
+void Mesh::face_to_coordinates (Entity_ID face,
                                 std::vector<double>::iterator begin,
                                 std::vector<double>::iterator end) const
 {
   face_to_coordinates (face, &(*begin), &(*end));
 };
-void Mesh::face_to_coordinates (unsigned int face,
+void Mesh::face_to_coordinates (Entity_ID face,
                                 double * begin,
                                 double * end) const
 {
@@ -528,13 +696,13 @@ void Mesh::face_to_coordinates (unsigned int face,
       begin[i*dim+j] = fxyz[i][j];
 };
 
-void Mesh::cell_to_coordinates (unsigned int cell,
+void Mesh::cell_to_coordinates (Entity_ID cell,
                                 std::vector<double>::iterator begin,
                                 std::vector<double>::iterator end) const
 {
   cell_to_coordinates (cell, &(*begin), &(*end));
 };
-void Mesh::cell_to_coordinates (unsigned int cell,
+void Mesh::cell_to_coordinates (Entity_ID cell,
                                 double * begin,
                                 double * end) const
 {
@@ -565,14 +733,14 @@ unsigned int Mesh::count_entities (Entity_kind kind,
 
   // Id numbers
 void Mesh::get_set_ids (Entity_kind kind,
-                        std::vector<unsigned int>::iterator begin,
-                        std::vector<unsigned int>::iterator end) const
+                        std::vector<Set_ID>::iterator begin,
+                        std::vector<Set_ID>::iterator end) const
 {
   get_set_ids (kind, &(*begin), &(*end));
 };
 void Mesh::get_set_ids (Entity_kind kind,
-                        unsigned int * begin,
-                        unsigned int * end) const
+                        Set_ID * begin,
+                        Set_ID * end) const
 {
   Set_ID_List setids;
 
@@ -583,17 +751,17 @@ void Mesh::get_set_ids (Entity_kind kind,
 };
 
 
-void Mesh::get_set (unsigned int set_id, Entity_kind kind,
+void Mesh::get_set (Set_ID set_id, Entity_kind kind,
                     Parallel_type ptype,
-                    std::vector<unsigned int>::iterator begin,
-                    std::vector<unsigned int>::iterator end) const
+                    Entity_ID_List::iterator begin,
+                    Entity_ID_List::iterator end) const
 {
   get_set (set_id, kind, ptype, &(*begin), &(*end));
 };
-void Mesh::get_set (unsigned int set_id, Entity_kind kind,
+void Mesh::get_set (Set_ID set_id, Entity_kind kind,
                     Parallel_type ptype,
-                    unsigned int * begin,
-                    unsigned int * end) const
+                    Entity_ID * begin,
+                    Entity_ID * end) const
 {
   Entity_ID_List setents;
 
@@ -726,7 +894,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     // calculation routine
     
     int nf;
-    std::vector<Entity_ID> faces;
+    Entity_ID_List faces;
     std::vector<unsigned int> nfnodes;
     std::vector<int> fdirs;
     std::vector<AmanziGeometry::Point> cfcoords;
@@ -764,6 +932,8 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     return AmanziGeometry::point_in_polygon(p,ccoords);
     
   }
+
+  return false;
 }
 
 

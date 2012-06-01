@@ -167,7 +167,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
 * Copy cell-based data from master to ghost positions.              
 * WARNING: vector v must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::copyMasterCell2GhostCell(Epetra_Vector& v)
+void Flow_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -188,7 +188,7 @@ void Flow_State::copyMasterCell2GhostCell(Epetra_Vector& v)
 * performs the operation 'mode' there. 
 * WARNING: Vector v must contain ghost faces.              
 ******************************************************************* */
-void Flow_State::combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
+void Flow_State::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
@@ -208,7 +208,7 @@ void Flow_State::combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMod
 * Copy cell-based data from master to ghost positions.              
 * WARNING: MultiVector v must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
+void Flow_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -263,7 +263,7 @@ double Flow_State::normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, 
 /* *******************************************************************
 * Extract cells from a supervector             
 ******************************************************************* */
-Epetra_Vector* Flow_State::createCellView(const Epetra_Vector& u) const
+Epetra_Vector* Flow_State::CreateCellView(const Epetra_Vector& u) const
 {
   double* data;
   u.ExtractView(&data);
@@ -274,7 +274,7 @@ Epetra_Vector* Flow_State::createCellView(const Epetra_Vector& u) const
 /* *******************************************************************
 * Extract faces from a supervector             
 ******************************************************************* */
-Epetra_Vector* Flow_State::createFaceView(const Epetra_Vector& u) const
+Epetra_Vector* Flow_State::CreateFaceView(const Epetra_Vector& u) const
 {
   double* data;
   u.ExtractView(&data);
@@ -339,7 +339,7 @@ void Flow_State::set_permeability(double Kh, double Kv)
 
 void Flow_State::set_permeability(double Kh, double Kv, const string region)
 {
-  std::vector<unsigned int> block;
+  AmanziMesh::Entity_ID_List block;
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   int ncells = block.size();
 
@@ -368,6 +368,7 @@ void Flow_State::set_gravity(double g)
   int dim = mesh_->space_dimension();
   for (int i = 0; i < dim-1; i++) (*gravity_)[i] = 0.0;
   (*gravity_)[dim-1] = g;
+  (*gravity_)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
 }
 
 

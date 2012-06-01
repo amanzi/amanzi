@@ -73,17 +73,20 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone mesh_functions)
 
     # Test: miscaleneous transport routines
-    add_executable(transport_mics test/Main.cc test/transport_mics.cpp)
-    target_link_libraries(transport_mics ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(transport_mics transport_mics KIND unit)
+    add_amanzi_test(transport_mics transport_mics
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_mics.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_executable(transport_advance_simple test/Main.cc test/transport_advance_simple.cpp)
-    target_link_libraries(transport_advance_simple ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(transport_advance_simple transport_advance_simple KIND unit)
+    add_amanzi_test(transport_advance_simple transport_advance_simple
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_advance_simple.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_executable(transport_convergence test/Main.cc test/transport_convergence.cpp)
-    target_link_libraries(transport_convergence ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(transport_convergence transport_convergence KIND unit)
+    add_amanzi_test(transport_convergence transport_convergence
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_convergence.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # add_executable(transport_dispersion test/Main.cc test/transport_dispersion.cpp)
     # target_link_libraries(transport_dispersion ${amanzi_libs} ${UnitTest_LIBRARIES})
@@ -95,29 +98,36 @@ if ( BUILD_TESTS )
 
         set(amanzi_libs geometry mesh mesh_audit mstk_mesh state transport whetstone output mesh_functions)
 
-        add_executable(transport_advance_mstk test/Main.cc test/transport_advance_mstk.cpp)
-        target_link_libraries(transport_advance_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_advance_mstk transport_advance_mstk KIND unit)
+        add_amanzi_test(transport_advance_mstk transport_advance_mstk
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_advance_mstk.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_executable(transport_parallel_mstk test/Main.cc test/transport_parallel_mstk.cpp)
-        target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS 4 KIND int)
+        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
+		       KIND int
+	               NPROCS 4 
+                       SOURCE test/Main.cc test/transport_parallel_mstk.cpp
+                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_executable(transport_2D test/Main.cc test/transport_2D.cpp)
-        target_link_libraries(transport_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_2D transport_2D KIND unit)
+        add_amanzi_test(transport_2D transport_2D
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_2D.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_executable(transport_2D_long test/Main.cc test/transport_2D_long.cpp)
-        target_link_libraries(transport_2D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_2D_long transport_2D_long KIND unit)
+        add_amanzi_test(transport_2D_long transport_2D_long 
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_2D_long.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_executable(transport_3D_long test/Main.cc test/transport_3D_long.cpp)
-        target_link_libraries(transport_3D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_3D_long transport_3D_long KIND unit)
+        add_amanzi_test(transport_3D_long transport_3D_long
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_3D_long.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_executable(transport_subcycling test/Main.cc test/transport_subcycling.cpp)
-        target_link_libraries(transport_subcycling ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_subcycling transport_subcycling KIND unit)
+        add_amanzi_test(transport_subcycling transport_subcycling
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_subcycling.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
 
     if ( ENABLE_STK_Mesh )
@@ -126,13 +136,17 @@ if ( BUILD_TESTS )
 
         set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus_reader state transport whetstone mesh_functions)
 
-        add_executable(transport_advance_stk test/Main.cc test/transport_advance_stk.cpp)
-        target_link_libraries(transport_advance_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_advance_stk transport_advance_stk KIND unit)
-
-        add_executable(transport_parallel_stk test/Main.cc test/transport_parallel_stk.cpp)
-        target_link_libraries(transport_parallel_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_parallel_stk transport_parallel_stk NPROCS 4 KIND unit)
+        add_amanzi_test(transport_advance_stk transport_advance_stk
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_advance_stk.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        
+        add_amanzi_test(transport_parallel_stk transport_parallel_stk
+			KIND unit
+	                NPROCS 4
+                        SOURCE test/Main.cc test/transport_parallel_stk.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+          
     endif()    
 endif()
 

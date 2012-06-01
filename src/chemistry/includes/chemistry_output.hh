@@ -88,6 +88,8 @@ class ChemistryOutput {
   void Write(const Verbosity level, const std::stringstream& data);
   void Write(const Verbosity level, const std::string& data);
 
+  void DumpFlags(void) const;
+
   void set_use_stdout(const bool use_stdout) {
     this->use_stdout_ = use_stdout;
   }

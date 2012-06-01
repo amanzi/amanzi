@@ -21,7 +21,7 @@ static const std::string kVerbosityVerbose("verbose");
 static const std::string kVerbosityWarning("warning");
 static const std::string kVerbosityError("error");
 
-static const std::string kVerbosityDebugBeaker("Debug Input File");
+static const std::string kVerbosityDebugBeaker("Debug Beaker");
 static const std::string kVerbosityDebugMineralKinetics("Debug Mineral Kinetics");
 static const std::string kVerbosityDebugInputFile("debug Input File");
 static const std::string kVerbosityDebugDatabase("debug Database");

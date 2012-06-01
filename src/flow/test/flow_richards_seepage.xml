@@ -10,7 +10,6 @@
         <Parameter name="High Coordinate" type="Array double" value="{100.0,50.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Left side Bottom">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0}"/>
@@ -58,82 +57,31 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="atmospheric pressure" type="double" value="101325"/>
+      <Parameter name="discretization method" type="string" value="monotone mfd"/>
+
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
-      <Parameter name="atmospheric pressure" type="double" value="101325"/>
-      <Parameter name="Discretization method hint" type="string" value="monotone"/>
-
-      <ParameterList name="Diffusion Preconditioner">
-        <ParameterList name="ML Parameters">
-          <Parameter name="ML output" type="int" value="0"/>
-          <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
-          <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-          <Parameter name="aggregation: threshold" type="double" value="0"/>
-          <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
-          <Parameter name="coarse: max size" type="int" value="128"/>
-          <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-          <Parameter name="cycle applications" type="int" value="2"/>
-          <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-          <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-          <Parameter name="max levels" type="int" value="40"/>
-          <Parameter name="prec type" type="string" value="MGW"/>
-          <Parameter name="smoother: damping factor" type="double" value="1"/>
-          <Parameter name="smoother: pre or post" type="string" value="both"/>
-          <Parameter name="smoother: sweeps" type="int" value="2"/>
-          <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="Picard"/>
+        <Parameter name="time integration method" type="string" value="Picard"/>
         <Parameter name="initialize with darcy" type="string" value="yes"/>
+        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
-        <ParameterList name="error control">
+        <ParameterList name="Picard">
           <Parameter name="absolute error tolerance" type="double" value="10.0"/>
           <Parameter name="relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="convergence tolerance" type="double" value="1e-7"/>
           <Parameter name="maximal number of iterations" type="int" value="4000"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1.0e+10"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximal time step" type="double" value="1.0e+8"/>
         </ParameterList>
-
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-9"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="nonlinear solver BDF2">
-          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-          <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-        </ParameterList>
-
-        <ParameterList name="nonlinear solver BDF1">
-          <Parameter name="steady max iterations" type="int" value="20"/>
-          <Parameter name="steady min iterations" type="int" value="7"/>
-          <Parameter name="steady limit iterations" type="int" value="30"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1.0"/>
-          <Parameter name="steady time step reduction factor" type="double" value="0.5"/>
-          <Parameter name="steady time step increase factor" type="double" value="2.0"/>
-          <Parameter name="steady max time step" type="double" value="1.0e+8"/>
-          <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="medium"/>
-          </ParameterList>
-        </ParameterList>
       </ParameterList>
-
-      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Water retention model for Material 1">
@@ -141,7 +89,7 @@
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
           <Parameter name="van Genuchten m" type="double" value="0.51138"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.074"/>
+          <Parameter name="residual saturation" type="double" value="0.074"/>
         </ParameterList>
       </ParameterList>
 
@@ -192,6 +140,40 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO GMRES">
+      <Parameter name="error tolerance" type="double" value="1e-9"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="200"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="Preconditioners">
+    <ParameterList name="Trilinos ML">
+      <ParameterList name="ML Parameters">
+        <Parameter name="ML output" type="int" value="0"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
+        <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+        <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+        <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+        <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: damping factor" type="double" value="1.0"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+        <Parameter name="max levels" type="int" value="40"/>
+        <Parameter name="prec type" type="string" value="MGW"/>
+        <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+        <Parameter name="smoother: pre or post" type="string" value="both"/>
+        <Parameter name="smoother: sweeps" type="int" value="2"/>
+        <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

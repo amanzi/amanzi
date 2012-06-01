@@ -325,7 +325,7 @@ public:
 
   // this should be used with extreme caution:
   // modify coordinates
-  void set_coordinate(unsigned int local_node_id,
+  void set_coordinate(Entity_ID local_node_id,
 		      double* source_begin, double* source_end);
 
 private:
@@ -355,21 +355,21 @@ private:
   int num_faces_;
 
   // Local-id tables of entities
-  std::vector<unsigned int> cell_to_face_;
+  std::vector<Entity_ID> cell_to_face_;
   std::vector<int> cell_to_face_dirs_;
-  std::vector<unsigned int> cell_to_node_;
-  std::vector<unsigned int> face_to_node_;
-  std::vector<unsigned int> face_to_cell_;
-  std::vector<unsigned int> node_to_face_;
-  std::vector<unsigned int> node_to_cell_;
+  std::vector<Entity_ID> cell_to_node_;
+  std::vector<Entity_ID> face_to_node_;
+  std::vector<Entity_ID> face_to_cell_;
+  std::vector<Entity_ID> node_to_face_;
+  std::vector<Entity_ID> node_to_cell_;
 
   // The following are mutable because they have to be modified 
   // after the class construction even though the class is instantiated
   // as a constant class
 
-  mutable std::vector<std::vector<unsigned int> > side_sets_;
-  mutable std::vector<std::vector<unsigned int> > element_blocks_;
-  mutable std::vector<std::vector<unsigned int> > node_sets_;
+  mutable std::vector<std::vector<Set_ID> > side_sets_;
+  mutable std::vector<std::vector<Entity_ID> > element_blocks_;
+  mutable std::vector<std::vector<Entity_ID> > node_sets_;
   mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;
   mutable std::vector<AmanziGeometry::RegionPtr> side_set_regions_;
   mutable std::vector<AmanziGeometry::RegionPtr> node_set_regions_;

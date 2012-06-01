@@ -27,6 +27,8 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel );
 Teuchos::ParameterList CreateChemistryList ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_Preconditioners_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
 
 static std::string phase_name;
 static std::string phase_comp_name;

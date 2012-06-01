@@ -21,23 +21,22 @@ Authors: Neil Carlson (version 1)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "mfd3d.hpp"
 #include "BDF2_Dae.hpp"
 #include "BDF1_Dae.hh"
 
-#include "Flow_State.hpp"
 #include "Flow_PK.hpp"
 #include "Flow_BC_Factory.hpp"
 #include "Matrix_MFD.hpp"
 #include "WaterRetentionModel.hpp"
 
-
 namespace Amanzi {
 namespace AmanziFlow {
 
+class Flow_State;  // forward declarations
+
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC);
+  Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
   ~Richards_PK();
 
   // main methods
@@ -60,7 +59,9 @@ class Richards_PK : public Flow_PK {
 
   // methods for experimental time integration
   int PicardStep(double T, double dT, double& dTnext);
-  double ErrorNorm(const Epetra_Vector& uold, const Epetra_Vector& unew);
+  double ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du);
+  double ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du);
+  double ErrorNormPicardExperimental(const Epetra_Vector& uold, const Epetra_Vector& unew);
  
   // methods required for time integration
   void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
@@ -73,9 +74,10 @@ class Richards_PK : public Flow_PK {
 
 
   // other main methods
-  void ProcessParameterList();
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
+
+  void CalculateRelativePermeability(const Epetra_Vector& u);
   void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
   void CalculateRelativePermeabilityFace(const Epetra_Vector& p);
   void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
@@ -88,11 +90,31 @@ class Richards_PK : public Flow_PK {
                                    Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, int disc_method,
+  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix,
                                 double Tp, double dTp, bool flag_update_ML);
 
-  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
-                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+  void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
+
+  // linear problems and solvers
+  void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix, bool add_preconditioner);
+  void AssembleTransientProblem_MFD(Matrix_MFD* matrix, double dTp, Epetra_Vector& p, bool add_preconditioner);
+  void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
+  void SolveTransientProblem(double T, double dT, Epetra_Vector& u);
+
+  // io members
+  void ProcessParameterList();
+  void ProcessStringTimeIntegration(const std::string name, int* method);
+  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringRelativePermeability(const std::string name, int* method);
+  void VerifyStringMualemBurdine(const std::string name);
+  void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
+
+  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
+  std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
+  void ProcessSublistTimeIntegration(
+    Teuchos::ParameterList& list, const std::string name,
+    double* absolute_tol, double* relative_tol, double* residual_tol, int* max_itrs,
+    double* T0, double* T1, double* dT0, double* dTmax);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -101,15 +123,14 @@ class Richards_PK : public Flow_PK {
 
   // initization members
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
-
-  void InitializePressureHydrostatic(const double T);
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
   double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
-  // control methods
-  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
+  // control method
+  void ResetErrorControl(double error) { error_control_ = error; }
+  void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   void PrintStatistics() const;
   
   // access methods
@@ -117,11 +138,17 @@ class Richards_PK : public Flow_PK {
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
 
+  // developement members
+  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
+                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+
  public:
   int num_nonlinear_steps;
 
  private:
-  Teuchos::ParameterList rp_list;
+  Teuchos::ParameterList rp_list_;
+  Teuchos::ParameterList solver_list_;
+  Teuchos::ParameterList preconditioner_list_;
 
   AmanziGeometry::Point gravity_;
   double rho, mu;
@@ -141,15 +168,18 @@ class Richards_PK : public Flow_PK {
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
   int block_picard;
+  int error_control_;
 
   int ti_method_sss;  // Parameters for steady-state solution
+  std::string preconditioner_name_sss_;
   int num_itrs_sss, max_itrs_sss;
-  double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
+  double absolute_tol_sss, relative_tol_sss, residual_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
   int initialize_with_darcy;
 
   int ti_method_trs;  // Parameters for transient solution
-  double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
+  std::string preconditioner_name_trs_;
+  double absolute_tol_trs, relative_tol_trs, residual_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;
 
@@ -178,7 +208,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability
 
-  int mfd3d_method;
+  int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 

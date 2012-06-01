@@ -28,6 +28,14 @@ SorptionIsothermRxn::SorptionIsothermRxn(const SpeciesName species_name,
 SorptionIsothermRxn::~SorptionIsothermRxn() {
 }
 
+std::vector<double> SorptionIsothermRxn::GetIsothermParameters(void) const {
+  return isotherm_->GetParameters();
+}
+
+void SorptionIsothermRxn::SetIsothermParameters(const std::vector<double>& params) {
+  isotherm_->SetParameters(params);
+}
+
 void SorptionIsothermRxn::Update(const std::vector<Species>& primarySpecies) {
   sorbed_concentration_= (*isotherm_).Evaluate(primarySpecies.at(species_id_));
 }  // end Update()

@@ -32,13 +32,13 @@
 ---- Minerals
     Reaction                               log_Keq molar volume          GMW          SSA        Vfrac
                                                       [m^3/mol]      [g/mol][m^2/m^3 blk]          [-]
-    Calcite = -1.00 H+ + 1.00 HCO3- + 1.00 Ca++
+    Calcite = -1 H+ + 1 HCO3- + 1 Ca++
                                            1.84870  3.69340e-05    100.08700    100.00000      0.20000
 
 ---- Mineral Kinetics
     Rate law: TST
     Reaction: 
-      Calcite = -1.00 H+ + 1.00 HCO3- + 1.00 Ca++
+      Calcite = -1 H+ + 1 HCO3- + 1 Ca++
     Parameters:
       mineral = Calcite
       mineral id = 0

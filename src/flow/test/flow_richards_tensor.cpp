@@ -60,8 +60,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   RCP<Flow_State> FS = Teuchos::rcp(new AmanziFlow::Flow_State(*S));
 
   // create Richards problem
-  ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  Richards_PK* RPK = new Richards_PK(flow_list, FS);
+  Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);

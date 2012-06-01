@@ -26,6 +26,12 @@ class SurfaceComplexationRxn {
   // add complexes to the reaction
   void AddSurfaceComplex(SurfaceComplex surface_complex);
   void UpdateSiteDensity(const double);
+  double GetSiteDensity(void) const {
+    return surface_site_.at(0).molar_density();
+  }
+  SpeciesId SiteId(void) const {
+    return surface_site_.at(0).identifier();
+  }
   // update sorbed concentrations
   void Update(const std::vector<Species>& primarySpecies);
   // add stoichiometric contribution of complex to sorbed total

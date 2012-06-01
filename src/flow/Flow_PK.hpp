@@ -46,9 +46,6 @@ const int FLOW_TIME_INTEGRATION_BDF1 = 3;
 const int FLOW_TIME_INTEGRATION_BDF2 = 4;
 const double FLOW_INITIAL_DT = 1e-8;
 
-const int FLOW_TIME_INTEGRATION_MAX_ITERATIONS = 100;
-const double FLOW_TIME_INTEGRATION_TOLERANCE = 1e-6;
-
 const int FLOW_RELATIVE_PERM_CENTERED = 1; 
 const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 2; 
 const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
@@ -60,6 +57,16 @@ const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
 const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
 const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
 const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;  // rc1 compatibility
+const int FLOW_MFD3D_OPTIMIZED = 6;
+
+const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
+const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
+const int FLOW_TI_ERROR_CONTROL_CONSISTENCY = 4;
+
+const double FLOW_TI_ABSOLUTE_TOLERANCE = 1e-4;  // defaults for time integrations
+const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
+const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
+const int FLOW_TI_MAX_ITERATIONS = 400;
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
@@ -103,24 +110,28 @@ class Flow_PK : public BDF2::fnBase {
   virtual void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) = 0;
   virtual void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity) = 0;
 
+  virtual void InitializeAuxiliaryData() { };
+
   // boundary condition members
-  void UpdateBoundaryConditions(
+  void ProcessBoundaryConditions(
       BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
       BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
-      const Epetra_Vector& pressure_cells, const double atm_pressure,
+      const Epetra_Vector& pressure_faces, const double atm_pressure,
       std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
-  void applyBoundaryConditions(std::vector<int>& bc_markers,
+  void ApplyBoundaryConditions(std::vector<int>& bc_markers,
                                std::vector<double>& bc_values,
                                Epetra_Vector& pressure_faces);
 
-  void addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
+  void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
   // gravity members
-  void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
+  void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
+                            const Epetra_Vector& Krel_cells,
                             const Epetra_Vector& Krel_faces, 
                             Matrix_MFD* matrix);
-  void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
+  void AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
+                                  const Epetra_Vector& Krel_cells,
                                   const Epetra_Vector& Krel_faces,
                                   Epetra_Vector& darcy_mass_flux);
 
@@ -129,17 +140,21 @@ class Flow_PK : public BDF2::fnBase {
   int flow_status() { return flow_status_; }
 
   // control members
-  void validate_boundary_conditions(
+  void ValidateBoundaryConditions(
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; }
-  void writeGMVfile(Teuchos::RCP<Flow_State> FS) const;
+  void WriteGMVfile(Teuchos::RCP<Flow_State> FS) const;
  
   void set_time(double T0, double dT0) { T_internal = T0; dT = dT0; }
   void set_verbosity(int level) { verbosity = level; }
   
   // miscallenous members
-  Epetra_Map* createSuperMap();
-  void identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
+  Epetra_Map* CreateSuperMap();
+  void IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
+
+  // io members
+  void ProcessStringMFD3D(const std::string name, int* method);
+  void ProcessStringVerbosity(const std::string name, int* verbosity);
 
  public:
   int ncells_owned, ncells_wghost;
@@ -150,7 +165,7 @@ class Flow_PK : public BDF2::fnBase {
  
   Teuchos::RCP<Flow_State> FS;
   
-  double T_internal, dT, dT0, dTnext;
+  double T_internal, T_physics, dT, dT0, dTnext;
   int flow_status_;
   int standalone_mode;
  

@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 
     // print out observation file in ASCII format 
     Teuchos::ParameterList obs_list;
-    if (driver_parameter_list.isParameter("Native Unstructured Input")) {
+    if (driver_parameter_list.get<bool>("Native Unstructured Input",false)) {
       obs_list = driver_parameter_list.sublist("Observation Data");
     } else {
       obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");

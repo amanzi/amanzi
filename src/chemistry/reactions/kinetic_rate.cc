@@ -3,14 +3,18 @@
 
 #include <cstdlib>
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "string_tokenizer.hh"
+#include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 KineticRate::KineticRate(void)
     : debug_(false),
@@ -73,20 +77,22 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
 }  // end SetSpeciesIds()
 
 void KineticRate::DisplayReaction(void) const {
-  std::cout << "    Reaction: " << std::endl;
-  std::cout << "      ";
+  std::stringstream message;
+  message << "    Reaction: " << std::endl;
+  message << "      ";
 
-  std::cout << name();
-  std::cout << " = ";
+  message << name();
+  message << " = ";
   for (unsigned int species = 0;
        species < this->reactant_names.size(); species++) {
-    std::cout << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " "
+    message << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " "
               << this->reactant_names.at(species);
     if (species < this->reactant_names.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
-  std::cout << std::endl;
+  message << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayReaction
 
 }  // namespace chemistry

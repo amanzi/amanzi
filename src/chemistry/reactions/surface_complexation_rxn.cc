@@ -7,13 +7,16 @@
 #include <iomanip>
 #include <sstream>
 
-#include "chemistry_exception.hh"
 #include "matrix_block.hh"
+#include "chemistry_output.hh"
+#include "chemistry_exception.hh"
 
 #include "exceptions.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
@@ -207,8 +210,10 @@ void SurfaceComplexationRxn::display(void) const {
 }  // end display()
 
 void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "---"
+  std::stringstream message;
+  message << std::setw(15) << "---"
             << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceComplexationRxn::DisplayResults(void) const {

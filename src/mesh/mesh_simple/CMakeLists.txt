@@ -52,16 +52,16 @@ if (BUILD_TESTS)
     endif()
 
     # Test: simple_mesh
-
-    add_executable(test_simple_mesh 
-      test/Main.cc 
-      test/test_maps.cpp 
-      test/test_cell_numbering.cc 
-      test/test_face_adj_cells.cc 
-      test/test_node_cell_faces.cc
-      test/test_sets.cc)
-    target_link_libraries(test_simple_mesh simple_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(simple_mesh test_simple_mesh KIND unit)
+    add_amanzi_test(simple_mesh test_simple_mesh
+                    KIND unit
+		    SOURCE
+                          test/Main.cc 
+                          test/test_maps.cpp 
+                          test/test_cell_numbering.cc 
+                          test/test_face_adj_cells.cc 
+                          test/test_node_cell_faces.cc
+                          test/test_sets.cc
+                    LINK_LIBS simple_mesh ${UnitTest_LIBRARIES})
 
 endif()
 

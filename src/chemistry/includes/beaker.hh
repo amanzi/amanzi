@@ -40,7 +40,7 @@ class Beaker {
   struct BeakerComponents {
     std::vector<double> free_ion;  // molality
     std::vector<double> minerals;  // volume fractions
-    std::vector<double> ion_exchange_sites;
+    std::vector<double> ion_exchange_sites;  // CEC
     std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
   };
@@ -66,7 +66,6 @@ class Beaker {
     // the following parameters will be read in from the database file
     // but can be overridden by the driver if their size > 0....
     std::vector<double> mineral_specific_surface_area;
-    double cation_exchange_capacity;
     std::vector<double> sorption_site_density;
     std::vector<double> isotherm_kd;
     std::vector<double> isotherm_freundlich_n;
@@ -169,6 +168,13 @@ class Beaker {
   };
   virtual Verbosity verbosity(void) const {
     return this->verbosity_;
+  };
+
+  virtual void set_debug(const bool value) {
+    this->debug_ = value;
+  };
+  virtual bool debug(void) const {
+    return this->debug_;
   };
 
   SolverStatus status(void) const {
@@ -325,6 +331,7 @@ class Beaker {
   void DisplaySurfaceComplexes(void) const;
   void DisplaySorptionIsotherms(void) const;
 
+  bool debug_;
   Verbosity verbosity_;
   double tolerance_;
   unsigned int max_iterations_;

@@ -26,6 +26,9 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
   double b(void) const { return b_; }
   void set_b(const double b) { b_ = b; }
 
+  std::vector<double> GetParameters(void) const;
+  void SetParameters(const std::vector<double>& params);
+
 private:
   // equilibrium constant or Langmuir adsorption constant
   // units = L water/mol

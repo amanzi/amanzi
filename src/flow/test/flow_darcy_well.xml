@@ -2,110 +2,19 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <!--  REGIONS  -->
-  <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{-10.0,-5.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{10.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Well">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{-0.1,-5.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{0.1,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{-10.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{-1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{10.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Bottom side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{-10.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,-1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
-      </ParameterList>
-
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
-      <ParameterList name="Diffusion Preconditioner">
-        <ParameterList name="ML Parameters">
-          <Parameter name="ML output" type="int" value="0"/>
-          <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
-          <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-          <Parameter name="aggregation: threshold" type="double" value="0"/>
-          <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
-          <Parameter name="coarse: max size" type="int" value="128"/>
-          <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-          <Parameter name="cycle applications" type="int" value="2"/>
-          <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-          <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-          <Parameter name="max levels" type="int" value="40"/>
-          <Parameter name="prec type" type="string" value="MGW"/>
-          <Parameter name="smoother: damping factor" type="double" value="1"/>
-          <Parameter name="smoother: pre or post" type="string" value="both"/>
-          <Parameter name="smoother: sweeps" type="int" value="2"/>
-          <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-        </ParameterList>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="backward Euler"/>
-
-        <ParameterList name="error control">
-          <Parameter name="absolute error tolerance" type="double" value="0.1"/>
-          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
-          <Parameter name="start time" type="double" value="0.0"/>
-          <Parameter name="end time" type="double" value="100.0"/>
-          <Parameter name="initial time step" type="double" value="0.1"/>
-          <Parameter name="maximal time step" type="double" value="1.0"/>
-        </ParameterList>
-
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="nonlinear solver BDF2">
-          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-          <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="transient time integrator">
-      <!-- Is not used for this test -->
+        <Parameter name="method" type="string" value="none"/>
+        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO CG"/>
       </ParameterList>
 
       <ParameterList name="source terms">
@@ -144,8 +53,77 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
-    <!-- State is not used in the unit test -->
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="400"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="Preconditioners">
+    <ParameterList name="Trilinos ML">
+      <ParameterList name="ML Parameters">
+        <Parameter name="ML output" type="int" value="0"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
+        <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+        <Parameter name="aggregation: threshold" type="double" value="0"/>
+        <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+        <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+        <Parameter name="max levels" type="int" value="40"/>
+        <Parameter name="prec type" type="string" value="MGW"/>
+        <Parameter name="smoother: damping factor" type="double" value="1"/>
+        <Parameter name="smoother: pre or post" type="string" value="both"/>
+        <Parameter name="smoother: sweeps" type="int" value="2"/>
+        <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  REGIONS  -->
+  <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{-10.0,-5.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{10.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Well">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{-0.1,-5.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{0.1,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{-10.0,-5.0}"/>
+        <Parameter name="Direction" type="Array double" value="{-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{10.0,-5.0}"/>
+        <Parameter name="Direction" type="Array double" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{-10.0,-5.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 </ParameterList>
 

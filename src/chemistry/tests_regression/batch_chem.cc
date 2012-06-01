@@ -74,9 +74,6 @@ int main(int argc, char** argv) {
   components.total_sorbed.clear();
 
   SimulationParameters simulation_params;
-  simulation_params.mineral_ssa.clear();
-  simulation_params.site_density.clear();
-  simulation_params.cation_exchange_capacity = -1.0;
   if (!input_file_name.empty()) {
     ReadInputFile(input_file_name, &simulation_params, &components);
   }
@@ -129,7 +126,7 @@ int main(int argc, char** argv) {
       parameters.saturation = simulation_params.saturation;  // -
       parameters.volume = simulation_params.volume;  // m^3
       ModelSpecificParameters(simulation_params.comparison_model, &parameters);
-      OverrideParameters(simulation_params, &parameters);
+      CopySimulationParametersToBeakeParameters(simulation_params, &parameters);
 
       if (components.free_ion.size() == 0) {
         // initialize free-ion concentrations, these are actual
@@ -233,8 +230,9 @@ void ModelSpecificParameters(const std::string model,
   }
 }  // end ModelSpecificParameters()
 
-void OverrideParameters(const SimulationParameters& simulation_params,
-                        ac::Beaker::BeakerParameters* parameters) {
+void CopySimulationParametersToBeakeParameters(
+    const SimulationParameters& simulation_params,
+    ac::Beaker::BeakerParameters* parameters) {
   if (simulation_params.mineral_ssa.size() > 0) {
     parameters->mineral_specific_surface_area.assign(
         simulation_params.mineral_ssa.begin(),
@@ -247,10 +245,9 @@ void OverrideParameters(const SimulationParameters& simulation_params,
         simulation_params.site_density.end());
   }
 
-  if (simulation_params.cation_exchange_capacity > 0.0) {
-    parameters->cation_exchange_capacity = 
-        simulation_params.cation_exchange_capacity;
-  }
+  // TODO(bandre): copy isotherm data here when we figure out how it
+  // will be read in
+
 }  // end OverrideParameters()
 
 /*******************************************************************************
@@ -378,7 +375,7 @@ void ReadInputFile(const std::string& file_name,
     kSectionIonExchange,
     kSectionSiteDensity,
     kSectionSpecificSurfaceArea,
-    kSectionCationExchangeCapacity
+    kSectionIsotherms
   } current_section;
 
   int count = 0;
@@ -425,8 +422,8 @@ void ReadInputFile(const std::string& file_name,
         current_section = kSectionSiteDensity;
       } else if (section_name.compare(kSpecificSurfaceAreaSection) == 0) {
         current_section = kSectionSpecificSurfaceArea;
-      } else if (section_name.compare(kCationExchangeCapacitySection) == 0) {
-        current_section = kSectionCationExchangeCapacity;
+      } else if (section_name.compare(kIsothermSection) == 0) {
+        current_section = kSectionIsotherms;
       } else {
         message.str("");
         message << "batch_chem::ReadInputFile(): ";
@@ -452,8 +449,8 @@ void ReadInputFile(const std::string& file_name,
         ParseComponentValue(raw_line, &(simulation_params->site_density));
       } else if (current_section == kSectionSpecificSurfaceArea) {
         ParseComponentValue(raw_line, &(simulation_params->mineral_ssa));
-      } else if (current_section == kSectionCationExchangeCapacity) {
-        ParseComponentValue(raw_line, &(simulation_params->cation_exchange_capacity));
+      } else if (current_section == kSectionIsotherms) {
+        // TODO: need to figure out the format of this data...
       }
     }
   }
@@ -599,7 +596,9 @@ void WriteTemplateFile(const std::string& file_name)
   template_file << std::endl;
   template_file << "[" << kFreeIonSection << "]" << std::endl;
   template_file << std::endl;
-  template_file << "[" << kIonExchangeSection << "]" << std::endl;
+  template_file << "[" << kIonExchangeSection << "] # CEC" << std::endl;
+  template_file << std::endl;
+  template_file << "[" << kIsothermSection << "]" << std::endl;
   template_file << std::endl;
   template_file.close();
 }  // end WriteTemplateFile()

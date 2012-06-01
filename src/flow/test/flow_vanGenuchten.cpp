@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdio>
 #include "UnitTest++.h"
 
 #include "WRM_vanGenuchten.hpp"
@@ -8,12 +9,15 @@ TEST(vanGenuchten) {
   using namespace Amanzi::AmanziFlow;
 
   double m = 0.5;
-  double alpha = 0.1;
+  double l = 0.5;
+  double alpha = 0.01;
   double sr = 0.4;
-  double p_atm = 1.0e+5;
+  double p_atm = 101325.0;
+  std::string krel_function("Mualem");
+  double pc0 = 500.0;
 
-  WRM_vanGenuchten vG("test", m, alpha, sr);
-  
+  WRM_vanGenuchten vG("test", m, l, alpha, sr, krel_function, pc0);
+ 
   // check k_relative for p = 2*p_atm
   double pc = -p_atm;
   CHECK_EQUAL(vG.k_relative(pc), 1.0);
@@ -42,6 +46,10 @@ TEST(vanGenuchten) {
   CHECK_CLOSE(vG.dSdPc(pc), 
               (1.0-sr) * m * pow(1.0 + pow(alpha*pc, 1.0/(1.0-m)), -m-1.0)
                * (-alpha) * pow(alpha*pc, m/(1.0-m)) / (1.0-m), 1e-15);
+
+  // check smoothing at p = 0.998 * p_atm
+  pc = 0.002 * p_atm;
+  CHECK_CLOSE(vG.k_relative(pc), 6.4039599426e-1, 1e-9);
 }
 
 

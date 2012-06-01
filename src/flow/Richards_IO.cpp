@@ -14,6 +14,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 #include <string>
 
 #include "WRM_vanGenuchten.hpp"
+#include "WRM_BrooksCorey.hpp"
 #include "WRM_fake.hpp"
 #include "Richards_PK.hpp"
 
@@ -29,53 +30,29 @@ void Richards_PK::ProcessParameterList()
   Errors::Message msg;
 
   // create verbosity list if it does not exist
-  if (!rp_list.isSublist("VerboseObject")) {
+  if (!rp_list_.isSublist("VerboseObject")) {
     Teuchos::ParameterList verbosity_list;
     verbosity_list.set<std::string>("Verbosity Level", "none");
-    rp_list.set("VerboseObject", verbosity_list);
+    rp_list_.set("VerboseObject", verbosity_list);
   }
 
   // extract verbosity level
-  Teuchos::ParameterList verbosity_list = rp_list.get<Teuchos::ParameterList>("VerboseObject");
+  Teuchos::ParameterList verbosity_list = rp_list_.get<Teuchos::ParameterList>("VerboseObject");
   std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
-  if (verbosity_name == "none") {
-    verbosity = FLOW_VERBOSITY_NONE;
-  } else if (verbosity_name == "low") {
-    verbosity = FLOW_VERBOSITY_LOW;
-  } else if (verbosity_name == "medium") {
-    verbosity = FLOW_VERBOSITY_MEDIUM;
-  } else if (verbosity_name == "high") {
-    verbosity = FLOW_VERBOSITY_HIGH;
-  } else if (verbosity_name == "extreme") {
-    verbosity = FLOW_VERBOSITY_EXTREME;
-  }
+  ProcessStringVerbosity(verbosity_name, &verbosity);
 
-  Teuchos::ParameterList preconditioner_list;
-  preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
-
-  // Relative permeability method
-  std::string method_name = rp_list.get<string>("Relative permeability method", "Upwind with gravity");
-  if (method_name == "Upwind with gravity") {
-    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (method_name == "Cell centered") {
-    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_CENTERED;
-  } else if (method_name == "Upwind with Darcy flux") {
-    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (method_name == "Arithmetic mean") {
-    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
-  }
-
-  // Miscaleneous
-  if (rp_list.isParameter("atmospheric pressure")) {
-    atm_pressure = rp_list.get<double>("atmospheric pressure");
-  } else {
-    msg << "Richards Problem: no <atmospheric pressure> entry.";
-    Exceptions::amanzi_throw(msg);
-  }
+  // Process main one-line options (not sublists)
+  std::string krel_method_name = rp_list_.get<string>("relative permeability", "upwind with gravity");
+  ProcessStringRelativePermeability(krel_method_name, &Krel_method);
+ 
+  atm_pressure = rp_list_.get<double>("atmospheric pressure", 101325.0);
+ 
+  string mfd3d_method_name = rp_list_.get<string>("discretization method", "optimized mfd");
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list.sublist("boundary conditions", true)));
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list_.sublist("boundary conditions", true)));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.createPressure();
@@ -83,10 +60,10 @@ void Richards_PK::ProcessParameterList()
   bc_flux = bc_factory.createMassFlux();
   bc_seepage = bc_factory.createSeepageFace();
 
-  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);
+  ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
 
-  double T_physical = FS->get_time();  // set-up internal clock
-  T_internal = (standalone_mode) ? T_internal : T_physical;
+  T_physics = FS->get_time();  // set-up internal clock
+  T_internal = (standalone_mode) ? T_internal : T_physics;
 
   double time = T_internal;
   bc_pressure->Compute(time);
@@ -95,11 +72,11 @@ void Richards_PK::ProcessParameterList()
   bc_seepage->Compute(time);
 
   // Create water retention models
-  if (!rp_list.isSublist("Water retention models")) {
+  if (! rp_list_.isSublist("Water retention models")) {
     msg << "There is no Water retention models list";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList& vG_list = rp_list.sublist("Water retention models");
+  Teuchos::ParameterList& vG_list = rp_list_.sublist("Water retention models");
 
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = vG_list.begin(); i != vG_list.end(); i++) {
@@ -121,12 +98,30 @@ void Richards_PK::ProcessParameterList()
       if (wrm_list.get<string>("Water retention model") == "van Genuchten") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
 
-        double vG_m = wrm_list.get<double>("van Genuchten m");
-        double vG_alpha = wrm_list.get<double>("van Genuchten alpha");
-        double vG_sr = wrm_list.get<double>("van Genuchten residual saturation");
-        double vG_pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        double m = wrm_list.get<double>("van Genuchten m");
+        double alpha = wrm_list.get<double>("van Genuchten alpha");
+        double l = wrm_list.get<double>("van Genuchten l", 0.5);
+        double sr = wrm_list.get<double>("residual saturation");
+        double pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+        VerifyWRMparameters(m, alpha, sr, pc0);
+        VerifyStringMualemBurdine(krel_function);
 
-        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr, vG_pc0));
+        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
+
+      } else if (wrm_list.get<string>("Water retention model") == "Brooks Corey") {
+        std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
+
+        double lambda = wrm_list.get<double>("Brooks Corey lambda");
+        double alpha = wrm_list.get<double>("Brooks Corey alpha");
+        double l = wrm_list.get<double>("Brooks Corey l", 0.5);
+        double sr = wrm_list.get<double>("residual saturation");
+        double pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+        VerifyWRMparameters(lambda, alpha, sr, pc0);
+        VerifyStringMualemBurdine(krel_function);
+
+        WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, l, alpha, sr, krel_function, pc0));
 
       } else if (wrm_list.get<string>("Water retention model") == "fake") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
@@ -140,114 +135,212 @@ void Richards_PK::ProcessParameterList()
     }
   }
 
-  string mfd3d_method_name = rp_list.get<string>("Discretization method hint", "none");
-  if (mfd3d_method_name == "monotone") {
-    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (mfd3d_method_name == "none") {
-    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
-  } else if (mfd3d_method_name == "support operator") {
-    mfd3d_method = FLOW_MFD3D_SUPPORT_OPERATOR;
-  } else if (mfd3d_method_name == "two-point flux") {
-    mfd3d_method = FLOW_MFD3D_TWO_POINT_FLUX;
-  }
-
   // Time integrator for period I, temporary called steady-state time integrator
-  if (rp_list.isSublist("steady state time integrator")) {
-    Teuchos::ParameterList& sss_list = rp_list.sublist("steady state time integrator");
-
-    string ti_method_name = sss_list.get<string>("method", "Picard");
-    if (ti_method_name == "Picard") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
-    } else if (ti_method_name == "backward Euler") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
-    } else if (ti_method_name == "BDF1") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
-    } else if (ti_method_name == "BDF2") {
-      ti_method_sss = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
-    } else {
-      msg << "Richards Problem: steady state defines an unknown time integration method.";
-      Exceptions::amanzi_throw(msg);
-    }
+  if (rp_list_.isSublist("steady state time integrator")) {
+    Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
 
     initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
     clip_saturation = sss_list.get<double>("clipping saturation value", 0.6);
 
-    if (sss_list.isSublist("error control")) {
-      Teuchos::ParameterList& err_list = sss_list.sublist("error control");
-      absolute_tol_sss = err_list.get<double>("absolute error tolerance", 1.0);
-      relative_tol_sss = err_list.get<double>("relative error tolerance", 1e-5);
-      convergence_tol_sss = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
-      max_itrs_sss = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
-    } else {
-      msg << "Richards Problem: steady state sublist has no <error control> sublist.";
-      Exceptions::amanzi_throw(msg);
-    }
+    std::string ti_method_name = sss_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
+    ProcessSublistTimeIntegration(
+        sss_list, ti_method_name,
+        &absolute_tol_sss, &relative_tol_sss, &residual_tol_sss, &max_itrs_sss,
+        &T0_sss, &T1_sss, &dT0_sss, &dTmax_sss);
 
-    if (sss_list.isSublist("time control")) {
-      Teuchos::ParameterList& time_list = sss_list.sublist("time control");
-      T0_sss = time_list.get<double>("start time", -1e+12);
-      T1_sss = time_list.get<double>("end time", 0.0);
-      dT0_sss = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-      dTmax_sss = time_list.get<double>("maximal time step", dT0_sss);
-    } else {
-      msg << "Richards Problem: steady state time integrator has no <time control> sublist.";
-      Exceptions::amanzi_throw(msg);
-    }
+    preconditioner_name_sss_ = FindStringPreconditioner(sss_list);
+    std::string linear_solver_name = FindStringLinearSolver(sss_list);
+    ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
 
-    if (sss_list.isSublist("linear solver")) {
-      Teuchos::ParameterList& solver_list = sss_list.sublist("linear solver");
-      max_itrs = solver_list.get<int>("maximal number of iterations", 100);
-      convergence_tol = solver_list.get<double>("error tolerance", 1e-12);
-    } else {
-      msg << "Richards Problem: steady state time integrator has no <linear solver> sublist.";
-      Exceptions::amanzi_throw(msg);
-    }
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Richards Problem: there is no sublist for steady-state calculations.\n");
   }
 
   // Time integrator for period II, called transient time integrator
-  if (rp_list.isSublist("transient time integrator")) {
-    Teuchos::ParameterList& trs_list = rp_list.sublist("transient time integrator");
+  if (rp_list_.isSublist("transient time integrator")) {
+    Teuchos::ParameterList& trs_list = rp_list_.sublist("transient time integrator");
 
-    string ti_method_name = trs_list.get<string>("method", "BDF2");
-    if (ti_method_name == "backward Euler") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
-    } else if (ti_method_name == "BDF1") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
-    } else if (ti_method_name == "BDF2") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
-    } else if (ti_method_name == "Picard") {
-      ti_method_trs = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
-    } else {
-      msg << "Richards Problem: transient sublist defines an unknown time integration method.";
-      Exceptions::amanzi_throw(msg);
-    }
+    string ti_method_name = trs_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
+    ProcessSublistTimeIntegration(
+        trs_list, ti_method_name,
+        &absolute_tol_trs, &relative_tol_trs, &residual_tol_trs, &max_itrs_trs,
+        &T0_trs, &T1_trs, &dT0_trs, &dTmax_trs);
 
-    if (trs_list.isSublist("error control")) {
-      Teuchos::ParameterList& err_list = trs_list.sublist("error control");
-      absolute_tol_trs = err_list.get<double>("absolute error tolerance", 1.0);
-      relative_tol_trs = err_list.get<double>("relative error tolerance", 1e-5);
-      convergence_tol_trs = err_list.get<double>("convergence tolerance", AmanziFlow::FLOW_TIME_INTEGRATION_TOLERANCE);
-      max_itrs_trs = err_list.get<int>("maximal number of iterations", AmanziFlow::FLOW_TIME_INTEGRATION_MAX_ITERATIONS);
-    } else {
-      msg << "Richards Problem: transient sublist has no <error control> sublist.";
-      Exceptions::amanzi_throw(msg);
-    }
+    preconditioner_name_trs_ = FindStringPreconditioner(trs_list);
+    std::string linear_solver_name = FindStringLinearSolver(trs_list);
+    ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
 
-    if (trs_list.isSublist("time control")) {
-      Teuchos::ParameterList& time_list = trs_list.sublist("time control");
-      T0_trs = time_list.get<double>("start time", 0.0);
-      T1_trs = time_list.get<double>("end time", 0.0);
-      dT0_trs = time_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-      dTmax_trs = time_list.get<double>("maximal time step", dT0_trs);
-    } else {
-      msg << "Richards Problem: transient sublist has no <time control> sublist.";
-      Exceptions::amanzi_throw(msg);
-    }
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Warning: Richards Problem has no sublist <transient time integration>.\n");
   }
+}
+
+
+/* ****************************************************************
+* Process time integration sublist.
+**************************************************************** */
+void Richards_PK::ProcessSublistTimeIntegration(
+    Teuchos::ParameterList& list, const std::string name,
+    double* absolute_tol, double* relative_tol, double* residual_tol, int* max_itrs,
+    double* T0, double* T1, double* dT0, double* dTmax)
+{
+  Errors::Message msg;
+
+  if (list.isSublist(name)) {
+    Teuchos::ParameterList& tmp_list = list.sublist(name);
+    *absolute_tol = tmp_list.get<double>("absolute error tolerance", FLOW_TI_ABSOLUTE_TOLERANCE);
+    *relative_tol = tmp_list.get<double>("relative error tolerance", FLOW_TI_RELATIVE_TOLERANCE);
+    *residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
+    *max_itrs = tmp_list.get<int>("maximal number of iterations", FLOW_TI_MAX_ITERATIONS);
+
+    *T0 = tmp_list.get<double>("start time", -1e+12);
+    *T1 = tmp_list.get<double>("end time", 0.0);
+    *dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
+    *dTmax = tmp_list.get<double>("maximal time step", dT0_sss);
+
+  } else {
+    msg << "Richards PK: specified time integration sublist does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the lative permeability
+**************************************************************** */
+void Richards_PK::ProcessStringRelativePermeability(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "upwind with gravity") {
+    *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
+  } else if (name == "cell centered") {
+    *method = AmanziFlow::FLOW_RELATIVE_PERM_CENTERED;
+  } else if (name == "upwind with Darcy flux") {
+    *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
+  } else if (name == "arithmetic mean") {
+    *method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+  } else {
+    msg << "Richards Problem: unknown relative permeability method has been specified.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
+* Verify string for the relative permeability model.
+**************************************************************** */
+void Richards_PK::VerifyStringMualemBurdine(const std::string name)
+{
+  Errors::Message msg;
+  if (name != "Mualem" && name != "Burdine") {
+    msg << "Richards PK: supported relative permeability models are Mualem and Burdine.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
+* Verify string for the relative permeability model.
+**************************************************************** */
+void Richards_PK::VerifyWRMparameters(double m, double alpha, double sr, double pc0)
+{
+  Errors::Message msg;
+  if (m < 0.0 || alpha < 0.0 || sr < 0.0 || pc0 < 0.0) {
+    msg << "Richards PK: Negative parameter in one of the water retention models.";
+    Exceptions::amanzi_throw(msg);    
+  }
+  if (sr > 1.0) {
+    msg << "Richards PK: residula saturation is greater than 1.";
+    Exceptions::amanzi_throw(msg);    
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the time integration method.
+**************************************************************** */
+void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "Picard") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
+  } else if (name == "backward Euler") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
+  } else if (name == "BDF1") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
+  } else if (name == "BDF2") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+  } else {
+    msg << "Richards PK: unknown time integration method has been specified.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Richards_PK::ProcessStringLinearSolver(
+    const std::string name, int* max_itrs, double* convergence_tol)
+{
+  Errors::Message msg;
+
+  if (! solver_list_.isSublist(name)) {
+    msg << "Richards PK: steady state linear solver does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
+  *max_itrs = tmp_list.get<int>("maximal number of iterations", 100);
+  *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
+}
+
+
+/* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& list)
+{   
+  Errors::Message msg;
+  std::string name; 
+
+  if (list.isParameter("preconditioner")) {
+    name = list.get<string>("preconditioner");
+  } else {
+    msg << "Richards PK: steady state time integrator does not define <preconditioner>.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (! preconditioner_list_.isSublist(name)) {
+    msg << "Richards PK: steady state preconditioner does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+  return name;
+}
+
+
+/* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+std::string Richards_PK::FindStringLinearSolver(const Teuchos::ParameterList& list)
+{   
+  Errors::Message msg;
+  std::string name; 
+
+  if (list.isParameter("linear solver")) {
+    name = list.get<string>("linear solver");
+  } else {
+    msg << "Richards PK: steady state time integrator does not define <linear solver>.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (! solver_list_.isSublist(name)) {
+    msg << "Richards PK: steady state linear solver does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+  return name;
 }
 
 

@@ -92,7 +92,7 @@ set(Boost_VERSION_MINOR 48)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     "http://downloads.sourceforge.net/project/boost/boost/${Boost_VERSION}")
+set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.gz)
 set(Boost_MD5_SUM        313a11e97eb56eb7efd18325354631be) 
 
@@ -114,7 +114,7 @@ set(HDF5_VERSION_MAJOR 1)
 set(HDF5_VERSION_MINOR 8)
 set(HDF5_VERSION_PATCH 8)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
-set(HDF5_URL_STRING    "http://www.hdfgroup.org/ftp/HDF5/prev-releases/hdf5-${HDF5_VERSION}/src")
+set(HDF5_URL_STRING    "http://software.lanl.gov/ascem/tpls")
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)      
 
@@ -125,7 +125,7 @@ set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 1)
 set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
-set(NetCDF_URL_STRING     "http://www.unidata.ucar.edu/downloads/netcdf/ftp")
+set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
 set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814) 
 
@@ -142,13 +142,12 @@ set(ASCEMIO_MD5_SUM       04d1fba6b566b38628f503a3d39c6883)
 #
 # TPL: ExodusII
 #
-set(ExodusII_VERSION_MAJOR 5)
-set(ExodusII_VERSION_MINOR 14)
+set(ExodusII_VERSION_MAJOR 4)
+set(ExodusII_VERSION_MINOR 98)
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
-#set(ExodusII_URL_STRING     "http://downloads.sourceforge.net/project/exodusii/exodusii/${ExodusII_VERSION}")
 set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar)
-set(ExodusII_MD5_SUM        ed150bd50cbb2fb9c6d5fe95a9d46eff) 
+set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
+set(ExodusII_MD5_SUM     4480e641d6ada58f5d8ecb7172e76791) 
 
 #
 # TPL: MSTK

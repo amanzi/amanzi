@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-#include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -36,7 +36,7 @@ add_definitions("-DUSE_MPI")
 file(GLOB src_files "*.cc")
 add_library(functions ${src_files})
 add_install_library(functions)
-target_link_libraries(functions error_handling ${Teuchos_LIBRARIES})
+target_link_libraries(functions error_handling ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
 #
 # Install Targets
@@ -59,20 +59,28 @@ if (BUILD_TESTS)
         copy_directory ${FUNCS_SOURCE_DIR}/test ${FUNCS_BINARY_DIR}/test) 
   endif()
 
-  add_executable(all-function-test test/all-function-test.cc)
-  target_link_libraries(all-function-test functions ${UnitTest_LIBRARIES})
-  add_amanzi_test(concrete-functions all-function-test KIND unit)
+  add_amanzi_test(concrete-functions all-function-test
+                  KIND unit
+  SOURCE test/all-function-test.cc
+  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
-  add_executable(function-factory-test test/function-factory-test.cc)
-  target_link_libraries(function-factory-test functions ${UnitTest_LIBRARIES})
-  add_amanzi_test(function-factory function-factory-test KIND unit)
-  
-  add_executable(all-color-function-test test/all-color-function-test.cc)
-  target_link_libraries(all-color-function-test functions ${UnitTest_LIBRARIES})
-  add_amanzi_test(concrete-color-function all-color-function-test KIND unit)
+  add_amanzi_test(function-factory function-factory-test
+                  KIND unit
+                  SOURCE test/function-factory-test.cc
+                  LINK_LIBS functions ${UnitTest_LIBRARIES})
+ 
+  add_amanzi_test(concrete-color-function all-color-function-test
+                  KIND unit
+                  SOURCE test/all-color-function-test.cc
+                  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
-  add_executable(color-function-factory-test test/color-function-factory-test.cc)
-  target_link_libraries(color-function-factory-test functions ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-  add_amanzi_test(color-function-factory color-function-factory-test KIND unit)
+  add_amanzi_test(color-function-factory color-function-factory-test
+                  KIND unit
+                  SOURCE test/color-function-factory-test.cc
+                  LINK_LIBS 
+                         functions
+                         ${UnitTest_LIBRARIES}
+                         ${Teuchos_LIBRARIES}
+                         ${Epetra_LIBRARIES})
 
 endif()

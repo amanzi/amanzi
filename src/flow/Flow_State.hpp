@@ -40,12 +40,12 @@ class Flow_State {
   ~Flow_State() {};
 
   // data management
-  void copyMasterCell2GhostCell(Epetra_Vector& v);
-  void copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
-  void combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
+  void CopyMasterCell2GhostCell(Epetra_Vector& v);
+  void CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
+  void CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 
-  Epetra_Vector* createCellView(const Epetra_Vector& u) const;
-  Epetra_Vector* createFaceView(const Epetra_Vector& u) const;
+  Epetra_Vector* CreateCellView(const Epetra_Vector& u) const;
+  Epetra_Vector* CreateFaceView(const Epetra_Vector& u) const;
 
   // access methods
   Teuchos::RCP<AmanziGeometry::Point> gravity() { return gravity_; }  // RCP pointers

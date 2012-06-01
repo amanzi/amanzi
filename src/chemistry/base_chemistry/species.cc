@@ -7,12 +7,15 @@
 #include <iostream>
 #include <iomanip>
 
+#include "chemistry_output.hh"
 #include "chemistry_exception.hh"
 
 #include "exceptions.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 Species::Species()
     : molality_(1.e-9),
@@ -94,28 +97,34 @@ void Species::display(void) const {
 }  // end display()
 
 void Species::Display(void) const {
-  std::cout << std::setw(15) << name() << std::fixed
-            << std::setprecision(2) << std::setw(10) << charge()
-            << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
-            << std::setprecision(2) << std::setw(10) << ion_size_parameter()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name() << std::fixed
+          << std::setprecision(2) << std::setw(10) << charge()
+          << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
+          << std::setprecision(2) << std::setw(10) << ion_size_parameter()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void Species::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molality"
-            << std::setw(15) << "Activity Coeff"
-            << std::setw(15) << "Activity"
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << "Name"
+          << std::setw(15) << "Molality"
+          << std::setw(15) << "Activity Coeff"
+          << std::setw(15) << "Activity"
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void Species::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << molality()
-            << std::setw(15) << act_coef()
-            << std::setw(15) << activity()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << molality()
+          << std::setw(15) << act_coef()
+          << std::setw(15) << activity()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry
