@@ -31,7 +31,7 @@
 #include "beaker.hh"
 #endif
 
-enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type};
+enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type};
 
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
@@ -1015,7 +1015,28 @@ protected:
   static Array<PArray<RegionData> > tbc_array;
   static std::map<std::string,Array<int> > group_map;
 
+  // Minerals, Sorption sites
+  static int nminerals; 
+  static Array<std::string> minerals;
+  static int nsorption_sites; 
+  static Array<std::string> sorption_sites;
+  static int ncation_exchange; 
+  static Array<std::string> aux_chem_variables;
+
+  typedef std::map<std::string,Real> ICParmPair;
+  typedef std::map<std::string, ICParmPair > ICLabelParmPair;
+  typedef std::map<std::string, ICLabelParmPair> ChemICMap;
+  static ChemICMap sorption_isotherm_ics;
+  static ChemICMap mineralogy_ics;
+  static ChemICMap surface_complexation_ics;
+  static ICLabelParmPair cation_exchange_ics;
   static Array<Real> tInflow;
+
+  typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
+  static LabelIdx mineralogy_label_map;
+  static LabelIdx sorption_isotherm_label_map;
+  static LabelIdx surface_complexation_label_map;
+  static std::map<std::string,int> cation_exchange_label_map;
 
   // Pressure
   static Real wt_lo;

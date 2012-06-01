@@ -168,8 +168,8 @@ namespace Amanzi {
               double volume_frac, specific_surface_area;
               ParameterList BuildPL() const {
                   ParameterList pl;
-                  pl.set("volume_frac",volume_frac);
-                  pl.set("specific_surface_area",specific_surface_area);
+                  pl.set("Volume_Fraction",volume_frac);
+                  pl.set("Specific_Surface_Area",specific_surface_area);
                   return pl;
               }
           };
@@ -180,7 +180,7 @@ namespace Amanzi {
               double site_density;
               ParameterList BuildPL() const {
                   ParameterList pl;
-                  pl.set("site_density",site_density);
+                  pl.set("Site_Density",site_density);
                   return pl;
               }
           };

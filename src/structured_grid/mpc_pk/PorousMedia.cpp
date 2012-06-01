@@ -1095,6 +1095,129 @@ PorousMedia::initData ()
         }
     }
 
+    if (ntracers>0 && do_chem!=0) {
+        const Real* dx = geom.CellSize();
+        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+        {
+            FArrayBox& fab = AuxChem_new[mfi];
+
+            for (ChemICMap::iterator it=sorption_isotherm_ics.begin(); it!=sorption_isotherm_ics.end(); ++it)
+            {
+                const std::string& material_name = it->first;
+                const Rock& rock = find_rock(material_name);
+                ICLabelParmPair& solute_to_pp = it->second; 
+                for (ICLabelParmPair::iterator it1=solute_to_pp.begin(); it1!=solute_to_pp.end(); ++it1) 
+                {
+                    const std::string& solute_name = it1->first;
+                    ICParmPair& parm_pairs = it1->second;
+                    for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                    {
+                        const std::string& parameter = it2->first;
+                        int comp = sorption_isotherm_label_map[solute_name][parameter];
+                        Real value = it2->second;
+
+                        const PArray<Region>& rock_regions = rock.regions;
+                        for (int j=0; j<rock_regions.size(); ++j) {
+                            rock_regions[j].setVal(fab,value,comp,dx,0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (nminerals>0 && do_chem!=0) {
+        const Real* dx = geom.CellSize();
+        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+        {
+            FArrayBox& fab = AuxChem_new[mfi];
+
+            for (ChemICMap::iterator it=mineralogy_ics.begin(); it!=mineralogy_ics.end(); ++it)
+            {
+                const std::string& material_name = it->first;
+                const Rock& rock = find_rock(material_name);
+                ICLabelParmPair& mineral_to_pp = it->second; 
+                for (ICLabelParmPair::iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) 
+                {
+                    const std::string& mineral_name = it1->first;
+                    ICParmPair& parm_pairs = it1->second;
+                    for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                    {
+                        const std::string& parameter = it2->first;
+                        int comp = mineralogy_label_map[mineral_name][parameter];
+                        Real value = it2->second;
+                        
+                        const PArray<Region>& rock_regions = rock.regions;
+                        for (int j=0; j<rock_regions.size(); ++j) {
+                            rock_regions[j].setVal(fab,value,comp,dx,0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+        
+    if (nsorption_sites>0 && do_chem!=0) {
+        const Real* dx = geom.CellSize();
+        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+        {
+            FArrayBox& fab = AuxChem_new[mfi];
+            
+            for (ChemICMap::iterator it=surface_complexation_ics.begin(); it!=surface_complexation_ics.end(); ++it)
+            {
+                const std::string& material_name = it->first;
+                const Rock& rock = find_rock(material_name);
+                ICLabelParmPair& sorption_site_to_pp = it->second; 
+                for (ICLabelParmPair::iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) 
+                {
+                    const std::string& sorption_site_name = it1->first;
+                    ICParmPair& parm_pairs = it1->second;
+                    for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                    {
+                        const std::string& parameter = it2->first;
+                        int comp = surface_complexation_label_map[sorption_site_name][parameter];
+                        Real value = it2->second;
+                        
+                        const PArray<Region>& rock_regions = rock.regions;
+                        for (int j=0; j<rock_regions.size(); ++j) {
+                            rock_regions[j].setVal(fab,value,comp,dx,0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+        
+    if (ncation_exchange>0 && do_chem!=0) {
+        const Real* dx = geom.CellSize();
+        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+        {
+            FArrayBox& fab = AuxChem_new[mfi];
+            
+            for (ICLabelParmPair::iterator it=cation_exchange_ics.begin(); it!=cation_exchange_ics.end(); ++it)
+            {
+                const std::string& material_name = it->first;
+                const Rock& rock = find_rock(material_name);
+                ICParmPair& parm_pairs = it->second;
+                for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                {
+                    const std::string& parameter = it2->first;
+                    int comp = cation_exchange_label_map[parameter];
+                    Real value = it2->second;
+                    
+                    const PArray<Region>& rock_regions = rock.regions;
+                    for (int j=0; j<rock_regions.size(); ++j) {
+                        rock_regions[j].setVal(fab,value,comp,dx,0);
+                    }
+                }
+            }
+        }
+    }
+        
     if ( 1 || !(model == model_list["richard"] && do_richard_init_to_steady))
     {
         FillStateBndry(cur_time,State_Type,0,ncomps);
@@ -4284,6 +4407,10 @@ PorousMedia::strang_chem (MultiFab&  state,
                           int        ngrow)
 {
     BL_PROFILE(BL_PROFILE_THIS_NAME() + "::strang_chem()");
+
+    // HACK!
+    BoxLib::Warning("******************** Skipping of chemistry advance for now...");
+    return;
 
     const Real strt_time = ParallelDescriptor::second();
 

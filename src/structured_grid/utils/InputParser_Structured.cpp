@@ -273,10 +273,10 @@ namespace Amanzi {
                         chem_out_list.set(_name,chem_list.get<std::string>(name));
                     }
                     else if (name=="Thermodynamic Database File") {
-                        chem_out_list.set(_name,chem_list.get<std::string>(name));
+                        chem_out_list.set("file",chem_list.get<std::string>(name));
                     }
                     else if (name=="Verbosity") {
-                        chem_out_list.set(_name,chem_list.get<std::string>(name));
+                        chem_out_list.set("verbose_chemistry_init",chem_list.get<std::string>(name));
                     }
                     else if (name=="Activity Model") {
                         chem_out_list.set(_name,chem_list.get<std::string>(name));
@@ -992,6 +992,11 @@ namespace Amanzi {
             ParameterList& rock_list = struc_list.sublist("rock");
         
             const ParameterList& rlist = parameter_list.sublist("Material Properties");
+
+            std::string mineralogy_str = "Mineralogy";
+            std::string complexation_str = "Surface Complexation Sites";
+            std::string isotherm_str = "Sorption Isotherms";
+
             Array<std::string> arrayrock;
 
             bool add_chemistry_properties = false;
@@ -1085,7 +1090,7 @@ namespace Amanzi {
                                     throw std::exception();
                                 }
                             }
-                            else if (rlabel=="Mineralogy") {
+                            else if (rlabel==mineralogy_str) {
 
                                 add_chemistry_properties = true;
 
@@ -1118,7 +1123,7 @@ namespace Amanzi {
                                     }
                                 }
                             }
-                            else if (rlabel=="Surface Complexation Sites") {
+                            else if (rlabel==complexation_str) {
 
                                 add_chemistry_properties = true;
 
@@ -1148,7 +1153,7 @@ namespace Amanzi {
                                     }
                                 }
                             }
-                            else if (rlabel=="Sorption Isotherms") {
+                            else if (rlabel==isotherm_str) {
 
                                 add_chemistry_properties = true;
 
@@ -1300,6 +1305,9 @@ namespace Amanzi {
 
             if (add_chemistry_properties)
             {
+                
+                const Array<std::string>& minerals = state.getSolid().mineral_names;
+                const Array<std::string>& sorption_sites = state.getSolid().sorption_site_names;
 
                 for (int k=0; k<arrayrock.size(); ++k)
                 {
@@ -1309,31 +1317,36 @@ namespace Amanzi {
                     ParameterList& rsublist = rsublist_mat[label];
 
                     // Add chemistry data, if necessary
-                    const Array<std::string>& minerals = state.getSolid().mineral_names;
-                    ParameterList mPL;
-                    for (int i=0; i<minerals.size(); ++i) {
-                        const std::string& name = minerals[i];
-                        SolidChem::MineralData md = solid_chem[label].Mineral(name); // Will call defctr if not set by inputs
-                        ParameterList minPL = md.BuildPL();
-                        mPL.set(underscore(name),minPL);
+                    if (minerals.size()>0) {
+                        ParameterList mPL;
+                        for (int i=0; i<minerals.size(); ++i) {
+                            const std::string& name = minerals[i];
+                            SolidChem::MineralData md = solid_chem[label].Mineral(name); // Will call defctr if not set by inputs
+                            ParameterList minPL = md.BuildPL();
+                            mPL.set(underscore(name),minPL);
+                        }
+                        rsublist.set(underscore(mineralogy_str),mPL);
                     }
-                    rsublist.set("minerals",mPL);
 
-                    const Array<std::string>& sorption_sites = state.getSolid().sorption_site_names;
-                    ParameterList sPL;
-                    for (int i=0; i<sorption_sites.size(); ++i) {
-                        const std::string& name = sorption_sites[i];
-                        SolidChem::SorptionSiteData ssd = solid_chem[label].SorptionSite(name); 
-                        ParameterList ssdPL = ssd.BuildPL();
-                        sPL.set(underscore(name),ssdPL);
+                    if (sorption_sites.size()>0) {
+                        ParameterList sPL;
+                        for (int i=0; i<sorption_sites.size(); ++i) {
+                            const std::string& name = sorption_sites[i];
+                            SolidChem::SorptionSiteData ssd = solid_chem[label].SorptionSite(name); 
+                            ParameterList ssdPL = ssd.BuildPL();
+                            sPL.set(underscore(name),ssdPL);
+                        }
+                        rsublist.set(underscore(complexation_str),sPL);
                     }
-                    rsublist.set("sorption_sites",sPL);
-                    
+                        
                     rsublist.set("cation_exchange_capacity",cation_exchange_capacity[label]);
-                    
+
+                    // if ntracers>0...
+                    //
                     // Must "flatten" hierarchy of phases/comps to be compatible with current Amanzi-S 
                     // in fact, tracers are listed flat requiring that there be no name clashes across phase/comp
                     ParameterList siPL;
+                    bool any_here = false;
                     StateDef::Phases& phases = state.getPhases();
                     for (StateDef::Phases::iterator pit=phases.begin(); pit!=phases.end(); ++pit) {
                         const std::string& p=pit->first;
@@ -1344,18 +1357,16 @@ namespace Amanzi {
                             for (int i=0; i<tracers.size(); ++i) {
                                 const std::string& t=tracers[i];
                                 
-                                SolidChem::SorptionIsothermData sidDEF;
-                                bool hasOne = (p_c_s_iso[label].find(p)!=p_c_s_iso[label].end()
-                                               && p_c_s_iso[label][p].find(c)!=p_c_s_iso[label][p].end()
-                                               && p_c_s_iso[label][p][c].find(t)!=p_c_s_iso[label][p][c].end());
-                                
-                                SolidChem::SorptionIsothermData& sidr = (hasOne ? p_c_s_iso[label][p][c][t] : sidDEF);
-                                ParameterList sitPL = sidr.BuildPL();
+                                SolidChem::SorptionIsothermData sid = p_c_s_iso[label][p][c][t];
+                                ParameterList sitPL = sid.BuildPL();
                                 siPL.set(underscore(t),sitPL);
+                                any_here = true;
                             }
                         }
                     }
-                    rsublist.set("sorption_isotherms",siPL);
+                    if (any_here) {
+                        rsublist.set(underscore(isotherm_str),siPL);
+                    }
                 }
             }
 
@@ -1366,10 +1377,8 @@ namespace Amanzi {
                 const std::string& label = AMR_to_Amanzi_label_map[_label];
                 rock_list.set(_label,rsublist_mat[label]);
             }
-
             
             rock_list.set("rock",arrayrock);
-
             rock_list.set("permeability_file",kp_file);
             rock_list.set("porosity_file",pp_file);
 
@@ -2348,8 +2357,6 @@ namespace Amanzi {
             ParameterList& comp_list   = struc_list.sublist("comp"); 
             ParameterList& solute_list = struc_list.sublist("tracer"); 
             ParameterList& press_list  = struc_list.sublist("press");
-            ParameterList& solid_list  = struc_list.sublist("solid");
-            ParameterList& chem_list   = struc_list.sublist("chem");
     
             typedef StateDef::PhaseCompMap PhaseCompMap;
             typedef StateDef::CompMap  CompMap;
@@ -2357,8 +2364,6 @@ namespace Amanzi {
             // FIXME: Flattens the hierarchy, as expected for PMAMR
             Array<std::string> arrayphase;
             Array<std::string> arraysolute;  
-            Array<std::string> arraychem;  
-            Array<std::string> arraysolid;  
             Array<double> arraydensity;  
             Array<double> arrayviscosity;  
             Array<double> arraydiffusivity;  // FIXME: Not in current spec
@@ -2455,62 +2460,29 @@ namespace Amanzi {
                 }
             }
 
+            // Now add solute info
             for (int i=0; i<arraysolute.size(); ++i) {
                 const std::string& soluteName = arraysolute[i];
                 solute_list.set(soluteName,solutePLs[soluteName]);
             }
 
 
-            // Need to process materials here to see if there is solid chem
-            convert_to_structured_material(parameter_list, struc_list, stateDef);
-
             if (do_chem) 
             {
-                int num_solutes = arraysolute.size();
-                int num_chem = num_solutes*2;
-                arraychem.resize(2*arraysolute.size());
-                for (int i=0; i<arraysolute.size(); ++i) {
-                    arraychem[i] = "free_ion_guess_" + arraysolute[i];
-                    arraychem[arraysolute.size()+i] = "activity_coefficient_" + arraysolute[i];
-                }
-                chem_list.set("chem",arraychem);
-
                 if (stateDef.HasSolidChem()) {
-                    const Array<std::string>& arraymineral = stateDef.getSolid().mineral_names;
-                    const Array<std::string>& arraysorptionsites = stateDef.getSolid().sorption_site_names;
-
-                    int num_minerals = arraymineral.size();
-                    int num_sorption_sites = arraysorptionsites.size();
-                    int num_solid = num_solutes*4 + num_minerals*2 + num_sorption_sites + 1;
-
-                    arraysolid.resize(num_solid);
-                    int cnt=0;
-                    for (int i=0; i<num_solutes; ++i) {
-                        std::string _name = underscore(arraysolute[i]);
-                        arraysolid[cnt++] = "total_sorbed_"+_name;
-                        arraysolid[cnt++] = "sorption_isotherms_kd_"+_name;
-                        arraysolid[cnt++] = "sorption_isotherms_freundlich_n_"+_name;
-                        arraysolid[cnt++] = "sorption_isotherms_langmuir_b_"+_name;
+                    const Array<std::string>& mineral_names = stateDef.getSolid().mineral_names;
+                    if (mineral_names.size() > 0) {
+                        struc_list.sublist("mineral").set("minerals",underscore(mineral_names));
                     }
                     
-                    for (int i=0; i<num_minerals; ++i) {
-                        std::string _name = underscore(arraymineral[i]);
-                        arraysolid[cnt++] = "mineral_volume_fraction_"+_name;
-                        arraysolid[cnt++] = "mineral_specific_surface_area_"+_name;
+                    const Array<std::string>& sorption_site_names = stateDef.getSolid().sorption_site_names;
+                    if (sorption_site_names.size() > 0) {
+                        struc_list.sublist("sorption_site").set("sorption_sites",underscore(sorption_site_names));
                     }
-
-                    for (int i=0; i<num_sorption_sites; ++i) {
-                        std::string _name = underscore(arraysorptionsites[i]);
-                        arraysolid[cnt++] = "sorption_site_density_"+_name;
-                    }
-
-                    arraysolid[cnt++] = "cation_exchange_capacity";
-
-                    solid_list.set("solids",arraysolid);
                 }
             }
         }
- 
+
         //
         // convert output to structured format
         //
@@ -2550,9 +2522,9 @@ namespace Amanzi {
                     for (int i=0; i<solute_names.size(); ++i) {
                         const std::string& name = solute_names[i];
                         user_derive_list.push_back(underscore("Total Sorbed "+name));
-                        user_derive_list.push_back(underscore("Sorption Isotherms Kd "+name));
-                        user_derive_list.push_back(underscore("Sorption Isotherms Freundlich n "+name));
-                        user_derive_list.push_back(underscore("Sorption Isotherms Langmuir b "+name));
+                        user_derive_list.push_back(underscore("Kd "+name));
+                        user_derive_list.push_back(underscore("Freundlich n "+name));
+                        user_derive_list.push_back(underscore("Langmuir b "+name));
                         user_derive_list.push_back(underscore("Free Ion Guess "+name));
                         user_derive_list.push_back(underscore("Activity Coefficient "+name));
                     }
@@ -2561,14 +2533,14 @@ namespace Amanzi {
                 const Array<std::string>& mineral_names = state.getSolid().mineral_names;
                 for (int i=0; i<mineral_names.size(); ++i) {
                     const std::string& name = mineral_names[i];
-                    user_derive_list.push_back(underscore("Mineral Volume Fraction "+name));
-                    user_derive_list.push_back(underscore("Mineral Specific Surface Area "+name));
+                    user_derive_list.push_back(underscore("Volume Fraction "+name));
+                    user_derive_list.push_back(underscore("Specific Surface Area "+name));
                 }
 
                 const Array<std::string>& sorption_site_names = state.getSolid().sorption_site_names;
                 for (int i=0; i<sorption_site_names.size(); ++i) {
-                    const std::string& name = mineral_names[i];
-                    user_derive_list.push_back(underscore("Sorption Site Density "+name));
+                    const std::string& name = sorption_site_names[i];
+                    user_derive_list.push_back(underscore("Site Density "+name));
                 }
 
                 user_derive_list.push_back(underscore("Cation Exchange Capacity"));
@@ -2963,10 +2935,14 @@ namespace Amanzi {
             //
             convert_to_structured_region(parameter_list, struc_list);
             //
-            // State (includes materials, since options may generate requriments in the state)
+            // State 
             //
             StateDef stateDef(parameter_list);
             convert_to_structured_state(parameter_list, struc_list, stateDef, do_tracer_transport, do_chem);
+            //
+            // Materials
+            //
+            convert_to_structured_material(parameter_list, struc_list, stateDef);
             //
             // Output
             // 
