@@ -17,6 +17,7 @@ Authors: Neil Carlson (version 1)
 #include "Flow_State.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
+#include "Matrix_MFD.hpp"
 
 
 namespace Amanzi {
@@ -57,16 +58,17 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
   double  fun_eval_time;
 };
 
-class Preconditioner_Test : public Epetra_Operator{
+
+class Preconditioner_Test : public Matrix_MFD{
 	public:			    
-		Preconditioner_Test(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->mesh();}
+		Preconditioner_Test(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : Matrix_MFD(FS_, map_), FS(FS_), map(map_) { mesh_ = FS->mesh();}
 		~Preconditioner_Test(){};
 		
 		// required methods
-	int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X; return 0;};
-	int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X;  return 0 ;};
-	bool UseTranspose() const { return false; }
-	int SetUseTranspose(bool) { return 1; }
+// 	int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X; return 0;};
+// 	int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X;  return 0 ;};
+// 	bool UseTranspose() const { return false; }
+// 	int SetUseTranspose(bool) { return 1; }
 	
 	const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
 	const Epetra_Map& OperatorDomainMap() const { return map; }

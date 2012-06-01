@@ -11,6 +11,7 @@ Authors: Neil Carlson (version 1)
 #include "Interface_NOX.hpp"
 #include "Timer.hh"
 
+
 namespace Amanzi {
 namespace AmanziFlow {
 
@@ -53,7 +54,7 @@ bool Interface_NOX::computePreconditioner(
   lag_count_++;
   lag_count_ %= lag_prec_;
   
-//   FPK_->compute_precon(time, deltaT, x, M, params);
+   FPK_->compute_precon(time, deltaT, x, M, params);
 
   return true;
 }
