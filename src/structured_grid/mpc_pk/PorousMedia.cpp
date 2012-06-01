@@ -4409,7 +4409,9 @@ PorousMedia::strang_chem (MultiFab&  state,
     BL_PROFILE(BL_PROFILE_THIS_NAME() + "::strang_chem()");
 
     // HACK!
-    BoxLib::Warning("******************** Skipping of chemistry advance for now...");
+    if (ParallelDescriptor::IOProcessor()) {
+        BoxLib::Warning("******************** Skipping of chemistry advance for now...");
+    }
     return;
 
     const Real strt_time = ParallelDescriptor::second();
