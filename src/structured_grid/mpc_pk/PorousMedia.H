@@ -164,10 +164,15 @@ public:
                       Real                abs_err, 
                       Real                rel_err, 
                       Real&               new_dt); // Note: return bool for whether run should stop
-
+      
+        bool AdjustDt(Real                dt, 
+                      PorousMedia::Reason nl_solver_status, 
+                      Real&               new_dt); // Note: return bool for whether run should stop
+        
         Array < PArray <MultiFab> > Hcoeffs;
         Array < PArray <MultiFab> > Jacobian;
         Array <MultiFab*> velPhase;
+        PArray <MultiFab>  initialState;
 
     private:
         void Build(Amr* amrp);

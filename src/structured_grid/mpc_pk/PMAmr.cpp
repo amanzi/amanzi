@@ -63,7 +63,7 @@ PMAmr::init (Real strt_time_,
     if (!restart_file.empty() && restart_file != "init")
     {
         restart(restart_file);
-        cumtime = strt_time;
+        //cumtime = strt_time;
     }
     else
     {

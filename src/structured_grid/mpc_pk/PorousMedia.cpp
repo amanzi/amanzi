@@ -630,13 +630,13 @@ PorousMedia::restart (Amr&          papa,
   AmrLevel::restart(papa,is,bReadSpecial);
   is >> dt_eig;
 
-  int finest_level = parent->finestLevel();
-  for (int k = 0; k <= finest_level; k++)
-  {
-      Real dt = parent->dtLevel()[k];
-      Real strt_time =  static_cast<const PMAmr*>(parent)->StartTime();
-      getLevel(k).setTimeLevel(strt_time,dt,dt);
-  }
+  //int finest_level = parent->finestLevel();
+  //for (int k = 0; k <= finest_level; k++)
+  //{
+  //    Real dt = parent->dtLevel()[k];
+  //    Real strt_time =  static_cast<const PMAmr*>(parent)->StartTime();
+  //    getLevel(k).setTimeLevel(strt_time,dt,dt);
+  //}
 
   if (verbose && ParallelDescriptor::IOProcessor())
     std::cout << "Estimated time step = " << dt_eig << '\n';
@@ -1375,8 +1375,11 @@ PorousMedia::RichardNLSdata::Build(Amr* amrp)
         }
     }
     velPhase.resize(nlevs);
+    initialState.resize(nlevs,PArrayManage);
     for (int lev = 0; lev <nlevs; lev++) {
-        velPhase[lev] = dynamic_cast<PorousMedia*>(&amrp->getLevel(start_level+lev))->u_mac_curr;
+      BoxArray grids = amrp->getLevel(start_level+lev).boxArray();
+      initialState.set(lev,new MultiFab(grids,1,1));
+      velPhase[lev] = dynamic_cast<PorousMedia*>(&amrp->getLevel(start_level+lev))->u_mac_curr;
     }
 }
 
@@ -1441,6 +1444,98 @@ PorousMedia::RichardNLSdata::AdjustDt(Real                dt,
         num_consecutive_failures_1 = 0;
         num_consecutive_failures_2 = 0;
         prev_abs_err = abs_err;
+
+    }
+    else {
+
+        // step was rejected
+        num_consecutive_failures_1++;
+
+        if (num_consecutive_failures_1 <= steady_max_consecutive_failures_1)
+        {
+            dt_new = dt * steady_time_step_retry_factor_1;
+#if 0
+            // If the last increase was immediately undone, cut back on the dt adjustment knobs...
+            //  FIXME: needs more tweaking
+            if (num_consecutive_success == 0) {
+                time_step_increase_factor = 0.5*(1 + time_step_increase_factor);
+                steady_time_step_retry_factor_1 = 0.5*(1 + steady_time_step_retry_factor_1);
+            }
+#endif
+        }
+        else
+        {
+            num_consecutive_failures_2++;
+
+            if (num_consecutive_failures_2 <= steady_max_consecutive_failures_2)
+            {
+                dt_new = dt * steady_time_step_retry_factor_2;
+            }
+            else
+            {
+                if (last_chance)  return false;
+                dt_new = dt * steady_time_step_retry_factor_f;
+                last_chance = true;
+            }
+        }
+
+        num_consecutive_success = 0;
+        ResetJacobianCounter();
+    }
+
+    return true;
+}
+
+bool
+PorousMedia::RichardNLSdata::AdjustDt(Real                dt, 
+                                      PorousMedia::Reason nl_solver_status, 
+                                      Real&               dt_new) // Note: return bool for whether run should stop
+{
+    dt_new = dt;
+
+    if (nl_solver_status == RICHARD_SUCCESS)
+    {
+        last_chance = false;
+
+        // "success" is when the error is reduced using small number of iters
+        // In this case, increment counter for this event, reset "increase" counter
+        // If this keeps happening, increase dt and reset the counter for these events
+        //  (when we do, if the problem was  particularly easy, increase dt dramatically)
+        if (nl_iterations_taken < min_nl_iterations_for_dt ) {
+            
+            num_consecutive_success++;
+            num_consecutive_increases = 0;
+            
+            if (num_consecutive_success >= max_num_consecutive_success)
+            {
+                num_consecutive_success = 0;
+                Real fac = time_step_increase_factor;
+                if (nl_iterations_taken < min_nl_iterations_for_dt_2) {
+                    fac = time_step_increase_factor_2;
+                }
+                dt_new = dt * fac;
+            }
+        }
+
+        // "increase" is when large number of iters
+        // In this case, increment counter for this event, guarantee recalc of J, 
+	// and reset "success" counter
+        // If this keeps happening, reduce dt and reset the counter for these events
+        if (nl_iterations_taken > max_nl_iterations_for_dt  )
+        {
+            ResetJacobianCounter();
+            num_consecutive_increases++;
+            num_consecutive_success = 0;        
+        
+            if (nl_iterations_taken > max_nl_iterations_for_dt)
+            {
+                ResetJacobianCounter();
+                dt_new = dt * time_step_reduction_factor;
+            }
+        }
+
+        num_consecutive_failures_1 = 0;
+        num_consecutive_failures_2 = 0;
 
     }
     else {
@@ -1593,7 +1688,21 @@ PorousMedia::richard_init_to_steady()
 
                     if (do_multilevel_full) {
                         nld.ResetCounters();
-                        nld.ResetJacobianCounter();
+                        nld.ResetJacobianCounter();	// Save the initial state 
+			for (int lev=0;lev<= finest_level;lev++)
+			  {
+			    PorousMedia&    fine_lev   = getLevel(lev);
+			    if (do_richard_sat_solve)
+			      {
+				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+				MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
+			      }
+			    else
+			      {
+				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+				MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
+			      }
+			  }
                         ret = richard_composite_update(dt,nld);
                         total_num_Newton_iterations += nld.NLIterationsTaken();
                     }
@@ -2738,49 +2847,142 @@ PorousMedia::advance_multilevel_richard (Real time,
 {
   // 
   // Time stepping for richard's equation
+  // We will do subcycling if the time step is too big and 
+  // and reset the subsequent time step to the smller one.
   //
-  int nlevs = parent->finestLevel() - level + 1;
-  RichardNLSdata nld(0,nlevs,parent);
-  PorousMedia::Reason ret = richard_composite_update(dt,nld);
-  int curr_nwt_iter = nld.NLIterationsTaken();
-  BL_ASSERT(ret == RICHARD_SUCCESS);
 
-  for (int lev=0; lev<nlevs; lev++)
-    {
-      PorousMedia&    fine_lev   = getLevel(lev);  
-      fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,time+dt);
+  if (level == 0) {
+    int finest_level = parent->finestLevel();
+    int nlevs = finest_level + 1;
+    RichardNLSdata nld(0,nlevs,parent);
+    
+    Real cur_time = time;
+    Array<Real> dt_save(nlevs);
+    Array<int> nc_save(nlevs);
+    int n_factor;
+  
+    for (int k = 0; k <= finest_level; k++)
+      {
+	nc_save[k] = parent->nCycle(k);
+	dt_save[k] = parent->dtLevel()[k];
+	dt_save[k] = parent->getLevel(k).get_state_data(0).curTime()
+	  - getLevel(k).get_state_data(0).prevTime();
+      }
+    
+    Real dt_iter = dt;
+    Real t_max = time+dt;
+    int  k_max = 10;
+    Real t_eps = 1.e-8*dt_iter;
 
-      if (lev == 0) 
-	fine_lev.create_umac_grown(fine_lev.u_mac_curr,
-				   fine_lev.u_macG_trac);
-      else 
-	{
-	  PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-	  fine_lev.GetCrseUmac(u_macG_crse,time);
-	  fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
-				     fine_lev.u_macG_trac); 
-	}
+    Real t = time;
+    int  k = 0;
+    bool continue_subtimestep = (k < k_max) && (t < t_max);
+    bool continue_iterations  = (dt_iter > t_eps);
 
-      fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
-      if (do_tracer_transport && ntracers > 0)
-	{
-	  int ltracer = ncomps+ntracers-1;
-	  fine_lev.tracer_advection(fine_lev.u_macG_trac,dt,ncomps,ltracer,true);
-	}
- 
-      // predict the next time step. 
-      Real dt_nwt = dt; 
-      fine_lev.predictDT(fine_lev.u_macG_trac);
-      std::cout << "RICHARD TIME MULTILEVEL" << richard_time << " " << richard_time_min << std::endl;
-      if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 4 && dt_nwt < richard_max_dt)
-	dt_nwt = dt_nwt*1.1;
-      else if (curr_nwt_iter > 5 )
-	dt_nwt = dt_nwt*0.75;
-      else if (curr_nwt_iter < 2 ) 
-	dt_nwt = dt_nwt*1.1;
-      richard_iter = curr_nwt_iter;
-      dt_eig = std::min(dt_eig,dt_nwt); 
-    }
+    PorousMedia::Reason ret;
+    Real dt_new = dt_iter;
+    while(continue_subtimestep) 
+      {
+	// Solve the richard equation for the given time step.  
+	// Try with increasing smaller timestep if it fails.
+
+	// Save the initial state 
+	for (int lev=0;lev<nlevs;lev++)
+	  {
+	    PorousMedia&    fine_lev   = getLevel(lev);
+	    if (do_richard_sat_solve)
+	      {
+		MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+		MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
+	      }
+	    else
+	      {
+		MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+		MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
+	      }
+	  }
+
+	continue_iterations = true;
+	int iter = 0;
+	int max_iter = 100;
+	while (continue_iterations)
+	  {
+	    nld.ResetCounters();
+	    nld.ResetJacobianCounter();
+	    ret = richard_composite_update(dt_iter,nld);
+	    bool cont = nld.AdjustDt(dt_iter,ret,dt_new); 
+	    if (ret == RICHARD_SUCCESS || dt_new <= t_eps || iter > max_iter)
+	      continue_iterations = false;
+	    else	
+	      {
+		for (int lev=0;lev<nlevs;lev++)
+		  {
+		    PorousMedia&    fine_lev   = getLevel(lev);
+		    if (do_richard_sat_solve)
+		      {
+			MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+			MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
+		      }
+		    else
+		      {
+			MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+			MultiFab::Copy(P_lev,nld.initialState[lev],0,0,1,1);
+		      }
+		  }
+		dt_iter = dt_new;
+	      }
+
+	    if (verbose > 0 && ParallelDescriptor::IOProcessor())
+	      std::cout << "MULTILEVEL ADVANCE INNER STEP: Iter " << iter++ 
+			<< " Solver Status: " << ret 
+			<< " Time Step: " << dt_iter  << std::endl;
+	  }
+
+	if (ret == RICHARD_SUCCESS) 
+	  {
+	    for (int lev=0; lev<nlevs; lev++)
+	      {
+		PorousMedia&    fine_lev   = getLevel(lev);  
+		fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,t_max);
+		
+		if (lev == 0) 
+		  fine_lev.create_umac_grown(fine_lev.u_mac_curr,
+					     fine_lev.u_macG_trac);
+		else 
+		  {
+		    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+		    fine_lev.GetCrseUmac(u_macG_crse,time);
+		    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
+					 fine_lev.u_macG_trac); 
+		  }
+	  
+		fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
+		if (do_tracer_transport && ntracers > 0)
+		  {
+		    int ltracer = ncomps+ntracers-1;
+		    fine_lev.tracer_advection(fine_lev.u_macG_trac,dt,ncomps,ltracer,true);
+		  }
+
+		// predict the next time step based on cfl on transport
+		fine_lev.predictDT(fine_lev.u_macG_trac);
+		dt_new = std::min(dt_eig,dt_new);
+	      }
+	  }
+
+	k++;
+	t = t + dt_iter;
+	if (verbose > 0 &&  ParallelDescriptor::IOProcessor())
+	  std::cout << "MULTILEVEL ADVANCE SUBCYCLE: Iter: " << k 
+		    << " Current time: " << t 
+		    << " Current time step: " << dt_iter 
+		    << " Next time step " <<  dt_new << std::endl;
+
+	dt_iter = std::min(dt_new, t_max - t);
+	continue_subtimestep =  (dt_iter > t_eps) && (k < k_max) && (t < t_max);
+      }
+    dt_eig = dt_new;
+  }
+
 }
 #endif
 
@@ -5591,7 +5793,11 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
       MultiFab::Copy(alpha[lev],*(fine_lev.rock_phi),0,0,1,1);
 
       res_fix.set(lev,new MultiFab(fine_grids,1,1));
-      MultiFab::Copy(res_fix[lev],S_lev,nc,0,1,0);
+      if (do_richard_sat_solve)
+	MultiFab::Copy(res_fix[lev],nl_data.initialState[lev],nc,0,1,0);
+      else
+	fine_lev.calcInvPressure(res_fix[lev],nl_data.initialState[lev]);
+
       for (MFIter mfi(res_fix[lev]); mfi.isValid(); ++mfi)
 	res_fix[lev][mfi].mult(alpha[lev][mfi],mfi.validbox(),0,0,1);
       res_fix[lev].mult(-1.0);
