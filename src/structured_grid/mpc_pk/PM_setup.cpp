@@ -2555,7 +2555,7 @@ void PorousMedia::read_params()
   //  std::cout << "Read sources."<< std::endl;
   //read_source();
 
-  // source
+  // observation
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read observation."<< std::endl;
   read_observation();
