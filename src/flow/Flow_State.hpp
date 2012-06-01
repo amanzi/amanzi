@@ -83,7 +83,7 @@ class Flow_State {
   Epetra_Vector& ref_specific_storage() { return *specific_storage_; }
 
   // miscaleneous
-  double get_time() { return (S_ == NULL) ? 0.0 : S_->get_time(); }
+  double get_time() { return (S_ == NULL) ? -1.0 : S_->get_time(); }
   double normLpCell(const Epetra_Vector& v1, double p);
   double normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p);
   

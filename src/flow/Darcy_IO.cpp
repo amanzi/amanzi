@@ -53,7 +53,7 @@ void Darcy_PK::ProcessParameterList()
 
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
 
-  double time = T_internal;
+  double time = T_physics;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
@@ -73,10 +73,6 @@ void Darcy_PK::ProcessParameterList()
   // discretization method
   string mfd3d_method_name = dp_list_.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method); 
-
-  // Set up internal clock.
-  T_physics = FS->get_time();
-  T_internal = (standalone_mode) ? T_internal : T_physics;
 
   // Time integrator for period I, temporary called steady state time integrator
   Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");

@@ -63,7 +63,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // create Richards process kernel
   Darcy_PK* DPK = new Darcy_PK(parameter_list, FS);
-  DPK->set_standalone_mode(true);
   DPK->InitPK();
   DPK->InitSteadyState(0.0, 1e-8);
 

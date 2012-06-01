@@ -29,7 +29,6 @@ namespace AmanziFlow {
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
-
   FS = FS_MPC;
 
   // extract important sublists
@@ -89,8 +88,12 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
 
+  // time control
+  set_time(0.0, 1e-8);  // default parameters
+  dT_desirable_ = dT;
+
   // miscalleneous
-  mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
+  mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   verbosity = FLOW_VERBOSITY_HIGH;
 }
 
@@ -148,10 +151,10 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
 
-  T_physics = FS->get_time();  // set-up internal clock 
-  T_internal = (standalone_mode) ? T_internal : T_physics;
+  double time = FS->get_time();
+  if (time >= 0.0) T_physics = time;
 
-  double time = T_internal;
+  time = T_physics;
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
@@ -187,6 +190,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
+  dT_desirable_ = dT0;  // The desirable time step from now on.
   num_itrs_sss = 0;
 
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -213,6 +217,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   set_time(T0, dT0);
+  dT_desirable_ = dT0;  // The desirable time step from now on.
   num_itrs_trs = 0;
 
   // initialize mass matrices
@@ -268,15 +273,13 @@ int Darcy_PK::AdvanceToSteadyState()
 int Darcy_PK::Advance(double dT_MPC) 
 {
   dT = dT_MPC;
-  if (num_itrs_trs == 0) {  // set-up internal clock
-    T_physics = FS->get_time();
-    T_internal = (standalone_mode) ? T_internal : T_physics;
-  }
+  double time = FS->get_time();
+  if (time >= 0.0) T_physics = time;
 
   solver->SetAztecOption(AZ_output, AZ_none);
 
   // update boundary conditions and source terms
-  double time = T_internal;
+  time = T_physics;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
@@ -395,7 +398,6 @@ void Darcy_PK::PrintStatistics() const
 {
   if (!MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;
-    cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Verbosity level = " << verbosity << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }

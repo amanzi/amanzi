@@ -22,7 +22,7 @@ namespace AmanziFlow {
 * permeabilities do not depend explicitly on time.
 * WARNING: temporary replacement for missing BDF1 time integrator.                                                    
 ****************************************************************** */
-int Richards_PK::AdvanceSteadyState_BackwardEuler()
+int Richards_PK::AdvanceToSteadyState_BackwardEuler()
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
@@ -32,9 +32,6 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
 
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
-
-  T_internal = T0_sss;
-  dT = dT0_sss;
 
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
@@ -48,7 +45,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
     }
 
     // update boundary conditions
-    double time = T_internal + dT;
+    double time = T_physics + dT;
     bc_pressure->Compute(time);
     bc_flux->Compute(time);
     bc_head->Compute(time);
@@ -97,16 +94,16 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
       solution_new = solution_old;
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
         std::printf("Fail:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
-            itrs, L2error, sol_norm, residual, num_itrs, T_internal, dT);
+            itrs, L2error, sol_norm, residual, num_itrs, T_physics, dT);
       }
       ifail++;
     } else {
-      T_internal += dT;
+      T_physics += dT;
       solution_old = solution_new;
 
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
         std::printf("Step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
-            itrs, L2error, sol_norm, residual, num_itrs, T_internal, dT);
+            itrs, L2error, sol_norm, residual, num_itrs, T_physics, dT);
       }
 
       ifail = 0;
@@ -114,7 +111,7 @@ int Richards_PK::AdvanceSteadyState_BackwardEuler()
       itrs++;
     }
 
-    if (T_internal > T1_sss) break;
+    if (T_physics > T1_sss) break;
   }
 
   num_nonlinear_steps = itrs;

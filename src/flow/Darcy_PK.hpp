@@ -41,9 +41,10 @@ class Darcy_PK : public Flow_PK {
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
-  double CalculateFlowDt() { return dT; }
+  double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
   int AdvanceToSteadyState();
+  void InitializeAuxiliaryData() { };
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
   void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) {};
@@ -100,7 +101,8 @@ class Darcy_PK : public Flow_PK {
   std::string preconditioner_name_sss_;
   double convergence_tol_sss, residual_sss;
 
-  int num_itrs_trs;  // Pramaters for transient solver
+  int num_itrs_trs;  // Parameters for transient solver
+  double dT_desirable_;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
