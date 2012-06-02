@@ -111,7 +111,7 @@ Cementitious Materials, and Waste Zones Washington Savannah River Company (WSRC-
                     In MIN3P, the unit for this parameter is in [m-1] 
           -->
           <Parameter name="van Genuchten alpha" type="double" value="4.0e-4"/>  <!-- [kg-1 m s2] => [Pa-1] -->
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.18"/> 
+          <Parameter name="residual saturation" type="double" value="0.18"/> 
         </ParameterList>
       </ParameterList>
 

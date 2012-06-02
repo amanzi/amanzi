@@ -132,21 +132,21 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="Region ID" type="int" value="1"/>
           <Parameter name="van Genuchten m" type="double" value="0.39759"/>
           <Parameter name="van Genuchten alpha" type="double" value="8.179e-05"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.089"/> 
+          <Parameter name="residual saturation" type="double" value="0.089"/> 
         </ParameterList>
         <ParameterList name="Water retention model 1">
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="Region ID" type="int" value="2"/>
           <Parameter name="van Genuchten m" type="double" value="0.60112"/>
           <Parameter name="van Genuchten alpha" type="double" value="2.147e-04"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.081"/> 
+          <Parameter name="residual saturation" type="double" value="0.081"/> 
         </ParameterList>
         <ParameterList name="Water retention model 2">
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="Region ID" type="int" value="3"/>
           <Parameter name="van Genuchten m" type="double" value="0.42029"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.738e-04"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.081"/> 
+          <Parameter name="residual saturation" type="double" value="0.081"/> 
         </ParameterList>
       </ParameterList>
 

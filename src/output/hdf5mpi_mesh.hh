@@ -25,6 +25,8 @@ extern "C" {
 #include "parallelIO.h"
 };
 
+#define MAX_STRING_LENGTH 100
+
 namespace Amanzi
 {
 
@@ -103,6 +105,10 @@ class HDF5_MPI {
   
   // Read array data from HDF5 data file.
   void readData(Epetra_Vector &x, const std::string varname);
+  
+  // Write and read string datasets
+  void writeDataString(char **x, int num_entries, const std::string varname);
+  void readDataString(char ***x, int *num_entries, const std::string varname);
   
  private:
 

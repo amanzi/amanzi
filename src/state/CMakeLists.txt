@@ -50,7 +50,7 @@ add_definitions("-DUSE_MPI")
 add_library(state State.cpp Restart.cpp Vis.cpp)
 add_install_library(state)
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-target_link_libraries(state functions output simple_mesh mesh_data ${state_tpl_libs})
+target_link_libraries(state atk functions output simple_mesh mesh_data ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 

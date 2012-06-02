@@ -10,7 +10,6 @@
         <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Material 1">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0.0,-2.0}"/>
@@ -23,7 +22,6 @@
         <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array double" value="{0.0,-1.0}"/>
@@ -56,51 +54,40 @@
     </ParameterList>
   </ParameterList>
 
-  <!--  FLOW  -->
+  <!-- FLOW -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="atmospheric pressure" type="double" value="10.0"/>
+      <Parameter name="discretization method" type="string" value="monotone mfd"/>
+
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
-      <Parameter name="atmospheric pressure" type="double" value="0.0"/>
-      <Parameter name="discretization method" type="string" value="monotone mfd"/>
-
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="BDF2"/>
+        <Parameter name="time integration method" type="string" value="BDF2"/>
         <Parameter name="initialize with darcy" type="string" value="yes"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
-        <ParameterList name="error control">
+        <ParameterList name="BDF2">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
           <Parameter name="relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximal time step" type="double" value="1.0"/>
-        </ParameterList>
 
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="nonlinear solver BDF2">
-          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-          <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
+          <ParameterList name="BDF2 parameters">
+            <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
+            <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
+            <Parameter name="NKA max vectors" type="int" value="5"/>
+            <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
+            <Parameter name="Nonlinear solver tolerance" type="double" value="1e-4"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Water Retention Model for Material 1">
@@ -108,14 +95,16 @@
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
+          <Parameter name="van Genuchten l" type="double" value="0.5"/>
+          <Parameter name="residual saturation" type="double" value="0.1"/>
+          <Parameter name="relative permeability model" type="string" value="Mualem"/>
         </ParameterList>
         <ParameterList name="Water Retention Model for Material 2">
           <Parameter name="Region" type="string" value="Material 2"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
+          <Parameter name="residual saturation" type="double" value="0.1"/>
         </ParameterList>
       </ParameterList>
 
@@ -152,9 +141,19 @@
     </ParameterList>
   </ParameterList>
 
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO GMRES">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="400"/>
+    </ParameterList>
+  </ParameterList>
+
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
+      <Parameter name="discretization method" type="string" value="monotone mfd"/>
       <ParameterList name="ML Parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -174,10 +173,6 @@
         <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
       </ParameterList>
     </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="State">
-    <!-- State is not used in the unit test -->
   </ParameterList>
 </ParameterList>
 

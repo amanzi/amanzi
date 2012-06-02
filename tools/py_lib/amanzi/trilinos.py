@@ -109,13 +109,13 @@ def get_py_type(str_type):
     string_type_strings = ['str', 'string', 'char', 'character']
 
     if str_type in bool_type_strings:
-        result = BooleanType
+        result = types.BooleanType
     elif str_type in int_type_strings:
-        result = IntType
+        result = types.IntType
     elif str_type in float_type_strings:
-        result = FloatType
+        result = types.FloatType
     elif str_type in string_type_strings:
-        result = StringType
+        result = types.StringType
     else:
         raise ValueError, str_type + 'is an unknown string type'
      
@@ -136,6 +136,8 @@ def convert_str_to_type(str,str_type):
             result = float(str)
         elif py_type == types.BooleanType:
             result = bool(str)
+        elif py_type == types.StringType:
+            result = str
         else:
             raise ValueError, py_type + ' no conversion possible with this type'
     else:
@@ -160,10 +162,13 @@ class _ParameterInterface(_ElementInterface):
 
         if value == None:
             raise ValueError, 'Parameter constructor requires a value'
+      
+        print "name=",name 
+        print "value=",value 
+	print "type=",get_str_type(value)
 
-        _ElementInterface.__init__(self,_ParameterTag,{})
-        self.set_name(name)
-        self.set_value(value)
+	attrib= {'name':name,'value':str(value),'type':get_str_type(value)}
+        _ElementInterface.__init__(self,_ParameterTag,attrib)
 
     def get_name(self):
         return self.get('name',default=None)
@@ -230,8 +235,8 @@ class ParameterList(ElementTree):
 
         if name != None:
             root = ParameterListRoot(name)
-            ElementTree.__init__(self,element=root,file=None)
-        else:
+	    ElementTree.__init__(self,element=root,file=None)
+	else:
             ElementTree.__init__(self,element=None,file=file)
 
     def name(self):
@@ -298,20 +303,37 @@ class ParameterList(ElementTree):
         if target == None:
             raise ValueError, ' requires a parameter name'
 
+	'''
         search_list = []    
         try:
-            serach_list = self.iterfind(_ParameterTag)
+            search_list = self.iterfind(_ParameterTag)
         except AttributeError:
             search_list = self.getiterator(_ParameterTag)
-
+	'''
+        
+	search_list = self.findall(_ParameterTag)
+        index=0
         for node in search_list:
             node_name = node.get('name')
             if node_name == target:
-                result =  node
+	        tri_type=node.get('type')
+		py_value=convert_str_to_type(node.get('value'),tri_type) 
+	        result = Parameter(node.get('name'),py_value)
+		root = self.getroot()
+		try:
+		  root.remove(node)
+		except ValueError:
+		  print root.tag
+		  print root.get('name')
+		  for item in root.getchildren():
+		    print "CHILD tag", item.tag, " name=", item.get('name')
+		  raise
+		root.insert(index,result)
                 break
+	    index=index+1  
 
-        #if result == None and quiet != False:
-        #    print 'Could not find parameter ' + target
+        if result == None and quiet != False:
+            print 'Could not find parameter ' + target
 
         return result    
 
@@ -478,10 +500,10 @@ if __name__ == '__main__':
    input.add_sublist(mesh)
    input.add_sublist(mpc)
 
-   #input.dumpXML()
+   input.dumpXML()
 
    mpc.set_parameter('End Cycle', 100)
-   #mpc.dumpXML()
+   mpc.dumpXML()
 
 
    # Example of an array parameter

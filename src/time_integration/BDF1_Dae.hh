@@ -47,6 +47,9 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   // the nonlinear solver (uses NKA)
   void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u);
 
+  // the nonlinear solver (uses JFNK)
+  // void solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vector& u);
+
   // returns the most recent time
   double most_recent_time() { return state.uhist->most_recent_time(); }
 

@@ -27,8 +27,8 @@ namespace AmanziFlow {
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  ComputePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
-  matrix->computeNegativeResidual(u, f);  // compute A*u - g
+  ComputePreconditionerMFD(u, matrix_, Tp, 0.0, false);  // Calculate only stiffness matrix.
+  matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
@@ -59,21 +59,20 @@ void Richards_PK::fun(
 ****************************************************************** */
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
-  preconditioner->ApplyInverse(X, Y);
+  preconditioner_->ApplyInverse(X, Y);
 }
 
 
 /* ******************************************************************
-* Compute new preconditioner B(p, dT_prec). For BDFx method, we need
-* a separate memory allocation.                                              
+* Update new preconditioner B(p, dT_prec).                                   
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  ComputePreconditionerMFD(u, preconditioner, Tp, dTp, true);
+  ComputePreconditionerMFD(u, preconditioner_, Tp, dTp, true);
   ierr = 0;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards Flow: updating preconditioner at T(sec)=%9.4e dT(sec)=%9.4e\n", Tp, dTp);
+     std::printf("Richards PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   }
 }
 
@@ -98,7 +97,7 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du)
 {
   double error, error_p = 1e+99, error_s = 1e+99;
-  if (error_control & FLOW_TI_ERROR_CONTROL_PRESSURE) {
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
       double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
@@ -106,7 +105,7 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
     }
   } 
 
-  if (error_control & FLOW_TI_ERROR_CONTROL_SATURATION) {
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     Epetra_Vector dSdP(mesh_->cell_map(false));
     DerivedSdP(u, dSdP);
 

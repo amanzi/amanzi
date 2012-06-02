@@ -77,7 +77,6 @@
 	<Parameter name="Entity" type="String" value="Face"/>
       </ParameterList>
     </ParameterList>
-	
   </ParameterList> <!-- End Regions -->
 
 
@@ -97,6 +96,14 @@
       <Parameter name="Dump cycle frequency" type="int" value="1000"/>
     </ParameterList>    
   </ParameterList> <!-- End MPC -->
+
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="400"/>
+    </ParameterList>
+  </ParameterList>  <!-- End Solvers -->
 
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
@@ -142,7 +149,6 @@
 -->
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
     </ParameterList>
-
   </ParameterList> <!-- End State -->
 
   <ParameterList name="Transport">
@@ -168,50 +174,25 @@
 
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
-      </ParameterList>
-      
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="backward Euler"/>
+        <Parameter name="time integration method" type="string" value="backward Euler"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO CG"/>
 	
-        <ParameterList name="error control">
+        <ParameterList name="backward Euler">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
           <Parameter name="relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="convergence tolerance" type="double" value="1e-12"/>
           <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximal time step" type="double" value="1.0"/>
         </ParameterList>
-
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="nonlinear solver BDF2">
-          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-          <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-        </ParameterList>
       </ParameterList>
-
-      <ParameterList name="transient time integrator">
-      <!-- Is not used for this test -->
-      </ParameterList>
-
-      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="boundary conditions">
 	<ParameterList name="pressure">

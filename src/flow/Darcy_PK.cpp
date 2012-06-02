@@ -29,7 +29,6 @@ namespace AmanziFlow {
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
-
   FS = FS_MPC;
 
   // extract important sublists
@@ -37,21 +36,28 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   if (global_list.isSublist("Flow")) {
     flow_list = global_list.sublist("Flow");
   } else {
-    Errors::Message msg("Flow_PK: input parameter list does not specify <Flow> sublist.");
+    Errors::Message msg("Darcy PK: input parameter list does not have <Flow> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (flow_list.isSublist("Darcy Problem")) {
     dp_list_ = flow_list.sublist("Darcy Problem");
   } else {
-    Errors::Message msg("Flow_PK: input parameter list does not specify <Darcy Problem> sublist.");
+    Errors::Message msg("Darcy PK: input parameter list does not have <Darcy Problem> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (global_list.isSublist("Preconditioners")) {
     preconditioner_list_ = global_list.sublist("Preconditioners");
   } else {
-    Errors::Message msg("Flow_PK: input parameter list does not specify <Preconditioners> sublist.");
+    Errors::Message msg("Darcy PK: input parameter list does not have <Preconditioners> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (global_list.isSublist("Solvers")) {
+    solver_list_ = global_list.sublist("Solvers");
+  } else {
+    Errors::Message msg("Darcy PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -59,9 +65,9 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   dim = mesh_->space_dimension();
 
   // Create the combined cell/face DoF map.
-  super_map_ = createSuperMap();
+  super_map_ = CreateSuperMap();
 
-  // Other fundamental physical quantaties
+  // Other fundamental physical quantities
   rho_ = *(FS->fluid_density());
   mu_ = *(FS->fluid_viscosity());
   gravity_.init(dim);
@@ -82,8 +88,12 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
 
+  // time control
+  set_time(0.0, 1e-8);  // default parameters
+  dT_desirable_ = dT;
+
   // miscalleneous
-  mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
+  mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   verbosity = FLOW_VERBOSITY_HIGH;
 }
 
@@ -95,11 +105,11 @@ Darcy_PK::~Darcy_PK()
 {
   delete super_map_;
   delete solver;
-  if (matrix == preconditioner) {
-    delete matrix;
+  if (matrix_ == preconditioner_) {
+    delete matrix_;
   } else {
-    delete matrix;
-    delete preconditioner;
+    delete matrix_;
+    delete preconditioner_;
   }
   delete bc_pressure;
   delete bc_head;
@@ -111,26 +121,19 @@ Darcy_PK::~Darcy_PK()
 /* ******************************************************************
 * Extract information from Diffusion Problem parameter list.
 ****************************************************************** */
-void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
+void Darcy_PK::InitPK()
 {
-  if (matrix_ == NULL)
-    matrix = new Matrix_MFD(FS, *super_map_);
-  else
-    matrix = matrix_;
-
-  if (preconditioner_ == NULL)
-    preconditioner = matrix;
-  else
-    preconditioner = preconditioner_;
+  matrix_ = new Matrix_MFD(FS, *super_map_);
+  preconditioner_ = matrix_;
 
   // Create the solution vectors.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  solution_cells = Teuchos::rcp(FS->createCellView(*solution));
-  solution_faces = Teuchos::rcp(FS->createFaceView(*solution));
+  solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
+  solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
 
   solver = new AztecOO;
-  solver->SetUserOperator(matrix);
-  solver->SetPrecOperator(preconditioner);
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
   solver->SetAztecOption(AZ_solver, AZ_cg);
 
   // Get parameters from the flow parameter list.
@@ -141,22 +144,22 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces, 0.0);
 
-  double T_physical = FS->get_time();  // set-up internal clock 
-  T_internal = (standalone_mode) ? T_internal : T_physical;
+  double time = FS->get_time();
+  if (time >= 0.0) T_physics = time;
 
-  double time = T_internal;
+  time = T_physics;
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  UpdateBoundaryConditions(
+  ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure,
       bc_markers, bc_values);
 
   // Process other fundamental structures
   K.resize(ncells_owned);
-  matrix->setSymmetryProperty(true);
-  matrix->symbolicAssembleGlobalMatrices(*super_map_);
+  matrix_->SetSymmetryProperty(true);
+  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
 
   // Allocate data for relative permeability (for consistency).
   Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
@@ -167,7 +170,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Preconditioner
   Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
-  preconditioner->init_ML_preconditioner(ML_list);
+  preconditioner_->InitML_Preconditioner(ML_list);
 
   flow_status_ = FLOW_STATUS_INIT;
 };
@@ -180,6 +183,7 @@ void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
+  dT_desirable_ = dT0;  // The desirable time step from now on.
   num_itrs_sss = 0;
 
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -188,11 +192,11 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
-  matrix->createMFDmassMatrices(mfd3d_method, K);
+  matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    double pokay = 100 * matrix->nokay() / double(ncells_owned);
-    double ppassed = 100 * matrix->npassed() / double(ncells_owned);
+    double pokay = 100 * matrix_->nokay() / double(ncells_owned);
+    double ppassed = 100 * matrix_->npassed() / double(ncells_owned);
     std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
   }
 
@@ -206,12 +210,13 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   set_time(T0, dT0);
+  dT_desirable_ = dT0;  // The desirable time step from now on.
   num_itrs_trs = 0;
 
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
-  matrix->createMFDmassMatrices(mfd3d_method, K);
+  matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }
@@ -227,15 +232,15 @@ int Darcy_PK::AdvanceToSteadyState()
   solver->SetAztecOption(AZ_output, AZ_none);
 
   // calculate and assemble elemental stifness matrices
-  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-  matrix->applyBoundaryConditions(bc_markers, bc_values);
-  matrix->assembleGlobalMatrices();
-  matrix->computeSchurComplement(bc_markers, bc_values);
-  matrix->update_ML_preconditioner();
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+  matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_->AssembleGlobalMatrices();
+  matrix_->ComputeSchurComplement(bc_markers, bc_values);
+  matrix_->UpdateML_Preconditioner();
 
-  rhs = matrix->rhs();
+  rhs = matrix_->rhs();
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
@@ -261,15 +266,13 @@ int Darcy_PK::AdvanceToSteadyState()
 int Darcy_PK::Advance(double dT_MPC) 
 {
   dT = dT_MPC;
-  if (num_itrs_trs == 0) {  // set-up internal clock
-    double T_physical = FS->get_time();
-    T_internal = (standalone_mode) ? T_internal : T_physical;
-  }
+  double time = FS->get_time();
+  if (time >= 0.0) T_physics = time;
 
   solver->SetAztecOption(AZ_output, AZ_none);
 
   // update boundary conditions and source terms
-  double time = T_internal;
+  time = T_physics;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
@@ -277,23 +280,23 @@ int Darcy_PK::Advance(double dT_MPC)
 
   if (src_sink != NULL) src_sink->Compute(time);
 
-  UpdateBoundaryConditions(
+  ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure,
       bc_markers, bc_values);
 
   // calculate and assemble elemental stifness matrices
-  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-  AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix);
-  matrix->applyBoundaryConditions(bc_markers, bc_values);
-  matrix->assembleGlobalMatrices();
-  matrix->computeSchurComplement(bc_markers, bc_values);
-  matrix->update_ML_preconditioner();
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+  AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix_);
+  matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_->AssembleGlobalMatrices();
+  matrix_->ComputeSchurComplement(bc_markers, bc_values);
+  matrix_->UpdateML_Preconditioner();
 
-  rhs = matrix->rhs();
-  if (src_sink != NULL) addSourceTerms(src_sink, *rhs);
+  rhs = matrix_->rhs();
+  if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
@@ -320,13 +323,13 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // calculate darcy mass flux
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-  matrix->deriveDarcyMassFlux(*solution, *face_importer_, flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 
   // DEBUG
-  // writeGMVfile(FS_MPC);
+  // WriteGMVfile(FS_MPC);
 }
 
 
@@ -356,12 +359,12 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 * Specific storage at the moment is 1.                                              
 ****************************************************************** */
 void Darcy_PK::AddTimeDerivativeSpecificStorage(
-    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
+    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
 {
   const Epetra_Vector& specific_storage = FS->ref_specific_storage();
 
-  std::vector<double>& Acc_cells = matrix->Acc_cells();
-  std::vector<double>& Fc_cells = matrix->Fc_cells();
+  std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
+  std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
@@ -377,7 +380,7 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
 ****************************************************************** */
 void Darcy_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity)
 {
-  matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
+  matrix_->DeriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 
 
@@ -388,7 +391,6 @@ void Darcy_PK::PrintStatistics() const
 {
   if (!MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;
-    cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Verbosity level = " << verbosity << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }

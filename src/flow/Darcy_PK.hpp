@@ -37,13 +37,14 @@ class Darcy_PK : public Flow_PK {
   ~Darcy_PK();
 
   // main methods
-  void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
-  double CalculateFlowDt() { return dT; }
+  double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
   int AdvanceToSteadyState();
+  void InitializeAuxiliaryData() { };
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
   void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) {};
@@ -57,10 +58,12 @@ class Darcy_PK : public Flow_PK {
   void update_norm(double rtol, double atol) {};
 
   // other main methods
-  void ProcessParameterList();
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
+  void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
 
-  void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  // io members
+  void ProcessParameterList();
+  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
 
   // control methods
   void PrintStatistics() const;
@@ -77,6 +80,7 @@ class Darcy_PK : public Flow_PK {
  private:
   Teuchos::ParameterList dp_list_;
   Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList solver_list_;
 
   AmanziGeometry::Point gravity_;
   double rho_, mu_;
@@ -90,14 +94,15 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Import> face_importer_;
 
   AztecOO* solver;
-  Matrix_MFD* matrix;
-  Matrix_MFD* preconditioner;
+  Matrix_MFD* matrix_;
+  Matrix_MFD* preconditioner_;
 
   int num_itrs_sss, max_itrs_sss;  // Parameters for steady state solution
   std::string preconditioner_name_sss_;
   double convergence_tol_sss, residual_sss;
 
-  int num_itrs_trs;  // Pramaters for transient solver
+  int num_itrs_trs;  // Parameters for transient solver
+  double dT_desirable_;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

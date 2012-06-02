@@ -61,7 +61,6 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
   // create Richards problem
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-  RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
 

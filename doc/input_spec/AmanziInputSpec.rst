@@ -693,7 +693,7 @@ the following set of physical properties using the supported models described be
 
   * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`", `"Intrinsic Permeability: GSLib`", `"Intrinsic Permeability: File`" (see below)
 
-  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" (see below)
+  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
@@ -763,9 +763,26 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [SU] `"m`" [double] to specify m in Equation 3.7.
 
- * [SU only Mualem] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
+ * [U] `"ell`" [double]
+
+ * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") to determine n from Eq 3.10.
 
  * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing. 
+
+* [U] `"Capillary Pressure: Brooks Corey`" [list] requires
+
+ * [U] `"lambda`" [double]
+
+ * [U] `"alpha`" [double]
+
+ * [U] `"ell`" [double]
+
+ * [U] `"Sr`" [double]
+
+ * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
+
+ * [U] `"krel smoothing interval`" [double]
+
 
 Example:
 

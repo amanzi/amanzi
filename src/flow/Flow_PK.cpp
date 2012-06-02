@@ -38,8 +38,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   dim = mesh_->space_dimension();
   MyPID = 0;
 
-  T_internal = dT = 0.0;
-  standalone_mode = false;
+  T_physics = dT = 0.0;
 
   ncells_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -52,7 +51,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 /* ******************************************************************
 * Super-map combining cells and faces.                                                  
 ****************************************************************** */
-Epetra_Map* Flow_PK::createSuperMap()
+Epetra_Map* Flow_PK::CreateSuperMap()
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
@@ -76,7 +75,7 @@ Epetra_Map* Flow_PK::createSuperMap()
 /* ******************************************************************
 * Add a boundary marker to used faces.                                          
 ****************************************************************** */
-void Flow_PK::UpdateBoundaryConditions(
+void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_faces, const double atm_pressure,
@@ -159,7 +158,7 @@ void Flow_PK::UpdateBoundaryConditions(
     mesh_->get_comm()->SumAll(&missed_tmp, &missed, 1);
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
-    if (MyPID == 0) {
+    if (MyPID == 0 && nseepage > 0) {
       std::printf("Richards PK: number of influx seepage faces is %9d\n", nseepage);
     }
   }
@@ -173,7 +172,7 @@ void Flow_PK::UpdateBoundaryConditions(
 /* ******************************************************************
 * Add a boundary marker to owned faces.                                          
 ****************************************************************** */
-void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
+void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_markers,
                                       std::vector<double>& bc_values,
                                       Epetra_Vector& pressure_faces)
 {
@@ -191,7 +190,7 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
 * Add source and sink terms. We use a simplified algorithms than for
 * boundary conditions.                                          
 ****************************************************************** */
-void Flow_PK::addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
+void Flow_PK::AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 {
   Amanzi::Iterator src;
   for (src = src_sink->begin(); src != src_sink->end(); ++src) {
@@ -205,10 +204,10 @@ void Flow_PK::addSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 * Routine updates elemental discretization matrices and must be 
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
-void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
+void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
                                    const Epetra_Vector& Krel_cells,
                                    const Epetra_Vector& Krel_faces,
-                                   Matrix_MFD* matrix)
+                                   Matrix_MFD* matrix_operator)
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim);
@@ -221,8 +220,8 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-    double& Fc = matrix->Fc_cells()[c];
+    Epetra_SerialDenseVector& Ff = matrix_operator->Ff_cells()[c];
+    double& Fc = matrix_operator->Fc_cells()[c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -239,7 +238,7 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 /* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
+void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
                                          const Epetra_Vector& Krel_cells,
                                          const Epetra_Vector& Krel_faces,
                                          Epetra_Vector& darcy_mass_flux)
@@ -274,7 +273,7 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 * and sign of the Darcy velocity. 
 * WARNING: It is *not* used now.                              
 ******************************************************************* */
-void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
+void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
 {
   for (int f = 0; f < nfaces_owned; f++) {
     upwind_cell[f] = -1;  // negative value is indicator of a boundary
@@ -299,10 +298,14 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 }
 
 
+
+
+
+
 /* ****************************************************************
 * DEBUG: creating GMV file 
 **************************************************************** */
-void Flow_PK::writeGMVfile(Teuchos::RCP<Flow_State> FS) const
+void Flow_PK::WriteGMVfile(Teuchos::RCP<Flow_State> FS) const
 {
   Teuchos::RCP<AmanziMesh::Mesh> mesh = FS->mesh();
 
