@@ -628,9 +628,9 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
       // continue to set some reasonable defaults
       trp_list.sublist("VerboseObject") = create_Verbosity_List("high");
       trp_list.set<std::string>("enable internal tests", "no");
-      trp_list.set<double>("CFL",1.0);
-      trp_list.set<std::string>("flow mode","transient");
-
+      trp_list.set<double>("CFL", 1.0);
+      trp_list.set<std::string>("flow mode", "transient");
+      trp_list.set<std::string>("advection limiter", "Tensorial");
     }
   }
 

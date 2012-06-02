@@ -249,7 +249,7 @@ void Richards_PK::VerifyWRMparameters(double m, double alpha, double sr, double 
     Exceptions::amanzi_throw(msg);    
   }
   if (sr > 1.0) {
-    msg << "Richards PK: residula saturation is greater than 1.";
+    msg << "Richards PK: residual saturation is greater than 1.";
     Exceptions::amanzi_throw(msg);    
   }
 }

@@ -390,14 +390,13 @@ void MPC::cycle_driver() {
 	if ((ti_mode == STEADY) || 
 	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
 	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch))) {
-	  flow_dT = FPK->CalculateFlowDt();
-	  
+	  flow_dT = FPK->CalculateFlowDt();	  
 	}
       }
 
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
+      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch)) {
         if (transport_enabled) {
-          double transport_dT_tmp = TPK->CalculateTransportDt();
+          double transport_dT_tmp = TPK->EstimateTransportDt();
           if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
         }
         if (chemistry_enabled) {
@@ -498,7 +497,7 @@ void MPC::cycle_driver() {
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          TPK->Advance(mpc_dT, transport_subcycling);
+          TPK->Advance(mpc_dT);
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
             Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();

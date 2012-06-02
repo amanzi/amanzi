@@ -68,8 +68,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
   ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
-  TPK.set_standalone_mode(true);
-  TPK.printStatistics();
+  TPK.PrintStatistics();
 
   /* advance the state */
   int iter, k;
@@ -84,7 +83,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
     double dT = TPK.CalculateTransportDt();  
     double dT_MPC = dT * 7.7;
 
-    TPK.Advance(dT_MPC, 1);
+    TPK.Advance(dT_MPC);
     T += dT_MPC;
     iter++;
 
