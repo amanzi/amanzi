@@ -3,6 +3,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include <cassert>
 
 int main( int argc, char *argv[] )
 {
