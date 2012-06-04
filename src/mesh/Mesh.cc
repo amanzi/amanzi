@@ -728,6 +728,5 @@ int Mesh::deform (const Entity_ID_List nodeids,
   return status;
 }
 
-
 } // close namespace AmanziMesh
 } // close namespace Amanzi
