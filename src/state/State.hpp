@@ -153,6 +153,12 @@ public:
   void SetRegionSorptionSites(const std::string& region_name,
                               const Teuchos::ParameterList& sorption_sites_list);
 
+  void WriteChemistryToVis(Amanzi::Vis* vis);
+  void WriteMineralsToVis(Amanzi::Vis* vis);
+  void WriteIsothermsToVis(Amanzi::Vis* vis);
+  void WriteSorptionSitesToVis(Amanzi::Vis* vis);
+  void WriteIonExchangeSitesToVis(Amanzi::Vis* vis);
+
   Teuchos::RCP<const Epetra_Vector> volume() const {
     return volume_;
   }
