@@ -1135,9 +1135,9 @@ void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs
 
   facedirs->clear();
 
-  cell_faces = new Entity_ID[nf];
+  Entity_ID_List cell_faces;
 
-  cell_to_faces(cellid,cell_faces,cell_faces+nf);
+  cell_get_faces(cellid,&cell_faces);
 
   cell_facedirs = new int[nf];
 
