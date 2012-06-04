@@ -77,13 +77,13 @@ int Transport_PK::InitPK()
   const Epetra_Map& cmap = mesh_->cell_map(true);
   cmax = cmap.MaxLID();
 
-  ncells_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   cmax_owned = ncells_owned - 1;
 
   const Epetra_Map& fmap = mesh_->face_map(true);
   fmax = fmap.MaxLID();
 
-  nfaces_owned = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   fmax_owned = nfaces_owned - 1;
 
   const Epetra_Map& vmap = mesh_->node_map(true);

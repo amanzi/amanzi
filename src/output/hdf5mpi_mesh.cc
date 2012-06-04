@@ -80,9 +80,9 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   localdims[0] = nnodes_local;
   localdims[1] = 3;
 
-  std::vector<double> xc(space_dim);
+  AmanziGeometry::Point xc(space_dim);
   for (int i = 0; i < nnodes_local; i++) {
-    mesh_maps.node_to_coordinates(i, xc.begin(), xc.end());
+    mesh_maps.node_get_coordinates(i, &xc);
     // VisIt and ParaView require all mesh entities to be in 3D space
     nodes[i*3+0] = xc[0];
     nodes[i*3+1] = xc[1];
@@ -173,7 +173,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   for (int i=0; i<ncells_local; i++) {
     int conn_len(each_conn[i]);
     AmanziMesh::Entity_ID_List xe(conn_len);
-    mesh_maps.cell_to_nodes(i, xe.begin(), xe.end());
+    mesh_maps.cell_get_nodes(i, &xe);
     // store cell type id
     type = mesh_maps.cell_get_type(i);
     cells[idx] = getCellTypeID_(type); 

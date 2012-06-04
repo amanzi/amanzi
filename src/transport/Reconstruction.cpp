@@ -35,13 +35,13 @@ void Reconstruction::Init()
 
   cmax = cmap.MaxLID();
 
-  number_owned_cells = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  number_owned_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   cmax_owned = number_owned_cells - 1;
 
   fmin = fmap.MinLID();
   fmax = fmap.MaxLID();
 
-  number_owned_faces = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  number_owned_faces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   fmax_owned = fmin + number_owned_faces - 1;
 
   /*

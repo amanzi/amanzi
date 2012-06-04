@@ -91,7 +91,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
 
   double err_p = 0.0, err_u = 0.0;
-  int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
@@ -100,7 +100,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   }
   err_p = sqrt(err_p);
 
-  int nfaces = mesh->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) {
     const Point& xf = mesh->face_centroid(f);
     const Point normal = mesh->face_normal(f);

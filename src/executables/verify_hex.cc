@@ -69,20 +69,20 @@ dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& cgns
 
   std::fill(mypart.begin(), mypart.end(), -1);
 
-  Amanzi::AmanziMesh::Set_ID_List setids;
-  mesh.get_set_ids(Amanzi::AmanziMesh::CELL, &setids);
-  for (Amanzi::AmanziMesh::Set_ID_List::const_iterator i = setids.begin(); 
-       i != setids.end(); ++i) {
-    Amanzi::AmanziMesh::Entity_ID_List gids;
-    mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL, 
-                           Amanzi::AmanziMesh::OWNED, &gids);
-    for (Amanzi::AmanziMesh::Entity_ID_List::const_iterator g = gids.begin();
-         g != gids.end(); ++g) {
-      int lidx(*g);
-      mypart[lidx] = *i;
-      // std::cerr << me << ": set " << *i << ", cell " << *g << " (" << lidx << ")" << std::endl;
-    }
-  }
+  // Amanzi::AmanziMesh::Set_ID_List setids;
+  // mesh.get_set_ids(Amanzi::AmanziMesh::CELL, &setids);
+  // for (Amanzi::AmanziMesh::Set_ID_List::const_iterator i = setids.begin(); 
+  //      i != setids.end(); ++i) {
+  //   Amanzi::AmanziMesh::Entity_ID_List gids;
+  //   mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL, 
+  //                          Amanzi::AmanziMesh::OWNED, &gids);
+  //   for (Amanzi::AmanziMesh::Entity_ID_List::const_iterator g = gids.begin();
+  //        g != gids.end(); ++g) {
+  //     int lidx(*g);
+  //     mypart[lidx] = *i;
+  //     // std::cerr << me << ": set " << *i << ", cell " << *g << " (" << lidx << ")" << std::endl;
+  //   }
+  // }
 
   part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
   Amanzi::CGNS_PAR::write_field_data(part, "Block");
@@ -278,10 +278,10 @@ main(int argc, char **argv)
     mesh = factory(parameter_list);
   }
 
-  std::cout << "Generated mesh has " 
-            << mesh->num_sets(Amanzi::AmanziMesh::CELL)
-            << " cell sets" 
-            << std::endl;
+  //  std::cout << "Generated mesh has " 
+  //            << mesh->num_sets(Amanzi::AmanziMesh::CELL)
+  //            << " cell sets" 
+  //            << std::endl;
 
   // make sure it's OK
 
