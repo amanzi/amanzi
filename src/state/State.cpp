@@ -494,8 +494,8 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 
   Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
-  mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                     cell_ids.begin(),cell_ids.end());
+  mesh_maps->get_set_entities(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                     &cell_ids);
 
   for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin();
        c != cell_ids.end();  c++) {
@@ -521,8 +521,8 @@ void State::set_darcy_flux(const double* u, const int mesh_block_id)
   std::vector<int> dirs;
   Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
-  mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                     cell_ids.begin(),cell_ids.end());
+  mesh_maps->get_set_entities(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                     &cell_ids);
 
   for (Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
     mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);

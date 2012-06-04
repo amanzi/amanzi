@@ -60,7 +60,7 @@ TEST(CONSTRUCTOR) {
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
-  TPK.printStatistics();
+  TPK.PrintStatistics();
 
   double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);

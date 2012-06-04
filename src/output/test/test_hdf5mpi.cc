@@ -20,9 +20,9 @@ TEST(HDF5_MPI) {
   //                                        1, comm));
   Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm);
 
-  unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, 
+  unsigned int num_nodes = Mesh.num_entities(Amanzi::AmanziMesh::NODE, 
                                                 Amanzi::AmanziMesh::OWNED);
-  unsigned int num_cells = Mesh.count_entities(Amanzi::AmanziMesh::CELL, 
+  unsigned int num_cells = Mesh.num_entities(Amanzi::AmanziMesh::CELL, 
                                                 Amanzi::AmanziMesh::OWNED);
 
   //Teuchos::RCP<Mesh_maps_base> Mesh(new STK_mesh::Mesh_maps_stk(0.0, 0.0, 0.0,

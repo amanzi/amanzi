@@ -1124,7 +1124,6 @@ void Mesh_MOAB::cell_get_faces (Entity_ID cellid, Entity_ID_List *faceids) const
 void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs) const
 {
   MBEntityHandle cell;
-  Entity_ID *cell_faces;
   int *cell_facedirs;
   int j,nf, result;
   
@@ -1135,9 +1134,9 @@ void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs
 
   facedirs->clear();
 
-  cell_faces = new Entity_ID[nf];
+  Entity_ID_List cell_faces;
 
-  cell_to_faces(cellid,cell_faces,cell_faces+nf);
+  cell_get_faces(cellid,&cell_faces);
 
   cell_facedirs = new int[nf];
 
@@ -1160,7 +1159,6 @@ void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs
   for (int i = 0; i < nf; i++)
     facedirs->push_back(cell_facedirs[i]);
 
-  delete [] cell_faces;
   delete [] cell_facedirs;
 }
 

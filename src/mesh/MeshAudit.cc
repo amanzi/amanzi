@@ -1333,80 +1333,80 @@ bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
 
   bool error = false;
 
-  // Get the number of sets.
-  int nset;
-  try {
-    nset = mesh->num_sets(kind); // this may fail
-  } catch (...) {
-    os << "ERROR: caught exception from num_sets()" << endl;
-    error = true;
-  }
-  error = global_any(error);
-  if (error) return error;
+  // // Get the number of sets.
+  // int nset;
+  // try {
+  //   nset = mesh->num_sets(kind); // this may fail
+  // } catch (...) {
+  //   os << "ERROR: caught exception from num_sets()" << endl;
+  //   error = true;
+  // }
+  // error = global_any(error);
+  // if (error) return error;
 
-  // Get the vector of set IDs.
-  AmanziMesh::Set_ID_List sids(nset, UINT_MAX);
-  try {
-    mesh->get_set_ids(kind, &sids); // this may fail
-  } catch (...) {
-    os << "ERROR: caught exception from get_set_ids()" << endl;
-    error = true;
-  }
-  error = global_any(error);
-  if (error) return error;
+  // // Get the vector of set IDs.
+  // AmanziMesh::Set_ID_List sids(nset, UINT_MAX);
+  // try {
+  //   mesh->get_set_ids(kind, &sids); // this may fail
+  // } catch (...) {
+  //   os << "ERROR: caught exception from get_set_ids()" << endl;
+  //   error = true;
+  // }
+  // error = global_any(error);
+  // if (error) return error;
 
-  // Check to see that set ID values were actually assigned.  This assumes
-  // UINT_MAX is not a valid set ID.  This is a little iffy; perhaps 0 should
-  // be declared as an invalid set ID instead (the case for ExodusII), or
-  // perhaps we should just skip this check.
-  bool bad_data = false;
-  for (int j = 0; j < nset; ++j)
-    if (sids[j] == UINT_MAX) bad_data = true;
-  if (bad_data) {
-    os << "ERROR: get_set_ids() failed to set all values" << endl;
-    error = true;
-  }
-  error = global_any(error);
-  if (error) return error;
+  // // Check to see that set ID values were actually assigned.  This assumes
+  // // UINT_MAX is not a valid set ID.  This is a little iffy; perhaps 0 should
+  // // be declared as an invalid set ID instead (the case for ExodusII), or
+  // // perhaps we should just skip this check.
+  // bool bad_data = false;
+  // for (int j = 0; j < nset; ++j)
+  //   if (sids[j] == UINT_MAX) bad_data = true;
+  // if (bad_data) {
+  //   os << "ERROR: get_set_ids() failed to set all values" << endl;
+  //   error = true;
+  // }
+  // error = global_any(error);
+  // if (error) return error;
 
-  // Verify that the vector of set IDs contains no duplicates.
-  if (!distinct_values(sids)) {
-    os << "ERROR: get_set_ids() returned duplicate IDs" << endl;
-    // it would be nice to output the duplicates
-    error = true;
-  }
-  error = global_any(error);
-  if (error) return error;
+  // // Verify that the vector of set IDs contains no duplicates.
+  // if (!distinct_values(sids)) {
+  //   os << "ERROR: get_set_ids() returned duplicate IDs" << endl;
+  //   // it would be nice to output the duplicates
+  //   error = true;
+  // }
+  // error = global_any(error);
+  // if (error) return error;
 
-  // In parallel, verify that each process returns the exact same result.
-  if (comm.NumProc() > 1) {
-    // Check the number of sets are the same.
-    comm.Broadcast(&nset, 1, 0);
-    if (nset != mesh->num_sets(kind)) {
-      os << "ERROR: inconsistent num_sets() value" << endl;
-      error = true;
-    }
-    error = global_any(error);
+  // // In parallel, verify that each process returns the exact same result.
+  // if (comm.NumProc() > 1) {
+  //   // Check the number of sets are the same.
+  //   comm.Broadcast(&nset, 1, 0);
+  //   if (nset != mesh->num_sets(kind)) {
+  //     os << "ERROR: inconsistent num_sets() value" << endl;
+  //     error = true;
+  //   }
+  //   error = global_any(error);
 
-    if (!error) {
-      // Broadcast the set IDs on processor 0.
-    AmanziMesh::Set_ID_List sids(nset, UINT_MAX);
-    mesh->get_set_ids(kind, &sids);
-      int *sids0 = new int[nset];
-      for (int j = 0; j < nset; ++j) sids0[j] = sids[j];
-      comm.Broadcast(sids0, nset, 0);
+  //   if (!error) {
+  //     // Broadcast the set IDs on processor 0.
+  //   AmanziMesh::Set_ID_List sids(nset, UINT_MAX);
+  //   mesh->get_set_ids(kind, &sids);
+  //     int *sids0 = new int[nset];
+  //     for (int j = 0; j < nset; ++j) sids0[j] = sids[j];
+  //     comm.Broadcast(sids0, nset, 0);
 
-      // Check the set IDs, using the vector on process 0 as the reference.
-      bool bad_data = false;
-      for (int j = 0; j < nset; ++j)
-        if (sids[j] != sids0[j]) bad_data = true;
-      if (bad_data) {
-        os << "ERROR: get_set_ids() returned inconsistent values" << endl;
-        error = true;
-      }
-      delete [] sids0;
-    }
-  }
+  //     // Check the set IDs, using the vector on process 0 as the reference.
+  //     bool bad_data = false;
+  //     for (int j = 0; j < nset; ++j)
+  //       if (sids[j] != sids0[j]) bad_data = true;
+  //     if (bad_data) {
+  //       os << "ERROR: get_set_ids() returned inconsistent values" << endl;
+  //       error = true;
+  //     }
+  //     delete [] sids0;
+  //   }
+  // }
 
   return global_any(error);
 }
@@ -1434,38 +1434,38 @@ bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
 
-  // Get the list of set IDs.
-  int nset = mesh->num_sets(kind); // this should not fail
-  AmanziMesh::Set_ID_List sids(nset);
-  mesh->get_set_ids(kind, &sids); // this should not fail
+  // // Get the list of set IDs.
+  // int nset = mesh->num_sets(kind); // this should not fail
+  // AmanziMesh::Set_ID_List sids(nset);
+  // mesh->get_set_ids(kind, &sids); // this should not fail
 
-  AmanziMesh::Set_ID_List bad_sids;
-  int max_id = 0;
-  for (int j = 0; j < nset; ++j)
-    if (max_id < sids[j]) max_id = sids[j];
-  vector<bool> valid(max_id+2, false);
-  for (int j = 0; j < nset; ++j)
-    valid[sids[j]] = true;
+  // AmanziMesh::Set_ID_List bad_sids;
+  // int max_id = 0;
+  // for (int j = 0; j < nset; ++j)
+  //   if (max_id < sids[j]) max_id = sids[j];
+  // vector<bool> valid(max_id+2, false);
+  // for (int j = 0; j < nset; ++j)
+  //   valid[sids[j]] = true;
 
-  AmanziMesh::Set_ID_List bad_sids1, bad_sids2;
-  for (int n = 0; n < valid.size(); ++n) {
-    if (valid[n] && !mesh->valid_set_id(n, kind)) bad_sids1.push_back(n);
-    if (!valid[n] && mesh->valid_set_id(n, kind)) bad_sids2.push_back(n);
-  }
+  // AmanziMesh::Set_ID_List bad_sids1, bad_sids2;
+  // for (int n = 0; n < valid.size(); ++n) {
+  //   if (valid[n] && !mesh->valid_set_id(n, kind)) bad_sids1.push_back(n);
+  //   if (!valid[n] && mesh->valid_set_id(n, kind)) bad_sids2.push_back(n);
+  // }
 
   bool error = false;
 
-  if (!bad_sids1.empty()) {
-    os << "ERROR: valid_set_id() returned false for valid set IDs:";
-    write_list(bad_sids1, MAX_OUT);
-    error = true;
-  }
+  // if (!bad_sids1.empty()) {
+  //   os << "ERROR: valid_set_id() returned false for valid set IDs:";
+  //   write_list(bad_sids1, MAX_OUT);
+  //   error = true;
+  // }
 
-  if (!bad_sids2.empty()) {
-    os << "ERROR: valid_set_id() returned true for invalid set IDs:";
-    write_list(bad_sids2, MAX_OUT);
-    error = true;
-  }
+  // if (!bad_sids2.empty()) {
+  //   os << "ERROR: valid_set_id() returned true for invalid set IDs:";
+  //   write_list(bad_sids2, MAX_OUT);
+  //   error = true;
+  // }
 
   return global_any(error);
 }
@@ -1497,28 +1497,28 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
 
   bool error = false;
 
-  // Get the list of set IDs.
-  int nset = mesh->num_sets(kind);
-  AmanziMesh::Set_ID_List sids(nset);
-  mesh->get_set_ids(kind, &sids);
+  // // Get the list of set IDs.
+  // int nset = mesh->num_sets(kind);
+  // AmanziMesh::Set_ID_List sids(nset);
+  // mesh->get_set_ids(kind, &sids);
 
-  for (int n = 0; n < sids.size(); ++n) {
-    os << "  Checking set ID=" << sids[n] << " ..." << endl;
+  // for (int n = 0; n < sids.size(); ++n) {
+  //   os << "  Checking set ID=" << sids[n] << " ..." << endl;
 
-    // Basic sanity checks of the owned and used sets.
-    bool bad_set = check_get_set(sids[n], kind, AmanziMesh::OWNED, 
-				 map_own) ||
-                   check_get_set(sids[n], kind, AmanziMesh::USED,  
-				 map_use);
-    bad_set = global_any(bad_set);
+  //   // Basic sanity checks of the owned and used sets.
+  //   bool bad_set = check_get_set(sids[n], kind, AmanziMesh::OWNED, 
+  //       			 map_own) ||
+  //                  check_get_set(sids[n], kind, AmanziMesh::USED,  
+  //       			 map_use);
+  //   bad_set = global_any(bad_set);
 
-    // Verify the used set relates correctly to the owned set.
-    if (!bad_set) bad_set = check_used_set(sids[n], kind, map_own, map_use);
+  //   // Verify the used set relates correctly to the owned set.
+  //   if (!bad_set) bad_set = check_used_set(sids[n], kind, map_own, map_use);
 
-    // OUGHT TO DO TESTING OF THE GHOST SETS
+  //   // OUGHT TO DO TESTING OF THE GHOST SETS
 
-    if (bad_set) error = true;
-  }
+  //   if (bad_set) error = true;
+  // }
 
   return error;
 }

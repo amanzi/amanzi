@@ -97,8 +97,9 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // primary members
   int InitPK();
+  double EstimateTransportDt();
   double CalculateTransportDt();
-  void Advance(double dT, int subcycling = 0);
+  void Advance(double dT);
   void CommitState(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
 
   void CheckDivergenceProperty();
@@ -119,9 +120,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   inline int get_transport_status() { return status; }
 
   // control members
-  inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
-  void printStatistics() const;
-  void writeGMVfile(Teuchos::RCP<Transport_State> TS) const;
+  void PrintStatistics() const;
+  void WriteGMVfile(Teuchos::RCP<Transport_State> TS) const;
  
  private:
   // advection members
@@ -155,7 +155,6 @@ class Transport_PK : public Explicit_TI::fnBase {
                                AmanziGeometry::Point& direction, 
                                AmanziGeometry::Point& gradient);
 
-  void ProcessParameterList();
   void IdentifyUpwindCells();
 
   const Teuchos::RCP<Epetra_IntVector>& get_upwind_cell() { return upwind_cell_; }
@@ -175,6 +174,11 @@ class Transport_PK : public Explicit_TI::fnBase {
                            std::vector<int>& bc_face_id,
                            std::vector<double>& bc_face_values,
                            Teuchos::RCP<Epetra_MultiVector> tcc_next);
+
+  // io methods
+  void ProcessParameterList();
+  void ProcessStringAdvectionLimiter(const std::string name, int* method);
+  void ProcessStringVerbosity(const std::string name, int* verbosity);
 
  public:
   int MyPID;  // parallel information: will be moved to private
@@ -217,10 +221,9 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> harmonic_points_value;
   std::vector<WhetStone::Tensor> dispersion_tensor;
 
-  double cfl_, dT, dT_debug, T_internal, T_physical;  
+  double cfl_, dT, dT_debug, T_physics;  
   int number_components; 
   int status;
-  bool standalone_mode;  // If it is true the internal time will be used.
   int flow_mode;  // steady-sate or transient
 
   std::vector<BoundaryFunction*> bcs;  // influx BCs for each components

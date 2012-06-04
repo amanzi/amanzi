@@ -87,7 +87,7 @@ TEST(FLOW_3D_RICHARDS) {
   }
 
   // check the pressure 
-  int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) CHECK(p[c] > 0.0 && p[c] < 2.0);
 
 

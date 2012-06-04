@@ -155,6 +155,7 @@
     <Parameter name="CFL" type="double" value="0.5"/>   
     <Parameter name="enable internal tests" type="string" value="no"/>   
     <Parameter name="verbosity level" type="int" value="1"/>  
+    <Parameter name="advection limiter" type="string" value="Tensorial"/>  
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>

@@ -44,17 +44,7 @@ void Transport_PK::ProcessParameterList()
   // extract verbosity level
   Teuchos::ParameterList verbosity_list = transport_list.get<Teuchos::ParameterList>("VerboseObject");
   std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
-  if (verbosity_name == "none") {
-    verbosity = TRANSPORT_VERBOSITY_NONE;
-  } else if (verbosity_name == "low") {
-    verbosity = TRANSPORT_VERBOSITY_LOW;
-  } else if (verbosity_name == "medium") {
-    verbosity = TRANSPORT_VERBOSITY_MEDIUM;
-  } else if (verbosity_name == "high") {
-    verbosity = TRANSPORT_VERBOSITY_HIGH;
-  } else if (verbosity_name == "extreme") {
-    verbosity = TRANSPORT_VERBOSITY_EXTREME;
-  }
+  ProcessStringVerbosity(verbosity_name, &verbosity);
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
 
@@ -82,18 +72,8 @@ void Transport_PK::ProcessParameterList()
   dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
   dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
 
-  string advection_limiter_name = transport_list.get<string>("advection limiter", "Tensorial");
-  if (advection_limiter_name == "BarthJespersen") {
-    advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
-  } else if (advection_limiter_name == "Tensorial") {
-    advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
-  } else if (advection_limiter_name == "Kuzmin") {
-    advection_limiter = TRANSPORT_LIMITER_KUZMIN;
-  } else {
-    Errors::Message msg;
-    msg << "Advection limiter is wrong (BarthJespersen, Tensorial, Kuzmin)." << "\n";
-    Exceptions::amanzi_throw(msg);
-  }
+  string advection_limiter_name = transport_list.get<string>("advection limiter");
+  ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   string flow_mode_name = transport_list.get<string>("flow mode", "transient");
@@ -173,18 +153,58 @@ void Transport_PK::ProcessParameterList()
       Exceptions::amanzi_throw(msg);
     }
   }
-  // print_statistics();
+}
+
+
+/* ****************************************************************
+* Process string for the discretization method.
+**************************************************************** */
+void Transport_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
+{
+  Errors::Message msg;
+  if (name == "none") {
+    *verbosity = TRANSPORT_VERBOSITY_NONE;
+  } else if (name == "low") {
+    *verbosity = TRANSPORT_VERBOSITY_LOW;
+  } else if (name == "medium") {
+    *verbosity = TRANSPORT_VERBOSITY_MEDIUM;
+  } else if (name == "high") {
+    *verbosity = TRANSPORT_VERBOSITY_HIGH;
+  } else if (name == "extreme") {
+    *verbosity = TRANSPORT_VERBOSITY_EXTREME;
+  } else {
+    msg << "Transport PK: unknown verbosity level.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
+* Process time integration sublist.
+**************************************************************** */
+void Transport_PK::ProcessStringAdvectionLimiter(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "BarthJespersen") {
+    advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
+  } else if (name == "Tensorial") {
+    advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
+  } else if (name == "Kuzmin") {
+    advection_limiter = TRANSPORT_LIMITER_KUZMIN;
+  } else {
+    msg << "Transport PK: unknown advection limiter (BarthJespersen, Tensorial, Kuzmin).\n";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 
 /* ************************************************************* */
 /* Printing information about Transport status                   */
 /* ************************************************************* */
-void Transport_PK::printStatistics() const
+void Transport_PK::PrintStatistics() const
 {
   if (!MyPID && verbosity > TRANSPORT_VERBOSITY_NONE) {
     cout << "Transport PK: CFL = " << cfl_ << endl;
-    cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Total number of components = " << number_components << endl;
     cout << "    Verbosity level = " << verbosity << endl;
     cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
@@ -198,7 +218,7 @@ void Transport_PK::printStatistics() const
 /* ****************************************************************
 * DEBUG: creating GMV file 
 **************************************************************** */
-void Transport_PK::writeGMVfile(Teuchos::RCP<Transport_State> TS) const
+void Transport_PK::WriteGMVfile(Teuchos::RCP<Transport_State> TS) const
 {
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
   Epetra_MultiVector& tcc = TS->ref_total_component_concentration();

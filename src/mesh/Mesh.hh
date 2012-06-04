@@ -428,27 +428,6 @@ class Mesh
   //--------------------------------------------------------------
   //
 
-  // Number of sets containing entities of type 'kind' in mesh
-  // 
-  // DEPRECATED due to ambiguity in determining what types of sets
-  // some regions are supposed to create (a planar region can 
-  // result in sidesets or nodesets
-
-  unsigned int num_sets(const Entity_kind kind) const;
-
-
-  // Ids of sets containing entities of 'kind'
-  // 
-  // DEPRECATED due to ambiguity in determining what types of sets
-  // some regions are supposed to create (a planar region can 
-  // result in sidesets or nodesets
-
-  void get_set_ids (const Entity_kind kind,
-                    Set_ID_List *setids) const;
-
-
-
-
   // Is this is a valid ID of a set containing entities of 'kind'
 
   bool valid_set_id (const Set_ID setid,
@@ -528,63 +507,6 @@ class Mesh
   }
 
 
-  // Temporary routines for backward compatibility
-
-  void cell_to_faces (Entity_ID cell,
-                      Entity_ID_List::iterator begin,
-                      Entity_ID_List::iterator end) const;
-
-  void cell_to_faces (Entity_ID cell,
-                      Entity_ID* begin, Entity_ID *end) const;
-
-
-  void cell_to_face_dirs (Entity_ID cell,
-                          std::vector<int>::iterator begin,
-                          std::vector<int>::iterator end) const;
-  void cell_to_face_dirs (Entity_ID cell,
-                          int * begin, int * end) const;
-
-
-
-  void cell_to_nodes (Entity_ID cell,
-                      Entity_ID_List::iterator begin,
-                      Entity_ID_List::iterator end) const;
-  void cell_to_nodes (Entity_ID cell,
-                      Entity_ID * begin, Entity_ID * end) const;
-
-
-
-
-  void face_to_nodes (Entity_ID face,
-                      Entity_ID_List::iterator begin,
-                      Entity_ID_List::iterator end) const;
-  void face_to_nodes (Entity_ID face,
-                      Entity_ID * begin, Entity_ID * end) const;
-
-
-
-  void node_to_coordinates (Entity_ID node,
-                            std::vector<double>::iterator begin,
-                            std::vector<double>::iterator end) const;
-  void node_to_coordinates (Entity_ID node,
-                            double * begin,
-                            double * end) const;
-
-  void face_to_coordinates (Entity_ID face,
-                            std::vector<double>::iterator begin,
-                            std::vector<double>::iterator end) const;
-  void face_to_coordinates (Entity_ID face,
-                            double * begin,
-                            double * end) const;
-
-  void cell_to_coordinates (Entity_ID cell,
-                            std::vector<double>::iterator begin,
-                            std::vector<double>::iterator end) const;
-  void cell_to_coordinates (Entity_ID cell,
-                            double * begin,
-                            double * end) const;
-
-
   const Epetra_Map& cell_map (bool include_ghost) const
   {
     return cell_epetra_map (include_ghost);
@@ -600,28 +522,6 @@ class Mesh
     return node_epetra_map (include_ghost);
   };
 
-
-  unsigned int count_entities (Entity_kind kind,
-                               Parallel_type ptype) const;
-
-
-  void get_set (Set_ID set_id, Entity_kind kind,
-                Parallel_type ptype,
-                Entity_ID_List::iterator begin,
-                Entity_ID_List::iterator end) const;
-  void get_set (Set_ID set_id, Entity_kind kind,
-                Parallel_type ptype,
-                Entity_ID * begin,
-                Entity_ID * end) const;
-
-  // Id numbers
-  // DEPRECATED - DO NOT USE
-  void get_set_ids (Entity_kind kind,
-                    Entity_ID_List::iterator begin,
-                    Entity_ID_List::iterator end) const;
-  void get_set_ids (Entity_kind kind,
-                    Entity_ID * begin,
-                    Entity_ID * end) const;
 
 }; // End class Mesh
 

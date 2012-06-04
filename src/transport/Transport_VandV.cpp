@@ -157,7 +157,7 @@ void Transport_PK::CheckGEDproperty(Epetra_MultiVector& tracer) const
         cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
         cout << "    MyPID = " << MyPID << endl;
         cout << "    component = " << i << endl;
-        cout << "    time = " << T_internal << endl;
+        cout << "    time = " << T_physics << endl;
         cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << endl;
 
         Errors::Message msg;
@@ -187,7 +187,7 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
       cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
       cout << "    MyPID = " << MyPID << endl;
       cout << "    component = " << component << endl;
-      cout << "    internal time = " << T_internal << endl;
+      cout << "    simulation time = " << T_physics << endl;
       cout << "      cell = " << c << endl;
       cout << "      center = " << mesh_->cell_centroid(c) << endl;
       cout << "      limiter = " << (*limiter_)[c] << endl;
