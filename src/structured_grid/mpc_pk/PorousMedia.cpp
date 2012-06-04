@@ -6926,39 +6926,6 @@ PorousMedia::computeNewDt (int                   finest_level,
       dt_0      = std::min(dt_0,n_factor*dt_min[i]);
     }
 
-  //
-  // Limit dt's by the value of stop_time.
-  //
-  const Real eps      = 0.0001*dt_0;
-  const Real cur_time = state[State_Type].curTime();
-  if (stop_time >= 0.0)
-    {
-      if ((cur_time + dt_0) > (stop_time - eps))
-	dt_0 = stop_time - cur_time;
-    }
-  //
-  // Adjust the time step to be able to output checkpoints at specific times.
-  //
-  const Real check_per = parent->checkPer();
-  if (check_per > 0.0)
-    {
-      int a = int((cur_time + eps ) / check_per);
-      int b = int((cur_time + dt_0) / check_per);
-      if (a != b)
-	dt_0 = b * check_per - cur_time;
-    }
-  //
-  // Adjust the time step to be able to output plot files at specific times.
-  //
-  const Real plot_per = parent->plotPer();
-  if (plot_per > 0.0)
-    {
-      int a = int((cur_time + eps ) / plot_per);
-      int b = int((cur_time + dt_0) / plot_per);
-      if (a != b)
-	dt_0 = b * plot_per - cur_time;
-    }
-
   // 
   // Limit by max_dt: redundant?
   //
@@ -6968,33 +6935,7 @@ PorousMedia::computeNewDt (int                   finest_level,
   }  
 #endif
 
-  //
-  // Adjust time step if there is abrupt change in inflow condition
-  //
-  bool change_inflow = false;
-  for (int i=0; i<bc_array.size(); ++i) {
-    const RegionData& face_bc = bc_array[i];
-    if (face_bc.Type() == "zero_total_velocity") {
-      Array<Real> inflow_curr_time = face_bc(cur_time);
-      Array<Real> inflow_next_time = face_bc(cur_time+dt_0);
-      if (std::abs(inflow_curr_time[0] - inflow_next_time[0]) > 1.e-15) 
-	{
-	  Array<Real> timelist = bc_array[i].time();
-	  for (int j=0;j<timelist.size();j++)
-	    {
-	      Real dtime = timelist[j]-cur_time ;
-	      if (dtime > 0 && dtime < dt_0)
-		dt_0 = std::min(dtime,dt_0);
-	    }
-	  change_inflow = true;
-	}	  
-    }
 
-  if (change_inflow)
-    {
-      if (dt_0 > 1.e3) dt_0 *=0.99;
-    }
-    }
   n_factor = 1;
   for (int i = 0; i <= max_level; i++)
     {

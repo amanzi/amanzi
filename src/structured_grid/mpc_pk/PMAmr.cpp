@@ -233,3 +233,122 @@ PMAmr::coarseTimeStep (Real stop_time)
     }
 }
 
+void
+PMAmr::initialInit (Real strt_time,
+                    Real stop_time)
+{
+    checkInput();
+    //
+    // Generate internal values from user-supplied values.
+    //
+    finest_level = 0;
+    //
+    // Init problem dependent data.
+    //
+    int init = true;
+
+    readProbinFile(init);
+
+#ifdef BL_SYNC_RANTABLES
+    int iGet(0), iSet(1);
+    const int iTableSize(64);
+    Real *RanAmpl = new Real[iTableSize];
+    Real *RanPhase = new Real[iTableSize];
+    FORT_SYNC_RANTABLES(RanPhase, RanAmpl, &iGet);
+    ParallelDescriptor::Bcast(RanPhase, iTableSize);
+    ParallelDescriptor::Bcast(RanAmpl, iTableSize);
+    FORT_SYNC_RANTABLES(RanPhase, RanAmpl, &iSet);
+    delete [] RanAmpl;
+    delete [] RanPhase;
+#endif
+
+    cumtime = strt_time;
+    //
+    // Define base level grids.
+    //
+    defBaseLevel(strt_time);
+    //
+    // Compute dt and set time levels of all grid data.
+    //
+    amr_level[0].computeInitialDt(finest_level,
+                                  sub_cycle,
+                                  n_cycle,
+                                  ref_ratio,
+                                  dt_level,
+                                  stop_time);
+    //
+    // The following was added for multifluid.
+    //
+    Real dt0   = dt_level[0];
+    dt_min[0]  = dt_level[0];
+    n_cycle[0] = 1;
+
+
+    //
+    // The following was added to avoid stepping over registered events
+    //
+    bool write_plot, write_check;
+    Array<int> observations_to_process;
+    Real dt_red = process_events(write_plot,write_check,observations_to_process,event_coord,
+                                 cumtime, dt_level[0], level_steps[0], 1);
+    if (dt_red > 0  &&  dt_red < dt0) {
+        dt_min[0]  = dt_level[0];
+    }
+
+
+    for (int lev = 1; lev <= max_level; lev++)
+    {
+        const int fact = sub_cycle ? ref_ratio[lev-1][0] : 1;
+
+        dt0           /= Real(fact);
+        dt_level[lev]  = dt0;
+        dt_min[lev]    = dt_level[lev];
+        n_cycle[lev]   = fact;
+    }
+
+    if (max_level > 0)
+        bldFineLevels(strt_time);
+
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].setTimeLevel(strt_time,dt_level[lev],dt_level[lev]);
+
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].post_regrid(0,finest_level);
+    //
+    // Perform any special post_initialization operations.
+    //
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].post_init(stop_time);
+
+    for (int lev = 0; lev <= finest_level; lev++)
+    {
+        level_count[lev] = 0;
+        level_steps[lev] = 0;
+    }
+
+    if (ParallelDescriptor::IOProcessor())
+    {
+       if (verbose > 1)
+       {
+           std::cout << "INITIAL GRIDS \n";
+           printGridInfo(std::cout,0,finest_level);
+       }
+       else if (verbose > 0)
+       { 
+           std::cout << "INITIAL GRIDS \n";
+           printGridSummary(std::cout,0,finest_level);
+       }
+    }
+
+    if (record_grid_info && ParallelDescriptor::IOProcessor())
+    {
+        gridlog << "INITIAL GRIDS \n";
+        printGridInfo(gridlog,0,finest_level);
+    }
+
+#ifdef USE_STATIONDATA
+    station.init(amr_level, finestLevel());
+    station.findGrid(amr_level,geom);
+#endif
+}
+

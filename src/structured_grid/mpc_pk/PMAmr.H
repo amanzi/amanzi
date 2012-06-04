@@ -14,6 +14,9 @@ public:
     virtual void init (Real strt_time,
                        Real stop_time);
 
+    virtual void initialInit (Real strt_time,
+                              Real stop_time);
+
     static EventCoord& eventCoord() {return event_coord;}
 
     Real StartTime() const {return strt_time;}

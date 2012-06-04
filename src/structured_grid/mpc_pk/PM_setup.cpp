@@ -306,6 +306,17 @@ Real PorousMedia::richard_ls_reduction_factor;
 int PorousMedia::richard_monitor_linear_solve;
 int PorousMedia::richard_monitor_line_search;
 
+static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
+namespace
+{
+    static void PM_Setup_CleanUpStatics() 
+    {
+        for (std::map<std::string,EventCoord::Event*>::iterator it=defined_events.begin(); it!=defined_events.end(); ++it) {
+            delete it->second;
+        }
+    }
+}
+
 static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
 //
@@ -929,6 +940,9 @@ PorousMedia::variableSetUp ()
           BoxLib::Abort(std::string("Unrecognized refinement indicator for " + refinement_indicators[i]).c_str());
       }
   }
+
+  BoxLib::ExecOnFinalize(PM_Setup_CleanUpStatics);
+
 }
 
 //
@@ -1380,6 +1394,10 @@ void PorousMedia::read_prob()
 
   pp.query("max_step",max_step);
   pp.query("stop_time",stop_time);
+
+  std::string event_name = "Stop_Time";
+  defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
+  PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
 
   //
   // Get run options.
@@ -1838,6 +1856,7 @@ void  PorousMedia::read_comp()
 	pres_bc.setHi(j,4);
       }	  
 
+      EventCoord& event_coord = PMAmr::eventCoord();
       for (int i = 0; i<n_bcs; i++)
       {
           const std::string& bcname = bc_names[i];
@@ -1884,7 +1903,8 @@ void  PorousMedia::read_comp()
               PressToRhoSat p_to_sat;
               bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
                                                         bc_type,ncomps,p_to_sat));
-
+              defined_events[bcname] = new EventCoord::TimeEvent(times);
+              event_coord.Register(bcname,defined_events[bcname]);
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -1936,6 +1956,8 @@ void  PorousMedia::read_comp()
               component_bc = 1;
               pressure_bc = 1;
 	      bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
+              defined_events[bcname] = new EventCoord::TimeEvent(times);
+              event_coord.Register(bcname,defined_events[bcname]);
           }
           else if (bc_type == "noflow")
           {
@@ -2252,11 +2274,11 @@ void PorousMedia::read_observation()
           ppc.get("start",start);
           ppc.get("period",period);
           ppc.get("stop",stop);
-          event_coord.InsertCycleEvent(cmacroNames[i],start,period,stop);
+          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(start,period,stop);
       }
       else if (type == "cycles" ){
           Array<int> cycles; ppc.getarr("cycles",cycles,0,ppc.countval("cycles"));
-          event_coord.InsertCycleEvent(cmacroNames[i],cycles);
+          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(cycles);
       }
       else {
           BoxLib::Abort("Unrecognized cycle macros type");
@@ -2277,19 +2299,17 @@ void PorousMedia::read_observation()
           ppt.get("start",start);
           ppt.get("period",period);
           ppt.get("stop",stop);
-          event_coord.InsertTimeEvent(tmacroNames[i],start,period,stop);
+          defined_events[cmacroNames[i]] = new EventCoord::TimeEvent(start,period,stop);
       }
       else if (type == "times" ){
           Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
-          event_coord.InsertTimeEvent(tmacroNames[i],times);
+          defined_events[cmacroNames[i]] = new EventCoord::TimeEvent(times);
       }
       else {
           BoxLib::Abort("Unrecognized time macros type");
       }
       tmacro_map[tmacroNames[i]] = i;
   }
-
-
 
   ParmParse pp("observation");
   
@@ -2330,55 +2350,50 @@ void PorousMedia::read_observation()
   ppa.queryarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
   ppa.queryarr("chk_time_macros",chk_time_macros,0,ppa.countval("chk_time_macros"));
 
+  std::map<std::string,EventCoord::Event*>::const_iterator eit;
+
   for (int i=0; i<vis_cycle_macros.size(); ++i)
   {
-      bool pcm_found = false;
-      for (int j=0; j<cmacroNames.size(); ++j) {
-          if (cmacroNames[j] == vis_cycle_macros[i]) {
-              pcm_found = true;
-          }
+      eit = defined_events.find(vis_cycle_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!pcm_found) {
+      else {
           std::string m = "vis_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
+
   for (int i=0; i<vis_time_macros.size(); ++i)
   {
-      bool pcm_found = false;
-      for (int j=0; j<tmacroNames.size(); ++j) {
-          if (tmacroNames[j] == vis_time_macros[i]) {
-              pcm_found = true;
-          }
+      eit = defined_events.find(vis_time_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsTime() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!pcm_found) {
-          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
+      else {
+          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
   for (int i=0; i<chk_cycle_macros.size(); ++i)
   {
-      bool ccm_found = false;
-      for (int j=0; j<cmacroNames.size(); ++j) {
-          if (cmacroNames[j] == chk_cycle_macros[i]) {
-              ccm_found = true;
-          }
+      eit = defined_events.find(chk_cycle_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!ccm_found) {
+      else {
           std::string m = "chk_cycle_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
   for (int i=0; i<chk_time_macros.size(); ++i)
   {
-      bool ccm_found = false;
-      for (int j=0; j<tmacroNames.size(); ++j) {
-          if (tmacroNames[j] == chk_time_macros[i]) {
-              ccm_found = true;
-          }
+      eit = defined_events.find(chk_time_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsTime() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!ccm_found) {
-          std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_time_macros[i] + "\"";
+      else {
+          std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
@@ -2559,7 +2574,6 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read observation."<< std::endl;
   read_observation();
-
 
   FORT_INITPARAMS(&ncomps,&nphases,&model,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
