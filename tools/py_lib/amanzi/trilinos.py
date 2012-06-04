@@ -163,9 +163,9 @@ class _ParameterInterface(_ElementInterface):
         if value == None:
             raise ValueError, 'Parameter constructor requires a value'
       
-        print "name=",name 
-        print "value=",value 
-	print "type=",get_str_type(value)
+        #print "name=",name 
+        #print "value=",value 
+	#print "type=",get_str_type(value)
 
 	attrib= {'name':name,'value':str(value),'type':get_str_type(value)}
         _ElementInterface.__init__(self,_ParameterTag,attrib)

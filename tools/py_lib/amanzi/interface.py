@@ -9,7 +9,7 @@ from amanzi import input_tree
 
 class AmanziInterface:
 
-  def __init__(self,input=None,binary=None,output=None,error=None,mpiexec='mpiexec'):
+  def __init__(self,binary=None,input=None,output=None,error=None,mpiexec='mpiexec'):
 
     self.binary=binary
     self.mpiexec=mpiexec
@@ -77,13 +77,12 @@ class AmanziInterface:
   
     # Open a pipe, catch a CTRL-C shut down the pipe
     try: 
-      pipe = subprocess.Popen(args,executable=executable,stdout=stdout_fh,stderr=stderr_fh)
+      pipe = subprocess.Popen(args,executable=executable,bufsize=-1,stdout=stdout_fh,stderr=stderr_fh)
     except ValueError:
       raise ValueError, 'Popen called with incorrect arguments'
     else:
       try:
-        while pipe.poll() == None:
-	  pass
+          pipe.wait()
       except KeyboardInterrupt:
 	try:
 	  kill_signal=signal.SIGKILL
@@ -151,7 +150,7 @@ class AmanziInterface:
     if exists and path.isfile(self.binary) and access(self.binary,R_OK|X_OK):
       ok_flag=True
     else:
-      print amanzi.binary + ' does not exist or is not readable'
+      print self.binary + ' does not exist or is not readable'
 
     return ok_flag  
 
