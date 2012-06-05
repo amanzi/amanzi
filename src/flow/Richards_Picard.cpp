@@ -78,7 +78,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
           itrs, error, linear_residual, num_itrs);
     }
 
-    if (error < 1e-4 && itrs > 0) 
+    if (error < 1e-5 && itrs > 0) 
       break;
     else 
       solution_old = solution_new;
