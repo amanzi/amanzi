@@ -95,9 +95,7 @@ if (BUILD_TESTS)
         copy_directory ${MESH_SOURCE_DIR}/test ${MESH_BINARY_DIR}/test) 
     endif()
 
-
-    # Test: mesh
-    set(test_src_files test/Main.cc test/test_deform.cc)
+    # Test link libraries
     set(test_link_libs geometry simple_mesh mesh_factory ${UnitTest_LIBRARIES})
 
     # STK (Trilinos Package)
@@ -115,8 +113,29 @@ if (BUILD_TESTS)
       list(APPEND test_link_libs mstk_mesh)
     endif(ENABLE_MSTK_Mesh)    
 
+    # Test: mesh geometry
 
-    add_amanzi_test(mesh test_deform
+    set(test_src_files test/Main.cc test/test_mesh_geometry.cc)
+
+    add_amanzi_test(mesh_geometry test_mesh_geometry
+                    KIND unit
+		    SOURCE ${test_src_files}
+		    LINK_LIBS ${test_link_libs})
+
+
+    # Test: mesh deformation
+    set(test_src_files test/Main.cc test/test_deform.cc)
+
+    add_amanzi_test(mesh_deform test_deform
+                    KIND unit
+		    SOURCE ${test_src_files}
+		    LINK_LIBS ${test_link_libs})
+
+    # Test: mesh columns
+
+    set(test_src_files test/Main.cc test/test_columns.cc)
+
+    add_amanzi_test(mesh_columns test_columns
                     KIND unit
 		    SOURCE ${test_src_files}
 		    LINK_LIBS ${test_link_libs})
