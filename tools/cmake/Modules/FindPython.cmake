@@ -11,8 +11,6 @@ if ( NOT PYTHON_EXECUTABLE )
 
   # Call PythonInterp to find the python executable
   find_package(PythonInterp)
-  print_variable(PYTHON_EXECTUABLE)
-  print_variable(PYTHON_VERSION_STRING)
 
 endif()
 
