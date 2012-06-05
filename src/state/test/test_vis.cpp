@@ -117,7 +117,7 @@ SUITE(VISUALIZATION) {
 
     S.set_compnames(compnames);
     
-    S.write_vis(V, &aux, auxnames);
+    S.write_vis(V, &aux, auxnames, false);
 
   }
 

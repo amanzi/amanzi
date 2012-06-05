@@ -971,7 +971,7 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
 
 
 /* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, bool force) {
+void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   if (!vis.is_disabled()) {
     if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
       using Teuchos::OSTab;
@@ -1010,7 +1010,7 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
       vis.write_vector( *get_total_component_concentration(), compnames);
 
       // write the geochemistry data
-      WriteChemistryToVis(&vis);
+      if (chemistry_enabled) WriteChemistryToVis(&vis);
 
       vis.finalize_timestep();
     }
@@ -1019,8 +1019,8 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
 
 
 /* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force)  {
-  write_vis(vis, force);
+void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool chemistry_enabled, bool force)  {
+  write_vis(vis, chemistry_enabled, force);
   
   if ( !vis.is_disabled() ) {
     if ( force || vis.dump_requested(get_cycle())) {
