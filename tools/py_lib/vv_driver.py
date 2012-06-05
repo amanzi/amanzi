@@ -11,13 +11,18 @@ import os, sys
 import glob 
 from optparse import OptionParser
 
-import amanzi
+try:
+  import amanzi
+except ImportError:
+  amanzi_python_install_prefix='@AmanziPython_INSTALL_PREFIX@'
+  sys.path.append(amanzi_python_install_prefix)
+  import amanzi
 
 # --- Parse command line
 parser = OptionParser()
 
 # Binary file
-amanzi_dflt_binary='/home/lpritch/amanzi/bin/amanzi'
+amanzi_dflt_binary='@Amanzi_EXECUTABLE@'
 parser.add_option("-b", "--binary", dest="binary", default=amanzi_dflt_binary, 
                   help="Amanzi binary file",metavar="FILE")
 
@@ -39,7 +44,8 @@ parser.add_option("-n", "--nprocs", dest="nprocs",
 
 
 # HDF5 Difference Binary (h5diff)
-parser.add_option("--h5diff", dest="h5diff",
+h5diff_dflt_binary='@HDF5_H5DIFF_BINARY@'
+parser.add_option("--h5diff", dest="h5diff", default=h5diff_dflt_binary,
                   help="HDF5 difference tool", metavar="FILE")
 
 
