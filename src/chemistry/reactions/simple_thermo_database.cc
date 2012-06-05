@@ -62,7 +62,7 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
                      parameters.pitzer_database, parameters.jfunction_pitzer);
   ResizeInternalMemory(primary_species().size());
   VerifyComponentSizes(components);
-  SetComponents(components);
+  CopyComponentsToBeaker(components);
 }  // end Setup()
 
 /*******************************************************************************

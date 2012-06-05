@@ -38,6 +38,9 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerComponents {
+    // TODO(bandre): rename to BeakerState and move all "state"
+    // variables (porosity, density, volume, mineral ssa, isotherms,
+    // etc) into a single struct.
     std::vector<double> free_ion;  // molality
     std::vector<double> minerals;  // volume fractions
     std::vector<double> ion_exchange_sites;  // CEC
@@ -86,7 +89,7 @@ class Beaker {
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
-  void UpdateComponents(Beaker::BeakerComponents* components);
+  void CopyBeakerToComponents(Beaker::BeakerComponents* components);
 
   BeakerParameters GetDefaultParameters(void) const;
   BeakerParameters GetCurrentParameters(void) const;
@@ -212,7 +215,7 @@ class Beaker {
 
   void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
   void VerifyComponentSizes(const Beaker::BeakerComponents& components) const;
-  void SetComponents(const Beaker::BeakerComponents& components);
+  void CopyComponentsToBeaker(const Beaker::BeakerComponents& components);
 
   void AddPrimarySpecies(const Species& s);
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);

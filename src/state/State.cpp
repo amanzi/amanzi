@@ -300,6 +300,10 @@ void State::create_storage()
   // if chemistry in enabled, we'll always need free_ions stored.
   free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
 
+  // TODO(bandre): activity corrections. Need primaries and
+  // secondaries, but don't know number of secondaries when this
+  // function is called!
+
   if (number_of_minerals() > 0) {
     mineral_volume_fractions_ = Teuchos::rcp(
         new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
@@ -313,13 +317,8 @@ void State::create_storage()
   if (using_sorption()) {
     total_sorbed_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
-    // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
-    sorption_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), 
-                               number_of_sorption_sites()));
   } else {
     total_sorbed_ = Teuchos::null;
-    sorption_sites_ = Teuchos::null;
   }
 
   if (number_of_sorption_sites() > 0) {
@@ -972,7 +971,7 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
 
 
 /* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, bool force) {
+void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   if (!vis.is_disabled()) {
     if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
       using Teuchos::OSTab;
@@ -1011,6 +1010,7 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
       vis.write_vector( *get_total_component_concentration(), compnames);
 
       // write the geochemistry data
+      if (chemistry_enabled) WriteChemistryToVis(&vis);
 
       vis.finalize_timestep();
     }
@@ -1019,8 +1019,8 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
 
 
 /* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force)  {
-  write_vis(vis, force);
+void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool chemistry_enabled, bool force)  {
+  write_vis(vis, chemistry_enabled, force);
   
   if ( !vis.is_disabled() ) {
     if ( force || vis.dump_requested(get_cycle())) {
@@ -1397,3 +1397,60 @@ void State::SetRegionSorptionSites(const std::string& region_name,
 }  // end SetRegionSorptionSites()
 
 
+/*******************************************************************************
+ **
+ **  Chemistry Vis
+ **
+ ******************************************************************************/
+void State::WriteChemistryToVis(Amanzi::Vis* vis) {
+  // free ion conc corresponds to total components
+  vis->write_vector(*free_ion_concentrations(), compnames);
+
+  // TODO(bandre): activity corrections....
+
+  WriteMineralsToVis(vis);
+  WriteIsothermsToVis(vis);
+  WriteSorptionSitesToVis(vis);
+  WriteIonExchangeSitesToVis(vis);
+}  // end WriteChemistryToVis()
+
+void State::WriteMineralsToVis(Amanzi::Vis* vis) {
+  std::string name;
+  for (int m = 0; m < number_of_minerals(); ++m) {
+    name = mineral_names().at(m);
+    name += "_volume_fraction";
+    vis->write_vector(*(*mineral_volume_fractions_)(m), name);
+    name = mineral_names().at(m);
+    name += "_specific_surface_area";
+    vis->write_vector(*(*mineral_specific_surface_area_)(m), name);
+  }
+}  // end WriteMineralsToVis()
+
+void State::WriteIsothermsToVis(Amanzi::Vis* vis) {
+  std::string name;
+  for (int i = 0; i < get_number_of_components(); ++i) {
+    name = compnames.at(i);
+    name += "_Kd";
+    vis->write_vector(*(*isotherm_kd_)(i), name);
+    name = compnames.at(i);
+    name += "_freundlich_n";
+    vis->write_vector(*(*isotherm_freundlich_n_)(i), name);
+    name = compnames.at(i);
+    name += "_langmuir_b";
+    vis->write_vector(*(*isotherm_langmuir_b_)(i), name);
+  }
+}  // end WriteIsothermsToVis()
+
+void State::WriteSorptionSitesToVis(Amanzi::Vis* vis) {
+  std::string name;
+  for (int s = 0; s < number_of_sorption_sites(); ++s) {
+    name = sorption_site_names_.at(s);
+    vis->write_vector(*(*sorption_sites_)(s), name);
+  }
+}  // end WriteSorptionSitesToVis()
+
+void State::WriteIonExchangeSitesToVis(Amanzi::Vis* vis) {
+  // NOTE: Assume that only one ion exchange site!
+  std::string name("CEC");
+  vis->write_vector(*(*ion_exchange_sites_)(0), name);
+}  // end WriteIonExchangeSitesToVis()

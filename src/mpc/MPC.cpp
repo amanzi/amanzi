@@ -313,7 +313,7 @@ void MPC::cycle_driver() {
   } else { // no restart, we will call the PKs to allow them to init their auxilary data
     FPK->InitializeAuxiliaryData();
   }
-    
+
 
 
   // write visualization output as requested
@@ -321,22 +321,28 @@ void MPC::cycle_driver() {
     // get the auxillary data from chemistry
     Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
     // write visualization data for timestep
-    S->write_vis(*visualization, &(*aux), auxnames, true);
+    S->write_vis(*visualization, &(*aux), auxnames, true, true);
   } else {
     // always write the initial visualization dump
-    S->write_vis(*visualization, true);
+    S->write_vis(*visualization, false, true);
   }
 
   // write a restart dump if requested (determined in dump_state)
   restart->dump_state(*S);
 
   
-  
   if (flow_enabled) {
     if (ti_mode == STEADY) {
       FPK->InitSteadyState(S->get_time(), dTsteady);
     } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
       FPK->InitTransient(S->get_time(), dTtransient);
+    } else if ( ti_mode == INIT_TO_STEADY && flow_model == std::string("Steady State Saturated")) {
+      if (!restart_requested) {
+	FPK->InitializeSteadySaturated();
+	FPK->CommitStateForTransport(FS);
+	FPK->CommitState(FS);
+	S->advance_time(Tswitch-T0);
+      }
     } else if ( ti_mode == INIT_TO_STEADY ) {
       if (S->get_time() < Tswitch) {
 	FPK->InitSteadyState(S->get_time(), dTsteady);
@@ -389,7 +395,8 @@ void MPC::cycle_driver() {
 
 	if ((ti_mode == STEADY) || 
 	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
-	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch))) {
+	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch)) ||
+	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Saturated")))) {
 	  flow_dT = FPK->CalculateFlowDt();	  
 	}
       }
@@ -432,7 +439,7 @@ void MPC::cycle_driver() {
         if (!reset_times_.empty()) {
           // this is probably iffy...
           if (S->get_time() == reset_times_.front()) {
-            *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
+            *out << "Resetting the time integrator at time = " << S->get_time() << std::endl;
             mpc_dT = reset_times_dt_.front();
 	    mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
             tslimiter = MPC_LIMITS;
@@ -448,7 +455,8 @@ void MPC::cycle_driver() {
       if (flow_enabled) {
 	if ((ti_mode == STEADY) ||
 	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
-	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch))) {
+	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch)) ||
+	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Saturated")))) {
 	  bool redo(false);
 	  do {
 	    redo = false;
@@ -563,9 +571,9 @@ void MPC::cycle_driver() {
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
         
         // write visualization data for timestep if requested
-        S->write_vis(*visualization, &(*aux), auxnames, force);
+        S->write_vis(*visualization, &(*aux), auxnames, true, force);
       } else {
-        S->write_vis(*visualization, force);
+        S->write_vis(*visualization, false, force);
       }
 
       // write restart dump if requested

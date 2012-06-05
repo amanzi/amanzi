@@ -4,7 +4,7 @@
 : Uniform velocity (see below). No flow mode specified.
 
 :=========================== useful tranport parameters ==================
-UNIFORM_VELOCITY 3.170979d-8 0.d0 0.d0 ! 1. meter/yr
+UNIFORM_VELOCITY 0.0 0.d0 0.d0 ! 1. meter/yr
 
 :=========================== chemistry ========================================
 CHEMISTRY
@@ -43,6 +43,10 @@ CHEMISTRY
 END
 
 :=========================== solver options ===================================
+TIMESTEPPER TRANSPORT
+  MAX_STEPS -1
+END
+
 LINEAR_SOLVER TRANSPORT
   SOLVER DIRECT
 END
@@ -53,7 +57,7 @@ GRID
   NXYZ 100 1 1
   BOUNDS
     0.d0 0.d0 0.d0
-    100.d0 1.d0 1.d0
+    1.d0 1.d0 1.d0
   /
 END
 

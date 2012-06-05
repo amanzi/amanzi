@@ -16,8 +16,13 @@ import amanzi
 # --- Parse command line
 parser = OptionParser()
 
+# Binary file
+amanzi_dflt_binary='/home/lpritch/amanzi/bin/amanzi'
+parser.add_option("-b", "--binary", dest="binary", default=amanzi_dflt_binary, 
+                  help="Amanzi binary file",metavar="FILE")
+
 # Input file
-parser.add_option("-i", "--input-file", dest="input", 
+parser.add_option("-i", "--input", dest="input", 
                   help="Amanzi input file",metavar="FILE")
 
 # STDOUT file
@@ -67,15 +72,12 @@ else:
     raise ValueError, options.h5diff + ' does not exist'
 
 
-
 # --- Run amanzi
 print '>>>>>>>>> LAUNCHING AMANZI <<<<<<<<'
-amanzi_binary='/home/lpritch/amanzi/bin/amanzi'
-amanzi=amanzi.interface.AmanziInterface(input=options.input,
-                                        binary=amanzi_binary,
-					output=options.output,
-				        error=options.error	
-					)
+amanzi=amanzi.interface.AmanziInterface(options.binary)
+amanzi.input=options.input
+amanzi.output=options.output
+amanzi.error=options.error
 amanzi.nprocs=options.nprocs
 amanzi.run()
 print 'Amanzi exit code ' + str(amanzi.exit_code)
@@ -96,15 +98,19 @@ output_basename=viz_ctrl.find_parameter('File Name Base')
 output_regex=output_basename.get_value()
 output_regex=output_regex+'_data.h5'
 
+# - Create the h5diff command - will add options and files later
+#h5diff_cmd=amanzi.command.CommandInterface(options.h5diff)
 
-print '>>>>>>>> Processing Amanzi Output <<<<<<<<'
+# - Locate output files
 print 'Search for output files matching pattern \'' + output_regex + '\''
 output_files=glob.glob(output_regex)
 if len(output_files) == 0:
   print 'No output files found'
 else:
   for file in output_files:
-    print 'Will process output file ' + file
+    print 'Will process output file:' + file
+
+# - Call h5diff to compare files    
 print '>>>>>>>> Processing Amanzi Output COMPLETE <<<<<<<<'
 
 sys.exit(amanzi.exit_code)

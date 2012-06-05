@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
 
     // solve for initial free-ion concentrations
     mixing_cells[thread]->Speciate(cell_components[thread], parameters);
-    mixing_cells[thread]->UpdateComponents(&cell_components[thread]);
+    mixing_cells[thread]->CopyBeakerToComponents(&cell_components[thread]);
     if (verbosity >= ac::kDebugBeaker) {
       mixing_cells[thread]->DisplayResults();
     }

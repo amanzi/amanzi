@@ -106,6 +106,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual int Advance(double dT) = 0; 
   virtual int AdvanceToSteadyState() = 0;
   virtual void InitializeAuxiliaryData() = 0;
+  virtual void InitializeSteadySaturated() {};
 
   virtual void CommitState(Teuchos::RCP<Flow_State> FS) = 0;
   virtual void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) = 0;

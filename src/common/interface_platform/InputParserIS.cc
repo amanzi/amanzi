@@ -564,8 +564,11 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
       } else if (exe_sublist.get<std::string>("Flow Model") == "Steady State Richards") {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Steady State Richards");
+      } else if (exe_sublist.get<std::string>("Flow Model") == "Steady State Saturated") {
+	mpc_list.set<std::string>("disable Flow_PK", "no");
+	mpc_list.set<std::string>("Flow model","Steady State Saturated");      
       } else {
-        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Steady State Richards, Steady State Saturated, or Off"));
       }
     } else {
       Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
@@ -744,58 +747,60 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
-      if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady" ) {
+      if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady State Saturated" ) {
+	flw_list.set<bool>("initialize saturated flow",true);
 
       } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ||
-                  plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady State Richards" ) {
+		  plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady State Richards" ) {
+	flw_list.set<bool>("initialize saturated flow",false);
+	
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         richards_problem.set<double>("atmospheric pressure", 101325.0);
 
-        // create sublists for the steady state time integrator
-        Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady state time integrator");
-        steady_time_integrator.set<std::string>("time integration method","BDF1");
-        Teuchos::ParameterList& sti_bdf1 = steady_time_integrator.sublist("BDF1");
-        Teuchos::ParameterList& sti_bdf1_param = sti_bdf1.sublist("BDF1 parameters");
-
-        // link to preconditioner and linear solver for the steady state time integration
-        steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
-        steady_time_integrator.set<std::string>("linear solver", "AztecOO");
-
-        bool have_unstructured_algorithm_sublist(false);
-        if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-          if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
-            have_unstructured_algorithm_sublist = true;
-            Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-            sti_bdf1_param.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
-            sti_bdf1_param.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
-            sti_bdf1_param.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
-            sti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
-            sti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
-            sti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
-            sti_bdf1_param.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
-            sti_bdf1_param.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
-            sti_bdf1_param.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
-            sti_bdf1_param.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
-          }
-        }
-        if (have_unstructured_algorithm_sublist == false) {
-          // set some probably not so good defaults for the steady computation
-          sti_bdf1_param.set<int>("max iterations",10);
-          sti_bdf1_param.set<int>("min iterations",5);
-          sti_bdf1_param.set<int>("limit iterations",20);
-          sti_bdf1_param.set<double>("nonlinear tolerance",1.0);
-          sti_bdf1_param.set<double>("time step reduction factor",0.8);
-          sti_bdf1_param.set<double>("time step increase factor",1.2);
-          sti_bdf1_param.set<double>("max time step", 1.0e+8);
-          sti_bdf1_param.set<int>("max preconditioner lag iterations", 5);
-          sti_bdf1_param.set<double>("error abs tol", 1.0);
-          sti_bdf1_param.set<double>("error rel tol", 0.0);
-        }
-
-        // crerate sublists for the transient time integrator
+	bool have_unstructured_algorithm_sublist(false);
+	// create sublists for the steady state time integrator
+	Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady state time integrator");
+	steady_time_integrator.set<std::string>("time integration method","BDF1");
+	Teuchos::ParameterList& sti_bdf1 = steady_time_integrator.sublist("BDF1");
+	Teuchos::ParameterList& sti_bdf1_param = sti_bdf1.sublist("BDF1 parameters");
+	
+	// link to preconditioner and linear solver for the steady state time integration
+	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
+	steady_time_integrator.set<std::string>("linear solver", "AztecOO");
+	
+	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	    have_unstructured_algorithm_sublist = true;
+	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    sti_bdf1_param.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
+	    sti_bdf1_param.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
+	    sti_bdf1_param.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
+	    sti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
+	    sti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
+	    sti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
+	    sti_bdf1_param.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
+	    sti_bdf1_param.set<int>("max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
+	    sti_bdf1_param.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
+	    sti_bdf1_param.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
+	  }
+	}
+	if (have_unstructured_algorithm_sublist == false) {
+	  // set some probably not so good defaults for the steady computation
+	  sti_bdf1_param.set<int>("max iterations",10);
+	  sti_bdf1_param.set<int>("min iterations",5);
+	  sti_bdf1_param.set<int>("limit iterations",20);
+	  sti_bdf1_param.set<double>("nonlinear tolerance",1.0);
+	  sti_bdf1_param.set<double>("time step reduction factor",0.8);
+	  sti_bdf1_param.set<double>("time step increase factor",1.2);
+	  sti_bdf1_param.set<double>("max time step", 1.0e+8);
+	  sti_bdf1_param.set<int>("max preconditioner lag iterations", 5);
+	  sti_bdf1_param.set<double>("error abs tol", 1.0);
+	  sti_bdf1_param.set<double>("error rel tol", 0.0);
+	}
+	// crerate sublists for the transient time integrator
         Teuchos::ParameterList& transient_time_integrator = richards_problem.sublist("transient time integrator");
         transient_time_integrator.set<std::string>("time integration method", "BDF1");
         Teuchos::ParameterList& tti_bdf1 = transient_time_integrator.sublist("BDF1");
