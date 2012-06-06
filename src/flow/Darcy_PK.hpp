@@ -44,7 +44,8 @@ class Darcy_PK : public Flow_PK {
   double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
   int AdvanceToSteadyState();
-  void InitializeAuxiliaryData() { };
+  void InitializeAuxiliaryData() {};
+  void InitializeSteadySaturated() {};
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
   void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) {};

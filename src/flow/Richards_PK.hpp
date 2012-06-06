@@ -48,6 +48,7 @@ class Richards_PK : public Flow_PK {
   int Advance(double dT_MPC); 
   int AdvanceToSteadyState();
   void InitializeAuxiliaryData();
+  void InitializeSteadySaturated();
 
   int AdvanceToSteadyState_Picard();
   int AdvanceToSteadyState_BackwardEuler();
