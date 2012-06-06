@@ -128,6 +128,9 @@ void Chemistry_PK::InitializeChemistry(void) {
     chem_->set_debug(false);
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
+    // TODO(bandre): at this point we should know the number of
+    // secondary species so we can finally allocate the activity
+    // coefficients array in state!
 
     // solve for initial free-ion concentrations
     chem_->Speciate(beaker_components_, beaker_parameters_);
@@ -312,8 +315,8 @@ void Chemistry_PK::SetupAuxiliaryOutput(void) {
   if (debug()) {
     std::cout << "  Chemistry_PK::SetupAuxiliaryOutput()" << std::endl;
   }
-  // TODO(bander): this indexing scheme may not be appropriate
-  // depending on the additional type of aux data this is requested...
+  // TODO(bandre): this indexing scheme will not be appropriate when
+  // additional types of aux data are requested, e.g. mineral SI.....
   unsigned int nvars = aux_names_.size();
   std::string name;
   aux_index_.clear();
@@ -683,22 +686,24 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
 
 
 Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data() {
-  int num_cells = chemistry_state_->porosity()->MyLength();
+  if (aux_data_ != Teuchos::null) {
+    int num_cells = chemistry_state_->porosity()->MyLength();
 
-  for (int cell = 0; cell < num_cells; cell++) {
-    // populate aux_data_ by copying from the appropriate internal storage
-    // for now, assume we are just looking at free ion conc of primaries
-    for (unsigned int i = 0; i < aux_names_.size(); i++) {
-      double* cell_aux_data = (*aux_data_)[i];
-      double* cell_free_ion = (*chemistry_state_->free_ion_species())[aux_index_.at(i)];
-      cell_aux_data[cell] = cell_free_ion[cell];
-      if (aux_names_.at(i) == "pH") {
-        cell_aux_data[cell] = -std::log10(cell_aux_data[cell]);
+    for (int cell = 0; cell < num_cells; cell++) {
+      // populate aux_data_ by copying from the appropriate internal storage
+      // for now, assume we are just looking at free ion conc of primaries
+      for (unsigned int i = 0; i < aux_names_.size(); i++) {
+        double* cell_aux_data = (*aux_data_)[i];
+        double* cell_free_ion = (*chemistry_state_->free_ion_species())[aux_index_.at(i)];
+        cell_aux_data[cell] = cell_free_ion[cell];
+        if (aux_names_.at(i) == "pH") {
+          cell_aux_data[cell] = -std::log10(cell_aux_data[cell]);
+        }
       }
-    }
-  }  // for(cells)
+    }  // for(cells)
 
-  // return the multi vector
+    // return the multi vector
+  }
   return aux_data_;
 }
 

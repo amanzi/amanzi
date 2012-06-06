@@ -321,7 +321,7 @@ void MPC::cycle_driver() {
     // get the auxillary data from chemistry
     Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
     // write visualization data for timestep
-    S->write_vis(*visualization, &(*aux), auxnames, true, true);
+    S->write_vis(*visualization, aux, auxnames, true, true);
   } else {
     // always write the initial visualization dump
     S->write_vis(*visualization, false, true);
@@ -571,7 +571,7 @@ void MPC::cycle_driver() {
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
         
         // write visualization data for timestep if requested
-        S->write_vis(*visualization, &(*aux), auxnames, true, force);
+        S->write_vis(*visualization, aux, auxnames, true, force);
       } else {
         S->write_vis(*visualization, false, force);
       }

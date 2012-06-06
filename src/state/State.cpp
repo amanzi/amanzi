@@ -1019,13 +1019,16 @@ void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
 
 
 /* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool chemistry_enabled, bool force)  {
+void State::write_vis(Amanzi::Vis& vis, 
+                      Teuchos::RCP<Epetra_MultiVector> auxdata, 
+                      const std::vector<std::string>& auxnames, 
+                      bool chemistry_enabled, bool force)  {
   write_vis(vis, chemistry_enabled, force);
   
   if ( !vis.is_disabled() ) {
     if ( force || vis.dump_requested(get_cycle())) {
       // write auxillary data
-      if (auxdata != NULL)  {
+      if (!is_null(auxdata))  {
         vis.write_vector( *auxdata , auxnames);
       }
       
@@ -1274,6 +1277,11 @@ void State::VerifySorptionSites(const std::string& region_name,
 void State::SetRegionMaterialChemistry(const std::string& region_name,
                                        Teuchos::ParameterList* region_data) {
 
+  // NOTE(bandre): I don't think this is going to ensure all memory is
+  // initialized correctly. If a region doesn't have a particular
+  // block (e.g. isotherms) in the XML file, it will have
+  // uninitialized data!?!?
+
   if (region_data->isSublist("Mineralogy")) {
     SetRegionMineralogy(region_name, region_data->sublist("Mineralogy"));
   } else {
@@ -1403,16 +1411,22 @@ void State::SetRegionSorptionSites(const std::string& region_name,
  **
  ******************************************************************************/
 void State::WriteChemistryToVis(Amanzi::Vis* vis) {
-  // free ion conc corresponds to total components
-  vis->write_vector(*free_ion_concentrations(), compnames);
-
   // TODO(bandre): activity corrections....
-
+  WriteFreeIonsToVis(vis);
   WriteMineralsToVis(vis);
   WriteIsothermsToVis(vis);
   WriteSorptionSitesToVis(vis);
   WriteIonExchangeSitesToVis(vis);
 }  // end WriteChemistryToVis()
+
+void State::WriteFreeIonsToVis(Amanzi::Vis* vis) {
+  std::string name;
+  for (int i = 0; i < get_number_of_components(); ++i) {
+    name = compnames.at(i);
+    name += "_free";
+    vis->write_vector(*(*free_ion_concentrations_)(i), name);
+  }
+}  // end WriteFreeIonsToVis()
 
 void State::WriteMineralsToVis(Amanzi::Vis* vis) {
   std::string name;
@@ -1427,17 +1441,19 @@ void State::WriteMineralsToVis(Amanzi::Vis* vis) {
 }  // end WriteMineralsToVis()
 
 void State::WriteIsothermsToVis(Amanzi::Vis* vis) {
-  std::string name;
-  for (int i = 0; i < get_number_of_components(); ++i) {
-    name = compnames.at(i);
-    name += "_Kd";
-    vis->write_vector(*(*isotherm_kd_)(i), name);
-    name = compnames.at(i);
-    name += "_freundlich_n";
-    vis->write_vector(*(*isotherm_freundlich_n_)(i), name);
-    name = compnames.at(i);
-    name += "_langmuir_b";
-    vis->write_vector(*(*isotherm_langmuir_b_)(i), name);
+  if (use_sorption_isotherms()) {
+    std::string name;
+    for (int i = 0; i < get_number_of_components(); ++i) {
+      name = compnames.at(i);
+      name += "_Kd";
+      vis->write_vector(*(*isotherm_kd_)(i), name);
+      name = compnames.at(i);
+      name += "_freundlich_n";
+      vis->write_vector(*(*isotherm_freundlich_n_)(i), name);
+      name = compnames.at(i);
+      name += "_langmuir_b";
+      vis->write_vector(*(*isotherm_langmuir_b_)(i), name);
+    }
   }
 }  // end WriteIsothermsToVis()
 
@@ -1450,7 +1466,9 @@ void State::WriteSorptionSitesToVis(Amanzi::Vis* vis) {
 }  // end WriteSorptionSitesToVis()
 
 void State::WriteIonExchangeSitesToVis(Amanzi::Vis* vis) {
-  // NOTE: Assume that only one ion exchange site!
-  std::string name("CEC");
-  vis->write_vector(*(*ion_exchange_sites_)(0), name);
+  if (number_of_ion_exchange_sites() > 0) {
+    // NOTE: Assume that only one ion exchange site!
+    std::string name("CEC");
+    vis->write_vector(*(*ion_exchange_sites_)(0), name);
+  }
 }  // end WriteIonExchangeSitesToVis()
