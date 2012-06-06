@@ -340,6 +340,7 @@ void MPC::cycle_driver() {
       FPK->InitTransient(S->get_time(), dTtransient);
     } else if ( ti_mode == INIT_TO_STEADY && flow_model == std::string("Steady State Saturated")) {
       if (!restart_requested) {
+	FPK->InitSteadyState(S->get_time(), dTsteady);
 	FPK->InitializeSteadySaturated();
 	FPK->CommitStateForTransport(FS);
 	FPK->CommitState(FS);
@@ -380,12 +381,12 @@ void MPC::cycle_driver() {
 
       // catch the switchover time to transient
       if (flow_enabled) {
-	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
+	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) { 
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
 	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
 	  }
 	  // only init the transient problem if we need to 
-	  if (flow_model != std::string("Steady State Richards")) {
+	  if (flow_model != "Steady State Richards"  && flow_model != "Steady State Saturated" )  {
 	    FPK->InitTransient(S->get_time(), dTtransient);
 	  }
 	}
@@ -397,9 +398,10 @@ void MPC::cycle_driver() {
 
 	if ((ti_mode == STEADY) || 
 	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
-	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch)) ||
-	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Saturated")))) {
-	  flow_dT = FPK->CalculateFlowDt();	  
+	    (ti_mode == INIT_TO_STEADY && 
+	     ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
+	       (flow_model != std::string("Steady State Saturated"))))) {
+	  flow_dT = FPK->CalculateFlowDt();
 	}
       }
 
@@ -457,8 +459,9 @@ void MPC::cycle_driver() {
       if (flow_enabled) {
 	if ((ti_mode == STEADY) ||
 	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
-	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Richards") || S->get_time() < Tswitch)) ||
-	    (ti_mode == INIT_TO_STEADY && (flow_model != std::string("Steady State Saturated")))) {
+	    (ti_mode == INIT_TO_STEADY && 
+	     ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
+	       (flow_model != std::string("Steady State Saturated"))))) {
 	  bool redo(false);
 	  do {
 	    redo = false;
