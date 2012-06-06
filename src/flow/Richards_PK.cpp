@@ -227,6 +227,16 @@ void Richards_PK::InitializeAuxiliaryData()
 
 
 /* ******************************************************************
+* Initial pressure is set to the pressure for fully saturated rock.
+****************************************************************** */
+void Richards_PK::InitializeSteadySaturated()
+{ 
+  double T = FS->get_time();
+  SolveFullySaturatedProblem(T, *solution);
+}
+
+
+/* ******************************************************************
 * Separate initialization of solver may be required for steady state
 * and transient runs. BDF2 and BDF1 will eventually merge but are 
 * separated strictly (no code optimization) for the moment.
@@ -469,7 +479,8 @@ int Richards_PK::Advance(double dT_MPC)
 
   } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     if (block_picard == 0) {
-      PicardStep(time, dT, dTnext);  // Updates solution vector.
+      PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
+      //AndersonAccelerationTimeStep(time, dT, dTnext);
     } else {
       dTnext = dT;
     }

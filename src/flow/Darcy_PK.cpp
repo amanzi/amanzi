@@ -209,6 +209,13 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+  }
+
+  Epetra_Vector& pressure = FS->ref_pressure();
+  *solution_cells = pressure;
+
   set_time(T0, dT0);
   dT_desirable_ = dT0;  // The desirable time step from now on.
   num_itrs_trs = 0;
@@ -270,6 +277,7 @@ int Darcy_PK::Advance(double dT_MPC)
   if (time >= 0.0) T_physics = time;
 
   solver->SetAztecOption(AZ_output, AZ_none);
+  //solver->SetAztecOption(AZ_conv, AZ_Anorm);
 
   // update boundary conditions and source terms
   time = T_physics;
@@ -303,11 +311,13 @@ int Darcy_PK::Advance(double dT_MPC)
   solver->SetLHS(&*solution);  // initial solution guess
 
   solver->Iterate(max_itrs_sss, convergence_tol_sss);
-  num_itrs_sss = solver->NumIters();
-  residual_sss = solver->TrueResidual();
-
   num_itrs_trs++;
 
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    int num_itrs = solver->NumIters();
+    double linear_residual = solver->TrueResidual();
+    std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+  }
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }

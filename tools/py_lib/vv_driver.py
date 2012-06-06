@@ -10,14 +10,21 @@
 import os, sys
 import glob 
 from optparse import OptionParser
+from xml.etree import ElementTree as ETree
 
-import amanzi
+
+try:
+  import amanzi
+except ImportError:
+  amanzi_python_install_prefix='@AmanziPython_INSTALL_PREFIX@'
+  sys.path.append(amanzi_python_install_prefix)
+  import amanzi
 
 # --- Parse command line
 parser = OptionParser()
 
 # Binary file
-amanzi_dflt_binary='/home/lpritch/amanzi/bin/amanzi'
+amanzi_dflt_binary='@Amanzi_EXECUTABLE@'
 parser.add_option("-b", "--binary", dest="binary", default=amanzi_dflt_binary, 
                   help="Amanzi binary file",metavar="FILE")
 
@@ -39,7 +46,13 @@ parser.add_option("-n", "--nprocs", dest="nprocs",
 
 
 # HDF5 Difference Binary (h5diff)
-parser.add_option("--h5diff", dest="h5diff",
+h5diff_dflt_binary='@HDF5_H5DIFF_BINARY@'
+parser.add_option("--h5diff", dest="h5diff", default=h5diff_dflt_binary,
+                  help="HDF5 difference tool", metavar="FILE")
+
+# HDF5 List Binary (h5ls)
+h5ls_dflt_binary='@HDF5_H5LS_BINARY@'
+parser.add_option("--h5ls", dest="h5ls", default=h5ls_dflt_binary,
                   help="HDF5 difference tool", metavar="FILE")
 
 
@@ -97,6 +110,7 @@ output_basename=viz_ctrl.find_parameter('File Name Base')
 # Build the regular expression for globbing
 output_regex=output_basename.get_value()
 output_regex=output_regex+'_data.h5'
+output_xmf_regex=output_basename.get_value()+'_data.h5'+'.'+'[0-9]*'+'.xmf'
 
 # - Create the h5diff command - will add options and files later
 #h5diff_cmd=amanzi.command.CommandInterface(options.h5diff)
@@ -104,11 +118,24 @@ output_regex=output_regex+'_data.h5'
 # - Locate output files
 print 'Search for output files matching pattern \'' + output_regex + '\''
 output_files=glob.glob(output_regex)
+print 'Search for XDMF XML files matching pattern \'' + output_xmf_regex + '\''
+xmf_files=glob.glob(output_xmf_regex)
 if len(output_files) == 0:
   print 'No output files found'
 else:
   for file in output_files:
     print 'Will process output file:' + file
+
+if len(xmf_files) == 0:
+  print 'No XDMF XML files found'
+else:
+  for file in xmf_files:
+    #print 'Will process XDMF XML output file:' + file
+    xmf_tree=ETree.parse(file)
+    time_element=xmf_tree.getiterator(tag='Time')[0]
+    time=time_element.get('Value')
+    print 'File ' + file + ' dumped out at time=' + time + ' (years)'
+
 
 # - Call h5diff to compare files    
 print '>>>>>>>> Processing Amanzi Output COMPLETE <<<<<<<<'

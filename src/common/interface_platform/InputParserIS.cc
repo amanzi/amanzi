@@ -42,6 +42,8 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   // unstructured header
   new_list.set<bool>("Native Unstructured Input", true);
   new_list.set<std::string>("grid_option", "Unstructured");
+  new_list.set<std::string>("input file name", 
+      plist->get<std::string>("input file name", "unit_test.xml"));
 
   // checkpoint list is optional
   tmp_list = create_Checkpoint_Data_List(plist);
@@ -747,13 +749,13 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
-      if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady State Saturated" ) {
-	flw_list.set<bool>("initialize saturated flow",true);
-
-      } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ||
-		  plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady State Richards" ) {
-	flw_list.set<bool>("initialize saturated flow",false);
-	
+      std::string flow_model = plist->sublist("Execution Control").get<std::string>("Flow Model");
+      if ( flow_model == "Richards" || flow_model == "Steady State Richards" || flow_model == "Steady State Saturated" ) {
+	if (flow_model == "Steady State Saturated" ) {
+	  flw_list.set<bool>("initialize saturated flow",true);
+	} else {
+	  flw_list.set<bool>("initialize saturated flow",false);
+	}
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
