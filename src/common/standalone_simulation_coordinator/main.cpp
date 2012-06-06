@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList driver_parameter_list;
     Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
     const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
+    driver_parameter_list.set<string>("input file name", xmlInFileName);
     
     // The Mesh list contains a "Structured" sublist or a "Unstructured" sublist, and will 
     // determine which simulation driver to call

@@ -479,7 +479,8 @@ int Richards_PK::Advance(double dT_MPC)
 
   } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     if (block_picard == 0) {
-      PicardStep(time, dT, dTnext);  // Updates solution vector.
+      PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
+      //AndersonAccelerationTimeStep(time, dT, dTnext);
     } else {
       dTnext = dT;
     }

@@ -42,6 +42,8 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   // unstructured header
   new_list.set<bool>("Native Unstructured Input", true);
   new_list.set<std::string>("grid_option", "Unstructured");
+  new_list.set<std::string>("input file name", 
+      plist->get<std::string>("input file name", "unit_test.xml"));
 
   // checkpoint list is optional
   tmp_list = create_Checkpoint_Data_List(plist);
