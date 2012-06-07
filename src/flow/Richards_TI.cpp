@@ -117,7 +117,7 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
   }
 
 #ifdef HAVE_MPI
-  double buf = std::min<double>(error_s, error_p);
+  double buf = std::max<double>(error_s, error_p);
   du.Comm().MaxAll(&buf, &error, 1);  // find the global maximum
 #endif
   return error;

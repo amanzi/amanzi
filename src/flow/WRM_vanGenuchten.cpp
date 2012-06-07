@@ -48,7 +48,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(
     double pc0_3 = pc0_2 * pc0;
 
     a_ = (3 * k0 - k0p * pc0) / pc0_2;
-    b_ = (3 * k0p * pc0 - 2 * k0) / pc0_3;
+    b_ = (k0p * pc0 - 2 * k0) / pc0_3;
   }
 }
 
