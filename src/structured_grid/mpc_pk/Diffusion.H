@@ -24,6 +24,10 @@
 #include <mg_cpp_f.h>
 #endif
 
+// Forward declarations
+class PorousMedia;
+class PMAmr;
+
 #ifndef _PorousMedia_H_
 enum StateType {State_Type=0}; 
 enum StateNames  { N_w_g=0, N_w_l=0, N_o_g=0, N_o_l,  Enthalpy};
@@ -442,6 +446,8 @@ protected:
     //
     Amr*            parent;
     AmrLevel*       caller;
+    PMAmr*          pm_parent;
+    PorousMedia*    pm_caller;
     const BoxArray& grids;
     const int       level;
     //

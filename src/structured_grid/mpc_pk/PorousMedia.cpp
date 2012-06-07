@@ -1218,7 +1218,8 @@ PorousMedia::initData ()
         }
     }
         
-    if ( 1 || !(model == model_list["richard"] && do_richard_init_to_steady))
+    //if ( 1 || !(model == model_list["richard"] && do_richard_init_to_steady))
+    if ( 1 )
     {
         FillStateBndry(cur_time,State_Type,0,ncomps);
         FillStateBndry(cur_time,Press_Type,0,1);
@@ -1235,7 +1236,7 @@ PorousMedia::initData ()
         // 
         calcLambda(cur_time);
 
-        if (model == model_list["richard"] && do_richard_init_to_steady) {
+        if (0 && model == model_list["richard"] && do_richard_init_to_steady) {
             richard_init_to_steady();        
         }
 
@@ -1275,6 +1276,8 @@ PorousMedia::RichardNLSdata::RichardNLSdata(int slev, int nlevs, Amr* amrp)
     : start_level(slev), end_level(slev+nlevs-1),
       num_Jacobian_reuses_remaining(nlevs,0)
 {
+    BL_ASSERT(amrp);
+
     // Set solver defaults
     max_num_Jacobian_reuse = 0;
     max_nl_iterations = 20;
@@ -7203,6 +7206,16 @@ PorousMedia::post_timestep (int crse_iteration)
 
 }
 
+PMAmr*
+PorousMedia::PMParent()
+{
+    PMAmr* pm_parent = dynamic_cast<PMAmr*>(parent);
+    if (!pm_parent) {
+        BoxLib::Abort("Bad cast");
+    }
+    return pm_parent;
+}
+
 //
 // Build any additional data structures after restart.
 //
@@ -7216,6 +7229,13 @@ void PorousMedia::post_restart()
       for (int i=0; i<observations.size(); ++i)
           observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
+
+#ifdef BL_USE_PETSC
+  if (level==0)
+  {
+      PMParent()->GetLayout().Rebuild();
+  }
+#endif
 }
 
 //
@@ -7226,6 +7246,20 @@ PorousMedia::post_regrid (int lbase,
                           int new_finest)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_regrid()");
+
+#ifdef BL_USE_PETSC
+  if (lbase==0)
+  {
+      PMAmr* pm_parent = dynamic_cast<PMAmr*>(parent);
+      if (pm_parent) {
+          pm_parent->GetLayout().Rebuild();
+      }
+      else {
+          BoxLib::Abort("Bad cast");
+      }
+  }
+#endif
+
   //if (level > lbase)
   {
     //
@@ -7634,6 +7668,7 @@ PorousMedia::post_init (Real stop_time)
   Real        dt_init_local = 0.;
   Array<Real> dt_save(finest_level+1);
   Array<int>  nc_save(finest_level+1);
+
   //
   // Ensure state is consistent, i.e. velocity field is non-divergent,
   // Coarse levels are fine level averages, pressure is zero.
@@ -7686,7 +7721,7 @@ PorousMedia::post_init_state ()
   //
   // Richard initialization
   //
-  if (0 && model == model_list["richard"] && do_richard_init_to_steady) {
+  if (model == model_list["richard"] && do_richard_init_to_steady) {
       richard_init_to_steady();        
   }
 
@@ -9759,6 +9794,12 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
   //FIXME: analytical jacobian is not working
   bool do_analytic_jac = false;//true;
 
+#ifdef BL_USE_PETSC
+  PetscErrorCode ierr;
+  Mat& J = PMParent()->GetLayout().Jacobian();
+  BaseFab<int> nodeNums;
+#endif
+
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
        fpi.isValid();
        ++fpi)
@@ -9926,7 +9967,58 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			       &deps, &do_upwind);
 	    }
 	}
+
+#ifdef BL_USE_PETSC
+      const Box& vbox = grids[idx];
+      Box gbox = Box(vbox).grow(1);
+      nodeNums.resize(gbox,1);
+      PMParent()->GetLayout().SetNodeIds(nodeNums,level,idx);
+
+      Array<int> cols(1+2*BL_SPACEDIM);
+      Array<int> rows(1);
+      Array<Real> vals(cols.size());
+      FArrayBox* wrk[BL_SPACEDIM];
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+          wrk[d] = &((*diffusivity[d])[idx]);
+      }
+
+      for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
+      {
+          cols[0] = nodeNums(iv);
+          rows[0] = cols[0];
+          vals[0] = 0;
+          int cnt = 1;
+          for (int d=0; d<BL_SPACEDIM; ++d) {
+              IntVect ivp = iv + BoxLib::BASISV(d);
+              int np = nodeNums(ivp,0);
+              if (np>=0) {
+                  cols[cnt]  = np; 
+                  vals[0]   -= (*wrk[d])(iv,2);
+                  vals[cnt] -= (*wrk[d])(iv,0);
+                  cnt++;
+              }
+
+              IntVect ivn = iv - BoxLib::BASISV(d);
+              int nn = nodeNums(ivn,0);
+              if (nn>=0) {
+                  cols[cnt]  = nn; 
+                  vals[0]   -= (*wrk[d])(iv,2);
+                  vals[cnt] -= (*wrk[d])(iv,1);
+                  cnt++;
+              }
+          }
+
+          ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES);
+          CHKPETSC(ierr);
+      }
+#endif
+
     }
+
+#ifdef BL_USE_PETSC
+  ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+#endif
 }
 
 void 

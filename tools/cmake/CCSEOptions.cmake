@@ -91,6 +91,16 @@ elseif (AMANZI_CHEMEVOL_PKG STREQUAL "COREREACT")
   list(APPEND BL_DEFINES "COREREACT")
 endif()
 
+set(BL_USE_PETSC FALSE)
+#set(BL_USE_PETSC TRUE)
+if (BL_USE_PETSC)
+  set(PETSC_DIR /home/marc/src/ASCEM/amanzi/build/Release/TPLs/petsc-3.2)
+  set(PETSC_ARCH arch-linux2-c-debug)
+  include_directories(${PETSC_DIR}/include)
+  include_directories(${PETSC_DIR}/${PETSC_ARCH}/include)
+  list(APPEND BL_DEFINES BL_USE_PETSC)
+endif()
+
 set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "${BL_DEFINES}")
 
 

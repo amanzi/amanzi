@@ -26,6 +26,8 @@
 #include <Observation.H>
 #include <RegionData.H>
 
+#include <PMAmr.H>
+
 #ifdef AMANZI
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
@@ -971,6 +973,8 @@ protected:
   */
   static std::string model_name;
   static int model;
+
+  PMAmr* PMParent();
 
 protected:
 

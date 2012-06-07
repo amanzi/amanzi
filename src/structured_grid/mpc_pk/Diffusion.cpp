@@ -22,6 +22,10 @@
 #include <algorithm>
 #include <cfloat>
 
+#ifdef BL_USE_PETSC
+#include <petscksp.h>
+#endif
+
 #if defined(BL_OSF1)
 #if defined(BL_USE_DOUBLE)
 const Real BL_BOGUS      = DBL_QNAN;
@@ -164,6 +168,9 @@ Diffusion::Diffusion (Amr*               Parent,
   NUM_SCALARS(num_state),
   viscflux_reg(Viscflux_reg)
 {
+  pm_parent = dynamic_cast<PMAmr*>(parent);
+  pm_caller = dynamic_cast<PorousMedia*>(caller);
+
   if (!initialized)
     {
       Initialize();
@@ -252,6 +259,9 @@ Diffusion::Diffusion (Amr*               Parent,
   NUM_SCALARS(num_state),
   viscflux_reg(Viscflux_reg)
 {
+  pm_parent = dynamic_cast<PMAmr*>(parent);
+  pm_caller = dynamic_cast<PorousMedia*>(caller);
+
   if (!initialized)
     {
       Initialize();
@@ -2034,27 +2044,86 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 	  Soln[lev].setVal(0.);
 	}
       Real b_dp = dt*density[0];   
-      const Real S_tol     = visc_tol;
-      const Real S_tol_abs = visc_abs_tol;
-      Real final_resnorm;
-      int  fill_bcs_for_gradient = 1; 
-      mgt_solver.set_maxorder(2);
-      mgt_solver.set_porous_coefficients(dalpha, a2, beta_dp, b_dp, xa, xb, nc_opt);    
 
-      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-          std::cout << tag 
-                    << "Linear solve init res=" << status.initial_residual_norm
-                    << std::endl;
-      }
-          
       int linsol_status = 0;
-      mgt_solver.solve(Soln_p.dataPtr(), Rhs_p.dataPtr(), S_tol, S_tol_abs, 
-		       fill_bcs_for_gradient, final_resnorm,
-                       linsol_status);
+      Real final_resnorm;
+
+#ifdef BL_USE_PETSC
+      bool use_petsc = true;
+      if (use_petsc) {
+          BL_ASSERT(pm_parent);
+
+          Layout& layout = pm_parent->GetLayout();
+          bool ioproc = ParallelDescriptor::IOProcessor();
+          MPI_Comm comm = ParallelDescriptor::Communicator();
+
+          Vec RhsV, SolnV;
+          Mat& J = layout.Jacobian();
+
+          const Array<IntVect>& ref_ratio = layout.RefRatio();
+          
+          MFTower RhsMFT(Rhs,ref_ratio);
+          MFTower SolnMFT(Soln,ref_ratio);
+
+          if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
+              BoxLib::Abort("MFT incompatible with layout");
+          }
+
+          PetscErrorCode ierr; 
+          ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
+          ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
+
+          
+          MFTower t;
+          layout.BuildMFTower(t,1,Rhs[0].nComp());
+          layout.VecToMFTower(t,RhsV,0);
+
+          t.AXPY(RhsMFT,-1);
+          if (ioproc) {
+              std::cout << "    max diff = " << t.norm() << std::endl;
+          }
+
+
+          Real resnorm;
+          ierr = VecNorm(RhsV,NORM_2,&resnorm);
+          if (ioproc) {
+              std::cout << "Resnorm = " << resnorm << std::endl;
+          }
+
+          KSP  ksp;
+          ierr = KSPCreate(comm,&ksp); CHKPETSC(ierr);
+          ierr = KSPSetOperators(ksp,J,J,DIFFERENT_NONZERO_PATTERN); CHKPETSC(ierr);
+          ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
+          ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
+
+          //ierr = PetscViewerSetFormat(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_ASCII_INDEX);
+          //ierr = VecView(SolnV,PETSC_VIEWER_STDOUT_WORLD);
+          BoxLib::Abort();
+      } 
+#endif
+
+      // For the moment, always follow with mg solve
+      {
+          const Real S_tol     = visc_tol;
+          const Real S_tol_abs = visc_abs_tol;
+          int  fill_bcs_for_gradient = 1; 
+          mgt_solver.set_maxorder(2);
+          mgt_solver.set_porous_coefficients(dalpha, a2, beta_dp, b_dp, xa, xb, nc_opt);    
+          
+          if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+              std::cout << tag 
+                        << "Linear solve init res=" << status.initial_residual_norm
+                        << std::endl;
+          }
+          
+          mgt_solver.solve(Soln_p.dataPtr(), Rhs_p.dataPtr(), S_tol, S_tol_abs, 
+                           fill_bcs_for_gradient, final_resnorm,
+                           linsol_status);
+      }
 
       if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
           std::cout << tag 
-                    << "Linear solve init res=" << status.initial_residual_norm
+                    << "Linear solve final res=" << status.initial_residual_norm
                     << std::endl;
       }
 

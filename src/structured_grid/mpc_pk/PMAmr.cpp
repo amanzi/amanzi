@@ -3,6 +3,31 @@
 #include <Observation.H>
 
 EventCoord PMAmr::event_coord;
+#ifdef BL_USE_PETSC
+Layout PMAmr::layout;
+#endif
+
+void
+PMAmr::CleanupStatics ()
+{
+#ifdef BL_USE_PETSC
+    layout.Clear();
+#endif
+}
+
+
+static bool initialized = false;
+PMAmr::PMAmr()
+    : Amr()
+{
+    if (!initialized) {
+        BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
+        initialized = true;
+    }
+#ifdef BL_USE_PETSC
+    layout.SetParent(this);
+#endif
+}
 
 Real
 process_events(bool& write_plotfile_after_step,

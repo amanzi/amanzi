@@ -35,6 +35,18 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     char** argv;
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
+
+#ifdef BL_USE_PETSC
+    std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
+    std::string petsc_file_str = "Petsc Options File";
+    std::string petsc_options_file;
+    if (input_parameter_list.isParameter(petsc_file_str))
+    {
+	petsc_options_file = Teuchos::getParameter<std::string>(input_parameter_list, petsc_file_str);
+    }
+    PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
+#endif
+
     if (input_parameter_list.isParameter("PPfile"))
       {
 	const std::string& PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");

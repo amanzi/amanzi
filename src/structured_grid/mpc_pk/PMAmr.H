@@ -4,12 +4,13 @@
 
 #include <Amr.H>
 #include <EventCoord.H>
+#include <Layout.H>
 
 class PMAmr
     : public Amr
 {
 public:
-    PMAmr() : Amr() {}
+    PMAmr();
     virtual void coarseTimeStep (Real stop_time);
     virtual void init (Real strt_time,
                        Real stop_time);
@@ -21,8 +22,15 @@ public:
 
     Real StartTime() const {return strt_time;}
 
+#ifdef BL_USE_PETSC
+    static Layout& GetLayout() {return layout;}
+protected:
+    static Layout layout;
+#endif
+
 protected:
     static EventCoord event_coord;
+    static void CleanupStatics ();
 
 private:
     //
