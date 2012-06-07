@@ -69,6 +69,7 @@ if (BUILD_TESTS)
 			  test/test_Mesh.cc
                           test/test_Maps.cc
 			  test/test_Hex.cc
+			  test/test_STK.cc
 		    LINK_LIBS
                           stk_mesh mesh_audit
                           ${UnitTest_LIBRARIES} )

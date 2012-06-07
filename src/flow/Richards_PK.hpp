@@ -48,6 +48,7 @@ class Richards_PK : public Flow_PK {
   int Advance(double dT_MPC); 
   int AdvanceToSteadyState();
   void InitializeAuxiliaryData();
+  void InitializeSteadySaturated();
 
   int AdvanceToSteadyState_Picard();
   int AdvanceToSteadyState_BackwardEuler();
@@ -59,7 +60,8 @@ class Richards_PK : public Flow_PK {
   void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   // methods for experimental time integration
-  int PicardStep(double T, double dT, double& dTnext);
+  int PicardTimeStep(double T, double dT, double& dTnext);
+  int AndersonAccelerationTimeStep(double T, double dT, double& dTnext);
   double ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du);
   double ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du);
   double ErrorNormPicardExperimental(const Epetra_Vector& uold, const Epetra_Vector& unew);

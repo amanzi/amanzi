@@ -344,7 +344,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       t1.start();
       fn.update_precon (t, u, h, errc);
       t1.stop();
-      std::cout << "Preconditioner, if necessary: " << t1 << std::endl;
+      // std::cout << "Preconditioner, if necessary: " << t1 << std::endl;
     }
  
 

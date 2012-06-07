@@ -47,16 +47,17 @@ SUITE (HexMesh)
 
     Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> meshdata(g.generate());
 
-    for (int p = 0; p < nproc; p++) {
-      if (me == p) {
-        std::cerr << std::endl;
-        std::cerr << ">>>>>> Process " << p << " Begin <<<<<<" << std::endl;
-        meshdata->to_stream(std::cerr, true);
-        std::cerr << ">>>>>> Process " << p << " End <<<<<<" << std::endl;
-        std::cerr << std::endl;
-      }
-      comm.Barrier();
-    }
+    // Disable printing - must check/verify, not very useful to just print
+    // for (int p = 0; p < nproc; p++) {
+    //   if (me == p) {
+    //     std::cerr << std::endl;
+    //     std::cerr << ">>>>>> Process " << p << " Begin <<<<<<" << std::endl;
+    //     meshdata->to_stream(std::cerr, true);
+    //     std::cerr << ">>>>>> Process " << p << " End <<<<<<" << std::endl;
+    //     std::cerr << std::endl;
+    //   }
+    //   comm.Barrier();
+    // }
 
     // need to have 1-based global indexes for stk::mesh
     Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
@@ -94,6 +95,8 @@ SUITE (HexMesh)
     comm.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
 
+
+
     // Check sets in a different test
     // stk::mesh::Part *side;
 
@@ -127,7 +130,9 @@ SUITE (HexMesh)
     // comm.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, jsize*ksize);
 
-    mesh->summary(std::cerr);
+
+    // Must check/verify, not just print
+    //  mesh->summary(std::cerr);
 
     Auditor audit("stk_mesh_hextest1_", mesh);
     audit();
@@ -161,7 +166,7 @@ SUITE (HexMesh)
 
     if (nproc > 1) {
 
-      mesh->summary(std::cerr);
+      //      mesh->summary(std::cerr);
 
       // all processes should have at least 1 but at most 8 shared nodes
 
@@ -272,7 +277,8 @@ SUITE (HexMesh)
         *mesh_stk = new Amanzi::AmanziMesh::Mesh_STK(&comm, 4, 2, 2);
 
     Teuchos::RCP<Epetra_CrsGraph> cgraph = mesh_stk->cellgraph();
-    cgraph->Print(std::cerr);
+    //    cgraph->Print(std::cerr);  // must check, not just print!
+    
 
     mesh_stk->redistribute();
 

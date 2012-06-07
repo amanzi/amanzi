@@ -68,11 +68,15 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
-  if (out.get() && ! native && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-    std::string xmlFileName("native_spec.xml"); 
-    *out << "Amanzi: writing translated parameter list to the XML file native_spec.xml" << std::endl;
+  if (! native && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) { 
+    std::string xmlFileName = new_list.get<std::string>("input file name");
+    std::string new_extension("_native_v2.xml");
+    size_t pos = xmlFileName.find(".xml");
+    xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
+    if (comm->MyPID() == 0)
+        printf("Amanzi: writing the translated parameter list to file %s.\n", xmlFileName.c_str());
+
     Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
-    //Teuchos::writeParameterListToXmlOStream(new_list, *out);
   }
 
 

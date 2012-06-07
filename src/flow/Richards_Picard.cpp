@@ -18,7 +18,7 @@ namespace AmanziFlow {
 * Makes one Picard step during transient time integration.
 * This is the experimental method.                                                 
 ****************************************************************** */
-int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
+int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
 {
   // p^{k-1} = solution_old, p^k = solution_new
   Epetra_Vector solution_old(*solution);
@@ -78,7 +78,7 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
           itrs, error, linear_residual, num_itrs);
     }
 
-    if (error < 1e-4 && itrs > 0) 
+    if (error < 1e-5 && itrs > 0) 
       break;
     else 
       solution_old = solution_new;
@@ -87,18 +87,16 @@ int Richards_PK::PicardStep(double Tp, double dTp, double& dTnext)
   if (itrs < 10) {
     *solution = solution_new;
     dTnext = dT * 1.2;
-    return itrs;
   } else if (itrs < 15) {
     *solution = solution_new;
     dTnext = dT;
-    return itrs;
   } else if (itrs < 19) {
     *solution = solution_new;
     dTnext = dT * 0.5;
-    *solution = solution_new;
+    throw itrs;
   }
 
-  throw itrs;
+  return itrs;
 }
 
 
