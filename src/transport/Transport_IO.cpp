@@ -35,7 +35,7 @@ void Transport_PK::ProcessParameterList()
   transport_list = parameter_list;
 
   // create verbosity list if it does not exist
-  if (!transport_list.isSublist("VerboseObject")) {
+  if (! transport_list.isSublist("VerboseObject")) {
     Teuchos::ParameterList verbosity_list;
     verbosity_list.set<std::string>("Verbosity Level", "none");
     transport_list.set("VerboseObject", verbosity_list);
