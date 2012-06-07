@@ -264,20 +264,20 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   // set up new time integration or solver
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    Teuchos::ParameterList solver_list = rp_list_.sublist("steady state time integrator").sublist("BDF2").sublist("BDF2 parameters");
-    if (solver_list.isSublist("VerboseObject"))
-        solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
+    Teuchos::ParameterList tmp_list = rp_list_.sublist("steady state time integrator").sublist("BDF2").sublist("BDF2 parameters");
+    if (! tmp_list.isSublist("VerboseObject"))
+        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(tmp_list));
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
 
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
-    Teuchos::ParameterList solver_list = rp_list_.sublist("steady state time integrator").sublist("BDF1").sublist("BDF1 parameters");
-    if (solver_list.isSublist("VerboseObject"))
-        solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
+    Teuchos::ParameterList tmp_list = rp_list_.sublist("steady state time integrator").sublist("BDF1").sublist("BDF1 parameters");
+    if (! tmp_list.isSublist("VerboseObject"))
+        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
+    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
 
@@ -365,22 +365,22 @@ void Richards_PK::InitTransient(double T0, double dT0)
   if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
     if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset BDF2 is to delete it.
 
-    Teuchos::ParameterList solver_list = rp_list_.sublist("transient time integrator").sublist("BDF2").sublist("BDF2 parameters");
-    if (solver_list.isSublist("VerboseObject"))
-        solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
+    Teuchos::ParameterList tmp_list = rp_list_.sublist("transient time integrator").sublist("BDF2").sublist("BDF2 parameters");
+    if (! tmp_list.isSublist("VerboseObject"))
+        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(tmp_list));
     bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
 
   } else if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF1) {
     if (bdf1_dae != NULL) delete bdf1_dae;  // the only way to reset BDF1 is to delete it
 
-    Teuchos::ParameterList solver_list = rp_list_.sublist("transient time integrator").sublist("BDF1").sublist("BDF1 parameters");
-    if (solver_list.isSublist("VerboseObject"))
-        solver_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
+    Teuchos::ParameterList tmp_list = rp_list_.sublist("transient time integrator").sublist("BDF1").sublist("BDF1 parameters");
+    if (! tmp_list.isSublist("VerboseObject"))
+        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(solver_list));
+    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
     bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
 
