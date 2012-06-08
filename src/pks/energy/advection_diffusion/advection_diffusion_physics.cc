@@ -82,12 +82,8 @@ void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
   Teuchos::RCP<CompositeVector> thermal_conductivity =
     S->GetFieldData("thermal_conductivity", "energy");
 
-  for (int c=0; c!=Ke_.size(); ++c) {
-    Ke_[c](0,0) = (*thermal_conductivity)("cell",0,c);
-  }
-
   // calculate the div-grad operator, apply it to temperature, and add to residual
-  matrix_->CreateMFDstiffnessMatrices(Ke_);
+  matrix_->CreateMFDstiffnessMatrices(*thermal_conductivity);
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();

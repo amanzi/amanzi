@@ -73,8 +73,8 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
   S->RequireGravity();
 
   // -- work vectors
-  S->RequireField("rel_perm_faces", "flow", AmanziMesh::FACE, 1, true);
-  S->GetRecord("rel_perm_faces","flow")->set_io_vis(false);
+  S->RequireField("numerical_rel_perm", "flow", names2, locations2, 1, true);
+  S->GetRecord("numerical_rel_perm","flow")->set_io_vis(false);
 
   // abs perm tensor
   variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
@@ -185,8 +185,15 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 
   // rel perm is special -- if the mode is symmetric, it needs to be
   // initialized to 1
-  S->GetFieldData("rel_perm_faces","flow")->PutScalar(1.0);
-  S->GetRecord("rel_perm_faces","flow")->set_initialized();
+  S->GetFieldData("numerical_rel_perm","flow")->PutScalar(1.0);
+  S->GetRecord("numerical_rel_perm","flow")->set_initialized();
+
+  // absolute perm
+  SetAbsolutePermeabilityTensor_(S);
+
+  // operators
+  matrix_->CreateMFDmassMatrices(K_);
+  preconditioner_->CreateMFDmassMatrices(K_);
 
   // initialize the timesteppper
   state_to_solution(S, solution_);
@@ -259,14 +266,14 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
   // update the flux
   UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm_faces =
-    S->GetFieldData("rel_perm_faces");
+  Teuchos::RCP<const CompositeVector> rel_perm =
+    S->GetFieldData("numerical_rel_perm");
   Teuchos::RCP<const CompositeVector> pres =
     S->GetFieldData("pressure");
   Teuchos::RCP<CompositeVector> darcy_flux =
     S->GetFieldData("darcy_flux", "flow");
 
-  matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
+  matrix_->CreateMFDstiffnessMatrices(*rel_perm);
   matrix_->DeriveFlux(*pres, darcy_flux);
   AddGravityFluxesToVector_(S, darcy_flux);
 };
@@ -283,34 +290,39 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
 // relative permeability methods
 void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  SetAbsolutePermeabilityTensor_(S);
+  // this isn't needed at this point -- the abs perm is set once Even
+  // if it is needed, it needs to be fixed because the mass matrices
+  // are already calculated and are cached -- they would have to be
+  // thrown away and recalculated. --etc
+  // SetAbsolutePermeabilityTensor_(S);
 
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   rel_perm->ScatterMasterToGhosted();
 
   Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
   Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
-  Teuchos::RCP<CompositeVector> rel_perm_faces = S->GetFieldData("rel_perm_faces", "flow");
+  Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
 
+  num_rel_perm->PutScalar(1.0);
   if (Krel_method_ == FLOW_RELATIVE_PERM_CENTERED) {
     // symmetric method, no faces needed
     for (int c=0; c!=K_.size(); ++c) {
-      K_[c] *= (*rel_perm)(c) * (*n_liq)(c) / (*visc)(c);
+      (*num_rel_perm)("cell",0,c) = (*rel_perm)("cell",0,c) * (*n_liq)(c) / (*visc)(c);
     }
   } else {
     // faces needed
     if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
-      CalculateRelativePermeabilityUpwindGravity_(S, *rel_perm, rel_perm_faces);
+      CalculateRelativePermeabilityUpwindGravity_(S, *rel_perm, num_rel_perm);
     } else if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
       Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
       CalculateRelativePermeabilityUpwindFlux_(S, *flux, *rel_perm,
-              rel_perm_faces);
+              num_rel_perm);
     } else if (Krel_method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-      CalculateRelativePermeabilityArithmeticMean_(S, *rel_perm, rel_perm_faces);
+      CalculateRelativePermeabilityArithmeticMean_(S, *rel_perm, num_rel_perm);
     }
     // update K with just rho/mu
     for (int c=0; c!=K_.size(); ++c) {
-      K_[c] *= (*n_liq)(c) / (*visc)(c);
+      (*num_rel_perm)("cell",0,c) *= (*n_liq)(c) / (*visc)(c);
     }
   }
 };

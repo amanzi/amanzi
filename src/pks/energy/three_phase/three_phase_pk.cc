@@ -117,6 +117,7 @@ ThreePhase::ThreePhase(Teuchos::ParameterList& plist,
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->mesh()));
   matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
+  matrix_->CreateMFDmassMatrices(Ke_);
 
   // preconditioner
   // NOTE: may want to allow these to be the same/different?
@@ -124,6 +125,8 @@ ThreePhase::ThreePhase(Teuchos::ParameterList& plist,
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->mesh()));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
+  preconditioner_->CreateMFDmassMatrices(Ke_);
+
   Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
   preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
 };

@@ -95,41 +95,17 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   //S->RequireGravity();
   
   // -- work vectors
-  S->RequireField("rel_perm_faces", "overland_flow", AmanziMesh::FACE, 1, true);
-  S->GetRecord("rel_perm_faces","overland_flow")->set_io_vis(false);
+  S->RequireField("numerical_rel_perm", "overland_flow", names2,
+                  locations2, 1, true);
+  S->GetRecord("numerical_rel_perm","overland_flow")->set_io_vis(false);
 
   // abs perm tensor
   variable_abs_perm_ = false;
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_.resize(c_owned);
   for (int c=0; c!=c_owned; ++c) { 
     K_[c].init( S->mesh()->space_dimension(), 1 );
   }
-  
-  // // -- water retention models
-  // Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Models");
-  // // count the number of region-model pairs
-  // int wrm_count = 0;
-  // for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); 
-  //      i!=wrm_plist.end(); ++i) {
-  //   if ( wrm_plist.isSublist(wrm_plist.name(i)) ) {
-  //     wrm_count++;
-  //   } else {
-  //     std::string message("OverlandFlow: water retention model contains an entry that is not a sublist.");
-  //     Exceptions::amanzi_throw(message);
-  //   }
-  // }
-  // wrm_.resize(wrm_count);
-
-  // // instantiate the region-model pairs
-  // FlowRelations::WRMFactory wrm_factory;
-  // int iblock = 0;
-  // for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
-  //   Teuchos::ParameterList wrm_region_list = wrm_plist.sublist(wrm_plist.name(i));
-  //   std::string region = wrm_region_list.get<std::string>("Region");
-  //   wrm_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
-  //   iblock++;
-  // }
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
@@ -137,22 +113,6 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   bc_pressure_ = bc_factory.CreatePressure();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
-  // head boundary conditions not yet implemented, as they depend on constant density
-  // bc_head_ = bc_factory.CreateStaticHead(0.0, 0.0, g);
-
-  // // Relative permeability method
-  // string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
-  // bool symmetric = false;
-  // if (method_name == "Upwind with gravity") {
-  //   Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  // } else if (method_name == "Cell centered") {
-  //   Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
-  //   symmetric = true;
-  // } else if (method_name == "Upwind with Darcy flux") {
-  //   Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  // } else if (method_name == "Arithmetic mean") {
-  //   Krel_method_ = FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
-  // }
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = flow_plist_.sublist("Diffusion");
@@ -187,15 +147,22 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
 
   // declare secondary variables initialized, as they will be done by
   // the commit_state call
-  //S->GetRecord("saturation_liquid",    "overland_flow")->set_initialized();
   S->GetRecord("relative_permeability","overland_flow")->set_initialized();
   S->GetRecord("darcy_flux",           "overland_flow")->set_initialized();
   S->GetRecord("darcy_velocity",       "overland_flow")->set_initialized();
 
-  // rel perm is special -- if the mode is symmetric, it needs to be
-  // initialized to 1
-  S->GetFieldData("rel_perm_faces","overland_flow")->PutScalar(1.0);
-  S->GetRecord   ("rel_perm_faces","overland_flow")->set_initialized();
+  // rel perm is special -- we'll treat it with both cells and faces
+  S->GetFieldData("numerical_rel_perm","overland_flow")->PutScalar(1.0);
+  S->GetRecord   ("numerical_rel_perm","overland_flow")->set_initialized();
+
+  // set the abs perm tensor to 1
+  for (int c=0; c!=K_.size(); ++c) {
+    K_[c](0,0) = 1.0;
+  }
+
+  // initialize operators
+  matrix_->CreateMFDmassMatrices(K_);
+  preconditioner_->CreateMFDmassMatrices(K_);
 
   // initialize the timestepper
   state_to_solution(S, solution_);
@@ -273,17 +240,16 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
   // update the flux
   UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm_faces = S->GetFieldData("rel_perm_faces");
+  Teuchos::RCP<const CompositeVector> numerical_rel_perm =
+    S->GetFieldData("numerical_rel_perm");
 
-  Teuchos::RCP<const CompositeVector> pres_elev      = S->GetFieldData("pres_elev");
-  Teuchos::RCP<      CompositeVector> darcy_flux     = S->GetFieldData("darcy_flux", "overland_flow");
-  
-  matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
+  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", "overland_flow");
+
+  matrix_->CreateMFDstiffnessMatrices(*numerical_rel_perm);
   matrix_->DeriveFlux(*pres_elev, darcy_flux);
-  //matrix_->DeriveFlux(*pres, darcy_flux);
-  //AddGravityFluxesToVector_(S, darcy_flux);
 
-
+  // cruft to dump overland flow solution
   std::stringstream filename;
   filename << "overland_pressure_" << S->time();
   std::string fname = filename.str();
@@ -291,7 +257,6 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("overland_pressure");
   Teuchos::RCP<const Epetra_MultiVector> pres_mv = pres->ViewComponent("cell", false);
   EpetraExt::MultiVectorToMatrixMarketFile(fname.c_str(), *pres_mv,"abc","abc",false);
-
 };
 
 // -- update diagnostics -- used prior to vis
@@ -304,111 +269,21 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
 // relative permeability methods
 void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  
-  // set absolute permeability
-  SetAbsolutePermeabilityTensor_(S);
-
   // get reference to relative permeability
-  Teuchos::RCP<const CompositeVector> rcp_rel_perm       = S->GetFieldData("relative_permeability");
-  Teuchos::RCP<      CompositeVector> rcp_rel_perm_faces = S->GetFieldData("rel_perm_faces", "overland_flow");
-  
+  Teuchos::RCP<const CompositeVector> rcp_rel_perm =
+    S->GetFieldData("relative_permeability");
+  Teuchos::RCP<CompositeVector> rcp_numerical_rel_perm =
+    S->GetFieldData("numerical_rel_perm", "overland_flow");
+
   const CompositeVector & rel_perm       = *rcp_rel_perm ;
-  CompositeVector       & rel_perm_faces = *rcp_rel_perm_faces ;
-  
-  rel_perm . ScatterMasterToGhosted();
-  
+  CompositeVector       & numerical_rel_perm = *rcp_numerical_rel_perm ;
+
+  rel_perm.ScatterMasterToGhosted();
+
   Teuchos::RCP<const CompositeVector> rcp_flux = S->GetFieldData("darcy_flux");
   const CompositeVector & flux = *rcp_flux ;
-  Calculate_Relative_Permeability_Upwind_Flux_(S, flux, rel_perm, rel_perm_faces);
+  Calculate_Relative_Permeability_Upwind_Flux_(S, flux, rel_perm, numerical_rel_perm);
 };
-
-// // relative permeability methods
-// void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  
-//   // set absolute permeability
-//   SetAbsolutePermeabilityTensor_(S);
-
-//   // get reference to relative permeability
-//   Teuchos::RCP<const CompositeVector> rcp_rel_perm       = S->GetFieldData("relative_permeability");
-//   Teuchos::RCP<      CompositeVector> rcp_rel_perm_faces = S->GetFieldData("rel_perm_faces", "overland_flow");
-  
-//   const CompositeVector & rel_perm       = *rcp_rel_perm ;
-//   CompositeVector       & rel_perm_faces = *rcp_rel_perm_faces ;
-  
-//   rel_perm . ScatterMasterToGhosted();
-  
-//   double rho  = *(S->GetScalarData("molar_density_liquid"));
-//   double visc = *(S->GetScalarData("viscosity_liquid"));
-  
-//   if (Krel_method_ == FLOW_RELATIVE_PERM_CENTERED) {
-    
-//     // symmetric method, no faces needed
-//     double scaling = rho / visc;
-//     for (int c=0; c!=K_.size(); ++c) {
-//       K_[c] *= rel_perm(c) * scaling ;
-//     }
-    
-//   } else {
-    
-//     // faces needed
-//     if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
-
-//       Calculate_Relative_Permeability_Upwind_Gravity_(S, rel_perm, rel_perm_faces);
-      
-//     } else if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-      
-//       Teuchos::RCP<const CompositeVector> rcp_flux = S_->GetFieldData("darcy_flux");
-//       const CompositeVector & flux = *rcp_flux ;
-//       Calculate_Relative_Permeability_Upwind_Flux_(S, flux, rel_perm, rel_perm_faces);
-      
-//     } else if (Krel_method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-      
-//       Calculate_Relative_Permeability_Arithmetic_Mean_(S, rel_perm, rel_perm_faces);
-
-//     }
-    
-//     // update K with just rho/mu
-//     for (int c=0; c!=K_.size(); ++c) {
-//       K_[c] *= rho / visc;
-//     }
-    
-//   }
-// };
-
-
-// /* ******************************************************************
-// * Defines upwinded relative permeabilities for faces using gravity.
-// ****************************************************************** */
-// void OverlandFlow::Calculate_Relative_Permeability_Upwind_Gravity_( const Teuchos::RCP<State> & S,
-//                                                                     const CompositeVector & rel_perm_cells,
-//                                                                     CompositeVector & rel_perm_faces ) {
-//   AmanziMesh::Entity_ID_List faces;
-//   std::vector<int> dirs;
-  
-//   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-//   AmanziGeometry::Point gravity(g_vec->MyLength());
-//   for (int i=0; i!=g_vec->MyLength(); ++i) { 
-//     gravity[i] = (*g_vec)[i];
-//   }
-  
-//   rel_perm_faces.PutScalar(0.0);
-//   int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-//   for (int c=0; c!=c_owned; ++c) {
-//     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-//     AmanziGeometry::Point Kgravity = K_[c] * gravity;
-
-//     for (int n=0; n!=faces.size(); ++n) {
-//       int f = faces[n];
-//       const AmanziGeometry::Point& normal = S->mesh()->face_normal(f);
-//       if ((normal * Kgravity) * dirs[n] >= 0.0) {
-//         rel_perm_faces(f) = rel_perm_cells(c);
-//       } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-//         rel_perm_faces(f) = rel_perm_cells(c);
-//       }
-//     }
-//   }
-// }
 
 /* ******************************************************************
 * Defines upwinded relative permeabilities for faces using a given flux.
@@ -416,51 +291,32 @@ void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
 void OverlandFlow::Calculate_Relative_Permeability_Upwind_Flux_( const Teuchos::RCP<State>& S,
                                                                  const CompositeVector & flux, 
                                                                  const CompositeVector & rel_perm_cells,
-                                                                 CompositeVector & rel_perm_faces ) {
+                                                                 CompositeVector & numerical_rel_perm ) {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  rel_perm_faces.PutScalar(0.0);
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  numerical_rel_perm.PutScalar(0.0);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
       if (flux(n) * dirs[n] >= 0.0) {
-        rel_perm_faces(f) = rel_perm_cells(c);
+        numerical_rel_perm(f) = rel_perm_cells(c);
       } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-        rel_perm_faces(f) = rel_perm_cells(c);
+        numerical_rel_perm(f) = rel_perm_cells(c);
       }
     }
   }
 }
 
 
-// /* ******************************************************************
-// * Defines relative permeabilities for faces via arithmetic averaging.
-// ****************************************************************** */
-// void OverlandFlow::Calculate_Relative_Permeability_Arithmetic_Mean_( const Teuchos::RCP<State>& S,
-//                                                                      const CompositeVector & rel_perm_cells,
-//                                                                      CompositeVector & rel_perm_faces ) {
-//   AmanziMesh::Entity_ID_List cells;
-  
-//   rel_perm_faces.PutScalar(0.0);
-//   int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-//   for (int f=0; f!=f_owned; ++f) {
-//     S->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-//     for (int n=0; n!=cells.size(); ++n) { 
-//       rel_perm_faces(f) += rel_perm_cells(cells[n]);
-//     }
-//     rel_perm_faces(f) /= cells.size();
-//   }
-// }
-
 void OverlandFlow::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
                                                    const Teuchos::RCP<CompositeVector> & pres) {
   AmanziMesh::Entity_ID_List cells;
   
-  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
     S->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -562,14 +418,14 @@ void OverlandFlow::TestOneSetElevation_( const Teuchos::RCP<State>& S ) {
   CompositeVector & elev = *(S ->GetFieldData("elevation","overland_flow"));
   
   // add elevation to pres_elev, cell dofs
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     Amanzi::AmanziGeometry::Point pc = S->mesh()->cell_centroid( c ) ;
     elev("cell",0,c) = TestOneElevation_( pc[0], pc[1] ) ;
   }  
 
   // add elevation to pres_elev, cell dofs
-  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=f_owned; ++f) {
     Amanzi::AmanziGeometry::Point pf = S->mesh()->face_centroid( f ) ;    
     elev("face",0,f) = TestOneElevation_( pf[0], pf[1] ) ;
@@ -631,14 +487,14 @@ void OverlandFlow::TestTwoSetElevation_( const Teuchos::RCP<State>& S ) {
   CompositeVector & elev = *(S ->GetFieldData("elevation","overland_flow"));
   
   // add elevation to pres_elev, cell dofs
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     Amanzi::AmanziGeometry::Point pc = S->mesh()->cell_centroid( c ) ;
     elev("cell",0,c) = TestTwoElevation_( pc[0], pc[1] ) ;
   }  
 
   // add elevation to pres_elev, cell dofs
-  int f_owned = S->mesh()->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=f_owned; ++f) {
     Amanzi::AmanziGeometry::Point pf = S->mesh()->face_centroid( f ) ;    
     elev("face",0,f) = TestTwoElevation_( pf[0], pf[1] ) ;
