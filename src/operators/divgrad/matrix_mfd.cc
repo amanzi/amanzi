@@ -52,11 +52,11 @@ void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
       } else {
         ok = mfd.darcy_mass_inverse(c, K[c], Mff);
       }
-    } else if (mfd3d_method == MFD_TWO_POINT_FLUX) {
+    } else if (method_ == MFD_TWO_POINT_FLUX) {
       ok = mfd.darcy_mass_inverse_diagonal(c, K[c], Mff);
-    } else if (mfd3d_method == MFD_SUPPORT_OPERATOR) {
+    } else if (method_ == MFD_SUPPORT_OPERATOR) {
       ok = mfd.darcy_mass_inverse_SO(c, K[c], Mff);
-    } else if (mfd3d_method == MFD_OPTIMIZED) {
+    } else if (method_ == MFD_OPTIMIZED) {
       ok = mfd.darcy_mass_inverse_optimized(c, K[c], Mff);
     } else {
       ok = mfd.darcy_mass_inverse(c, K[c], Mff);
@@ -100,19 +100,27 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
-    Teuchos::SerialDenseMatrix<int, double>& Bff(nfaces,nfaces);
+    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (Krel_cells[c] == 1.0) {
+    if (!Krel.has_name("face")) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * Krel("face",0,faces[m]);
+          Bff(m, n) = Mff(m,n) * Krel("cell",0,c);
         }
       }
     } else {
-      for (int n=0; n!=nfaces; ++n) {
-        for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * Krel("cell",0,c) * Krel("face",0,faces[m]);
+      if (Krel("cell",0,c) == 1.0) {
+        for (int n=0; n!=nfaces; ++n) {
+          for (int m=0; m!=nfaces; ++m) {
+            Bff(m, n) = Mff(m,n) * Krel("face",0,faces[m]);
+          }
+        }
+      } else {
+        for (int n=0; n!=nfaces; ++n) {
+          for (int m=0; m!=nfaces; ++m) {
+            Bff(m, n) = Mff(m,n) * Krel("cell",0,c) * Krel("face",0,faces[m]);
+          }
         }
       }
     }

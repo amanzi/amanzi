@@ -125,10 +125,10 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_);
-  Teuchos::RCP<const CompositeVector> rel_perm_faces =
-    S_next_->GetFieldData("rel_perm_faces");
+  Teuchos::RCP<const CompositeVector> numerical_rel_perm =
+    S_next_->GetFieldData("numerical_rel_perm");
 
-  preconditioner_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
+  preconditioner_->CreateMFDstiffnessMatrices(numerical_rel_perm);
   preconditioner_->CreateMFDrhsVectors();
 
   Teuchos::RCP<const CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume");

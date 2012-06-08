@@ -19,11 +19,11 @@ void Permafrost::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 
   // update the rel perm on faces according to the scheme of choice
   UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm_faces =
-    S->GetFieldData("rel_perm_faces", "flow");
+  Teuchos::RCP<const CompositeVector> num_rel_perm =
+    S->GetFieldData("numerical_rel_perm", "flow");
 
   // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
+  matrix_->CreateMFDstiffnessMatrices(*num_rel_perm);
   matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_(S, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);

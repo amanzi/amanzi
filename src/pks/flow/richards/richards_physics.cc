@@ -19,11 +19,11 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm_faces =
-    S->GetFieldData("rel_perm_faces", "flow");
+  Teuchos::RCP<const CompositeVector> rel_perm =
+    S->GetFieldData("numerical_rel_perm", "flow");
 
   // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(K_, rel_perm_faces);
+  matrix_->CreateMFDstiffnessMatrices(*rel_perm);
   matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_(S, matrix_);
   std::cout << "BC in res: " << bc_values_[3] << ", " << bc_values_[5] << std::endl;
