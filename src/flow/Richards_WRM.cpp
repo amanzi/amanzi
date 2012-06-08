@@ -30,6 +30,7 @@ void Richards_PK::CalculateRelativePermeabilityCell(const Epetra_Vector& p)
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
+for ( double pc=0.0; pc < 1000; pc += 0.05) cout << pc << " " << WRM[mb]->k_relative(pc) << endl; exit(0);
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[*i];
       (*Krel_cells)[*i] = WRM[mb]->k_relative(pc);

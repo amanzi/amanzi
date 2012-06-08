@@ -336,7 +336,7 @@ void Transport_PK::Advance(double dT_MPC)
     tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
 
     if (MyPID == 0) 
-        printf("Transport PK: min/max of a tracer: %9.6g %9.6g\n", tccmin, tccmax);
+        printf("Transport PK: min/max of a tracer: %9.6g %9.6g  at T(sec) %12.7g\n", tccmin, tccmax, T_physics);
   }
 
   // DEBUG

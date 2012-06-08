@@ -73,6 +73,9 @@ include(InstallManager)
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
+# Python modules
+add_subdirectory(tools/py_lib)
+
 # Define a list of all enabled TPLs. Must do this AFTER all the 
 # CMakelist.txt files have been processed!
 get_property(AMANZI_ENABLED_TPLS GLOBAL PROPERTY PACKAGES_FOUND)

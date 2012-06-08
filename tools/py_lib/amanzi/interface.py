@@ -7,7 +7,58 @@ from amanzi import input_tree
 
 # ############################################################################ #
 
+class AmanziDataOutput:
+
+  CYCLE_REGEX_PATTERN=r'.h5.(\d+).xmf'
+  XMF_TIME_TAG='Time'
+  XMF_TIME_VALUE_ATTR='Value'
+  XMF_DATASET_TAG='Attribute'
+  XMF_DATASET_NAME_ATTR='Name'
+
+  def __init__(self,xmf_filename,directory=None):
+
+    from xml.etree import ElementTree as ETree
+    import re
+   
+    
+    # Set to current directory if not set
+    try:
+      self.output_dir=os.path.abspath(directory)
+    except:
+      self.output_dir=os.getcwd()
+
+    # Set filename to the full path
+    self.filename=os.path.abspath(self.output_dir+os.sep+xmf_filename)
+
+    # Define the cycle
+    base_file=os.path.basename(self.filename)
+    self.cycle=int(re.search(self.CYCLE_REGEX_PATTERN,base_file).group(1))
+
+    # Search for the XMF file need to open it with ElementTree
+    try:
+      tree=ETree.parse(self.filename)
+    except IOError:
+      print 'Failed to open:' + self.filename
+      raise
+    except:
+      raise
+
+    # Find the time
+    time_elem=tree.getiterator(tag=self.XMF_TIME_TAG)[0]
+    self.time=float(time_elem.get(self.XMF_TIME_VALUE_ATTR))
+
+    # Now find all the datasets
+    self.datasets = []
+    dataset_iter=tree.getiterator(tag=self.XMF_DATASET_TAG)
+    for elem in tree.getiterator(tag=self.XMF_DATASET_TAG):
+      self.datasets.append(elem.get(self.XMF_DATASET_NAME_ATTR))
+
+    
+
 class AmanziInterface:
+
+  AMANZI_CHECKPOINT_REGEX=r'checkpoint\d+.h5'
+  AMANZI_DATAFILE_REGEX=r'_data.h5'
 
   def __init__(self,binary=None,input=None,output=None,error=None,mpiexec='mpiexec'):
 
@@ -20,6 +71,9 @@ class AmanziInterface:
     self.nprocs=0
     self.exit_code=None
     self.args=[]
+
+    self.data_files=[] 
+
 
   def run(self):
     import time
@@ -114,6 +168,8 @@ class AmanziInterface:
     else:
       stderr_fh.close()
 
+      
+
     return pipe.returncode
 
   def input_option(self):
@@ -135,7 +191,6 @@ class AmanziInterface:
       print amanzi.mpiexec + ' does not exist or is not readable or is not executbale'
 
     return ok_flag
-
 
   def _check_binary(self):
     from os import path,access, R_OK, X_OK
@@ -169,7 +224,30 @@ class AmanziInterface:
     else:
       print amanzi.input+ ' does not exist or is not readable'
 
-    return ok_flag  
+    return ok_flag
+
+  def find_data_files(self,basename,directory=None):
+    import glob
+    
+    try:
+      output_xmf_regex=basename+'_data.h5'+'.[0-9]*'+'.xmf'
+    except: 
+      print 'Failed to build XMF output regular expression pattern'
+      raise
+
+    try:
+      output_xmf_regex=directory+os.sep+output_xmf_regex
+    except:
+      pass
+
+    print 'output_xmf_regex='+output_xmf_regex
+
+    for output in glob.glob(output_xmf_regex):
+     print 'File='+output 
+     self.data_files.append(AmanziDataOutput(output))
+
+    return self.data_files
+
 
 if __name__ == '__main__':
 

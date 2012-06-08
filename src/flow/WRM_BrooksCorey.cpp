@@ -43,7 +43,7 @@ WRM_BrooksCorey::WRM_BrooksCorey(
     double pc0_3 = pc0_2 * pc0;
 
     a_ = (3 * k0 - k0p * pc0) / pc0_2;
-    b_ = (3 * k0p * pc0 - 2 * k0) / pc0_3;
+    b_ = (k0p * pc0 - 2 * k0) / pc0_3;
   }
 }
 
@@ -55,10 +55,10 @@ WRM_BrooksCorey::WRM_BrooksCorey(
 ****************************************************************** */
 double WRM_BrooksCorey::k_relative(double pc)
 {
-  if (pc >= pc0_) {
-    return pow(alpha_ * pc, factor_);
-  } else if (pc <= 0.0) {
+  if (pc <= 0.0) {
     return 1.0;
+  } else if (pc >= pc0_) {
+    return pow(alpha_ * pc, factor_);
   } else {
     double pc_2 = pc * pc;
     double pc_3 = pc_2 * pc;
