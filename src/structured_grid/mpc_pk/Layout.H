@@ -57,7 +57,7 @@ struct MFTower
                 int                    nGrow=0);
 
     int size() const {return mft.size();}
-    IntVect refRatio(int lev) const {return ref_ratio[lev];} 
+    const IntVect& refRatio(int lev) const {return ref_ratio[lev];} 
     MultiFab& operator[](int i) {return mft[i];}
     const MultiFab& operator[](int i) const {return mft[i];}
 

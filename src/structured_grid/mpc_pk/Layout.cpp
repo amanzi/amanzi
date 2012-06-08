@@ -199,8 +199,8 @@ MFTower::norm() const // currently only max norm supported
             fab.resize(vbox,1);
             fab.copy(mft[lev][mfi]);
             if (lev<nLevs-1) {
-                BoxArray cba = BoxArray(mft[lev-1].boxArray()).refine(refRatio(lev));
-                std::vector< std::pair<int,Box> > isects = cba.intersections(vbox);
+                BoxArray cfba = BoxArray(mft[lev+1].boxArray()).coarsen(refRatio(lev));
+                std::vector< std::pair<int,Box> > isects = cfba.intersections(vbox);
                 for (int i = 0; i < isects.size(); i++)
                 {
                     Box ovlp = isects[i].second & vbox;
@@ -526,17 +526,27 @@ Layout::MFTowerToVec(Vec&           V,
         {
             // NOTE: We built the node numbering so that the following operation works correctly
             const Box& vbox = mfi.validbox();
-            int ni = vbox.numPts();
 
-            ifab.resize(vbox,1);
-            ifab.copy(nodeIds[lev][mfi]);
-            const int* ix = ifab.dataPtr();
+            BoxArray ba(vbox);
+            if (lev<nLevs-1) {
+                BoxArray cfba = BoxArray(mft[lev+1].boxArray()).coarsen(refRatio[lev]);
+                ba = BoxLib::complementIn(vbox,cfba);
+            }
 
-            fab.resize(vbox,1);
-            fab.copy(mft[lev][mfi]);
-            const Real* y = fab.dataPtr();
+            for (int i=0; i<ba.size(); ++i) {
+                const Box& box = ba[i];
+                int ni = box.numPts();
 
-            ierr = VecSetValues(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);
+                ifab.resize(box,1);
+                ifab.copy(nodeIds[lev][mfi]);
+                const int* ix = ifab.dataPtr();
+                
+                fab.resize(box,1);
+                fab.copy(mft[lev][mfi]);
+                const Real* y = fab.dataPtr();
+                
+                ierr = VecSetValues(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);                
+            }
         }
     }
     ierr = VecAssemblyBegin(V); CHKPETSC(ierr);
@@ -559,27 +569,40 @@ Layout::VecToMFTower(MFTower&   mft,
 
     FArrayBox fab;
     IntFab ifab;
-    for (int lev=0; lev<nLevs; ++lev)
-    {
-        for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
-        {
-            // NOTE: We built the node numbering so that the following operation works correctly
-            const Box& vbox = mfi.validbox();
-            int ni = vbox.numPts();
-
-            ifab.resize(vbox,1);
-            ifab.copy(nodeIds[lev][mfi]);
-            const int* ix = ifab.dataPtr();
-
-            fab.resize(vbox,1);
-            fab.copy(mft[lev][mfi]);
-            const Real* y = fab.dataPtr();
-
-            ierr = VecSetValues(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);
-        }
-    }
     ierr = VecAssemblyBegin(V); CHKPETSC(ierr);
     ierr = VecAssemblyEnd(V); CHKPETSC(ierr);
+    for (int lev=0; lev<nLevs; ++lev)
+    {
+        if (mft[lev].nGrow()) {
+            mft[lev].setBndry(0);
+        }
+
+        for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
+        {
+            const Box& vbox = mfi.validbox();
+            BoxArray ba(vbox);
+            if (lev<nLevs-1) {
+                BoxArray cfba = BoxArray(mft[lev+1].boxArray()).coarsen(refRatio[lev]);
+                ba = BoxLib::complementIn(vbox,cfba);
+            }
+
+            for (int i=0; i<ba.size(); ++i) {
+                const Box& box = ba[i];
+                int ni = box.numPts();
+
+                ifab.resize(box,1);
+                ifab.copy(nodeIds[lev][mfi]);
+                const int* ix = ifab.dataPtr();
+                
+                fab.resize(box,1);
+                fab.copy(mft[lev][mfi]);
+                Real* y = fab.dataPtr();
+
+                ierr = VecGetValues(V,ni,ix,y); CHKPETSC(ierr);
+                mft[lev][mfi].copy(fab);
+            }
+        }
+    }
     return ierr;
 }
 

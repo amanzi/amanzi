@@ -2055,13 +2055,14 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
           Layout& layout = pm_parent->GetLayout();
           bool ioproc = ParallelDescriptor::IOProcessor();
+          int myproc = ParallelDescriptor::MyProc();
           MPI_Comm comm = ParallelDescriptor::Communicator();
 
           Vec RhsV, SolnV;
           Mat& J = layout.Jacobian();
 
           const Array<IntVect>& ref_ratio = layout.RefRatio();
-          
+
           MFTower RhsMFT(Rhs,ref_ratio);
           MFTower SolnMFT(Soln,ref_ratio);
 
@@ -2072,17 +2073,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           PetscErrorCode ierr; 
           ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
           ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
-
-          
-          MFTower t;
-          layout.BuildMFTower(t,1,Rhs[0].nComp());
-          layout.VecToMFTower(t,RhsV,0);
-
-          t.AXPY(RhsMFT,-1);
-          if (ioproc) {
-              std::cout << "    max diff = " << t.norm() << std::endl;
-          }
-
 
           Real resnorm;
           ierr = VecNorm(RhsV,NORM_2,&resnorm);
@@ -2096,9 +2086,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
           ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
 
-          //ierr = PetscViewerSetFormat(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_ASCII_INDEX);
-          //ierr = VecView(SolnV,PETSC_VIEWER_STDOUT_WORLD);
-          BoxLib::Abort();
+          // TODO: Compare this result with Soln computed below...
       } 
 #endif
 
