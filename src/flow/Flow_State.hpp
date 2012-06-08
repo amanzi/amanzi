@@ -73,6 +73,7 @@ class Flow_State {
   Epetra_Vector& ref_lambda() { return *lambda_; }  
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux_; }
   Epetra_MultiVector& ref_darcy_velocity() { return *darcy_velocity_; }
+  const AmanziGeometry::Point& ref_gravity() { return *gravity_; }
 
   Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability_; }
   Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability_; }

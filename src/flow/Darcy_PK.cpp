@@ -371,6 +371,7 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 void Darcy_PK::AddTimeDerivativeSpecificStorage(
     Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
 {
+  double g = fabs(gravity()[dim - 1]);
   const Epetra_Vector& specific_storage = FS->ref_specific_storage();
 
   std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
@@ -378,7 +379,7 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume / dT_prec * specific_storage[c];
+    double factor = volume * specific_storage[c] / (rho_ * g * dT_prec);
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
