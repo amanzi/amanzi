@@ -30,13 +30,15 @@ WRM_vanGenuchten::WRM_vanGenuchten(
     double sr, std::string krel_function, double pc0)
     : m_(m), l_(l), alpha_(alpha), sr_(sr), pc0_(pc0)
 {
-  n_ = 1.0 / (1.0 - m_);
   set_region(region);
 
-  if (krel_function == "Mualem")
+  if (krel_function == "Mualem") {
+    n_ = 1.0 / (1.0 - m_);
     function_ = FLOW_WRM_MUALEM;
-  else
+  } else {
+    n_ = 2.0 / (1.0 - m_);
     function_ = FLOW_WRM_BURDINE;
+  }
 
   factor_dSdPc_ = -m_ * n_ * alpha_ * (1.0 - sr_);
   a_ = b_ = 0;

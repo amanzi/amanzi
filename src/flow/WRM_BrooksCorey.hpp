@@ -39,7 +39,7 @@ class WRM_BrooksCorey : public WaterRetentionModel {
   int krel_function_;  // Mualem or Burdine
 
   double pc0_;  // regularization threshold (usually 0 to 500 Pa)
-  double a_, b_, factor_;  // frequently used constant
+  double a_, b_, factor_, pc_bubble_;  // frequently used constant
 };
 
 }  // namespace AmanziFlow
