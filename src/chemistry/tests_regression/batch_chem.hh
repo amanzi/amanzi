@@ -24,6 +24,7 @@ struct SimulationParameters {
   double delta_time;  // [s]
   int num_time_steps;  // [-]
   int output_interval;  // [steps]
+  bool display_free_columns;
   std::vector<double> mineral_ssa;  // specific surface area []
   std::vector<double> site_density;  // sorption site density []
   std::vector<double> isotherm_kd;
@@ -46,6 +47,7 @@ struct SimulationParameters {
         delta_time(1.0),
         num_time_steps(0),
         output_interval(1),
+        display_free_columns(false),
         mineral_ssa(),
         site_density(),
         isotherm_kd(),

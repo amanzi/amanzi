@@ -158,6 +158,7 @@ public:
 
   void WriteChemistryToVis(Amanzi::Vis* vis);
   void WriteFreeIonsToVis(Amanzi::Vis* vis);
+  void WriteTotalSorbedToVis(Amanzi::Vis* vis);
   void WriteMineralsToVis(Amanzi::Vis* vis);
   void WriteIsothermsToVis(Amanzi::Vis* vis);
   void WriteSorptionSitesToVis(Amanzi::Vis* vis);

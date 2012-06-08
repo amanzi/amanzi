@@ -155,8 +155,9 @@ int main(int argc, char** argv) {
         ac::chem_out->Write(ac::kVerbose, message);
 
         // write out the headers info and initial conditions
-        chem->DisplayTotalColumnHeaders();
-        chem->DisplayTotalColumns(0.0, components);
+        chem->DisplayTotalColumnHeaders(simulation_params.display_free_columns);
+        chem->DisplayTotalColumns(0.0, components,
+                                  simulation_params.display_free_columns);
         std::vector<std::string> names;
         chem->GetPrimaryNames(&names);
         WriteTextOutputHeader(&text_output, time_units, names);
@@ -168,7 +169,8 @@ int main(int argc, char** argv) {
           chem->ReactionStep(&components, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
             double time = (time_step + 1) * simulation_params.delta_time;
-            chem->DisplayTotalColumns(time, components);
+            chem->DisplayTotalColumns(time, components, 
+                                      simulation_params.display_free_columns);
             WriteTextOutput(&text_output, time * time_units_conversion, components);
           }
           if (simulation_params.verbosity >= ac::kDebugBeaker) {

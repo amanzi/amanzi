@@ -102,9 +102,10 @@ class Beaker {
 
   void Display(void) const;
   void DisplayComponents(const BeakerComponents& components) const;
-  void DisplayTotalColumnHeaders(void) const;
+  void DisplayTotalColumnHeaders(const bool display_free) const;
   void DisplayTotalColumns(const double time, 
-                           const BeakerComponents& total) const;
+                           const BeakerComponents& total,
+                           const bool display_free) const;
   void DisplayResults(void) const;
 
 
@@ -314,7 +315,7 @@ class Beaker {
 
   // utilities for updating solution, convergence checks
   void UpdateMolalitiesWithTruncation(double max_change);
-  double CalculateMaxRelChangeInMolality(void);
+  void CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_index);
   void ValidateSolution(void);
 
   // solvers

@@ -287,6 +287,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   }
 
   double max_rel_change;
+  int max_rel_index;
   double max_residual;
   unsigned int num_iterations = 0;
   bool calculate_activity_coefs = false;
@@ -349,7 +350,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // calculate update truncating at a maximum of 5 in log space
     UpdateMolalitiesWithTruncation(5.0);
     // calculate maximum relative change in concentration over all species
-    max_rel_change = CalculateMaxRelChangeInMolality();
+    CalculateMaxRelChangeInMolality(&max_rel_change, &max_rel_index);
 
     if (debug()) {
       message.str("");
@@ -424,6 +425,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
+  int max_rel_index = -1;
   // iteration counter
   unsigned int num_iterations = 0;
 
@@ -482,13 +484,18 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // update with exp(-dlnc)
     UpdateMolalitiesWithTruncation(5.0);
     // calculate maximum relative change in concentration over all species
-    max_rel_change = CalculateMaxRelChangeInMolality();
+    CalculateMaxRelChangeInMolality(&max_rel_change, &max_rel_index);
 
     if (debug()) {
-      message.str("");
+      message.str("--Iteration: ");
+      message << num_iterations << "\n";
       for (int i = 0; i < ncomp(); i++) {
-        message << primary_species().at(i).name() << " " <<
-            primary_species().at(i).molality() << " " << total_.at(i) << "\n";
+        message << "  " << primary_species().at(i).name() << " " 
+                << primary_species().at(i).molality() << " " << total_.at(i);
+        if (total_sorbed_.size() > 0) {
+          message << " " << total_sorbed_.at(i);
+        }
+        message << "\n";
       }
       chem_out->Write(kDebugBeaker, message);
     }
@@ -513,6 +520,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
     error_stream << "Warning: Results may not have the desired accuracy." << std::endl;
     error_stream << "Warning: max relative change = " << max_rel_change << std::endl;
+    error_stream << "Warning: max relative index = " << max_rel_index << std::endl;
     error_stream << "Warning: tolerance = " << tolerance() << std::endl;
     error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
     // update before leaving so that we can see the erroneous values!
@@ -774,11 +782,17 @@ void Beaker::DisplayResults(void) const {
   chem_out->Write(kVerbose, "---------------------------------------------------------- Solution --\n\n");
 }  // end DisplayResults()
 
-void Beaker::DisplayTotalColumnHeaders(void) const {
+void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
   std::stringstream message;
   message << std::setw(15) << "Time (s)";
   for (int i = 0; i < ncomp(); i++) {
     message << std::setw(15) << primary_species().at(i).name();
+  }
+  if (display_free) {
+    for (int i = 0; i < ncomp(); i++) {
+      std::string temp = primary_species().at(i).name() + "_free";
+      message << std::setw(15) << temp;
+    }
   }
   if (total_sorbed_.size() > 0) {
     for (int i = 0; i < total_sorbed_.size(); i++) {
@@ -797,12 +811,18 @@ void Beaker::DisplayTotalColumnHeaders(void) const {
 }  // end DisplayTotalColumnHeaders()
 
 void Beaker::DisplayTotalColumns(const double time,
-                                 const BeakerComponents& components) const {
+                                 const BeakerComponents& components,
+                                 const bool display_free) const {
   std::stringstream message;
   message << std::scientific << std::setprecision(6) << std::setw(15);
   message << time;
   for (int i = 0; i < ncomp(); i++) {
     message << std::setw(15) << components.total.at(i);
+  }
+  if (display_free) {
+    for (int i = 0; i < ncomp(); i++) {
+      message << std::setw(15) << components.free_ion.at(i);
+    }
   }
   if (total_sorbed_.size() > 0) {
     for (int i = 0; i < total_sorbed_.size(); i++) {
@@ -1385,14 +1405,17 @@ void Beaker::UpdateMolalitiesWithTruncation(double max_change) {
   }
 }  // end UpdateMolalitiesWithTruncation()
 
-double Beaker::CalculateMaxRelChangeInMolality(void) {
-  double max_rel_change = 0.0;
+void Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_index) {
+  *max_rel_change = 0.0;
+  *max_rel_index = -1;
   for (int i = 0; i < ncomp(); i++) {
     double delta = fabs(primary_species().at(i).molality() - prev_molal().at(i)) / 
         prev_molal().at(i);
-    max_rel_change = delta > max_rel_change ? delta : max_rel_change;
+    if (delta > *max_rel_change) {
+      *max_rel_change = delta;
+      *max_rel_index = i;
+    }
   }
-  return max_rel_change;
 }  // end CalculateMaxRelChangeInMolality()
 
 

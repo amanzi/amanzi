@@ -1413,6 +1413,7 @@ void State::SetRegionSorptionSites(const std::string& region_name,
 void State::WriteChemistryToVis(Amanzi::Vis* vis) {
   // TODO(bandre): activity corrections....
   WriteFreeIonsToVis(vis);
+  WriteTotalSorbedToVis(vis);
   WriteMineralsToVis(vis);
   WriteIsothermsToVis(vis);
   WriteSorptionSitesToVis(vis);
@@ -1427,6 +1428,17 @@ void State::WriteFreeIonsToVis(Amanzi::Vis* vis) {
     vis->write_vector(*(*free_ion_concentrations_)(i), name);
   }
 }  // end WriteFreeIonsToVis()
+
+void State::WriteTotalSorbedToVis(Amanzi::Vis* vis) {
+  if (using_sorption()) {
+    std::string name;
+    for (int i = 0; i < get_number_of_components(); ++i) {
+      name = compnames.at(i);
+      name += "_sorbed";
+      vis->write_vector(*(*total_sorbed_)(i), name);
+    }
+  }
+}  // end WriteTotalSorbedToVis()
 
 void State::WriteMineralsToVis(Amanzi::Vis* vis) {
   std::string name;
