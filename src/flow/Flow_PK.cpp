@@ -195,7 +195,6 @@ void Flow_PK::AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
   Amanzi::Iterator src;
   for (src = src_sink->begin(); src != src_sink->end(); ++src) {
     int c = src->first;
-cout << c << endl;
     rhs[c] += mesh_->cell_volume(c) * src->second;
   }
 }
