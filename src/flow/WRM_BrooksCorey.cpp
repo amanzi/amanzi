@@ -34,11 +34,13 @@ WRM_BrooksCorey::WRM_BrooksCorey(
     factor_ = -2.0 - 3.0 * lambda_;
   }
 
+  pc_bubble_ = 1.0 / alpha_;
   a_ = b_ = 0;
   
-  if (pc0 > 0) {
-    double k0 = k_relative(pc0);
-    double k0p = dKdPc(pc0);
+  if (pc0_ > 0.0) {
+    pc0_ += pc_bubble_;
+    double k0 = k_relative(pc0_) - 1.0;
+    double k0p = dKdPc(pc0_);
     double pc0_2 = pc0 * pc0;
     double pc0_3 = pc0_2 * pc0;
 
@@ -55,13 +57,13 @@ WRM_BrooksCorey::WRM_BrooksCorey(
 ****************************************************************** */
 double WRM_BrooksCorey::k_relative(double pc)
 {
-  if (pc <= 0.0) {
+  if (pc <= pc_bubble_) {
     return 1.0;
   } else if (pc >= pc0_) {
     return pow(alpha_ * pc, factor_);
   } else {
-    double pc_2 = pc * pc;
-    double pc_3 = pc_2 * pc;
+    double pc_2 = (pc - pc_bubble_) * (pc - pc_bubble_);
+    double pc_3 = pc_2 * (pc - pc_bubble_);
     return 1.0 + a_ * pc_2 + b_ * pc_3;
   }
 }
@@ -72,7 +74,7 @@ double WRM_BrooksCorey::k_relative(double pc)
 ****************************************************************** */
 double WRM_BrooksCorey::saturation(double pc)
 {
-  if (pc > 0.0) {
+  if (pc > pc_bubble_) {
     return pow(alpha_ * pc, -lambda_) * (1.0 - sr_) + sr_;
   } else {
     return 1.0;
@@ -86,7 +88,7 @@ double WRM_BrooksCorey::saturation(double pc)
 ****************************************************************** */
 double WRM_BrooksCorey::dSdPc(double pc)
 {
-  if (pc > 0.0) {
+  if (pc > pc_bubble_) {
     return -pow(alpha_ * pc, -lambda_ - 1.0) * (1.0 - sr_) * alpha_ * lambda_;
   } else {
     return 0.0;
@@ -109,8 +111,8 @@ double WRM_BrooksCorey::capillaryPressure(double s)
 ****************************************************************** */
 double WRM_BrooksCorey::dKdPc(double pc)
 {
-  if (pc > 0.0) {
-    return factor_ * pow(alpha_ * pc, factor_ - 1.0);
+  if (pc > pc_bubble_) {
+    return factor_ * alpha_ * pow(alpha_ * pc, factor_ - 1.0);
   } else {
     return 0.0;
   }
