@@ -61,6 +61,9 @@ void ChemistryOutput::AddLevel(const std::string& level) {
   utilities::RemoveLeadingAndTrailingWhitespace(&new_level);
   if (verbosity_map().count(new_level) > 0) {
     verbosity_flags_.set(verbosity_map().at(new_level), true);
+  } else {
+    std::cout << "ChemistryOutput::AddLevel() : "
+              << "unknown verbosity level '" << level << "'\n";
   }
 }  // end AddLevel()
 
