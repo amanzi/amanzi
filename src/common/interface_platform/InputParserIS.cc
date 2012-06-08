@@ -734,9 +734,28 @@ Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist
 Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList solver_list;
   Teuchos::ParameterList& aztecoo_list = solver_list.sublist("AztecOO");
-  aztecoo_list.set<double>("error tolerance", 1e-14);
-  aztecoo_list.set<std::string>("iterative method", "GMRES");
-  aztecoo_list.set<int>("maximal number of iterations", 400);
+
+  // define defaults...
+  double tol = 1e-14;
+  int maxiter = 400;
+  std::string method = "GMRES";
+  // get values from Execution control list if they exist
+  if ( plist->isSublist("Execution Control") ) {  
+    if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+      if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	if (num_list.isParameter("linear solver tolerance"))
+	  tol = num_list.get<double>("linear solver tolerance");
+	if (num_list.isParameter("linear solver maximum iterations")) 
+	  maxiter = num_list.get<int>("linear solver maximum iterations");
+	if (num_list.isParameter("linear solver method"))
+	  method = num_list.get<std::string>("linear solver method");
+      }
+    }
+  }
+  aztecoo_list.set<double>("error tolerance", tol);
+  aztecoo_list.set<std::string>("iterative method", method);
+  aztecoo_list.set<int>("maximal number of iterations", maxiter);
   return solver_list;
 }
 
