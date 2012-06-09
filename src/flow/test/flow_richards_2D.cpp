@@ -72,6 +72,7 @@ TEST(FLOW_2D_RICHARDS) {
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
+  RPK->InitializeAuxiliaryData();
   RPK->InitSteadyState(0.0, 1e-8);
   RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
@@ -85,6 +86,7 @@ TEST(FLOW_2D_RICHARDS) {
     GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
     GMV::close_data_file();
   }
+
 
   // check the pressure 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

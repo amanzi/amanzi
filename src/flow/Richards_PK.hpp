@@ -130,7 +130,7 @@ class Richards_PK : public Flow_PK {
   double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
   // control method
-  void ResetErrorControl(double error) { error_control_ = error; }
+  void ResetErrorControl(int error) { error_control_ = error; }
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   void PrintStatistics() const;
   

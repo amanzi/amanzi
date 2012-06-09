@@ -96,14 +96,16 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 ****************************************************************** */
 double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du)
 {
-  double error, error_p = 1e+99, error_s = 1e+99;
+  double error, error_p, error_s;
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
       double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
       error_p = std::max<double>(error_p, tmp);
     }
-  } 
+  } else {
+    error_p = 0.0;
+  }
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     Epetra_Vector dSdP(mesh_->cell_map(false));
@@ -114,7 +116,10 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
       double tmp = dSdP[c] * fabs(du[c]);
       error_s = std::max<double>(error_s, tmp);
     }
+  } else {
+    error_s = 0.0;
   }
+  
 
 #ifdef HAVE_MPI
   double buf = std::max<double>(error_s, error_p);

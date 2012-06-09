@@ -72,6 +72,7 @@ TEST(FLOW_3D_RICHARDS) {
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
+  RPK->InitializeAuxiliaryData();
   RPK->InitSteadyState(0.0, 1e-8);
   RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
