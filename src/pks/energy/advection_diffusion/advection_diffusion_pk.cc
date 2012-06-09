@@ -10,6 +10,7 @@ Author: Ethan Coon
 #include "bdf2_time_integrator.hh"
 #include "advection_factory.hh"
 #include "energy_bc_factory.hh"
+#include "composite_vector_factory.hh"
 
 #include "advection_diffusion.hh"
 
@@ -19,62 +20,74 @@ namespace Energy {
 RegisteredPKFactory<AdvectionDiffusion> AdvectionDiffusion::reg_("advection-diffusion energy");
 
 AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
+        const Teuchos::RCP<State>& S,
+        const Teuchos::RCP<TreeVector>& solution) :
     energy_plist_(plist) {
 
+  solution_ = solution;
+
   // require fields
-  // primary variable: temperature on both cells and faces, ghosted, with 1 dof
+  Teuchos::RCP<CompositeVectorFactory> factory;
+
+  // -- temperature -- on cells and faces
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
-  std::vector< std::vector<std::string> > subfield_names(2);
+  std::vector<int> num_dofs2(2,1);
   locations2[0] = AmanziMesh::CELL;
   locations2[1] = AmanziMesh::FACE;
   names2[0] = "cell";
   names2[1] = "face";
-  subfield_names[0].resize(1); subfield_names[0][0] = "temperature";
-  subfield_names[1].resize(1); subfield_names[1][0] = "temperature_lambda";
 
-  S->RequireField("temperature", "energy", names2, locations2, 1, true);
-  S->GetRecord("temperature","energy")->set_io_vis(true);
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-  temp->set_subfield_names(subfield_names);
-  solution->set_data(temp);
-  solution_ = solution;
+  factory = S->RequireField("temperature", "energy");
+  factory->SetMesh(S->Mesh());
+  factory->SetGhosted(true);
+  factory->SetComponents(names2, locations2, num_dofs2);
 
-  // -- parameters
-  S->RequireField("thermal_conductivity","energy",AmanziMesh::CELL,1,true);
+  // -- thermal conductivity -- just cells
+  factory = S->RequireField("thermal_conductivity", "energy");
+  factory->SetMesh(S->Mesh());
+  factory->SetGhosted(true);
+  factory->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  // independent variables (not owned by this pk)
-  S->RequireField("darcy_flux", AmanziMesh::FACE, 1, true);
-  S->RequireField("cell_volume",AmanziMesh::CELL,1,true);
+  // -- independent variables (not owned by this pk)
+  factory = S->RequireField("darcy_flux");
+  factory->SetMesh(S->Mesh());
+  factory->SetGhosted(true);
+  factory->SetComponent("face", AmanziMesh::FACE, 1);
+
+  factory = S->RequireField("cell_volume");
+  factory->SetMesh(S->Mesh());
+  factory->SetGhosted(true);
+  factory->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = energy_plist_.sublist("boundary conditions", true);
-  EnergyBCFactory bc_factory(S->mesh(), bc_plist);
+  EnergyBCFactory bc_factory(S->Mesh(), bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = energy_plist_.sublist("Advection");
-  advection_ = advection_factory.create(advect_plist, S->mesh());
+  advection_ = advection_factory.create(advect_plist, S->Mesh());
   advection_->set_num_dofs(1);
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = energy_plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->mesh()));
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->Mesh()));
   matrix_->SetSymmetryProperty(true);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner
   // NOTE: may want to allow these to be the same/different?
   Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->mesh()));
+  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh()));
   preconditioner_->SetSymmetryProperty(true);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
   preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
 };
+
 
 // -- Initialize owned (dependent) variables.
 void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
@@ -82,29 +95,20 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   // initial timestep size
   dt_ = energy_plist_.get<double>("Initial time step", 1.);
 
-  // constant initial temperature
-  if (energy_plist_.isParameter("Constant temperature")) {
-    double T = energy_plist_.get<double>("Constant temperature");
-    S->GetFieldData("temperature", "energy")->PutScalar(T);
-    S->GetRecord("temperature", "energy")->set_initialized();
+  // initialize thermal conductivity
+  int ncells = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  Ke_.resize(ncells);
+  for (int c=0; c!=ncells; ++c) {
+    Ke_[c].init(S->Mesh()->space_dimension(),1);
+    Ke_[c](0,0) = 1.0;
   }
 
-  // initialize thermal conductivity
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S->GetFieldData("thermal_conductivity", "energy");
-  if (energy_plist_.isParameter("Constant thermal_conductivity")) {
-    double K = energy_plist_.get<double>("Constant thermal_conductivity");
-    thermal_conductivity->ViewComponent("cell")->PutScalar(K);
-    S->GetRecord("thermal_conductivity", "energy")->set_initialized();
-  }
-  int size = thermal_conductivity->ViewComponent("cell",false)->MyLength();
-  Ke_.resize(size);
-  for (int c=0; c!=size; ++c) {
-    Ke_[c].init(S->mesh()->space_dimension(),1);
-  }
+  // initialize the operators
+  matrix_->CreateMFDmassMatrices(Ke_);
+  preconditioner_->CreateMFDmassMatrices(Ke_);
 
   // initialize boundary conditions
-  int nfaces = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = S->Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -113,15 +117,12 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   bc_flux_->Compute(time);
   UpdateBoundaryConditions_();
 
-  state_to_solution(S, solution_);
-  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e-5);
-  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+  // initialize time integrater and nonlinear solver
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+  solution_->set_data(temp);
+  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e0);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e0);
 
-  // initialize the operators
-  matrix_->CreateMFDmassMatrices(Ke_);
-  preconditioner_->CreateMFDmassMatrices(Ke_);
-
-  // initialize the timesteppper
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
@@ -136,6 +137,7 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
     time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
   }
 };
+
 
 // -- transfer operators -- ONLY COPIES POINTERS
 void AdvectionDiffusion::state_to_solution(const Teuchos::RCP<State>& S,
@@ -162,10 +164,17 @@ bool AdvectionDiffusion::advance(double dt) {
   // take the bdf timestep
   double h = dt;
   time_stepper_->time_step(h, solution_);
+
+  // commit the step as successful
   time_stepper_->commit_solution(h, solution_);
+  solution_to_state(solution_, S_next_);
+  commit_state(h, S_next_);
+
   return false;
 };
 
+
+// Evaluate BCs
 void AdvectionDiffusion::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::MFD_BC_NULL;
@@ -186,8 +195,10 @@ void AdvectionDiffusion::UpdateBoundaryConditions_() {
   }
 };
 
+
+// Set BCs for advection
 void AdvectionDiffusion::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
-  int nfaces = S_next_->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = temperature->size("face",false);
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
       (*temperature)("face", 0, f) = bc_values_[f];

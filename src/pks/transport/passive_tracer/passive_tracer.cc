@@ -57,7 +57,7 @@ void PassiveTracer::initialize(const Teuchos::RCP<State>& S) {
 
   state_to_solution(S, solution_);
   atol_ = transport_plist_.get<double>("Absolute error tolerance",1.0);
-  rtol_ = transport_plist_.get<double>("Relative error tolerance",1e-5);
+  rtol_ = transport_plist_.get<double>("Relative error tolerance",1.0);
 
   if (!transport_plist_.get<bool>("Strongly Coupled PK", false)) {
     Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =

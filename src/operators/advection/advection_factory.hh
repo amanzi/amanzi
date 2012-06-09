@@ -26,7 +26,7 @@ class AdvectionFactory {
 public:
 
   Teuchos::RCP<Advection> create(Teuchos::ParameterList& advect_plist,
-          Teuchos::RCP<AmanziMesh::Mesh> mesh);
+          const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 };
 
 } // namespace Operators

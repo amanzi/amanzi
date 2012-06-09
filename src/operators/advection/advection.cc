@@ -21,6 +21,7 @@ void Advection::set_flux(const Teuchos::RCP<const CompositeVector>& flux) {
 void Advection::set_num_dofs(int num_dofs) {
   if (field_ == Teuchos::null || num_dofs_ != num_dofs) {
     num_dofs_ = num_dofs;
+    std::vector<int> ndofs_tmp(2,num_dofs_);
 
     std::vector<std::string> names(2);
     names[0] = "cell";
@@ -30,7 +31,7 @@ void Advection::set_num_dofs(int num_dofs) {
     locations[0] = AmanziMesh::CELL;
     locations[1] = AmanziMesh::FACE;
 
-    field_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs_, true));
+    field_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, ndofs_tmp, true));
     field_->CreateData();
   }
 }

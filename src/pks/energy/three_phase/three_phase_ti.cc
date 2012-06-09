@@ -23,8 +23,8 @@ void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
   std::cout << "Two-Phase Residual calculation:" << std::endl;
-  std::cout << "  T0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
-  std::cout << "  T1: " << (*u)("cell",0,99) << " " << (*u)("face",0,497) << std::endl;
+  std::cout << "  T0: " << (*u)("cell",0) << " " << (*u)("face",3) << std::endl;
+  std::cout << "  T1: " << (*u)("cell",99) << " " << (*u)("face",497) << std::endl;
 
   // pointer-copy temperature into states and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -46,13 +46,13 @@ void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   } else {
     ApplyDiffusion_(S_inter_, res);
   }
-  std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-  std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+  std::cout << "  res0 (after diffusion): " << (*res)("cell",0) << " " << (*res)("face",3) << std::endl;
+  std::cout << "  res1 (after diffusion): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
-  std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-  std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+  std::cout << "  res0 (after accumulation): " << (*res)("cell",0) << " " << (*res)("face",3) << std::endl;
+  std::cout << "  res1 (after accumulation): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;
 
   // advection term
   bool imp_adv = energy_plist_.get<bool>("Implicit Advection Term", false);
@@ -62,18 +62,18 @@ void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     AddAdvection_(S_inter_, res, true);
   }
 
-  std::cout << "  res0 (after advection): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-  std::cout << "  res1 (after advection): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+  std::cout << "  res0 (after advection): " << (*res)("cell",0) << " " << (*res)("face",3) << std::endl;
+  std::cout << "  res1 (after advection): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;
 };
 
 // applies preconditioner to u and returns the result in Pu
 void ThreePhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
-  std::cout << "  T0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
-  std::cout << "  T1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
+  std::cout << "  T0: " << (*u->data())("cell",0) << " " << (*u->data())("face",3) << std::endl;
+  std::cout << "  T1: " << (*u->data())("cell",99) << " " << (*u->data())("face",497) << std::endl;
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
-  std::cout << "  PC*T0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
-  std::cout << "  PC*T1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,497) << std::endl;
+  std::cout << "  PC*T0: " << (*Pu->data())("cell",0) << " " << (*Pu->data())("face",3) << std::endl;
+  std::cout << "  PC*T1: " << (*Pu->data())("cell",99) << " " << (*Pu->data())("face",497) << std::endl;
 };
 
 // computes a norm on u-du and returns the result
@@ -181,9 +181,9 @@ void ThreePhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     //       must be fixed, but need to figure out a new paradigm for this
     //       sort of thing. -- etc
     // note: also assumes phi does not depend on temperature.
-    double T = (*temp)("cell",0,c);
-    double phi = (*poro)("cell",0,c);
-    double du_gas_dT = iem_gas_->DInternalEnergyDT(T, (*mol_frac_gas)("cell",0,c));
+    double T = (*temp)("cell",c);
+    double phi = (*poro)("cell",c);
+    double du_gas_dT = iem_gas_->DInternalEnergyDT(T, (*mol_frac_gas)("cell",c));
     double du_liq_dT = iem_liquid_->DInternalEnergyDT(T);
     double du_ice_dT = iem_ice_->DInternalEnergyDT(T);
     double du_rock_dT = iem_rock_->DInternalEnergyDT(T);
@@ -228,7 +228,7 @@ void ThreePhase::test_precon(double t, Teuchos::RCP<const TreeVector> up, double
     fun(t-h, t, uold, unew, f1);
 
     dp->PutScalar(0.0);
-    (*dp->data())("cell",0,c) = 0.0001;
+    (*dp->data())("cell",c) = 0.0001;
     unew->Update(1.0, *dp, 1.0);
     fun(t-h, t, uold, unew, f2);
 
