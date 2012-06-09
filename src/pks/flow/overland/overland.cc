@@ -336,7 +336,10 @@ void OverlandFlow::UpdateBoundaryConditions_( const Teuchos::RCP<State>& S,
     ASSERT( ncells==1 ) ;
 
     bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
-    bc_values_[f] = pres("cell",0,cells[0]) ;
+    bc_values_[f] = pres("cell",0,cells[0]) + elevation("face",0,f);
+    std::cout << "Setting zero-grad BC with value: " <<
+      pres("cell",0,cells[0]) << "on face/cell: " << f << ", " <<
+      cells[0] << std::endl;
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
@@ -380,7 +383,7 @@ void OverlandFlow::TestOneSetUpElevationPars_() {
 }
 double OverlandFlow::TestOneElevation_( double x, double y ) {
   double Lx = 600./3.28084 ;
-  return 0.; //slope_x[0]*( Lx - x ) ;
+  return 1.; //slope_x[0]*( Lx - x ) ;
 }
 
 void OverlandFlow::TestOneSetElevation_( const Teuchos::RCP<State>& S ) {
@@ -475,8 +478,8 @@ void OverlandFlow::SetUpElevation_( const Teuchos::RCP<State>& S ) {
 #if 1
 
   // TEST 1
-  //  load_value = 2. * 0.0254 / 3600. ;
-  load_value = 0.;
+  load_value = 1.; //2. * 0.0254 / 3600. ;
+  // load_value = 0.;
   t_rain     = 1800.  ;
   TestOneSetUpElevationPars_() ;
   TestOneSetElevation_( S ) ;

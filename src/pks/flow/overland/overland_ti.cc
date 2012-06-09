@@ -50,15 +50,17 @@ void OverlandFlow::fun( double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
   std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-  std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,29) << std::endl;
+  std::cout << "  res1 (after diffusion): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
   std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-  std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,29) << std::endl;
+  std::cout << "  res1 (after accumulation): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
 
   // add rhs load value
   AddLoadValue_(S_next_,res);
+  std::cout << "  res0 (after source): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res1 (after source): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
 };
 
 /* ******************************************************************
@@ -67,11 +69,11 @@ void OverlandFlow::fun( double t_old,
 void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
-  std::cout << "  p1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,29) << std::endl;
-  //preconditioner_->ApplyInverse(*u->data(), Pu->data());
-  *Pu = *u ;
+  std::cout << "  p1: " << (*u->data())("cell",0,9) << " " << (*u->data())("face",0,29) << std::endl;
+  preconditioner_->ApplyInverse(*u->data(), Pu->data());
+  //*Pu = *u ;
   std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
-  std::cout << "  PC*p1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,29) << std::endl;
+  std::cout << "  PC*p1: " << (*Pu->data())("cell",0,9) << " " << (*Pu->data())("face",0,29) << std::endl;
 };
 
 
@@ -113,10 +115,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   // update state with the solution up.
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_);
-  UpdateSecondaryVariables_(S_next_);
-
-  // update with accumulation terms
   Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("overland_pressure");
+  UpdateSecondaryVariables_(S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -128,23 +128,38 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
 
+  // calculating the operator is done in 3 steps:
+  // 1. Create all local matrices.
   preconditioner_->CreateMFDstiffnessMatrices(*cond);
   preconditioner_->CreateMFDrhsVectors();
 
-  Teuchos::RCP<const CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume");
+  // 2. Update local matrices diagonal with the accumulation terms.
+  Teuchos::RCP<const CompositeVector> cell_volume =
+    S_next_->GetFieldData("cell_volume");
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells = preconditioner_->Aff_cells();
-  std::vector<Epetra_SerialDenseVector>& Acf_cells = preconditioner_->Acf_cells();
-  std::vector<Epetra_SerialDenseVector>& Afc_cells = preconditioner_->Afc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  std::vector<Epetra_SerialDenseVector>& Ff_cells = preconditioner_->Ff_cells();
+  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c!=ncells; ++c) {
+    // accumulation term
+    Acc_cells[c] += (*cell_volume)("cell",0,c) / h;
+    Fc_cells[c] += (*cell_volume)("cell",0,c) / h * (*pres)("cell",0,c);
+
+    // source term
+    Fc_cells[c] += rhs_load_value(S_next_->time()) * (*cell_volume)("cell",0,c);
+  }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   preconditioner_->AssembleGlobalMatrices();
-  preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
 
-  // need to update the PC's RHS -- it currently has z+p, but should have just p
+  // currently the PC has p + z as the global RHS -- should correct
+  // the global RHS to have the correct value (just p) prior to
+  // calculating the Schur complement?  Maybe this is not necessary as
+  // we're forming the Schur complement of the face-face system, so
+  // the face RHS may not come into play for the operator (just the
+  // Schur complement's RHS?)
+
+  preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
 
   // Code to dump Schur complement to check condition number
   /*
