@@ -89,6 +89,7 @@
 
     <ParameterList name="boundary conditions">
       <ParameterList name="pressure">
+<!--
         <ParameterList name="left side">
           <Parameter name="regions" type="Array string" value="{Left side}"/>
           <ParameterList name="boundary pressure">
@@ -97,12 +98,16 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+-->
       </ParameterList>
 
       <ParameterList name="mass flux">
       </ParameterList>
 
       <ParameterList name="zero-gradient">
+        <ParameterList name="left side">
+          <Parameter name="regions" type="Array string" value="{Left side}"/>
+        </ParameterList>
         <ParameterList name="right side">
           <Parameter name="regions" type="Array string" value="{Right side}"/>
         </ParameterList>
