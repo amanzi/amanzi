@@ -1,19 +1,22 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-/*
+/* -------------------------------------------------------------------------
   A base two-phase, thermal Richard's equation with water vapor.
 
   License: BSD
   Authors: Neil Carlson (version 1)
   Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
   Ethan Coon (ATS version) (ecoon@lanl.gov)
-*/
+------------------------------------------------------------------------- */
 
 #include "richards.hh"
 
 namespace Amanzi {
 namespace Flow {
 
+// -------------------------------------------------------------
+// Diffusion term, div K grad T
+// -------------------------------------------------------------
 void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
 
@@ -36,6 +39,9 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 };
 
 
+// -------------------------------------------------------------
+// Accumulation of internal energy term du/dt
+// -------------------------------------------------------------
 void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> poro0 =
     S_inter_->GetFieldData("porosity");
@@ -75,25 +81,26 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
 
-  int c_owned = S_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = g->size("cell");
   for (int c=0; c!=c_owned; ++c) {
     // calculate water content of each phase and at each time
-    double wc_liq1 = (*n_liq1)(c) * (*sat_liq1)(c);
-    double wc_gas1 = (*n_gas1)(c) * (*sat_gas1)(c) * (*mol_frac_gas1)(c);
-    double wc1 = (wc_liq1 + wc_gas1) * (*poro1)(c) * (*cell_volume1)(c);
+    double wc_liq1 = (*n_liq1)("cell",c) * (*sat_liq1)("cell",c);
+    double wc_gas1 = (*n_gas1)("cell",c) * (*sat_gas1)("cell",c) * (*mol_frac_gas1)("cell",c);
+    double wc1 = (wc_liq1 + wc_gas1) * (*poro1)("cell",c) * (*cell_volume1)("cell",c);
 
-    double wc_liq0 = (*n_liq0)(c) * (*sat_liq0)(c);
-    double wc_gas0 = (*n_gas0)(c) * (*sat_gas0)(c) * (*mol_frac_gas0)(c);
-    double wc0 = (wc_liq0 + wc_gas0) * (*poro0)(c) * (*cell_volume0)(c);
+    double wc_liq0 = (*n_liq0)("cell",c) * (*sat_liq0)("cell",c);
+    double wc_gas0 = (*n_gas0)("cell",c) * (*sat_gas0)("cell",c) * (*mol_frac_gas0)("cell",c);
+    double wc0 = (wc_liq0 + wc_gas0) * (*poro0)("cell",c) * (*cell_volume0)("cell",c);
 
     // add the time derivative of total water content to the residual
-    (*g)("cell",0,c) += (wc1 - wc0)/dt;
+    (*g)("cell",c) += (wc1 - wc0)/dt;
   }
 };
 
-/* ******************************************************************
- * Update secondary variables, calculated in various methods below.
- ****************************************************************** */
+
+// -----------------------------------------------------------------------------
+// Update variables, like densities, saturations, etc, from constitutive models.
+// -----------------------------------------------------------------------------
 void Richards::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
   // get needed fields
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
@@ -128,38 +135,49 @@ void Richards::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
 
   // update abs perm if needed
   if (variable_abs_perm_) {
-    // Teuchos::RCP<const CompositeVector> phi = S->GetFieldData("porosity");
-    // Teuchos::RCP<CompositeVector> abs_perm = S->GetFieldData("permeability", "flow");
-    // AbsolutePermeability_(*phi, abs_perm)
+    // do something!
   }
 
   // calculate rel perm using WRM
   RelativePermeability_(S, *pres, *p_atm, rel_perm);
 };
 
+
+// -------------------------------------------------------------
+// Evaluate EOS of the liquid phase.
+// -------------------------------------------------------------
 void Richards::DensityLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp, const CompositeVector& pres,
         const Teuchos::RCP<CompositeVector>& dens_liq,
         const Teuchos::RCP<CompositeVector>& mol_dens_liq) {
 
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   double Mw = eos_liquid_->molar_mass();
+
+  int c_owned = dens_liq->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    double rho = eos_liquid_->MassDensity(temp("cell",0,c), pres("cell",0,c));
-    (*dens_liq)("cell",0,c) = rho;
-    (*mol_dens_liq)("cell",0,c) = rho/Mw;
+    double rho = eos_liquid_->MassDensity(temp("cell",c), pres("cell",c));
+    (*dens_liq)("cell",c) = rho;
+    (*mol_dens_liq)("cell",c) = rho/Mw;
   }
 };
 
+
+// -------------------------------------------------------------
+// Evaluate EOS of the liquid phase.
+// -------------------------------------------------------------
 void Richards::ViscosityLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& visc_liq) {
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = visc_liq->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    (*visc_liq)("cell",0,c) = eos_liquid_->Viscosity(temp("cell",0,c));
+    (*visc_liq)("cell",c) = eos_liquid_->Viscosity(temp("cell",c));
   }
 };
 
+
+// -------------------------------------------------------------
+// Evaluate EOS of the gas phase.
+// -------------------------------------------------------------
 void Richards::DensityGas_(const Teuchos::RCP<State>& S,
                            const CompositeVector& temp,
                            const CompositeVector& pres, const double& p_atm,
@@ -167,17 +185,21 @@ void Richards::DensityGas_(const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<CompositeVector>& dens_gas,
                            const Teuchos::RCP<CompositeVector>& mol_dens_gas) {
 
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = dens_gas->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    double p_sat = eos_gas_->SaturatedVaporPressure(temp("cell",0,c));
-    (*mol_frac_gas)("cell",0,c) = p_sat/p_atm;
-    double Mv = eos_gas_->molar_mass((*mol_frac_gas)("cell",0,c));
-    double n = eos_gas_->MolarDensity(temp("cell",0,c), pres("cell",0,c));
-    (*dens_gas)("cell",0,c) = Mv*n;
-    (*mol_dens_gas)("cell",0,c) = n;
+    double p_sat = eos_gas_->SaturatedVaporPressure(temp("cell",c));
+    (*mol_frac_gas)("cell",c) = p_sat/p_atm;
+    double Mv = eos_gas_->molar_mass((*mol_frac_gas)("cell",c));
+    double n = eos_gas_->MolarDensity(temp("cell",c), pres("cell",c));
+    (*dens_gas)("cell",c) = Mv*n;
+    (*mol_dens_gas)("cell",c) = n;
   }
 };
 
+
+// -------------------------------------------------------------
+// Evaluate WRM.
+// -------------------------------------------------------------
 void Richards::Saturation_(const Teuchos::RCP<State>& S,
                            const CompositeVector& pres, const double& p_atm,
                            const Teuchos::RCP<CompositeVector>& sat_liq) {
@@ -186,17 +208,21 @@ void Richards::Saturation_(const Teuchos::RCP<State>& S,
        wrm!=wrm_.end(); ++wrm) {
     // get the owned cells in that region
     std::string region = (*wrm)->first;
-    int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = S->Mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> cells(ncells);
-    S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+    S->Mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
     for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      (*sat_liq)("cell",0,*c) = (*wrm)->second->saturation(p_atm - pres("cell",0,*c));
+      (*sat_liq)("cell",*c) = (*wrm)->second->saturation(p_atm - pres("cell",*c));
     }
   }
 };
 
+
+// -------------------------------------------------------------
+// Evaluate WRM for ds/dp
+// -------------------------------------------------------------
 void Richards::DSaturationDp_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
         const Teuchos::RCP<CompositeVector>& dsat_liq) {
@@ -205,17 +231,21 @@ void Richards::DSaturationDp_(const Teuchos::RCP<State>& S,
        wrm!=wrm_.end(); ++wrm) {
     // get the owned cells in that region
     std::string region = (*wrm)->first;
-    int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = S->Mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> cells(ncells);
-    S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+    S->Mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
     for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      (*dsat_liq)("cell",0,*c) = -(*wrm)->second->d_saturation(p_atm - pres("cell",0,*c));
+      (*dsat_liq)("cell",*c) = -(*wrm)->second->d_saturation(p_atm - pres("cell",*c));
     }
   }
 };
 
+
+// -------------------------------------------------------------
+// Evaluate WRM for Krel
+// -------------------------------------------------------------
 void Richards::RelativePermeability_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
         const Teuchos::RCP<CompositeVector>& rel_perm) {
@@ -225,33 +255,57 @@ void Richards::RelativePermeability_(const Teuchos::RCP<State>& S,
        wrm!=wrm_.end(); ++wrm) {
     // get the owned cells in that region
     std::string region = (*wrm)->first;
-    int ncells = S->mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = S->Mesh()->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> cells(ncells);
-    S->mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+    S->Mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
     for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      (*rel_perm)("cell",0,*c) = (*wrm)->second->k_relative(p_atm - pres("cell",0,*c));
+      (*rel_perm)("cell",*c) = (*wrm)->second->k_relative(p_atm - pres("cell",*c));
     }
   }
 };
 
 
-/* ******************************************************************
- * Converts absolute perm to tensor
- ****************************************************************** */
+// -------------------------------------------------------------
+// Convert abs perm vector to tensor.
+// -------------------------------------------------------------
 void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
   // currently assumes isotropic perm, should be updated
   Teuchos::RCP<const CompositeVector> perm = S->GetFieldData("permeability");
-  for (int c=0; c!=K_.size(); ++c) {
-    K_[c](0, 0) = (*perm)(c);
+  int ncells = perm->size("cell");
+  int ndofs = perm->num_dofs("cell");
+
+  if (ndofs == 1) { // isotropic
+    for (int c=0; c!=ncells; ++c) {
+      K_[c](0, 0) = (*perm)("cell",c);
+    }
+  } else if (ndofs == 2 && S->Mesh()->space_dimension() == 3) {
+    // horizontal and vertical perms
+    for (int c=0; c!=ncells; ++c) {
+      K_[c](0, 0) = (*perm)("cell",0,c);
+      K_[c](1, 1) = (*perm)("cell",0,c);
+      K_[c](2, 2) = (*perm)("cell",1,c);
+    }
+  } else if (ndofs == S->Mesh()->space_dimension()) {
+    // diagonal tensor
+    for (int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
+      for (int c=0; c!=ncells; ++c) {
+        K_[c](lcv_dof, lcv_dof) = (*perm)("cell",lcv_dof,c);
+      }
+    }
+  } else {
+    // ERROR -- unknown perm type
+    ASSERT(0);
   }
 };
 
-/* ******************************************************************
- * Routine updates elemental discretization matrices and must be
- * called before applying boundary conditions and global assembling.
- ****************************************************************** */
+
+// -----------------------------------------------------------------------------
+// Update elemental discretization matrices with gravity terms.
+//
+// Must be called before applying boundary conditions and global assembling.
+// -----------------------------------------------------------------------------
 void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<Operators::MatrixMFD>& matrix) {
 
@@ -265,9 +319,9 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = rho->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
@@ -275,10 +329,10 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = S->mesh()->face_normal(f);
+      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
 
-      double outward_flux = ((K_[c] * gravity) * normal)
-        * dirs[n] * (*Krel)("face",0,f) * (*rho)("cell",0,c);
+      double outward_flux = ( (K_[c] * gravity) * normal) * dirs[n]
+              * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c);
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
     }
@@ -286,15 +340,15 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 };
 
 
-/* ******************************************************************
- * Updates global Darcy vector calculated by a discretization method.
- ****************************************************************** */
+// -----------------------------------------------------------------------------
+// Updates global Darcy vector calculated by a discretization method.
+// -----------------------------------------------------------------------------
 void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& darcy_flux) {
 
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("rel_perm_faces");
+  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_perm_faces");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -302,22 +356,22 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int f_used = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_used = darcy_flux->size("face", true);
+  int f_owned = darcy_flux->size("face", false);
   std::vector<bool> done(f_used, false);
 
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = rho->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = S->mesh()->face_normal(f);
+      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
 
       if (f<f_owned && !done[f]) {
-        (*darcy_flux)(f) += ((K_[c] * gravity) * normal)
-          * (*Krel)("face",0,f) * (*rho)("cell",0,c);
+        (*darcy_flux)("face",f) += ((K_[c] * gravity) * normal)
+          * (*Krel)("cell",c) * (*Krel)("face",f) * (*rho)("cell",c);
         done[f] = true;
       }
     }

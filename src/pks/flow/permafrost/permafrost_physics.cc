@@ -379,11 +379,12 @@ void Permafrost::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
   }
 };
 
-/* ******************************************************************
- * Routine updates elemental discretization matrices and must be
- * called before applying boundary conditions and global assembling.
- ****************************************************************** */
-void Permafrost::AddGravityFluxes_(const Teuchos::RCP<State>& S,
+// -----------------------------------------------------------------------------
+// Update elemental discretization matrices with gravity terms.
+//
+// Must be called before applying boundary conditions and global assembling.
+// -----------------------------------------------------------------------------
+void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<Operators::MatrixMFD>& matrix) {
 
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
@@ -396,9 +397,9 @@ void Permafrost::AddGravityFluxes_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = rho->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
@@ -406,10 +407,10 @@ void Permafrost::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = S->mesh()->face_normal(f);
+      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
 
-      double outward_flux = ((K_[c] * gravity) * normal)
-        * dirs[n] * (*Krel)("face",0,f) * (*rho)("cell",0,c);
+      double outward_flux = ( (K_[c] * gravity) * normal) * dirs[n]
+              * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c);
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
     }
@@ -417,15 +418,15 @@ void Permafrost::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 };
 
 
-/* ******************************************************************
- * Updates global Darcy vector calculated by a discretization method.
- ****************************************************************** */
-void Permafrost::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
+// -----------------------------------------------------------------------------
+// Updates global Darcy vector calculated by a discretization method.
+// -----------------------------------------------------------------------------
+void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& darcy_flux) {
 
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("rel_perm_faces");
+  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_perm_faces");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -433,22 +434,22 @@ void Permafrost::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int f_used = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int f_owned = S->mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int f_used = darcy_flux->size("face", true);
+  int f_owned = darcy_flux->size("face", false);
   std::vector<bool> done(f_used, false);
 
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = rho->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    S->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = S->mesh()->face_normal(f);
+      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
 
       if (f<f_owned && !done[f]) {
-        (*darcy_flux)(f) += ((K_[c] * gravity) * normal)
-          * (*Krel)("face",0,f) * (*rho)("cell",0,c);
+        (*darcy_flux)("face",f) += ((K_[c] * gravity) * normal)
+          * (*Krel)("cell",c) * (*Krel)("face",f) * (*rho)("cell",c);
         done[f] = true;
       }
     }

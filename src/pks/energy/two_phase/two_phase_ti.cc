@@ -14,7 +14,9 @@ namespace Amanzi {
 namespace Energy {
 
 // TwoPhase is a BDFFnBase
+// -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
+// -----------------------------------------------------------------------------
 void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
@@ -54,7 +56,10 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   std::cout << "  res1 (after advection): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;
 };
 
-// applies preconditioner to u and returns the result in Pu
+
+// -----------------------------------------------------------------------------
+// Apply the preconditioner to u and return the result in Pu.
+// -----------------------------------------------------------------------------
 void TwoPhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  T0: " << (*u->data())("cell",0) << " " << (*u->data())("face",3) << std::endl;
@@ -64,7 +69,10 @@ void TwoPhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   std::cout << "  PC*T1: " << (*Pu->data())("cell",99) << " " << (*Pu->data())("face",497) << std::endl;
 };
 
-// computes a norm on u-du and returns the result
+
+// -----------------------------------------------------------------------------
+// Compute a norm on (u,du)
+// -----------------------------------------------------------------------------
 double TwoPhase::enorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
@@ -92,7 +100,10 @@ double TwoPhase::enorm(Teuchos::RCP<const TreeVector> u,
   return enorm_val;
 };
 
-// updates the preconditioner
+
+// -----------------------------------------------------------------------------
+// Update the preconditioner at time t and u = up
+// -----------------------------------------------------------------------------
 void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_); // not sure why this isn't getting found? --etc

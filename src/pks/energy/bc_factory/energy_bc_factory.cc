@@ -21,8 +21,8 @@ namespace Energy {
 /* ******************************************************************
 * Process Dirichet BC (temperature), step 1.
 ****************************************************************** */
-Teuchos::RCP<BoundaryFunction> EnergyBCFactory::CreateTemperature() const {
-  Teuchos::RCP<BoundaryFunction> bc = Teuchos::rcp(new BoundaryFunction(mesh_));
+Teuchos::RCP<Functions::BoundaryFunction> EnergyBCFactory::CreateTemperature() const {
+  Teuchos::RCP<Functions::BoundaryFunction> bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
   try {
     ProcessTemperatureList_(plist_.sublist("temperature"), bc);
   } catch (Errors::Message& msg) {
@@ -42,8 +42,8 @@ Teuchos::RCP<BoundaryFunction> EnergyBCFactory::CreateTemperature() const {
 /* ******************************************************************
 * Process Neumann BC (enthalpy flux), step 1.
 ****************************************************************** */
-Teuchos::RCP<BoundaryFunction> EnergyBCFactory::CreateEnthalpyFlux() const {
-  Teuchos::RCP<BoundaryFunction> bc = Teuchos::rcp(new BoundaryFunction(mesh_));
+Teuchos::RCP<Functions::BoundaryFunction> EnergyBCFactory::CreateEnthalpyFlux() const {
+  Teuchos::RCP<Functions::BoundaryFunction> bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
   try {
     ProcessEnthalpyFluxList_(plist_.sublist("enthalpy flux"), bc);
   } catch (Errors::Message& msg) {
@@ -63,7 +63,7 @@ Teuchos::RCP<BoundaryFunction> EnergyBCFactory::CreateEnthalpyFlux() const {
 * Process Dirichet BC (temperature), step 2.
 ****************************************************************** */
 void EnergyBCFactory::ProcessTemperatureList_(const Teuchos::ParameterList& list,
-                                        const Teuchos::RCP<BoundaryFunction>& bc) const {
+                                        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
@@ -90,7 +90,7 @@ void EnergyBCFactory::ProcessTemperatureList_(const Teuchos::ParameterList& list
 * Process Dirichet BC (temperature), step 3.
 ****************************************************************** */
 void EnergyBCFactory::ProcessTemperatureSpec_(const Teuchos::ParameterList& list,
-        const Teuchos::RCP<BoundaryFunction>& bc) const {
+        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   Errors::Message message;
   std::vector<std::string> regions;
 
@@ -143,7 +143,7 @@ void EnergyBCFactory::ProcessTemperatureSpec_(const Teuchos::ParameterList& list
 * Process Neumann BC (enthalpy flux), step 2.
 ****************************************************************** */
 void EnergyBCFactory::ProcessEnthalpyFluxList_(const Teuchos::ParameterList& list,
-        const Teuchos::RCP<BoundaryFunction>& bc) const {
+        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
@@ -170,7 +170,7 @@ void EnergyBCFactory::ProcessEnthalpyFluxList_(const Teuchos::ParameterList& lis
 * Process Neumann BC (enthalpy flux), step 3.
 ****************************************************************** */
 void EnergyBCFactory::ProcessEnthalpyFluxSpec_(const Teuchos::ParameterList& list,
-        const Teuchos::RCP<BoundaryFunction>& bc) const {
+        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   Errors::Message message;
   // Get the regions parameter value.
   std::vector<std::string> regions;

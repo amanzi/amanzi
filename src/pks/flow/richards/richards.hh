@@ -16,6 +16,7 @@
 #include "composite_vector.hh"
 #include "tree_vector.hh"
 #include "state.hh"
+#include "boundary_function.hh"
 #include "matrix_mfd.hh"
 
 #include "PK.hh"
@@ -188,9 +189,9 @@ private:
   double time_step_reduction_factor_;
 
   // boundary condition data
-  Teuchos::RCP<BoundaryFunction> bc_pressure_;
-  Teuchos::RCP<BoundaryFunction> bc_head_;
-  Teuchos::RCP<BoundaryFunction> bc_flux_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
 

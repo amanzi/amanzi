@@ -21,7 +21,7 @@ simple passive tracer transport
 #include "tree_vector.hh"
 #include "state.hh"
 #include "advection.hh"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 
 #include "pk_factory.hh"
 #include "PK.hh"
@@ -35,7 +35,8 @@ class PassiveTracer : public PK {
 
 public:
 
-  PassiveTracer(Teuchos::ParameterList& transport_plist, const Teuchos::RCP<State>& S,
+  PassiveTracer(Teuchos::ParameterList& transport_plist,
+                const Teuchos::RCP<State>& S,
                 const Teuchos::RCP<TreeVector>& solution);
 
   // ConstantTemperature is a PK
@@ -95,8 +96,8 @@ private:
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   double cfl_;
-  Teuchos::RCP< std::vector< Teuchos::RCP<BoundaryFunction> > > bcs_;
-  Teuchos::RCP<BoundaryFunction> bc_flux_;
+  Teuchos::RCP< std::vector< Teuchos::RCP<Functions::BoundaryFunction> > > bcs_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP< std::vector<int> > bcs_dof_;
 
   // factory registration

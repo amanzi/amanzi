@@ -6,7 +6,6 @@
    Author: Ethan Coon
 
    ------------------------------------------------------------------------- */
-#include "composite_vector.hh"
 #include "advection_factory.hh"
 #include "bdf2_time_integrator.hh"
 #include "passive_tracer.hh"
