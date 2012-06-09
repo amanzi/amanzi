@@ -88,7 +88,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   // -- work vectors
   S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
-  S->GetRecord("numerical_rel_perm","flow")->set_io_vis(false);
+  S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
 
   // abs perm tensor
   variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
@@ -189,24 +189,24 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 
   // declare secondary variables initialized, as they will be done by
   // the commit_state call
-  S->GetRecord("saturation_liquid","flow")->set_initialized();
-  S->GetRecord("density_liquid","flow")->set_initialized();
-  S->GetRecord("molar_density_liquid","flow")->set_initialized();
-  S->GetRecord("viscosity_liquid","flow")->set_initialized();
+  S->GetField("saturation_liquid","flow")->set_initialized();
+  S->GetField("density_liquid","flow")->set_initialized();
+  S->GetField("molar_density_liquid","flow")->set_initialized();
+  S->GetField("viscosity_liquid","flow")->set_initialized();
 
-  S->GetRecord("saturation_gas","flow")->set_initialized();
-  S->GetRecord("density_gas","flow")->set_initialized();
-  S->GetRecord("molar_density_gas","flow")->set_initialized();
-  S->GetRecord("mol_frac_gas","flow")->set_initialized();
+  S->GetField("saturation_gas","flow")->set_initialized();
+  S->GetField("density_gas","flow")->set_initialized();
+  S->GetField("molar_density_gas","flow")->set_initialized();
+  S->GetField("mol_frac_gas","flow")->set_initialized();
 
-  S->GetRecord("relative_permeability","flow")->set_initialized();
-  S->GetRecord("darcy_flux", "flow")->set_initialized();
-  S->GetRecord("darcy_velocity", "flow")->set_initialized();
+  S->GetField("relative_permeability","flow")->set_initialized();
+  S->GetField("darcy_flux", "flow")->set_initialized();
+  S->GetField("darcy_velocity", "flow")->set_initialized();
 
   // rel perm is special -- if the mode is symmetric, it needs to be
   // initialized to 1
   S->GetFieldData("numerical_rel_perm","flow")->PutScalar(1.0);
-  S->GetRecord("numerical_rel_perm","flow")->set_initialized();
+  S->GetField("numerical_rel_perm","flow")->set_initialized();
 
   // absolute perm
   SetAbsolutePermeabilityTensor_(S);

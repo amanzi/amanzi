@@ -50,7 +50,7 @@ ConstantTemperature::ConstantTemperature(Teuchos::ParameterList& energy_plist,
   //  S->RequireField("temperature", "energy")->SetMesh(S->Mesh())->
   //            SetComponent("cell", AmanziMesh::CELL, 1)->SetGhosted(true);
 
-  S->GetRecord("temperature","energy")->set_io_vis(true);
+  S->GetField("temperature","energy")->set_io_vis(true);
   Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
 };
 

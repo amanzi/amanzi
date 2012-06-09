@@ -49,7 +49,7 @@ void FlowTest::initialize_owned() {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*pres)("cell",c) = my_f(xc, 0.0);
   }
-  S0->GetRecord("pressure", "flow")->set_initialized();
+  S0->GetField("pressure", "flow")->set_initialized();
 }
 
 
