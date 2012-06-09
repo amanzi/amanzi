@@ -418,7 +418,6 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   dT = dT_MPC;  // overwrite the transport step
 
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws_prev = TS_nextBIG->ref_prev_water_saturation();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
 
   // populating next state of concentrations
@@ -431,7 +430,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   int num_components = tcc->NumVectors();
 
   for (int c = 0; c <= cmax_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws_prev[c];
+    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * (*water_saturation_start)[c];
 
     for (int i = 0; i < num_components; i++)
       (*tcc_next)[i][c] = (*tcc)[i][c] * vol_phi_ws;
@@ -482,10 +481,8 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   }
 
   // recover concentration from new conservative state
-  const Epetra_Vector& ws = TS_nextBIG->ref_water_saturation();
-
   for (int c = 0; c <= cmax_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
+    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * (*water_saturation_end)[c];
     for (int i = 0; i < num_components; i++) (*tcc_next)[i][c] /= vol_phi_ws;
   }
 
