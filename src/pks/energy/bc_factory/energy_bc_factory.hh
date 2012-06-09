@@ -74,8 +74,6 @@ is the vector (t, x, y, z).
 #include "Mesh.hh"
 #include "boundary_function.hh"
 
-using namespace Amanzi::Functions;
-
 namespace Amanzi {
 namespace Energy {
 
@@ -86,18 +84,18 @@ public:
                   Teuchos::ParameterList& plist) :
     mesh_(mesh), plist_(plist) {}
 
-  Teuchos::RCP<BoundaryFunction> CreateTemperature() const;
-  Teuchos::RCP<BoundaryFunction> CreateEnthalpyFlux() const;
+  Teuchos::RCP<Functions::BoundaryFunction> CreateTemperature() const;
+  Teuchos::RCP<Functions::BoundaryFunction> CreateEnthalpyFlux() const;
 
 private:
   void ProcessTemperatureList_(const Teuchos::ParameterList&,
-          const Teuchos::RCP<BoundaryFunction>&) const;
+          const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessTemperatureSpec_(const Teuchos::ParameterList&,
-          const Teuchos::RCP<BoundaryFunction>&) const;
+          const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessEnthalpyFluxList_(const Teuchos::ParameterList&,
-          const Teuchos::RCP<BoundaryFunction>&) const;
+          const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessEnthalpyFluxSpec_(const Teuchos::ParameterList&,
-          const Teuchos::RCP<BoundaryFunction>&) const;
+          const Teuchos::RCP<Functions::BoundaryFunction>&) const;
 
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
   Teuchos::ParameterList plist_;

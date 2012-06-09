@@ -14,9 +14,10 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-/* ******************************************************************
- * Calculate f(u, du/dt) = d(s u)/dt + A*u - g.
- ****************************************************************** */
+// TwoPhase is a BDFFnBase
+// -----------------------------------------------------------------------------
+// computes the non-linear functional g = g(t,u,udot)
+// -----------------------------------------------------------------------------
 void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
@@ -33,7 +34,6 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // update boundary conditions
   bc_pressure_->Compute(t_new);
-  //bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_();
 
@@ -52,9 +52,10 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 };
 
-/* ******************************************************************
-* Apply preconditioner to u and return the result in Pu.
-****************************************************************** */
+
+// -----------------------------------------------------------------------------
+// Apply the preconditioner to u and return the result in Pu.
+// -----------------------------------------------------------------------------
 void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
@@ -65,9 +66,9 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 };
 
 
-/* ******************************************************************
- * computes a norm on u-du and returns the result
- ****************************************************************** */
+// -----------------------------------------------------------------------------
+// Compute a norm on (u,du)
+// -----------------------------------------------------------------------------
 double Richards::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
@@ -95,9 +96,10 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   return enorm_val;
 };
 
-/* ******************************************************************
-* Compute new preconditioner B(p, dT_prec).
-****************************************************************** */
+
+// -----------------------------------------------------------------------------
+// Update the preconditioner at time t and u = up
+// -----------------------------------------------------------------------------
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   std::cout << "Precon update at t = " << t << std::endl;
   // update state with the solution up.
@@ -107,7 +109,6 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
-  //bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
@@ -142,7 +143,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<CompositeVector> dsat_liq = Teuchos::rcp(new CompositeVector(*sat_liq));
   DSaturationDp_(S_next_, *pres, *p_atm, dsat_liq);
 
-  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = pres->size("cell");
   for (int c=0; c!=ncells; ++c) {
     // many terms here...
     // accumulation term is d/dt ( phi * (omega_g*n_g*s_g + n_l*s_l) )
@@ -158,22 +159,24 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     if (c==0) std::cout << "    phi =" << phi << std::endl;
 
     //  omega_g * sat_g * d(n_g)/dp
-    double result = (*mol_frac_gas)(c) * (*sat_gas)(c) * eos_gas_->DMolarDensityDp(T,p);
+    double result = (*mol_frac_gas)("cell",c) * (*sat_gas)("cell",c) *
+                                  eos_gas_->DMolarDensityDp(T,p);
     if (c==0) std::cout << "    res0 (0) =" << result << std::endl;
     if (c==99) std::cout << "    res0 (99) =" << result << std::endl;
 
     // + sat_l * d(n_l)/dp
-    result += (*sat_liq)(c) * eos_liquid_->DMolarDensityDp(T,p);
+    result += (*sat_liq)("cell",c) * eos_liquid_->DMolarDensityDp(T,p);
     if (c==0) std::cout << "    res1 (0) =" << result << std::endl;
     if (c==99) std::cout << "    res1 (99) =" << result << std::endl;
 
     // + (n_l - omega_g * n_g) * d(sat_l)/d(p_c) * d(p_c)/dp
-    result += ((*n_liq)(c) - (*mol_frac_gas)(c)*(*n_gas)(c)) * (*dsat_liq)(c);
+    result += ((*n_liq)("cell",c) - (*mol_frac_gas)("cell",c)*(*n_gas)("cell",c)) *
+                                  (*dsat_liq)("cell",c);
     if (c==0) std::cout << "    res3 (0) =" << result << std::endl;
     if (c==99) std::cout << "    res3 (99) =" << result << std::endl;
 
-    Acc_cells[c] += phi * result * (*cell_volume)(c) / h;
-    Fc_cells[c] += phi * result * (*cell_volume)(c) / h * p;
+    Acc_cells[c] += phi * result * (*cell_volume)("cell",c) / h;
+    Fc_cells[c] += phi * result * (*cell_volume)("cell",c) / h * p;
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

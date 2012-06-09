@@ -117,8 +117,11 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   bc_flux_->Compute(time);
   UpdateBoundaryConditions_();
 
-  // initialize time integrater and nonlinear solver
+  // update face temperature IC as a hint?
   Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+  DeriveFaceValuesFromCellValues_(S, temp);
+
+  // initialize time integrater and nonlinear solver
   solution_->set_data(temp);
   atol_ = energy_plist_.get<double>("Absolute error tolerance",1e0);
   rtol_ = energy_plist_.get<double>("Relative error tolerance",1e0);
@@ -174,6 +177,28 @@ bool AdvectionDiffusion::advance(double dt) {
 };
 
 
+// -----------------------------------------------------------------------------
+// Interpolate pressure ICs on cells to ICs for lambda (faces).
+// -----------------------------------------------------------------------------
+void AdvectionDiffusion::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
+        const Teuchos::RCP<CompositeVector>& temp) {
+  AmanziMesh::Entity_ID_List cells;
+
+  int f_owned = temp->size("face");
+  for (int f=0; f!=f_owned; ++f) {
+    cells.clear();
+    S->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += (*temp)("cell",cells[n]);
+    }
+    (*temp)("face",f) = face_value / ncells;
+  }
+};
+
+
 // Evaluate BCs
 void AdvectionDiffusion::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
@@ -181,7 +206,7 @@ void AdvectionDiffusion::UpdateBoundaryConditions_() {
     bc_values_[n] = 0.0;
   }
 
-  BoundaryFunction::Iterator bc;
+  Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_temperature_->begin(); bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
     bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
@@ -196,7 +221,7 @@ void AdvectionDiffusion::UpdateBoundaryConditions_() {
 };
 
 
-// Set BCs for advection
+// Add a boundary marker to owned faces.
 void AdvectionDiffusion::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
   int nfaces = temperature->size("face",false);
   for (int f=0; f!=nfaces; ++f) {

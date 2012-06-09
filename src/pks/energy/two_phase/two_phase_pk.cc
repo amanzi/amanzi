@@ -84,12 +84,12 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   S->RequireScalar("density_rock");
   S->RequireField("internal_energy_rock", "energy")->Update(one_cell_owned_factory);
 
-  // -- thermal conductivity on cells + faces for use with matrix mfd
+  // -- thermal conductivity
   S->RequireField("thermal_conductivity", "energy")->Update(one_cell_owned_factory);
-
 
   // independent variables
   //   These are not owned by this pk, but we want to make sure they exist.
+  S->RequireField("cell_volume")->Update(one_cell_factory);
   S->RequireField("porosity")->Update(one_cell_factory);
   S->RequireField("density_gas")->Update(one_cell_factory);
   S->RequireField("density_liquid")->Update(one_cell_factory);
@@ -163,6 +163,7 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
 };
 
+
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
@@ -177,7 +178,8 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   bc_values_.resize(nfaces, 0.0);
 
   // update face temperatures as a hint?
-  DeriveFaceValuesFromCellValues_(S, S->GetFieldData("temperature", "energy"));
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+  DeriveFaceValuesFromCellValues_(S, temp);
 
   // declare secondary variables initialized, as they get done in a call to
   // commit_state
@@ -188,7 +190,7 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   S->GetRecord("enthalpy_liquid","energy")->set_initialized();
 
   // initialize the timesteppper
-  state_to_solution(S, solution_);
+  solution_->set_data(temp);
   atol_ = energy_plist_.get<double>("Absolute error tolerance",1e0);
   rtol_ = energy_plist_.get<double>("Relative error tolerance",1e0);
 
@@ -207,6 +209,7 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
     time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
   }
 };
+
 
 // -----------------------------------------------------------------------------
 // Update any secondary (dependent) variables given a solution.
@@ -228,7 +231,6 @@ void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void TwoPhase::state_to_solution(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& solution) {
-  //Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
   solution->set_data(S->GetFieldData("temperature", "energy"));
 };
 
@@ -238,7 +240,6 @@ void TwoPhase::state_to_solution(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 void TwoPhase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
-  //Teuchos::RCP<CompositeVector> temp = solution->data();
   S->SetData("temperature", "energy", solution->data());
 };
 
@@ -271,7 +272,11 @@ bool TwoPhase::advance(double dt) {
     }
   }
 
+  // commit the step as successful
   time_stepper_->commit_solution(h, solution_);
+  solution_to_state(solution_, S_next_);
+  commit_state(h, S_next_);
+
   return false;
 };
 
@@ -307,7 +312,7 @@ void TwoPhase::UpdateBoundaryConditions_() {
     bc_values_[n] = 0.0;
   }
 
-  BoundaryFunction::Iterator bc;
+  Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_temperature_->begin(); bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
     bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
@@ -323,13 +328,13 @@ void TwoPhase::UpdateBoundaryConditions_() {
 
 
 // -----------------------------------------------------------------------------
-// Apply BCs for advection system.
+// Add a boundary marker to owned faces.
 // -----------------------------------------------------------------------------
 void TwoPhase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
   int nfaces = temperature->size("face");
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
-      (*temperature)("face", 0, f) = bc_values_[f];
+      (*temperature)("face",f) = bc_values_[f];
     }
   }
 };

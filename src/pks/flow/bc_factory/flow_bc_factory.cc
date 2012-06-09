@@ -5,9 +5,10 @@ Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
          Ethan Coon (ATS version)
 */
 
-#include "boundary-function.hh"
 #include "constant-function.hh"
 #include "function-factory.hh"
+#include "vector_function.hh"
+#include "composite_function.hh"
 #include "errors.hh"
 
 #include "flow_bc_factory.hh"
@@ -18,8 +19,8 @@ namespace Flow {
 /* ******************************************************************
 * Process Dirichet BC (pressure), step 1.
 ****************************************************************** */
-Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreatePressure() const {
-  Teuchos::RCP<BoundaryFunction> bc = Teuchos::rcp(new BoundaryFunction(mesh_));
+Teuchos::RCP<Functions::BoundaryFunction> FlowBCFactory::CreatePressure() const {
+  Teuchos::RCP<Functions::BoundaryFunction> bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
   try {
     ProcessPressureList(plist_.sublist("pressure"), bc);
   } catch (Errors::Message& msg) {
@@ -38,8 +39,8 @@ Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreatePressure() const {
 /* ******************************************************************
 * Process Neumann BC (mass flux), step 1.
 ****************************************************************** */
-Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateMassFlux() const {
-  Teuchos::RCP<BoundaryFunction> bc = Teuchos::rcp(new BoundaryFunction(mesh_));
+Teuchos::RCP<Functions::BoundaryFunction> FlowBCFactory::CreateMassFlux() const {
+  Teuchos::RCP<Functions::BoundaryFunction> bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
   try {
     ProcessMassFluxList(plist_.sublist("mass flux"), bc);
   } catch (Errors::Message& msg) {
@@ -58,9 +59,9 @@ Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateMassFlux() const {
 /* ******************************************************************
 * Process Dirichet BC (static head), step 1.
 ****************************************************************** */
-Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateStaticHead(double p0,
+Teuchos::RCP<Functions::BoundaryFunction> FlowBCFactory::CreateStaticHead(double p0,
         double density, AmanziGeometry::Point& gravity) const {
-  Teuchos::RCP<BoundaryFunction> bc = Teuchos::rcp(new BoundaryFunction(mesh_));
+  Teuchos::RCP<Functions::BoundaryFunction> bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
   try {
     ProcessStaticHeadList(p0, density, gravity, plist_.sublist("static head"), bc);
   } catch (Errors::Message& msg) {
@@ -79,8 +80,8 @@ Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateStaticHead(double p0,
 /* ******************************************************************
 * Process Zero Gradient BC (pressure), step 1.
 ****************************************************************** */
-Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateZeroGradient() const {
-  Teuchos::RCP<BoundaryFunction> bc = Teuchos::rcp(new BoundaryFunction(mesh_));
+Teuchos::RCP<Functions::BoundaryFunction> FlowBCFactory::CreateZeroGradient() const {
+  Teuchos::RCP<Functions::BoundaryFunction> bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
   try {
     ProcessZeroGradientList(plist_.sublist("zero-gradient"), bc);
   } catch (Errors::Message& msg) {
@@ -100,7 +101,7 @@ Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateZeroGradient() const {
 * Process Dirichet BC (pressure), step 2.
 ****************************************************************** */
 void FlowBCFactory::ProcessPressureList(const Teuchos::ParameterList& list,
-                                        const Teuchos::RCP<BoundaryFunction>& bc) const {
+                                        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
@@ -127,7 +128,7 @@ void FlowBCFactory::ProcessPressureList(const Teuchos::ParameterList& list,
 * Process Dirichet BC (pressure), step 3.
 ****************************************************************** */
 void FlowBCFactory::ProcessPressureSpec(const Teuchos::ParameterList& list,
-        const Teuchos::RCP<BoundaryFunction>& bc) const {
+        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   Errors::Message m;
   std::vector<std::string> regions;
 
@@ -167,8 +168,12 @@ void FlowBCFactory::ProcessPressureSpec(const Teuchos::ParameterList& list,
     Exceptions::amanzi_throw(m);
   }
 
+  // A bit hacky -- this entire code needs to be revisited in light of the new
+  // options for mesh_functions.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 }
 
 
@@ -176,7 +181,7 @@ void FlowBCFactory::ProcessPressureSpec(const Teuchos::ParameterList& list,
 * Process Neumann BC (mass flux), step 2.
 ****************************************************************** */
 void FlowBCFactory::ProcessMassFluxList(const Teuchos::ParameterList& list,
-                                        const Teuchos::RCP<BoundaryFunction>& bc) const {
+                                        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
@@ -203,7 +208,7 @@ void FlowBCFactory::ProcessMassFluxList(const Teuchos::ParameterList& list,
 * Process Neumann BC (mass flux), step 3.
 ****************************************************************** */
 void FlowBCFactory::ProcessMassFluxSpec(const Teuchos::ParameterList& list,
-                                        const Teuchos::RCP<BoundaryFunction>& bc) const {
+                                        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   Errors::Message m;
   // Get the regions parameter value.
   std::vector<std::string> regions;
@@ -243,8 +248,12 @@ void FlowBCFactory::ProcessMassFluxSpec(const Teuchos::ParameterList& list,
     Exceptions::amanzi_throw(m);
   }
 
+  // A bit hacky -- this entire code needs to be revisited in light of the new
+  // options for mesh_functions.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 }
 
 
@@ -253,7 +262,7 @@ void FlowBCFactory::ProcessMassFluxSpec(const Teuchos::ParameterList& list,
 ****************************************************************** */
 void FlowBCFactory::ProcessStaticHeadList(double p0, double density,
         AmanziGeometry::Point& gravity, const Teuchos::ParameterList& list,
-        const Teuchos::RCP<BoundaryFunction>& bc) const {
+        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
@@ -281,7 +290,7 @@ void FlowBCFactory::ProcessStaticHeadList(double p0, double density,
 ****************************************************************** */
 void FlowBCFactory::ProcessStaticHeadSpec(double p0, double density,
         AmanziGeometry::Point& gravity, const Teuchos::ParameterList& list,
-        const Teuchos::RCP<BoundaryFunction>& bc) const {
+        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   Errors::Message m;
   std::vector<std::string> regions;
 
@@ -332,8 +341,12 @@ void FlowBCFactory::ProcessStaticHeadSpec(double p0, double density,
     Exceptions::amanzi_throw(m);
   }
 
+  // A bit hacky -- this entire code needs to be revisited in light of the new
+  // options for mesh_functions.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 }
 
 
@@ -341,7 +354,7 @@ void FlowBCFactory::ProcessStaticHeadSpec(double p0, double density,
 * Process Dirichet BC (pressure), step 2.
 ****************************************************************** */
 void FlowBCFactory::ProcessZeroGradientList(const Teuchos::ParameterList& list,
-                                        const Teuchos::RCP<BoundaryFunction>& bc) const {
+                                        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
@@ -368,7 +381,7 @@ void FlowBCFactory::ProcessZeroGradientList(const Teuchos::ParameterList& list,
 * Process Dirichet BC (pressure), step 3.
 ****************************************************************** */
 void FlowBCFactory::ProcessZeroGradientSpec(const Teuchos::ParameterList& list,
-        const Teuchos::RCP<BoundaryFunction>& bc) const {
+        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   Errors::Message m;
   std::vector<std::string> regions;
 
@@ -388,8 +401,12 @@ void FlowBCFactory::ProcessZeroGradientSpec(const Teuchos::ParameterList& list,
   // is expected to handle this condition correctly.
   Teuchos::RCP<Function> f = Teuchos::rcp(new ConstantFunction(0.0));
 
+  // A bit hacky -- this entire code needs to be revisited in light of the new
+  // options for mesh_functions.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 }
 }  // namespace AmanziFlow
 }  // namespace Amanzi

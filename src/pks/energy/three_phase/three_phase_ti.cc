@@ -15,7 +15,9 @@ namespace Amanzi {
 namespace Energy {
 
 // ThreePhase is a BDFFnBase
+// -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
+// -----------------------------------------------------------------------------
 void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
@@ -66,7 +68,10 @@ void ThreePhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   std::cout << "  res1 (after advection): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;
 };
 
-// applies preconditioner to u and returns the result in Pu
+
+// -----------------------------------------------------------------------------
+// Apply the preconditioner to u and return the result in Pu.
+// -----------------------------------------------------------------------------
 void ThreePhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  T0: " << (*u->data())("cell",0) << " " << (*u->data())("face",3) << std::endl;
@@ -76,7 +81,10 @@ void ThreePhase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
   std::cout << "  PC*T1: " << (*Pu->data())("cell",99) << " " << (*Pu->data())("face",497) << std::endl;
 };
 
-// computes a norm on u-du and returns the result
+
+// -----------------------------------------------------------------------------
+// Compute a norm on (u,du)
+// -----------------------------------------------------------------------------
 double ThreePhase::enorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
@@ -106,7 +114,10 @@ double ThreePhase::enorm(Teuchos::RCP<const TreeVector> u,
   return enorm_val;
 };
 
-// updates the preconditioner
+
+// -----------------------------------------------------------------------------
+// Update the preconditioner at time t and u = up
+// -----------------------------------------------------------------------------
 void ThreePhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_); // not sure why this isn't getting found? --etc
@@ -171,7 +182,7 @@ void ThreePhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = temp->size("cell");
   for (int c=0; c!=ncells; ++c) {
     // accumulation term is d/dt ( phi * (s_g*n_g*u_g + s_l*n_l*u_l) + (1-phi)*rho_r*u_r
     // note: CURRENTLY IGNORING the saturation dependence on temperature
@@ -188,13 +199,13 @@ void ThreePhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     double du_ice_dT = iem_ice_->DInternalEnergyDT(T);
     double du_rock_dT = iem_rock_->DInternalEnergyDT(T);
 
-    double factor_gas = (*dens_gas)(c)*(*sat_gas)(c)*du_gas_dT;
-    double factor_liq = (*dens_liq)(c)*(*sat_liq)(c)*du_liq_dT;
-    double factor_ice = (*dens_ice)(c)*(*sat_ice)(c)*du_ice_dT;
+    double factor_gas = (*dens_gas)("cell",c)*(*sat_gas)("cell",c)*du_gas_dT;
+    double factor_liq = (*dens_liq)("cell",c)*(*sat_liq)("cell",c)*du_liq_dT;
+    double factor_ice = (*dens_ice)("cell",c)*(*sat_ice)("cell",c)*du_ice_dT;
     double factor_rock = (*dens_rock)*du_rock_dT;
 
     double factor = (phi * (factor_gas + factor_liq + factor_ice) +
-                     (1-phi) * factor_rock) * (*cell_volume)(c);
+                     (1-phi) * factor_rock) * (*cell_volume)("cell",c);
 
     Acc_cells[c] += factor/h;
     Fc_cells[c] += factor/h * T;
@@ -210,8 +221,9 @@ void ThreePhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
 };
 
 
-// Runs a very expensive FD test of the Jacobian and prints out an enorm
-//  measure of the error.
+// -----------------------------------------------------------------------------
+// Runs a very expensive FD test of the diagonal of the Jacobian.
+// -----------------------------------------------------------------------------
 void ThreePhase::test_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   Teuchos::RCP<TreeVector> dp = Teuchos::rcp(new TreeVector(*up));
   Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
@@ -222,7 +234,7 @@ void ThreePhase::test_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
   double maxval = 0.0;
 
-  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = up->data()->size("cell");
   for (int c=0; c!=ncells; ++c) {
     *unew = (*up);
     fun(t-h, t, uold, unew, f1);

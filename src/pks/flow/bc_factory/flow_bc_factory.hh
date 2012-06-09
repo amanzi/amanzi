@@ -90,7 +90,7 @@ The gravitational acceleration is assumed to be directed in the negative z-direc
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -102,29 +102,29 @@ public:
                 const Teuchos::ParameterList& plist)
      : mesh_(mesh), plist_(plist) {}
 
-  Teuchos::RCP<BoundaryFunction> CreatePressure() const;
-  Teuchos::RCP<BoundaryFunction> CreateMassFlux() const;
-  Teuchos::RCP<BoundaryFunction> CreateStaticHead(double, double, AmanziGeometry::Point&) const;
-  Teuchos::RCP<BoundaryFunction> CreateZeroGradient() const;
+  Teuchos::RCP<Functions::BoundaryFunction> CreatePressure() const;
+  Teuchos::RCP<Functions::BoundaryFunction> CreateMassFlux() const;
+  Teuchos::RCP<Functions::BoundaryFunction> CreateStaticHead(double, double, AmanziGeometry::Point&) const;
+  Teuchos::RCP<Functions::BoundaryFunction> CreateZeroGradient() const;
 
 
 private:
   void ProcessPressureList(const Teuchos::ParameterList&,
-                           const Teuchos::RCP<BoundaryFunction>&) const;
+                           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessPressureSpec(const Teuchos::ParameterList&,
-                           const Teuchos::RCP<BoundaryFunction>&) const;
+                           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessMassFluxList(const Teuchos::ParameterList&,
-                           const Teuchos::RCP<BoundaryFunction>&) const;
+                           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessMassFluxSpec(const Teuchos::ParameterList&,
-                           const Teuchos::RCP<BoundaryFunction>&) const;
+                           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessStaticHeadList(double, double, AmanziGeometry::Point&,
-        const Teuchos::ParameterList&, const Teuchos::RCP<BoundaryFunction>&) const;
+        const Teuchos::ParameterList&, const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessStaticHeadSpec(double, double, AmanziGeometry::Point&,
-        const Teuchos::ParameterList&, const Teuchos::RCP<BoundaryFunction>&) const;
+        const Teuchos::ParameterList&, const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessZeroGradientList(const Teuchos::ParameterList&,
-          const Teuchos::RCP<BoundaryFunction>&) const;
+          const Teuchos::RCP<Functions::BoundaryFunction>&) const;
   void ProcessZeroGradientSpec(const Teuchos::ParameterList&,
-          const Teuchos::RCP<BoundaryFunction>&) const;
+          const Teuchos::RCP<Functions::BoundaryFunction>&) const;
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
