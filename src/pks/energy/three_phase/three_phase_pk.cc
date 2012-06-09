@@ -156,8 +156,8 @@ void ThreePhase::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize the timesteppper
   state_to_solution(S, solution_);
-  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e-5);
-  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e0);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e0);
 
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- instantiate time stepper
@@ -235,9 +235,9 @@ void ThreePhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
 
     double face_value = 0.0;
     for (int n=0; n!=ncells; ++n) {
-      face_value += (*temp)("cell",0,cells[n]);
+      face_value += (*temp)("cell",cells[n]);
     }
-    (*temp)("face",0,f) = face_value / ncells;
+    (*temp)("face",f) = face_value / ncells;
   }
 };
 

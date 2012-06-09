@@ -30,7 +30,7 @@ void AdvectionDiffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
   std::cout << "Residual calculation:" << std::endl;
-  std::cout << "  u: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+  std::cout << "  u: " << (*u)("cell",0) << " " << (*u)("face",0) << std::endl;
 
   // get access to the solution
   Teuchos::RCP<CompositeVector> res = g->data();
@@ -38,28 +38,28 @@ void AdvectionDiffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector
 
   // diffusion term, implicit
   ApplyDiffusion_(S_next_, res);
-  std::cout << "  res (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res (after diffusion): " << (*res)("cell",0) << " " << (*res)("face",0) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
-  std::cout << "  res (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res (after accumulation): " << (*res)("cell",0) << " " << (*res)("face",0) << std::endl;
 
   // advection term, explicit
   AddAdvection_(S_inter_, res, true);
-  std::cout << "  res (after advection): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
+  std::cout << "  res (after advection): " << (*res)("cell",0) << " " << (*res)("face",0) << std::endl;
 };
 
 // applies preconditioner to u and returns the result in Pu
 void AdvectionDiffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
-  std::cout << "  u: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
+  std::cout << "  u: " << (*u->data())("cell",0) << " " << (*u->data())("face",0) << std::endl;
   // preconditioner for accumulation only:
   //  *Pu = *u;
 
   // MFD ML preconditioner
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
 
-  std::cout << "  Pu: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
+  std::cout << "  Pu: " << (*Pu->data())("cell",0) << " " << (*Pu->data())("face",0) << std::endl;
 };
 
 // computes a norm on u-du and returns the result
@@ -117,11 +117,11 @@ void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> 
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = cell_volume->size("cell",false);
   for (int c=0; c!=ncells; ++c) {
-    double factor = (*cell_volume)(c);
+    double factor = (*cell_volume)("cell",c);
     Acc_cells[c] += factor/h;
-    Fc_cells[c] += factor/h * (*temp0)("cell",0,c);
+    Fc_cells[c] += factor/h * (*temp0)("cell",c);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

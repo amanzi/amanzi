@@ -136,6 +136,7 @@ void Coordinator::cycle_driver () {
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
   S_next_ = Teuchos::rcp(new State(*S_));
+  *S_next_ = *S_;
 
   // set the states in the PKs
   Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state

@@ -72,7 +72,9 @@ is the vector (t, x, y, z).
 #include "Teuchos_ParameterList.hpp"
 
 #include "Mesh.hh"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
+
+using namespace Amanzi::Functions;
 
 namespace Amanzi {
 namespace Energy {

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
   typedef Teuchos::StringToIntegralParameterEntryValidator<int> StrValidator;
   Teuchos::RCP<StrValidator> frameworkValidator = Teuchos::rcp(
           new StrValidator(Teuchos::tuple<std::string>( "Structured", "SimpleMesh",
-                  "stk::mesh" ) ,"Framework") );
+                  "stk::mesh", "MSTK" ) ,"Framework") );
 
   std::string framework = frameworkValidator->validateString(
           Teuchos::getParameter<std::string>(mesh_parameter_list,"Framework"));

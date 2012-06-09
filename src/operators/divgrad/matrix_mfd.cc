@@ -11,7 +11,8 @@
 namespace Amanzi {
 namespace Operators {
 
-MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
+                     const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     plist_(plist), mesh_(mesh) {
   std::string methodstring = plist.get<string>("MFD method");
 
@@ -31,7 +32,10 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mes
  ****************************************************************** */
 void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+
+  // TODO: fix -- MFD3D should NOT need a non-const mesh
+  Teuchos::RCP<AmanziMesh::Mesh> nc_mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh_);
+  WhetStone::MFD3D mfd(nc_mesh);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -85,7 +89,10 @@ void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
  ****************************************************************** */
 void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+
+  // TODO: fix -- MFD3D should NOT need a non-const mesh
+  Teuchos::RCP<AmanziMesh::Mesh> nc_mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh_);
+  WhetStone::MFD3D mfd(nc_mesh);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -103,13 +110,13 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (!Krel.has_name("face")) {
+    if (!Krel.has_component("face")) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n) * Krel("cell",0,c);
         }
       }
-    } else if (!Krel.has_name("cell")) {
+    } else if (!Krel.has_component("cell")) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n) * Krel("face",0,faces[m]);
@@ -194,11 +201,11 @@ void MatrixMFD::CreateMFDrhsVectors() {
  * (Supervectors) instead of CompositeVectors -- for use with AztecOO.
  * This should likely only be called with a non-ghosted sample vector.
  ****************************************************************** */
-void MatrixMFD::InitializeSuperVecs(const CompositeVector& sample) {
-  vector_x_ = Teuchos::rcp(new CompositeVector(sample));
-  vector_y_ = Teuchos::rcp(new CompositeVector(sample));
-  supermap_ = vector_x_->supermap();
-}
+// void MatrixMFD::InitializeSuperVecs(const CompositeVector& sample) {
+//   vector_x_ = Teuchos::rcp(new CompositeVector(sample));
+//   vector_y_ = Teuchos::rcp(new CompositeVector(sample));
+//   supermap_ = vector_x_->supermap();
+// }
 
 /* ******************************************************************
  * Applies boundary conditions to elemental stiffness matrices and
@@ -295,7 +302,8 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   std::vector<AmanziMesh::Entity_kind> locations(2);
   locations[0] = AmanziMesh::CELL; locations[1] = AmanziMesh::FACE;
 
-  rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, 1, true));
+  std::vector<int> num_dofs(1,1);
+  rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
   rhs_->CreateData();
 }
 
@@ -392,17 +400,17 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
 /* ******************************************************************
  * Parallel matvec product A * X.
  ****************************************************************** */
-int MatrixMFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-  vector_x_->DataFromSuperVector(*X(0));
-  vector_y_->DataFromSuperVector(*Y(0));
-  Apply(*vector_x_, vector_y_);
-}
+// int MatrixMFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+//   vector_x_->DataFromSuperVector(*X(0));
+//   vector_y_->DataFromSuperVector(*Y(0));
+//   Apply(*vector_x_, vector_y_);
+// }
 
-int MatrixMFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-  vector_x_->DataFromSuperVector(*X(0));
-  vector_y_->DataFromSuperVector(*Y(0));
-  ApplyInverse(*vector_x_, vector_y_);
-}
+// int MatrixMFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+//   vector_x_->DataFromSuperVector(*X(0));
+//   vector_y_->DataFromSuperVector(*Y(0));
+//   ApplyInverse(*vector_x_, vector_y_);
+// }
 
 /* ******************************************************************
  * Parallel matvec product A * X.
@@ -551,7 +559,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
       if (f < nfaces_owned && !flag[f]) {
         double s = 0.0;
         for (int m=0; m!=nfaces; ++m) s += Aff_cells_[c](n, m) * dp[m];
-        (*flux)(f) = s * dirs[n];
+        (*flux)("face", 0, f) = s * dirs[n];
         flag[f] = 1;
       }
     }
@@ -589,7 +597,7 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
       double area = mesh_->face_area(f);
 
       for (int i=0; i!=dim; ++i) {
-        rhs_cell[i] += normal[i] * flux(f);
+        rhs_cell[i] += normal[i] * flux("face",0,f);
         matrix(i,i) += normal[i] * normal[i];
         for (int j=i+1; j!=dim; ++j) {
           matrix(j,i) = matrix(i,j) += normal[i] * normal[j];
@@ -600,7 +608,7 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
     int info;
     lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
 
-    for (int i=0; i!=dim; ++i) (*velocity)(i,c) = rhs_cell[i];
+    for (int i=0; i!=dim; ++i) (*velocity)("cell",i,c) = rhs_cell[i];
   }
 }
 

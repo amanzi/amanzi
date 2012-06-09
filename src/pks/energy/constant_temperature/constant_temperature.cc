@@ -20,6 +20,7 @@
    ------------------------------------------------------------------------- */
 
 #include "composite_vector.hh"
+#include "composite_vector_factory.hh"
 #include "bdf2_time_integrator.hh"
 #include "constant_temperature.hh"
 
@@ -35,32 +36,44 @@ ConstantTemperature::ConstantTemperature(Teuchos::ParameterList& energy_plist,
   solution_ = solution;
 
   // require fields for the state and solution
-  S->RequireField("temperature", "energy", AmanziMesh::CELL);
+  Teuchos::RCP<CompositeVectorFactory> factory =
+    S->RequireField("temperature", "energy");
+
+  // Set up the data structure.
+  // Since there is only one field, we'll do this manually.
+  factory->SetMesh(S->Mesh());
+  factory->SetComponent("cell", AmanziMesh::CELL, 1);
+  factory->SetGhosted(true);
+
+  // Note that this the above lines are equivalent to the fancier/more concise
+  // version:
+  //  S->RequireField("temperature", "energy")->SetMesh(S->Mesh())->
+  //            SetComponent("cell", AmanziMesh::CELL, 1)->SetGhosted(true);
+
   S->GetRecord("temperature","energy")->set_io_vis(true);
   Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-  solution_->set_data(temp);
-
-  // check if we need to make a time integrator
-  if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
-      Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
-    time_stepper_ = Teuchos::rcp(new BDF2TimeIntegrator(this, bdf2_plist_p, solution_));
-  }
 };
 
 // initialize ICs
 void ConstantTemperature::initialize(const Teuchos::RCP<State>& S) {
-  // constant initial temperature
-  T_ = energy_plist_.get<double>("Constant temperature", 290.0);
-  S->GetFieldData("temperature", "energy")->PutScalar(T_);
-  S->GetRecord("temperature", "energy")->set_initialized();
+  // This pk provides a constant temperature, given by the intial temp.
+  // Therefore we store the initial temp to evaluate changes.
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+  temp0_ = Teuchos::rcp(new CompositeVector(*temp));
+  *temp0_ = *temp;
 
-  state_to_solution(S, solution_);
+  // initialize the time integrator and nonlinear solver
+  solution_->set_data(temp);
   atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
-  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1.0);
 
-  // initialize the timesteppper
+  // check if we need to make a time integrator
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
+    // -- instantiate the time integrator
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_plist_p =
+      Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
+    time_stepper_ = Teuchos::rcp(new BDF2TimeIntegrator(this, bdf2_plist_p, solution_));
+
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);
@@ -88,7 +101,7 @@ void ConstantTemperature::solution_to_state(const Teuchos::RCP<TreeVector>& soln
 // Advance methods calculate the constant value
 // -- advance using the analytic value
 bool ConstantTemperature::advance_analytic_(double dt) {
-  solution_->PutScalar(T_);
+  *solution_->data() = *temp0_;
   return false;
 };
 
@@ -99,20 +112,18 @@ bool ConstantTemperature::advance_bdf_(double dt) {
   // take the bdf timestep
   double h = dt;
   time_stepper_->time_step(h, solution_);
-  time_stepper_->commit_solution(h, solution_);
 
-  // In the case where this is a leaf, and therefore advancing itself (and not
-  // within a strongly coupled solver), we will call the local residual
-  // function only.  This local residual function need NOT copy the guess for
-  // u/u_dot into the state (as it is a leaf and therefore already has access.
-  // Therefore, the S_next's temperature pointer was not overwritten, and we
-  // need not copy it back into S_next, like is required in StrongMPC.
+  // commit the step as successful
+  time_stepper_->commit_solution(h, solution_);
+  solution_to_state(solution_, S_next_);
+  commit_state(h, S_next_);
+
   return false;
 };
 
 // -- call your favorite
 bool ConstantTemperature::advance(double dt) {
-  return advance_analytic_(dt);
+  return advance_bdf_(dt);
 };
 
 // Methods for the BDF integrator
@@ -120,19 +131,22 @@ bool ConstantTemperature::advance(double dt) {
 void ConstantTemperature::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
   *f = *u_new;
-  f->Shift(-T_);
+  f->data()->Update(-1.0, *temp0_, 1.0); // T - T0
 };
 
-// -- preconditioning (currently none)
-void ConstantTemperature::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+// -- preconditioning (the identity matrix)
+void ConstantTemperature::precon(Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> Pu) {
   *Pu = *u;
 };
 
-void ConstantTemperature::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  // do nothing
-};
 
-// computes a norm on u-du and returns the result
+// -- update the preconditioner (no need to do anything)
+void ConstantTemperature::update_precon(double t,
+        Teuchos::RCP<const TreeVector> up, double h) {};
+
+
+// -- computes a norm on (u, du) and returns the result
 double ConstantTemperature::enorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
@@ -140,7 +154,8 @@ double ConstantTemperature::enorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const Epetra_MultiVector> temp_dot_vec = du->data()->ViewComponent("cell", false);
 
   for (int lcv=0; lcv != temp_vec->MyLength(); ++lcv) {
-    double tmp = abs((*(*temp_dot_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*temp_vec)(0))[lcv]));
+    double tmp = abs((*(*temp_dot_vec)(0))[lcv]) /
+      (atol_ + rtol_*abs((*(*temp_vec)(0))[lcv]));
     enorm_val = std::max<double>(enorm_val, tmp);
   }
 
