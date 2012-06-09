@@ -137,11 +137,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<const CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume");
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells = preconditioner_->Aff_cells();
-  std::vector<Epetra_SerialDenseVector>& Acf_cells = preconditioner_->Acf_cells();
-  std::vector<Epetra_SerialDenseVector>& Afc_cells = preconditioner_->Afc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  std::vector<Epetra_SerialDenseVector>& Ff_cells = preconditioner_->Ff_cells();
 
   Teuchos::RCP<CompositeVector> dsat_liq = Teuchos::rcp(new CompositeVector(*sat_liq));
   DSaturationDp_(S_next_, *pres, *p_atm, dsat_liq);
