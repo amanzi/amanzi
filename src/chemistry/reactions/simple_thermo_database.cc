@@ -94,7 +94,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
   if (!input) {
     std::ostringstream error_stream;
     error_stream << "SimpleThermoDatabase::ReadFile(): \n";
-    error_stream << "file could not be opened.... " << file_name << "\n";
+    error_stream << "file could not be opened.... '" << file_name << "'\n";
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 

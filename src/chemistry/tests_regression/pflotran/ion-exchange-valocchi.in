@@ -24,7 +24,7 @@ CHEMISTRY
   /
   SORPTION
     ION_EXCHANGE_RXN
-      MINERAL Halite
+:      MINERAL Halite
       CEC 750. eq/m^3
       CATIONS
         Na+   1.

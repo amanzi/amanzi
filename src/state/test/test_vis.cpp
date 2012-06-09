@@ -107,7 +107,7 @@ SUITE(VISUALIZATION) {
     S.set_cycle(3);
 
     // create some auxillary data
-    Epetra_MultiVector aux(*S.get_total_component_concentration());
+    Teuchos::RCP<Epetra_MultiVector> aux = S.get_total_component_concentration();
     
     std::vector<string> compnames(1);
     std::vector<string> auxnames(1);
@@ -117,7 +117,7 @@ SUITE(VISUALIZATION) {
 
     S.set_compnames(compnames);
     
-    S.write_vis(V, &aux, auxnames, false);
+    S.write_vis(V, aux, auxnames, false);
 
   }
 

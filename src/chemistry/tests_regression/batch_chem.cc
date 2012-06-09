@@ -155,8 +155,9 @@ int main(int argc, char** argv) {
         ac::chem_out->Write(ac::kVerbose, message);
 
         // write out the headers info and initial conditions
-        chem->DisplayTotalColumnHeaders();
-        chem->DisplayTotalColumns(0.0, components);
+        chem->DisplayTotalColumnHeaders(simulation_params.display_free_columns);
+        chem->DisplayTotalColumns(0.0, components,
+                                  simulation_params.display_free_columns);
         std::vector<std::string> names;
         chem->GetPrimaryNames(&names);
         WriteTextOutputHeader(&text_output, time_units, names);
@@ -168,7 +169,8 @@ int main(int argc, char** argv) {
           chem->ReactionStep(&components, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
             double time = (time_step + 1) * simulation_params.delta_time;
-            chem->DisplayTotalColumns(time, components);
+            chem->DisplayTotalColumns(time, components, 
+                                      simulation_params.display_free_columns);
             WriteTextOutput(&text_output, time * time_units_conversion, components);
           }
           if (simulation_params.verbosity >= ac::kDebugBeaker) {
@@ -468,10 +470,11 @@ void ParseSimulationParameter(const std::string& raw_line,
   //std::cout << "\'" << raw_line << "\'" << std::endl;
   // if param.size() == 0 then we have a blank line
   if (param.size() != 0) {
-    ac::StringTokenizer param_value(param.at(1), spaces);
+    ac::StringTokenizer values(param.at(1), ",");
     std::string value("");
-    if (param_value.size() > 0) {
-      value.assign(param_value.at(0));
+    if (values.size() == 1) {
+      value.assign(values.at(0));
+      ac::utilities::RemoveLeadingAndTrailingWhitespace(&value);
     }
     if (param.at(0).find(kDescriptionParam) != std::string::npos) {
       // the description probably has spaces in it, so we want to use
@@ -479,8 +482,7 @@ void ParseSimulationParameter(const std::string& raw_line,
       // version in value, which has been tokenized by spaces!
       params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
-      ac::StringTokenizer verb_names(value, ",");
-      params->verbosity_names.assign(verb_names.begin(), verb_names.end());
+      params->verbosity_names.assign(values.begin(), values.end());
     } else if (param.at(0).find(kTextOutputParam) != std::string::npos) {
       params->text_output.assign(value) ;
     } else if (param.at(0).find(kTextTimeUnitsParam) != std::string::npos) {
@@ -684,12 +686,9 @@ void PrintSimulationParameters(const SimulationParameters& params)
   std::stringstream message;
   message << "-- Simulation parameters:" << std::endl;
   message << "\tdescription: " << params.description << std::endl;
-  message << "\tverbosity names: ";
-  for (std::vector<std::string>::const_iterator name = params.verbosity_names.begin();
-       name != params.verbosity_names.end(); ++name) {
-    message << *name << ", ";
-  }
-  message << std::endl;
+  ac::chem_out->Write(ac::kVerbose, message);
+  ac::utilities::PrintVector("\tverbosity names", params.verbosity_names, true);
+  message.str("");
   message << "\tverbosity enum: " << params.verbosity << std::endl;
   message << "\tcomparison model: " << params.comparison_model << std::endl;
   message << "\tdatabase type: " << params.database_type << std::endl;

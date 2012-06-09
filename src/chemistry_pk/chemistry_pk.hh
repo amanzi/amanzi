@@ -99,6 +99,7 @@ class Chemistry_PK {
 
  private:
   bool debug_;
+  bool display_free_columns_;
   double max_time_step_;
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
