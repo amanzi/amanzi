@@ -52,7 +52,7 @@ void EnergyTest::initialize_owned() {
       (*temp)("cell",lcv_comp,c) = my_f(xc, 0.0);
     }
   }
-  S0->GetRecord("temperature", "energy")->set_initialized();
+  S0->GetField("temperature", "energy")->set_initialized();
 }
 
 void EnergyTest::initialize_darcy_flux() {
@@ -65,7 +65,7 @@ void EnergyTest::initialize_darcy_flux() {
     const AmanziGeometry::Point& fc = mesh->face_centroid(f);
     (*darcy_flux)("face",0,f) = my_u(fc, 0.0) * normal;
   }
-  S0->GetRecord("darcy_flux", "state")->set_initialized();
+  S0->GetField("darcy_flux", "state")->set_initialized();
 }
 
 void EnergyTest::evaluate_error_temp(double t, double* L1, double* L2) {

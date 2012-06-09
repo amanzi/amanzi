@@ -50,7 +50,7 @@ void TransportTest::initialize_tcc() {
       (*tcc)(lcv_comp,c) = my_f(xc, 0.0);
     }
   }
-  S0->GetRecord("concentration", "transport")->set_initialized();
+  S0->GetField("concentration", "transport")->set_initialized();
 }
 
 void TransportTest::initialize_darcy_flux() {
@@ -63,7 +63,7 @@ void TransportTest::initialize_darcy_flux() {
     const AmanziGeometry::Point& fc = mesh->face_centroid(f);
     (*darcy_flux)(f) = my_u(fc, 0.0) * normal;
   }
-  S0->GetRecord("darcy_flux", "state")->set_initialized();
+  S0->GetField("darcy_flux", "state")->set_initialized();
 }
 
 void TransportTest::evaluate_error_tcc(double t, double* L1, double* L2) {

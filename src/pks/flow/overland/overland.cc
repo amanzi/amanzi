@@ -128,7 +128,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   S->RequireField("upwind_overland_conductivity", "overland_flow")
                 ->SetMesh(S->Mesh("surface"))->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
-  S->GetRecord("upwind_overland_conductivity","overland_flow")->set_io_vis(false);
+  S->GetField("upwind_overland_conductivity","overland_flow")->set_io_vis(false);
 
   // abs perm tensor
   variable_abs_perm_ = false;
@@ -194,7 +194,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
     Errors::Message message("Pulling elevation from volume mesh not yet implemented.");
     Exceptions::amanzi_throw(message);
   }
-  S->GetRecord("elevation","overland_flow")->set_initialized();
+  S->GetField("elevation","overland_flow")->set_initialized();
 
   // initialize the rainfall model
   Teuchos::RCP<const CompositeVector> rain = S->GetFieldData("rainfall_rate");
@@ -204,16 +204,16 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
 
   // declare secondary variables initialized, as they will be done by
   // the commit_state call
-  S->GetRecord("overland_conductivity", "overland_flow")->set_initialized();
-  S->GetRecord("overland_flux", "overland_flow")->set_initialized();
-  S->GetRecord("overland_velocity", "overland_flow")->set_initialized();
-  S->GetRecord("pres_elev", "overland_flow")->set_initialized();
-  S->GetRecord("rainfall_rate", "overland_flow")->set_initialized();
+  S->GetField("overland_conductivity", "overland_flow")->set_initialized();
+  S->GetField("overland_flux", "overland_flow")->set_initialized();
+  S->GetField("overland_velocity", "overland_flow")->set_initialized();
+  S->GetField("pres_elev", "overland_flow")->set_initialized();
+  S->GetField("rainfall_rate", "overland_flow")->set_initialized();
 
   // rel perm is special -- if the mode is symmetric, it needs to be
   // initialized to 1
   S->GetFieldData("upwind_overland_conductivity","overland_flow")->PutScalar(1.0);
-  S->GetRecord("upwind_overland_conductivity", "overland_flow")->set_initialized();
+  S->GetField("upwind_overland_conductivity", "overland_flow")->set_initialized();
 
   // initialize bcs
   bc_pressure_->Compute(S->time());

@@ -185,12 +185,12 @@ void ThreePhase::initialize(const Teuchos::RCP<State>& S) {
 
   // declare secondary variables initialized, as they get done in a call to
   // commit_state
-  S->GetRecord("thermal_conductivity","energy")->set_initialized();
-  S->GetRecord("internal_energy_gas","energy")->set_initialized();
-  S->GetRecord("internal_energy_liquid","energy")->set_initialized();
-  S->GetRecord("internal_energy_ice","energy")->set_initialized();
-  S->GetRecord("internal_energy_rock","energy")->set_initialized();
-  S->GetRecord("enthalpy_liquid","energy")->set_initialized();
+  S->GetField("thermal_conductivity","energy")->set_initialized();
+  S->GetField("internal_energy_gas","energy")->set_initialized();
+  S->GetField("internal_energy_liquid","energy")->set_initialized();
+  S->GetField("internal_energy_ice","energy")->set_initialized();
+  S->GetField("internal_energy_rock","energy")->set_initialized();
+  S->GetField("enthalpy_liquid","energy")->set_initialized();
 
   // initialize the timesteppper
   solution_->set_data(temp);

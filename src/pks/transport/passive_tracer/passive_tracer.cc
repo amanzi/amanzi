@@ -22,7 +22,7 @@ PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
 
   // require fields for the state and solution
   S->RequireField("concentration", "transport", AmanziMesh::CELL);
-  S->GetRecord("concentration","transport")->set_io_vis(true);
+  S->GetField("concentration","transport")->set_io_vis(true);
   Teuchos::RCP<CompositeVector> conc = S->GetFieldData("concentration", "transport");
   solution->set_data(conc);
   solution_ = solution;
@@ -49,7 +49,7 @@ void PassiveTracer::initialize(const Teuchos::RCP<State>& S) {
   // constant initial concentration
   C_ = transport_plist_.get<double>("Constant concentration", 1.0);
   S->GetFieldData("concentration", "transport")->PutScalar(C_);
-  S->GetRecord("concentration", "transport")->set_initialized();
+  S->GetField("concentration", "transport")->set_initialized();
 
   // initialize the advection method
   advection_->set_num_dofs(1);
