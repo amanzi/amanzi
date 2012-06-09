@@ -40,7 +40,7 @@ void Coordinator::coordinator_init() {
   // vis for the state
   Teuchos::ParameterList vis_plist = parameter_list_.sublist("Visualization");
   visualization_ = Teuchos::rcp(new Visualization(vis_plist, comm_));
-  visualization_->create_files(*mesh_);
+  visualization_->CreateFiles(*mesh_);
 
   // checkpointing for the state
   Teuchos::ParameterList chkp_plist = parameter_list_.sublist("Checkpoint");
@@ -117,7 +117,20 @@ void Coordinator::read_parameter_list() {
   end_cycle_ = coordinator_plist_.get<int>("End Cycle",-1);
 }
 
-void Coordinator::cycle_driver () {
+
+// -----------------------------------------------------------------------------
+// timestep loop
+// -----------------------------------------------------------------------------
+void Coordinator::cycle_driver() {
+  // the time step manager coordinates all non-physical timesteps
+  TimeStepManager tsm;
+  // register times with the tsm
+  // -- register visualization times
+  visualization_->RegisterWithTimeStepManager(tsm);
+  // -- register observation times
+  //if (observations_) observations_->register_with_time_step_manager(TSM);
+  // -- register the final time
+  tsm.RegisterTimeEvent(t1_);
 
   // start at time t = t0 and initialize the state.  In a flow steady-state
   // problem, this should include advancing flow to steady state (which should
@@ -132,7 +145,7 @@ void Coordinator::cycle_driver () {
   //  observations_->MakeObservations(*S_);
 
   // write visualization if requested at IC
-  S_->WriteVis(visualization_, true);
+  S_->WriteVis(visualization_.ptr());
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -147,6 +160,7 @@ void Coordinator::cycle_driver () {
   double dt;
   bool fail = false;
   while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
+    // get the physical step size
     dt = pk_->get_dt();
 
     // check if the step size has gotten too small
@@ -160,11 +174,8 @@ void Coordinator::cycle_driver () {
       dt = max_dt_;
     }
 
-    // check if we are within reach of a vis step, restart step, or end of
-    // simulation, and adjust timestep appropriately
-    if (S_->time() + dt > t1_) {
-      dt = t1_ - S_->time();
-    }
+    // ask the step manager if this step is ok
+    dt = tsm.TimeStep(S_->time(), dt);
 
     std::cout << "Cycle = " << S_->cycle();
     std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
@@ -187,8 +198,11 @@ void Coordinator::cycle_driver () {
 
       // write visualization if requested
       // this needs to be fixed...
-      pk_->calculate_diagnostics(S_next_);
-      S_next_->WriteVis(visualization_);
+      if (visualization_->DumpRequested(S_next_->cycle(), S_next_->time())) {
+        pk_->calculate_diagnostics(S_next_);
+        S_next_->WriteVis(visualization_.ptr());
+      }
+
       S_next_->WriteCheckpoint(checkpoint_);
 
       // write restart dump if requested
@@ -207,7 +221,7 @@ void Coordinator::cycle_driver () {
   // this needs to be fixed -- should not force, but ask if we want to checkpoint/vis at end
   S_next_->advance_cycle(); // hackery to make the vis stop whining
   pk_->calculate_diagnostics(S_next_);
-  S_next_->WriteVis(visualization_, true);
+  S_next_->WriteVis(visualization_.ptr());
   S_next_->WriteCheckpoint(checkpoint_, true);
 
   // dump observations
