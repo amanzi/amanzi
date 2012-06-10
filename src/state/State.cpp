@@ -40,7 +40,7 @@ State::State(int number_of_components_,
 };
 
 
-State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
+State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
     : mesh_maps(mesh_maps_),
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
@@ -53,8 +53,8 @@ State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
 }
 
 
-State::State( Teuchos::ParameterList &parameter_list_,
-              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
+State::State(Teuchos::ParameterList &parameter_list_,
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
     : mesh_maps(mesh_maps_),
       parameter_list(parameter_list_),
       number_of_minerals_(0),

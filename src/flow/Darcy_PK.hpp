@@ -44,8 +44,8 @@ class Darcy_PK : public Flow_PK {
   double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
   int AdvanceToSteadyState();
-  void InitializeAuxiliaryData() {};
-  void InitializeSteadySaturated() {};
+  void InitializeAuxiliaryData();
+  void InitializeSteadySaturated();
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
   void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) {};
@@ -61,6 +61,9 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+
+  // linear solvers
+  void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
 
   // io members
   void ProcessParameterList();

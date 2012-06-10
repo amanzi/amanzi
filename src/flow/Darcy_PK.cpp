@@ -177,6 +177,37 @@ void Darcy_PK::InitPK()
 
 
 /* ******************************************************************
+* Initialization of auxiliary variables (lambda and two saturations).
+* WARNING: Flow_PK may use complex initialization of the remaining 
+* state variables.
+****************************************************************** */
+void Darcy_PK::InitializeAuxiliaryData()
+{
+  // pressures (lambda is not important)
+  Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& lambda = FS->ref_lambda();
+  lambda.PutScalar(1.0);
+
+  // saturations
+  Epetra_Vector& ws = FS->ref_water_saturation();
+  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
+
+  ws_prev.PutScalar(1.0);
+  ws.PutScalar(1.0);
+}
+
+
+/* ******************************************************************
+* Wrapper for a steady-state solver
+****************************************************************** */
+void Darcy_PK::InitializeSteadySaturated()
+{ 
+  double T = FS->get_time();
+  SolveFullySaturatedProblem(T, *solution);
+}
+
+
+/* ******************************************************************
 * Separate initialization of solver may be required for steady state
 * and transient runs.       
 ****************************************************************** */
@@ -230,11 +261,22 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 
 
 /* ******************************************************************
+* Wrapper for a steady-state solver
+****************************************************************** */
+int Darcy_PK::AdvanceToSteadyState()
+{  
+  double T = FS->get_time();
+  SolveFullySaturatedProblem(T, *solution);
+  return 0;
+}
+
+
+/* ******************************************************************
 * Calculates steady-state solution assuming that absolute permeability 
 * does not depend on time. The boundary conditions are calculated
 * only once, during the initialization step.                                                
 ****************************************************************** */
-int Darcy_PK::AdvanceToSteadyState()
+void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 {
   solver->SetAztecOption(AZ_output, AZ_none);
 
@@ -250,7 +292,7 @@ int Darcy_PK::AdvanceToSteadyState()
   rhs = matrix_->rhs();
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
-  solver->SetLHS(&*solution);  // initial solution guess
+  solver->SetLHS(&u);  // initial solution guess
 
   solver->Iterate(max_itrs_sss, convergence_tol_sss);
   num_itrs_sss = solver->NumIters();
@@ -262,7 +304,6 @@ int Darcy_PK::AdvanceToSteadyState()
   }
 
   flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
-  return 0;
 }
 
 
@@ -329,7 +370,8 @@ int Darcy_PK::Advance(double dT_MPC)
 ****************************************************************** */
 void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
-  FS_MPC->ref_pressure() = *solution_cells;
+  Epetra_Vector& pressure = FS_MPC->ref_pressure();
+  pressure = *solution_cells;
 
   // calculate darcy mass flux
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();

@@ -89,8 +89,8 @@ int main(int argc, char *argv[]) {
     
     Amanzi::Simulator* simulator = NULL;
     
-    Amanzi::timer_manager.add( "Full Simulation", Amanzi::Timer::ONCE );
-    Amanzi::timer_manager.start( "Full Simulation" );
+    Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
+    Amanzi::timer_manager.start("Full Simulation");
     
     if (framework=="Structured") {
 #ifdef ENABLE_Structured
