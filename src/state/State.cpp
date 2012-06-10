@@ -240,9 +240,11 @@ void State::initialize_from_parameter_list()
         set_uniform_saturation(lin_s_list, region);
       }  
 
-      // set the specific storage
+      // set specific storage Ss or specific yield Sy in the same state variable
       if (sublist.isParameter("Constant specific storage")) {
         set_specific_storage(sublist.get<double>("Constant specific storage"), region);
+      } else if (sublist.isParameter("Constant specific yield")) {
+        set_specific_storage(sublist.get<double>("Constant specific yield"), region);
       }
 
       // read the component concentrations from the xml file
