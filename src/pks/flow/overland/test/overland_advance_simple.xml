@@ -116,11 +116,14 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Water Retention Model">
-      <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-      <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
-      <Parameter name="van Genuchten m" type="double" value="0.5"/>
-      <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
+    <ParameterList name="Water Retention Models">
+      <ParameterList name="WRM 1">
+        <Parameter name="Region" type="string" value="Computational domain"/>
+        <Parameter name="WRM Type" type="string" value="van Genuchten"/>
+        <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
+        <Parameter name="van Genuchten m" type="double" value="0.5"/>
+        <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -144,7 +147,6 @@
     <ParameterList name="Initial pressure">
       <Parameter name="Constant" type="double" value="101325.0"/>
     </ParameterList>
-
 
     <ParameterList name="Initial permeability">
       <Parameter name="Constant" type="double" value="2.5e-12"/> <!-- m**2 -->

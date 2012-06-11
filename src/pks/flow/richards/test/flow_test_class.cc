@@ -24,7 +24,8 @@ void FlowTest::initialize() {
 
   // initialize flow
   FPK->initialize(S0);
-  initialize_owned();
+  FPK->commit_state(0.0, S0);
+  //  initialize_owned();
 
   // finish checking state and create the state at the new timestep
   if (!S0->CheckAllInitialized()) {
