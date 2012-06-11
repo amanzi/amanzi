@@ -40,12 +40,12 @@ class Flow_State {
   ~Flow_State() {};
 
   // data management
-  void copyMasterCell2GhostCell(Epetra_Vector& v);
-  void copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
-  void combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
+  void CopyMasterCell2GhostCell(Epetra_Vector& v);
+  void CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
+  void CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 
-  Epetra_Vector* createCellView(const Epetra_Vector& u) const;
-  Epetra_Vector* createFaceView(const Epetra_Vector& u) const;
+  Epetra_Vector* CreateCellView(const Epetra_Vector& u) const;
+  Epetra_Vector* CreateFaceView(const Epetra_Vector& u) const;
 
   // access methods
   Teuchos::RCP<AmanziGeometry::Point> gravity() { return gravity_; }  // RCP pointers
@@ -73,6 +73,7 @@ class Flow_State {
   Epetra_Vector& ref_lambda() { return *lambda_; }  
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux_; }
   Epetra_MultiVector& ref_darcy_velocity() { return *darcy_velocity_; }
+  const AmanziGeometry::Point& ref_gravity() { return *gravity_; }
 
   Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability_; }
   Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability_; }
@@ -83,7 +84,7 @@ class Flow_State {
   Epetra_Vector& ref_specific_storage() { return *specific_storage_; }
 
   // miscaleneous
-  double get_time() { return (S_ == NULL) ? 0.0 : S_->get_time(); }
+  double get_time() { return (S_ == NULL) ? -1.0 : S_->get_time(); }
   double normLpCell(const Epetra_Vector& v1, double p);
   double normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p);
   

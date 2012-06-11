@@ -40,58 +40,82 @@ class Richards_PK : public Flow_PK {
   ~Richards_PK();
 
   // main methods
-  void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
 
   double CalculateFlowDt();
   int Advance(double dT_MPC); 
   int AdvanceToSteadyState();
+  void InitializeAuxiliaryData();
+  void InitializeSteadySaturated();
+
+  int AdvanceToSteadyState_Picard();
+  int AdvanceToSteadyState_BackwardEuler();
+  int AdvanceToSteadyState_BDF1();
+  int AdvanceToSteadyState_BDF2();
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
   void CommitStateForTransport(Teuchos::RCP<Flow_State> FS);
   void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
-  int AdvanceSteadyState_Picard();
-  int AdvanceSteadyState_BackwardEuler();
-  int AdvanceSteadyState_BDF1();
-  int AdvanceSteadyState_BDF2();
-
   // methods for experimental time integration
-  int PicardStep(double T, double dT, double& dTnext);
-  double ErrorNorm(const Epetra_Vector& uold, const Epetra_Vector& unew);
+  int PicardTimeStep(double T, double dT, double& dTnext);
+  int AndersonAccelerationTimeStep(double T, double dT, double& dTnext);
+  double ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du);
+  double ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du);
+  double ErrorNormPicardExperimental(const Epetra_Vector& uold, const Epetra_Vector& unew);
  
   // methods required for time integration
   void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
-  void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
   void update_norm(double rtol, double atol) {};
+  void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
+  // void compute_precon(double T, double dT, const Epetra_Vector& u, Teuchos::ParameterList* prec_list);
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
+
+  void CalculateRelativePermeability(const Epetra_Vector& u);
   void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
   void CalculateRelativePermeabilityFace(const Epetra_Vector& p);
   void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
   void CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
   void CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
 
-  void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
-  void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDpicard(Epetra_Vector& pressure_cells, 
-                                   Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix);
+                                   Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix_operator);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix,
+  void ComputePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix_operator,
                                 double Tp, double dTp, bool flag_update_ML);
 
-  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
-                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+  void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
+
+  // linear problems and solvers
+  void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner);
+  void AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp, Epetra_Vector& p, bool add_preconditioner);
+  void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
+  void SolveTransientProblem(double T, double dT, Epetra_Vector& u);
 
   // io members
   void ProcessParameterList();
   void ProcessStringTimeIntegration(const std::string name, int* method);
+  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringRelativePermeability(const std::string name, int* method);
+  void VerifyStringMualemBurdine(const std::string name);
+  void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
+
+  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
+  std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
+  void ProcessSublistTimeIntegration(
+    Teuchos::ParameterList& list, const std::string name,
+    double* absolute_tol, double* relative_tol, double* residual_tol, int* max_itrs,
+    double* T0, double* T1, double* dT0, double* dTmax);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -100,14 +124,13 @@ class Richards_PK : public Flow_PK {
 
   // initization members
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
-
-  void InitializePressureHydrostatic(const double T);
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
   double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
-  // control methods
+  // control method
+  void ResetErrorControl(int error) { error_control_ = error; }
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   void PrintStatistics() const;
   
@@ -116,12 +139,19 @@ class Richards_PK : public Flow_PK {
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
 
+  // developement members
+  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
+                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+  
+  Matrix_MFD* preconditioner() { return preconditioner_; }
+
  public:
   int num_nonlinear_steps;
 
  private:
-  Teuchos::ParameterList preconditioner_list_;
   Teuchos::ParameterList rp_list_;
+  Teuchos::ParameterList solver_list_;
+  Teuchos::ParameterList preconditioner_list_;
 
   AmanziGeometry::Point gravity_;
   double rho, mu;
@@ -134,25 +164,25 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Import> face_importer_;
 
   AztecOO* solver;  // Linear solver data
-  Matrix_MFD* matrix;
-  Matrix_MFD* preconditioner;
+  Matrix_MFD* matrix_;
+  Matrix_MFD* preconditioner_;
   double convergence_tol;
 
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
   int block_picard;
-  int error_control;
+  int error_control_;
 
   int ti_method_sss;  // Parameters for steady-state solution
   std::string preconditioner_name_sss_;
   int num_itrs_sss, max_itrs_sss;
-  double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
+  double absolute_tol_sss, relative_tol_sss, residual_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
   int initialize_with_darcy;
 
   int ti_method_trs;  // Parameters for transient solution
   std::string preconditioner_name_trs_;
-  double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
+  double absolute_tol_trs, relative_tol_trs, residual_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;
 

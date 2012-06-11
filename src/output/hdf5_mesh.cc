@@ -23,15 +23,15 @@ namespace Amanzi
   group = H5Gcreate(file, "/Mesh", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // get num_nodes, num_cells
-  int num_nodes = mesh_maps.count_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int num_elems = mesh_maps.count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_nodes = mesh_maps.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int num_elems = mesh_maps.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   // get coords
   double *nodes = new double[num_nodes*3];
 
-  std::vector<double> xc(3);
+  AmanziGeometry::Point xc;
   for (int i = 0; i < num_nodes; i++) {
-    mesh_maps.node_to_coordinates(i, xc.begin(), xc.end());
+    mesh_maps.node_get_coordinates(i, &xc);
     nodes[i*3] = xc[0];
     nodes[i*3+1] = xc[1];
     nodes[i*3+2] = xc[2];

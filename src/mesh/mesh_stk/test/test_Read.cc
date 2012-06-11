@@ -108,23 +108,26 @@ class ParallelReadFixture : public ReadFixture {
     Amanzi::Exodus::Parallel_Exodus_file thefile(comm, name);
     meshdata = thefile.read_mesh();
 
-    for (int p = 0; p < nproc; p++) {
-      if (comm.MyPID() == p) {
-        std::cerr << std::endl;
-        std::cerr << ">>>>>> Process " << p << " Begin <<<<<<" << std::endl;
-        meshdata->to_stream(std::cerr, verbose);
-        std::cerr << ">>>>>> Process " << p << " End <<<<<<" << std::endl;
-        std::cerr << std::endl;
-      }
-      comm.Barrier();
-    }
+    // Must check/verify, not just print
+    // for (int p = 0; p < nproc; p++) {
+    //   if (comm.MyPID() == p) {
+    //     std::cerr << std::endl;
+    //     std::cerr << ">>>>>> Process " << p << " Begin <<<<<<" << std::endl;
+    //     meshdata->to_stream(std::cerr, verbose);
+    //     std::cerr << ">>>>>> Process " << p << " End <<<<<<" << std::endl;
+    //     std::cerr << std::endl;
+    //   }
+    //   comm.Barrier();
+    // }
 
     Teuchos::RCP<Epetra_Map> cmap(thefile.cellmap());
     Teuchos::RCP<Epetra_Map> vmap(thefile.vertexmap());
-    if (verbose) {
-      cmap->Print(std::cerr);
-      vmap->Print(std::cerr);
-    }
+    
+    // Must check/verify, not just print
+    //    if (verbose) {
+    //      cmap->Print(std::cerr);
+    //      vmap->Print(std::cerr);
+    //    }
     mesh.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
   }
 

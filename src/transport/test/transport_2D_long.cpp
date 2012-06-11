@@ -69,8 +69,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
-  TPK.set_standalone_mode(true);
-  TPK.printStatistics();
+  TPK.PrintStatistics();
  
   /* advance the transport state */
   int iter, k;

@@ -63,7 +63,6 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-  RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
 

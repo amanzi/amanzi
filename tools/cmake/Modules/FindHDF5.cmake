@@ -236,6 +236,10 @@ if (HDF5_ROOT)
   list(APPEND _hdf5_LIBRARY_SEARCH_DIRS 
               ${HDF5_ROOT}/lib
               ${HDF5_ROOT})
+  
+            list(APPEND _hdf5_BINARY_SEARCH_DIRS 
+              ${HDF5_ROOT}/bin
+              ${HDF5_ROOT})
 endif()
  
 # Restrict the search to HDF5_ROOT if user does not want other
@@ -484,6 +488,23 @@ if ( NOT HDF5_IS_PARALLEL AND HDF5_SETTINGS_FILE )
   _HDF5_DEFINE_PARALLEL_BUILD(${HDF5_SETTINGS_FILE} HDF5_IS_PARALLEL)
 endif()
 
+# --- Search for HDF5 tools
+set(_hdf5_TOOLS h52gif h5copy h5debug h5diff h5dump h5import h5jam h5ls h5mkgrp h5stat)
+set(HDF5_TOOLS_FOUND)
+foreach( tool ${_hdf5_TOOLS})
+  string(TOUPPER "${tool}" tool_uc)
+  set(_hdf5_VAR_NAME HDF5_${tool_uc}_BINARY)
+  find_program(${_hdf5_VAR_NAME}
+               ${tool}
+               HINTS ${_hdf5_BINARY_SEARCH_DIRS}
+               ${_hdf5_FIND_OPTIONS})
+  if ("${_hdf5_VAR_NAME}")
+    list(APPEND HDF5_TOOLS_FOUND ${tool})
+  endif()
+endforeach()
+
+
+
 # --- Set the variables HDF5_<COMPONENT>_FOUND FLAGS
 foreach ( _component ${HDF5_VALID_COMPONENTS} )
   if( HDF5_${_component}_LIBRARY )
@@ -516,10 +537,11 @@ if ( NOT HDF5_FIND_QUIETLY )
   if ( HDF5_COMPONENTS_NOTFOUND )
     message(STATUS "\tHDF5 Components not found: ${HDF5_COMPONENTS_NOTFOUND}")
   endif()  
+  message(STATUS "\tHDF5_TOOLS_FOUND: ${HDF5_TOOLS_FOUND}")
 
 endif()
 
-find_package_handle_standard_args( HDF5 DFLT_MESSAGE
+find_package_handle_standard_args( HDF5 DEFAULT_MESSAGE
                                    HDF5_INCLUDE_DIRS
-				   HDF5_LIBRARIES
-				   HDF5_VERSION)
+                                   HDF5_LIBRARIES
+                                   HDF5_VERSION)

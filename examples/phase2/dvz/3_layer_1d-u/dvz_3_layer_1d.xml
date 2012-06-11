@@ -21,7 +21,7 @@
         <Parameter name="Start Times" type="Array double" value="{6.1729344E10, 6.173178481E10, 6.173705521E10}"/>
         <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10}"/>
       </ParameterList>
-      <Parameter name="Verbosity" type="string" value="Low"/>
+      <Parameter name="Verbosity" type="string" value="High"/>
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
@@ -32,7 +32,7 @@
           <Parameter name="steady max iterations" type="int" value="15"/>
           <Parameter name="steady min iterations" type="int" value="10"/>
           <Parameter name="steady limit iterations" type="int" value="20"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1.0"/>
+          <Parameter name="steady nonlinear tolerance" type="double" value="1e-4"/>
           <Parameter name="steady max time step" type="double" value="6.0e+10"/>
           <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
@@ -40,7 +40,7 @@
           <Parameter name="transient max iterations" type="int" value="15"/>
           <Parameter name="transient min iterations" type="int" value="10"/>
           <Parameter name="transient limit iterations" type="int" value="20"/>
-          <Parameter name="transient nonlinear tolerance" type="double" value="1.0"/>
+          <Parameter name="transient nonlinear tolerance" type="double" value="1e-4"/>
           <Parameter name="transient max time step" type="double" value="6.0e+10"/>
           <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
@@ -254,8 +254,8 @@
         </ParameterList>
       </ParameterList> 
       <ParameterList name="Time Macros">
-         <ParameterList name="Annual">
-            <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7,-1}"/>
+         <ParameterList name="Every 100 years">
+            <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3155760000.,-1}"/>
          </ParameterList>
       </ParameterList>
       <ParameterList name="Variable Macros"/>
@@ -263,8 +263,8 @@
       <ParameterList name="Visualization Data">
         <Parameter name="File Name Base" type="string" value="plot"/>
         <Parameter name="File Name Digits" type="string" value="5"/>
-	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
-<!-- 	<Parameter name="Time Macro" type="string" value="Annual"/> -->
+<!--	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/> -->
+ 	<Parameter name="Time Macro" type="string" value="Every 100 years"/> 
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_1000_year"/> -->
       </ParameterList>
@@ -272,8 +272,8 @@
         <Parameter name="File Name Base" type="string" value="checkpoint"/>
         <Parameter name="File Name Digit" type="int" value="5"/>
 	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
-<!-- 	<Parameter name="Time Macro" type="string" value="Annual"/> -->
-<!--         <Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
+<!-- 	<Parameter name="Time Macro" type="string" value="Every 100 years"/> -->
+<!--    <Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_1000_year"/> -->
       </ParameterList>
     </ParameterList>

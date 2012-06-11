@@ -20,9 +20,9 @@ TEST(HDF5_MPI) {
   //                                        1, comm));
   Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm);
 
-  unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, 
+  unsigned int num_nodes = Mesh.num_entities(Amanzi::AmanziMesh::NODE, 
                                                 Amanzi::AmanziMesh::OWNED);
-  unsigned int num_cells = Mesh.count_entities(Amanzi::AmanziMesh::CELL, 
+  unsigned int num_cells = Mesh.num_entities(Amanzi::AmanziMesh::CELL, 
                                                 Amanzi::AmanziMesh::OWNED);
 
   //Teuchos::RCP<Mesh_maps_base> Mesh(new STK_mesh::Mesh_maps_stk(0.0, 0.0, 0.0,
@@ -103,6 +103,23 @@ TEST(HDF5_MPI) {
   restart_output->writeCellDataReal(*fake_pressure, "pressure");
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
   
+  // write out string dataset
+  /*
+  int num_wstrs = 5;
+  char **strArray;
+  strArray = (char**) malloc(5*sizeof(char*));
+  for (int i=0; i<num_wstrs; i++) {
+    strArray[i] = (char *)malloc(MAX_STRING_LENGTH*sizeof(char));
+  }
+  sprintf(strArray[0], "Calcium");
+  sprintf(strArray[1], "Magnesium");
+  sprintf(strArray[2], "Uranium");
+  sprintf(strArray[3], "Unobtainium");
+  sprintf(strArray[4], "My Favorite Mineral in the Whole World");
+    
+  restart_output->writeDataString(strArray,num_wstrs,"string_dataset");
+  */
+  
   delete viz_output;
   delete restart_output;
   
@@ -127,6 +144,17 @@ TEST(HDF5_MPI) {
   
   cout << "E>> read back:" << endl << *read_quantity;
   cout << "E>> cell map:" << endl << Mesh.cell_map(false);
+
+  // reading back string dataset
+  /*
+  char **strBack;
+  int num_rstrs = 0;
+  restart_input->readDataString(&strBack, &num_rstrs, "string_dataset");
+  cout << "E>> reading back string dataset["<<num_rstrs<<"]: " << endl;
+  for (int i=0 ; i<num_rstrs; i++) {
+    cout << "    " << strBack[i] << endl;
+  }
+  */
   
   delete restart_input;
 

@@ -40,7 +40,7 @@ State::State(int number_of_components_,
 };
 
 
-State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
+State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
     : mesh_maps(mesh_maps_),
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
@@ -53,8 +53,8 @@ State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
 }
 
 
-State::State( Teuchos::ParameterList &parameter_list_,
-              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
+State::State(Teuchos::ParameterList &parameter_list_,
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
     : mesh_maps(mesh_maps_),
       parameter_list(parameter_list_),
       number_of_minerals_(0),
@@ -214,9 +214,9 @@ void State::initialize_from_parameter_list()
         set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"), region);
       }
 
-      u[0] = sublist.get<double>("Constant Darcy flux x", 0.0);
-      u[1] = sublist.get<double>("Constant Darcy flux y", 0.0);
-      u[2] = sublist.get<double>("Constant Darcy flux z", 0.0);
+      u[0] = sublist.get<double>("Constant velocity x", 0.0);
+      u[1] = sublist.get<double>("Constant velocity y", 0.0);
+      u[2] = sublist.get<double>("Constant velocity z", 0.0);
       set_darcy_flux(u, region);
 
       // set the pressure
@@ -240,9 +240,11 @@ void State::initialize_from_parameter_list()
         set_uniform_saturation(lin_s_list, region);
       }  
 
-      // set the specific storage
+      // set specific storage Ss or specific yield Sy in the same state variable
       if (sublist.isParameter("Constant specific storage")) {
         set_specific_storage(sublist.get<double>("Constant specific storage"), region);
+      } else if (sublist.isParameter("Constant specific yield")) {
+        set_specific_storage(sublist.get<double>("Constant specific yield"), region);
       }
 
       // read the component concentrations from the xml file
@@ -300,6 +302,10 @@ void State::create_storage()
   // if chemistry in enabled, we'll always need free_ions stored.
   free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
 
+  // TODO(bandre): activity corrections. Need primaries and
+  // secondaries, but don't know number of secondaries when this
+  // function is called!
+
   if (number_of_minerals() > 0) {
     mineral_volume_fractions_ = Teuchos::rcp(
         new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
@@ -313,13 +319,8 @@ void State::create_storage()
   if (using_sorption()) {
     total_sorbed_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
-    // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
-    sorption_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), 
-                               number_of_sorption_sites()));
   } else {
     total_sorbed_ = Teuchos::null;
-    sorption_sites_ = Teuchos::null;
   }
 
   if (number_of_sorption_sites() > 0) {
@@ -495,8 +496,8 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 
   Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
-  mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                     cell_ids.begin(),cell_ids.end());
+  mesh_maps->get_set_entities(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                     &cell_ids);
 
   for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin();
        c != cell_ids.end();  c++) {
@@ -522,8 +523,8 @@ void State::set_darcy_flux(const double* u, const int mesh_block_id)
   std::vector<int> dirs;
   Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
 
-  mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                     cell_ids.begin(),cell_ids.end());
+  mesh_maps->get_set_entities(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                     &cell_ids);
 
   for (Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
     mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);
@@ -836,6 +837,12 @@ void State::set_water_saturation(const Epetra_Vector& water_saturation_)
 };
 
 
+void State::set_prev_water_saturation(const Epetra_Vector& prev_water_saturation_)
+{
+  *prev_water_saturation = prev_water_saturation_;
+};
+
+
 void State::set_porosity(const Epetra_Vector& porosity_)
 {
   *porosity = porosity_;
@@ -966,7 +973,7 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
 
 
 /* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, bool force) {
+void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   if (!vis.is_disabled()) {
     if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
       using Teuchos::OSTab;
@@ -1005,6 +1012,7 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
       vis.write_vector( *get_total_component_concentration(), compnames);
 
       // write the geochemistry data
+      if (chemistry_enabled) WriteChemistryToVis(&vis);
 
       vis.finalize_timestep();
     }
@@ -1013,13 +1021,16 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
 
 
 /* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force)  {
-  write_vis(vis, force);
+void State::write_vis(Amanzi::Vis& vis, 
+                      Teuchos::RCP<Epetra_MultiVector> auxdata, 
+                      const std::vector<std::string>& auxnames, 
+                      bool chemistry_enabled, bool force)  {
+  write_vis(vis, chemistry_enabled, force);
   
   if ( !vis.is_disabled() ) {
     if ( force || vis.dump_requested(get_cycle())) {
       // write auxillary data
-      if (auxdata != NULL)  {
+      if (!is_null(auxdata))  {
         vis.write_vector( *auxdata , auxnames);
       }
       
@@ -1268,6 +1279,11 @@ void State::VerifySorptionSites(const std::string& region_name,
 void State::SetRegionMaterialChemistry(const std::string& region_name,
                                        Teuchos::ParameterList* region_data) {
 
+  // NOTE(bandre): I don't think this is going to ensure all memory is
+  // initialized correctly. If a region doesn't have a particular
+  // block (e.g. isotherms) in the XML file, it will have
+  // uninitialized data!?!?
+
   if (region_data->isSublist("Mineralogy")) {
     SetRegionMineralogy(region_name, region_data->sublist("Mineralogy"));
   } else {
@@ -1391,3 +1407,82 @@ void State::SetRegionSorptionSites(const std::string& region_name,
 }  // end SetRegionSorptionSites()
 
 
+/*******************************************************************************
+ **
+ **  Chemistry Vis
+ **
+ ******************************************************************************/
+void State::WriteChemistryToVis(Amanzi::Vis* vis) {
+  // TODO(bandre): activity corrections....
+  WriteFreeIonsToVis(vis);
+  WriteTotalSorbedToVis(vis);
+  WriteMineralsToVis(vis);
+  WriteIsothermsToVis(vis);
+  WriteSorptionSitesToVis(vis);
+  WriteIonExchangeSitesToVis(vis);
+}  // end WriteChemistryToVis()
+
+void State::WriteFreeIonsToVis(Amanzi::Vis* vis) {
+  std::string name;
+  for (int i = 0; i < get_number_of_components(); ++i) {
+    name = compnames.at(i);
+    name += "_free";
+    vis->write_vector(*(*free_ion_concentrations_)(i), name);
+  }
+}  // end WriteFreeIonsToVis()
+
+void State::WriteTotalSorbedToVis(Amanzi::Vis* vis) {
+  if (using_sorption()) {
+    std::string name;
+    for (int i = 0; i < get_number_of_components(); ++i) {
+      name = compnames.at(i);
+      name += "_sorbed";
+      vis->write_vector(*(*total_sorbed_)(i), name);
+    }
+  }
+}  // end WriteTotalSorbedToVis()
+
+void State::WriteMineralsToVis(Amanzi::Vis* vis) {
+  std::string name;
+  for (int m = 0; m < number_of_minerals(); ++m) {
+    name = mineral_names().at(m);
+    name += "_volume_fraction";
+    vis->write_vector(*(*mineral_volume_fractions_)(m), name);
+    name = mineral_names().at(m);
+    name += "_specific_surface_area";
+    vis->write_vector(*(*mineral_specific_surface_area_)(m), name);
+  }
+}  // end WriteMineralsToVis()
+
+void State::WriteIsothermsToVis(Amanzi::Vis* vis) {
+  if (use_sorption_isotherms()) {
+    std::string name;
+    for (int i = 0; i < get_number_of_components(); ++i) {
+      name = compnames.at(i);
+      name += "_Kd";
+      vis->write_vector(*(*isotherm_kd_)(i), name);
+      name = compnames.at(i);
+      name += "_freundlich_n";
+      vis->write_vector(*(*isotherm_freundlich_n_)(i), name);
+      name = compnames.at(i);
+      name += "_langmuir_b";
+      vis->write_vector(*(*isotherm_langmuir_b_)(i), name);
+    }
+  }
+}  // end WriteIsothermsToVis()
+
+void State::WriteSorptionSitesToVis(Amanzi::Vis* vis) {
+  std::string name;
+  for (int s = 0; s < number_of_sorption_sites(); ++s) {
+    name = sorption_site_names_.at(s);
+    vis->write_vector(*(*sorption_sites_)(s), name);
+  }
+}  // end WriteSorptionSitesToVis()
+
+void State::WriteIonExchangeSitesToVis(Amanzi::Vis* vis) {
+  if (number_of_ion_exchange_sites() > 0) {
+    // NOTE: Assume that only one ion exchange site!
+    std::string name("CEC");
+    vis->write_vector(*(*ion_exchange_sites_)(0), name);
+  }
+}  // end WriteIonExchangeSitesToVis()

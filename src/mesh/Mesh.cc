@@ -1,5 +1,6 @@
 #include "Geometry.hh"
 #include "dbc.hh"
+#include "errors.hh"
 
 #include "Mesh.hh"
 
@@ -568,320 +569,6 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
 
 
 
-
-
-// Temporary routines for backward compatibility
-//
-// ----- ATTENTION - ATTENTION - ATTENTION -----
-// NEW CODE SHOULD NOT USE THESE FUNCTIONS SINCE THEY WILL GO AWAY
-//
-
-
-
-void Mesh::cell_to_faces (Entity_ID cell,
-                          Entity_ID_List::iterator begin,
-                          Entity_ID_List::iterator end) const
-{
-  cell_to_faces (cell, &(*begin), &(*end));
-};
-
-void Mesh::cell_to_faces (Entity_ID cell,
-                          Entity_ID* begin, Entity_ID *end) const
-{
-  Entity_ID_List cfaces;
-
-  cell_get_faces ((Entity_ID)cell, &cfaces);
-
-  assert (cfaces.size() <= (unsigned int) (end-begin));
-  std::copy (cfaces.begin(), cfaces.end(), begin);
-};
-
-
-void Mesh::cell_to_face_dirs (Entity_ID cell,
-                              std::vector<int>::iterator begin,
-                              std::vector<int>::iterator end) const
-{
-  cell_to_face_dirs (cell, &(*begin), &(*end));
-};
-void Mesh::cell_to_face_dirs (Entity_ID cell,
-                              int * begin, int * end) const
-{
-  vector<int> cfdirs;
-
-  cell_get_face_dirs ((Entity_ID)cell, &cfdirs);
-
-  assert (cfdirs.size() <= (unsigned int) (end-begin));
-  std::copy (cfdirs.begin(), cfdirs.end(), begin);
-};
-
-
-
-void Mesh::cell_to_nodes (Entity_ID cell,
-                          Entity_ID_List::iterator begin,
-                          Entity_ID_List::iterator end) const
-{
-  cell_to_nodes (cell, &(*begin), &(*end));
-};
-void Mesh::cell_to_nodes (Entity_ID cell,
-                          Entity_ID * begin, Entity_ID * end) const
-{
-  Entity_ID_List cnodes;
-
-  cell_get_nodes ((Entity_ID)cell, &cnodes);
-
-  assert (cnodes.size() <= (unsigned int) (end-begin));
-  std::copy (cnodes.begin(), cnodes.end(), begin);
-};
-
-
-
-
-void Mesh::face_to_nodes (Entity_ID face,
-                          Entity_ID_List::iterator begin,
-                          Entity_ID_List::iterator end) const
-{
-  face_to_nodes(face, &(*begin), &(*end));
-};
-void Mesh::face_to_nodes (Entity_ID face,
-                          Entity_ID * begin, Entity_ID * end) const
-{
-  Entity_ID_List fnodes;
-
-  face_get_nodes ((Entity_ID)face, &fnodes);
-
-  assert (fnodes.size() <= (unsigned int) (end-begin));
-  std::copy (fnodes.begin(), fnodes.end(), begin);
-};
-
-
-
-void Mesh::node_to_coordinates (Entity_ID node,
-                                std::vector<double>::iterator begin,
-                                std::vector<double>::iterator end) const
-{
-  node_to_coordinates (node, &(*begin), &(*end));
-};
-void Mesh::node_to_coordinates (Entity_ID node,
-                                double * begin,
-                                double * end) const
-{
-  AmanziGeometry::Point xyz;
-
-  node_get_coordinates ((Entity_ID)node, &xyz);
-
-  assert (xyz.dim() == (end-begin));
-  for (int i = 0; i < xyz.dim(); i++) begin[i] = xyz[i];
-};
-
-void Mesh::face_to_coordinates (Entity_ID face,
-                                std::vector<double>::iterator begin,
-                                std::vector<double>::iterator end) const
-{
-  face_to_coordinates (face, &(*begin), &(*end));
-};
-void Mesh::face_to_coordinates (Entity_ID face,
-                                double * begin,
-                                double * end) const
-{
-  vector<AmanziGeometry::Point> fxyz;
-
-  face_get_coordinates ((Entity_ID)face, &fxyz);
-
-  int dim = fxyz[0].dim();
-  int nfn = fxyz.size();
-  assert ((nfn*dim) <= (end-begin));
-
-  for (int i = 0; i < nfn; i++)
-    for (int j = 0; j < dim; j++)
-      begin[i*dim+j] = fxyz[i][j];
-};
-
-void Mesh::cell_to_coordinates (Entity_ID cell,
-                                std::vector<double>::iterator begin,
-                                std::vector<double>::iterator end) const
-{
-  cell_to_coordinates (cell, &(*begin), &(*end));
-};
-void Mesh::cell_to_coordinates (Entity_ID cell,
-                                double * begin,
-                                double * end) const
-{
-  vector<AmanziGeometry::Point> cxyz;
-
-  cell_get_coordinates ((Entity_ID)cell, &cxyz);
-
-  int dim = cxyz[0].dim();
-  int ncn = cxyz.size();
-  assert ((ncn*dim) <= (end-begin));
-
-  for (int i = 0; i < ncn; i++)
-    for (int j = 0; j < dim; j++)
-      begin[i*dim+j] = cxyz[i][j];
-};
-
-
-unsigned int Mesh::count_entities (Entity_kind kind,
-                                   Parallel_type ptype) const
-{
-  return num_entities(kind, ptype);
-};
-
-
-
-  // Number of sets containing entities of type 'kind' in mesh
-
-
-  // Id numbers
-void Mesh::get_set_ids (Entity_kind kind,
-                        std::vector<Set_ID>::iterator begin,
-                        std::vector<Set_ID>::iterator end) const
-{
-  get_set_ids (kind, &(*begin), &(*end));
-};
-void Mesh::get_set_ids (Entity_kind kind,
-                        Set_ID * begin,
-                        Set_ID * end) const
-{
-  Set_ID_List setids;
-
-  get_set_ids (kind, &setids);
-
-  assert (setids.size() <= (end-begin));
-  std::copy (setids.begin(), setids.end(), begin);
-};
-
-
-void Mesh::get_set (Set_ID set_id, Entity_kind kind,
-                    Parallel_type ptype,
-                    Entity_ID_List::iterator begin,
-                    Entity_ID_List::iterator end) const
-{
-  get_set (set_id, kind, ptype, &(*begin), &(*end));
-};
-void Mesh::get_set (Set_ID set_id, Entity_kind kind,
-                    Parallel_type ptype,
-                    Entity_ID * begin,
-                    Entity_ID * end) const
-{
-  Entity_ID_List setents;
-
-  get_set_entities ((Set_ID)set_id, kind, ptype, &setents);
-
-  assert (setents.size() <= (end-begin));
-  std::copy (setents.begin(), setents.end(), begin);
-};
-
-
-
-  // Number of sets containing entities of type 'kind' in mesh
-  // 
-  // DEPRECATED due to ambiguity in determining what types of sets
-  // some regions are supposed to create (a planar region can 
-  // result in sidesets or nodesets
-
-unsigned int Mesh::num_sets(const Entity_kind kind) const
-{
-  int nsets = 0;
-
-  std::cerr << "THIS ROUTINE (num_sets) IS DEPRECATED" << std::endl;
-  std::cerr << "It might work but there is no guarantee" << std::endl;
-  std::cerr << "that it will work in general situations" << std::endl;
-  
-  if (!geometric_model_) return 0;
-
-  unsigned int gdim = geometric_model_->dimension();    
-  
-  unsigned int ngr = geometric_model_->Num_Regions();
-  for (int i = 0; i < ngr; i++) {
-    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
-    
-    unsigned int rdim = rgn->dimension();
-    
-    // If we are looking for a cell set the region has to be 
-    // of the same topological dimension as the cells
-    
-    if (kind == CELL && rdim == celldim) 
-      {
-        nsets++;
-      }
-    
-    // If we are looking for a side set, the region has to be 
-    // one topological dimension less than the cells
-    
-    else if (kind == FACE && rdim == celldim-1) 
-      {
-        nsets++;
-      }
-    
-    // If we are looking for a node set, the region can be of any
-    // dimension upto the cell dimension
-    
-    else if (kind == NODE && rdim <= celldim)
-      {
-        nsets++;
-      }
-  }
-
-  return nsets;
-  
-}
-
-
-
-  // Ids of sets containing entities of 'kind'
-  // 
-  // DEPRECATED due to ambiguity in determining what types of sets
-  // some regions are supposed to create (a planar region can 
-  // result in sidesets or nodesets
-
-void Mesh::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const 
-{
-  int i, nsets=0;
-
-  std::cerr << "THIS ROUTINE (get_set_ids_) IS DEPRECATED" << std::endl;
-  std::cerr << "It might work but there is no guarantee" << std::endl;
-  std::cerr << "that it will work in general situations" << std::endl;
-  
-  assert(setids != NULL);
-
-  setids->clear();
-
-  if (!geometric_model_) return;
-  
-  int ngr = geometric_model_->Num_Regions();
-  for (int i = 0; i < ngr; i++) {
-    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
-    
-    unsigned int rdim = rgn->dimension();
-    
-    // If we are looking for a cell set the region has to be 
-    // of the same topological dimension as the cells
-    
-    if (kind == CELL && rdim == celldim)
-      {
-        setids->push_back(rgn->id());
-      }
-
-      // If we are looking for a side set, the region has to be 
-      // one topological dimension less than the cells
-      
-    else if (kind == FACE && rdim == celldim-1)
-      {
-        setids->push_back(rgn->id());
-      }
-
-      // If we are looking for a node set, the region can be of any
-      // dimension upto the cell dimension
-      
-    else if (kind == NODE && rdim <= celldim) 
-      {
-        setids->push_back(rgn->id());
-      }
-    
-  }
-}
-
-
 bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) const
 {
   std::vector<AmanziGeometry::Point> ccoords;
@@ -1040,6 +727,173 @@ int Mesh::deform (const Entity_ID_List nodeids,
   compute_geometric_quantities();
 
   return status;
+}
+
+
+// Figure out columns of cells in a structured mesh and cache the
+// information for later.
+
+// The code currently makes the assumption that the "bottom" of the is
+// a flat surface in the XY plane. It then builds up information about
+// the cell above and cell below for each cell based on the
+// orientation of the face normals w.r.t the z direction. If the mesh
+// is highly warped, this could lead to ambiguities. Also,
+// intersecting columns in an unstructured mesh will lead to an
+// exception being thrown. These data structures are never populated
+// if these operators are never called. The above and below cells are
+// computed for all cells the first time one of the routines,
+// cell_get_cellabove or cell_get_cellbelow are called and then this
+// info is cached
+
+
+
+int Mesh::build_columns() const {
+  int status = 1;
+
+  // Find the faces at the bottom of the domain. For now we assume
+  // that these are all the boundary faces whose normal points in the
+  // negative z-direction
+
+  int nf = num_entities(FACE,USED);
+  int nc = num_entities(CELL,USED);
+
+  // Initialize cell_below and cell_above so that we can assign using
+  // cell_below[i] = j type operations below
+
+  cell_cellbelow.resize(nc);
+  cell_cellbelow.assign(nc,-1);
+  cell_cellabove.resize(nc);
+  cell_cellabove.assign(nc,-1);
+  
+
+  for (int i = 0; i < nf; i++) {
+    
+    Entity_ID_List fcells;
+    face_get_cells(i,USED,&fcells); // Should this be USED or OWNED?
+
+    if (fcells.size() != 1) continue;
+
+    AmanziGeometry::Point normal = face_normal(i,false,fcells[0]);
+    normal /= norm(normal);
+      
+    AmanziGeometry::Point negzvec(spacedim);
+    if (spacedim == 2)
+      negzvec.set(0.0,-1.0);
+    else if (spacedim == 3)
+      negzvec.set(0.0,0.0,-1.0);
+    
+    double dp = negzvec*normal;
+    
+    if (fabs(dp-1.0) > 1.0e-06) continue;
+
+    // found a boundary face with a downward facing normal
+
+    // Just to make sure we are not making a mistake, lets check that
+    // the centroid of the cell is above the centroid of the face
+
+    AmanziGeometry::Point ccen(spacedim),fcen(spacedim);
+    ccen = cell_centroid(fcells[0]);
+    fcen = face_centroid(i);
+
+    AmanziGeometry::Point cfvec = fcen-ccen;
+    cfvec /= norm(cfvec);
+
+    dp = negzvec*cfvec;
+
+    if (fabs(dp-1.0) > 1.0e-06) continue;
+
+    // Now we are quite sure that this is a face at the bottom of the
+    // mesh/domain
+
+    // Walk through the cells until we get to the top of the domain
+
+    Entity_ID cur_cell = fcells[0];
+    Entity_ID bot_face = i;
+    Entity_ID top_face = -1;
+    Entity_ID_List fcells2, cfaces;
+    std::vector<int> cfdirs;
+
+    bool done = false;
+    while (!done) {
+      
+      // Faces of current cell
+
+      cell_get_faces_and_dirs(cur_cell,&cfaces,&cfdirs);
+
+      // Find the top face of the cell as the face whose outward
+      // normal from the current cell is most aligned with the Z
+      // direction
+
+      double mindp = 999.0;
+      top_face = -1;
+      for (int j = 0; j < cfaces.size(); j++) {
+        normal = face_normal(cfaces[j]);
+        if (cfdirs[j] == -1) normal *= -1;
+        normal /= norm(normal);
+        
+        dp = normal*negzvec;
+        if (dp < mindp) {
+          mindp = dp;
+          top_face = cfaces[j];
+        }
+      }
+
+
+      assert(top_face != bot_face);
+
+      face_get_cells(top_face,USED,&fcells2);
+      if (fcells2.size() == 2) {
+
+        if (cell_cellabove[cur_cell] != -1) {  // intersecting column of cells 
+          status = 0;
+          Errors::Message mesg("Intersecting column of cells");
+          Exceptions::amanzi_throw(mesg);
+        }
+
+        if (fcells2[0] == cur_cell) {
+          cell_cellabove[cur_cell] = fcells2[1];
+          cell_cellbelow[fcells2[1]] = cur_cell;
+          cur_cell = fcells2[1];
+        }
+        else if (fcells2[1] == cur_cell) {
+          cell_cellabove[cur_cell] = fcells2[0];
+          cell_cellbelow[fcells2[0]] = cur_cell;
+          cur_cell = fcells2[0];
+        }
+        else {
+          status = 0;
+          Errors::Message mesg("Unlikely problem in face to cell connectivity");
+          Exceptions::amanzi_throw(mesg);
+        }
+
+        bot_face = top_face;
+      }
+      else 
+        done = true;
+
+    } // while (!done)
+      
+  }
+
+  columns_built = true;
+  return status;
+}
+
+
+Entity_ID Mesh::cell_get_cell_above(const Entity_ID cellid) const {
+
+  if (!columns_built)
+    build_columns();
+
+  return cell_cellabove[cellid];
+}
+
+Entity_ID Mesh::cell_get_cell_below(const Entity_ID cellid) const {
+  
+  if (!columns_built)
+    build_columns();
+
+  return cell_cellbelow[cellid];
 }
 
 } // close namespace AmanziMesh

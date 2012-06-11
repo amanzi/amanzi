@@ -884,7 +884,7 @@ check_compilers
 check_tools
 
 # Change the branch
-hg_change_branch ${amanzi_branch}
+#hg_change_branch ${amanzi_branch}
 
 
 # Now build the TPLs if the config file is not defined

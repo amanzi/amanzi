@@ -278,28 +278,16 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   ResetStatus();
   UpdateParameters(parameters, 0.0);
   CheckChargeBalance(components.total);
-  // initialize free-ion concentrations, these are actual
-  // concentrations, so the value must be positive or ln(free_ion)
-  // will return a nan!
-  if (components.free_ion.size() > 0) {
-    InitializeMolalities(components.free_ion);
-  } else {
-    InitializeMolalities(1.e-9);
-  }
 
-  for (unsigned int m = 0; m < minerals_.size(); m++) {
-    minerals_.at(m).set_volume_fraction(components.minerals.at(m));
-    // NOTE: SSA already updated by the call to UpdateParameters()!
-  }
+  CopyComponentsToBeaker(components);
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++) {
     prev_molal_.at(i) = primary_species().at(i).molality();
   }
 
-  // TODO(bandre): update CEC from components!
-
   double max_rel_change;
+  int max_rel_index;
   double max_residual;
   unsigned int num_iterations = 0;
   bool calculate_activity_coefs = false;
@@ -362,7 +350,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // calculate update truncating at a maximum of 5 in log space
     UpdateMolalitiesWithTruncation(5.0);
     // calculate maximum relative change in concentration over all species
-    max_rel_change = CalculateMaxRelChangeInMolality();
+    CalculateMaxRelChangeInMolality(&max_rel_change, &max_rel_index);
 
     if (debug()) {
       message.str("");
@@ -428,28 +416,16 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   UpdateParameters(parameters, dt);
   CheckChargeBalance(components->total);
 
-  // initialize free-ion concentrations, these are actual
-  // concentrations, so the value must be positive or ln(free_ion)
-  // will return a nan!
-  if (components->free_ion.size() > 0) {
-    InitializeMolalities(components->free_ion);
-    // testing only    InitializeMolalities(1.e-9);
-  }
+  CopyComponentsToBeaker(*components);
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++) {
     prev_molal_.at(i) = primary_species().at(i).molality();
   }
 
-  for (unsigned int m = 0; m < minerals_.size(); m++) {
-    minerals_.at(m).set_volume_fraction(components->minerals.at(m));
-    // NOTE: SSA already updated by the call to UpdateParameters()!
-  }
-
-  // TODO(bandre): update CEC from components!
-
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
+  int max_rel_index = -1;
   // iteration counter
   unsigned int num_iterations = 0;
 
@@ -508,13 +484,18 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // update with exp(-dlnc)
     UpdateMolalitiesWithTruncation(5.0);
     // calculate maximum relative change in concentration over all species
-    max_rel_change = CalculateMaxRelChangeInMolality();
+    CalculateMaxRelChangeInMolality(&max_rel_change, &max_rel_index);
 
     if (debug()) {
-      message.str("");
+      message.str("--Iteration: ");
+      message << num_iterations << "\n";
       for (int i = 0; i < ncomp(); i++) {
-        message << primary_species().at(i).name() << " " <<
-            primary_species().at(i).molality() << " " << total_.at(i) << "\n";
+        message << "  " << primary_species().at(i).name() << " " 
+                << primary_species().at(i).molality() << " " << total_.at(i);
+        if (total_sorbed_.size() > 0) {
+          message << " " << total_sorbed_.at(i);
+        }
+        message << "\n";
       }
       chem_out->Write(kDebugBeaker, message);
     }
@@ -539,10 +520,11 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
     error_stream << "Warning: Results may not have the desired accuracy." << std::endl;
     error_stream << "Warning: max relative change = " << max_rel_change << std::endl;
+    error_stream << "Warning: max relative index = " << max_rel_index << std::endl;
     error_stream << "Warning: tolerance = " << tolerance() << std::endl;
     error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
     // update before leaving so that we can see the erroneous values!
-    UpdateComponents(components);
+    CopyBeakerToComponents(components);
     Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
   }
 
@@ -554,33 +536,38 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // update total concentrations
   UpdateEquilibriumChemistry();
   UpdateKineticMinerals();
-  UpdateComponents(components);
+  CopyBeakerToComponents(components);
   ValidateSolution();
 
   return num_iterations;
 }  // end ReactionStep()
 
 
-void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
+void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
   // Copy the beaker primary variables into a component struct that
   // can be returned to the driver
   for (int i = 0; i < ncomp(); i++) {
     components->total.at(i) = total_.at(i);
-    if (components->free_ion.size() > 0) {
-      components->free_ion.at(i) = primary_species().at(i).molality();
+
+    if (!components->free_ion.size() > 0) {
+      components->free_ion.resize(ncomp(), 1.0e-9);
     }
+    components->free_ion.at(i) = primary_species().at(i).molality();
+
     if (components->total_sorbed.size() > 0 &&
         total_sorbed_.size() > 0) {
       components->total_sorbed.at(i) = total_sorbed_.at(i);
     }
   }
+
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     components->minerals.at(m) = minerals_.at(m).volume_fraction();
   }
+
   for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
     components->ion_exchange_sites.at(i) = ion_exchange_rxns_.at(i).site().cation_exchange_capacity();
   }
-}  // end UpdateComponents()
+}  // end CopyBeakerToComponents()
 
 void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents* to) {
@@ -768,7 +755,7 @@ void Beaker::DisplayResults(void) const {
 
   if (ion_exchange_rxns_.size() > 0) {
     chem_out->Write(kVerbose, "---- Ion Exchange Sites\n");
-    ion_exchange_rxns_[0].DisplayResultsHeader();
+    ion_exchange_rxns_.at(0).site().DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
       ion_exchange_rxns_.at(i).site().DisplayResults();
     }
@@ -776,7 +763,7 @@ void Beaker::DisplayResults(void) const {
 
   if (ion_exchange_rxns_.size() > 0) {
     chem_out->Write(kVerbose, "---- Ion Exchange Complexes\n");
-    ion_exchange_rxns_[0].DisplayResultsHeader();
+    ion_exchange_rxns_.at(0).ionx_complexes().at(0).DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
       for (unsigned int j = 0; j < ion_exchange_rxns_.at(i).ionx_complexes().size(); j++) {
         (ion_exchange_rxns_.at(i).ionx_complexes())[j].DisplayResults();
@@ -795,11 +782,17 @@ void Beaker::DisplayResults(void) const {
   chem_out->Write(kVerbose, "---------------------------------------------------------- Solution --\n\n");
 }  // end DisplayResults()
 
-void Beaker::DisplayTotalColumnHeaders(void) const {
+void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
   std::stringstream message;
   message << std::setw(15) << "Time (s)";
   for (int i = 0; i < ncomp(); i++) {
     message << std::setw(15) << primary_species().at(i).name();
+  }
+  if (display_free) {
+    for (int i = 0; i < ncomp(); i++) {
+      std::string temp = primary_species().at(i).name() + "_free";
+      message << std::setw(15) << temp;
+    }
   }
   if (total_sorbed_.size() > 0) {
     for (int i = 0; i < total_sorbed_.size(); i++) {
@@ -818,12 +811,18 @@ void Beaker::DisplayTotalColumnHeaders(void) const {
 }  // end DisplayTotalColumnHeaders()
 
 void Beaker::DisplayTotalColumns(const double time,
-                                 const BeakerComponents& components) const {
+                                 const BeakerComponents& components,
+                                 const bool display_free) const {
   std::stringstream message;
   message << std::scientific << std::setprecision(6) << std::setw(15);
   message << time;
   for (int i = 0; i < ncomp(); i++) {
     message << std::setw(15) << components.total.at(i);
+  }
+  if (display_free) {
+    for (int i = 0; i < ncomp(); i++) {
+      message << std::setw(15) << components.free_ion.at(i);
+    }
   }
   if (total_sorbed_.size() > 0) {
     for (int i = 0; i < total_sorbed_.size(); i++) {
@@ -853,7 +852,8 @@ void Beaker::ResizeInternalMemory(const int size) {
   dtotal_.Resize(ncomp());
 
   if (surfaceComplexationRxns_.size() > 0 ||
-      sorption_isotherm_rxns_.size() > 0) {
+      sorption_isotherm_rxns_.size() > 0 ||
+      ion_exchange_rxns_.size() > 0) {
     total_sorbed_.resize(ncomp(), 0.0);
     dtotal_sorbed_.Resize(ncomp());
     dtotal_sorbed_.Zero();
@@ -929,7 +929,9 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
   // resized in resize(), even if there is no sorption!
   if (this->total_sorbed().size() != components.total_sorbed.size()) {
     error = true;
-    error_stream << "total_sorbed.size and components.total_sorbed.size do not match.\n";
+    error_stream << "total_sorbed.size(" << this->total_sorbed().size()
+                 << ") and components.total_sorbed.size("
+                 << components.total_sorbed.size() << ") do not match.\n";
   }
 
   if (error) {
@@ -937,24 +939,31 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
   }
 }  // end VerifyComponentSizes()
 
-void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
-  // TODO(bandre): Not sure this is actually doing anything as currently
-  // used. Should be renamed ApplyComponentsToBeaker() or something
-  // similar, then repurposed to handle this behavior uniformly in the
-  // SimpleThermoDatabase::Setup(), ReactionStep() an Speciate() calls.
+void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) {
+  // initialize free-ion concentrations, these are actual
+  // concentrations, so the value must be positive or ln(free_ion)
+  // will return a nan!
+  if (components.free_ion.size() > 0) {
+    InitializeMolalities(components.free_ion);
+  } else {
+    InitializeMolalities(1.e-9);
+  }
+
   unsigned int size = components.ion_exchange_sites.size();
   if (ion_exchange_rxns().size() == size) {
-    // for now, we will set the size of total_sorbed = ncomp() if # sites > 0
     for (unsigned int ies = 0; ies < size; ies++) {
       ion_exchange_rxns_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
     }
   } else {
     std::ostringstream error_stream;
-    error_stream << "Beaker::SetComponents(): \n";
-    error_stream << "ion_exchange_sites.size and components.ion_exchange_sites.size do not match.\n";
+    error_stream << "Beaker::CopyComponentsToBeaker(): \n";
+    error_stream << "ion_exchange_sites.size(" << ion_exchange_rxns().size()
+                 << ") and components.ion_exchange_sites.size(" << size 
+                 << ") do not match.\n";
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
+  // NOTE: SSA updated by the call to UpdateParameters()!
   size = components.minerals.size();
   if (minerals().size() == size) {
     for (unsigned int m = 0; m < size; m++) {
@@ -962,11 +971,13 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
     }
   } else {
     std::ostringstream error_stream;
-    error_stream << "Beaker::SetComponents(): \n";
-    error_stream << "minerals.size and components.minerals.size do not match.\n";
+    error_stream << "Beaker::CopyComponentsToBeaker(): \n";
+    error_stream << "minerals.size(" << minerals().size()
+                 << ") and components.minerals.size(" << size 
+                 << ") do not match.\n";
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
-}  // end SetComponents()
+}  // end CopyComponentsToBeaker()
 
 void Beaker::SetupActivityModel(std::string model,
                                 std::string pitzer_database,
@@ -1394,14 +1405,17 @@ void Beaker::UpdateMolalitiesWithTruncation(double max_change) {
   }
 }  // end UpdateMolalitiesWithTruncation()
 
-double Beaker::CalculateMaxRelChangeInMolality(void) {
-  double max_rel_change = 0.0;
+void Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_index) {
+  *max_rel_change = 0.0;
+  *max_rel_index = -1;
   for (int i = 0; i < ncomp(); i++) {
     double delta = fabs(primary_species().at(i).molality() - prev_molal().at(i)) / 
         prev_molal().at(i);
-    max_rel_change = delta > max_rel_change ? delta : max_rel_change;
+    if (delta > *max_rel_change) {
+      *max_rel_change = delta;
+      *max_rel_index = i;
+    }
   }
-  return max_rel_change;
 }  // end CalculateMaxRelChangeInMolality()
 
 
@@ -1412,7 +1426,7 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const
   }
   if (std::fabs(charge_balance) > tolerance()) {
     std::stringstream message;
-    message << "WARNING: Beaker::CheckChargeBalance() :\n"
+    message << "WARNING: Beaker::CheckChargeBalance() : "
             << "         charge balance = " << std::scientific
             << charge_balance << std::fixed << std::endl;
     chem_out->Write(kWarning, message);

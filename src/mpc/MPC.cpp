@@ -19,7 +19,7 @@
 #define BOOST_FILESYSTEM_VERSION 2
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-
+#include "time_step_manager.hh"
 
 namespace Amanzi {
 
@@ -63,33 +63,6 @@ void MPC::mpc_init() {
 
   read_parameter_list();
 
-  // now we need to get the observations time from the observation data list
-  Teuchos::Array<double> observation_times;
-  if (parameter_list.isSublist("Observation Data")) {
-    if (parameter_list.sublist("Observation Data").isParameter("Observation Times")) {
-      observation_times = parameter_list.sublist("Observation Data").get<Teuchos::Array<double> >("Observation Times");    
-    }
-  }
-  // now we need to get the visualization times from the visualization data list
-  Teuchos::Array<double> visualization_times;
-  if (parameter_list.isSublist("Visualization Data")) {
-    if (parameter_list.sublist("Visualization Data").isParameter("Visualization Times")) {
-      visualization_times = parameter_list.sublist("Visualization Data").get<Teuchos::Array<double> >("Visualization Times");    
-    }
-  }
-  // We will combine the visualization times and the observation times lists, sort and remove duplicates.
-  Teuchos::Array<double> tmp;
-  tmp.resize(observation_times.size()+visualization_times.size());
-  std::copy(observation_times.begin(), observation_times.end(), tmp.begin());
-  std::copy(visualization_times.begin(), visualization_times.end(), tmp.begin()+observation_times.size());
-  std::inplace_merge(tmp.begin(), tmp.begin()+observation_times.size(), tmp.end());
-  Teuchos::Array<double>::iterator it = std::unique( tmp.begin(), tmp.end() );
-  tmp.resize( it - tmp.begin() );
-  // Insert the times into the stack that we will use
-  for (Teuchos::Array<double>::reverse_iterator rit=tmp.rbegin(); rit<tmp.rend(); ++rit) {
-    waypoint_times_.push(*rit);
-  }
-  
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
   transport_enabled =
@@ -159,13 +132,21 @@ void MPC::mpc_init() {
     flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
+    } else if (flow_model == "Steady State Saturated") {
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
+      // FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else if (flow_model == "Richards") {
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
+    } else if (flow_model == "Steady State Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else {
       cout << "MPC: unknown flow model: " << flow_model << endl;
       throw std::exception();
     }
     FPK->InitPK();
+  }
+  if (flow_model == "Steady State Richards") {
+    *out << "Flow will be off during the transient phase" << std::endl;
   }
   // done creating auxilary state objects and  process models
 
@@ -185,7 +166,7 @@ void MPC::mpc_init() {
   } else {  // create a dummy vis object
     visualization = new Amanzi::Vis();
   }
-
+  
 
   // create the restart object
   if (parameter_list.isSublist("Checkpoint Data")) {
@@ -252,27 +233,35 @@ void MPC::read_parameter_list()  {
   if (mpc_parameter_list.isSublist("Time Period Control")) {
     Teuchos::ParameterList& tpc_list =  mpc_parameter_list.sublist("Time Period Control"); 
 
-    Teuchos::Array<double> reset_times    = tpc_list.get<Teuchos::Array<double> >("Start Times");
-    Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
+    reset_times_    = tpc_list.get<Teuchos::Array<double> >("Start Times");
+    reset_times_dt_ = tpc_list.get<Teuchos::Array<double> >("Initial Time Step");
     
-    if (reset_times.size() != reset_times_dt.size()) {
+    if (reset_times_.size() != reset_times_dt_.size()) {
       Errors::Message message("You must specify the same number of Reset Times and Initial Time Steps under Time Period Control");
       Exceptions::amanzi_throw(message);
-    }
-    
-    reset_times_.resize(0);
-    Teuchos::Array<double>::iterator t  = reset_times.begin();
-    Teuchos::Array<double>::iterator dt = reset_times_dt.begin();
-    for (; t!=reset_times.end(); ++t, ++dt) {
-      reset_times_.push_back(std::make_pair(*t, *dt));
-    }
-    std::sort(reset_times_.begin(), reset_times_.end());
+    }    
   }
 }
 
 
 /* *******************************************************************/
 void MPC::cycle_driver() {
+
+  // create the time step manager
+  Amanzi::TimeStepManager TSM;
+  // register visualization times with the time step manager
+  visualization->register_with_time_step_manager(TSM);
+  // register observation times with the time step manager
+  if (observations) observations->register_with_time_step_manager(TSM);
+  // register reset_times
+  TSM.RegisterTimeEvent(reset_times_.toVector());
+  // if this is an init to steady run, register the switchover time
+  if (ti_mode == INIT_TO_STEADY) TSM.RegisterTimeEvent(Tswitch);
+  // register the final time
+  TSM.RegisterTimeEvent(T1);
+
+
+
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
 
@@ -280,6 +269,8 @@ void MPC::cycle_driver() {
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+
+  //TSM.print(*out,0.0, 20.0); *out << std::endl;
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
@@ -316,43 +307,53 @@ void MPC::cycle_driver() {
     restart->read_state(*S, restart_from_filename);
     iter = S->get_cycle();
     
-    // Remove the early timesteps from the waypoints and vis
-    double t0 = S->get_time();
-    visualization->set_start_time(t0);
-    if (!waypoint_times_.empty()) {
-      while (waypoint_times_.top()<t0)
-        waypoint_times_.pop();
-    }
     if (!reset_times_.empty()) {
-      while (reset_times_.front().first<t0)
-        reset_times_.erase(reset_times_.begin());
+      while (reset_times_.front()<S->get_time()) {
+	reset_times_.erase(reset_times_.begin());
+	reset_times_dt_.erase(reset_times_dt_.begin());
+      }
     }
+  } else { // no restart, we will call the PKs to allow them to init their auxilary data
+    FPK->InitializeAuxiliaryData();
   }
+
+
 
   // write visualization output as requested
   if (chemistry_enabled) {
     // get the auxillary data from chemistry
     Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-    // write visualization data for timestep if requested
-    S->write_vis(*visualization, &(*aux), auxnames);
+    // write visualization data for timestep
+    S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
   } else {
     // always write the initial visualization dump
-    S->write_vis(*visualization, true);
+    S->write_vis(*visualization, chemistry_enabled, true);
   }
 
   // write a restart dump if requested (determined in dump_state)
   restart->dump_state(*S);
 
+  
   if (flow_enabled) {
     if (ti_mode == STEADY) {
       FPK->InitSteadyState(S->get_time(), dTsteady);
-    } else if ( ti_mode == TRANSIENT ) {
+    } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
       FPK->InitTransient(S->get_time(), dTtransient);
+    } else if ( ti_mode == INIT_TO_STEADY && flow_model == std::string("Steady State Saturated")) {
+      if (!restart_requested) {
+	FPK->InitSteadyState(S->get_time(), dTsteady);
+	FPK->InitializeSteadySaturated();
+	FPK->CommitStateForTransport(FS);
+	FPK->CommitState(FS);
+	S->advance_time(Tswitch-T0);
+      }
     } else if ( ti_mode == INIT_TO_STEADY ) {
       if (S->get_time() < Tswitch) {
 	FPK->InitSteadyState(S->get_time(), dTsteady);
       } else {
-	FPK->InitTransient(S->get_time(), dTtransient);
+	if (flow_model !=std::string("Steady State Richards")) {
+	  FPK->InitTransient(S->get_time(), dTtransient);
+	}
       }
     }
   }
@@ -373,50 +374,41 @@ void MPC::cycle_driver() {
       
       // Update our reset times (delete the next one if we just did it)
       if (!reset_times_.empty()) {
-        if (S->get_last_time()>=reset_times_.front().first)
+	if (S->get_last_time()>=reset_times_.front()) {
           reset_times_.erase(reset_times_.begin());
-      }
-      // Update our waypoint times (delete the next one if we just did it)
-      if (!waypoint_times_.empty()) {
-        if (S->get_time() >= waypoint_times_.top())
-          waypoint_times_.pop();
+	  reset_times_dt_.erase(reset_times_dt_.begin());
+	}
       }
 
+      // catch the switchover time to transient
       if (flow_enabled) {
-	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
+	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) { 
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
 	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
 	  }
-	  FPK->InitTransient(S->get_time(), dTtransient);	
+	  // only init the transient problem if we need to 
+	  if (flow_model != "Steady State Richards"  && flow_model != "Steady State Saturated" )  {
+	    FPK->InitTransient(S->get_time(), dTtransient);
+	  }
 	}
       }
       
+      // find the flow time step
       if (flow_enabled) {
-        flow_dT = FPK->CalculateFlowDt();
+	// only if we are actually running with flow
 
-        // adjust the time step, so that we exactly hit the switchover time
-        if (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch && S->get_time()+flow_dT >= Tswitch) {
-          limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
-          tslimiter = MPC_LIMITS;
-        }
-	
-        // make sure we hit any of the reset times exactly (not in steady mode)
-        if (! ti_mode == STEADY) {
-          if (!reset_times_.empty()) {
-	    if (S->get_time() >=  Tswitch) {
-              // now we are trying to hit the next reset time exactly
-              if (S->get_time()+2*flow_dT > reset_times_[0].first) {
-                limiter_dT = time_step_limiter(S->get_time(), flow_dT, reset_times_[0].first);
-		tslimiter = MPC_LIMITS;
-              }
-            }
-          }
-        }
+	if ((ti_mode == STEADY) || 
+	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
+	    (ti_mode == INIT_TO_STEADY && 
+	     ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
+	       (flow_model != std::string("Steady State Saturated"))))) {
+	  flow_dT = FPK->CalculateFlowDt();
+	}
       }
 
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
+      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch)) {
         if (transport_enabled) {
-          double transport_dT_tmp = TPK->CalculateTransportDt();
+          double transport_dT_tmp = TPK->EstimateTransportDt();
           if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
         }
         if (chemistry_enabled) {
@@ -425,19 +417,10 @@ void MPC::cycle_driver() {
       }
 
       // take the mpc time step as the min of all suggested time steps 
-      mpc_dT = std::min(std::min(std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT);
-
-      // make sure we hit the waypoint times exactly
-      if (!waypoint_times_.empty()) {
-        // now we are trying to hit the next reset time exactly
-        if (S->get_time()+2*mpc_dT > waypoint_times_.top()) {
-          limiter_dT = time_step_limiter(S->get_time(), mpc_dT, waypoint_times_.top());
-          tslimiter = MPC_LIMITS;
-        }	  
-      }
+      mpc_dT = std::min(std::min(flow_dT, transport_dT), chemistry_dT);
 
       // take the mpc time step as the min of the last limiter and itself 
-      mpc_dT = std::min(mpc_dT, limiter_dT);
+      mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
 
       // figure out who limits the time step
       if (mpc_dT == flow_dT) {
@@ -446,36 +429,24 @@ void MPC::cycle_driver() {
 	tslimiter = TRANSPORT_LIMITS;
       } else if (mpc_dT == chemistry_dT) {
 	tslimiter = CHEMISTRY_LIMITS;
-      } else if (mpc_dT == limiter_dT) {
+      } else {
 	tslimiter = MPC_LIMITS;
       }
       
+      // make sure we reset the timestep at switchover time
       if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
-	mpc_dT = std::min( mpc_dT, dTtransient );
+	// mpc_dT = std::min( mpc_dT, dTtransient );
 	tslimiter = MPC_LIMITS; 
       }
 
-      // make sure we will hit the final time exactly
-      if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
-        mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
-	tslimiter = MPC_LIMITS;
-      } 
-      if (ti_mode == TRANSIENT && S->get_time()+2*mpc_dT > T1) { 
-	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
-	tslimiter = MPC_LIMITS;
-      }
-      if (ti_mode == STEADY && S->get_time()+2*mpc_dT > T1) { 
-	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
-	tslimiter = MPC_LIMITS;
-      }
-      
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
         if (!reset_times_.empty()) {
           // this is probably iffy...
-          if (S->get_time() == reset_times_.front().first) {
-            *out << "Resetting the time integrator at time = " << S->get_time() << std:: endl;
-            mpc_dT = reset_times_.front().second;
+          if (S->get_time() == reset_times_.front()) {
+            *out << "Resetting the time integrator at time = " << S->get_time() << std::endl;
+            mpc_dT = reset_times_dt_.front();
+	    mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
             tslimiter = MPC_LIMITS;
 	    // now reset the flow time integrator..
 	    FPK->InitTransient(S->get_time(), mpc_dT);
@@ -487,20 +458,26 @@ void MPC::cycle_driver() {
       // time step info after we've advanced steady flow
       // first advance flow
       if (flow_enabled) {
-        bool redo(false);
-        do {
-          redo = false;
-          try {
-            FPK->Advance(mpc_dT);
-          } 
-          catch (int itr) {
-            mpc_dT = 0.5*mpc_dT;
-            redo = true;
-            tslimiter = FLOW_LIMITS;
-            *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
-          }
-        } while (redo);
-        FPK->CommitStateForTransport(FS);
+	if ((ti_mode == STEADY) ||
+	    (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
+	    (ti_mode == INIT_TO_STEADY && 
+	     ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
+	       (flow_model != std::string("Steady State Saturated"))))) {
+	  bool redo(false);
+	  do {
+	    redo = false;
+	    try {
+	      FPK->Advance(mpc_dT);
+	    } 
+	    catch (int itr) {
+	      mpc_dT = 0.5*mpc_dT;
+	      redo = true;
+	      tslimiter = FLOW_LIMITS;
+	      *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
+	    }
+	  } while (redo);
+	  FPK->CommitStateForTransport(FS);
+	}
       }
 
       // write some info about the time step we are about to take
@@ -526,6 +503,7 @@ void MPC::cycle_driver() {
         *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
         *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);
 	*out << " " << limitstring;
+	//*out << " " << S->get_time() << " " << mpc_dT;
         *out << std::endl;
       }
       // ==============================================================
@@ -533,7 +511,7 @@ void MPC::cycle_driver() {
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          TPK->Advance(mpc_dT, transport_subcycling);
+          TPK->Advance(mpc_dT);
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
             Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
@@ -563,8 +541,10 @@ void MPC::cycle_driver() {
       }
       
       // update the time in the state object
+      *out << "mpc_dT = " << mpc_dT << std::endl;
+
       S->advance_time(mpc_dT);
-      if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
+      // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
       // ===========================================================
       // we're done with this time step, commit the state
@@ -599,9 +579,9 @@ void MPC::cycle_driver() {
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
         
         // write visualization data for timestep if requested
-        S->write_vis(*visualization, &(*aux), auxnames, force);
+        S->write_vis(*visualization, aux, auxnames, chemistry_enabled, force);
       } else {
-        S->write_vis(*visualization, force);
+        S->write_vis(*visualization, chemistry_enabled, force);
       }
 
       // write restart dump if requested

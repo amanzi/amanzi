@@ -27,6 +27,9 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 
 #include "Mesh.hh"
 #include "Point.hh"
+// class Mesh;
+// class Point;
+
 
 #include "tensor.hpp"
 
@@ -37,6 +40,7 @@ namespace WhetStone {
 const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
 const int WHETSTONE_ELEMENTAL_MATRIX_WRONG = 1;
 const int WHETSTONE_ELEMENTAL_MATRIX_PASSED = 2;
+const int WHETSTONE_ELEMENTAL_MATRIX_FAILED = 4;  // only for unexpected situations
 
 class MFD3D { 
  public:

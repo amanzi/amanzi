@@ -53,7 +53,7 @@ ordering of grid points and cells starts at CORNER1 and ends at CORNER2.
     This is the number of values per grid cell/point.  N=1 for a scalar
     valued function; N>1 for a N-vector valued function.
     
-(5) DATAVAL: The values of the function on the cells/points of the grid.  The
+(8) DATAVAL: The values of the function on the cells/points of the grid.  The
     values should appear in Fortran array order were the values stored in the
     Fortran array A(N,NX,NY,NZ) (A(N,0:NX,0:NY,0:NZ) for point-based data).
     That is, the column index varies fastest, x grid index next fastest, etc.

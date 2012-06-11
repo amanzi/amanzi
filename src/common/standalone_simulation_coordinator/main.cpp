@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList driver_parameter_list;
     Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
     const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
+    driver_parameter_list.set<string>("input file name", xmlInFileName);
     
     // The Mesh list contains a "Structured" sublist or a "Unstructured" sublist, and will 
     // determine which simulation driver to call
@@ -88,8 +89,8 @@ int main(int argc, char *argv[]) {
     
     Amanzi::Simulator* simulator = NULL;
     
-    Amanzi::timer_manager.add( "Full Simulation", Amanzi::Timer::ONCE );
-    Amanzi::timer_manager.start( "Full Simulation" );
+    Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
+    Amanzi::timer_manager.start("Full Simulation");
     
     if (framework=="Structured") {
 #ifdef ENABLE_Structured
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
 
     // print out observation file in ASCII format 
     Teuchos::ParameterList obs_list;
-    if (driver_parameter_list.isParameter("Native Unstructured Input")) {
+    if (driver_parameter_list.get<bool>("Native Unstructured Input",false)) {
       obs_list = driver_parameter_list.sublist("Observation Data");
     } else {
       obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");

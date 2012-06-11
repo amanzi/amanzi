@@ -56,6 +56,16 @@ general-reaction :
 	mv pflotran.out $@.pfout 
 	@echo 
 
+ion-exchange-valocchi :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+ionx-valocchi :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
 #
 # clean - Clean up the directory.
 #

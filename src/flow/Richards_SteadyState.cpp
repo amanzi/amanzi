@@ -22,16 +22,24 @@ namespace AmanziFlow {
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState()
 {
+  T_physics = T0_sss;
+  dT = dT0_sss;
+
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
-    ierr = AdvanceSteadyState_Picard();
+    ierr = AdvanceToSteadyState_Picard();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
-    ierr = AdvanceSteadyState_BackwardEuler();
+    ierr = AdvanceToSteadyState_BackwardEuler();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
-    ierr = AdvanceSteadyState_BDF1();
+    ierr = AdvanceToSteadyState_BDF1();
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    ierr = AdvanceSteadyState_BDF2();
+    ierr = AdvanceToSteadyState_BDF2();
   }
+
+  Epetra_Vector& ws = FS->ref_water_saturation();
+  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
+  DeriveSaturationFromPressure(*solution_cells, ws);
+  ws_prev = ws;
 
   if (ierr == 0) flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
   return ierr;
@@ -41,14 +49,12 @@ int Richards_PK::AdvanceToSteadyState()
 /* ******************************************************************* 
 * Performs one time step of size dT using first-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceSteadyState_BDF1()
+int Richards_PK::AdvanceToSteadyState_BDF1()
 {
-  T_internal = T0_sss;
-  dT = dT0_sss;
   bool last_step = false;
 
   int itrs = 0;
-  while (itrs < max_itrs_sss && T_internal < T1_sss) {
+  while (itrs < max_itrs_sss && T_physics < T1_sss) {
     if (itrs == 0) {  // initialization of BDF1
       Epetra_Vector udot(*super_map_);
       ComputeUDot(T0_sss, *solution, udot);
@@ -63,11 +69,11 @@ int Richards_PK::AdvanceSteadyState_BDF1()
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
 
-    T_internal = bdf1_dae->most_recent_time();
+    T_physics = bdf1_dae->most_recent_time();
     dT = dTnext;
     itrs++;
 
-    double Tdiff = T1_sss - T_internal;
+    double Tdiff = T1_sss - T_physics;
     if (dTnext > Tdiff) {
       dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
       last_step = true;
@@ -83,14 +89,12 @@ int Richards_PK::AdvanceSteadyState_BDF1()
 /* ******************************************************************* 
 * Performs one time step of size dT using second-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceSteadyState_BDF2()
+int Richards_PK::AdvanceToSteadyState_BDF2()
 {
-  T_internal = T0_sss;
-  dT = dT0_sss;
   bool last_step = false;
 
   int itrs = 0;
-  while (itrs < max_itrs_sss && T_internal < T1_sss) {
+  while (itrs < max_itrs_sss && T_physics < T1_sss) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
       ComputeUDot(T0_sss, *solution, udot);
@@ -105,11 +109,11 @@ int Richards_PK::AdvanceSteadyState_BDF2()
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
-    T_internal = bdf2_dae->most_recent_time();
+    T_physics = bdf2_dae->most_recent_time();
     dT = dTnext;
     itrs++;
 
-    double Tdiff = T1_sss - T_internal;
+    double Tdiff = T1_sss - T_physics;
     if (dTnext > Tdiff) {
       dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
       last_step = true;
@@ -127,34 +131,36 @@ int Richards_PK::AdvanceSteadyState_BDF2()
 * relative permeabilities do not depend explicitly on time.
 * This is the experimental method.                                                 
 ****************************************************************** */
-int Richards_PK::AdvanceSteadyState_Picard()
+int Richards_PK::AdvanceToSteadyState_Picard()
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
-  Epetra_Vector* solution_old_cells = FS->createCellView(solution_old);
-  Epetra_Vector* solution_new_cells = FS->createCellView(solution_new);
+  Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
+  Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
-  // update boundary conditions
-  double time = 0.0;
+  // update steady state boundary conditions
+  double time = T_physics;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_head->Compute(time);
-  bc_seepage->Compute(time);
-  UpdateBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, atm_pressure,
-      bc_markers, bc_values);
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
-  while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
+    // update dynamic boundary conditions
+    bc_seepage->Compute(time);
+    ProcessBoundaryConditions(
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_faces, atm_pressure,
+        bc_markers, bc_values);
+
     if (!is_matrix_symmetric) {
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
@@ -164,24 +170,24 @@ int Richards_PK::AdvanceSteadyState_Picard()
     }
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
-    rhs = matrix->rhs();  // export RHS from the matrix class
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->AssembleGlobalMatrices();
+    rhs = matrix_->rhs();  // export RHS from the matrix class
 
     // create preconditioner
-    preconditioner->createMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
-    preconditioner->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner);
-    preconditioner->applyBoundaryConditions(bc_markers, bc_values);
-    preconditioner->assembleGlobalMatrices();
-    preconditioner->computeSchurComplement(bc_markers, bc_values);
-    preconditioner->update_ML_preconditioner();
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->UpdateML_Preconditioner();
 
     // check convergence of non-linear residual
-    L2error = matrix->computeResidual(solution_new, residual);
+    L2error = matrix_->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
     rhs->Norm2(&L2norm);
     L2error /= L2norm;
@@ -200,7 +206,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%11.6e, relax=%8.3e)  solver(%8.3e, %4d)\n",
+      std::printf("Richards PK: Picard:%4d  Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e,%4d)\n",
           itrs, L2error, L2norm, relaxation, linear_residual, num_itrs);
     }
 
@@ -210,7 +216,7 @@ int Richards_PK::AdvanceSteadyState_Picard()
       solution_old[c] = solution_new[c];
     }
 
-    T_internal += dT;
+    T_physics += dT;
     itrs++;
   }
 

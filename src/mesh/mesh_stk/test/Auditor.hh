@@ -70,10 +70,12 @@ class Auditor {
   void 
   operator() (void) {
 
-    mesh_map->node_epetra_map(true).Print(std::cerr);
-    mesh_map->face_epetra_map(true).Print(std::cerr);
-    mesh_map->cell_epetra_map(true).Print(std::cerr);
+    // mesh_map->node_epetra_map(true).Print(std::cerr);
+    // mesh_map->face_epetra_map(true).Print(std::cerr);
+    // mesh_map->cell_epetra_map(true).Print(std::cerr);
+
     CHECK(audit->Verify() == 0);
+
     // CHECK(audit->check_entity_counts() == 0);
     // CHECK(audit->check_cell_to_nodes_refs() == 0);
     // CHECK(audit->check_cell_to_faces_refs() == 0);

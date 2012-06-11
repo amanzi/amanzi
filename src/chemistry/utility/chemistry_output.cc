@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
 
@@ -56,15 +57,22 @@ void ChemistryOutput::Initialize(const OutputOptions& options) {
 
 void ChemistryOutput::AddLevel(const std::string& level) {
   // if a valid level was provided by the user, set the flag
-  if (verbosity_map().count(level) > 0) {
-    verbosity_flags_.set(verbosity_map().at(level), true);
+  std::string new_level = level;
+  utilities::RemoveLeadingAndTrailingWhitespace(&new_level);
+  if (verbosity_map().count(new_level) > 0) {
+    verbosity_flags_.set(verbosity_map().at(new_level), true);
+  } else {
+    std::cout << "ChemistryOutput::AddLevel() : "
+              << "unknown verbosity level '" << level << "'\n";
   }
 }  // end AddLevel()
 
 void ChemistryOutput::RemoveLevel(const std::string& level) {
+  std::string old_level = level;
+  utilities::RemoveLeadingAndTrailingWhitespace(&old_level);
   // valid level provided by the user, unset the flag
-  if (verbosity_map().count(level) > 0) {
-    verbosity_flags_.set(verbosity_map().at(level), false);
+  if (verbosity_map().count(old_level) > 0) {
+    verbosity_flags_.set(verbosity_map().at(old_level), false);
   }
 }  // end RemoveLevel()
 

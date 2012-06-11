@@ -74,11 +74,41 @@ Conventions:
 
 
 
-MPC
-===
+MPC (tbw)
+=========
 
-State
-=====
+Restart from Checkpoint Data File
+---------------------------------
+
+A user may request a restart from a Checkpoint Data file by including the sublist 
+`"Restart from Checkpoint Data File`" in the Execution Control list. This mode of restarting
+will overwrite all other initializations of data that are called out in the input file.
+The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
+terminated because its allocation of time ran out.
+
+
+* [S] `"Restart from Checkpoint Data File`" [list]
+
+  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Restart from Checkpoint Data File">
+     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+  </ParameterList>
+
+In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
+Data file named chk00123.h5. All other initialization of field variables that might be called 
+out in the input file is ignored.  Recall that the value of "time" is taken from the checkpoint, 
+but may be overridden by the execution control parameters.
+
+
+
+State (tbw)
+===========
+
 
 Flow
 ====
@@ -86,12 +116,17 @@ Flow
 Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richards Problem`".
 Structure of both sublists is quite similar. We make necessary comments on differences.
 
+Water retention models
+-----------------------
+
 User defines water retention models in sublist `"Water retention models`". It contains as many sublists, 
 e.g. `"Model 1`", `"Model 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
 inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
-The available models are `"van Genuchten`" and `"fake`". The later is used to set up an analytical
-solution for convergence study. An example of the van Genuchten model specification is:
+The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
+The later is used to set up an analytical solution for convergence study. 
+The available models for the relative permeability are `"Mualem`" (default) and `"Burdine`".
+An example of the van Genuchten model specification is:
 
 .. code-block:: xml
 
@@ -100,20 +135,39 @@ solution for convergence study. An example of the van Genuchten model specificat
        <Parameter name="Water retention model" type="string" value="van Genuchten"/>
        <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
        <Parameter name="van Genuchten m" type="double" value="0.28571"/>
-       <Parameter name="van Genuchten residual saturation" type="double" value="0.103"/>
+       <Parameter name="van Genuchten l" type="double" value="0.5"/>
+       <Parameter name="residual saturation" type="double" value="0.103"/>
+       <Parameter name="relative permeability model" type="string" value="Mualem"/>
     </ParameterList>
 
+    <ParameterList name="Model 2">
+       <Parameter name="Region" type="string" value="Bottom Half"/>
+       <Parameter name="Water retention model" type="string" value="Brooks Corey"/>
+       <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
+       <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
+       <Parameter name="Brooks Corey l" type="double" value="0.51"/>
+       <Parameter name="residual saturation" type="double" value="0.103"/>
+       <Parameter name="regularization interval" type="double" value="0.0"/>
+       <Parameter name="relative permeability model" type="string" value="Burdine"/>
+    </ParameterList>
+
+
+Amanzi performs rudimentary checks of validity of the provided parameters.
+
+
+Boundary conditions
+-------------------
 
 Boundary conditions are defined in sublist `"boundary conditions`". Four types of boundary 
 conditions are supported:
 
-* `"pressure`" [list] Dirichlet boundary condition, a pressure is prescribed on a region. 
+* `"pressure`" [list] Dirichlet boundary condition, a pressure is prescribed on a surface region. 
 
-* `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a region.
+* `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a surface region.
   This is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
   boundary condition is used implicitly.
 
-* `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a region.
+* `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a surface region.
 
 * `"seepage face`" [list] Seepage face boundary condition, a dynamic combination of the `"pressure`" and 
   `"mass flux`" boundary conditions on a region. 
@@ -171,6 +225,10 @@ of the other available functions:
        </ParameterList>
      </ParameterList>
 
+
+Sources and Sinks
+-----------------
+
 The external sources (e.g. wells) are supported only in sublist `"Darcy Problems`". The structure
 of sublist `"source terms`" follows the specification of boundary conditions. 
 Again, constant functions can be replaced by any of the available time-functions:
@@ -199,18 +257,19 @@ Again, constant functions can be replaced by any of the available time-functions
 
 The remaining `"Flow`" parameters are
 
-* `"Atmospheric pressure`" [double] defines the atmosperic pressure, [Pa].
+* `"atmospheric pressure`" [double] defines the atmosperic pressure, [Pa].
 
-* `"Relative permeability method`" [string] defines a method for calculating relative
-  premeability. The available self-explanatory options `"Upwind with gravity`",
-  `"Upwind with Darcy flux`", `"Arithmetic mean`" and `"Cell centered`". The first three
-  calculate the relative permeability on mesh interfaces.
+* `"relative permeability`" [string] defines a method for calculating relative
+  permeability. The available self-explanatory options `"upwind with gravity`",
+  are `"upwind with Darcy flux`", `"arithmetic mean`" and `"cell centered`". 
+  The first three calculate the relative permeability on mesh interfaces.
 
-* `"Discretization method hint`" [string] helps to select the best discretization. 
-  It will go away with the next release of WhetStone. The available options are
-  `"none`", `"support operator`", and `"monotone`". The second options reproduces 
-  discretization implemented in RC1. The last option is recommended for orthogonal
-  meshes. 
+* `"discretization method`" [string] helps to test new discretization methods. 
+  The available options are `"generic mfd`", `"optimized mfd`", `"monotone mfd`", and
+  `"support operator`". The last option reproduces discretization method implemented in RC1. 
+  The third option is recommended for orthogonal meshes and diagonal absolute permeability.
+  The second option is still experimental (no papers were published) and produces 
+  an optimal discretization.
 
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
@@ -232,24 +291,21 @@ nonlinear solvers during steady state time integration. Here is an example:
 .. code-block:: xml
 
     <ParameterList name="steady state time integrator">
-      <Parameter name="method" type="string" value="Picard"/>
+      <Parameter name="time integration method" type="string" value="BDF1"/>
       <Parameter name="initialize with darcy" type="string" value="yes"/>
       <Parameter name="clipping saturation value" type="double" value="0.98"/>
       <Parameter name="preconditoner" type="string" value="Trilinos ML">
-
-      <ParameterList name="nonlinear solver BDF1">
-      ...
-      </ParameterList>
+      <Parameter name="linear solver" type="string" value="AztecOO GMRES">
  
-      <ParameterList name="nonlinear solver BDF2">
+      <ParameterList name="nonlinear solver BDF1">
       ...
       </ParameterList>
     </ParameterList>
 
 The parameters used here are
 
-* `"method`" [string] defines time integration method. The available options are 
-  `"BDF1`", `"BDF2`", and `"Picard`".
+* `"time integration method`" [string] defines a time integration method.
+  The available options are `"BDF1`", `"BDF2`", and `"Picard`".
 
 * `"initialize with darcy`" [string] solves the fully saturated problem with the 
   boundary continious avaluated at time T=0. The solution defines a new pressure
@@ -260,14 +316,17 @@ The parameters used here are
   of pressure. By default, the pressure threshold is equal to the atmospheric pressure.
   The new pressure is calculated based of the defined saturation value. Default is 0.6.
 
-* `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".   
+* `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".
+
+* `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
+
 
 Transient Time Integratior
 -----------------------------
 
 The sublist `"transient time integrator`" defines parameters controling linear and 
-nonlinear solvers during steady state time integration. Its parameters similar to 
-that n the sublist `"steady state time integrator`" except for parameters controling
+nonlinear solvers during transient time integration. Its parameters are similar to 
+that in the sublist `"steady state time integrator`" except for parameters controling
 pressure re-initialization.
 
 
@@ -326,34 +385,28 @@ The `"Transport`" parameters useful for developers are:
 Linear and Nonlinear Solvers
 ============================
 
-Version 2 of the native input spec introduces this sublist.
-It constans sublists for various linear an nonlinear solvers such as BDF1 and AztecOO.
+Version 2 of the native input spec introduces this list.
+At the moment it constans sublists for various linear an nonlinear solvers such as AztecOO.
 Here is and example:
 
 .. code-block:: xml
 
      <ParameterList name="Solvers">
        <ParameterList name="GMRES via AztecOO">
-            ... 
-       </ParameterList>
-
-       <ParameterList name="BDF1">
-       ...
-       </ParameterList>
-
-       <ParameterList name="BDF2">
-       ...
+         <Parameter name="error tolerance" type="double" value="1e-12"/>
+         <Parameter name="iterative method" type="string" value="GMRES"/>
+         <Parameter name="maximal number of iterations" type="int" value="400"/>
        </ParameterList>
      </ParameterList>
 
-Names `"GMRES via AztecOO`", `"BDF1`", and `"BDF2`" are selected by the user.
-They can be used by a process kernel lists to define a solver.
+The name `"GMRES via AztecOO`" is selected by the user.
+It can be used by a process kernel lists to define a solver.
 
 
 Preconditioners
 ===============
 
-Version 2 of the native input spec introduces this sublist. It contains sublists for various
+Version 2 of the native input spec introduces this list. It contains sublists for various
 preconditioners required by a simulation. At the moment, we support only Trilinos multilevel 
 preconditioner. Here is an example:
 
@@ -641,305 +694,150 @@ two intervals are speicified by the `"Time Functions`" parameter.  Thus, the val
 
 
 
-Output
-======
-
-Output data from Amanzi is currently organized into four specific groups: `"Observations`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
-Each of these is controlled in different ways, reflecting their intended use.
-
-* `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint Data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
-
-* `"Visualization Data`" is intended to represent spatially complete snapshots of the solution at defined instances during the simulation.  Dependeing on the control parameters provided here, visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see below for more discussion).
-
-* `"Observation Data`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.
-
-* `"Diagnostic Output`" is intended to represent diagnostic values to be written to stdout during a simulation. The available diagnostics are for the most part analogous to what is available as observations under the Observation Data capability. 
-
-* `"Log Data`" is intended to represent runtime diagnostics to indicate the status of the simulation in progress.  This data is typically written by the simulation code to the screen or some other stream or file pipe.  The volume of `"Log Data`" generated is a function of the `"Verbosity`" setting under `"Execution Control`".
-
-"`Log Data`" is not explicitly controlled in this section, since it is easier to control in the context of specifying details of the algorithms.  The remaining data types are discussed in the section below.
-
-
-Time and Cycle specification
-----------------------------
-
-The user must specify when the various types of output are desired.  For Observation Data, this can be in terms of physical time.  For Visualization Data or Checkpoint Data, this can only be in terms of cycle number.  We support the definition of useful macros to specify these quantities.  One must specify the quantity over which these operators must function.  For example, you may want the integral of Moisture Content at various times as Observation Data, or the molar concentration of a solute at periodic cycles as Visualization Data.  The quantities must be identified from the standardized set:
-
-* Available field quantities
-
- * Volumetric water content [volume water / bulk volume]
- * Aqueous saturation [volume water / volume pore space]
- * Aqueous pressure [Pa]
- * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
- * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
- * MaterialID
-
-Note that MaterialID will be treated as a double that is unique to each defined material.  Its value will be generated internal to Amanzi.  The log file will be appended with the (material name)->(integer) mapping used.  Also note that this list tacitly assumes the presence of Aqueous Water as one of the transported components.  Presently, it is an error if the `"Phase Definition`" above does not sufficiently define this component.
-
-
-Time macros specify a rule to generate a list of time values.  They are defined in the parameter list `"Time Macros`":
-
-* [SU] `"Time Macros`" [list] can accept multiple lists for user-named macros TMACRO
-
- * [S] TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
-
-  * [SU] `"Values`" [Array double] values of time, or 
-
-  * [SU] `"Start_Period_Stop`" [Array double] values of start time (ts), period (dt) and (optionally) end time (te) to generate times, t=ts + dt*i, for any integer i. If stop time is less than start time, the time intervals have no ending.
-
-
-Cycle macros specify a rule to generate or list cycle values.  They are defined in the parameter list `"Cycle Macros`":
-
-* [SU] `"Cycle Macros`" [list] can accept multiple lists for user-named macros CMACRO
-
- * [SU] CMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
-
-  * [SU] `"Values`" [Array int] values of cycle number, or 
-
-  * [SU] `"Start_Period_Stop`" [Array int] values of start cycle (cs), period (dc) and (optionally) end cycle (ce) to generate cycle numbers, c=cs + dc*i, for any integer i. If stop cycle < 0, the cycle intervals will not end.
-
-
-
 Observation Data
-----------------
+================
 
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-* [SU] `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
-  * [SU] `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
 
-  * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+  * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"times`", and TSPS (see below).
 
-    * [SU] `"Variables`" [Array string] a list of field quantities taken from the list of "Available field quantities" defined above
+    * `"Variables`" [Array string] a list of field quantities taken from the list of 
+      available field quantities:
 
-    * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
-
-    * [SU] `"Region`" [string] the label of a user-defined region
-
-    * [SU] `"Time Macro`" [string] one of the labeled time macros (see below)
-
-    * [SU] `"Cycle Macro`" [string] one of the labeled time macros (see below)
-
-
-The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
-
-* [SU] `"Observation Data: Point`" returns the value of the field quantity at a point
-
-* `"Observation Data: Mean`" returns the mean value of the field quantities over the region specified
-
-* [SU] `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
-
-* `"Observation Data: Cummulative Integral`" returns the integral of the field quantity, accumulated over the intervals defined by the time macro
-
-* `"Observation Data: Peak Value`" returns the peak value of the field quantity over the region
-
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="Time Macros">
-    <ParameterList name="Annual">
-      <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7,-1}"/>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Observation Data">
-    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="Integrated Mass">
-      <Parameter name="Region" type="string" value="All"/>
-      <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
-      <Parameter name="Variables" type="Array string" value="{Volumetric Water Content, Tc-99 Aqueous Concentration}"/>
-      <Parameter name="Time Macro" type="string" value="Annual"/>
-    </ParameterList>
-  </ParameterList>
-
-In this example, the user requests an annual report of the integrated volume of water and aqueous solute concentration over the entire domain.
-
-
-Diagnostic Output
------------------
-
-A user may request any number of specific observations from Amanzi that are 
-written to stdout at times or cycles that are specified by the user.  Each 
-labeled Diagnostic Output quantity involves a field quantity, a model, a 
-region from which it will extract its source data, and a list of discrete 
-times or cycles for its evaluation.  The diagnostics are evaluated during 
-the simulation and written to stdout while the simulation is running.
-
-* `"Diagnostic Output`" [list] can accept multiple lists for named Diagnostics (DIAGNOSTIC)
-
-  * DIAGNOSTIC [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
+      * Volumetric water content [volume water / bulk volume]
+      * Aqueous saturation [volume water / volume pore space]
+      * Aqueous pressure [Pa]
+      * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
+      * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
+      * MaterialID
 
     * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
     * `"Region`" [string] the label of a user-defined region
 
-    * `"Time Macro`" [string] one of the labeled time macros (see below)
+    * `"time start period stop`" [list] contains possibly several sublists that contain serparate start period stop definitions.
 
-    * `"Cycle Macro`" [string] one of the labeled cycle macros (see below)
+      * TSPS [list] user defined label, a sublist that contains one parameter, the start period stop definition
+
+        * `"start period stop`" [Array double] the first entry is the start time, the second it the time period, and the third the stop time, or -1 for an indifinite stop time. 
+
+    * `"times`" [Array double] an array of observation times.
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
-* `"Diagnostic Output: Point`" returns the value of the field quantity at the specified point
+* `"Observation Data: Point`" returns the value of the field quantity at a point
 
-* `"Diagnostic Output: Mean`" returns the mean value of the field quantity 
-
-* `"Diagnostic Output: Integral`" returns the integral of the field quantity 
-
-* `"Diagnostic Output: Cummulative Integral`" returns the integral of the field quantity , accumulated over the intervals defined by the time macro
-
-* `"Diagnostic Output: Peak Value`" returns the peak value of the field quantity
+* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
 
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Cycle Macros">
-    <ParameterList name="first 100">
-      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 1, 99}"/>
+  <ParameterList name="Observation Data">
+    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
+    <ParameterList name="some observation name">
+      <Parameter name="Region" type="string" value="some point region name"/>
+      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+      <Parameter name="Variable" type="string" value="Volumetric water content"/>
+      <Parameter name="times" type="Array doulbe" value="{100000.0, 200000.0}"/>
+      <ParameterList name="time start period stop">
+         <ParameterList name="some name">
+	    <Parameter name="start period stop" type="Array double" value="{0.0, 1000.0, 100000}"/>
+	 </ParameterList>
+         <ParameterList name="some other name">
+	    <Parameter name="start period stop" type="Array double" value="{200000.0, 2000.0, -1.0}"/>
+	 </ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
-
-  <ParameterList name="Diagnostic Output">
-    <ParameterList name="User specified name of this diagnostic output">
-      <Parameter name="Region" type="string" value="Some user specified point region"/>
-      <Parameter name="Functional" type="string" value="Diagnostic Output: Point"/>
-      <Parameter name="Variables" type="Array string" value="{Volumetric Water Content, Tc-99 Aqueous Concentration}"/>
-      <Parameter name="Cycle Macro" type="string" value="first 100"/>
-    </ParameterList>
-  </ParameterList>
-
-
-
-In this example the simulation will make point observations of the water volume and
-concentration of Tc-99 in every one of the first 100 cycles and write the result
-of these to stdout. 
 
 
 Checkpoint Data
----------------------------------
+===============
 
 A user may request periodic dumps of Amanzi Checkpoint Data.  The user has no explicit control over the content of these files, but has the guarantee that the Amanzi run will be reproducible (with accuracies determined
 by machine round errors and randomness due to execution in a parallel computing environment).  Therefore, output controls for Checkpoint Data are limited to file name generation and writing frequency, by numerical cycle number.
 
-* [SU] `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
+* `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] 
+  used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
 
-  * [SU] `"File Name Base`" [string]
+  * `"File Name Base`" [string]
 
-  * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
-
+  * `"Cycle Data`" [list] can accept a start cycle [int], interval between check points [int], 
+    and the final cycle [int].
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Cycle Macros">
-    <ParameterList name="Every-5">
-      <Parameter name="Start_Period" type="Array int" value="{0, 5}"/>
+  <ParameterList name="Checkpoint Data">
+    <Parameter name="File Name Base" type="string" value="chkpoint"/>
+    <Parameter name="File Name Digits" type="int" value="5"/>
+
+    <ParameterList name="Cycle Data">
+      <Parameter name="Start" type="int" value="0"/>
+      <Parameter name="Interval" type="int" value="100"/>
+      <Parameter name="End" type="int" value="-1"/>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Checkpoint Data">
-    <Parameter name="File Name Base" type="string" value="chk"/>
-    <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macro" type="string" value="Every-5"/>
-  </ParameterList>
+In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 100.
 
-In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
 
 
 Visualization Data
----------------------------------
+==================
 
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
 at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
 
-* [SU] `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
+* `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
 
-  * [SU] `"File Name Base`" [string]
+  * `"File Name Base`" [string]
   
-  * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+  * `"cycle start period stop`" [list] this is a list of start period stop definitions for cycles, each of which must be a sublist. Currently there can only be one sublist.
 
-  * [SU] `"Variables`" [string] can accept a list of field quantities to include in the file
+   * CSPS [list] can accept the only the parameter `"start period stop`".
+    
+    *  `"start period stop`" [Array int] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
 
+  * `"time start period stop`" [list] this is a list of start period stop definitions, each of which must be a sublist
+
+   * TSPS [list] can accept only the parameter `"start period stop`".
+
+    * `"start period stop`" [Array double] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times`" an array of discrete times that at which a visualization dump shall be written.
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Cycle Macros">
-    <ParameterList name="Every-10">
-      <Parameter name="Start_Period" type="Array int" value="{0, 10}"/>
-    </ParameterList>
-  </ParameterList>
-
   <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
-    <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macro" type="string" value="Every-10"}>
-    <Parameter name="Variable Macro" type="string" value="{Aqueous Pressure, Moisture Content"}>
+  
+    <ParameterList name="cycle start period stop">
+      <ParameterList name="some unique name">
+        <Parameter name="start period stop" type="Array int" value="{0, 100, -1}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="time start period stop">
+      <ParameterList name="some unique name">
+        <Parameter name="start period stop" type="Array double" value="{0.0, 10.0, -1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <Parameter name="times" type="Array double" value="{100.0, 300.0, 450.0}"/>
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
 
-
-Restart from Checkpoint Data File
----------------------------------
-
-A user may request a restart from a Checkpoint Data file by including the sublist 
-`"Restart from Checkpoint Data File`" in the Execution Control list. This mode of restarting
-will overwrite all other initializations of data that are called out in the input file.
-The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
-terminated because its allocation of time ran out.
-
-
-* [S] `"Restart from Checkpoint Data File`" [list]
-
-  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="Restart from Checkpoint Data File">
-     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
-  </ParameterList>
-
-In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
-Data file named chk00123.h5. All other initialization of field variables that might be called 
-out in the input file is ignored.  Recall that the value of "time" is taken from the checkpoint, 
-but may be overridden by the execution control parameters.
-
-Output format of Observation Output File
-========================================
-ASCII format will be used.   The file is preceded by two header lines:
-
-* `Observation Name, Region, Functional, Variable, Time, Value`
-* `======================================`
-
-the first line describes what information are being displayed in entries in subsequent lines.  Each subsequent line
-consists of 6 entries separated by the delimiter ",":
-
-* Entry 1: `"ParameterList name`" for a particular observation output. 
-
-* Entry 2: `"Region`" in the above `"ParameterList`".
-
-* Entry 3: `"Functional`" in the above `"ParameterList`".
-
-* Entry 4: `"Variable`" in the above `"ParameterList`".
-
-* Entry 5: Time at which the observation is requested.
-
-* Entry 6: Value of the observation at time specified in Entry 5.
-
-An example is given by the following:
-
-`Integrated Mass, All, Observation Data: Integral, Water Mass Density, 1000, 1.00e3`
 
 Tabulated Function File Format
 ==============================

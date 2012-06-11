@@ -38,6 +38,9 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerComponents {
+    // TODO(bandre): rename to BeakerState and move all "state"
+    // variables (porosity, density, volume, mineral ssa, isotherms,
+    // etc) into a single struct.
     std::vector<double> free_ion;  // molality
     std::vector<double> minerals;  // volume fractions
     std::vector<double> ion_exchange_sites;  // CEC
@@ -86,7 +89,7 @@ class Beaker {
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
-  void UpdateComponents(Beaker::BeakerComponents* components);
+  void CopyBeakerToComponents(Beaker::BeakerComponents* components);
 
   BeakerParameters GetDefaultParameters(void) const;
   BeakerParameters GetCurrentParameters(void) const;
@@ -99,9 +102,10 @@ class Beaker {
 
   void Display(void) const;
   void DisplayComponents(const BeakerComponents& components) const;
-  void DisplayTotalColumnHeaders(void) const;
+  void DisplayTotalColumnHeaders(const bool display_free) const;
   void DisplayTotalColumns(const double time, 
-                           const BeakerComponents& total) const;
+                           const BeakerComponents& total,
+                           const bool display_free) const;
   void DisplayResults(void) const;
 
 
@@ -212,7 +216,7 @@ class Beaker {
 
   void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
   void VerifyComponentSizes(const Beaker::BeakerComponents& components) const;
-  void SetComponents(const Beaker::BeakerComponents& components);
+  void CopyComponentsToBeaker(const Beaker::BeakerComponents& components);
 
   void AddPrimarySpecies(const Species& s);
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
@@ -311,7 +315,7 @@ class Beaker {
 
   // utilities for updating solution, convergence checks
   void UpdateMolalitiesWithTruncation(double max_change);
-  double CalculateMaxRelChangeInMolality(void);
+  void CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_index);
   void ValidateSolution(void);
 
   // solvers

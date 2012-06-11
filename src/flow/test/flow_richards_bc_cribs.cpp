@@ -68,7 +68,6 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-  RPK->set_standalone_mode(true);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-8);
   RPK->PrintStatistics();
@@ -91,7 +90,7 @@ TEST(FLOW_3D_RICHARDS) {
   GMV::close_data_file();
 
   // check the pressure profile
-  int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
 
   delete RPK;

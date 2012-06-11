@@ -47,7 +47,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 
   TS = Teuchos::rcp(new Transport_State(*TS_MPC));
 
-  dT = dT_debug = T_internal = 0.0;
+  dT = dT_debug = T_physics = 0.0;
+  double time = TS->get_time();
+  if (time >= 0.0) T_physics = time;
+
   verbosity = TRANSPORT_VERBOSITY_HIGH;
   internal_tests = 0;
   dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
@@ -57,7 +60,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   mesh_ = TS->mesh();
   dim = mesh_->space_dimension();
 
-  standalone_mode = false;
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
 }
@@ -75,13 +77,13 @@ int Transport_PK::InitPK()
   const Epetra_Map& cmap = mesh_->cell_map(true);
   cmax = cmap.MaxLID();
 
-  ncells_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   cmax_owned = ncells_owned - 1;
 
   const Epetra_Map& fmap = mesh_->face_map(true);
   fmax = fmap.MaxLID();
 
-  nfaces_owned = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   fmax_owned = nfaces_owned - 1;
 
   const Epetra_Map& vmap = mesh_->node_map(true);
@@ -141,7 +143,7 @@ int Transport_PK::InitPK()
   }
 
   // boundary conditions installation at initial time
-  double time = T_internal;
+  double time = T_physics;
   for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
 
   CheckInfluxBC();
@@ -226,11 +228,21 @@ double Transport_PK::CalculateTransportDt()
 
 
 /* ******************************************************************* 
+* Estimate returns last time step unless it is zero.     
+******************************************************************* */
+double Transport_PK::EstimateTransportDt()
+{
+  if (dT == 0.0) CalculateTransportDt();
+  return dT;
+}
+
+
+/* ******************************************************************* 
 * MPC will call this function to advance the transport state.
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.     
 ******************************************************************* */
-void Transport_PK::Advance(double dT_MPC, int subcycling)
+void Transport_PK::Advance(double dT_MPC)
 {
   Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
   Epetra_MultiVector& tcc_next = TS_nextBIG->ref_total_component_concentration();
@@ -238,15 +250,21 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
   const Epetra_Vector& ws_prev = TS->ref_prev_water_saturation();
   const Epetra_Vector& ws = TS->ref_water_saturation();
 
-  T_physical = TS->get_time();
-  double dT_total = 0.0, dT_cycle;
+  // calculate stable time step dT
+  double time = TS->get_time();
+  if (time >= 0.0) T_physics = time;
+
+  CalculateTransportDt();
   double dT_original = dT;  // advance routines override dT
 
+  // start subcycling
+  double dT_total = 0.0;
   if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
   }
 
-  if (subcycling && dT_original < dT_MPC) {
+  double dT_cycle;
+  if (dT_original < dT_MPC) {
     dT_cycle = dT_original;
     *ws_subcycle_start = ws_prev;
   } else {
@@ -257,14 +275,24 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
 
   int ncycles = 0, swap = 1;
   while (dT_total < dT_MPC) {
-    double time = (standalone_mode) ? T_internal : T_physical;
+    time = T_physics;
     for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
 
-    T_internal += dT_cycle;
-    T_physical += dT_cycle;
+    double dT_try = dT_MPC - dT_total;
+    bool final_cycle = false;
+    if (dT_try >= 2 * dT_original) {
+      dT_cycle = dT_original;
+    } else if (dT_try > dT_original) { 
+      dT_cycle = dT_try / 2; 
+    } else {
+      dT_cycle = dT_try;
+      final_cycle = true;
+    }
+
+    T_physics += dT_cycle;
     dT_total += dT_cycle;
 
-    if (subcycling && dT_original < dT_MPC) {
+    if (dT_original < dT_MPC) {
       if (swap) {  // Initial water saturation is in 'start'.
         water_saturation_start = ws_subcycle_start;
         water_saturation_end = ws_subcycle_end;
@@ -283,17 +311,16 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
       AdvanceSecondOrderUpwind(dT_cycle);
     }
 
-    if (subcycling && dT_original < dT_MPC)  // rotate the concentrations
+    if (! final_cycle)  // rotate the concentrations
         TS->copymemory_multivector(tcc_next, tcc, 0);
 
-    dT_cycle = std::min<double>(dT_cycle, dT_MPC - dT_total);
     ncycles++;
   }
 
   dT = dT_original;  // restore the original dT (just in case)
 
   if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
-    printf("Transport PK: number of sub-cycles = %3d  dT(sec): stable=%8.3g  mpc=%8.3g\n", 
+    printf("Transport PK: number of sub-cycles = %3d  dT(sec): stable=%10.5g  mpc=%8.3g\n", 
         ncycles, dT_original, dT_MPC);
   }
 
@@ -309,7 +336,7 @@ void Transport_PK::Advance(double dT_MPC, int subcycling)
     tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
 
     if (MyPID == 0) 
-        printf("Transport PK: min/max of tracer are %9.6g %9.6g\n", tccmin, tccmax);
+        printf("Transport PK: min/max of a tracer: %9.6g %9.6g  at T(sec) %12.7g\n", tccmin, tccmax, T_physics);
   }
 
   // DEBUG
@@ -391,7 +418,6 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   dT = dT_MPC;  // overwrite the transport step
 
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws_prev = TS_nextBIG->ref_prev_water_saturation();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
 
   // populating next state of concentrations
@@ -404,7 +430,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   int num_components = tcc->NumVectors();
 
   for (int c = 0; c <= cmax_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws_prev[c];
+    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * (*water_saturation_start)[c];
 
     for (int i = 0; i < num_components; i++)
       (*tcc_next)[i][c] = (*tcc)[i][c] * vol_phi_ws;
@@ -455,10 +481,8 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   }
 
   // recover concentration from new conservative state
-  const Epetra_Vector& ws = TS_nextBIG->ref_water_saturation();
-
   for (int c = 0; c <= cmax_owned; c++) {
-    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
+    vol_phi_ws = mesh_->cell_volume(c) * phi[c] * (*water_saturation_end)[c];
     for (int i = 0; i < num_components; i++) (*tcc_next)[i][c] /= vol_phi_ws;
   }
 

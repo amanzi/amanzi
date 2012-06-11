@@ -44,7 +44,7 @@ void Richards_PK::CalculateRelativePermeabilityCell(const Epetra_Vector& p)
 void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
 {
   CalculateRelativePermeabilityCell(p);  // populates cell-based permeabilities
-  FS->copyMasterCell2GhostCell(*Krel_cells);
+  FS->CopyMasterCell2GhostCell(*Krel_cells);
 
   if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
     CalculateRelativePermeabilityUpwindGravity(p);
@@ -271,7 +271,7 @@ void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g,
   }
 
 #ifdef HAVE_MPI
-  FS->copyMasterMultiCell2GhostMultiCell(Kg_copy);
+  FS->CopyMasterMultiCell2GhostMultiCell(Kg_copy);
 #endif
 
   AmanziGeometry::Point Kg(dim);

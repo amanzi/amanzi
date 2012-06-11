@@ -128,8 +128,11 @@ public:
 
   void create_storage();
 
-  void write_vis (Amanzi::Vis& vis, bool force=false);
-  void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force=false);
+  void write_vis (Amanzi::Vis& vis, bool chemistry_enabled,  bool force=false);
+  void write_vis (Amanzi::Vis& vis, 
+                  Teuchos::RCP<Epetra_MultiVector> auxdata, 
+                  const std::vector<std::string>& auxnames, 
+                  bool chemistry_enabled, bool force=false);
   void set_compnames(std::vector<std::string>& compnames_);
   void set_compnames(Teuchos::Array<std::string>& compnames_);
 
@@ -152,6 +155,14 @@ public:
                           const Teuchos::ParameterList& isotherm_list);
   void SetRegionSorptionSites(const std::string& region_name,
                               const Teuchos::ParameterList& sorption_sites_list);
+
+  void WriteChemistryToVis(Amanzi::Vis* vis);
+  void WriteFreeIonsToVis(Amanzi::Vis* vis);
+  void WriteTotalSorbedToVis(Amanzi::Vis* vis);
+  void WriteMineralsToVis(Amanzi::Vis* vis);
+  void WriteIsothermsToVis(Amanzi::Vis* vis);
+  void WriteSorptionSitesToVis(Amanzi::Vis* vis);
+  void WriteIonExchangeSitesToVis(Amanzi::Vis* vis);
 
   Teuchos::RCP<const Epetra_Vector> volume() const {
     return volume_;

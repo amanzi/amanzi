@@ -67,7 +67,7 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
   ASSERT(nj_ > 0);
   ASSERT(nk_ > 0);
   const int p_size(comm_->NumProc());
-  ASSERT(ncell_ > p_size);      // require at least 1 cell per process
+  ASSERT(ncell_ >= p_size);      // require at least 1 cell per process
   const int p_rank(comm_->MyPID());
   unsigned int proccell(ncell_/p_size);
   int cell0_ = p_rank * proccell;

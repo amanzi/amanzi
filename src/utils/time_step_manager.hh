@@ -4,8 +4,13 @@
 #include <vector>
 #include <list>
 #include <ostream>
+#include <cmath>
 
 namespace Amanzi {
+
+bool inline near_equal (double x, double y) {
+  return (fabs(x-y)<1e-12*std::max(1.0,std::max(fabs(x),fabs(y))));
+}
 
 class TimeStepManager {
 
@@ -30,7 +35,7 @@ class TimeStepManager {
 
  public:
   void RegisterTimeEvent(double start, double period, double stop);
-  void RegisterTimeEvent(const std::vector<double>& cycles);
+  void RegisterTimeEvent(std::vector<double> times);
   void RegisterTimeEvent(double time);
   double TimeStep(const double T, const double dT) const;
   void print(std::ostream& os, double start, double end) const;

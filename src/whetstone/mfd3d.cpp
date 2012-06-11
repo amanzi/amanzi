@@ -582,7 +582,8 @@ int MFD3D::stability_optimized(int cell,
   Teuchos::LAPACK<int, double> lapack;
   lapack.GESVD('A', 'N', nrows, ncols, N.values(), nrows,  // N = u s v
                S, U.values(), nrows, &V, 1, work, size, 
-               NULL, &info); 
+               NULL, &info);
+  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // calculate vectors C and C0
   int mrows = nrows * (nrows - 1) / 2;
@@ -626,6 +627,7 @@ int MFD3D::stability_optimized(int cell,
 
   // Find parameters
   lapack.POSV('U', nparam, 1, A.values(), nparam, G.values(), nparam, &info);
+  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // project solution on the positive quadrant and convert to matrix
   Teuchos::SerialDenseMatrix<int, double> P(mcols, mcols);
@@ -655,7 +657,15 @@ int MFD3D::stability_optimized(int cell,
     // check SPD property (we use allocated memory)
     Teuchos::SerialDenseMatrix<int, double> Ptmp(P);
     lapack.SYEV('N', 'U', mcols, Ptmp.values(), mcols, S, work, size, &info); 
-    if (S[0] > 0.0) break;
+    if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+    if (S[0] > 0.0) {
+      break;
+    } else if (loop == 2) {
+      double trace = 0.0;
+      for (int k = 0; k < nrows; k++) trace += Mc(k, k);
+      for (int k = 0; k < mcols; k++) if (P(k, k) == 0.0) P(k, k) = trace / (d * nrows);
+    }
   }
 
   // add stability term U G U^T

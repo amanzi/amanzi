@@ -21,7 +21,7 @@ namespace AmanziFlow {
 * TODO: Verify that a BC has been applied to every boundary face.
 * Right now faces without BC are considered no-mass-flux.                                         
 ****************************************************************** */
-void Flow_PK::validate_boundary_conditions(
+void Flow_PK::ValidateBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head, BoundaryFunction* bc_flux) const
 {
   // Create sets of the face indices belonging to each BC type.

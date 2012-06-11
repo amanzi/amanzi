@@ -6,8 +6,7 @@
     <Parameter name="Framework" type="string" value="mstk::mesh"/>
   </ParameterList>    
    
-  <!--  REGIONS: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
+  <!--  REGIONS  -->
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
@@ -15,14 +14,12 @@
         <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Material 1 Region">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
         <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array double" value="{0.0,0.5,0.5}"/>
@@ -61,50 +58,38 @@
     </ParameterList>
   </ParameterList>
 
-  <!--  FLOW: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
+  <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
+
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
-      <Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
-
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="BDF2"/>
+        <Parameter name="time integration method" type="string" value="BDF2"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
-        <ParameterList name="error control">
+        <ParameterList name="BDF2">
           <Parameter name="absolute error tolerance" type="double" value="0.1"/>
           <Parameter name="relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="time control">
-          <Parameter name="start pseudo time" type="double" value="0.0"/>
-          <Parameter name="end pseudo time" type="double" value="1e+11"/>
+          <Parameter name="start time" type="double" value="0.0"/>
+          <Parameter name="end time" type="double" value="1e+11"/>
           <Parameter name="initial time step" type="double" value="1e+3"/>
           <Parameter name="maximal time step" type="double" value="1e+11"/>
-        </ParameterList>
 
-        <ParameterList name="linear solver"> 
-          <Parameter name="iterative method" type="string" value="CGS"/>
-          <Parameter name="error tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-        </ParameterList>
-
-        <ParameterList name="nonlinear solver BDF2">
-          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-          <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="100"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="1e-5"/>
+          <ParameterList name="BDF2 parameters">
+            <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
+            <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
+            <Parameter name="NKA max vectors" type="int" value="5"/>
+            <Parameter name="Nonlinear solver max iterations" type="int" value="100"/>
+            <Parameter name="Nonlinear solver tolerance" type="double" value="1e-5"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Water Retention Model for Material 1 Region">
@@ -112,7 +97,7 @@
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0"/>
+          <Parameter name="residual saturation" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
 
@@ -173,6 +158,15 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO GMRES">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximal number of iterations" type="int" value="200"/>
     </ParameterList>
   </ParameterList>
 

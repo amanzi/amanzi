@@ -91,7 +91,7 @@
           <Parameter name="Region ID" type="int" value="0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.0e-4"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/> 
+          <Parameter name="residual saturation" type="double" value="0.1"/> 
         </ParameterList>
       </ParameterList>
 

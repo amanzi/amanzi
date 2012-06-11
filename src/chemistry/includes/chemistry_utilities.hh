@@ -51,12 +51,20 @@ double ln_to_log(double d);
  ******************************************************************************/
 template <typename T>
 void PrintVector(const std::string& name, 
-                 const std::vector<T>& data) {
+                 const std::vector<T>& data,
+                 const bool comma_seperated=false) {
   std::stringstream output;
   output << name << " : { ";
   for (typename std::vector<T>::const_iterator i = data.begin();
        i != data.end(); ++i) {
-    output << *i << "  ";
+    output << *i;
+    if (i != --data.end()) {
+      if (comma_seperated) {
+        output << ", ";
+      } else {
+        output << "  ";
+      }
+    }
   }
   output << " }\n";
   chem_out->Write(kVerbose, output);

@@ -71,6 +71,7 @@ extern ChemistryOutput* chem_out;
 Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
     : debug_(false),
+      display_free_columns_(false),
       max_time_step_(9.9e9),
       chemistry_state_(chem_state),
       parameter_list_(param_list),
@@ -123,60 +124,61 @@ void Chemistry_PK::InitializeChemistry(void) {
       cell, 
       chemistry_state_->total_component_concentration());
 
-  // finish setting up the chemistry object
+  // finish setting up & testing the chemistry object
   try {
     chem_->set_debug(false);
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
-
     // solve for initial free-ion concentrations
     chem_->Speciate(beaker_components_, beaker_parameters_);
-    chem_->UpdateComponents(&beaker_components_);
     if (debug()) {
       chem_out->Write(kVerbose, "\nTest solution of initial conditions in cell 0:\n");
       chem_->DisplayResults();
     }
   } catch (ChemistryException& geochem_error) {
-    // TODO(bandre): any errer in the constructor is probably fatal.
-    // TODO(bandre): write to cout/cerr here or let the catcher handle it?
     chem_->DisplayResults();
     std::cout << geochem_error.what() << std::endl;
     Exceptions::amanzi_throw(geochem_error);
   }
 
-  CopyBeakerStructuresToCellState(cell);
-
+  // TODO(bandre): at this point we should know the number of
+  // secondary species so we can finally allocate the activity
+  // coefficients array in state!
+  //chemistry_state_->CreateActivityCoeffStorage(chem_->SizeActivityCoeff());
   SetupAuxiliaryOutput();
 
-  // now take care of the remainder
+  // now loop through all the cells and initialize
   int num_cells = chemistry_state_->porosity()->MyLength();
-  for (int icell = 1; icell < num_cells; icell++) {
+  for (cell = 0; cell < num_cells; ++cell) {
     CopyCellStateToBeakerStructures(
-        icell,
+        cell,
         chemistry_state_->total_component_concentration());
 
     if (debug()) {
-      std::cout << "Reacting in cell " << icell << std::endl;
+      std::cout << "Initial speciation in cell " << cell << std::endl;
     }
 
     try {
+      //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
       // solve for initial free-ion concentrations
       chem_->Speciate(beaker_components_, beaker_parameters_);
-      chem_->UpdateComponents(&beaker_components_);
+      chem_->CopyBeakerToComponents(&beaker_components_);
+      CopyBeakerStructuresToCellState(cell);
     } catch (ChemistryException& geochem_error) {
-      std::cout << geochem_error.what() << std::endl;
+      std::cout << "ChemistryPK::InitializeChemistry(): " 
+                << "An error occured while initializing chemistry in cell: " 
+                << cell << ".\n" << geochem_error.what() << std::endl;
       Exceptions::amanzi_throw(geochem_error);
     }
-    // if successful copy back
-    CopyBeakerStructuresToCellState(icell);
 
 #ifdef GLENN_DEBUG
-    if (icell % (num_cells / 10) == 0) {
-      std::cout << "  " << icell * 100 / num_cells
+    if (cell % (num_cells / 10) == 0) {
+      std::cout << "  " << cell * 100 / num_cells
                 << "%" << std::endl;
     }
 #endif
   }
+  chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
 }  // end InitializeChemistry()
 
 /*******************************************************************************
@@ -312,8 +314,8 @@ void Chemistry_PK::SetupAuxiliaryOutput(void) {
   if (debug()) {
     std::cout << "  Chemistry_PK::SetupAuxiliaryOutput()" << std::endl;
   }
-  // TODO(bander): this indexing scheme may not be appropriate
-  // depending on the additional type of aux data this is requested...
+  // TODO(bandre): this indexing scheme will not be appropriate when
+  // additional types of aux data are requested, e.g. mineral SI.....
   unsigned int nvars = aux_names_.size();
   std::string name;
   aux_index_.clear();
@@ -323,8 +325,18 @@ void Chemistry_PK::SetupAuxiliaryOutput(void) {
     } else {
       name = aux_names_.at(i);
     }
-    aux_index_.push_back(chem_->GetPrimaryIndex(name));
-    // check to make sure it is not -1, an invalid name/index
+    int index = chem_->GetPrimaryIndex(name);
+    if (index == -1) {
+        // check to make sure it is not -1, an invalid name/index
+      std::stringstream message;
+      message << "ChemistryPK::SetupAuxiliaryOutput() : "
+              << "Output was requested for '" << aux_names_.at(i) 
+              << "' (" << name 
+              << ") but no chemistry varibles of this name were found.\n";
+      Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
+    } else {
+      aux_index_.push_back(index);
+    }
   }
 
   // create the Epetra_MultiVector that will hold the data
@@ -584,12 +596,14 @@ void Chemistry_PK::advance(
   for (int cell = 0; cell < num_cells; cell++) {
     // copy state data into the beaker data structures
     CopyCellStateToBeakerStructures(cell, tcc_star);
-
+    //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
     try {
-      // chemistry computations for this cell
+      // create a backup copy of the components
       chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
+      // chemistry computations for this cell
       int num_iterations = chem_->ReactionStep(&beaker_components_,
                                                beaker_parameters_, delta_time);
+      //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
         imax = cell;
@@ -603,10 +617,10 @@ void Chemistry_PK::advance(
       std::cout << "ERROR: Chemistry_PR::advance() "
                 << "cell[" << cell << "]: " << std::endl;
       std::cout << geochem_error.what();
-      chem_->DisplayTotalColumnHeaders();
+      chem_->DisplayTotalColumnHeaders(display_free_columns_);
       std::cout << "\nFailed Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_);
+      chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
       // std::cout << "  Free Ion Concentrations" << std::endl;
       // chem_->DisplayTotalColumns(current_time_, beaker_components_);
       // std::cout << "  Total Sorbed Concentrations" << std::endl;
@@ -615,7 +629,7 @@ void Chemistry_PK::advance(
       // TODO(bandre): these cause an exception if called when the above copy is missing
       std::cout << "\nPrevious Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_);
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_, true);
       // std::cout << "  Free Ion Concentrations" << std::endl;
       // chem_->DisplayTotalColumns(current_time_, beaker_components_copy_);
       // std::cout << "  Total Sorbed Concentrations" << std::endl;
@@ -653,8 +667,8 @@ void Chemistry_PK::advance(
   if (debug() == kDebugChemistryProcessKernel) {
     // dumping the values of the final cell. not very helpful by itself,
     // but can be move up into the loops....
-    chem_->DisplayTotalColumnHeaders();
-    chem_->DisplayTotalColumns(current_time_, beaker_components_);
+    chem_->DisplayTotalColumnHeaders(display_free_columns_);
+    chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
   }
 }  // end advance()
 
@@ -675,30 +689,32 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
   if (debug() && false) {
     chem_->Speciate(beaker_components_, beaker_parameters_);
     chem_->DisplayResults();
-    chem_->DisplayTotalColumnHeaders();
-    chem_->DisplayTotalColumns(saved_time_, beaker_components_);
+    chem_->DisplayTotalColumnHeaders(display_free_columns_);
+    chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
   }
 }  // end commit_state()
 
 
 
 Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data() {
-  int num_cells = chemistry_state_->porosity()->MyLength();
+  if (aux_data_ != Teuchos::null) {
+    int num_cells = chemistry_state_->porosity()->MyLength();
 
-  for (int cell = 0; cell < num_cells; cell++) {
-    // populate aux_data_ by copying from the appropriate internal storage
-    // for now, assume we are just looking at free ion conc of primaries
-    for (unsigned int i = 0; i < aux_names_.size(); i++) {
-      double* cell_aux_data = (*aux_data_)[i];
-      double* cell_free_ion = (*chemistry_state_->free_ion_species())[aux_index_.at(i)];
-      cell_aux_data[cell] = cell_free_ion[cell];
-      if (aux_names_.at(i) == "pH") {
-        cell_aux_data[cell] = -std::log10(cell_aux_data[cell]);
+    for (int cell = 0; cell < num_cells; cell++) {
+      // populate aux_data_ by copying from the appropriate internal storage
+      // for now, assume we are just looking at free ion conc of primaries
+      for (unsigned int i = 0; i < aux_names_.size(); i++) {
+        double* cell_aux_data = (*aux_data_)[i];
+        double* cell_free_ion = (*chemistry_state_->free_ion_species())[aux_index_.at(i)];
+        cell_aux_data[cell] = cell_free_ion[cell];
+        if (aux_names_.at(i) == "pH") {
+          cell_aux_data[cell] = -std::log10(cell_aux_data[cell]);
+        }
       }
-    }
-  }  // for(cells)
+    }  // for(cells)
 
-  // return the multi vector
+    // return the multi vector
+  }
   return aux_data_;
 }
 

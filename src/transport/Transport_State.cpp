@@ -214,7 +214,7 @@ void Transport_State::distribute_cell_multivector(Epetra_MultiVector& v)
 void Transport_State::interpolateCellVector(
     const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int)
 {
-  int ncells = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   double a = dT_int / dT;
   double b = 1.0 - a;
