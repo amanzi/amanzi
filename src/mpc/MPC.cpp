@@ -133,7 +133,8 @@ void MPC::mpc_init() {
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
     } else if (flow_model == "Steady State Saturated") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
+      // FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else if (flow_model == "Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else if (flow_model == "Steady State Richards") {
@@ -540,8 +541,10 @@ void MPC::cycle_driver() {
       }
       
       // update the time in the state object
+      *out << "mpc_dT = " << mpc_dT << std::endl;
+
       S->advance_time(mpc_dT);
-      if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
+      // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
       // ===========================================================
       // we're done with this time step, commit the state
