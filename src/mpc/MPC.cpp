@@ -540,8 +540,6 @@ void MPC::cycle_driver() {
       }
       
       // update the time in the state object
-      *out << "mpc_dT = " << mpc_dT << std::endl;
-
       S->advance_time(mpc_dT);
       // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 

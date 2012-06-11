@@ -926,7 +926,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU, all except file for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+  * [SU, all except file and velocity for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`", `"IC: Uniform Velocity`" (see below)
 
   * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -976,6 +976,7 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
 
+* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
 
 The following boundary condition parameterizations are supported:
 
