@@ -104,6 +104,9 @@ Richards::Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>
       Exceptions::amanzi_throw(message);
     }
   }
+
+  // TODO: check and make sure all blocks have a WRM associated with it. --etc
+
   wrm_.resize(wrm_count);
 
   // instantiate the region-model pairs
