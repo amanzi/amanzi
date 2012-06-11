@@ -5,16 +5,16 @@
     <Parameter name="Author" type="string" value="Glenn Hammond"/>
   </ParameterList>
   <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Richards"/>
+    <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
     <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient">
+      <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="3.1536e+7"/>
-        <Parameter name="Initial Time Step" type="double" value="1.5768e+5"/>
-        <Parameter name="Maximum Time Step" type="double" value="1.5768e+5"/>
-        <Parameter name="Maximum Time Step Size" type="double" value="1.5768e+5"/>
+        <Parameter name="Switch" type="double" value="0.0"/>
+	<Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="High"/>
@@ -41,6 +41,7 @@
         <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
         <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
         <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+        <Parameter name="linear solver tolerance" type="double" value="1e-22"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -232,7 +233,7 @@
       <ParameterList name="BC: Uniform Pressure">
         <Parameter name="Times" type="Array double" value="{0.0, 3.1536e+7}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-				<Parameter name="Values" type="Array double" value="{201325.0, 201325.0}"/>	 		
+	<Parameter name="Values" type="Array double" value="{201325.0, 201325.0}"/>	 		
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
