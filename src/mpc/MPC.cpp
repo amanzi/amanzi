@@ -314,7 +314,7 @@ void MPC::cycle_driver() {
       }
     }
   } else { // no restart, we will call the PKs to allow them to init their auxilary data
-    FPK->InitializeAuxiliaryData();
+    if (flow_enabled) FPK->InitializeAuxiliaryData();
   }
 
 
@@ -408,9 +408,9 @@ void MPC::cycle_driver() {
 
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch)) {
         if (transport_enabled) {
-          double transport_dT_tmp = TPK->EstimateTransportDt();
+	  double transport_dT_tmp = TPK->EstimateTransportDt();
           if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
-        }
+	}
         if (chemistry_enabled) {
           chemistry_dT = CPK->max_time_step();
         }
@@ -441,19 +441,18 @@ void MPC::cycle_driver() {
 
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
-        if (!reset_times_.empty()) {
-          // this is probably iffy...
-          if (S->get_time() == reset_times_.front()) {
-            *out << "Resetting the time integrator at time = " << S->get_time() << std::endl;
-            mpc_dT = reset_times_dt_.front();
+	if (!reset_times_.empty()) {
+	  // this is probably iffy...
+	  if (S->get_time() == reset_times_.front()) {
+	    *out << "Resetting the time integrator at time = " << S->get_time() << std::endl;
+	    mpc_dT = reset_times_dt_.front();
 	    mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
-            tslimiter = MPC_LIMITS;
+	    tslimiter = MPC_LIMITS;
 	    // now reset the flow time integrator..
-	    FPK->InitTransient(S->get_time(), mpc_dT);
+	    if (flow_enabled) FPK->InitTransient(S->get_time(), mpc_dT);
 	  }
-        }
+	}
       }
-
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow
       // first advance flow
@@ -550,7 +549,7 @@ void MPC::cycle_driver() {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      FPK->CommitState(FS);
+      if (flow_enabled) FPK->CommitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) TPK->CommitState(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
