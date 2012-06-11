@@ -163,7 +163,6 @@ void State::initialize_from_parameter_list()
 
   set_zero_total_component_concentration();
   set_water_density(parameter_list.get<double>("Constant water density"));
-  // set_water_saturation(parameter_list.get<double>("Constant water saturation"));
   set_viscosity(parameter_list.get<double>("Constant viscosity"));
 
 
@@ -955,6 +954,7 @@ void State::set_uniform_saturation(const Teuchos::ParameterList& unif_s_list, co
   // get value from paramter list
   const double value = unif_s_list.get<double>("value");
   set_cell_value_in_region(value, *water_saturation, region);
+  set_cell_value_in_region(value, *prev_water_saturation, region);
 };
 
 
@@ -969,6 +969,8 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
   Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
 
   set_cell_value_in_region(lin_p, *water_saturation, region);
+  set_cell_value_in_region(lin_p, *prev_water_saturation, region);
+  
 }
 
 
