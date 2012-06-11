@@ -214,9 +214,9 @@ void State::initialize_from_parameter_list()
         set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"), region);
       }
 
-      u[0] = sublist.get<double>("Constant Darcy flux x", 0.0);
-      u[1] = sublist.get<double>("Constant Darcy flux y", 0.0);
-      u[2] = sublist.get<double>("Constant Darcy flux z", 0.0);
+      u[0] = sublist.get<double>("Constant velocity x", 0.0);
+      u[1] = sublist.get<double>("Constant velocity y", 0.0);
+      u[2] = sublist.get<double>("Constant velocity z", 0.0);
       set_darcy_flux(u, region);
 
       // set the pressure
