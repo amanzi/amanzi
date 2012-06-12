@@ -290,6 +290,7 @@ void State::create_storage()
       = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
   darcy_velocity   = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
   material_ids =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  particle_density = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
   density =   Teuchos::rcp(new double);
   viscosity = Teuchos::rcp(new double);
