@@ -20,6 +20,12 @@ except ImportError:
   sys.path.append(amanzi_python_install_prefix)
   import amanzi as Amanzi
 
+try:
+  import subprocess as process
+except ImportError:
+  raise ImportError, 'Script requires the subprocess module found in Python 2.4 and higher'
+
+
 # --- Parse command line
 parser = OptionParser()
 
@@ -159,18 +165,19 @@ if options.extract_data != None:
       idx=idx+1
 
   if source_file != None:
-    print 'Will extract ' + options.extract_data + ' from ' + source_file.filename
+    print 'Will extract "' + options.extract_data + '" from ' + source_file.filename
     root_data_file=output_basename+'_data.h5'
     group_name=options.extract_data+'/'+str(source_file.cycle)
-    h5copy_args = ['--parents']
+    h5copy_args = [options.h5copy]
     h5copy_args.append('--input='+root_data_file)
     h5copy_args.append('--source='+group_name)
     h5copy_args.append('--output='+options.vv_results)
     h5copy_args.append('--destination='+options.extract_data)
-    h5copy_cmd=Amanzi.command.Command(options.h5copy,h5copy_args)
-    if h5copy_cmd.exit_code != 0:
-      h5copy_cmd._dump_state()
-      raise RuntimeError, 'Failed to create V&V results file:'+options.vv_results
+    try:
+      process.Popen(h5copy_args)
+    except:
+      print 'Failed to extract "' +options.extract_data + '"'
+
   else:
     print 'Failed to locate dataset ' + options.extract_data + ' at time ' + options.extract_time
 
