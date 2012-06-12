@@ -134,6 +134,9 @@ class AmanziInterface:
       pipe = subprocess.Popen(args,executable=executable,bufsize=-1,stdout=stdout_fh,stderr=stderr_fh)
     except ValueError:
       raise ValueError, 'Popen called with incorrect arguments'
+    except OSError:
+      print 'Failed to run ' + str(args)
+      raise OSError, 'Failed to run Amanzi binary ' + self.binary
     else:
       try:
           pipe.wait()
