@@ -35,33 +35,55 @@ void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Aff_cells_.clear();
+  Mff_cells_.clear();
+
+  int ok;
+  nokay_ = npassed_ = 0;
+
   for (int c=0; c!=K.size(); ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
+    Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
 
     if (method_ == MFD_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) {
-        mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+        ok = mfd.darcy_mass_inverse_hex(c, K[c], Mff);
       } else {
-        mfd.darcy_mass_inverse(c, K[c], Bff);
+        ok = mfd.darcy_mass_inverse(c, K[c], Mff);
       }
+    } else if (mfd3d_method == MFD_TWO_POINT_FLUX) {
+      ok = mfd.darcy_mass_inverse_diagonal(c, K[c], Mff);
+    } else if (mfd3d_method == MFD_SUPPORT_OPERATOR) {
+      ok = mfd.darcy_mass_inverse_SO(c, K[c], Mff);
+    } else if (mfd3d_method == MFD_OPTIMIZED) {
+      ok = mfd.darcy_mass_inverse_optimized(c, K[c], Mff);
     } else {
-      mfd.darcy_mass_inverse(c, K[c], Bff);
+      ok = mfd.darcy_mass_inverse(c, K[c], Mff);
     }
 
-    Aff_cells_.push_back(Bff);
+    Mff_cells_.push_back(Mff);
+
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
+      Errors::Message msg("Matrix_MFD: unexpected failure of LAPACK in WhetStone.");
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) nokay_++;
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_PASSED) npassed_++;
   }
+
+  // sum up the numbers across processors
+  int nokay_tmp = nokay_, npassed_tmp = npassed_;
+  mesh_->get_comm()->SumAll(&nokay_tmp, &nokay_, 1);
+  mesh_->get_comm()->SumAll(&npassed_tmp, &npassed_, 1);
 }
 
 
 /* ******************************************************************
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
-void MatrixMFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
-        const Teuchos::RCP<const CompositeVector>& K_faces) {
+void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
@@ -77,23 +99,22 @@ void MatrixMFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
+    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    Teuchos::SerialDenseMatrix<int, double>& Bff(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (method_ == MFD_HEXAHEDRA_MONOTONE) {
-      if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) {
-        mfd.darcy_mass_inverse_hex(c, K[c], Bff);
-      } else {
-        mfd.darcy_mass_inverse(c, K[c], Bff);
-        //mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
+    if (Krel_cells[c] == 1.0) {
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * Krel("face",0,faces[m]);
+        }
       }
     } else {
-      mfd.darcy_mass_inverse(c, K[c], Bff);
-    }
-
-    if (K_faces!=Teuchos::null) {
-      for (int n=0; n!=nfaces; ++n)
-        for (int m=0; m!=nfaces; ++m) Bff(m, n) *= (*K_faces)("face",faces[m]);
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * Krel("cell",0,c) * Krel("face",0,faces[m]);
+        }
+      }
     }
 
     double matsum = 0.0;  // elimination of mass matrix

@@ -37,7 +37,10 @@ enum MFD_method {
   MFD_NULL = 0,
   MFD_POLYHEDRA = 1,
   MFD_POLYHEDRA_MONOTONE = 2,  // under development
-  MFD_HEXAHEDRA_MONOTONE = 3
+  MFD_HEXAHEDRA_MONOTONE = 3,
+  MFD_TWO_POINT_FLUX = 4, // without consistency
+  MFD_SUPPORT_OPERATOR = 5, // rc1 compatibility
+  MFD_OPTIMIZED = 6
 };
 
 const int MFD_HEX_FACES = 6;  // Hexahedron is the common element
@@ -75,12 +78,15 @@ public:
   std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
   Teuchos::RCP<const Epetra_Vector> Acc() { return Acc_; }
 
+  // performance of algorithms generating mass matrices
+  int nokay() { return nokay_; }
+  int npassed() { return npassed_; }
+
   // main computational methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
 
   void CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
-  void CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
-          const Teuchos::RCP<const CompositeVector>& K_faces=Teuchos::null);
+  void CreateMFDstiffnessMatrices(const CompositeVector& Krel);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
           const Epetra_Vector& new_scale);
   void CreateMFDrhsVectors();
@@ -136,6 +142,7 @@ private:
   bool flag_symmetry_;
   MFD_method method_;
 
+  std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
   std::vector<double> Acc_cells_;  // duplication may be useful later
@@ -150,6 +157,9 @@ private:
   Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
 
   Teuchos::RCP<CompositeVector> rhs_;
+
+  int nokay_;
+  int npassed_; // performance of algorithms generating mass matrices
 
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
