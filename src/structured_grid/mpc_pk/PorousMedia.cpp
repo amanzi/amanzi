@@ -1379,9 +1379,11 @@ PorousMedia::RichardNLSdata::Build(Amr* amrp)
     }
     velPhase.resize(nlevs);
     initialState.resize(nlevs,PArrayManage);
+    DAlpha.resize(nlevs,PArrayManage);
     for (int lev = 0; lev <nlevs; lev++) {
       BoxArray grids = amrp->getLevel(start_level+lev).boxArray();
       initialState.set(lev,new MultiFab(grids,1,1));
+      DAlpha.set(lev, new MultiFab(grids,1,1)); // Why is this grow cell required/filled?
       velPhase[lev] = dynamic_cast<PorousMedia*>(&amrp->getLevel(start_level+lev))->u_mac_curr;
     }
 }
@@ -5438,7 +5440,10 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
   P_new.mult(-1.0,1);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind);
+  MultiFab* dalpha=0;
+  bool do_n = true;
+  Real dt=-1;
+  calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_n);
   while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
     {
       diffusion->richard_iter_eqb(nc,gravity,density,res_fix,
@@ -5455,7 +5460,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
       P_new.mult(-1.0,1);
       compute_vel_phase(u_mac,0,pcTime);
       calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-      calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind);
+      calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_n);
       itr_nwt += 1;
 
       if (verbose > 1)	check_minmax();
@@ -5589,7 +5594,12 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 
   calcLambda(pcTime);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_richard_sat_solve);
+
+  MultiFab* dalpha = 0;
+  if (!do_richard_sat_solve) {
+      dalpha->define(grids,1,1,Fab_allocate);
+  }
+  calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
 
   Diffusion::NewtonStepInfo linear_status;
   linear_status.success = true;
@@ -5628,21 +5638,21 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
                 P_new.mult(-1.0,1);
                 compute_vel_phase(u_mac,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-                calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_richard_sat_solve);
+                calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
                 if (verbose > 1) check_minmax();
             }
 	}
     }
   else
     {
-      MultiFab dalpha(grids,1,1);
-      calc_richard_alpha(&dalpha,pcTime);
+        //MultiFab dalpha(grids,1,1);
+        //calc_richard_alpha(&dalpha,pcTime);
 
       while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)  && (linear_status.success)) 
 	{
             itr_nwt++;
             diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
-                                      alpha,&dalpha,cmp_pcp1,cmp_pcp1_dp,
+                                      alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
                                       u_mac,do_upwind,linear_status);
 
 	    err_nwt = linear_status.residual_norm_post_ls;
@@ -5656,8 +5666,8 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
                 calcLambda(pcTime);
                 compute_vel_phase(u_mac,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-                calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_richard_sat_solve);
-                calc_richard_alpha(&dalpha,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
+                //calc_richard_alpha(&dalpha,pcTime);
                 if (verbose > 1)  check_minmax();
             }
 	}
@@ -5773,7 +5783,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
   Array<MultiFab*>& u_mac_local = nl_data.velPhase;
   Array < PArray <MultiFab> >& cmp_pcp1 = nl_data.Hcoeffs;
   Array < PArray <MultiFab> >& cmp_pcp1_dp = nl_data.Jacobian;
-
+  PArray <MultiFab>& dalpha = nl_data.DAlpha;
 
   // Create a nlevs-level array for the coefficients
   PArray <MultiFab> alpha(nlevs,PArrayManage);
@@ -5822,8 +5832,8 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 
       if (nl_data.UpdateJacobian(lev))
       {
-          fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-                                    u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+          fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,&(dalpha[lev]),fine_lev.lambdap1_cc,
+                                    u_mac_local[lev],pcTime,dt,0,do_upwind,do_richard_sat_solve);
       }
 
       if (do_richard_sat_solve) 
@@ -5880,8 +5890,8 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 	      fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
 					 u_mac_local[lev],0,do_upwind,pcTime);
               if (nl_data.UpdateJacobian(lev)) {
-                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-                                            u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,0,fine_lev.lambdap1_cc,
+                                            u_mac_local[lev],pcTime,dt,0,do_upwind,do_richard_sat_solve);
               }
  	    }
         }
@@ -5889,15 +5899,6 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 
   else
     {
-      PArray <MultiFab> dalpha(nlevs,PArrayManage);
-      for (int lev=0; lev<nlevs; lev++)
-	{
-	  PorousMedia&    fine_lev   = getLevel(lev);
-	  const BoxArray& fine_grids = fine_lev.boxArray();     
-	  dalpha.set(lev,new MultiFab(fine_grids,1,1));
-	  fine_lev.calc_richard_alpha(&dalpha[lev],pcTime);
-	}
-
       while ((nl_data.NLIterationsTaken() < nl_data.MaxNLIterations()) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
           nl_data++;
@@ -5934,10 +5935,10 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
               fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
                                          u_mac_local[lev],0,do_upwind,pcTime);
               if (nl_data.UpdateJacobian(lev)) {
-                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-                                            u_mac_local[lev],pcTime,0,do_upwind,do_richard_sat_solve);
+                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,&(dalpha[lev]),fine_lev.lambdap1_cc,
+                                            u_mac_local[lev],pcTime,dt,0,do_upwind,do_richard_sat_solve);
               }
-              fine_lev.calc_richard_alpha(&dalpha[lev],pcTime);
+              //fine_lev.calc_richard_alpha(&dalpha[lev],pcTime);
           }
 	}
     }
@@ -8886,10 +8887,10 @@ PorousMedia::richard_sync ()
   
   calcLambda(pcTime);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_richard_sat_solve);
+  calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
 
   
-  if (!do_richard_sat_solve) calc_richard_alpha(dalpha,pcTime);
+  //if (!do_richard_sat_solve) calc_richard_alpha(dalpha,pcTime);
 
   Diffusion::NewtonStepInfo linear_status;
   linear_status.status = "";
@@ -8934,7 +8935,7 @@ PorousMedia::richard_sync ()
                 P_new.mult(-1.0,1);
                 compute_vel_phase(u_mac_curr,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-                calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_richard_sat_solve);
+                calc_richard_jac (cmp_pcp1_dp,0,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
                 itr_nwt += 1;
                 if (verbose > 1)  check_minmax();
             }
@@ -8942,13 +8943,13 @@ PorousMedia::richard_sync ()
     }
   else
     {
-      MultiFab dalpha(grids,1,1);
-      calc_richard_alpha(&dalpha,pcTime);
+        //MultiFab dalpha(grids,1,1);
+        //calc_richard_alpha(&dalpha,pcTime);
 
       while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.status!="Finished")) 
 	{
             diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
-                                      alpha,&dalpha,cmp_pcp1,cmp_pcp1_dp,
+                                      alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
                                       u_mac_curr,do_upwind,linear_status);
 
 	    err_nwt = linear_status.residual_norm_post_ls;
@@ -8964,8 +8965,8 @@ PorousMedia::richard_sync ()
                 calcLambda(pcTime);
                 compute_vel_phase(u_mac_curr,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-                calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_richard_sat_solve);
-                calc_richard_alpha(&dalpha,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
+                //calc_richard_alpha(&dalpha,pcTime);
                 itr_nwt += 1;
                 if (verbose > 1)  check_minmax();
             }
@@ -9766,12 +9767,14 @@ PorousMedia::calc_richard_coef (MultiFab*        diffusivity[BL_SPACEDIM],
 
 void 
 PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
-			       const MultiFab* lbd_cc, 
+                               MultiFab*       dalpha,
+			       const MultiFab* lbd_cc,                                
 			       const MultiFab* umac,
-			       const Real      time,
-			       const int       nc,
-			       const int       do_upwind,
-			       const bool      do_richard_sat_solve)
+			       Real            time,
+			       Real            dt,
+			       int             nc,
+			       int             do_upwind,
+			       bool            do_richard_sat_solve)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_jac()");
 
@@ -9882,6 +9885,19 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       const int*  cp_lo  = (*cpl_coef)[fpi].loVect();
       const int*  cp_hi  = (*cpl_coef)[fpi].hiVect();
 
+      if (dalpha) {
+          const Real* adat = (*dalpha)[fpi].dataPtr();
+          const int*  a_lo = (*dalpha)[fpi].loVect();
+          const int*  a_hi = (*dalpha)[fpi].hiVect();
+
+          FORT_RICHARD_ALPHA(adat, ARLIM(a_lo), ARLIM(a_hi),
+                             ndat, ARLIM(n_lo), ARLIM(n_hi),
+                             pdat, ARLIM(p_lo), ARLIM(p_hi),
+                             kdat, ARLIM(k_lo), ARLIM(k_hi),
+                             cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
+                             &n_cpl_coef, lo, hi);
+      }
+
       Array<int> bc;
       bc = getBCArray(Press_Type,idx,0,1);
 
@@ -9988,24 +10004,22 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       {
           cols[0] = nodeNums(iv);
           rows[0] = cols[0];
-          vals[0] = 0;
+          vals[0] = (dalpha ? (*dalpha)[fpi](iv,0)  :  0);
+          Real rdt = (dt>0  ?  density[nc]*dt : 1); // The "b" factor
           int cnt = 1;
-          //for (int d=0; d<BL_SPACEDIM; ++d) {
-          bool top_row = false;
-          bool bottom_row = false;
           for (int d=0; d<BL_SPACEDIM; ++d) {
-              vals[0] -= (*wrk[d])(iv,2);
+              vals[0] -= rdt * (*wrk[d])(iv,2);
 
               IntVect ivp = iv + BoxLib::BASISV(d);
               int np = nodeNums(ivp,0);
               if (np>=0) {
                   cols[cnt]  = np; 
-                  vals[cnt]  = -(*wrk[d])(iv,0);
+                  vals[cnt]  = -rdt * (*wrk[d])(iv,0);
                   cnt++;
               }
               else {
                   if (theBC.hi()[d]==FOEXTRAP) {
-                      vals[0] -= (*wrk[d])(iv,0);
+                      vals[0] -= rdt * (*wrk[d])(iv,0);
                   }
               }
 
@@ -10013,19 +10027,21 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
               int nn = nodeNums(ivn,0);
               if (nn>=0) {
                   cols[cnt]  = nn; 
-                  vals[cnt]  = -(*wrk[d])(iv,1);
+                  vals[cnt]  = -rdt * (*wrk[d])(iv,1);
                   cnt++;
               }
               else {
                   if (theBC.lo()[d]==FOEXTRAP) {
-                      vals[0] -= (*wrk[d])(iv,1);
+                      vals[0] -= rdt * (*wrk[d])(iv,1);
                   }
               }
           }
 
           // Normalize matrix entries
-          Real max_abs = 0;
 #if 1
+          Real max_abs = 1;
+#else
+          Real max_abs = 0;
           for (int n=0; n<cnt; ++n) {
               max_abs = std::max(max_abs,std::abs(vals[n]));
           }
@@ -10033,8 +10049,6 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
           for (int n=0; n<cnt; ++n) {
               vals[n] *= max_abs;
           }
-#else
-          max_abs = 1;
 #endif
 
           ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);

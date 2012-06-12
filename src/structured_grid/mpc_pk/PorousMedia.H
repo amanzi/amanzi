@@ -173,6 +173,7 @@ public:
         
         Array < PArray <MultiFab> > Hcoeffs;
         Array < PArray <MultiFab> > Jacobian;
+        PArray <MultiFab>  DAlpha;
         Array <MultiFab*> velPhase;
         PArray <MultiFab>  initialState;
 
@@ -807,12 +808,14 @@ protected:
   // Calculate the diffusive term in the jacobian of richard's equation
   //
   void calc_richard_jac (MultiFab*  diffusivity[BL_SPACEDIM],
+                         MultiFab*  dalpha,
 			 const MultiFab* lbd,
 			 const MultiFab* umac,
-			 const Real time,
-			 const int  nc = 0,
-			 const int do_upwind = 0,
-			 const bool do_n = true);
+			 Real time,
+                         Real dt,
+			 int  nc,
+			 int do_upwind,
+			 bool do_n);
 
   //
   // Calculate the dt term in the jacobian for p-formulation

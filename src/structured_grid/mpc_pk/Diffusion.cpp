@@ -2044,32 +2044,22 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 	  Soln[lev].setVal(0.);
 	}
       Real b_dp = dt*density[0];   
-
       int linsol_status = 0;
       Real final_resnorm;
 
+      bool use_petsc_result = true;
+      //bool use_petsc_result = false;
 #ifdef BL_USE_PETSC
       BL_ASSERT(pm_parent);
 
       Layout& layout = pm_parent->GetLayout();
+      const Array<IntVect>& ref_ratio = layout.RefRatio();
       bool ioproc = ParallelDescriptor::IOProcessor();
       int myproc = ParallelDescriptor::MyProc();
       MPI_Comm comm = ParallelDescriptor::Communicator();
 
       Vec RhsV, SolnV;
-      Mat& J = layout.Jacobian();
-
       PetscErrorCode ierr; 
-
-      //Mat Jt;
-      //ierr = MatDuplicate(J,MAT_COPY_VALUES,Jt); CHKPETSC(ierr);
-      // Jt *= -rho.dt
-
-      // MatMultAdd(A,v1,v2,v4) compute v3 = v2 + A*v1
-      // v3 = linear residual, v2=Rhs, v1=Pnew, A=J*dt
-      //ierr = MatMultAdd(Jt,ResV,RhsV,PnewV);
-      
-      const Array<IntVect>& ref_ratio = layout.RefRatio();
 
       MFTower RhsMFT(Rhs,ref_ratio);
       MFTower SolnMFT(Soln,ref_ratio);
@@ -2081,43 +2071,45 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
       ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
 
-      Real resnorm;
-      ierr = VecNorm(RhsV,NORM_2,&resnorm);
-      if (ioproc) {
-          //std::cout << "PETSc Resnorm = " << resnorm << std::endl;
-      }
-
+      // Apply column scaling of J to Rhs
       Real* RhsV_array, *JRowScale_array;
       ierr = VecGetArray(RhsV,&RhsV_array); CHKPETSC(ierr);
       ierr = VecGetArray(layout.JRowScale(),&JRowScale_array); CHKPETSC(ierr);
       int nlocal;
       ierr = VecGetSize(RhsV,&nlocal);
-      Real fac = 1/dt*density[0];
       for (int i=0; i<nlocal; ++i) {
-          RhsV_array[i] *= fac * JRowScale_array[i];
+          RhsV_array[i] *= JRowScale_array[i];
       }
       ierr = VecRestoreArray(RhsV,&RhsV_array);
       ierr = VecRestoreArray(layout.JRowScale(),&JRowScale_array);
 
       KSP  ksp;
       ierr = KSPCreate(comm,&ksp); CHKPETSC(ierr);
+
+      Mat& J = layout.Jacobian();
       ierr = KSPSetOperators(ksp,J,J,DIFFERENT_NONZERO_PATTERN); CHKPETSC(ierr);
       ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
-
       ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
 
-#if 0
-      MFTower ResultMFT;
-      layout.BuildMFTower(ResultMFT,1,0);
-      ierr = layout.VecToMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
-      VisMF::Write(ResultMFT[0],"JUNK");
-      if (ioproc) {
-          std::cout << "PETSc write solution to JUNK" << std::endl;
+      MFTower ResultMFT;      
+      if (use_petsc_result) {
+          ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
       }
+      else {
+          layout.BuildMFTower(ResultMFT,1,0);
+          ierr = layout.VecToMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
+#if 0
+          VisMF::Write(ResultMFT[0],"JUNK");
+          if (ioproc) {
+              std::cout << "PETSc write solution to JUNK" << std::endl;
+          }
 #endif
+      }
+#else
+      use_petsc_result = false;
 #endif
 
-      // For the moment, always follow with mg solve
+      if (!use_petsc_result)
       {
           const Real S_tol     = visc_tol;
           const Real S_tol_abs = visc_abs_tol;
@@ -2134,28 +2126,30 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           mgt_solver.solve(Soln_p.dataPtr(), Rhs_p.dataPtr(), S_tol, S_tol_abs, 
                            fill_bcs_for_gradient, final_resnorm,
                            linsol_status);
-      }
 
-      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-          std::cout << tag 
-                    << "Linear solve final res=" << status.initial_residual_norm
-                    << std::endl;
-      }
-
+          if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+              std::cout << tag 
+                        << "Linear solve final res=" << status.initial_residual_norm
+                        << std::endl;
+          }
 
 #ifdef BL_USE_PETSC
 #if 0
-      ResultMFT.AXPY(SolnMFT,-1);
-      Real diff = ResultMFT.norm();
-      if (ioproc) {
-          std::cout << "PETSc norm of diff: " << diff << std::endl;
-      }
-      VisMF::Write(Soln[0],"JUNK1");
-      if (ioproc) {
-          std::cout << "PETSc write bl solution to JUNK1" << std::endl;
-      }
+          ResultMFT.AXPY(SolnMFT,-1);
+          Real diff = ResultMFT.norm();
+          if (ioproc) {
+              std::cout << "PETSc norm of diff: " << diff << std::endl;
+          }
+#endif
+#if 0
+          VisMF::Write(Rhs[0],"JUNK1");
+          if (ioproc) {
+              std::cout << "PETSc write bl solution to JUNK1" << std::endl;
+          }
 #endif
 #endif
+
+      }
 
       if (linsol_status!=0)
       {
@@ -2186,12 +2180,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
 	  pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
 	}
-
-      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-          std::cout << tag 
-                    << "Linear solve final res=" << final_resnorm
-                    << std::endl;
-      }
     }
   
   PArray<MultiFab> Ptmp(nlevs,PArrayManage);
@@ -2214,8 +2202,11 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       status.reason = "Full linear step accepted";
       status.success = true;
       status.status = "Finished";
-      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-          std::cout << tag << status.reason << std::endl;
+      if (ParallelDescriptor::IOProcessor()) {
+          if (status.monitor_linear_solve) {
+              std::cout << tag << status.reason << std::endl;
+          }
+          
       }
   }
 
