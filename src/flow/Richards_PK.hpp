@@ -56,7 +56,6 @@ class Richards_PK : public Flow_PK {
   int AdvanceToSteadyState_BDF2();
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
-  void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   // methods for experimental time integration
   int PicardTimeStep(double T, double dT, double& dTnext);

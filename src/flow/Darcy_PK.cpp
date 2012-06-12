@@ -380,9 +380,6 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 
-  Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
-  DeriveDarcyVelocity(flux, velocity);  
-
   // DEBUG
   // WriteGMVfile(FS_MPC);
 }
@@ -428,15 +425,6 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
-}
-
-
-/* ******************************************************************
-* A wrapper for a similar matrix call.  
-****************************************************************** */
-void Darcy_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity)
-{
-  matrix_->DeriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 
 
