@@ -130,6 +130,7 @@ public:
   double water_mass();
   double point_value(const std::string& point_region, const std::string& comp_name);
       
+  void DeriveDarcyVelocity();
 
   void create_storage();
 
