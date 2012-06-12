@@ -343,7 +343,6 @@ void MPC::cycle_driver() {
       if (!restart_requested) {
 	FPK->InitSteadyState(S->get_time(), dTsteady);
 	FPK->InitializeSteadySaturated();
-	FPK->CommitStateForTransport(FS);
 	FPK->CommitState(FS);
 	S->advance_time(Tswitch-T0);
       }
@@ -475,7 +474,7 @@ void MPC::cycle_driver() {
 	      *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
 	    }
 	  } while (redo);
-	  FPK->CommitStateForTransport(FS);
+	  FPK->CommitState(FS);
 	}
       }
 
@@ -547,7 +546,7 @@ void MPC::cycle_driver() {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      if (flow_enabled) FPK->CommitState(FS);
+      // if (flow_enabled) FPK->CommitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) TPK->CommitState(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);

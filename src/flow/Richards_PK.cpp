@@ -498,7 +498,7 @@ int Richards_PK::Advance(double dT_MPC)
 * The consistency condition is enforced by solving a steady state 
 * problem with a mass source.
 ****************************************************************** */
-void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
+void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
   // save cell-based and face-based pressures 
   Epetra_Vector& pressure = FS_MPC->ref_pressure();
@@ -520,22 +520,14 @@ void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
-  // DEBUG
-  // WriteGMVfile(FS_MPC);
-}
-
-
-/* ******************************************************************
-* Transfer internal data to flow state FS_MPC. MPC may request
-* to populate the original state FS. 
-****************************************************************** */
-void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
-{
   dT = dTnext;
 
-  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
+  // calculate full velocity vector
   Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
   DeriveDarcyVelocity(flux, velocity);
+
+  // DEBUG
+  // WriteGMVfile(FS_MPC);
 }
 
 
