@@ -828,16 +828,16 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }    
-  } else if (var == "Hydrostatic Head") {
-    value = 0.0;
-    volume = 0.0;
+  // } else if (var == "Hydrostatic Head") {
+  //   value = 0.0;
+  //   volume = 0.0;
 
-    for (int i=0; i<mesh_block_size; ++i) {
-      int ic = cell_ids[i];
-      value += (*pressure)[ic]/ ( (*density) * (*gravity)[2]);
-      value *= mesh_maps->cell_volume(ic);
-      volume += mesh_maps->cell_volume(ic);
-    }
+  //   for (int i=0; i<mesh_block_size; ++i) {
+  //     int ic = cell_ids[i];
+  //     value += (*pressure)[ic]/ ( (*density) * (*gravity)[2]);
+  //     value *= mesh_maps->cell_volume(ic);
+  //     volume += mesh_maps->cell_volume(ic);
+  //   }
   } else {
     std::stringstream ss;
     ss << "State::point_value: cannot make an observation for variable " << name;
@@ -1052,6 +1052,9 @@ void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
       bulk_density.Multiply(1.0,*particle_density,bulk_density,0.0);
       vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
       vis.write_vector(vol_water,"gravimetric water content");
+
+      // compute hydrostatic head
+      // TO DO
 
       std::vector<std::string> names(3);
       names[0] = "darcy velocity x";
