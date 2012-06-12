@@ -51,11 +51,14 @@ void Richards_PK::fun(
       f[c] += rho * phi[c] * volume * (s1 - s2) / dTp;
     }
   }
+
+  Epetra_Vector* f_cells = FS->CreateCellView(f);
+  f_cells->NormInf(&functional_max_norm);
 }
 
 
 /* ******************************************************************
-* .                                                 
+* Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
@@ -96,7 +99,7 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 ****************************************************************** */
 double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du)
 {
-  double error, error_p, error_s;
+  double error, error_p, error_s, error_r;
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
@@ -120,9 +123,17 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
     error_s = 0.0;
   }
   
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_RESIDUAL) {
+    error_r = functional_max_norm;
+  } else {
+    error_r = 0.0;
+  }
+
+  error = std::max<double>(error_s, error_p);
+  error = std::max<double>(error, error_r);
 
 #ifdef HAVE_MPI
-  double buf = std::max<double>(error_s, error_p);
+  double buf = error;
   du.Comm().MaxAll(&buf, &error, 1);  // find the global maximum
 #endif
   return error;

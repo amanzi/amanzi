@@ -106,6 +106,7 @@ class Richards_PK : public Flow_PK {
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
   void ProcessStringRelativePermeability(const std::string name, int* method);
+  void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
   void VerifyStringMualemBurdine(const std::string name);
   void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
 
@@ -171,19 +172,21 @@ class Richards_PK : public Flow_PK {
   BDF1Dae* bdf1_dae;
   int block_picard;
   int error_control_;
+  double functional_max_norm;
 
   int ti_method_sss;  // Parameters for steady-state solution
   std::string preconditioner_name_sss_;
   int num_itrs_sss, max_itrs_sss;
   double absolute_tol_sss, relative_tol_sss, residual_tol_sss;
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
-  int initialize_with_darcy;
+  int initialize_with_darcy, error_control_sss_;
 
   int ti_method_trs;  // Parameters for transient solution
   std::string preconditioner_name_trs_;
   double absolute_tol_trs, relative_tol_trs, residual_tol_trs;
   int num_itrs_trs, max_itrs_trs;
   double T0_trs, T1_trs, dT0_trs, dTmax_trs;
+  int error_control_trs_;
 
   double absolute_tol, relative_tol;  // Generic parameters (sss or trs)
   int ti_method, num_itrs, max_itrs;

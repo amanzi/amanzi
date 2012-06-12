@@ -246,9 +246,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("Richards PK: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
     if (initialize_with_darcy) {
-       std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
-       std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
-     }
+      std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
+      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
+    }
   }
 
   // set up new preconditioner
@@ -328,6 +328,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   block_picard = 0;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+  error_control_ |= error_control_sss_;
 
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 
@@ -347,7 +348,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 void Richards_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
   }
   set_time(T0, dT0);
 
@@ -416,6 +417,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
   block_picard = 0;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+  error_control_ |= error_control_trs_;
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }

@@ -11,7 +11,10 @@ Authors: Neil Carlson (nnc@lanl.gov),
 */
 
 #include <set>
+#include <vector>
 #include <string>
+
+#include "Teuchos_ParameterList.hpp"
 
 #include "WRM_vanGenuchten.hpp"
 #include "WRM_BrooksCorey.hpp"
@@ -150,6 +153,8 @@ void Richards_PK::ProcessParameterList()
     std::string linear_solver_name = FindStringLinearSolver(sss_list);
     ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
 
+    ProcessStringErrorOptions(sss_list, &error_control_sss_);
+
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Richards Problem: there is no sublist for steady-state calculations.\n");
   }
@@ -168,6 +173,8 @@ void Richards_PK::ProcessParameterList()
     preconditioner_name_trs_ = FindStringPreconditioner(trs_list);
     std::string linear_solver_name = FindStringLinearSolver(trs_list);
     ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
+
+    ProcessStringErrorOptions(trs_list, &error_control_trs_);
 
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Warning: Richards Problem has no sublist <transient time integration>.\n");
@@ -196,7 +203,6 @@ void Richards_PK::ProcessSublistTimeIntegration(
     *T1 = tmp_list.get<double>("end time", 0.0);
     *dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
     *dTmax = tmp_list.get<double>("maximal time step", dT0_sss);
-
   } else {
     msg << "Richards PK: specified time integration sublist does not exist.";
     Exceptions::amanzi_throw(msg);
@@ -205,7 +211,30 @@ void Richards_PK::ProcessSublistTimeIntegration(
 
 
 /* ****************************************************************
-* Process string for the lative permeability
+* Process string for error control options
+**************************************************************** */
+void Richards_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control)
+{
+  *control = 0;
+  if (list.isParameter("error control options")){
+    std::vector<std::string> options;
+    options = list.get<Teuchos::Array<std::string> >("error control options").toVector();
+
+    for (int i=0; i < options.size(); i++) {
+      if (options[i] == "pressure") {
+        *control += FLOW_TI_ERROR_CONTROL_PRESSURE;
+      } else if (options[i] == "saturation") {
+        *control += FLOW_TI_ERROR_CONTROL_SATURATION;
+      } else if (options[i] == "residual") {
+        *control += FLOW_TI_ERROR_CONTROL_RESIDUAL;
+      }
+    }
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the relative permeability
 **************************************************************** */
 void Richards_PK::ProcessStringRelativePermeability(const std::string name, int* method)
 {

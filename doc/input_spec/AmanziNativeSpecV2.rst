@@ -296,6 +296,7 @@ nonlinear solvers during steady state time integration. Here is an example:
       <Parameter name="clipping saturation value" type="double" value="0.98"/>
       <Parameter name="preconditoner" type="string" value="Trilinos ML">
       <Parameter name="linear solver" type="string" value="AztecOO GMRES">
+      <Parameter name="error control options" type="Array string" value="{pressure, saturation}">
  
       <ParameterList name="nonlinear solver BDF1">
       ...
@@ -320,6 +321,15 @@ The parameters used here are
 
 * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
 
+* `"error control options`" [Array string] lists various error control options. 
+  A nonlinear solver is terminated when all listed options are passed. 
+  The available options are `"pressure`", `"saturation`", and `"residual`". 
+  All errors are relative, i.e. dimensionless. 
+  The error in pressure is compared with capillary pressure plus atmospheric pressure. 
+  The other two error are compared with 1. 
+  The option `"pressure`" is always active during steady-state time integration.
+  The option  `"saturation`" is always active during transient time integration.
+
 
 Transient Time Integratior
 -----------------------------
@@ -342,7 +352,10 @@ is used. Note that the boundary condition is set up separately for each componen
 .. code-block:: xml
 
     <ParameterList name="Transport BCs">
+      <Parameter name="CFL" type="double" value="1.0"/>
+      <Parameter name="advective limiter" type="string" value="Tensorial"/>
       <Parameter name="number of BCs" type="int" value="2"/>
+
       <ParameterList name="BC 0">
         <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
         <Parameter name="Regions" type="Array string" value="{Left side}"/>

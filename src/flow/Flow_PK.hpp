@@ -61,7 +61,7 @@ const int FLOW_MFD3D_OPTIMIZED = 6;
 
 const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
 const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
-const int FLOW_TI_ERROR_CONTROL_CONSISTENCY = 4;
+const int FLOW_TI_ERROR_CONTROL_RESIDUAL = 4;
 
 const double FLOW_TI_ABSOLUTE_TOLERANCE = 1e-4;  // defaults for time integrations
 const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
