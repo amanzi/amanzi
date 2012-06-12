@@ -666,7 +666,6 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
 
     Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
-    int bc_counter = 0;
     // TODO: these simple checks for one transported phase will not
     // work with the addition of the solid phase
 
@@ -709,15 +708,12 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
                   bc.set<Teuchos::Array<double> >("Times", times);
                   bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
                   bc.set<Teuchos::Array<std::string> >("Regions", regs);
-
-                  bc_counter++;
-                }
+		}
               }
             }
           }
         }
       }
-      tbc_list.set<int>("number of BCs", bc_counter);
     } else {
       Exceptions::amanzi_throw(Errors::Message( "Unstructured Amanzi can only have one phase, but the input file specifies more than one."));
     }

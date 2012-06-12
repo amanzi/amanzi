@@ -97,17 +97,8 @@ void Transport_PK::ProcessParameterList()
   BCs_list = transport_list.get<Teuchos::ParameterList>("Transport BCs");
 
   // populate the list of boundary influx functions
-  int nBCs = BCs_list.get<int>("number of BCs");
   bcs.clear();
   bcs_tcc_index.clear();
-
-  // make sure that there are the expected number of boundary condition sublists
-  int actual_nBCs(0);
-  for (Teuchos::ParameterList::ConstIterator it = BCs_list.begin(); it != BCs_list.end(); ++it)
-    if (BCs_list.isSublist(it->first)) ++actual_nBCs;
-  if (actual_nBCs != nBCs) {
-    Exceptions::amanzi_throw(Errors::Message("The number of transport BC sublists does not match the parameter number of BCs"));
-  }
 
   for (Teuchos::ParameterList::ConstIterator it = BCs_list.begin(); it != BCs_list.end(); ++it) {
     if (BCs_list.isSublist(it->first)) {
