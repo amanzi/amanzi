@@ -424,7 +424,7 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume * specific_storage[c] / (rho_ * g * dT_prec);
+    double factor = volume * specific_storage[c] / (g * dT_prec);
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
