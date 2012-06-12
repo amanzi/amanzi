@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
   // make sure only PE0 can write to std::cout
   int rank, ierr, aerr;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  rank = mpiSession.MyRank(); 
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   // if (rank!=0) {
