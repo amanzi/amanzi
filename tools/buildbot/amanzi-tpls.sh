@@ -1162,6 +1162,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
 	-D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
 	-D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
 	-D ASCEMIO_DIR:FILEPATH=${PREFIX} \\
+        -D TESTS_REQUIRE_FULLPATH:BOOL=TRUE \\
 	..
 
     if [ \$? -ne 0 ]; then
