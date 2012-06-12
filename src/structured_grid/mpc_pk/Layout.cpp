@@ -209,11 +209,7 @@ MFTower::norm() const // currently only max norm supported
                     }
                 }
             }
-            norm = std::max(norm,fab.norm(0));
-            if (norm>0) {
-                std::cout << "    max diff = " << norm << " l,g: " << lev << ", " << mfi.index() << std::endl;
-                BoxLib::Abort();
-            }
+            norm = std::max(norm, fab.norm(2,0,1));
         }
     }
     ParallelDescriptor::ReduceRealMax(norm);
@@ -240,7 +236,7 @@ Layout::Layout(Amr* _parent)
     : initialized(false),
       nGrow(1),
       parent(_parent), 
-      J(0)
+      J_mat(0), JRowScale_vec(0)
 {
 }
 
@@ -249,9 +245,11 @@ Layout::SetParent(Amr* new_parent)
 {
     if (parent) {
         Clear();
-        if (J) {
-            MatDestroy(J);
-            delete J; J = 0;
+        if (J_mat) {
+            MatDestroy(J_mat);
+            delete J_mat; J_mat = 0;
+            VecDestroy(JRowScale_vec);
+            delete JRowScale_vec; JRowScale_vec = 0;
         }
     }
     parent = new_parent;
@@ -261,9 +259,11 @@ void
 Layout::Clear()
 {
     nodes.clear();
-    if (J) {
-        MatDestroy(J);
-        delete J; J = 0;
+    if (J_mat) {
+        MatDestroy(J_mat);
+        delete J_mat; J_mat = 0;
+        VecDestroy(JRowScale_vec);
+        delete JRowScale_vec; JRowScale_vec = 0;
     }
     initialized = false;
 }
@@ -457,25 +457,36 @@ void
 Layout::AllocateJ()
 {
     BL_ASSERT(initialized);
-    BL_ASSERT(J == 0);
-    J = new Mat;
+    BL_ASSERT(J_mat == 0);
+    BL_ASSERT(JRowScale_vec == 0);
+    J_mat = new Mat;
+    JRowScale_vec = new Vec;
     int n = nNodes_local; // Number of local columns of J
     int m = nNodes_local; // Number of local rows of J
     int N = nNodes_global; // Number of global columns of J 
     int M = nNodes_global; // Number of global rows of J 
     int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
     int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
-    int ierr = MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, J);
-    CHKPETSC(ierr);
+    int ierr = MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, J_mat); CHKPETSC(ierr);
+    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,JRowScale_vec); CHKPETSC(ierr);        
 }
 
 Mat&
 Layout::Jacobian()
 {
-    if (J==0) {
+    if (J_mat==0) {
         AllocateJ();
     }
-    return *J;
+    return *J_mat;
+}
+
+Vec&
+Layout::JRowScale()
+{
+    if (J_mat==0) {
+        AllocateJ();
+    }
+    return *JRowScale_vec;
 }
 
 bool
@@ -539,6 +550,8 @@ Layout::MFTowerToVec(Vec&           V,
 
                 ifab.resize(box,1);
                 ifab.copy(nodeIds[lev][mfi]);
+                BL_ASSERT(ifab.min()>=0);
+
                 const int* ix = ifab.dataPtr();
                 
                 fab.resize(box,1);

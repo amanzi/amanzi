@@ -2049,45 +2049,72 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       Real final_resnorm;
 
 #ifdef BL_USE_PETSC
-      bool use_petsc = true;
-      if (use_petsc) {
-          BL_ASSERT(pm_parent);
+      BL_ASSERT(pm_parent);
 
-          Layout& layout = pm_parent->GetLayout();
-          bool ioproc = ParallelDescriptor::IOProcessor();
-          int myproc = ParallelDescriptor::MyProc();
-          MPI_Comm comm = ParallelDescriptor::Communicator();
+      Layout& layout = pm_parent->GetLayout();
+      bool ioproc = ParallelDescriptor::IOProcessor();
+      int myproc = ParallelDescriptor::MyProc();
+      MPI_Comm comm = ParallelDescriptor::Communicator();
 
-          Vec RhsV, SolnV;
-          Mat& J = layout.Jacobian();
+      Vec RhsV, SolnV;
+      Mat& J = layout.Jacobian();
 
-          const Array<IntVect>& ref_ratio = layout.RefRatio();
+      PetscErrorCode ierr; 
 
-          MFTower RhsMFT(Rhs,ref_ratio);
-          MFTower SolnMFT(Soln,ref_ratio);
+      //Mat Jt;
+      //ierr = MatDuplicate(J,MAT_COPY_VALUES,Jt); CHKPETSC(ierr);
+      // Jt *= -rho.dt
 
-          if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
-              BoxLib::Abort("MFT incompatible with layout");
-          }
+      // MatMultAdd(A,v1,v2,v4) compute v3 = v2 + A*v1
+      // v3 = linear residual, v2=Rhs, v1=Pnew, A=J*dt
+      //ierr = MatMultAdd(Jt,ResV,RhsV,PnewV);
+      
+      const Array<IntVect>& ref_ratio = layout.RefRatio();
 
-          PetscErrorCode ierr; 
-          ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
-          ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
+      MFTower RhsMFT(Rhs,ref_ratio);
+      MFTower SolnMFT(Soln,ref_ratio);
 
-          Real resnorm;
-          ierr = VecNorm(RhsV,NORM_2,&resnorm);
-          if (ioproc) {
-              std::cout << "Resnorm = " << resnorm << std::endl;
-          }
+      if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
+          BoxLib::Abort("MFT incompatible with layout");
+      }
 
-          KSP  ksp;
-          ierr = KSPCreate(comm,&ksp); CHKPETSC(ierr);
-          ierr = KSPSetOperators(ksp,J,J,DIFFERENT_NONZERO_PATTERN); CHKPETSC(ierr);
-          ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
-          ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
+      ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
+      ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
 
-          // TODO: Compare this result with Soln computed below...
-      } 
+      Real resnorm;
+      ierr = VecNorm(RhsV,NORM_2,&resnorm);
+      if (ioproc) {
+          //std::cout << "PETSc Resnorm = " << resnorm << std::endl;
+      }
+
+      Real* RhsV_array, *JRowScale_array;
+      ierr = VecGetArray(RhsV,&RhsV_array); CHKPETSC(ierr);
+      ierr = VecGetArray(layout.JRowScale(),&JRowScale_array); CHKPETSC(ierr);
+      int nlocal;
+      ierr = VecGetSize(RhsV,&nlocal);
+      Real fac = 1/dt*density[0];
+      for (int i=0; i<nlocal; ++i) {
+          RhsV_array[i] *= fac * JRowScale_array[i];
+      }
+      ierr = VecRestoreArray(RhsV,&RhsV_array);
+      ierr = VecRestoreArray(layout.JRowScale(),&JRowScale_array);
+
+      KSP  ksp;
+      ierr = KSPCreate(comm,&ksp); CHKPETSC(ierr);
+      ierr = KSPSetOperators(ksp,J,J,DIFFERENT_NONZERO_PATTERN); CHKPETSC(ierr);
+      ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
+
+      ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
+
+#if 0
+      MFTower ResultMFT;
+      layout.BuildMFTower(ResultMFT,1,0);
+      ierr = layout.VecToMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
+      VisMF::Write(ResultMFT[0],"JUNK");
+      if (ioproc) {
+          std::cout << "PETSc write solution to JUNK" << std::endl;
+      }
+#endif
 #endif
 
       // For the moment, always follow with mg solve
@@ -2114,6 +2141,21 @@ Diffusion::richard_composite_iter_p (Real                      dt,
                     << "Linear solve final res=" << status.initial_residual_norm
                     << std::endl;
       }
+
+
+#ifdef BL_USE_PETSC
+#if 0
+      ResultMFT.AXPY(SolnMFT,-1);
+      Real diff = ResultMFT.norm();
+      if (ioproc) {
+          std::cout << "PETSc norm of diff: " << diff << std::endl;
+      }
+      VisMF::Write(Soln[0],"JUNK1");
+      if (ioproc) {
+          std::cout << "PETSc write bl solution to JUNK1" << std::endl;
+      }
+#endif
+#endif
 
       if (linsol_status!=0)
       {

@@ -9797,7 +9797,9 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 #ifdef BL_USE_PETSC
   PetscErrorCode ierr;
   Mat& J = PMParent()->GetLayout().Jacobian();
+  Vec& JRowScale = PMParent()->GetLayout().JRowScale();
   BaseFab<int> nodeNums;
+  const BCRec& theBC = AmrLevel::desc_lst[Press_Type].getBC(0);
 #endif
 
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
@@ -9988,28 +9990,55 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
           rows[0] = cols[0];
           vals[0] = 0;
           int cnt = 1;
+          //for (int d=0; d<BL_SPACEDIM; ++d) {
+          bool top_row = false;
+          bool bottom_row = false;
           for (int d=0; d<BL_SPACEDIM; ++d) {
+              vals[0] -= (*wrk[d])(iv,2);
+
               IntVect ivp = iv + BoxLib::BASISV(d);
               int np = nodeNums(ivp,0);
               if (np>=0) {
                   cols[cnt]  = np; 
-                  vals[0]   -= (*wrk[d])(iv,2);
-                  vals[cnt] -= (*wrk[d])(iv,0);
+                  vals[cnt]  = -(*wrk[d])(iv,0);
                   cnt++;
+              }
+              else {
+                  if (theBC.hi()[d]==FOEXTRAP) {
+                      vals[0] -= (*wrk[d])(iv,0);
+                  }
               }
 
               IntVect ivn = iv - BoxLib::BASISV(d);
               int nn = nodeNums(ivn,0);
               if (nn>=0) {
                   cols[cnt]  = nn; 
-                  vals[0]   -= (*wrk[d])(iv,2);
-                  vals[cnt] -= (*wrk[d])(iv,1);
+                  vals[cnt]  = -(*wrk[d])(iv,1);
                   cnt++;
+              }
+              else {
+                  if (theBC.lo()[d]==FOEXTRAP) {
+                      vals[0] -= (*wrk[d])(iv,1);
+                  }
               }
           }
 
-          ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES);
-          CHKPETSC(ierr);
+          // Normalize matrix entries
+          Real max_abs = 0;
+#if 1
+          for (int n=0; n<cnt; ++n) {
+              max_abs = std::max(max_abs,std::abs(vals[n]));
+          }
+          max_abs = 1/max_abs;
+          for (int n=0; n<cnt; ++n) {
+              vals[n] *= max_abs;
+          }
+#else
+          max_abs = 1;
+#endif
+
+          ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+          ierr = VecSetValues(JRowScale,1,&(rows[0]),&max_abs,INSERT_VALUES);
       }
 #endif
 
@@ -10018,6 +10047,8 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 #ifdef BL_USE_PETSC
   ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  ierr = VecAssemblyBegin(JRowScale); CHKPETSC(ierr);  
+  ierr = VecAssemblyEnd(JRowScale); CHKPETSC(ierr);  
 #endif
 }
 

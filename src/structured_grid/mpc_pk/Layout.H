@@ -84,6 +84,7 @@ struct Layout
 
 #ifdef BL_USE_PETSC
     Mat& Jacobian();
+    Vec& JRowScale();
     PetscErrorCode MFTowerToVec(Vec& V,
                                 const MFTower& mft,
                                 int comp) const;
@@ -108,7 +109,8 @@ struct Layout
 protected:
 #ifdef BL_USE_PETSC
     void AllocateJ();
-    Mat* J;
+    Mat* J_mat;
+    Vec* JRowScale_vec;
 #endif
 
     PArray<MultiNodeFab> nodes;
