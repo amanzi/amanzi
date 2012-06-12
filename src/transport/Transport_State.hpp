@@ -67,6 +67,10 @@ class Transport_State {
 
   void error_total_component_concentration(double f_tcc(const AmanziGeometry::Point&, double), double t, double* L1, double* L2);
 
+  // component name and number accessors
+  int get_component_number (const std::string component_name) { return S_->get_component_number(component_name); }
+  std::string get_component_name (const int component_number) { return S_->get_component_name(component_number); }
+
  private:
   State* S_;  
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_;

@@ -59,6 +59,9 @@ public:
 
   const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
 
+  int get_component_number(const std::string component_name);
+  std::string get_component_name(const int component_number);
+
   // modify methods
   void set_time ( double new_time );
   void set_cycle ( int new_cycle );

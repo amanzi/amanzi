@@ -679,6 +679,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
         Teuchos::Array<std::string> regs = bc_sublist.sublist(bc_sublist.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 
         // only count sublists
+	std::string bc_root_str(bc_sublist.name(i));
         if (bc_sublist.isSublist(bc_sublist.name(i))) {
           if ( bc_sublist.sublist((bc_sublist.name(i))).isSublist("Solute BC")) {
             // read the solute bc stuff
@@ -690,12 +691,13 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
                  i != comp_names.end(); i++) {
               if (  comps.isSublist(*i) ) {
                 std::stringstream compss;
-                compss << "Component " << comp_names_map[*i];
-
+		compss << *i;
                 // for now just read the first value from the
                 if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
+		  // create the unique name for this boundary condition
                   std::stringstream ss;
-                  ss << "BC " << bc_counter;
+		  ss << bc_root_str << " " << *i;
+		  // and create the native boundary condition list
                   Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
 
                   Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");

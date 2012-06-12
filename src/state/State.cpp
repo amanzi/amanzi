@@ -106,7 +106,7 @@ void State::create_default_compnames(int n)
   for (int i=0; i<n; i++)
   {
     std::stringstream ss;
-    ss << "component " << i;
+    ss << "Component " << i;
     compnames[i] = ss.str();
   }
 }
@@ -1011,6 +1011,30 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
   set_cell_value_in_region(lin_p, *prev_water_saturation, region);
   
 }
+
+
+// return component number, -1 if the component does not exist
+int State::get_component_number(const std::string component_name) {
+  std::map<std::string, int>::const_iterator it = comp_no.find(component_name);
+  if (it != comp_no.end()) {
+    return it->second;
+  } else {
+    return -1;
+  }
+}
+
+
+// return component name, empty string if number does not exist
+std::string State::get_component_name(const int component_number) {
+  return compnames[component_number];
+
+  // if ( component_number < 0  || component_number >= compnames.size() ) { 
+  //   return compnames[component_number];
+  // } else {
+  //   return std::string("");
+  // }
+}
+
 
 
 /* *******************************************************************/
