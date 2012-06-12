@@ -1065,6 +1065,7 @@ The user must specify when the various types of output are desired.  For Observa
  * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
  * MaterialID
  * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
+ * Hydrostatic Head [pressure / (density * gravity)]
 
 Note that MaterialID will be treated as a double that is unique to each defined material.  Its value will be generated internal to Amanzi.  The log file will be appended with the (material name)->(integer) mapping used.  Also note that this list tacitly assumes the presence of Aqueous Water as one of the transported components.  Presently, it is an error if the `"Phase Definition`" above does not sufficiently define this component.
 

@@ -819,6 +819,15 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*pressure)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
+  } else if (var == "Aqueous saturation") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }    
   } else if (var == "Hydrostatic Head") {
     value = 0.0;
     volume = 0.0;
