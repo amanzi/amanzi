@@ -7,6 +7,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef __APPLE__
+  #include <xmmintrin.h>
+#endif
+
 #include <cstdlib>
 #include <cctype>
 
@@ -46,6 +50,17 @@ const std::string kPflotran("pflotran");
    from the beaker.  */
 
 int main(int argc, char** argv) {
+#ifdef __APPLE__
+  // Make floating point exceptions abort the program. runtime error
+  // message isn't helpful, but running in gdb will stop at the
+  // correct line. This may code may not be apple specific....
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DENORM);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_UNDERFLOW);
+#endif
+
   ac::SetupDefaultChemistryOutput();
   std::stringstream message;
 
