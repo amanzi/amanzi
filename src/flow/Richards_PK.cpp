@@ -524,10 +524,6 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   dT = dTnext;
 
-  // calculate full velocity vector
-  Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
-  DeriveDarcyVelocity(flux, velocity);
-
   // DEBUG
   // WriteGMVfile(FS_MPC);
 }
@@ -651,15 +647,6 @@ void Richards_PK::AddTimeDerivative_MFD(
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
-}
-
-
-/* ******************************************************************
-* A wrapper for a similar matrix call.
-****************************************************************** */
-void Richards_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity)
-{
-  matrix_->DeriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 
 
