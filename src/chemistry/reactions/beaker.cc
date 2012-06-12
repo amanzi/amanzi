@@ -63,7 +63,7 @@ Beaker::Beaker()
       water_density_kg_m3_(water_density_kg_m3_default_),
       water_density_kg_L_(1.0),
       volume_(volume_default_),
-      dt_(0.0),
+      dt_(1.0),
       aqueous_accumulation_coef_(0.0),
       sorbed_accumulation_coef_(0.0),
       por_sat_den_vol_(0.0),
