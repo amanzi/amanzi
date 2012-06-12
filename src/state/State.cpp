@@ -206,6 +206,8 @@ void State::initialize_from_parameter_list()
       // initialize the arrays with some constants from the input file
       set_porosity(sublist.get<double>("Constant porosity"), region);
 
+      set_cell_value_in_region(sublist.get<double>("Constant particle density",1.0), *particle_density, region);
+
       if (sublist.isParameter("Constant permeability")) {
         set_permeability(sublist.get<double>("Constant permeability"), region);
       } else {
@@ -803,6 +805,16 @@ double State::point_value(const std::string& point_region, const std::string& na
     for (int i=0; i<mesh_block_size; i++) {
       int ic = cell_ids[i];
       value += (*pressure)[ic] * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }
+  } else if (var == "Hydrostatic Head") {
+    value = 0.0;
+    volume = 0.0;
+
+    for (int i=0; i<mesh_block_size; ++i) {
+      int ic = cell_ids[i];
+      value += (*pressure)[ic]/ ( (*density) * (*gravity)[3]);
+      value *= mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
   } else {

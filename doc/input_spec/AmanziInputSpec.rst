@@ -701,6 +701,8 @@ the following set of physical properties using the supported models described be
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
+  * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
@@ -789,6 +791,11 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [U] `"krel smoothing interval`" [double]
 
+The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
+
+* [U] `"Particle Density: Uniform`" [list] requires 
+ 
+ * [U] `"Value`" [double] to specify the constant value of rock density.
 
 Example:
 
@@ -1028,7 +1035,7 @@ Due to its length, an XML example of the `"Phases`" parameter list appears in th
 Output
 ======
 
-Output data from Amanzi is currently organized into four specific groups: `"Observations`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
+Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
 Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint Data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
