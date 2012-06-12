@@ -142,7 +142,7 @@ void Transport_PK::ProcessParameterList()
 	  break;
 	}
       }
-      if (!flag_BCX) {
+      if (! flag_BCX) {
 	Errors::Message msg;
 	msg << "Sublist BC X was not found.\n";
 	Exceptions::amanzi_throw(msg);
