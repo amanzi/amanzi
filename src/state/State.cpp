@@ -834,7 +834,7 @@ double State::point_value(const std::string& point_region, const std::string& na
 
     for (int i=0; i<mesh_block_size; ++i) {
       int ic = cell_ids[i];
-      value += (*pressure)[ic]/ ( (*density) * (*gravity)[3]);
+      value += (*pressure)[ic]/ ( (*density) * (*gravity)[2]);
       value *= mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
@@ -879,6 +879,12 @@ void State::set_porosity(const Epetra_Vector& porosity_)
 {
   *porosity = porosity_;
 };
+
+void State::set_particle_density(const Epetra_Vector& particle_density_)
+{
+  *particle_density = particle_density_;
+};
+
 
 
 /* *******************************************************************/
@@ -1043,7 +1049,8 @@ void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
       Epetra_Vector bulk_density( mesh_maps->cell_map(false) );
       bulk_density.PutScalar(1.0);
       bulk_density.Update(-1.0,*porosity,1.0);
-      vol_water.ReciprocalMultiply(1.0,vol_water,bulk_density,0.0);
+      bulk_density.Multiply(1.0,*particle_density,bulk_density,0.0);
+      vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
       vis.write_vector(vol_water,"gravimetric water content");
 
       std::vector<std::string> names(3);

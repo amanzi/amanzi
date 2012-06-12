@@ -90,6 +90,7 @@ void Amanzi::Restart::dump_state(State& S, bool force)
       restart_output->writeDataReal(*S.get_pressure(),"pressure");
       restart_output->writeDataReal(*S.get_lambda(),"lambda");
       restart_output->writeDataReal(*S.get_porosity(),"porosity");
+      restart_output->writeDataReal(*S.get_particle_density(),"particle density");
       restart_output->writeDataReal(*S.get_water_saturation(),"water saturation");
       restart_output->writeDataReal(*S.get_prev_water_saturation(),"previous water saturation");
       restart_output->writeDataReal(*S.get_water_density(),"water density");
@@ -232,6 +233,11 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
   restart_input->readData(*cell_vector,"porosity");
   S.set_porosity(*cell_vector);
+  delete cell_vector;
+
+  cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
+  restart_input->readData(*cell_vector,"particle density");
+  S.set_particle_density(*cell_vector);
   delete cell_vector;
 
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
