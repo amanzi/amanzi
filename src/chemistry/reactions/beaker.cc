@@ -276,7 +276,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   double speciation_tolerance = 1.e-12;
   double residual_tolerance = 1.e-12;
   ResetStatus();
-  UpdateParameters(parameters, 0.0);
+  UpdateParameters(parameters, 1.0);  // NOTE: need dt=1 to avoid divide by zero
   CheckChargeBalance(components.total);
 
   CopyComponentsToBeaker(components);
