@@ -1087,6 +1087,7 @@ void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
       names[0] = "darcy velocity x";
       names[1] = "darcy velocity y";
       names[2] = "darcy velocity z";
+      DeriveDarcyVelocity();
       vis.write_vector(*get_darcy_velocity(), names);
       
       // write component data
