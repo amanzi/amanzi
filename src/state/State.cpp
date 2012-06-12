@@ -751,6 +751,7 @@ double State::water_mass()
 }
 
 
+
 /* *******************************************************************/
 double State::point_value(const std::string& point_region, const std::string& name)
 {
@@ -799,6 +800,16 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
+  } else if (var == "Gravimetric water content") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*porosity)[ic] * (*water_saturation)[ic] * (*water_density)[ic] 
+	/ ( (*particle_density)[ic] * (1.0 - (*porosity)[ic] ) )  * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }    
   } else if (var == "Aqueous pressure") {
     value = 0.0;
     volume = 0.0;
@@ -1017,6 +1028,15 @@ void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
       vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
       vis.write_vector(vol_water,"volumetric water content");
       
+      // compute gravimetric water content for visualization
+      // MUST have computed volumetric water content before
+      vol_water.Multiply(1.0, *water_density, vol_water, 0.0);
+      Epetra_Vector bulk_density( mesh_maps->cell_map(false) );
+      bulk_density.PutScalar(1.0);
+      bulk_density.Update(-1.0,*porosity,1.0);
+      vol_water.ReciprocalMultiply(1.0,vol_water,bulk_density,0.0);
+      vis.write_vector(vol_water,"gravimetric water content");
+
       std::vector<std::string> names(3);
       names[0] = "darcy velocity x";
       names[1] = "darcy velocity y";
