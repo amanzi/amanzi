@@ -1332,6 +1332,9 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
 
       }
+      
+      // particle density, for now we make the default 1.0 since we do not want to require this input parameter in the input spec, yet
+      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",1.0);
 
       // extract the mineralogy for this material
       Teuchos::ParameterList mineralogy;
@@ -1366,6 +1369,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         stt_mat.set<double>("Constant porosity", porosity);
         stt_mat.set<double>("Constant vertical permeability", perm_vert);
         stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
+	stt_mat.set<double>("Constant particle density", particle_density);
         stt_mat.set<std::string>("Region", *i);
 
         if (  mineralogy.begin() != mineralogy.end() ) { // this is to avoid creating an empty Mineralogy list

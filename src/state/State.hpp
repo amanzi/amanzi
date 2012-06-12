@@ -297,6 +297,7 @@ private:
   Teuchos::RCP<Epetra_Vector> lambda;
   Teuchos::RCP<Epetra_Vector> darcy_flux;
   Teuchos::RCP<Epetra_Vector> porosity;
+  Teuchos::RCP<Epetra_Vector> particle_density;
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
   Teuchos::RCP<Epetra_Vector> water_saturation;
   Teuchos::RCP<Epetra_Vector> prev_water_saturation;
