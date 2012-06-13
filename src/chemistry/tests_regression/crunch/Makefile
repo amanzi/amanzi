@@ -1,4 +1,4 @@
-CRUNCHFLOW = CrunchFlow2007
+CRUNCHFLOW = ./CrunchFlow2011
 
 TESTS = \
 	carbonate-unit \
@@ -47,7 +47,15 @@ calcite-large-time-step :
 	$(CRUNCHFLOW) > $@.cout
 	@echo 
 
+surface-complexation-1 :
+	echo $@.cfin > PestControl.ant
+	$(CRUNCHFLOW) > $@.cout
+	@echo 
 
+surface-complexation-2 :
+	echo $@.cfin > PestControl.ant
+	$(CRUNCHFLOW) > $@.cout
+	@echo 
 
 #
 # clean - Clean up the directory.

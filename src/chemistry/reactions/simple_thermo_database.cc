@@ -883,7 +883,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
  **
  **  <Surface Complex Site
  **
- **  Name ; change ; location
+ **  Name ; density 
  **
  **  where location is the mineral where the exchanger is located, i.e. kaolinite
  **
@@ -935,7 +935,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
  **
  **  Secondary Species Fields:
  **
- **  Name = coeff primary coeff exchanger ; Keq
+ **  Name = coeff primary coeff exchanger ; Keq ; charge
  **
  **  Assume:
  **

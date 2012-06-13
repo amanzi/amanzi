@@ -129,7 +129,7 @@ class SurfaceComplex {
   SpeciesId identifier_;
   double charge_;
 
-  double surface_concentration_;
+  double surface_concentration_;  // units? ?[mol/m^3 bulk]?
 
   int ncomp_;  // # components in reaction
   std::vector<SpeciesName> species_names_;

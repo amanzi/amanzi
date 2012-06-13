@@ -1621,11 +1621,14 @@ void Beaker::DisplayIonExchangeComplexes(void) const {
 }  // end DisplayIonExchangeComplexes()
 
 void Beaker::DisplaySurfaceSites(void) const {
-  if (total_sorbed_.size() > 0) {
+  if (surfaceComplexationRxns_.size() > 0) {
     std::stringstream message;
     message << "---- Surface Sites" << std::endl;
     message << std::setw(15) << "Species"
             << std::setw(15) << "Site Density"
+            << std::endl;
+    message << std::setw(15) << " "
+            << std::setw(15) << "[mol/m^3]"
             << std::endl;
     chem_out->Write(kVerbose, message);
     std::vector<SurfaceComplexationRxn>::const_iterator s;
@@ -1638,7 +1641,7 @@ void Beaker::DisplaySurfaceSites(void) const {
 }  // end DisplaySurfaceSites()
 
 void Beaker::DisplaySurfaceComplexes(void) const {
-  if (total_sorbed_.size() > 0) {
+  if (surfaceComplexationRxns_.size() > 0) {
     std::stringstream message;
     message << "---- Surface Complexes" << std::endl;
     message << std::setw(12) << "Reaction"
@@ -1656,7 +1659,7 @@ void Beaker::DisplaySurfaceComplexes(void) const {
 }  // end DisplaySurfaceComplexes()
 
 void Beaker::DisplaySorptionIsotherms(void) const {
-  if (total_sorbed_.size() > 0) {
+  if (sorption_isotherm_rxns_.size() > 0) {
     std::stringstream message;
     message << "---- Equilibrium Sorption Isotherms" << std::endl;
     message << std::setw(12) << "Species"

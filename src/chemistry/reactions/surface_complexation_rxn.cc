@@ -211,7 +211,7 @@ void SurfaceComplexationRxn::display(void) const {
 
 void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
   std::stringstream message;
-  message << std::setw(15) << "---"
+  message << std::setw(7) << "---"
             << std::endl;
   chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
@@ -223,7 +223,7 @@ void SurfaceComplexationRxn::DisplayResults(void) const {
        site != surface_site_.end(); site++) {
     site->DisplayResults();
   }
-
+  chem_out->Write(kVerbose, "\n");
   surface_complexes_[0].DisplayResultsHeader();
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();

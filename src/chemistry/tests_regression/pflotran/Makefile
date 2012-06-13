@@ -9,7 +9,9 @@ TESTS = \
 	ca-carbonate-debye-huckel-activity \
 	calcite-kinetics \
 	calcite-kinetics-volume-fractions \
-	general-reaction
+	general-reaction \
+	surface-complexation-1 \
+	surface-complexation-2
 
 #
 # tests
@@ -62,6 +64,16 @@ ion-exchange-valocchi :
 	@echo 
 
 ionx-valocchi :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+surface-complexation-1 :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+surface-complexation-2 :
 	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
 	mv pflotran.out $@.pfout 
 	@echo 
