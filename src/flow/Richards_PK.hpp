@@ -28,6 +28,7 @@ Authors: Neil Carlson (version 1)
 #include "Flow_BC_Factory.hpp"
 #include "Matrix_MFD.hpp"
 #include "WaterRetentionModel.hpp"
+#include "TI_Specs.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -113,8 +114,8 @@ class Richards_PK : public Flow_PK {
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
   void ProcessSublistTimeIntegration(
     Teuchos::ParameterList& list, const std::string name,
-    double* absolute_tol, double* relative_tol, double* residual_tol, int* max_itrs,
-    double* T0, double* T1, double* dT0, double* dTmax);
+    double* absolute_tol, double* relative_tol, double* residual_tol,
+    double* dT0, double* dTmax, TI_Specs& ti_specs);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -144,9 +145,6 @@ class Richards_PK : public Flow_PK {
   
   Matrix_MFD* preconditioner() { return preconditioner_; }
 
- public:
-  int num_nonlinear_steps;
-
  private:
   Teuchos::ParameterList rp_list_;
   Teuchos::ParameterList solver_list_;
@@ -175,17 +173,17 @@ class Richards_PK : public Flow_PK {
 
   int ti_method_sss;  // Parameters for steady-state solution
   std::string preconditioner_name_sss_;
-  int num_itrs_sss, max_itrs_sss;
   double absolute_tol_sss, relative_tol_sss, residual_tol_sss;
-  double T0_sss, T1_sss, dT0_sss, dTmax_sss;
+  double dT0_sss, dTmax_sss;
   int initialize_with_darcy, error_control_sss_;
+  TI_Specs ti_specs_sss_;
 
   int ti_method_trs;  // Parameters for transient solution
   std::string preconditioner_name_trs_;
   double absolute_tol_trs, relative_tol_trs, residual_tol_trs;
-  int num_itrs_trs, max_itrs_trs;
-  double T0_trs, T1_trs, dT0_trs, dTmax_trs;
+  double dT0_trs, dTmax_trs;
   int error_control_trs_;
+  TI_Specs ti_specs_trs_;
 
   double absolute_tol, relative_tol;  // Generic parameters (sss or trs)
   int ti_method, num_itrs, max_itrs;

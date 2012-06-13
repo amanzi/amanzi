@@ -22,7 +22,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState()
 {
-  T_physics = T0_sss;
+  T_physics = ti_specs_sss_.T0;
   dT = dT0_sss;
 
   int ierr = 0;
@@ -53,15 +53,19 @@ int Richards_PK::AdvanceToSteadyState_BDF1()
 {
   bool last_step = false;
 
+  int max_itrs = ti_specs_sss_.max_itrs;
+  double T0 = ti_specs_sss_.T0;
+  double T1 = ti_specs_sss_.T1;
+
   int itrs = 0;
-  while (itrs < max_itrs_sss && T_physics < T1_sss) {
+  while (itrs < max_itrs && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF1
       Epetra_Vector udot(*super_map_);
-      ComputeUDot(T0_sss, *solution, udot);
-      bdf1_dae->set_initial_state(T0_sss, *solution, udot);
+      ComputeUDot(T0, *solution, udot);
+      bdf1_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
-      update_precon(T0_sss, *solution, dT0_sss, ierr);
+      update_precon(T0, *solution, dT0_sss, ierr);
     }
 
     double dTnext;
@@ -73,7 +77,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1()
     dT = dTnext;
     itrs++;
 
-    double Tdiff = T1_sss - T_physics;
+    double Tdiff = T1 - T_physics;
     if (dTnext > Tdiff) {
       dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
       last_step = true;
@@ -81,7 +85,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1()
     if (last_step && dT < 1e-3) break;
   }
 
-  num_nonlinear_steps = itrs;
+  ti_specs_sss_.num_itrs = itrs;
   return 0;
 }
 
@@ -93,15 +97,19 @@ int Richards_PK::AdvanceToSteadyState_BDF2()
 {
   bool last_step = false;
 
+  int max_itrs = ti_specs_sss_.max_itrs;
+  double T0 = ti_specs_sss_.T0;
+  double T1 = ti_specs_sss_.T1;
+
   int itrs = 0;
-  while (itrs < max_itrs_sss && T_physics < T1_sss) {
+  while (itrs < max_itrs && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
-      ComputeUDot(T0_sss, *solution, udot);
-      bdf2_dae->set_initial_state(T0_sss, *solution, udot);
+      ComputeUDot(T0, *solution, udot);
+      bdf2_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
-      update_precon(T0_sss, *solution, dT0_sss, ierr);
+      update_precon(T0, *solution, dT0_sss, ierr);
     }
 
     double dTnext;
@@ -113,7 +121,7 @@ int Richards_PK::AdvanceToSteadyState_BDF2()
     dT = dTnext;
     itrs++;
 
-    double Tdiff = T1_sss - T_physics;
+    double Tdiff = T1 - T_physics;
     if (dTnext > Tdiff) {
       dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
       last_step = true;
@@ -121,7 +129,7 @@ int Richards_PK::AdvanceToSteadyState_BDF2()
     if (last_step && dT < 1e-3) break;
   }
 
-  num_nonlinear_steps = itrs;
+  ti_specs_sss_.num_itrs = itrs;
   return 0;
 }
 
@@ -150,10 +158,12 @@ int Richards_PK::AdvanceToSteadyState_Picard()
   bc_flux->Compute(time);
   bc_head->Compute(time);
 
+  int max_itrs = ti_specs_sss_.max_itrs;
+
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
-  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > residual_tol_sss && itrs < max_itrs) {
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
@@ -220,7 +230,7 @@ int Richards_PK::AdvanceToSteadyState_Picard()
     itrs++;
   }
 
-  num_nonlinear_steps = itrs;
+  ti_specs_sss_.num_itrs = itrs;
   return 0;
 }
 

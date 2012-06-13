@@ -33,9 +33,12 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
 
+  int max_itrs = ti_specs_sss_.max_itrs;
+  double T1 = ti_specs_sss_.T1;
+
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
-  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > residual_tol_sss && itrs < max_itrs) {
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
@@ -111,10 +114,10 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
       itrs++;
     }
 
-    if (T_physics > T1_sss) break;
+    if (T_physics > T1) break;
   }
 
-  num_nonlinear_steps = itrs;
+  ti_specs_sss_.num_itrs = itrs;
   return 0;
 }
 

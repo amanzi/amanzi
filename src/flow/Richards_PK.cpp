@@ -114,7 +114,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 
   ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
   ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
-  num_itrs_trs = 0;
 
   absolute_tol_sss = absolute_tol_trs = 1.0;
   relative_tol_sss = relative_tol_trs = 1e-5;
@@ -127,8 +126,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 
   verbosity = FLOW_VERBOSITY_HIGH;
   internal_tests = 0;
-
-  num_nonlinear_steps = 0;
 }
 
 
