@@ -354,17 +354,16 @@ is used. Note that the boundary condition is set up separately for each componen
     <ParameterList name="Transport BCs">
       <Parameter name="CFL" type="double" value="1.0"/>
       <Parameter name="advective limiter" type="string" value="Tensorial"/>
-      <Parameter name="number of BCs" type="int" value="2"/>
 
-      <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
+      <ParameterList name="West Boundary for H+">
+        <Parameter name="H+" type="Array double" value="{1.0, 1.0}"/>
         <Parameter name="Regions" type="Array string" value="{Left side}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
       </ParameterList>  
 
-      <ParameterList name="BC 1">
-        <Parameter name="Component 1" type="Array double" value="{1.0, 1.0}"/>
+      <ParameterList name="East Boundary for TC-99">
+        <Parameter name="TC-99" type="Array double" value="{1.0, 1.0}"/>
         <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>

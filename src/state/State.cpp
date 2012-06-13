@@ -1,8 +1,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Import.h"
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -106,7 +109,7 @@ void State::create_default_compnames(int n)
   for (int i=0; i<n; i++)
   {
     std::stringstream ss;
-    ss << "component " << i;
+    ss << "Component " << i;
     compnames[i] = ss.str();
   }
 }
@@ -1013,6 +1016,30 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
 }
 
 
+// return component number, -1 if the component does not exist
+int State::get_component_number(const std::string component_name) {
+  std::map<std::string, int>::const_iterator it = comp_no.find(component_name);
+  if (it != comp_no.end()) {
+    return it->second;
+  } else {
+    return -1;
+  }
+}
+
+
+// return component name, empty string if number does not exist
+std::string State::get_component_name(const int component_number) {
+  return compnames[component_number];
+
+  // if ( component_number < 0  || component_number >= compnames.size() ) { 
+  //   return compnames[component_number];
+  // } else {
+  //   return std::string("");
+  // }
+}
+
+
+
 /* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   if (!vis.is_disabled()) {
@@ -1060,6 +1087,7 @@ void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
       names[0] = "darcy velocity x";
       names[1] = "darcy velocity y";
       names[2] = "darcy velocity z";
+      DeriveDarcyVelocity();
       vis.write_vector(*get_darcy_velocity(), names);
       
       // write component data
@@ -1540,3 +1568,56 @@ void State::WriteIonExchangeSitesToVis(Amanzi::Vis* vis) {
     vis->write_vector(*(*ion_exchange_sites_)(0), name);
   }
 }  // end WriteIonExchangeSitesToVis()
+
+
+
+
+void State::DeriveDarcyVelocity() {
+  const Epetra_Map& source_fmap = mesh_maps->face_map(false);
+  const Epetra_Map& target_fmap = mesh_maps->face_map(true);
+  Epetra_Import face_importer(target_fmap, source_fmap);  
+
+#ifdef HAVE_MPI
+  Epetra_Vector darcy_flux_wghost(mesh_maps->face_map(true));
+  darcy_flux_wghost.Import(*darcy_flux, face_importer, Insert);
+#else
+  Epetra_Vector& darcy_flux_wghost = *darcy_flux;
+#endif
+
+  Teuchos::LAPACK<int, double> lapack;
+
+  int dim = mesh_maps->space_dimension();
+  Teuchos::SerialDenseMatrix<int, double> matrix(dim, dim);
+  double rhs_cell[dim];
+
+  Amanzi::AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int ncells_owned = mesh_maps->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_maps->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int i = 0; i < dim; i++) rhs_cell[i] = 0.0;
+    matrix.putScalar(0.0);
+
+    for (int n = 0; n < nfaces; n++) {  // populate least-square matrix
+      int f = faces[n];
+      const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
+      double area = mesh_maps->face_area(f);
+
+      for (int i = 0; i < dim; i++) {
+        rhs_cell[i] += normal[i] * darcy_flux_wghost[f];
+        matrix(i, i) += normal[i] * normal[i];
+        for (int j = i+1; j < dim; j++) {
+          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
+        }
+      }
+    }
+
+    int info;
+    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
+
+    for (int i = 0; i < dim; i++) (*darcy_velocity)[i][c] = rhs_cell[i];
+  }
+}

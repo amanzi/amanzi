@@ -97,64 +97,59 @@ void Transport_PK::ProcessParameterList()
   BCs_list = transport_list.get<Teuchos::ParameterList>("Transport BCs");
 
   // populate the list of boundary influx functions
-  int nBCs = BCs_list.get<int>("number of BCs");
   bcs.clear();
   bcs_tcc_index.clear();
 
-  for (int n = 0; n < nBCs; n++) {
-    char bc_char_name[10];
-
-    sprintf(bc_char_name, "BC %d", n);
-    string bc_name(bc_char_name);
-
-    if (!BCs_list.isSublist(bc_name)) {
-      Errors::Message msg;
-      msg << "Boundary condition with name " << bc_char_name << " does not exist" << "\n";
-      Exceptions::amanzi_throw(msg);
-    }
-    Teuchos::ParameterList BC_list = BCs_list.sublist(bc_name);  // A single sublist.
-
-    bool flag_BCX = false;
-    for (int i = 0; i < number_components; i++) {
-      char tcc_char_name[20];
-
-      sprintf(tcc_char_name, "Component %d", i);
-      string tcc_name(tcc_char_name);
-
-      if (BC_list.isParameter(tcc_name)) {
-        flag_BCX = true;
-        std::vector<std::string> regions, functions;
-        std::vector<double> times, values;
-
-        regions = BC_list.get<Teuchos::Array<std::string> >("Regions").toVector();
-        times = BC_list.get<Teuchos::Array<double> >("Times").toVector();
-        values = BC_list.get<Teuchos::Array<double> >(tcc_name).toVector();
-        functions = BC_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
-
-        int nfunctions = functions.size();  // convert strings to forms
-        std::vector<TabularFunction::Form> forms(functions.size());
-        for (int k = 0; k < nfunctions; k++) {
-          forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
-        }
-
-        Teuchos::RCP<Function> f;
-        f = Teuchos::rcp(new TabularFunction(times, values, forms));
-
-        BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
-        bnd_fun->Define(regions, f);
-        bcs.push_back(bnd_fun);
-        bcs_tcc_index.push_back(i);
-        break;
+  for (Teuchos::ParameterList::ConstIterator it = BCs_list.begin(); it != BCs_list.end(); ++it) {
+    if (BCs_list.isSublist(it->first)) {
+      Teuchos::ParameterList BC_list = BCs_list.sublist(it->first); 
+      
+      bool flag_BCX = false;
+      for (int i = 0; i < number_components; i++) {
+	char tcc_char_name[20];
+	
+	sprintf(tcc_char_name, "Component %d", i);
+	string tcc_name(tcc_char_name);
+	string tcc_name_alt(TS->get_component_name(i));
+		
+	if (BC_list.isParameter(tcc_name) || BC_list.isParameter(tcc_name_alt)) {
+	  flag_BCX = true;
+	  std::vector<std::string> regions, functions;
+	  std::vector<double> times, values;
+	  
+	  regions = BC_list.get<Teuchos::Array<std::string> >("Regions").toVector();
+	  times = BC_list.get<Teuchos::Array<double> >("Times").toVector();
+	  if (BC_list.isParameter(tcc_name)) {
+	    values = BC_list.get<Teuchos::Array<double> >(tcc_name).toVector();
+	  } else if ( BC_list.isParameter(tcc_name_alt)) {
+	    values = BC_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
+	  }
+	  functions = BC_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
+	  
+	  int nfunctions = functions.size();  // convert strings to forms
+	  std::vector<TabularFunction::Form> forms(functions.size());
+	  for (int k = 0; k < nfunctions; k++) {
+	    forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
+	  }
+	  
+	  Teuchos::RCP<Function> f;
+	  f = Teuchos::rcp(new TabularFunction(times, values, forms));
+	  
+	  BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
+	  bnd_fun->Define(regions, f);
+	  bcs.push_back(bnd_fun);
+	  bcs_tcc_index.push_back(i);
+	  break;
+	}
       }
-    }
-    if (!flag_BCX) {
-      Errors::Message msg;
-      msg << "Sublist BC X was not found.\n";
-      Exceptions::amanzi_throw(msg);
+      if (! flag_BCX) {
+	Errors::Message msg;
+	msg << "Sublist BC X was not found.\n";
+	Exceptions::amanzi_throw(msg);
+      }
     }
   }
 }
-
 
 /* ****************************************************************
 * Process string for the discretization method.

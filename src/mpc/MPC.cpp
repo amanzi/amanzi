@@ -134,7 +134,6 @@ void MPC::mpc_init() {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
     } else if (flow_model == "Steady State Saturated") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
-      // FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else if (flow_model == "Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else if (flow_model == "Steady State Richards") {

@@ -584,59 +584,6 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
 }
 
 
-/* ******************************************************************
-* Derive Darcy velocity in cells. 
-* WARNING: It cannot be consistent with the Darcy flux.                                                 
-****************************************************************** */
-void Matrix_MFD::DeriveDarcyVelocity(const Epetra_Vector& darcy_flux,
-                                     const Epetra_Import& face_importer,
-                                     Epetra_MultiVector& darcy_velocity) const
-{
-#ifdef HAVE_MPI
-  Epetra_Vector darcy_flux_wghost(mesh_->face_map(true));
-  darcy_flux_wghost.Import(darcy_flux, face_importer, Insert);
-#else
-  Epetra_Vector& darcy_flux_wghost = darcy_flux;
-#endif
-
-  Teuchos::LAPACK<int, double> lapack;
-
-  int dim = mesh_->space_dimension();
-  Teuchos::SerialDenseMatrix<int, double> matrix(dim, dim);
-  double rhs_cell[dim];
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int i = 0; i < dim; i++) rhs_cell[i] = 0.0;
-    matrix.putScalar(0.0);
-
-    for (int n = 0; n < nfaces; n++) {  // populate least-square matrix
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double area = mesh_->face_area(f);
-
-      for (int i = 0; i < dim; i++) {
-        rhs_cell[i] += normal[i] * darcy_flux_wghost[f];
-        matrix(i, i) += normal[i] * normal[i];
-        for (int j = i+1; j < dim; j++) {
-          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
-        }
-      }
-    }
-
-    int info;
-    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
-
-    for (int i = 0; i < dim; i++) darcy_velocity[i][c] = rhs_cell[i];
-  }
-}
-
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

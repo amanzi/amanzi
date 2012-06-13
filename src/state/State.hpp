@@ -59,6 +59,9 @@ public:
 
   const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
 
+  int get_component_number(const std::string component_name);
+  std::string get_component_name(const int component_number);
+
   // modify methods
   void set_time ( double new_time );
   void set_cycle ( int new_cycle );
@@ -127,6 +130,7 @@ public:
   double water_mass();
   double point_value(const std::string& point_region, const std::string& comp_name);
       
+  void DeriveDarcyVelocity();
 
   void create_storage();
 
