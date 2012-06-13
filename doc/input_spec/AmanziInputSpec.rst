@@ -701,6 +701,8 @@ the following set of physical properties using the supported models described be
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
+  * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
@@ -789,6 +791,11 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [U] `"krel smoothing interval`" [double]
 
+The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
+
+* [U] `"Particle Density: Uniform`" [list] requires 
+ 
+ * [U] `"Value`" [double] to specify the constant value of rock density.
 
 Example:
 
@@ -926,7 +933,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU, all except file for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+  * [SU, all except file and velocity for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`", `"IC: Uniform Velocity`" (see below)
 
   * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -976,6 +983,7 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
 
+* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
 
 The following boundary condition parameterizations are supported:
 
@@ -1027,7 +1035,7 @@ Due to its length, an XML example of the `"Phases`" parameter list appears in th
 Output
 ======
 
-Output data from Amanzi is currently organized into four specific groups: `"Observations`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
+Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
 Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint Data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
@@ -1056,6 +1064,7 @@ The user must specify when the various types of output are desired.  For Observa
  * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
  * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
  * MaterialID
+ * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
 
 Note that MaterialID will be treated as a double that is unique to each defined material.  Its value will be generated internal to Amanzi.  The log file will be appended with the (material name)->(integer) mapping used.  Also note that this list tacitly assumes the presence of Aqueous Water as one of the transported components.  Presently, it is an error if the `"Phase Definition`" above does not sufficiently define this component.
 

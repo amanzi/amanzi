@@ -48,7 +48,6 @@ class Darcy_PK : public Flow_PK {
   void InitializeSteadySaturated();
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
-  void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) {};
   void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   // methods required for time integration

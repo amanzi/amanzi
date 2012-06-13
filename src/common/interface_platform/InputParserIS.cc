@@ -193,6 +193,13 @@ Teuchos::Array<std::string> get_Variable_Macro(Teuchos::Array<std::string>& macr
  ****************************************************************** */
 void init_global_info(Teuchos::ParameterList* plist) {
 
+  // spatial dimension
+  if ( plist->isSublist("Domain") ) {
+    spatial_dimension_ = plist->sublist("Domain").get<int>("Spatial Dimension",0);
+  } else {
+    spatial_dimension_ = 0;
+  }
+
   phase_name = "Aqueous";
   phase_comp_name = "Water";
   // don't know the history of these variables, clear them just to be safe.
@@ -1260,8 +1267,8 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList stt_list;
 
   stt_list.set<double>("Gravity x", 0.0);
-  stt_list.set<double>("Gravity y", 0.0);
-  stt_list.set<double>("Gravity z", -9.81);
+  if (spatial_dimension_>1) stt_list.set<double>("Gravity y", 0.0);
+  if (spatial_dimension_>2) stt_list.set<double>("Gravity z", -9.81);
 
   // find the viscosity
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
@@ -1325,6 +1332,9 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
 
       }
+      
+      // particle density, for now we make the default 1.0 since we do not want to require this input parameter in the input spec, yet
+      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",1.0);
 
       // extract the mineralogy for this material
       Teuchos::ParameterList mineralogy;
@@ -1359,6 +1369,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         stt_mat.set<double>("Constant porosity", porosity);
         stt_mat.set<double>("Constant vertical permeability", perm_vert);
         stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
+	stt_mat.set<double>("Constant particle density", particle_density);
         stt_mat.set<std::string>("Region", *i);
 
         if (  mineralogy.begin() != mineralogy.end() ) { // this is to avoid creating an empty Mineralogy list
@@ -1432,6 +1443,15 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         } else if (ic_for_region->isSublist("IC: Linear Saturation")) {
           Teuchos::ParameterList& sublist = stt_mat.sublist("linear saturation");
         }
+	// write the initial conditions for velocity
+	// we don't throw if these initial conditions are missing
+        if ( ic_for_region->isSublist("IC: Uniform Velocity") ) {
+	  Teuchos::Array<double> vel = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
+	  stt_mat.set<double>("Constant velocity x",vel[0]);
+	  if (spatial_dimension_>1) stt_mat.set<double>("Constant velocity y",vel[1]);
+	  if (spatial_dimension_>2) stt_mat.set<double>("Constant velocity z",vel[2]);
+	  
+	}
 
         // write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component
         for (int ii=0; ii<comp_names.size(); ii++) {

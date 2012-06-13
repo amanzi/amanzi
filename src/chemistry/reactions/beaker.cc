@@ -63,7 +63,7 @@ Beaker::Beaker()
       water_density_kg_m3_(water_density_kg_m3_default_),
       water_density_kg_L_(1.0),
       volume_(volume_default_),
-      dt_(0.0),
+      dt_(1.0),
       aqueous_accumulation_coef_(0.0),
       sorbed_accumulation_coef_(0.0),
       por_sat_den_vol_(0.0),
@@ -276,7 +276,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   double speciation_tolerance = 1.e-12;
   double residual_tolerance = 1.e-12;
   ResetStatus();
-  UpdateParameters(parameters, 0.0);
+  UpdateParameters(parameters, 1.0);  // NOTE: need dt=1 to avoid divide by zero
   CheckChargeBalance(components.total);
 
   CopyComponentsToBeaker(components);

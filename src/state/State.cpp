@@ -206,6 +206,8 @@ void State::initialize_from_parameter_list()
       // initialize the arrays with some constants from the input file
       set_porosity(sublist.get<double>("Constant porosity"), region);
 
+      set_cell_value_in_region(sublist.get<double>("Constant particle density",1.0), *particle_density, region);
+
       if (sublist.isParameter("Constant permeability")) {
         set_permeability(sublist.get<double>("Constant permeability"), region);
       } else {
@@ -288,6 +290,7 @@ void State::create_storage()
       = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
   darcy_velocity   = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
   material_ids =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  particle_density = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
   density =   Teuchos::rcp(new double);
   viscosity = Teuchos::rcp(new double);
@@ -748,6 +751,7 @@ double State::water_mass()
 }
 
 
+
 /* *******************************************************************/
 double State::point_value(const std::string& point_region, const std::string& name)
 {
@@ -796,6 +800,16 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
+  } else if (var == "Gravimetric water content") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*porosity)[ic] * (*water_saturation)[ic] * (*water_density)[ic] 
+	/ ( (*particle_density)[ic] * (1.0 - (*porosity)[ic] ) )  * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }    
   } else if (var == "Aqueous pressure") {
     value = 0.0;
     volume = 0.0;
@@ -805,6 +819,25 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*pressure)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
+  } else if (var == "Aqueous saturation") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }    
+  // } else if (var == "Hydrostatic Head") {
+  //   value = 0.0;
+  //   volume = 0.0;
+
+  //   for (int i=0; i<mesh_block_size; ++i) {
+  //     int ic = cell_ids[i];
+  //     value += (*pressure)[ic]/ ( (*density) * (*gravity)[2]);
+  //     value *= mesh_maps->cell_volume(ic);
+  //     volume += mesh_maps->cell_volume(ic);
+  //   }
   } else {
     std::stringstream ss;
     ss << "State::point_value: cannot make an observation for variable " << name;
@@ -846,6 +879,12 @@ void State::set_porosity(const Epetra_Vector& porosity_)
 {
   *porosity = porosity_;
 };
+
+void State::set_particle_density(const Epetra_Vector& particle_density_)
+{
+  *particle_density = particle_density_;
+};
+
 
 
 /* *******************************************************************/
@@ -1004,6 +1043,19 @@ void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
       vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
       vis.write_vector(vol_water,"volumetric water content");
       
+      // compute gravimetric water content for visualization
+      // MUST have computed volumetric water content before
+      vol_water.Multiply(1.0, *water_density, vol_water, 0.0);
+      Epetra_Vector bulk_density( mesh_maps->cell_map(false) );
+      bulk_density.PutScalar(1.0);
+      bulk_density.Update(-1.0,*porosity,1.0);
+      bulk_density.Multiply(1.0,*particle_density,bulk_density,0.0);
+      vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
+      vis.write_vector(vol_water,"gravimetric water content");
+
+      // compute hydrostatic head
+      // TO DO
+
       std::vector<std::string> names(3);
       names[0] = "darcy velocity x";
       names[1] = "darcy velocity y";

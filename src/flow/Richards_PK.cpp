@@ -246,9 +246,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("Richards PK: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
     if (initialize_with_darcy) {
-       std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
-       std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
-     }
+      std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
+      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
+    }
   }
 
   // set up new preconditioner
@@ -328,6 +328,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   block_picard = 0;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+  error_control_ |= error_control_sss_;
 
   flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
 
@@ -347,7 +348,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 void Richards_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
   }
   set_time(T0, dT0);
 
@@ -416,6 +417,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
   block_picard = 0;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+  error_control_ |= error_control_trs_;
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
 }
@@ -498,7 +500,7 @@ int Richards_PK::Advance(double dT_MPC)
 * The consistency condition is enforced by solving a steady state 
 * problem with a mass source.
 ****************************************************************** */
-void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
+void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
   // save cell-based and face-based pressures 
   Epetra_Vector& pressure = FS_MPC->ref_pressure();
@@ -520,22 +522,14 @@ void Richards_PK::CommitStateForTransport(Teuchos::RCP<Flow_State> FS_MPC)
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
-  // DEBUG
-  // WriteGMVfile(FS_MPC);
-}
-
-
-/* ******************************************************************
-* Transfer internal data to flow state FS_MPC. MPC may request
-* to populate the original state FS. 
-****************************************************************** */
-void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
-{
   dT = dTnext;
 
-  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
+  // calculate full velocity vector
   Epetra_MultiVector& velocity = FS_MPC->ref_darcy_velocity();
   DeriveDarcyVelocity(flux, velocity);
+
+  // DEBUG
+  // WriteGMVfile(FS_MPC);
 }
 
 
