@@ -251,6 +251,20 @@ class AmanziInterface:
 
     return self.data_files
 
+  def plot_output_basename(self,input=None):
+
+    import amanzi.trilinos.InputList as AmanziInput
+
+    if input == None:
+      input_tree = AmanziInput(self.input)
+    else:
+      input_tree = AmanziInput(input)
+
+    output_ctrl = input_tree.find_sublist('Output')
+    viz_ctrl    = output_ctrl.find_sublist('Visualization Data')
+
+    return viz_ctrl.find_paramter('File Name Base').get_value()
+
 
 if __name__ == '__main__':
 

@@ -168,11 +168,6 @@ if len(amanzi.data_files) == 0:
   print 'No XDMF XML files found'
 else:
   print 'Found ' + str(len(amanzi.data_files)) + ' XMF files.'
-  #for data_file in amanzi.data_files:
-  #  print 'File:'+data_file.filename
-  #  print '\tcycle='+str(data_file.cycle)
-  #  print '\ttime='+str(data_file.time)
-  #  print '\tdatasets='+str(data_file.datasets)
 
 # - Find the correct file to data mine
 if options.extract_data != None:
