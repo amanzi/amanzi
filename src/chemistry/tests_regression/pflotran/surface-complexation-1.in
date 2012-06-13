@@ -26,7 +26,7 @@ CHEMISTRY
   SORPTION
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      SITE >FeOH_w 3.7e-4
+      SITE >FeOH_w 7.6355e4
       COMPLEXES
         >FeOH2+_w
         >FeO-_w

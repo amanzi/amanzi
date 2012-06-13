@@ -16,7 +16,7 @@ Zn(OH)4-- =   4.00 H2O  -4.00 H+   1.00 Zn++  ;   41.60520 ;    4.00000 ;   -2.0
 ZnOH+ =   1.00 H2O  -1.00 H+   1.00 Zn++  ;    8.96000 ;    4.00000 ;    1.00000 ;   82.39730
 
 <Surface Complex Sites
->FeOH_w ;   3.70000E-04
+>FeOH_w ;   7.63550E+04
 
 <Surface Complexes
 >FeOH2+_w =   1.00 >FeOH_w  1.00 H+ ;  -7.18000E+00 ;   1.00
