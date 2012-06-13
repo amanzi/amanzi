@@ -15,6 +15,7 @@ using namespace std;
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <stdlib.h>
 
 #include "hdf5.h"
 
