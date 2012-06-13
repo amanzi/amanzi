@@ -33,7 +33,7 @@ void Richards_PK::ProcessParameterList()
   Errors::Message msg;
 
   // create verbosity list if it does not exist
-  if (!rp_list_.isSublist("VerboseObject")) {
+  if (! rp_list_.isSublist("VerboseObject")) {
     Teuchos::ParameterList verbosity_list;
     verbosity_list.set<std::string>("Verbosity Level", "none");
     rp_list_.set("VerboseObject", verbosity_list);
@@ -179,6 +179,9 @@ void Richards_PK::ProcessParameterList()
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Warning: Richards Problem has no sublist <transient time integration>.\n");
   }
+
+  // Optional debug output
+  CalculateWRMcurves(rp_list_);
 }
 
 
@@ -372,11 +375,39 @@ std::string Richards_PK::FindStringLinearSolver(const Teuchos::ParameterList& li
 
 
 /* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
+{
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    if (list.isParameter("calculate WRM curves")) {
+      std::printf("Richards PK: saving WRM curves in file wrm_curves.txt\n");
+      ofstream ofile;
+      ofile.open("wrm_curves.txt");
+
+      std::vector<double> spe;
+      spe = list.get<Teuchos::Array<double> >("calculate WRM curves").toVector();
+
+      for (double pc = spe[0]; pc < spe[2]; pc += spe[1]) {
+        ofile << pc << " ";
+        for (int mb = 0; mb < WRM.size(); mb++) {
+          double krel = WRM[mb]->k_relative(pc);
+          ofile << krel << " ";
+        }
+        ofile << endl;
+      }
+      ofile.close();
+    }
+  }
+}
+
+
+/* ****************************************************************
 * Printing information about Flow status 
 **************************************************************** */
 void Richards_PK::PrintStatistics() const
 {
-  if (!MyPID && verbosity > 0) {
+  if (! MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;
     cout << "  Verbosity level = " << verbosity << endl;
     cout << "  Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;

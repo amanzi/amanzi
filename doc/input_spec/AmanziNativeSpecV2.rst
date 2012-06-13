@@ -150,9 +150,21 @@ An example of the van Genuchten model specification is:
        <Parameter name="regularization interval" type="double" value="0.0"/>
        <Parameter name="relative permeability model" type="string" value="Burdine"/>
     </ParameterList>
+    <Parameter name="calculate WRM curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
 
 
-Amanzi performs rudimentary checks of validity of the provided parameters.
+Amanzi performs rudimentary checks of validity of the provided parameters. 
+The relative permeability curves can be calculated and saved in the file wrm_curves.txt
+using the following optional command:
+
+.. code-block:: xml
+
+    <Parameter name="calculate WRM curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
+
+The triple of doubles means the starting capillary pressure, the period, and the final capillary pressure.
+Each line in the output file will contain the capilalry pressure and relative permeability values for
+all water retention models in the order they appear in the input spec.
+This output requires verbosity level `"high`" or higher. 
 
 
 Boundary conditions

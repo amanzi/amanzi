@@ -109,6 +109,7 @@ class Richards_PK : public Flow_PK {
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
   void VerifyStringMualemBurdine(const std::string name);
   void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
+  void CalculateWRMcurves(Teuchos::ParameterList& list);
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
