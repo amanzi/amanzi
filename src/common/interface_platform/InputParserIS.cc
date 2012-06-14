@@ -801,18 +801,41 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  use_picard = ti_mode_list.sublist("Initialize To Steady").get<bool>("Use Picard",false);
 	}
 	if (use_picard) {
+	  bool have_num_params_list(false);
+	  Teuchos::ParameterList num_params_list;
+	  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters"))
+	    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	      have_num_params_list = true;
+	      num_params_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    }
+
 	  Teuchos::ParameterList& picard_list = richards_problem.sublist("initial guess pseudo time integrator");
-	  picard_list.set<bool>("initialize with darcy",true);
-	  picard_list.set<double>("clipping saturation value",0.9);
-	  picard_list.set<std::string>("time integration method","Picard");
-	  picard_list.set<std::string>("preconditioner","Trilinos ML");
-	  picard_list.set<std::string>("linear solver","AztecOO GMRES");
-	  Teuchos::Array<std::string> error_ctrl(1);
-	  error_ctrl[0] = std::string("pressure");
-	  picard_list.set<Teuchos::Array<std::string> >("error control options",error_ctrl);
-	  picard_list.sublist("Picard").set<double>("convergence tolerance",1e-7);
-	  picard_list.sublist("Picard").set<int>("maximum number of iterations",400);
+	  
+	  if (have_num_params_list) {
+	    picard_list.set<bool>("initialize with darcy",num_params_list.get<bool>("pseudo time integrator initialize with darcy",true));
+	    picard_list.set<double>("clipping saturation value",num_params_list.get<double>("pseudo time integrator clipping saturation value",0.9));
+	    picard_list.set<std::string>("time integration method",num_params_list.get<std::string>("pseudo time integrator time integration method","Picard"));
+	    picard_list.set<std::string>("preconditioner",num_params_list.get<std::string>("pseudo time integrator preconditioner","Trilinos ML"));
+	    picard_list.set<std::string>("linear solver",num_params_list.get<std::string>("pseudo time integrator linear solver","AztecOO"));
+	    Teuchos::Array<std::string> error_ctrl(1);
+	    error_ctrl[0] = std::string("pressure");
+	    picard_list.set<Teuchos::Array<std::string> >("error control options",num_params_list.get<Teuchos::Array<std::string> >("pseudo time integrator error control options",error_ctrl));
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",num_params_list.get<double>("pseudo time integrator picard convergence tolerance",1e-7));
+	    picard_list.sublist("Picard").set<int>("maximum number of iterations",num_params_list.get<int>("pseudo time integrator picard maximum number of iterations",400));
+	  } else {
+	    picard_list.set<bool>("initialize with darcy",true);
+	    picard_list.set<double>("clipping saturation value",0.9);
+	    picard_list.set<std::string>("time integration method","Picard");
+	    picard_list.set<std::string>("preconditioner","Trilinos ML");
+	    picard_list.set<std::string>("linear solver","AztecOO");
+	    Teuchos::Array<std::string> error_ctrl(1);
+	    error_ctrl[0] = std::string("pressure");
+	    picard_list.set<Teuchos::Array<std::string> >("error control options",error_ctrl);
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",1e-7);
+	    picard_list.sublist("Picard").set<int>("maximum number of iterations",400);
+	  }
 	}
+	  
 
 	bool have_unstructured_algorithm_sublist(false);
 	// create sublists for the steady state time integrator
