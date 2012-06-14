@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     }
 
     // solve for initial free-ion concentrations
-    mixing_cells[thread]->Speciate(cell_components[thread], parameters);
+    mixing_cells[thread]->Speciate(&(cell_components[thread]), parameters);
     mixing_cells[thread]->CopyBeakerToComponents(&cell_components[thread]);
     if (verbosity >= ac::kDebugBeaker) {
       mixing_cells[thread]->DisplayResults();
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
       }
       try {
         mixing_cells[thread]->ReactionStep(&cell_components[thread], parameters, delta_time);
-        mixing_cells[thread]->Speciate(cell_components[thread], parameters);
+        mixing_cells[thread]->Speciate(&(cell_components[thread]), parameters);
       } catch (const ac::ChemistryException& geochem_error) {
         std::cout << geochem_error.what() << std::endl;
       } catch (const std::runtime_error& rt_error) {

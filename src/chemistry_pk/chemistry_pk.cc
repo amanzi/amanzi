@@ -130,7 +130,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
     // solve for initial free-ion concentrations
-    chem_->Speciate(beaker_components_, beaker_parameters_);
+    chem_->Speciate(&beaker_components_, beaker_parameters_);
     if (debug()) {
       chem_out->Write(kVerbose, "\nTest solution of initial conditions in cell 0:\n");
       chem_->DisplayResults();
@@ -161,7 +161,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     try {
       //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
       // solve for initial free-ion concentrations
-      chem_->Speciate(beaker_components_, beaker_parameters_);
+      chem_->Speciate(&beaker_components_, beaker_parameters_);
       chem_->CopyBeakerToComponents(&beaker_components_);
       CopyBeakerStructuresToCellState(cell);
     } catch (ChemistryException& geochem_error) {
@@ -435,6 +435,7 @@ void Chemistry_PK::CopyCellStateToBeakerStructures(
     for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
       double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
       beaker_components_.ion_exchange_sites[i] = cell_ion_exchange_sites[cell_id];
+      // TODO(bandre): need to save ion exchange ref cation conc here!
     }
   }
 
@@ -456,6 +457,7 @@ void Chemistry_PK::CopyCellStateToBeakerStructures(
       double* cell_sorption_sites = 
           (*chemistry_state_->sorption_sites())[s];
       beaker_parameters_.sorption_site_density[s] = cell_sorption_sites[cell_id];
+      // TODO(bandre): need to save surface complexation free site conc here!
     }
   }
 
@@ -509,11 +511,13 @@ void Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
   for (unsigned int i = 0; i < number_sorption_sites(); i++) {
     double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
     cell_sorption_sites[cell_id] = beaker_parameters_.sorption_site_density.at(i);
+    // TODO(bandre): need to save surface complexation free site conc here!
   }
 
   for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
     double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
     cell_ion_exchange_sites[cell_id] = beaker_components_.ion_exchange_sites.at(i);
+    // TODO(bandre): need to save ion exchange ref cation conc here!
   }
 
   if (using_sorption_isotherms()) {
@@ -687,7 +691,7 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
   saved_time_ += delta_time;
 
   if (debug() && false) {
-    chem_->Speciate(beaker_components_, beaker_parameters_);
+    chem_->Speciate(&beaker_components_, beaker_parameters_);
     chem_->DisplayResults();
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);

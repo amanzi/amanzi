@@ -32,6 +32,15 @@ class SurfaceComplexationRxn {
   SpeciesId SiteId(void) const {
     return surface_site_.at(0).identifier();
   }
+
+  double free_site_concentration(void) const {
+    return surface_site_.at(0).free_site_concentration();
+  }
+
+  void set_free_site_concentration(const double value) {
+    surface_site_.at(0).set_free_site_concentration(value);
+  }
+
   // update sorbed concentrations
   void Update(const std::vector<Species>& primarySpecies);
   // add stoichiometric contribution of complex to sorbed total

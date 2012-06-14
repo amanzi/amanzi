@@ -270,16 +270,16 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
 //
 
 // if no water density provided, default is 1000.0 kg/m^3
-int Beaker::Speciate(const Beaker::BeakerComponents& components,
+int Beaker::Speciate(Beaker::BeakerComponents* components,
                      const Beaker::BeakerParameters& parameters) {
   std::stringstream message;
   double speciation_tolerance = 1.e-12;
   double residual_tolerance = 1.e-12;
   ResetStatus();
   UpdateParameters(parameters, 1.0);  // NOTE: need dt=1 to avoid divide by zero
-  CheckChargeBalance(components.total);
+  CheckChargeBalance(components->total);
 
-  CopyComponentsToBeaker(components);
+  CopyComponentsToBeaker(*components);
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++) {
@@ -300,7 +300,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // calculate residual
     // units of residual: mol/sec
     for (int i = 0; i < ncomp(); i++) {
-      residual_.at(i) = total_.at(i) - components.total.at(i);
+      residual_.at(i) = total_.at(i) - components->total.at(i);
     }
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
@@ -384,6 +384,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
   UpdateEquilibriumChemistry();
+  CopyBeakerToComponents(components);
   status_.num_newton_iterations = num_iterations;
   if (max_rel_change < tolerance()) {
     status_.converged = true;
@@ -545,44 +546,87 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
 void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
   // Copy the beaker primary variables into a component struct that
-  // can be returned to the driver
-  for (int i = 0; i < ncomp(); i++) {
+  // can be returned to the driver for long term storage. 
+
+  // NOTE: The components struct may have been only partially
+  // initialized be the driver (it doesn't know about the size of
+  // internal memory for surface complexation or ion exchange....
+  // For now we assert the things the driver should know....
+
+  //
+  // totals
+  //
+  assert(components->total.size() == total_.size());
+  for (int i = 0; i < ncomp(); ++i) {
     components->total.at(i) = total_.at(i);
+  }
 
-    if (!components->free_ion.size() > 0) {
-      components->free_ion.resize(ncomp(), 1.0e-9);
-    }
-    components->free_ion.at(i) = primary_species().at(i).molality();
-
-    if (components->total_sorbed.size() > 0 &&
-        total_sorbed_.size() > 0) {
+  if (total_sorbed_.size() > 0) {
+    assert(components->total_sorbed.size() == total_sorbed_.size());
+    for (int i = 0; i < ncomp(); ++i) {
       components->total_sorbed.at(i) = total_sorbed_.at(i);
     }
   }
 
-  for (unsigned int m = 0; m < minerals_.size(); m++) {
+  //
+  // free ion
+  //
+  assert(components->free_ion.size() == ncomp());
+  for (int i = 0; i < ncomp(); ++i) {
+    components->free_ion.at(i) = primary_species().at(i).molality();
+  }
+
+  //
+  // minerals
+  //
+  assert(components->minerals.size() == minerals_.size());
+  for (unsigned int m = 0; m < minerals_.size(); ++m) {
     components->minerals.at(m) = minerals_.at(m).volume_fraction();
   }
 
-  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
-    components->ion_exchange_sites.at(i) = ion_exchange_rxns_.at(i).site().cation_exchange_capacity();
+  //
+  // ion exchange
+  //
+  if (components->ion_exchange_sites.size() != ion_exchange_rxns_.size()) {
+    components->ion_exchange_sites.resize(ion_exchange_rxns_.size());
+  }
+  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); ++i) {
+    components->ion_exchange_sites.at(0) = 
+        ion_exchange_rxns_.at(0).site().cation_exchange_capacity();
+  }
+
+  if (components->ion_exchange_ref_cation_conc.size() != 
+      ion_exchange_rxns_.size()) {
+    components->ion_exchange_ref_cation_conc.resize( 
+        ion_exchange_rxns_.size());
+  }
+  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); ++i) {
+    components->ion_exchange_ref_cation_conc.at(i) = 
+        ion_exchange_rxns_[i].ref_cation_sorbed_conc();
+  }
+
+  //
+  // surface complexation
+  //
+  if (components->surface_complex_free_site_conc.size() != 
+      surfaceComplexationRxns_.size()) {
+    components->surface_complex_free_site_conc.resize( 
+        surfaceComplexationRxns_.size());
+  }
+  for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); ++i) {
+    components->surface_complex_free_site_conc.at(i) =
+        surfaceComplexationRxns_.at(i).free_site_concentration();
   }
 }  // end CopyBeakerToComponents()
 
 void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents* to) {
+  // totals
   if (to->total.size() != from.total.size()) {
     to->total.resize(from.total.size());
   }
   for (unsigned int i = 0; i < from.total.size(); i++) {
     to->total.at(i) = from.total.at(i);
-  }
-
-  if (to->free_ion.size() != from.free_ion.size()) {
-    to->free_ion.resize(from.free_ion.size());
-  }
-  for (unsigned int i = 0; i < from.free_ion.size(); i++) {
-    to->free_ion.at(i) = from.free_ion.at(i);
   }
 
   if (to->total_sorbed.size() != from.total_sorbed.size()) {
@@ -592,6 +636,15 @@ void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
     to->total_sorbed.at(i) = from.total_sorbed.at(i);
   }
 
+  // free ion
+  if (to->free_ion.size() != from.free_ion.size()) {
+    to->free_ion.resize(from.free_ion.size());
+  }
+  for (unsigned int i = 0; i < from.free_ion.size(); i++) {
+    to->free_ion.at(i) = from.free_ion.at(i);
+  }
+
+  // minerals
   if (to->minerals.size() != from.minerals.size()) {
     to->minerals.resize(from.minerals.size());
   }
@@ -599,11 +652,30 @@ void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
     to->minerals.at(i) = from.minerals.at(i);
   }
 
+  // ion exchange
   if (to->ion_exchange_sites.size() != from.ion_exchange_sites.size()) {
     to->ion_exchange_sites.resize(from.ion_exchange_sites.size());
   }
   for (unsigned int i = 0; i < from.ion_exchange_sites.size(); i++) {
     to->ion_exchange_sites.at(i) = from.ion_exchange_sites.at(i);
+  }
+
+  if (to->ion_exchange_ref_cation_conc.size() != 
+      from.ion_exchange_ref_cation_conc.size()) {
+    to->ion_exchange_ref_cation_conc.resize(from.ion_exchange_ref_cation_conc.size());
+  }
+  for (unsigned int i = 0; i < from.ion_exchange_ref_cation_conc.size(); i++) {
+    to->ion_exchange_ref_cation_conc.at(i) = 
+        from.ion_exchange_ref_cation_conc.at(i);
+  }
+
+  // surface complexation
+  if (to->surface_complex_free_site_conc.size() != 
+      from.surface_complex_free_site_conc.size()) {
+    to->surface_complex_free_site_conc.resize(from.surface_complex_free_site_conc.size());
+  }
+  for (unsigned int i = 0; i < from.surface_complex_free_site_conc.size(); i++) {
+    to->surface_complex_free_site_conc.at(i) = from.surface_complex_free_site_conc.at(i);
   }
 }  // end Beaker::CopyComponents()
 
@@ -940,6 +1012,8 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
 }  // end VerifyComponentSizes()
 
 void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) {
+  // NOTE: Do not copy total and total_sorbed here!
+
   // initialize free-ion concentrations, these are actual
   // concentrations, so the value must be positive or ln(free_ion)
   // will return a nan!
@@ -949,6 +1023,9 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
     InitializeMolalities(1.e-9);
   }
 
+  //
+  // ion exchange
+  //
   unsigned int size = components.ion_exchange_sites.size();
   if (ion_exchange_rxns().size() == size) {
     for (unsigned int ies = 0; ies < size; ies++) {
@@ -963,6 +1040,27 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
+  if (ion_exchange_rxns().size() > 0) {
+    // check for the ref cation conc....
+    if (components.ion_exchange_ref_cation_conc.size() ==
+        ion_exchange_rxns().size()) {
+      // we have a value from a previous solve, restore it.
+      for (int i = 0; i < ion_exchange_rxns().size(); ++i) {
+        double value = components.ion_exchange_ref_cation_conc.at(i);
+        ion_exchange_rxns_[i].set_ref_cation_sorbed_conc(value);
+      }
+    } else {
+      // no previous value, provide a guess
+      for (int i = 0; i < ion_exchange_rxns().size(); ++i) {
+        ion_exchange_rxns_[i].set_ref_cation_sorbed_conc(1.0e-9);
+      }
+    }
+  }
+
+  //
+  // minerals
+  //
+
   // NOTE: SSA updated by the call to UpdateParameters()!
   size = components.minerals.size();
   if (minerals().size() == size) {
@@ -976,6 +1074,28 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
                  << ") and components.minerals.size(" << size 
                  << ") do not match.\n";
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
+  }
+
+  //
+  // surface complexation
+  //
+
+  // NOTE: site density was updated by the call to UpdateParameters()!
+  if (surfaceComplexationRxns_.size() > 0) {
+    if (components.surface_complex_free_site_conc.size() ==
+        surfaceComplexationRxns_.size()) {
+      // we have a value from a previous solve, restore it.
+      for (int r = 0; r < surfaceComplexationRxns_.size(); ++r) {
+        double value = components.surface_complex_free_site_conc.size();
+        surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
+      }
+    } else {
+      // no previous value, provide a guess
+      for (int r = 0; r < surfaceComplexationRxns_.size(); ++r) {
+        double value = 0.1 * surfaceComplexationRxns_.at(r).GetSiteDensity();
+        surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
+      }
+    }
   }
 }  // end CopyComponentsToBeaker()
 

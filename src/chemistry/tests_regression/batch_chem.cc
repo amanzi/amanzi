@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
       }
 
       // solve for free-ion concentrations
-      chem->Speciate(components, parameters);
+      chem->Speciate(&components, parameters);
       chem->CopyBeakerToComponents(&components);
       if (simulation_params.verbosity >= ac::kTerse) {
         chem->DisplayResults();
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
           }
         }
         ac::chem_out->Write(ac::kVerbose, "---- Final Speciation\n");
-        chem->Speciate(components, parameters);
+        chem->Speciate(&components, parameters);
         if (simulation_params.verbosity >= ac::kTerse) {
           chem->DisplayResults();
         }

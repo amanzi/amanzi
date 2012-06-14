@@ -21,6 +21,7 @@
 #include "matrix_block.hh"
 #include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
+#include "chemistry_utilities.hh"
 
 #ifdef GLENN
 #include "chemistry/includes/direct_solver.hh"
@@ -41,11 +42,25 @@ class Beaker {
     // TODO(bandre): rename to BeakerState and move all "state"
     // variables (porosity, density, volume, mineral ssa, isotherms,
     // etc) into a single struct.
+    std::vector<double> total;  // molarity
+    std::vector<double> total_sorbed;
     std::vector<double> free_ion;  // molality
     std::vector<double> minerals;  // volume fractions
     std::vector<double> ion_exchange_sites;  // CEC
-    std::vector<double> total;  // molarity
-    std::vector<double> total_sorbed;
+    std::vector<double> ion_exchange_ref_cation_conc;  // [?]
+    std::vector<double> surface_complex_free_site_conc;  // [moles sites / m^3 bulk]
+
+    void Display(const std::string& message) {
+      chem_out->Write(kVerbose, message);
+      utilities::PrintVector("total", total, 16, true);
+      utilities::PrintVector("total_sorbed", total_sorbed, 16, true);
+      utilities::PrintVector("minerals", minerals, 16, true);
+      utilities::PrintVector("free_ion", free_ion, 16, true);
+      utilities::PrintVector("ion exchange sites", ion_exchange_sites, 16, true);
+      utilities::PrintVector("ion exchange ref cation conc", ion_exchange_ref_cation_conc, 16, true);
+      utilities::PrintVector("surface complex free site conc", surface_complex_free_site_conc, 16, true);
+    }
+
   };
 
   struct BeakerParameters {
@@ -112,7 +127,7 @@ class Beaker {
   bool HaveKinetics(void) const;
 
   // speciate for free-ion concentrations
-  int Speciate(const BeakerComponents& components,
+  int Speciate(BeakerComponents* components,
                const BeakerParameters& parameters);
 
   // solve a chemistry step

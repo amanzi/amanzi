@@ -44,6 +44,14 @@ class IonExchangeRxn {
   std::vector<IonExchangeComplex>  ionx_complexes(void) const { return ionx_complexes_; };
   void set_cation_exchange_capacity(const double d) { ionx_site_[0].set_cation_exchange_capacity(d); };
 
+  void set_ref_cation_sorbed_conc(double value) {
+    ref_cation_sorbed_conc_ = value;
+  }
+
+  double ref_cation_sorbed_conc(void) const {
+    return ref_cation_sorbed_conc_;
+  }
+
   void display(void) const;
   void Display(void) const;
   void DisplaySite(void) const;
