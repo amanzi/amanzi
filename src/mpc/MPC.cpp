@@ -207,6 +207,8 @@ void MPC::read_parameter_list()  {
 
     dTsteady = init_to_steady_list.get<double>("Steady Initial Time Step");
     dTtransient = init_to_steady_list.get<double>("Transient Initial Time Step");
+
+    do_picard_ = init_to_steady_list.get<bool>("Use Picard",false);
   } else if ( ti_list.isSublist("Steady")) {
     ti_mode = STEADY;
     
@@ -215,6 +217,8 @@ void MPC::read_parameter_list()  {
     T0 = steady_list.get<double>("Start");
     T1 = steady_list.get<double>("End");
     dTsteady = steady_list.get<double>("Initial Time Step");
+    
+    do_picard_ = steady_list.get<bool>("Use Picard",false);
   } else if ( ti_list.isSublist("Transient") ) {
     ti_mode = TRANSIENT;
 
@@ -224,6 +228,7 @@ void MPC::read_parameter_list()  {
     T1 = transient_list.get<double>("End");
     dTtransient =  transient_list.get<double>("Initial Time Step");
 
+    do_picard_ = false;
   } else {
     Errors::Message message("MPC: no valid Time Integration Mode was specified, you must specify exactly one of Initialize To Steady, Steady, or Transient.");
     Exceptions::amanzi_throw(message);    
@@ -312,8 +317,9 @@ void MPC::cycle_driver() {
 	reset_times_dt_.erase(reset_times_dt_.begin());
       }
     }
-  } else { // no restart, we will call the PKs to allow them to init their auxilary data
+  } else { // no restart, we will call the PKs to allow them to init their auxilary data and massage initial conditions
     if (flow_enabled) FPK->InitializeAuxiliaryData();
+    if (do_picard_) FPK->InitPicard(S->get_time());
   }
 
 
