@@ -792,6 +792,27 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         richards_problem.set<double>("atmospheric pressure", 101325.0);
+	// see if we need to generate a Picard list
+	bool use_picard(false);
+	Teuchos::ParameterList& ti_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
+	if (ti_mode_list.isSublist("Steady")) {
+	  use_picard = ti_mode_list.sublist("Steady").get<bool>("Use Picard",false);
+	} else if (ti_mode_list.isSublist("Initialize To Steady")) {
+	  use_picard = ti_mode_list.sublist("Initialize To Steady").get<bool>("Use Picard",false);
+	}
+	if (use_picard) {
+	  Teuchos::ParameterList& picard_list = richards_problem.sublist("initial guess pseudo time integrator");
+	  picard_list.set<bool>("initialize with darcy",true);
+	  picard_list.set<double>("clipping saturation value",0.9);
+	  picard_list.set<std::string>("time integration method","Picard");
+	  picard_list.set<std::string>("preconditioner","Trilinos ML");
+	  picard_list.set<std::string>("linear solver","AztecOO GMRES");
+	  Teuchos::Array<std::string> error_ctrl(1);
+	  error_ctrl[0] = std::string("pressure");
+	  picard_list.set<Teuchos::Array<std::string> >("error control options",error_ctrl);
+	  picard_list.sublist("Picard").set<double>("convergence tolerance",1e-7);
+	  picard_list.sublist("Picard").set<int>("maximum number of iterations",400);
+	}
 
 	bool have_unstructured_algorithm_sublist(false);
 	// create sublists for the steady state time integrator

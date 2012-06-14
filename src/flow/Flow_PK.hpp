@@ -102,6 +102,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual void InitPK() = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
+  virtual void InitPicard(double T0) = 0;
 
   virtual double CalculateFlowDt() = 0;
   virtual int Advance(double dT) = 0; 
