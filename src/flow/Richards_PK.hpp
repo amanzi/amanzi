@@ -114,9 +114,8 @@ class Richards_PK : public Flow_PK {
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
   void ProcessSublistTimeIntegration(
-    Teuchos::ParameterList& list, const std::string name,
-    double* absolute_tol, double* relative_tol, double* residual_tol,
-    double* dT0, double* dTmax, TI_Specs& ti_specs);
+      Teuchos::ParameterList& list, const std::string name,
+      double* residual_tol, TI_Specs& ti_specs);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -174,15 +173,13 @@ class Richards_PK : public Flow_PK {
 
   int ti_method_sss;  // Parameters for steady-state solution
   std::string preconditioner_name_sss_;
-  double absolute_tol_sss, relative_tol_sss, residual_tol_sss;
-  double dT0_sss, dTmax_sss;
+  double residual_tol_sss;
   int initialize_with_darcy, error_control_sss_;
   TI_Specs ti_specs_sss_;
 
   int ti_method_trs;  // Parameters for transient solution
   std::string preconditioner_name_trs_;
-  double absolute_tol_trs, relative_tol_trs, residual_tol_trs;
-  double dT0_trs, dTmax_trs;
+  double residual_tol_trs;
   int error_control_trs_;
   TI_Specs ti_specs_trs_;
 

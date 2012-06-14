@@ -144,10 +144,7 @@ void Richards_PK::ProcessParameterList()
 
     std::string ti_method_name = sss_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
-    ProcessSublistTimeIntegration(
-        sss_list, ti_method_name,
-        &absolute_tol_sss, &relative_tol_sss, &residual_tol_sss,
-        &dT0_sss, &dTmax_sss, ti_specs_sss_);
+    ProcessSublistTimeIntegration(sss_list, ti_method_name, &residual_tol_sss, ti_specs_sss_);
 
     preconditioner_name_sss_ = FindStringPreconditioner(sss_list);
     std::string linear_solver_name = FindStringLinearSolver(sss_list);
@@ -165,10 +162,7 @@ void Richards_PK::ProcessParameterList()
 
     string ti_method_name = trs_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
-    ProcessSublistTimeIntegration(
-        trs_list, ti_method_name,
-        &absolute_tol_trs, &relative_tol_trs, &residual_tol_trs,
-        &dT0_trs, &dTmax_trs, ti_specs_trs_);
+    ProcessSublistTimeIntegration(trs_list, ti_method_name, &residual_tol_trs, ti_specs_trs_);
 
     preconditioner_name_trs_ = FindStringPreconditioner(trs_list);
     std::string linear_solver_name = FindStringLinearSolver(trs_list);
@@ -190,22 +184,21 @@ void Richards_PK::ProcessParameterList()
 **************************************************************** */
 void Richards_PK::ProcessSublistTimeIntegration(
     Teuchos::ParameterList& list, const std::string name,
-    double* absolute_tol, double* relative_tol, double* residual_tol,
-    double* dT0, double* dTmax, TI_Specs& ti_specs)
+    double* residual_tol, TI_Specs& ti_specs)
 {
   Errors::Message msg;
 
   if (list.isSublist(name)) {
     Teuchos::ParameterList& tmp_list = list.sublist(name);
-    *absolute_tol = tmp_list.get<double>("absolute error tolerance", FLOW_TI_ABSOLUTE_TOLERANCE);
-    *relative_tol = tmp_list.get<double>("relative error tolerance", FLOW_TI_RELATIVE_TOLERANCE);
+    ti_specs.atol = tmp_list.get<double>("absolute error tolerance", FLOW_TI_ABSOLUTE_TOLERANCE);
+    ti_specs.rtol = tmp_list.get<double>("relative error tolerance", FLOW_TI_RELATIVE_TOLERANCE);
     *residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
     ti_specs.max_itrs = tmp_list.get<int>("maximal number of iterations", FLOW_TI_MAX_ITERATIONS);
 
     ti_specs.T0 = tmp_list.get<double>("start time", -1e+12);
     ti_specs.T1 = tmp_list.get<double>("end time", 0.0);
-    *dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-    *dTmax = tmp_list.get<double>("maximal time step", dT0_sss);
+    ti_specs.dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
+    ti_specs.dTmax = tmp_list.get<double>("maximal time step", AmanziFlow::FLOW_MAXIMAL_DT);
 
   } else {
     msg << "Richards PK: specified time integration sublist does not exist.";

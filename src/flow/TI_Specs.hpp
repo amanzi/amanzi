@@ -21,7 +21,9 @@ class TI_Specs {
     ti_method = 0;
     preconditioner_name = "";
     num_itrs = max_itrs = 0;
-    T0 = T1 = dT0 = 0.0;
+    T0 = T1 = dT0 = dTmax = 0.0;
+    atol = 1.0; 
+    rtol = 0.0;
   }
 
  public:
@@ -29,7 +31,8 @@ class TI_Specs {
   std::string preconditioner_name;
   int num_itrs, max_itrs;
 
-  double T0, T1, dT0;
+  double T0, T1, dT0, dTmax;
+  double atol, rtol;  // obsolete options
 };
 
 }  // namespace AmanziFlow

@@ -35,6 +35,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
 
   int max_itrs = ti_specs_sss_.max_itrs;
   double T1 = ti_specs_sss_.T1;
+  double dTmax = ti_specs_sss_.dTmax;
 
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
@@ -110,7 +111,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
       }
 
       ifail = 0;
-      dT = std::min(dT*1.25, dTmax_sss);
+      dT = std::min(dT*1.25, dTmax);
       itrs++;
     }
 

@@ -115,8 +115,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
   ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
 
-  absolute_tol_sss = absolute_tol_trs = 1.0;
-  relative_tol_sss = relative_tol_trs = 1e-5;
   initialize_with_darcy = 0;
 
   mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
@@ -316,8 +314,8 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
-  absolute_tol = absolute_tol_sss;
-  relative_tol = relative_tol_sss;
+  absolute_tol = ti_specs_sss_.atol;
+  relative_tol = ti_specs_sss_.rtol;
 
   set_time(T0, dT0);  // overrides data provided in the input file
   ti_method = ti_method_sss;
@@ -406,8 +404,8 @@ void Richards_PK::InitTransient(double T0, double dT0)
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
-  absolute_tol = absolute_tol_trs;
-  relative_tol = relative_tol_trs;
+  absolute_tol = ti_specs_trs_.atol;
+  relative_tol = ti_specs_trs_.rtol;
 
   ti_method = ti_method_trs;
   num_itrs = 0;

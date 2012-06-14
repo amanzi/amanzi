@@ -23,7 +23,7 @@ namespace AmanziFlow {
 int Richards_PK::AdvanceToSteadyState()
 {
   T_physics = ti_specs_sss_.T0;
-  dT = dT0_sss;
+  dT = ti_specs_sss_.dT0;
 
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
@@ -56,6 +56,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1()
   int max_itrs = ti_specs_sss_.max_itrs;
   double T0 = ti_specs_sss_.T0;
   double T1 = ti_specs_sss_.T1;
+  double dT0 = ti_specs_sss_.dT0;
 
   int itrs = 0;
   while (itrs < max_itrs && T_physics < T1) {
@@ -65,7 +66,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1()
       bdf1_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
-      update_precon(T0, *solution, dT0_sss, ierr);
+      update_precon(T0, *solution, dT0, ierr);
     }
 
     double dTnext;
@@ -100,6 +101,7 @@ int Richards_PK::AdvanceToSteadyState_BDF2()
   int max_itrs = ti_specs_sss_.max_itrs;
   double T0 = ti_specs_sss_.T0;
   double T1 = ti_specs_sss_.T1;
+  double dT0 = ti_specs_sss_.dT0;
 
   int itrs = 0;
   while (itrs < max_itrs && T_physics < T1) {
@@ -109,7 +111,7 @@ int Richards_PK::AdvanceToSteadyState_BDF2()
       bdf2_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
-      update_precon(T0, *solution, dT0_sss, ierr);
+      update_precon(T0, *solution, dT0, ierr);
     }
 
     double dTnext;
