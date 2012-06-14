@@ -82,11 +82,6 @@ int main(int argc, char** argv) {
   }
 
   ac::Beaker::BeakerComponents components;
-  components.free_ion.clear();
-  components.minerals.clear();
-  components.ion_exchange_sites.clear();
-  components.total.clear();
-  components.total_sorbed.clear();
 
   SimulationParameters simulation_params;
   if (!input_file_name.empty()) {
@@ -141,15 +136,9 @@ int main(int argc, char** argv) {
       parameters.saturation = simulation_params.saturation;  // -
       parameters.volume = simulation_params.volume;  // m^3
       ModelSpecificParameters(simulation_params.comparison_model, &parameters);
-      CopySimulationParametersToBeakeParameters(simulation_params, &parameters);
-
-      if (components.free_ion.size() == 0) {
-        // initialize free-ion concentrations, these are actual
-        // concentrations, so the value must be positive or ln(free_ion)
-        // will return a nan!
+      if (components.free_ion.size() != components.total.size()) {
         components.free_ion.resize(components.total.size(), 1.0e-9);
       }
-
       chem->Setup(components, parameters);
 
       if (simulation_params.verbosity >= ac::kVerbose) {
@@ -247,25 +236,6 @@ void ModelSpecificParameters(const std::string model,
   }
 }  // end ModelSpecificParameters()
 
-void CopySimulationParametersToBeakeParameters(
-    const SimulationParameters& simulation_params,
-    ac::Beaker::BeakerParameters* parameters) {
-  if (simulation_params.mineral_ssa.size() > 0) {
-    parameters->mineral_specific_surface_area.assign(
-        simulation_params.mineral_ssa.begin(),
-        simulation_params.mineral_ssa.end());
-  }
-
-  if (simulation_params.site_density.size() > 0) {
-    parameters->sorption_site_density.assign(
-        simulation_params.site_density.begin(),
-        simulation_params.site_density.end());
-  }
-
-  // TODO(bandre): copy isotherm data here when we figure out how it
-  // will be read in
-
-}  // end OverrideParameters()
 
 /*******************************************************************************
  **
@@ -454,18 +424,18 @@ void ReadInputFile(const std::string& file_name,
         ParseSimulationParameter(raw_line, simulation_params);
       } else if (current_section == kSectionTotal) {
         ParseComponentValue(raw_line, &(components->total));
-      } else if (current_section == kSectionMineral) {
-        ParseComponentValue(raw_line, &(components->minerals));
-      } else if (current_section == kSectionIonExchange) {
-        ParseComponentValue(raw_line, &(components->ion_exchange_sites));
       } else if (current_section == kSectionSorbed) {
         ParseComponentValue(raw_line, &(components->total_sorbed));
       } else if (current_section == kSectionFreeIon) {
         ParseComponentValue(raw_line, &(components->free_ion));
-      } else if (current_section == kSectionSiteDensity) {
-        ParseComponentValue(raw_line, &(simulation_params->site_density));
+      } else if (current_section == kSectionMineral) {
+        ParseComponentValue(raw_line, &(components->mineral_volume_fraction));
       } else if (current_section == kSectionSpecificSurfaceArea) {
-        ParseComponentValue(raw_line, &(simulation_params->mineral_ssa));
+        ParseComponentValue(raw_line, &(components->mineral_specific_surface_area));
+      } else if (current_section == kSectionIonExchange) {
+        ParseComponentValue(raw_line, &(components->ion_exchange_sites));
+      } else if (current_section == kSectionSiteDensity) {
+        ParseComponentValue(raw_line, &(components->surface_site_density));
       } else if (current_section == kSectionIsotherms) {
         // TODO: need to figure out the format of this data...
       }
@@ -691,7 +661,7 @@ void PrintInput(const SimulationParameters& params,
 {
   ac::chem_out->Write(ac::kVerbose, "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params);
-  PrintComponents(components);
+  components.Display("-- Input components: \n");
   ac::chem_out->Write(ac::kVerbose, "--------------------------------------------------------- Input File -\n");
 }  // end PrintInput()
 
@@ -715,21 +685,8 @@ void PrintSimulationParameters(const SimulationParameters& params)
   message << "\tdelta time: " << params.delta_time << std::endl;
   message << "\tnum time steps: " << params.num_time_steps << std::endl;
   message << "\toutput interval: " << params.output_interval << std::endl;
-  message << "-- Database parameters:" << std::endl;
   ac::chem_out->Write(ac::kVerbose, message);
-  ac::utilities::PrintVector("  Site Density", params.site_density);
-  ac::utilities::PrintVector("  Specific Surface Area", params.mineral_ssa);
 }
 
 
-void PrintComponents(const ac::Beaker::BeakerComponents& components)
-{
-  ac::chem_out->Write(ac::kVerbose, "-- Input components: \n");
-  ac::utilities::PrintVector("  Totals", components.total);
-  ac::utilities::PrintVector("  Minerals", components.minerals);
-  ac::utilities::PrintVector("  Total sorbed", components.total_sorbed);
-  ac::utilities::PrintVector("  Free Ion", components.free_ion);
-  ac::utilities::PrintVector("  Ion Exchange", components.ion_exchange_sites);
-
-}  // end PrintComponents()
 

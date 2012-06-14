@@ -45,20 +45,30 @@ class Beaker {
     std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
     std::vector<double> free_ion;  // molality
-    std::vector<double> minerals;  // volume fractions
+    std::vector<double> mineral_volume_fraction;  // volume fractions
+    std::vector<double> mineral_specific_surface_area;  // [m^2 mineral/ m^3 bulk]
     std::vector<double> ion_exchange_sites;  // CEC
     std::vector<double> ion_exchange_ref_cation_conc;  // [?]
+    std::vector<double> surface_site_density;
     std::vector<double> surface_complex_free_site_conc;  // [moles sites / m^3 bulk]
+    std::vector<double> isotherm_kd;
+    std::vector<double> isotherm_freundlich_n;
+    std::vector<double> isotherm_langmuir_b;
 
-    void Display(const std::string& message) {
+    void Display(const std::string& message) const {
       chem_out->Write(kVerbose, message);
-      utilities::PrintVector("total", total, 16, true);
-      utilities::PrintVector("total_sorbed", total_sorbed, 16, true);
-      utilities::PrintVector("minerals", minerals, 16, true);
-      utilities::PrintVector("free_ion", free_ion, 16, true);
-      utilities::PrintVector("ion exchange sites", ion_exchange_sites, 16, true);
-      utilities::PrintVector("ion exchange ref cation conc", ion_exchange_ref_cation_conc, 16, true);
-      utilities::PrintVector("surface complex free site conc", surface_complex_free_site_conc, 16, true);
+      utilities::PrintVector("Totals", total, 16, true);
+      utilities::PrintVector("Total sorbed", total_sorbed, 16, true);
+      utilities::PrintVector("Free Ion", free_ion, 16, true);
+      utilities::PrintVector("Mineral VF", mineral_volume_fraction, 16, true);
+      utilities::PrintVector("Mineral SSA", mineral_specific_surface_area, 16, true);
+      utilities::PrintVector("Ion Exchange Sites", ion_exchange_sites, 16, true);
+      utilities::PrintVector("Ion Exchange ref cation conc", ion_exchange_ref_cation_conc, 16, true);
+      utilities::PrintVector("Surface Site Density", surface_site_density, 16, true);
+      utilities::PrintVector("Surface Complex free site conc", surface_complex_free_site_conc, 16, true);
+      utilities::PrintVector("Kd", isotherm_kd, 16, true);
+      utilities::PrintVector("Freundlich n", isotherm_freundlich_n, 16, true);
+      utilities::PrintVector("Langmuir b", isotherm_langmuir_b, 16, true);
     }
 
   };
@@ -80,14 +90,6 @@ class Beaker {
     double saturation;  // [-]
     double water_density;  // [kg/m^3]
     double volume;  // [m^3]
-
-    // the following parameters will be read in from the database file
-    // but can be overridden by the driver if their size > 0....
-    std::vector<double> mineral_specific_surface_area;
-    std::vector<double> sorption_site_density;
-    std::vector<double> isotherm_kd;
-    std::vector<double> isotherm_freundlich_n;
-    std::vector<double> isotherm_langmuir_b;
   };
 
   struct SolverStatus {

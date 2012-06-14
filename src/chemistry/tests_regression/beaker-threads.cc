@@ -69,13 +69,6 @@ int main(int argc, char** argv) {
   std::vector<ac::Beaker::BeakerComponents> cell_components(num_threads);
 
   for (int thread = 0; thread < num_threads; thread++) {
-    // initialize the component struct
-    cell_components[thread].free_ion.clear();
-    cell_components[thread].minerals.clear();
-    cell_components[thread].ion_exchange_sites.clear();
-    cell_components[thread].total.clear();
-    cell_components[thread].total_sorbed.clear();
-
     // apply fbasin 'source' condition to all the components
     fbasin_source(&(cell_components[thread]));
 
@@ -232,17 +225,17 @@ void fbasin_free_ions(ac::Beaker::BeakerComponents* components) {
 }  // end fbasin_free_ions()
 
 void fbasin_minerals(ac::Beaker::BeakerComponents* components) {
-  components->minerals.push_back(0.0);  // Gibbsite
-  components->minerals.push_back(0.21);  // Quartz
-  components->minerals.push_back(0.15);  // K-Feldspar
-  components->minerals.push_back(0.0);  // Jurbanite
-  components->minerals.push_back(0.1);  // Ferrihydrite
-  components->minerals.push_back(0.15);  // Kaolinite
-  components->minerals.push_back(0.0);  // Schoepite
-  components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
-  components->minerals.push_back(0.0);  // Soddyite
-  components->minerals.push_back(0.0);  // Calcite
-  components->minerals.push_back(0.0);  // Chalcedony
+  components->mineral_volume_fraction.push_back(0.0);  // Gibbsite
+  components->mineral_volume_fraction.push_back(0.21);  // Quartz
+  components->mineral_volume_fraction.push_back(0.15);  // K-Feldspar
+  components->mineral_volume_fraction.push_back(0.0);  // Jurbanite
+  components->mineral_volume_fraction.push_back(0.1);  // Ferrihydrite
+  components->mineral_volume_fraction.push_back(0.15);  // Kaolinite
+  components->mineral_volume_fraction.push_back(0.0);  // Schoepite
+  components->mineral_volume_fraction.push_back(0.0);  // (UO2)3(PO4)2.4H2O
+  components->mineral_volume_fraction.push_back(0.0);  // Soddyite
+  components->mineral_volume_fraction.push_back(0.0);  // Calcite
+  components->mineral_volume_fraction.push_back(0.0);  // Chalcedony
 }  // end fbasin_minerals()
 
 void fbasin_sorbed(ac::Beaker::BeakerComponents* components) {

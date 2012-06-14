@@ -119,14 +119,10 @@ void ParseComponentValue(const std::string& raw_line,
 
 void ModelSpecificParameters(const std::string model,
                              amanzi::chemistry::Beaker::BeakerParameters* parameters);
-void CopySimulationParametersToBeakeParameters(
-    const SimulationParameters& simulation_params,
-    amanzi::chemistry::Beaker::BeakerParameters* parameters);
 
 void PrintInput(const SimulationParameters& params,
                 const amanzi::chemistry::Beaker::BeakerComponents& components);
 void PrintSimulationParameters(const SimulationParameters& params);
-void PrintComponents(const amanzi::chemistry::Beaker::BeakerComponents& components);
 
 
 #endif  /* AMANZI_CHEMISTRY_BATCH_CHEM_HH_ */
