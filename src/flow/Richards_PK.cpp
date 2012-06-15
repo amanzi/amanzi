@@ -115,8 +115,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
   ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
 
-  initialize_with_darcy = 0;
-
   mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
   mfd3d_method_preconditioner_ = FLOW_MFD3D_OPTIMIZED;
 
@@ -238,12 +236,18 @@ void Richards_PK::InitializeSteadySaturated()
 ****************************************************************** */
 void Richards_PK::InitPicard(double T0)
 {
+  bool ini_with_darcy = ti_specs_igs_.initialize_with_darcy;
+  double clip_value = ti_specs_igs_.clip_saturation;
+
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    std::printf("***********************************************************\n");
     std::printf("Richards PK: initializing of initial guess at T(sec)=%9.4e\n", T0);
-    if (initialize_with_darcy) {
+
+    if (ini_with_darcy) {
       std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
-      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
+      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
     }
+    std::printf("***********************************************************\n");
   }
 
   // set up new preconditioner
@@ -283,10 +287,10 @@ void Richards_PK::InitPicard(double T0)
   *solution_cells = pressure;
   *solution_faces = lambda;
 
-  if (initialize_with_darcy) {
+  if (ini_with_darcy) {
     SolveFullySaturatedProblem(T0, *solution);
     double pmin = atm_pressure;
-    ClipHydrostaticPressure(pmin, clip_saturation, *solution);
+    ClipHydrostaticPressure(pmin, clip_value, *solution);
     pressure = *solution_cells;
   }
   DeriveSaturationFromPressure(pressure, ws);
@@ -307,9 +311,6 @@ void Richards_PK::InitPicard(double T0)
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
   DeriveSaturationFromPressure(*solution_cells, ws);
   ws_prev = ws;
-
-  // cleaning: should be moved under TI_Specs (lipnikov@lanl.gov)
-  initialize_with_darcy = false;
 }
 
 
@@ -320,12 +321,18 @@ void Richards_PK::InitPicard(double T0)
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
+  bool ini_with_darcy = ti_specs_sss_.initialize_with_darcy;
+  double clip_value = ti_specs_sss_.clip_saturation;
+
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    std::printf("***********************************************************\n");
     std::printf("Richards PK: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
-    if (initialize_with_darcy) {
+
+    if (ini_with_darcy) {
       std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
-      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
+      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
     }
+    std::printf("***********************************************************\n");
   }
 
   // set up new preconditioner
@@ -385,10 +392,10 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   *solution_cells = pressure;
   *solution_faces = lambda;
 
-  if (initialize_with_darcy) {
+  if (ini_with_darcy) {
     SolveFullySaturatedProblem(T0, *solution);
     double pmin = atm_pressure;
-    ClipHydrostaticPressure(pmin, clip_saturation, *solution);
+    ClipHydrostaticPressure(pmin, clip_value, *solution);
     pressure = *solution_cells;
   }
   DeriveSaturationFromPressure(pressure, water_saturation);
@@ -423,7 +430,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 void Richards_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    std::printf("***********************************************************\n");
     std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("***********************************************************\n");
   }
   set_time(T0, dT0);
 

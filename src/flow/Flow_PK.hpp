@@ -166,8 +166,10 @@ class Flow_PK : public BDF2::fnBase {
   
   double T_physics, dT, dTnext;
   int flow_status_;
- 
   int dim;
+
+ private:
+  int nseepage_prev;
 
  private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

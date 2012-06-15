@@ -172,7 +172,7 @@ class Richards_PK : public Flow_PK {
   double functional_max_norm;
 
   TI_Specs ti_specs_igs_;  // Parameters for initial guess solution
-  int ti_method_igs, error_control_igs_, initialize_with_darcy;
+  int ti_method_igs, error_control_igs_;
   std::string preconditioner_name_igs_;
 
   TI_Specs ti_specs_sss_;  // Parameters for steady-state solution
@@ -183,7 +183,7 @@ class Richards_PK : public Flow_PK {
   int ti_method_trs, error_control_trs_; 
   std::string preconditioner_name_trs_;
 
-  double absolute_tol, relative_tol;  // Generic parameters (sss or trs)
+  double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
   int ti_method, num_itrs, max_itrs;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
@@ -211,8 +211,6 @@ class Richards_PK : public Flow_PK {
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
-
-  double clip_saturation;  // initialization options
 
  private:
   void operator=(const Richards_PK& RPK);

@@ -74,7 +74,7 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
   ComputePreconditionerMFD(u, preconditioner_, Tp, dTp, true);
   ierr = 0;
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
      std::printf("Richards PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   }
 }

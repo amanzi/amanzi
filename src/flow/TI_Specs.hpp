@@ -24,6 +24,8 @@ class TI_Specs {
     T0 = T1 = dT0 = dTmax = 0.0;
     atol = 1.0; 
     rtol = residual_tol = 0.0;
+    initialize_with_darcy = false;
+    clip_saturation = 0.6;
   }
 
  public:
@@ -34,6 +36,9 @@ class TI_Specs {
   double T0, T1, dT0, dTmax;
   double atol, rtol;  // obsolete options
   double residual_tol; 
+
+  bool initialize_with_darcy;  // initialization options
+  double clip_saturation;
 };
 
 }  // namespace AmanziFlow
