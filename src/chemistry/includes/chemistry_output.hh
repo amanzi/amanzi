@@ -64,6 +64,7 @@ extern ChemistryOutput* chem_out;
 #include <sstream>
 #include <vector>
 #include <ostream>
+#include <fstream>
 
 #include "chemistry_containers.hh"
 #include "chemistry_verbosity.hh"
@@ -114,7 +115,7 @@ class ChemistryOutput {
   VerbosityMap verbosity_map_;
   VerbosityFlags verbosity_flags_;
   bool use_stdout_;
-  std::ofstream* file_stream_;
+  std::ofstream file_stream_;
 
 };
 
