@@ -19,7 +19,7 @@ ChemistryOutput* chem_out = NULL;
 void SetupDefaultChemistryOutput(void) {
   OutputOptions output_options;
   output_options.use_stdout = true;
-  output_options.file_name = "chemistry-output.txt";
+  output_options.file_name.clear();
   output_options.verbosity_levels.push_back(strings::kVerbosityError);
   output_options.verbosity_levels.push_back(strings::kVerbosityWarning);
   output_options.verbosity_levels.push_back(strings::kVerbosityVerbose);
@@ -35,7 +35,7 @@ ChemistryOutput::ChemistryOutput(void)
     : verbosity_map_(),
       verbosity_flags_(),
       use_stdout_(false),
-      file_stream_(NULL) {
+      file_stream_() {
   verbosity_map_ = CreateVerbosityMap();
   verbosity_flags_.reset();
 }  // end ChemistryOutput constructor
@@ -92,25 +92,21 @@ void ChemistryOutput::OpenFileStream(const std::string& file_name) {
   // close the current file if it exists
   CloseFileStream();
   if (file_name.size()) {
-    file_stream_ = new std::ofstream;
-    file_stream_->open(file_name.c_str());
-    if (!(*file_stream_)) {
+    file_stream_.open(file_name.c_str());
+    if (!file_stream_.is_open()) {
       std::ostringstream ost;
       ost << ChemistryException::kChemistryError 
-          << "ChemistryOutput::Initialize(): failed to open output file: " 
-          << file_name << std::endl;
+          << "ChemistryOutput::Initialize(): failed to open output file: '" 
+          << file_name << "'" << std::endl;
       throw ChemistryInvalidInput(ost.str());
     }
   }
 }  // end OpenFileStream()
 
 void ChemistryOutput::CloseFileStream(void) {
-  if (file_stream_) {
-    if (file_stream_->is_open()) {
-      file_stream_->close();
-    }
+  if (file_stream_.is_open()) {
+    file_stream_.close();
   }
-  //delete file_stream_;
 }  // end CloseFileStream()
 
 void ChemistryOutput::Write(const Verbosity level, const std::stringstream& data) {
@@ -121,8 +117,8 @@ void ChemistryOutput::Write(const Verbosity level, const std::stringstream& data
 void ChemistryOutput::Write(const Verbosity level, const std::string& data) {
   if (!verbosity_flags().test(kSilent)) {
     if (verbosity_flags().test(level)) {
-      if (file_stream_) {
-        *file_stream_ << data;
+      if (file_stream_.is_open()) {
+        file_stream_ << data;
       }
       if (use_stdout()) {
         std::cout << data;
