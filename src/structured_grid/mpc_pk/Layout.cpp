@@ -275,6 +275,28 @@ Layout::Clear()
     initialized = false;
 }
 
+#include <VisMF.H>
+void 
+Write(const Layout::MultiIntFab& imf,
+      const std::string& filename,
+      int comp,
+      int nGrow) 
+{
+    BL_ASSERT(comp<=imf.nComp() && comp>=0);
+    BL_ASSERT(nGrow<=imf.nGrow());
+    MultiFab mf(imf.boxArray(), 1, imf.nGrow());
+    for (MFIter mfi(imf); mfi.isValid(); ++mfi)
+    {
+        const int* iptr = imf[mfi].dataPtr(comp);
+        Real* rptr = mf[mfi].dataPtr();
+        int numpts = imf[mfi].box().numPts();
+        for (int i=0; i<numpts; ++i) {
+            rptr[i] = Real(iptr[i]);
+        }
+    }
+    VisMF::Write(mf,filename);
+}
+
 void 
 Layout::Rebuild()
 {
@@ -434,16 +456,16 @@ Layout::Rebuild()
         nNodes_global += num_nodes_p[i];
     }
 
-#if 0
     // Now communicate node numbering to neighbors grow cells
     for (int lev=1; lev<nLevs; ++lev) // This is really concerned with filling c-f grow cells
     {
         BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(refRatio[lev-1]);
-        MultiIntFab crseIds(bndC,1,0);
+        
+        MultiIntFab crseIds(bndC,1,0); crseIds.setVal(-1);
         crseIds.copy(nodeIds[lev-1]); // parallel copy
 
         // "refine" crseIds
-        MultiIntFab fineIds(bndryCells[lev],1,0);
+        MultiIntFab fineIds(bndryCells[lev],1,0); fineIds.setVal(-1);
         const Box rangeBox = Box(IntVect::TheZeroVector(),
                                  refRatio[lev-1] - IntVect::TheUnitVector());
         for (MFIter mfi(crseIds); mfi.isValid(); ++mfi)
@@ -457,28 +479,30 @@ Layout::Rebuild()
             }
         }
 
+        nodeIds[lev].FillBoundary(0,1);
+        BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
+
         MultiIntFab ng(BoxArray(nodeIds[lev].boxArray()).grow(nodeIds[lev].nGrow()),1,0);
-        ng.copy(fineIds); // another parallel copy
+        for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
+        {
+            ng[mfi].copy(nodeIds[lev][mfi]); // get valid + f-f (+periodic f-f)
+        }
+        
+        ng.copy(fineIds); // Parallel copy to get c-f from bndryCells
 
         for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
         {
-            nodeIds[lev][mfi].copy(ng[mfi]); // fill grow cells
-
-            //if (mfi.index()==1) {
-            //    std::cout << nodeIds[lev][mfi] << std::endl;
-            // }
+            nodeIds[lev][mfi].copy(ng[mfi]); // put it all back
         }
-    }
-#endif
-    //ParallelDescriptor::Barrier();
-    //BoxLib::Abort();
-#endif
 
+    }
+#else
     for (int lev=0; lev<nLevs; ++lev)
     {
         nodeIds[lev].FillBoundary(0,1);
         BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
     }    
+#endif
 
     int n = nNodes_local; // Number of local columns of J
     int m = nNodes_local; // Number of local rows of J
