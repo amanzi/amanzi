@@ -135,16 +135,34 @@ void Richards_PK::ProcessParameterList()
     }
   }
 
-  // Time integrator for period I, temporary called steady-state time integrator
+  // Time integrator for period I, temporary called initial guess initialization
+  if (rp_list_.isSublist("initial guess pseudo time integrator")) {
+    Teuchos::ParameterList& igs_list = rp_list_.sublist("initial guess pseudo time integrator");
+
+    initialize_with_darcy = igs_list.get<bool>("initialize with darcy", "false");
+    clip_saturation = igs_list.get<double>("clipping saturation value", 0.6);
+
+    std::string ti_method_name = igs_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_method_igs);
+    ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
+
+    preconditioner_name_igs_ = FindStringPreconditioner(igs_list);
+    std::string linear_solver_name = FindStringLinearSolver(igs_list);
+    ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
+
+    ProcessStringErrorOptions(igs_list, &error_control_igs_);
+  }
+
+  // Time integrator for period II, temporary called steady-state time integrator
   if (rp_list_.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
 
-    initialize_with_darcy = (sss_list.get<std::string>("initialize with darcy", "no") == "yes");
+    initialize_with_darcy = sss_list.get<bool>("initialize with darcy", "false");
     clip_saturation = sss_list.get<double>("clipping saturation value", 0.6);
 
     std::string ti_method_name = sss_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
-    ProcessSublistTimeIntegration(sss_list, ti_method_name, &residual_tol_sss, ti_specs_sss_);
+    ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
 
     preconditioner_name_sss_ = FindStringPreconditioner(sss_list);
     std::string linear_solver_name = FindStringLinearSolver(sss_list);
@@ -156,13 +174,13 @@ void Richards_PK::ProcessParameterList()
     printf("Richards Problem: there is no sublist for steady-state calculations.\n");
   }
 
-  // Time integrator for period II, called transient time integrator
+  // Time integrator for period III, called transient time integrator
   if (rp_list_.isSublist("transient time integrator")) {
     Teuchos::ParameterList& trs_list = rp_list_.sublist("transient time integrator");
 
     string ti_method_name = trs_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
-    ProcessSublistTimeIntegration(trs_list, ti_method_name, &residual_tol_trs, ti_specs_trs_);
+    ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
 
     preconditioner_name_trs_ = FindStringPreconditioner(trs_list);
     std::string linear_solver_name = FindStringLinearSolver(trs_list);
@@ -183,8 +201,7 @@ void Richards_PK::ProcessParameterList()
 * Process time integration sublist.
 **************************************************************** */
 void Richards_PK::ProcessSublistTimeIntegration(
-    Teuchos::ParameterList& list, const std::string name,
-    double* residual_tol, TI_Specs& ti_specs)
+    Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs)
 {
   Errors::Message msg;
 
@@ -192,7 +209,7 @@ void Richards_PK::ProcessSublistTimeIntegration(
     Teuchos::ParameterList& tmp_list = list.sublist(name);
     ti_specs.atol = tmp_list.get<double>("absolute error tolerance", FLOW_TI_ABSOLUTE_TOLERANCE);
     ti_specs.rtol = tmp_list.get<double>("relative error tolerance", FLOW_TI_RELATIVE_TOLERANCE);
-    *residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
+    ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
     ti_specs.max_itrs = tmp_list.get<int>("maximal number of iterations", FLOW_TI_MAX_ITERATIONS);
 
     ti_specs.T0 = tmp_list.get<double>("start time", -1e+12);
@@ -311,7 +328,7 @@ void Richards_PK::ProcessStringLinearSolver(
   Errors::Message msg;
 
   if (! solver_list_.isSublist(name)) {
-    msg << "Richards PK: steady state linear solver does not exist.";
+    msg << "Richards PK: linear solver does not exist for a time integrator.";
     Exceptions::amanzi_throw(msg);
   }
 

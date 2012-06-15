@@ -232,6 +232,88 @@ void Richards_PK::InitializeSteadySaturated()
 
 
 /* ******************************************************************
+* Initial guess is a problem for BDFx. To help launch BDFx, a special
+* initialization of an initial guess has been developed based on 
+* dynamically relaxed Picard iterations. 
+****************************************************************** */
+void Richards_PK::InitPicard(double T0)
+{
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    std::printf("Richards PK: initializing of initial guess at T(sec)=%9.4e\n", T0);
+    if (initialize_with_darcy) {
+      std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
+      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_saturation);
+    }
+  }
+
+  // set up new preconditioner
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_igs_);
+  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
+
+  string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
+
+  preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
+  preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
+  preconditioner_->InitML_Preconditioner(ML_list);
+
+  // set up new time integration or solver
+  solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
+  solver->SetAztecOption(AZ_solver, AZ_gmres);
+
+  // initialize mass matrices
+  SetAbsolutePermeabilityTensor(K);
+  for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
+  matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
+  preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    int nokay = matrix_->nokay();
+    int npassed = matrix_->npassed();
+    std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+  }
+
+  // (re)initialize pressure and saturation
+  Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& lambda = FS->ref_lambda();
+  Epetra_Vector& ws = FS->ref_water_saturation();
+
+  *solution_cells = pressure;
+  *solution_faces = lambda;
+
+  if (initialize_with_darcy) {
+    SolveFullySaturatedProblem(T0, *solution);
+    double pmin = atm_pressure;
+    ClipHydrostaticPressure(pmin, clip_saturation, *solution);
+    pressure = *solution_cells;
+  }
+  DeriveSaturationFromPressure(pressure, ws);
+
+  // control options
+  set_time(T0, 0.0);  // overrides data provided in the input file
+  ti_method = ti_method_igs;
+  num_itrs = 0;
+  block_picard = 0;
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
+  error_control_ |= error_control_igs_;
+
+  // calculate initial guess: claening is required (lipnikov@lanl.gov)
+  T_physics = ti_specs_igs_.T0;
+  dT = ti_specs_igs_.dT0;
+  AdvanceToSteadyState_Picard(ti_specs_igs_);
+ 
+  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
+  DeriveSaturationFromPressure(*solution_cells, ws);
+  ws_prev = ws;
+
+  // cleaning: should be moved under TI_Specs (lipnikov@lanl.gov)
+  initialize_with_darcy = false;
+}
+
+
+/* ******************************************************************
 * Separate initialization of solver may be required for steady state
 * and transient runs. BDF2 and BDF1 will eventually merge but are 
 * separated strictly (no code optimization) for the moment.
@@ -250,7 +332,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_sss_);
   Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
 
-  string mfd3d_method_name = tmp_list.get<string>("discretization method", "two point flux approximation");
+  string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
@@ -276,7 +358,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
 
-  } else {
+  } else if (solver == NULL) {
     solver = new AztecOO;
     solver->SetUserOperator(matrix_);
     solver->SetPrecOperator(preconditioner_);
@@ -309,8 +391,6 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     ClipHydrostaticPressure(pmin, clip_saturation, *solution);
     pressure = *solution_cells;
   }
-
-  //DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
@@ -351,7 +431,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
   Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
 
-  string mfd3d_method_name = tmp_list.get<string>("discretization method", "two point flux approximation");
+  string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);

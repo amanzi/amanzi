@@ -67,7 +67,7 @@
 
       <ParameterList name="steady state time integrator">
         <Parameter name="time integration method" type="string" value="Picard"/>
-        <Parameter name="initialize with darcy" type="string" value="yes"/>
+        <Parameter name="initialize with darcy" type="bool" value="true"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 

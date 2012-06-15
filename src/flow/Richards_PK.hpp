@@ -44,7 +44,7 @@ class Richards_PK : public Flow_PK {
   void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
-  void InitPicard(double T0) {};
+  void InitPicard(double T0);
 
   double CalculateFlowDt();
   int Advance(double dT_MPC); 
@@ -52,10 +52,10 @@ class Richards_PK : public Flow_PK {
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
 
-  int AdvanceToSteadyState_Picard();
-  int AdvanceToSteadyState_BackwardEuler();
-  int AdvanceToSteadyState_BDF1();
-  int AdvanceToSteadyState_BDF2();
+  int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_BDF2(TI_Specs& ti_specs);
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
 
@@ -115,8 +115,7 @@ class Richards_PK : public Flow_PK {
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
   void ProcessSublistTimeIntegration(
-      Teuchos::ParameterList& list, const std::string name,
-      double* residual_tol, TI_Specs& ti_specs);
+      Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -172,17 +171,17 @@ class Richards_PK : public Flow_PK {
   int error_control_;
   double functional_max_norm;
 
-  int ti_method_sss;  // Parameters for steady-state solution
-  std::string preconditioner_name_sss_;
-  double residual_tol_sss;
-  int initialize_with_darcy, error_control_sss_;
-  TI_Specs ti_specs_sss_;
+  TI_Specs ti_specs_igs_;  // Parameters for initial guess solution
+  int ti_method_igs, error_control_igs_, initialize_with_darcy;
+  std::string preconditioner_name_igs_;
 
-  int ti_method_trs;  // Parameters for transient solution
+  TI_Specs ti_specs_sss_;  // Parameters for steady-state solution
+  int ti_method_sss, error_control_sss_;
+  std::string preconditioner_name_sss_;
+
+  TI_Specs ti_specs_trs_; // Parameters for transient solution
+  int ti_method_trs, error_control_trs_; 
   std::string preconditioner_name_trs_;
-  double residual_tol_trs;
-  int error_control_trs_;
-  TI_Specs ti_specs_trs_;
 
   double absolute_tol, relative_tol;  // Generic parameters (sss or trs)
   int ti_method, num_itrs, max_itrs;

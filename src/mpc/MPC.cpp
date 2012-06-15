@@ -319,7 +319,10 @@ void MPC::cycle_driver() {
     }
   } else { // no restart, we will call the PKs to allow them to init their auxilary data and massage initial conditions
     if (flow_enabled) FPK->InitializeAuxiliaryData();
-    if (do_picard_) FPK->InitPicard(S->get_time());
+    if (do_picard_) { 
+      FPK->InitPicard(S->get_time());
+      FPK->CommitState(FS);
+    }
   }
 
 

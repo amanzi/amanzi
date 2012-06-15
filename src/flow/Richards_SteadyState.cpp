@@ -27,13 +27,13 @@ int Richards_PK::AdvanceToSteadyState()
 
   int ierr = 0;
   if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
-    ierr = AdvanceToSteadyState_Picard();
+    ierr = AdvanceToSteadyState_Picard(ti_specs_sss_);
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
-    ierr = AdvanceToSteadyState_BackwardEuler();
+    ierr = AdvanceToSteadyState_BackwardEuler(ti_specs_sss_);
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
-    ierr = AdvanceToSteadyState_BDF1();
+    ierr = AdvanceToSteadyState_BDF1(ti_specs_sss_);
   } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    ierr = AdvanceToSteadyState_BDF2();
+    ierr = AdvanceToSteadyState_BDF2(ti_specs_sss_);
   }
 
   Epetra_Vector& ws = FS->ref_water_saturation();
@@ -49,14 +49,14 @@ int Richards_PK::AdvanceToSteadyState()
 /* ******************************************************************* 
 * Performs one time step of size dT using first-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceToSteadyState_BDF1()
+int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
 {
   bool last_step = false;
 
-  int max_itrs = ti_specs_sss_.max_itrs;
-  double T0 = ti_specs_sss_.T0;
-  double T1 = ti_specs_sss_.T1;
-  double dT0 = ti_specs_sss_.dT0;
+  int max_itrs = ti_specs.max_itrs;
+  double T0 = ti_specs.T0;
+  double T1 = ti_specs.T1;
+  double dT0 = ti_specs.dT0;
 
   int itrs = 0;
   while (itrs < max_itrs && T_physics < T1) {
@@ -94,14 +94,14 @@ int Richards_PK::AdvanceToSteadyState_BDF1()
 /* ******************************************************************* 
 * Performs one time step of size dT using second-order time integrator.
 ******************************************************************* */
-int Richards_PK::AdvanceToSteadyState_BDF2()
+int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
 {
   bool last_step = false;
 
-  int max_itrs = ti_specs_sss_.max_itrs;
-  double T0 = ti_specs_sss_.T0;
-  double T1 = ti_specs_sss_.T1;
-  double dT0 = ti_specs_sss_.dT0;
+  int max_itrs = ti_specs.max_itrs;
+  double T0 = ti_specs.T0;
+  double T1 = ti_specs.T1;
+  double dT0 = ti_specs.dT0;
 
   int itrs = 0;
   while (itrs < max_itrs && T_physics < T1) {
@@ -141,7 +141,7 @@ int Richards_PK::AdvanceToSteadyState_BDF2()
 * relative permeabilities do not depend explicitly on time.
 * This is the experimental method.                                                 
 ****************************************************************** */
-int Richards_PK::AdvanceToSteadyState_Picard()
+int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
@@ -160,12 +160,13 @@ int Richards_PK::AdvanceToSteadyState_Picard()
   bc_flux->Compute(time);
   bc_head->Compute(time);
 
-  int max_itrs = ti_specs_sss_.max_itrs;
+  int max_itrs = ti_specs.max_itrs;
+  double residual_tol = ti_specs.residual_tol;
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
-  while (L2error > residual_tol_sss && itrs < max_itrs) {
+  while (L2error > residual_tol && itrs < max_itrs) {
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(

@@ -23,7 +23,7 @@ class TI_Specs {
     num_itrs = max_itrs = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
     atol = 1.0; 
-    rtol = 0.0;
+    rtol = residual_tol = 0.0;
   }
 
  public:
@@ -33,6 +33,7 @@ class TI_Specs {
 
   double T0, T1, dT0, dTmax;
   double atol, rtol;  // obsolete options
+  double residual_tol; 
 };
 
 }  // namespace AmanziFlow
