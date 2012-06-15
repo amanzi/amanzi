@@ -760,7 +760,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   }
   aztecoo_list.set<double>("error tolerance", tol);
   aztecoo_list.set<std::string>("iterative method", method);
-  aztecoo_list.set<int>("maximal number of iterations", maxiter);
+  aztecoo_list.set<int>("maximum number of iterations", maxiter);
   return solver_list;
 }
 

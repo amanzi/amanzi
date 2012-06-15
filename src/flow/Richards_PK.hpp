@@ -116,6 +116,7 @@ class Richards_PK : public Flow_PK {
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
   void ProcessSublistTimeIntegration(
       Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
+  void AnalysisTI_Specs();
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);

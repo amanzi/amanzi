@@ -77,7 +77,7 @@
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
-          <Parameter name="maximal time step" type="double" value="1.0"/>
+          <Parameter name="maximum time step" type="double" value="1.0"/>
 
           <ParameterList name="BDF2 parameters">
             <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
@@ -146,7 +146,7 @@
     <ParameterList name="AztecOO GMRES">
       <Parameter name="error tolerance" type="double" value="1e-12"/>
       <Parameter name="iterative method" type="string" value="GMRES"/>
-      <Parameter name="maximal number of iterations" type="int" value="400"/>
+      <Parameter name="maximum number of iterations" type="int" value="400"/>
     </ParameterList>
   </ParameterList>
 

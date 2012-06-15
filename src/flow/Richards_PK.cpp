@@ -416,7 +416,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   // DEBUG
   // AdvanceToSteadyState();
-  // CommitStateForTransport(FS); CommitState(FS); WriteGMVfile(FS); exit(0);
+  // CommitState(FS); WriteGMVfile(FS); exit(0);
 }
 
 

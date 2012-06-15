@@ -241,7 +241,9 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("***********************************************************\n");
+    std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("***********************************************************\n");
   }
 
   Epetra_Vector& pressure = FS->ref_pressure();

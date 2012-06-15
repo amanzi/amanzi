@@ -80,7 +80,7 @@ void AndersonAccelerationMatrix(
 ****************************************************************** */
 int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTnext)
 {
-  int mmax = 3;  // maximal number of Krylov vectors
+  int mmax = 3;  // maximum number of Krylov vectors
   // allocate memory
   Epetra_MultiVector krylov(solution->Map(), mmax);
   Epetra_MultiVector d_krylov(solution->Map(), mmax);

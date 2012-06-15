@@ -114,7 +114,7 @@ void Darcy_PK::ProcessStringLinearSolver(
   }
 
   Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
-  *max_itrs = tmp_list.get<int>("maximal number of iterations", 100);
+  *max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
   *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
 }
 

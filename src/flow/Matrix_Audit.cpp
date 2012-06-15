@@ -55,7 +55,7 @@ void Matrix_Audit::InitAudit()
 
   lwork1 = 10 * lda;
   dwork1 = new double[lwork1];
-  printf("Matrix_Audit: maximal matrix size =%3d\n", lda); 
+  printf("Matrix_Audit: maximum matrix size =%3d\n", lda); 
 }
 
 
