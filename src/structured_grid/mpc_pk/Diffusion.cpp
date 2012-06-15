@@ -2078,9 +2078,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       Real* RhsV_array, *JRowScale_array;
       ierr = VecGetArray(RhsV,&RhsV_array); CHKPETSC(ierr);
       ierr = VecGetArray(layout.JRowScale(),&JRowScale_array); CHKPETSC(ierr);
-      int nlocal;
-      ierr = VecGetSize(RhsV,&nlocal);
-      for (int i=0; i<nlocal; ++i) {
+      for (int i=0; i<num_local; ++i) {
           RhsV_array[i] *= JRowScale_array[i];
       }
       ierr = VecRestoreArray(RhsV,&RhsV_array);
