@@ -466,15 +466,14 @@ Teuchos::ParameterList translate_Mesh_List(Teuchos::ParameterList* plist) {
 
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
         std::string format = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("Format");
-        if ( format == "Exodus II") {
+        if (format == "Exodus II") {
           // process the file name to replace .exo with .par in the case of a parallel run
           Teuchos::ParameterList& fn_list =  msh_list.sublist("Unstructured").sublist("Read Mesh File");
-          fn_list.set<std::string>("Format","Exodus II");
+          fn_list.set<std::string>("Format", "Exodus II");
           std::string file =  plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("File");
-          std::string suffix(file.substr(file.size()-4,4));
+          std::string suffix(file.substr(file.size()-4, 4));
 
-          if ( suffix != ".exo" ) {
-            // exodus files must have the .exo suffix
+          if (suffix != ".exo" ) {
             Exceptions::amanzi_throw(Errors::Message("Exodus II was specified as a mesh file format but the suffix of the file that was specified is not .exo"));
           }
 
@@ -1301,14 +1300,18 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
- * Empty
+ * populates parameters in the State list.
  ****************************************************************** */
 Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList stt_list;
 
   stt_list.set<double>("Gravity x", 0.0);
-  if (spatial_dimension_>1) stt_list.set<double>("Gravity y", 0.0);
-  if (spatial_dimension_>2) stt_list.set<double>("Gravity z", -9.81);
+  if (spatial_dimension_ == 2) {
+    stt_list.set<double>("Gravity y", -9.81);
+  } else {
+    stt_list.set<double>("Gravity y", 0.0);
+    stt_list.set<double>("Gravity z", -9.81);
+  }
 
   // find the viscosity
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
