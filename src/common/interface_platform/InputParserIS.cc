@@ -479,12 +479,14 @@ Teuchos::ParameterList translate_Mesh_List(Teuchos::ParameterList* plist) {
           }
 
           // figure out if this is a parallel run
-          std::string framework;
+          std::string framework("Unspecified");
           if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Expert")) {
             framework = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert").get<std::string>("Framework");
-          }
+          }          
 
-          if (numproc_ > 1 && framework == "stk::mesh") {
+          // Assume that if the framework is unspecified then stk::mesh is used
+          // This is obviously a kludge but I don't know how to get around it
+          if (numproc_ > 1 && (framework == "Unspecified" || framework == "stk::mesh")) {
             std::string par_file = file.replace(file.size()-4,4,std::string(".par"));
 
             fn_list.set<std::string>("File",par_file);
