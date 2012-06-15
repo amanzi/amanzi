@@ -111,6 +111,7 @@
 -- Test Beaker Reaction Stepping -------------------------------------
        Time (s)             H+            Na+           NO3-           Zn++      H+_sorbed     Na+_sorbed    NO3-_sorbed    Zn++_sorbed
    0.000000e+00   1.200858e-05   1.002726e-01   1.002848e-01   1.002791e-07   7.775013e+04   0.000000e+00   0.000000e+00   2.401738e-01
+   1.000000e+00   1.200858e-05   1.002726e-01   1.002848e-01   1.002791e-07   7.775013e+04   0.000000e+00   0.000000e+00   2.401738e-01
 CHEMISTRY_ERROR: Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep().
 Warning: Results may not have the desired accuracy.
 Warning: max relative change = 147.413

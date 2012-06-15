@@ -45,6 +45,8 @@ class Beaker {
     std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
     std::vector<double> free_ion;  // molality
+    std::vector<double> primary_activity_coeff;
+    std::vector<double> secondary_activity_coeff;
     std::vector<double> mineral_volume_fraction;  // volume fractions
     std::vector<double> mineral_specific_surface_area;  // [m^2 mineral/ m^3 bulk]
     std::vector<double> ion_exchange_sites;  // CEC
@@ -60,6 +62,8 @@ class Beaker {
       utilities::PrintVector("Totals", total, 16, true);
       utilities::PrintVector("Total sorbed", total_sorbed, 16, true);
       utilities::PrintVector("Free Ion", free_ion, 16, true);
+      utilities::PrintVector("Primary activity coeff", primary_activity_coeff, 16, true);
+      utilities::PrintVector("Secondary activity coeff", secondary_activity_coeff, 16, true);
       utilities::PrintVector("Mineral VF", mineral_volume_fraction, 16, true);
       utilities::PrintVector("Mineral SSA", mineral_specific_surface_area, 16, true);
       utilities::PrintVector("Ion Exchange Sites", ion_exchange_sites, 16, true);

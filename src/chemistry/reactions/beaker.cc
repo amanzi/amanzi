@@ -357,7 +357,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   unsigned int num_iterations = 0;
 
   // lagging activity coefficients by a time step in this case
-  UpdateActivityCoefficients();
+  //UpdateActivityCoefficients();
 
   // calculate portion of residual at time level t
   CalculateFixedAccumulation(components->total, components->total_sorbed,
@@ -463,6 +463,15 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // update total concentrations
   UpdateEquilibriumChemistry();
   UpdateKineticMinerals();
+
+  // TODO(bandre): not convinced this is the correct place to call
+  // UpdateActivityCoefficients. Should be before the call to
+  // UpdateEquilibriumChemistry()? But that changes the numerical
+  // results and I need to look more closely at what is going on.
+
+  // lagging activity coefficients by a time step
+  UpdateActivityCoefficients();
+
   CopyBeakerToComponents(components);
   ValidateSolution();
 
@@ -500,6 +509,22 @@ void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
   assert(components->free_ion.size() == ncomp());
   for (int i = 0; i < ncomp(); ++i) {
     components->free_ion.at(i) = primary_species().at(i).molality();
+  }
+
+  //
+  // activity coeff
+  //
+  if (components->primary_activity_coeff.size() != ncomp()) {
+    components->primary_activity_coeff.resize(ncomp());
+  }
+  for (int i = 0; i < ncomp(); ++i) {
+    components->primary_activity_coeff.at(i) = primary_species().at(i).act_coef();
+  }
+  if (components->secondary_activity_coeff.size() != aqComplexRxns_.size()) {
+    components->secondary_activity_coeff.resize(aqComplexRxns_.size());
+  }
+  for (int i = 0; i < aqComplexRxns_.size(); ++i) {
+    components->secondary_activity_coeff.at(i) = aqComplexRxns_.at(i).act_coef();
   }
 
   //
@@ -935,6 +960,24 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
     InitializeMolalities(components.free_ion);
   } else {
     InitializeMolalities(1.e-9);
+  }
+
+  //
+  // activity coefficients
+  //
+  if (components.primary_activity_coeff.size() > 0) {
+    assert(components.primary_activity_coeff.size() == primary_species().size());
+    for (int i = 0; i < primary_species().size(); ++i) {
+      double value = components.primary_activity_coeff.at(i);
+      primary_species_.at(i).act_coef(value);
+    }
+  }
+  if (components.secondary_activity_coeff.size() > 0) {
+    assert(components.secondary_activity_coeff.size() == aqComplexRxns_.size());
+    for (int i = 0; i < aqComplexRxns_.size(); ++i) {
+      double value = components.secondary_activity_coeff.at(i);
+      aqComplexRxns_.at(i).act_coef(value);
+    }
   }
 
   //
