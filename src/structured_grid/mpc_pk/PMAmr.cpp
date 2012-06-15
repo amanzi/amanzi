@@ -29,6 +29,9 @@ PMAmr::PMAmr()
 #endif
 }
 
+PMAmr::~PMAmr()
+{}
+
 Real
 process_events(bool& write_plotfile_after_step,
                bool& write_checkpoint_after_step,

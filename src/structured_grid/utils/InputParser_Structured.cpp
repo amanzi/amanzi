@@ -2533,6 +2533,9 @@ namespace Amanzi {
             // Create list of available field quantities.  All these must be recognized
             //  by name inside AmrLevel::derive
             user_derive_list.push_back(underscore("Material ID"));
+            user_derive_list.push_back(underscore("Grid ID"));
+            user_derive_list.push_back(underscore("Core ID"));
+            user_derive_list.push_back(underscore("Cell ID"));
             user_derive_list.push_back(underscore("Capillary Pressure"));
             user_derive_list.push_back(underscore("Volumetric Water Content"));
             user_derive_list.push_back(underscore("Porosity"));
@@ -3285,7 +3288,7 @@ IC: Uniform Concentration
    ...sets type=concentration
 
 
-user_derives: "Material ID", "Capillary Pressure", "Volumetric Water Content",
+user_derives: "Material ID", "Grid ID", "Core ID", "Cell ID", "Capillary Pressure", "Volumetric Water Content",
               "Porosity", "Aqueous Saturation", "Aqueous Pressure", "Aqueous Volumetric Flux X",
               "Aqueous Volumetric Flux Y", "Aqueous Volumetric Flux Z", "Aqueous TRACER Concentration"
 

@@ -34,6 +34,13 @@
  #endif
 #endif
 
+struct RunLog
+    : public std::ostream
+{
+    RunLog(std::ostream& _os);
+protected:
+    int rank;
+};
 
 int main(int argc, char *argv[]) {
 
@@ -48,7 +55,7 @@ int main(int argc, char *argv[]) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     
-    if (rank != 0) cout.rdbuf(0);
+    //if (rank != 0) cout.rdbuf(0);
 
     Teuchos::CommandLineProcessor CLP;
     

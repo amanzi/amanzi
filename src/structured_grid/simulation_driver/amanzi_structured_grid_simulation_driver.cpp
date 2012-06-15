@@ -137,7 +137,11 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         std::cout << "Run time = " << run_stop << std::endl;
 	std::cout << "SCOMPLETED\n";
       }
+
     BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
+#ifdef BL_USE_PETSC
+    PetscFinalize();
+#endif
 
     return Amanzi::Simulator::SUCCESS;
 }

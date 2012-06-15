@@ -235,9 +235,13 @@ MFTower::IsCompatible(const MFTower& rhs) const
 Layout::Layout(Amr* _parent)
     : initialized(false),
       nGrow(1),
-      parent(_parent), 
-      J_mat(0), JRowScale_vec(0)
+      parent(_parent)
 {
+}
+
+Layout::~Layout()
+{
+    Clear();
 }
 
 void
@@ -245,26 +249,29 @@ Layout::SetParent(Amr* new_parent)
 {
     if (parent) {
         Clear();
-        if (J_mat) {
-            MatDestroy(J_mat);
-            delete J_mat; J_mat = 0;
-            VecDestroy(JRowScale_vec);
-            delete JRowScale_vec; JRowScale_vec = 0;
-        }
     }
     parent = new_parent;
+}
+
+void
+Layout::DestroyPetscStructures()
+{
+    for (int i=0; i<mats_I_created.size(); ++i) {
+        PetscErrorCode ierr = MatDestroy(mats_I_created[i]); CHKPETSC(ierr);
+    }
+    mats_I_created.clear();
+    for (int i=0; i<vecs_I_created.size(); ++i) {
+        PetscErrorCode ierr = VecDestroy(vecs_I_created[i]); CHKPETSC(ierr);
+    }
+    vecs_I_created.clear();
 }
 
 void
 Layout::Clear()
 {
     nodes.clear();
-    if (J_mat) {
-        MatDestroy(J_mat);
-        delete J_mat; J_mat = 0;
-        VecDestroy(JRowScale_vec);
-        delete JRowScale_vec; JRowScale_vec = 0;
-    }
+    nodeIds.clear();
+    DestroyPetscStructures();
     initialized = false;
 }
 
@@ -287,6 +294,9 @@ Layout::Rebuild()
         }
     }
 
+    // Declare here so we can use again below
+    Array<BoxArray> bndryCells(nLevs);
+
     Clear();
     nodes.resize(nLevs,PArrayManage);
     nodeIds.resize(nLevs,PArrayManage);
@@ -304,18 +314,18 @@ Layout::Rebuild()
                 ifab(iv,0) = Node(iv,lev,fai.index(),Node::VALID);
         }
             
-        if (lev != 0)
+        if (lev > 0)
         {
             const Box rangeBox = Box(IntVect::TheZeroVector(),
-                                     refRatio[lev] - IntVect::TheUnitVector());
+                                     refRatio[lev-1] - IntVect::TheUnitVector());
 
-            BoxArray bndryCells = GetBndryCells(nodes[lev].boxArray(),refRatio[lev],geomArray[lev]);
+            bndryCells[lev] = GetBndryCells(nodes[lev].boxArray(),refRatio[lev-1],geomArray[lev]);
 
             for (MFIter fai(nodes[lev]); fai.isValid(); ++fai)
             {
-                const Box box = Box(fai.validbox()).grow(refRatio[lev]) & gridArray[lev][fai.index()];
+                const Box box = Box(fai.validbox()).grow(refRatio[lev-1]) & gridArray[lev][fai.index()];
                 NodeFab& ifab = nodes[lev][fai];
-                std::vector< std::pair<int,Box> > isects = bndryCells.intersections(box);
+                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(box);
                 for (int i = 0; i < isects.size(); i++)
                 {
                     Box co = isects[i].second & fai.validbox();
@@ -323,14 +333,14 @@ Layout::Rebuild()
                         std::cout << "BAD ISECTS: " << co << std::endl;
 
                     const Box& dstBox = isects[i].second;
-                    const Box& srcBox = BoxLib::coarsen(dstBox,refRatio[lev]);
+                    const Box& srcBox = BoxLib::coarsen(dstBox,refRatio[lev-1]);
 
                     NodeFab dst(dstBox,1);
                     for (IntVect iv(srcBox.smallEnd());
                          iv<=srcBox.bigEnd();
                          srcBox.next(iv))
                     {
-                        const IntVect baseIV = refRatio[lev];
+                        const IntVect baseIV = refRatio[lev-1] * iv;
                         for (IntVect ivt(rangeBox.smallEnd());ivt<=rangeBox.bigEnd();rangeBox.next(ivt))
                             dst(baseIV + ivt,0) = Node(iv,lev-1,-1,Node::VALID);
                     }
@@ -397,9 +407,10 @@ Layout::Rebuild()
                                  ParallelDescriptor::Communicator()));
 
     int offset = 0;
-    for (int i=1; i<ParallelDescriptor::MyProc(); ++i) {
+    for (int i=0; i<ParallelDescriptor::MyProc(); ++i) {
         offset += num_nodes_p[i];
     }
+
     // Adjust node numbers 
     for (int lev=0; lev<nLevs; ++lev)
     {
@@ -423,6 +434,44 @@ Layout::Rebuild()
         nNodes_global += num_nodes_p[i];
     }
 
+#if 0
+    // Now communicate node numbering to neighbors grow cells
+    for (int lev=1; lev<nLevs; ++lev) // This is really concerned with filling c-f grow cells
+    {
+        BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(refRatio[lev-1]);
+        MultiIntFab crseIds(bndC,1,0);
+        crseIds.copy(nodeIds[lev-1]); // parallel copy
+
+        // "refine" crseIds
+        MultiIntFab fineIds(bndryCells[lev],1,0);
+        const Box rangeBox = Box(IntVect::TheZeroVector(),
+                                 refRatio[lev-1] - IntVect::TheUnitVector());
+        for (MFIter mfi(crseIds); mfi.isValid(); ++mfi)
+        {
+            const Box& cbox = crseIds[mfi].box();
+            for (IntVect iv = cbox.smallEnd(), End=cbox.bigEnd(); iv<=End; cbox.next(iv)) {
+                int nodeIdx = crseIds[mfi](iv,0);
+                const IntVect baseIV = refRatio[lev-1] * iv;
+                for (IntVect ivt = rangeBox.smallEnd(), End=rangeBox.bigEnd(); ivt<=End;rangeBox.next(ivt))
+                    fineIds[mfi](baseIV + ivt,0) = nodeIdx;
+            }
+        }
+
+        MultiIntFab ng(BoxArray(nodeIds[lev].boxArray()).grow(nodeIds[lev].nGrow()),1,0);
+        ng.copy(fineIds); // another parallel copy
+
+        for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
+        {
+            nodeIds[lev][mfi].copy(ng[mfi]); // fill grow cells
+
+            //if (mfi.index()==1) {
+            //    std::cout << nodeIds[lev][mfi] << std::endl;
+            // }
+        }
+    }
+#endif
+    //ParallelDescriptor::Barrier();
+    //BoxLib::Abort();
 #endif
 
     for (int lev=0; lev<nLevs; ++lev)
@@ -431,9 +480,17 @@ Layout::Rebuild()
         BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
     }    
 
-    int myproc = ParallelDescriptor::MyProc();
+    int n = nNodes_local; // Number of local columns of J
+    int m = nNodes_local; // Number of local rows of J
+    int N = nNodes_global; // Number of global columns of J 
+    int M = nNodes_global; // Number of global rows of J 
+    int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
+    int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
+    PetscErrorCode ierr = MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat); CHKPETSC(ierr);
+    mats_I_created.push_back(&J_mat);
+    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
+    vecs_I_created.push_back(&JRowScale_vec);
     initialized = true;
-    AllocateJ();
 }
 
 void
@@ -453,40 +510,16 @@ Layout::SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const
     }
 }
 
-void
-Layout::AllocateJ()
-{
-    BL_ASSERT(initialized);
-    BL_ASSERT(J_mat == 0);
-    BL_ASSERT(JRowScale_vec == 0);
-    J_mat = new Mat;
-    JRowScale_vec = new Vec;
-    int n = nNodes_local; // Number of local columns of J
-    int m = nNodes_local; // Number of local rows of J
-    int N = nNodes_global; // Number of global columns of J 
-    int M = nNodes_global; // Number of global rows of J 
-    int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
-    int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
-    int ierr = MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, J_mat); CHKPETSC(ierr);
-    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,JRowScale_vec); CHKPETSC(ierr);        
-}
-
 Mat&
 Layout::Jacobian()
 {
-    if (J_mat==0) {
-        AllocateJ();
-    }
-    return *J_mat;
+    return J_mat;
 }
 
 Vec&
 Layout::JRowScale()
 {
-    if (J_mat==0) {
-        AllocateJ();
-    }
-    return *JRowScale_vec;
+    return JRowScale_vec;
 }
 
 bool
@@ -516,7 +549,7 @@ Layout::BuildMFTower(MFTower& mft,
 PetscErrorCode
 Layout::MFTowerToVec(Vec&           V,
                      const MFTower& mft,
-                     int            comp) const
+                     int            comp)
 {
     BL_ASSERT(initialized);
     BL_ASSERT(IsCompatible(mft));
@@ -526,8 +559,8 @@ Layout::MFTowerToVec(Vec&           V,
 
 
     PetscErrorCode ierr;
-    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&V);
-    CHKPETSC(ierr);        
+    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&V); CHKPETSC(ierr);
+    vecs_I_created.push_back(&V);
 
     FArrayBox fab;
     IntFab ifab;

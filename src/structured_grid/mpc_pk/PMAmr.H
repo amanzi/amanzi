@@ -11,6 +11,7 @@ class PMAmr
 {
 public:
     PMAmr();
+    virtual ~PMAmr();
     virtual void coarseTimeStep (Real stop_time);
     virtual void init (Real strt_time,
                        Real stop_time);

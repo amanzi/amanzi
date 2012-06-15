@@ -929,8 +929,6 @@ Diffusion::residual_CPL (ViscBndry              visc_bndry,
 }
 
 #ifdef MG_USE_FBOXLIB
-static int cnt = 0;
-
 void 
 Diffusion::residual_richard (ABecLaplacian*         visc_op,
 			     Real                   dt,

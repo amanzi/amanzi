@@ -2414,6 +2414,13 @@ void  PorousMedia::read_chem()
     }
       
 #ifdef AMANZI
+
+
+#ifdef AMANZI
+  amanzi::chemistry::SetupDefaultChemistryOutput();
+  amanzi::chemistry::chem_out->AddLevel("silent");
+#endif
+
   // get input file name, create SimpleThermoDatabase, process
   if (do_chem>0)
     {

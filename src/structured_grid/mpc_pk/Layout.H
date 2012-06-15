@@ -75,6 +75,7 @@ protected:
 struct Layout
 {
     Layout(Amr* parent = 0);
+    ~Layout();
     void Clear();
     void SetParent(Amr* new_parent);
     void Rebuild();
@@ -87,7 +88,7 @@ struct Layout
     Vec& JRowScale();
     PetscErrorCode MFTowerToVec(Vec& V,
                                 const MFTower& mft,
-                                int comp) const;
+                                int comp); // non-const because we track all created Vecs and destroy them in ~Layout
 
     PetscErrorCode VecToMFTower(MFTower&   mft,
                                 const Vec& V,
@@ -108,9 +109,11 @@ struct Layout
 
 protected:
 #ifdef BL_USE_PETSC
-    void AllocateJ();
-    Mat* J_mat;
-    Vec* JRowScale_vec;
+    void DestroyPetscStructures();
+    Mat J_mat;
+    Vec JRowScale_vec;
+    Array<Vec*> vecs_I_created;
+    Array<Mat*> mats_I_created;
 #endif
 
     PArray<MultiNodeFab> nodes;

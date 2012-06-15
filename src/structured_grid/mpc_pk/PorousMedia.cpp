@@ -152,6 +152,9 @@ PorousMedia::CleanupStatics ()
     tic_array.clear();
     tbc_array.clear();
     initialized = false;
+#ifdef AMANZI
+    delete amanzi::chemistry::chem_out;
+#endif
 }
 
 void
@@ -540,11 +543,6 @@ PorousMedia::PorousMedia (Amr&            papa,
 
   // Set up boundary condition work
   setup_bound_desc();
-
-#ifdef AMANZI
-  amanzi::chemistry::SetupDefaultChemistryOutput();
-  amanzi::chemistry::chem_out->AddLevel("silent");
-#endif
 }
 
 PorousMedia::~PorousMedia ()
@@ -595,9 +593,6 @@ PorousMedia::~PorousMedia ()
       delete pcnp1_cc;
     }
   delete diffusion;
-#ifdef AMANZI
-  delete amanzi::chemistry::chem_out;
-#endif
 }
 
 void
@@ -10830,6 +10825,68 @@ PorousMedia::derive (const std::string& name,
         }
 
     }
+    else if (name=="Grid_ID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        mf.setVal(-1,dcomp,1,ngrow);
+
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            mf[mfi].setVal(mfi.index());
+        }
+
+    }
+    else if (name=="Core_ID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        mf.setVal(-1,dcomp,1,ngrow);
+
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            mf[mfi].setVal(ParallelDescriptor::MyProc());
+        }
+
+    }
+#ifdef BL_USE_PETSC
+    else if (name=="Cell_ID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        mf.setVal(-1,dcomp,1,ngrow);
+        Layout& layout = PMParent()->GetLayout();
+
+        Layout::IntFab ifab;
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            Box gbox = mf[mfi].box();
+            ifab.resize(gbox,1);
+            layout.SetNodeIds(ifab,level,mfi.index());
+            const int* idat = ifab.dataPtr();
+            Real* rdat = mf[mfi].dataPtr();
+            int numpts = gbox.numPts();
+            for (int i=0; i<numpts; ++i) {
+                rdat[i] = Real(idat[i]);
+            }
+        }
+    }
+#endif
     else if (name=="Capillary_Pressure") {
         
         if (have_capillary)
