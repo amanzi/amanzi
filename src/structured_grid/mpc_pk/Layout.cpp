@@ -271,6 +271,7 @@ Layout::Clear()
 {
     nodes.clear();
     nodeIds.clear();
+    crseIds.clear();
     DestroyPetscStructures();
     initialized = false;
 }
@@ -455,24 +456,26 @@ Layout::Rebuild()
     for (int i=0; i<ParallelDescriptor::NProcs(); ++i) {
         nNodes_global += num_nodes_p[i];
     }
+#endif
 
     // Now communicate node numbering to neighbors grow cells
+    crseIds.resize(nLevs-1,PArrayManage);
     for (int lev=1; lev<nLevs; ++lev) // This is really concerned with filling c-f grow cells
     {
         BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(refRatio[lev-1]);
         
-        MultiIntFab crseIds(bndC,1,0); crseIds.setVal(-1);
-        crseIds.copy(nodeIds[lev-1]); // parallel copy
+        crseIds.set(lev-1,new MultiIntFab(bndC,1,0,Fab_allocate)); crseIds[lev-1].setVal(-1);
+        crseIds[lev-1].copy(nodeIds[lev-1]); // parallel copy
 
         // "refine" crseIds
         MultiIntFab fineIds(bndryCells[lev],1,0); fineIds.setVal(-1);
         const Box rangeBox = Box(IntVect::TheZeroVector(),
                                  refRatio[lev-1] - IntVect::TheUnitVector());
-        for (MFIter mfi(crseIds); mfi.isValid(); ++mfi)
+        for (MFIter mfi(crseIds[lev-1]); mfi.isValid(); ++mfi)
         {
-            const Box& cbox = crseIds[mfi].box();
+            const Box& cbox = crseIds[lev-1][mfi].box();
             for (IntVect iv = cbox.smallEnd(), End=cbox.bigEnd(); iv<=End; cbox.next(iv)) {
-                int nodeIdx = crseIds[mfi](iv,0);
+                int nodeIdx = crseIds[lev-1][mfi](iv,0);
                 const IntVect baseIV = refRatio[lev-1] * iv;
                 for (IntVect ivt = rangeBox.smallEnd(), End=rangeBox.bigEnd(); ivt<=End;rangeBox.next(ivt))
                     fineIds[mfi](baseIV + ivt,0) = nodeIdx;
@@ -496,13 +499,6 @@ Layout::Rebuild()
         }
 
     }
-#else
-    for (int lev=0; lev<nLevs; ++lev)
-    {
-        nodeIds[lev].FillBoundary(0,1);
-        BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
-    }    
-#endif
 
     int n = nNodes_local; // Number of local columns of J
     int m = nNodes_local; // Number of local rows of J
@@ -583,8 +579,11 @@ Layout::MFTowerToVec(Vec&           V,
 
 
     PetscErrorCode ierr;
-    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&V); CHKPETSC(ierr);
-    vecs_I_created.push_back(&V);
+    //ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&V); CHKPETSC(ierr);
+
+    //std::cout << "created PETSc vec: " << &V << std::endl;
+
+    //vecs_I_created.push_back(&V);
 
     FArrayBox fab;
     IntFab ifab;

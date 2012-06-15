@@ -83,7 +83,6 @@ struct Layout
     int NumberOfGlobalNodeIds() const {return nNodes_global;}
     int NumberOfLocalNodeIds() const {return nNodes_local;}
 
-#ifdef BL_USE_PETSC
     Mat& Jacobian();
     Vec& JRowScale();
     PetscErrorCode MFTowerToVec(Vec& V,
@@ -93,7 +92,7 @@ struct Layout
     PetscErrorCode VecToMFTower(MFTower&   mft,
                                 const Vec& V,
                                 int        comp) const;
-#endif
+
     const Array<IntVect>& RefRatio() const {return refRatio;}
 
     bool IsCompatible(const MFTower& mft) const;
@@ -108,16 +107,15 @@ struct Layout
     typedef FabArray<IntFab> MultiIntFab; 
 
 protected:
-#ifdef BL_USE_PETSC
     void DestroyPetscStructures();
     Mat J_mat;
     Vec JRowScale_vec;
     Array<Vec*> vecs_I_created;
     Array<Mat*> mats_I_created;
-#endif
 
     PArray<MultiNodeFab> nodes;
     PArray<MultiIntFab> nodeIds;
+    PArray<MultiIntFab> crseIds;
     Array<Geometry> geomArray;
     Array<BoxArray> gridArray;
     Array<IntVect> refRatio;

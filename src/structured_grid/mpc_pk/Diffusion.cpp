@@ -2058,6 +2058,11 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
       Vec RhsV, SolnV;
       PetscErrorCode ierr; 
+      int num_local = layout.NumberOfLocalNodeIds();
+      int num_global = layout.NumberOfGlobalNodeIds();
+
+      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&RhsV); CHKPETSC(ierr);
+      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&SolnV); CHKPETSC(ierr);
 
       MFTower RhsMFT(Rhs,ref_ratio);
       MFTower SolnMFT(Soln,ref_ratio);
@@ -2088,6 +2093,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       ierr = KSPSetOperators(ksp,J,J,DIFFERENT_NONZERO_PATTERN); CHKPETSC(ierr);
       ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
       ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
+      ierr = KSPDestroy(&ksp); CHKPETSC(ierr);
 
       MFTower ResultMFT;      
       if (use_petsc_result) {
@@ -2103,6 +2109,9 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           }
 #endif
       }
+
+      ierr = VecDestroy(&SolnV); CHKPETSC(ierr);
+      ierr = VecDestroy(&RhsV); CHKPETSC(ierr);
 #else
       use_petsc_result = false;
 #endif
