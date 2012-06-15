@@ -479,7 +479,12 @@ Teuchos::ParameterList translate_Mesh_List(Teuchos::ParameterList* plist) {
           }
 
           // figure out if this is a parallel run
-          if (numproc_ > 1) {
+          std::string framework_name;
+          if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Expert")) {
+            framework_name = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert").get<std::string>("Framework");
+          }
+
+          if (numproc_ > 1 && framework_name == "stk::mesh") {
             std::string par_file = file.replace(file.size()-4,4,std::string(".par"));
 
             fn_list.set<std::string>("File",par_file);
@@ -774,20 +779,13 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       std::string flow_model = plist->sublist("Execution Control").get<std::string>("Flow Model");
-      if ( flow_model == "Steady State Saturated" ) {
-	flw_list.set<bool>("initialize saturated flow",true);
-	Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
-	darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-	darcy_problem.set<double>("atmospheric pressure", 101325.0);
-	Teuchos::ParameterList& steady_time_integrator = darcy_problem.sublist("steady state time integrator");
-	steady_time_integrator.set<std::string>("linear solver","AztecOO");
-	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
-        // insert the flow BC sublist
-        Teuchos::ParameterList& flow_bc = darcy_problem.sublist("boundary conditions");
-        flow_bc = create_SS_FlowBC_List(plist);
-      } else if ( flow_model == "Richards" || flow_model == "Steady State Richards" ) {
-	flw_list.set<bool>("initialize saturated flow",false);
-	Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
+      if ( flow_model == "Richards" || flow_model == "Steady State Richards" || flow_model == "Steady State Saturated" ) {
+	if (flow_model == "Steady State Saturated" ) {
+	  flw_list.set<bool>("initialize saturated flow",true);
+	} else {
+	  flw_list.set<bool>("initialize saturated flow",false);
+	}
+        Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
