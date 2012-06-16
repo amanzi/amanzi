@@ -40,6 +40,7 @@ class Darcy_PK : public Flow_PK {
   void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
+  void InitPicard(double T0) {};  // not used yet.
 
   double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 

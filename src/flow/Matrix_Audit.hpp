@@ -32,7 +32,7 @@ class Matrix_Audit {
   AmanziFlow::Matrix_MFD* matrix_;
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >* A;  // local matrices
-  int lda;  // maximal size of elemental matrices
+  int lda;  // maximum size of elemental matrices
 
   int lwork1;  // work memory
   double *dmem1, *dmem2;

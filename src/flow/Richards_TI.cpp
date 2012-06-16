@@ -33,6 +33,7 @@ void Richards_PK::fun(
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
+  functional_max_norm = 0.0;
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -47,13 +48,12 @@ void Richards_PK::fun(
       s1 = WRM[mb]->saturation(atm_pressure - u[c]);
       s2 = WRM[mb]->saturation(atm_pressure - v);
 
-      volume = mesh_->cell_volume(c);
-      f[c] += rho * phi[c] * volume * (s1 - s2) / dTp;
+      double factor = rho * phi[c] * mesh_->cell_volume(c) / dTp;
+      f[c] += (s1 - s2) * factor;
+
+      functional_max_norm = std::max<double>(functional_max_norm, fabs(f[c]) / factor);
     }
   }
-
-  Epetra_Vector* f_cells = FS->CreateCellView(f);
-  f_cells->NormInf(&functional_max_norm);
 }
 
 
@@ -74,7 +74,7 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
   ComputePreconditionerMFD(u, preconditioner_, Tp, dTp, true);
   ierr = 0;
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
      std::printf("Richards PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   }
 }

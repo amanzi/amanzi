@@ -205,6 +205,8 @@ Usage:
 
    * [SU] `"Initial Time Step`" [double]: The initial time step for the steady calculation.
 
+   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
+
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
    * [SU] `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
@@ -232,6 +234,8 @@ Usage:
    * [U] `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
 
    * [U] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+
+   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
 
  * [U] `"Time Period Control`" (Optional)
 
@@ -317,6 +321,22 @@ Usage:
    * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation.
  
    * [U] `"linear solver method`" [string] Select the AztecOO linear solver that may be used in a saturated steady state computation. For example, GMRES.
+
+   * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution.
+
+   * [U] `"pseudo time integrator clipping saturation value`" [double]
+
+   * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currrently only Picard is supported).
+
+   * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method.
+
+   * [U] `"pseudo time integrator linear solver`" [string] select the linear solver to be used in the pseudo time integration method.
+
+   * [U] `"pseudo time integrator error control options`" [Array string]
+
+   * [U] `"pseudo time integrator picard convergence tolerance`" [double] Picard convergence tolerance.
+
+   * [U] `"pseudo time integrator picard maximum number of iterations`" [int] Picard maximum number of iterations.
 
   If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 

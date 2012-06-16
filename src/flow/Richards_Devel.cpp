@@ -13,6 +13,7 @@ Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Richards_PK.hpp"
+#include "TI_Specs.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -22,7 +23,7 @@ namespace AmanziFlow {
 * permeabilities do not depend explicitly on time.
 * WARNING: temporary replacement for missing BDF1 time integrator.                                                    
 ****************************************************************** */
-int Richards_PK::AdvanceToSteadyState_BackwardEuler()
+int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
@@ -33,9 +34,14 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
 
+  int max_itrs = ti_specs_sss_.max_itrs;
+  double T1 = ti_specs_sss_.T1;
+  double dTmax = ti_specs_sss_.dTmax;
+  double residual_tol = ti_specs_sss_.residual_tol;
+
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
-  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > residual_tol && itrs < max_itrs) {
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
@@ -107,14 +113,14 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
       }
 
       ifail = 0;
-      dT = std::min(dT*1.25, dTmax_sss);
+      dT = std::min(dT*1.25, dTmax);
       itrs++;
     }
 
-    if (T_physics > T1_sss) break;
+    if (T_physics > T1) break;
   }
 
-  num_nonlinear_steps = itrs;
+  ti_specs_sss_.num_itrs = itrs;
   return 0;
 }
 
