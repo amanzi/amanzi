@@ -18,8 +18,11 @@ WHOLE_ARCHIVE(pk_factory)
 
 if ( BUILD_TESTS )
     # Add UnitTest includes
-    set(amanzi_libs geometry mesh mesh_audit simple_mesh state whetstone mesh_functions)
+    set(amanzi_libs geometry mesh mesh_audit mstk_mesh state whetstone mesh_functions)
 
+    include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
+    add_definitions("-DMSTK_HAVE_MPI")
+    
     include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
 
     include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland)

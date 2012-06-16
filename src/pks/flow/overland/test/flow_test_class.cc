@@ -1,9 +1,9 @@
 #include "flow_test_class.hh"
 
 FlowTest::FlowTest(Teuchos::ParameterList& plist_,
-                             const Teuchos::RCP<AmanziMesh::Mesh>& mesh_,
-                             int num_components_) :
-    mesh(mesh_), parameter_list(plist_), num_components(num_components_) {
+		   const Teuchos::RCP<AmanziMesh::Mesh>& mesh_,
+		   int num_components_) :
+  mesh(mesh_), parameter_list(plist_), num_components(num_components_) {
 
   // create states
   Teuchos::ParameterList state_plist =
@@ -14,7 +14,7 @@ FlowTest::FlowTest(Teuchos::ParameterList& plist_,
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector("solution"));
 
   // create the PK
-  FPK = Teuchos::rcp(new Flow::Richards(flow_plist, S0, soln));
+  FPK = Teuchos::rcp(new Flow::OverlandFlow(flow_plist, S0, soln));
 }
 
 void FlowTest::initialize() {
@@ -41,35 +41,35 @@ void FlowTest::commit_step() {
 }
 
 void FlowTest::initialize_owned() {
-  Teuchos::RCP<CompositeVector> pres = S0->GetFieldData("pressure", "flow");
+  Teuchos::RCP<CompositeVector> pres = S0->GetFieldData("overland_pressure", "overland_flow");
 
   int c_owned = S0->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*pres)("cell",c) = my_f(xc, 0.0);
   }
-  S0->GetRecord("pressure", "flow")->set_initialized();
+  S0->GetRecord("overland_pressure", "overland_flow")->set_initialized();
 }
 
 
-void FlowTest::evaluate_error_pressure(double t, double* L1, double* L2) {
-  const Epetra_BlockMap& cmap = mesh->cell_map(true);
-  Teuchos::RCP<const CompositeVector> pres = S1->GetFieldData("pressure");
+void FlowTest::evaluate_error_pressure(double t, double & L1, double & L2) {
+  const Epetra_BlockMap & cmap = mesh->cell_map(true);
+  const CompositeVector & pres = *(S1->GetFieldData("overland_pressure"));
 
   double d;
-  *L1 = 0.0;
-  *L2 = 0.0;
+  L1 = 0.0;
+  L2 = 0.0;
   int c_owned = S0->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);
 
-    d = (*pres)("cell",c) - my_f(xc, t);
+    d = pres("cell",c) - my_f(xc, t);
 
-    *L1 += fabs(d) * volume;
-    *L2 += d * d * volume;
+    L1 += fabs(d) * volume;
+    L2 += d * d * volume;
   }
-  *L2 = sqrt(*L2);
+  L2 = sqrt(L2);
 }
 
 // test problem with constant solution of 1
