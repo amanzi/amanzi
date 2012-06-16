@@ -161,6 +161,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
         tempd;  // (free_site_stoich*surf_conc)
   }
   // complete the denominator within the brackets
+  sum_nu_i_sq_Si /= surface_site_.at(0).free_site_concentration();
   double Sx_plus_sum_nu_i_sq_Si = 1. + sum_nu_i_sq_Si;
 
   for (std::vector<SurfaceComplex>::iterator srfcplx =

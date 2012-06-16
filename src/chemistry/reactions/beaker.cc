@@ -1063,7 +1063,8 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
     } else {
       // no previous value, provide a guess
       for (int r = 0; r < surfaceComplexationRxns_.size(); ++r) {
-        double value = 0.1 * surfaceComplexationRxns_.at(r).GetSiteDensity();
+        //double value = 0.1 * surfaceComplexationRxns_.at(r).GetSiteDensity();
+        double value = 1.0e-9;
         surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
       }
     }
