@@ -132,6 +132,8 @@ int main(int argc, char** argv) {
       ac::Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
       parameters.thermo_database_file = simulation_params.database_file;
       parameters.activity_model_name = simulation_params.activity_model;
+      parameters.max_iterations = simulation_params.max_iterations;
+      parameters.tolerance = simulation_params.tolerance;
       parameters.porosity = simulation_params.porosity;  // -
       parameters.saturation = simulation_params.saturation;  // -
       parameters.volume = simulation_params.volume;  // m^3
@@ -461,6 +463,7 @@ void ParseSimulationParameter(const std::string& raw_line,
       value.assign(values.at(0));
       ac::utilities::RemoveLeadingAndTrailingWhitespace(&value);
     }
+    //std::cout << "Parsing ----->  '" << param.at(0) << "'" << std::endl;
     if (param.at(0).find(kDescriptionParam) != std::string::npos) {
       // the description probably has spaces in it, so we want to use
       // the raw parameter value from param.at(1) rather than the
@@ -492,6 +495,10 @@ void ParseSimulationParameter(const std::string& raw_line,
       params->num_time_steps = std::atoi(value.c_str());
     } else if (param.at(0).find(kOutputIntervalParam) != std::string::npos) {
       params->output_interval = std::atoi(value.c_str());
+    } else if (param.at(0).find(kToleranceParam) != std::string::npos) {
+      params->tolerance = std::atof(value.c_str());
+    } else if (param.at(0).find(kMaxIterationsParam) != std::string::npos) {
+      params->max_iterations = std::atoi(value.c_str());
     }
   }
 
@@ -685,6 +692,8 @@ void PrintSimulationParameters(const SimulationParameters& params)
   message << "\tdelta time: " << params.delta_time << std::endl;
   message << "\tnum time steps: " << params.num_time_steps << std::endl;
   message << "\toutput interval: " << params.output_interval << std::endl;
+  message << "\tmax iterations: " << params.max_iterations << std::endl;
+  message << "\ttolerance: " << params.tolerance << std::endl;
   ac::chem_out->Write(ac::kVerbose, message);
 }
 

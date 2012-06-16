@@ -63,6 +63,7 @@ class MatrixBlock {
   void Zero(void);
   void SetDiagonal(double d);
 
+  void Print(const std::string& name) const;
   void Print(void) const;
   void Print_ij(void) const;
 
