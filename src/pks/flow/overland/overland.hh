@@ -7,8 +7,11 @@
   Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 */
 
-#ifndef PK_FLOW_RICHARDS_HH_
-#define PK_FLOW_RICHARDS_HH_
+#ifndef PK_FLOW_OVERLAND_HH_
+#define PK_FLOW_OVERLAND_HH_
+
+#include <vector>
+#include <cassert>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -23,23 +26,25 @@
 #include "bdf_time_integrator.hh"
 
 #include "wrm.hh"
-#include "eos.hh"
-#include "eos_vapor_in_gas.hh"
 
 namespace Amanzi {
 namespace Flow {
+#if 0
+}}
+#endif
 
-const int FLOW_RELATIVE_PERM_CENTERED = 1;
-const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 2;
+const int FLOW_RELATIVE_PERM_CENTERED          = 1;
+const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY    = 2;
 const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
-const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4;
+const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN   = 4;
 
-class Richards : public PK {
-
+class OverlandFlow : public PK {
+  
 public:
-  Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
-           const Teuchos::RCP<TreeVector>& solution);
-
+  OverlandFlow(Teuchos::ParameterList& flow_plist,
+               const Teuchos::RCP<State>& S,
+               const Teuchos::RCP<TreeVector>& solution);
+  
   // main methods
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::RCP<State>& S);
@@ -51,9 +56,10 @@ public:
 
   // -- transfer operators -- pointer copy
   virtual void state_to_solution(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& soln);
+                                 const Teuchos::RCP<TreeVector>& soln);
+  
   virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
-          const Teuchos::RCP<State>& S);
+                                 const Teuchos::RCP<State>& S);
 
   // -- Advance from state S to state S_next at time S0.time + dt.
   virtual bool advance(double dt);
@@ -80,9 +86,9 @@ public:
 
 private:
   // boundary condition members
-  virtual void UpdateBoundaryConditions_();
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& temperature);
+  virtual void UpdateBoundaryConditions_( const Teuchos::RCP<State>& S, 
+                                          const CompositeVector & pres );
+  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S, CompositeVector & pres );
 
   // bdf needs help
   void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
@@ -97,73 +103,71 @@ private:
   void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
 
   // -- rel perm calculation for fluxes
-  void CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<State>& S,
-          const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
-  void CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State>& S,
-          const CompositeVector& flux, const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
-  void CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP<State>& S,
-          const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
+  // void Calculate_Relative_Permeability_Upwind_Gravity_ ( const Teuchos::RCP<State>& S,
+  //                                                        const CompositeVector & rel_perm_cells,
+  //                                                        CompositeVector & rel_perm_faces );
+  
+  void Calculate_Relative_Permeability_Upwind_Flux_    ( const Teuchos::RCP<State>& S,
+                                                         const CompositeVector & flux, 
+                                                         const CompositeVector & rel_perm_cells,
+                                                         CompositeVector & rel_perm_faces );
 
+  // void Calculate_Relative_Permeability_Arithmetic_Mean_( const Teuchos::RCP<State>& S,
+  //                                                        const CompositeVector & rel_perm_cells,
+  //                                                        CompositeVector & rel_perm_faces );
+  
   // physical methods
   // -- diffusion term
-  void ApplyDiffusion_(const Teuchos::RCP<State>& S,const Teuchos::RCP<CompositeVector>& g);
-
+  void ApplyDiffusion_(const Teuchos::RCP<State>& S, const Teuchos::RCP<CompositeVector>& g);
+  
   // -- accumulation term
   void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
+  
+  void AddLoadValue_(const Teuchos::RCP<State>& S,
+                     const Teuchos::RCP<CompositeVector>& g) ;
 
-  // -- gravity contributions
-  void AddGravityFluxes_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<Operators::MatrixMFD>& matrix);
-  void AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& darcy_mass_flux);
-
+  // -- add elevation to overland pressure
+  void AddElevation_(const Teuchos::RCP<Amanzi::State>&) ;
+  
   // -- update secondary variables from primary variables T,p
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
 
-  void DensityLiquid_(const Teuchos::RCP<State>& S,
-                      const CompositeVector& temp,
-                      const CompositeVector& pres,
-                      const Teuchos::RCP<CompositeVector>& dens_liq,
-                      const Teuchos::RCP<CompositeVector>& mol_dens_liq);
+  void RelativePermeability_( const Teuchos::RCP<State>& S,
+                              const CompositeVector    & pres,
+                              const Teuchos::RCP<CompositeVector>& rel_perm);
 
-  void ViscosityLiquid_(const Teuchos::RCP<State>& S,
-                        const CompositeVector& temp,
-                        const Teuchos::RCP<CompositeVector>& visc_liq);
+  // -- test 1, elevation methods
+  void   TestOneSetUpElevationPars_() ;
+  double TestOneElevation_( double x, double y ) ;
+  void   TestOneSetElevation_( const Teuchos::RCP<State>& S ) ;
+  
+  // -- test 2, elevation methods
+  int    TestTwoZoneFlag_ ( double x, double y ) ;
+  void   TestTwoSetUpElevationPars_() ;
+  double TestTwoElevation_( double x, double y ) ;
+  void   TestTwoSetElevation_( const Teuchos::RCP<State>& S ) ;
 
-#if 0
-  void DensityGas_(const Teuchos::RCP<State>& S,
-                   const CompositeVector& temp,
-                   const CompositeVector& pres,
-                   const double& p_atm,
-                   const Teuchos::RCP<CompositeVector>& mol_frac_gas,
-                   const Teuchos::RCP<CompositeVector>& dens_gas,
-                   const Teuchos::RCP<CompositeVector>& mol_dens_gas);
-#endif
+  // -- setup of elevation pars
+  void SetUpElevation_( const Teuchos::RCP<State>& S ) ;
 
-  void Saturation_(const Teuchos::RCP<State>& S,
-                   const CompositeVector& pres,
-                   const double& p_atm,
-                   const Teuchos::RCP<CompositeVector>& sat_liq);
-
-  void DSaturationDp_(const Teuchos::RCP<State>& S,
-                      const CompositeVector& pres,
-                      const double& p_atm,
-                      const Teuchos::RCP<CompositeVector>& dsat_liq);
-
-
-  void RelativePermeability_(const Teuchos::RCP<State>& S,
-                             const CompositeVector& pres,
-                             const double& p_atm,
-                             const Teuchos::RCP<CompositeVector>& rel_perm);
+  // loading term
+  double rhs_load_value( double t ) ;
 
 private:
+  // OVERLAND parameters
+  double load_value ;
+  double t_rain ;
+
+  std::vector<double> manning ;
+  std::vector<double> slope_x ;
+  std::vector<double> slope_y ;
+  std::vector<double> zone_x  ;
+
   // control switches
   int internal_tests_;  // output information
   bool variable_abs_perm_;
-  int Krel_method_;
+
+  //int Krel_method_;
 
   double dt_;
   double dt0_;
@@ -173,10 +177,6 @@ private:
 
   // work data space
   std::vector<WhetStone::Tensor> K_;  // tensor of absolute permeability
-
-  // constitutive relations
-  Teuchos::RCP<FlowRelations::EOS> eos_liquid_;
-  Teuchos::RCP<FlowRelations::EOSVaporInGas> eos_gas_;
 
   // wrms specified on a region-basis
   typedef std::pair< std::string, Teuchos::RCP<FlowRelations::WRM> > WRMRegionPair;
@@ -192,13 +192,14 @@ private:
 
   // boundary condition data
   Teuchos::RCP<BoundaryFunction> bc_pressure_;
+  Teuchos::RCP<BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<BoundaryFunction> bc_head_;
   Teuchos::RCP<BoundaryFunction> bc_flux_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
 
   // factory registration
-  static RegisteredPKFactory<Richards> reg_;
+  static RegisteredPKFactory<OverlandFlow> reg_;  
 };
 
 }  // namespace AmanziFlow

@@ -9,32 +9,32 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{183.,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.5,0.5}"/>
-        <Parameter name="Direction" type="Array double" value="{1.0,0.0,0.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,0.0,-1.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{1.0,0.5,0.5}"/>
-        <Parameter name="Direction" type="Array double" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="Location" type="Array double" value="{183.,1.}"/>
+        <Parameter name="Direction" type="Array double" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.0,1.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,0.0,1.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.0,1.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -90,10 +90,10 @@
     <ParameterList name="boundary conditions">
       <ParameterList name="pressure">
         <ParameterList name="left side">
-          <Parameter name="regions" type="Array string" value="{Left side, Bottom side, Right side, Top side}"/>
+          <Parameter name="regions" type="Array string" value="{Left side}"/>
           <ParameterList name="boundary pressure">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="101325.0"/>
+              <Parameter name="value" type="double" value="1."/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -101,27 +101,21 @@
 
       <ParameterList name="mass flux">
       </ParameterList>
-    </ParameterList>
 
-    <ParameterList name="Water EOS">
-      <Parameter name="EOS Type" type="string" value="liquid water"/>
-    </ParameterList>
+      <ParameterList name="zero-gradient">
+        <ParameterList name="right side">
+          <Parameter name="regions" type="Array string" value="{Right side}"/>
+        </ParameterList>
+      </ParameterList>
 
-    <ParameterList name="Vapor and Gas EOS">
-      <ParameterList name="Gas EOS">
-        <Parameter name="EOS Type" type="string" value="ideal gas"/>
-      </ParameterList>
-      <ParameterList name="Vapor Pressure Model">
-        <Parameter name="Vapor Pressure Model Type" type="string" value="water vapor over water/ice"/>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="Water Retention Models">
       <ParameterList name="WRM 1">
-        <Parameter name="Region" type="string" value="Computational domain"/>
-        <Parameter name="WRM Type" type="string" value="van Genuchten"/>
-        <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
-        <Parameter name="van Genuchten m" type="double" value="0.5"/>
+        <Parameter name="Region"                            type="string" value="Computational domain"/>
+        <Parameter name="WRM Type"                          type="string" value="van Genuchten"/>
+        <Parameter name="van Genuchten alpha"               type="double" value="1.0"/>
+        <Parameter name="van Genuchten m"                   type="double" value="0.5"/>
         <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
       </ParameterList>
     </ParameterList>
@@ -144,8 +138,8 @@
       <Parameter name="Constant" type="double" value="8.9e-4"/>
     </ParameterList>
 
-    <ParameterList name="Initial pressure">
-      <Parameter name="Constant" type="double" value="101325.0"/>
+    <ParameterList name="Initial overland_pressure">
+      <Parameter name="Constant" type="double" value="1"/>
     </ParameterList>
 
     <ParameterList name="Initial permeability">

@@ -23,7 +23,7 @@ using namespace Amanzi;
 class FlowTest {
 
 public:
-  // constuctor
+  // constructor
   FlowTest(Teuchos::ParameterList& plist,
                 const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                 int num_components);
@@ -34,7 +34,7 @@ public:
   // data
   Teuchos::ParameterList parameter_list;
   Teuchos::RCP<State> S0, S1;
-  Teuchos::RCP<Flow::Richards> FPK;
+  Teuchos::RCP<Flow::OverlandFlow> FPK;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   int num_components;
   double constant_value;
@@ -45,14 +45,14 @@ public:
   // helper evaluation methods
   void commit_step();
   void initialize_owned();
-  void evaluate_error_pressure(double t, double* L1, double* L2);
+  void evaluate_error_pressure(double t, double & L1, double & L2);
 };
 
 class FlowTestOne : public FlowTest {
 public:
   FlowTestOne(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                   int num_components);
+              const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+              int num_components);
 
   virtual double my_f(const AmanziGeometry::Point& x, double t);
 };
