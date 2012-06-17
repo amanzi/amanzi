@@ -120,16 +120,9 @@ add_executable(amanzi main.cpp)
 target_link_libraries(amanzi ${ssc_tpl_libs_incl} ${ssc_tpl_libs})
 set_target_properties(amanzi PROPERTIES 
                       OUTPUT_NAME amanzi
-		      OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
+		              OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 #message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
 add_install_binary(amanzi)
-
-#### EIB >>>>>>
-set_target_properties(unscramble_viz PROPERTIES 
-                      OUTPUT_NAME unscramble_viz
-		      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
-#### EIB >>>>>>
-
 
 if (BUILD_TESTS)
 
