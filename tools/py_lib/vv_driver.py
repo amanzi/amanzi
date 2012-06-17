@@ -173,6 +173,11 @@ print '>>>>>>>>> Amanzi RUN COMPLETE <<<<<<<<'
 
 
 # - Locate output files
+
+# Mesh file
+mesh_file=amanzi.find_mesh_file()
+
+# Viz Files
 amanzi.find_data_files(output_basename)
 if len(amanzi.data_files) == 0:
   print 'No XDMF XML files found'
@@ -204,19 +209,36 @@ if options.extract_data != None:
       idx=idx+1
 
   if source_file != None:
+    if options.nprocs > 1:
+      extract_source_file=output_basename+'_data_unscrambled.h5'
+      serialize_args=[options.unscramble_viz]
+      serialize_args.append(mesh_file)
+      serialize_args.append(output_basename+'_data.h5')
+      serialize_args.append(extract_source_file)
+      try:
+        pipe=process.Popen(serialize_args)
+      except:
+        print 'Failed to serialize the output data'
+        raise
+      else:
+        pipe.wait()
+        print 'Serialize command returned ' + str(pipe.returncode)
+    else:
+      extract_source_file=output_basename+'_data.h5'
     print 'Will extract "' + options.extract_data + '" from ' + source_file.filename
-    root_data_file=output_basename+'_data.h5'
     group_name=options.extract_data+'/'+str(source_file.cycle)
     h5copy_args = [options.h5copy]
-    h5copy_args.append('--input='+root_data_file)
+    h5copy_args.append('--input='+extract_source_file)
     h5copy_args.append('--source='+group_name)
     h5copy_args.append('--output='+options.vv_results)
     h5copy_args.append('--destination='+options.extract_data)
     try:
-      process.Popen(h5copy_args)
+      pipe=process.Popen(h5copy_args)
     except:
       print 'Failed to extract "' +options.extract_data + '"'
-
+    else:
+      pipe.wait()
+      print 'h5copy returned ' + str(pipe.returncode)
   else:
     print 'Failed to locate dataset ' + options.extract_data + ' at time ' + options.extract_time
 
