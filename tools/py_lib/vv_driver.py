@@ -38,6 +38,16 @@ parser.add_option("-b", "--binary", dest="binary", default=amanzi_dflt_binary,
 parser.add_option("-i", "--input", dest="input", 
                   help="Amanzi input file",metavar="FILE")
 
+# Unscramble Viz binary file
+unscram_viz_dflt_binary='@Amanzi_UnscrambleViz_BINARY@'
+parser.add_option("--unscramble-viz", dest="unscramble_viz", default=unscram_viz_dflt_binary, 
+                  help="Amanzi unscramble viz files binary ",metavar="FILE")
+
+# Unscramble Restart binary file
+unscram_restart_dflt_binary='@Amanzi_UnscrambleRestart_BINARY@'
+parser.add_option("--unscramble-restart", dest="unscramble_restart", default=unscram_restart_dflt_binary, 
+                  help="Amanzi unscramble restart files binary ",metavar="FILE")
+
 # STDOUT file
 parser.add_option("-o", "--output", dest="output",
                   help="Redirect STDOUT to file", metavar="FILE")
