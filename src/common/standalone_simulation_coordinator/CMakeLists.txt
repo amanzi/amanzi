@@ -124,6 +124,12 @@ set_target_properties(amanzi PROPERTIES
 #message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
 add_install_binary(amanzi)
 
+#### EIB >>>>>>
+set_target_properties(unscramble_viz PROPERTIES 
+                      OUTPUT_NAME unscramble_viz
+		      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
+#### EIB >>>>>>
+
 
 if (BUILD_TESTS)
 

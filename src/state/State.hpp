@@ -14,10 +14,8 @@
 
 typedef enum { COMPLETE, UPDATING } status_type;
 
-class State  : public Teuchos::VerboseObject<State> {
-  
-public:
-
+class State : public Teuchos::VerboseObject<State> {
+ public:
   State( int, int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
 
   State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
@@ -281,7 +279,7 @@ public:
     return isotherm_langmuir_b_;
   }
 
-private:
+ private:
   void initialize_from_parameter_list();
   void init_verbosity (Teuchos::ParameterList &parameter_list_);
   void create_default_compnames(int n);

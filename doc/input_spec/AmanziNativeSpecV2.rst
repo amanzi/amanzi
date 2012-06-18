@@ -108,6 +108,33 @@ but may be overridden by the execution control parameters.
 
 State (tbw)
 ===========
+Here is an example
+
+.. code-block:: xml
+
+  <ParameterList name="State">
+    <Parameter name="Component Solutes" type="Array string" value="{3H}"/>
+    <Parameter name="Constant viscosity" type="double" value="0.001"/>
+    <Parameter name="Constant water density" type="double" value="997.16"/>
+    <Parameter name="Gravity x" type="double" value="0.0"/>
+    <Parameter name="Gravity y" type="double" value="0.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.81"/>
+    <Parameter name="Material Names" type="Array string" value="{Mesh block 1, Mesh block 2}"/>
+
+    <ParameterList name="Mesh block Gordon aquifer">
+      <Parameter name="Constant component concentration 0" type="double" value="0"/>
+      <Parameter name="Constant horizontal permeability" type="double" value="1e-17"/>
+      <Parameter name="Constant porosity" type="double" value="0.39"/>
+      <Parameter name="Constant vertical permeability" type="double" value="1e-17"/>
+      <Parameter name="Region" type="string" value="Gordon aquifer"/>
+      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
+      <ParameterList name="linear pressure">
+        <Parameter name="gradient" type="Array double" value="{0, -9793.52}"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0, 60}"/>
+        <Parameter name="reference value" type="double" value="101325"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Flow
@@ -150,9 +177,21 @@ An example of the van Genuchten model specification is:
        <Parameter name="regularization interval" type="double" value="0.0"/>
        <Parameter name="relative permeability model" type="string" value="Burdine"/>
     </ParameterList>
+    <Parameter name="calculate WRM curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
 
 
-Amanzi performs rudimentary checks of validity of the provided parameters.
+Amanzi performs rudimentary checks of validity of the provided parameters. 
+The relative permeability curves can be calculated and saved in the file wrm_curves.txt
+using the following optional command:
+
+.. code-block:: xml
+
+    <Parameter name="calculate WRM curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
+
+The triple of doubles means the starting capillary pressure, the period, and the final capillary pressure.
+Each line in the output file will contain the capilalry pressure and relative permeability values for
+all water retention models in the order they appear in the input spec.
+This output requires verbosity level `"high`" or higher. 
 
 
 Boundary conditions
@@ -282,6 +321,29 @@ The remaining `"Flow`" parameters are
     </ParameterList>
 
 
+Initial Guess Pseudo Time Integratior
+-------------------------------------
+
+The sublist `"initial guess pseudo time integrator`" defines parameters controling linear and 
+nonlinear solvers during calculation of the initial guess time integration. Here is an example:
+
+.. code-block:: xml
+
+   <ParameterList name="initial guess pseudo time integrator">
+     <Parameter name="time integration method" type="string" value="Picard"/>
+     <Parameter name="initialize with darcy" type="bool" value="true"/>
+     <Parameter name="clipping saturation value" type="double" value="0.9"/>
+     <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
+     <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+     <Parameter name="error control options" type="Array string" value="{pressure}"/>
+
+     <ParameterList name="Picard">
+       <Parameter name="convergence tolerance" type="double" value="1e-08"/>
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+     </ParameterList>
+   </ParameterList>
+
+
 Steady State Time Integratior
 -----------------------------
 
@@ -290,18 +352,18 @@ nonlinear solvers during steady state time integration. Here is an example:
 
 .. code-block:: xml
 
-    <ParameterList name="steady state time integrator">
-      <Parameter name="time integration method" type="string" value="BDF1"/>
-      <Parameter name="initialize with darcy" type="string" value="yes"/>
-      <Parameter name="clipping saturation value" type="double" value="0.98"/>
-      <Parameter name="preconditoner" type="string" value="Trilinos ML">
-      <Parameter name="linear solver" type="string" value="AztecOO GMRES">
-      <Parameter name="error control options" type="Array string" value="{pressure, saturation}">
+   <ParameterList name="steady state time integrator">
+     <Parameter name="time integration method" type="string" value="BDF1"/>
+     <Parameter name="initialize with darcy" type="string" value="yes"/>
+     <Parameter name="clipping saturation value" type="double" value="0.98"/>
+     <Parameter name="preconditoner" type="string" value="Trilinos ML">
+     <Parameter name="linear solver" type="string" value="AztecOO GMRES">
+     <Parameter name="error control options" type="Array string" value="{pressure, saturation}">
  
-      <ParameterList name="nonlinear solver BDF1">
+     <ParameterList name="nonlinear solver BDF1">
       ...
-      </ParameterList>
-    </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 The parameters used here are
 
@@ -407,7 +469,7 @@ Here is and example:
        <ParameterList name="GMRES via AztecOO">
          <Parameter name="error tolerance" type="double" value="1e-12"/>
          <Parameter name="iterative method" type="string" value="GMRES"/>
-         <Parameter name="maximal number of iterations" type="int" value="400"/>
+         <Parameter name="maximum number of iterations" type="int" value="400"/>
        </ParameterList>
      </ParameterList>
 

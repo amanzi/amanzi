@@ -466,20 +466,26 @@ Teuchos::ParameterList translate_Mesh_List(Teuchos::ParameterList* plist) {
 
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
         std::string format = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("Format");
-        if ( format == "Exodus II") {
+        if (format == "Exodus II") {
           // process the file name to replace .exo with .par in the case of a parallel run
           Teuchos::ParameterList& fn_list =  msh_list.sublist("Unstructured").sublist("Read Mesh File");
-          fn_list.set<std::string>("Format","Exodus II");
+          fn_list.set<std::string>("Format", "Exodus II");
           std::string file =  plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("File");
-          std::string suffix(file.substr(file.size()-4,4));
+          std::string suffix(file.substr(file.size()-4, 4));
 
-          if ( suffix != ".exo" ) {
-            // exodus files must have the .exo suffix
+          if (suffix != ".exo" ) {
             Exceptions::amanzi_throw(Errors::Message("Exodus II was specified as a mesh file format but the suffix of the file that was specified is not .exo"));
           }
 
           // figure out if this is a parallel run
-          if (numproc_ > 1) {
+          std::string framework("Unspecified");
+          if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Expert")) {
+            framework = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert").get<std::string>("Framework");
+          }          
+
+          // Assume that if the framework is unspecified then stk::mesh is used
+          // This is obviously a kludge but I don't know how to get around it
+          if (numproc_ > 1 && (framework == "Unspecified" || framework == "stk::mesh")) {
             std::string par_file = file.replace(file.size()-4,4,std::string(".par"));
 
             fn_list.set<std::string>("File",par_file);
@@ -760,7 +766,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   }
   aztecoo_list.set<double>("error tolerance", tol);
   aztecoo_list.set<std::string>("iterative method", method);
-  aztecoo_list.set<int>("maximal number of iterations", maxiter);
+  aztecoo_list.set<int>("maximum number of iterations", maxiter);
   return solver_list;
 }
 
@@ -774,24 +780,61 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       std::string flow_model = plist->sublist("Execution Control").get<std::string>("Flow Model");
-      if ( flow_model == "Steady State Saturated" ) {
-	flw_list.set<bool>("initialize saturated flow",true);
-	Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
-	darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-	darcy_problem.set<double>("atmospheric pressure", 101325.0);
-	Teuchos::ParameterList& steady_time_integrator = darcy_problem.sublist("steady state time integrator");
-	steady_time_integrator.set<std::string>("linear solver","AztecOO");
-	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
-        // insert the flow BC sublist
-        Teuchos::ParameterList& flow_bc = darcy_problem.sublist("boundary conditions");
-        flow_bc = create_SS_FlowBC_List(plist);
-      } else if ( flow_model == "Richards" || flow_model == "Steady State Richards" ) {
-	flw_list.set<bool>("initialize saturated flow",false);
-	Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
+      if ( flow_model == "Richards" || flow_model == "Steady State Richards" || flow_model == "Steady State Saturated" ) {
+	if (flow_model == "Steady State Saturated" ) {
+	  flw_list.set<bool>("initialize saturated flow",true);
+	} else {
+	  flw_list.set<bool>("initialize saturated flow",false);
+	}
+        Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         richards_problem.set<double>("atmospheric pressure", 101325.0);
+	// see if we need to generate a Picard list
+	bool use_picard(false);
+	Teuchos::ParameterList& ti_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
+	if (ti_mode_list.isSublist("Steady")) {
+	  use_picard = ti_mode_list.sublist("Steady").get<bool>("Use Picard",false);
+	} else if (ti_mode_list.isSublist("Initialize To Steady")) {
+	  use_picard = ti_mode_list.sublist("Initialize To Steady").get<bool>("Use Picard",false);
+	}
+	if (use_picard) {
+	  bool have_num_params_list(false);
+	  Teuchos::ParameterList num_params_list;
+	  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters"))
+	    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	      have_num_params_list = true;
+	      num_params_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    }
+
+	  Teuchos::ParameterList& picard_list = richards_problem.sublist("initial guess pseudo time integrator");
+	  
+	  if (have_num_params_list) {
+	    picard_list.set<bool>("initialize with darcy",num_params_list.get<bool>("pseudo time integrator initialize with darcy",true));
+	    picard_list.set<double>("clipping saturation value",num_params_list.get<double>("pseudo time integrator clipping saturation value",0.9));
+	    picard_list.set<std::string>("time integration method",num_params_list.get<std::string>("pseudo time integrator time integration method","Picard"));
+	    picard_list.set<std::string>("preconditioner",num_params_list.get<std::string>("pseudo time integrator preconditioner","Trilinos ML"));
+	    picard_list.set<std::string>("linear solver",num_params_list.get<std::string>("pseudo time integrator linear solver","AztecOO"));
+	    Teuchos::Array<std::string> error_ctrl(1);
+	    error_ctrl[0] = std::string("pressure");
+	    picard_list.set<Teuchos::Array<std::string> >("error control options",num_params_list.get<Teuchos::Array<std::string> >("pseudo time integrator error control options",error_ctrl));
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",num_params_list.get<double>("pseudo time integrator picard convergence tolerance",1e-7));
+	    picard_list.sublist("Picard").set<int>("maximum number of iterations",num_params_list.get<int>("pseudo time integrator picard maximum number of iterations",400));
+	  } else {
+	    picard_list.set<bool>("initialize with darcy",true);
+	    picard_list.set<double>("clipping saturation value",0.9);
+	    picard_list.set<std::string>("time integration method","Picard");
+	    picard_list.set<std::string>("preconditioner","Trilinos ML");
+	    picard_list.set<std::string>("linear solver","AztecOO");
+	    Teuchos::Array<std::string> error_ctrl(1);
+	    error_ctrl[0] = std::string("pressure");
+	    picard_list.set<Teuchos::Array<std::string> >("error control options",error_ctrl);
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",1e-7);
+	    picard_list.sublist("Picard").set<int>("maximum number of iterations",400);
+	  }
+	}
+	  
 
 	bool have_unstructured_algorithm_sublist(false);
 	// create sublists for the steady state time integrator
@@ -1259,14 +1302,18 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
- * Empty
+ * populates parameters in the State list.
  ****************************************************************** */
 Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList stt_list;
 
   stt_list.set<double>("Gravity x", 0.0);
-  if (spatial_dimension_>1) stt_list.set<double>("Gravity y", 0.0);
-  if (spatial_dimension_>2) stt_list.set<double>("Gravity z", -9.81);
+  if (spatial_dimension_ == 2) {
+    stt_list.set<double>("Gravity y", -9.81);
+  } else {
+    stt_list.set<double>("Gravity y", 0.0);
+    stt_list.set<double>("Gravity z", -9.81);
+  }
 
   // find the viscosity
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
