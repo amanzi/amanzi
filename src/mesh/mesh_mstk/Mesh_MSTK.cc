@@ -4,7 +4,6 @@
 
 #include "Mesh_MSTK.hh"
 
-
 using namespace std;
 
 
@@ -485,6 +484,361 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 }
 
 
+
+//--------------------------------------
+// Constructor - load up mesh from file
+//--------------------------------------
+
+Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude)
+{  
+
+  // Assume three dimensional problem if constructor called without 
+  // the space_dimension parameter
+
+  int ok, ival, idx;
+  double rval, xyz[3];
+  void *pval;
+
+  Mesh_ptr inmesh_mstk = inmesh.mesh;
+
+  if (extrude) {
+    Errors::Message mesg("Extrude option not implemented yet");
+    amanzi_throw(mesg);
+  }
+
+
+  if (setkind != FACE && (flatten || extrude)) {
+    Errors::Message mesg("Flattening or extruding allowed only for submesh of type FACE, not CELL or NODE");
+    amanzi_throw(mesg);
+  }
+
+
+  if (inmesh.space_dimension() == 2 && flatten) {
+    Errors::Message mesg("Requested mesh constructor produces 1D mesh which is not supported by the discretization");
+    amanzi_throw(mesg);
+  }
+
+
+  // Access all the requested sets to make sure they get
+  // created within MSTK (they get created the first time
+  // this set is accessed)
+
+  for (int i = 0; i < setnames.size(); i++)
+    inmesh.get_set_size(setnames[i],setkind,OWNED);
+    
+
+  // Pre-processing (init, MPI queries etc)
+
+  if (flatten)
+    pre_create_steps_(inmesh.space_dimension()-1, inmesh.get_comm(), 
+                      inmesh.geometric_model());
+  else
+    pre_create_steps_(inmesh.space_dimension(), inmesh.get_comm(), 
+                      inmesh.geometric_model());
+
+  if (myprocid == 0) {
+    int DebugWait=0;
+    while (DebugWait);
+  }
+
+
+  mesh = MESH_New(MESH_RepType(inmesh_mstk));
+
+  MType entdim;
+  switch (setkind) {
+  case CELL:
+    entdim = inmesh.space_dimension() == 3 ? MREGION : MFACE;
+    set_cell_dimension(inmesh.cell_dimension()); 
+    break;
+  case FACE:
+    entdim = inmesh.space_dimension() == 3 ? MFACE : MEDGE;
+    if (extrude)
+      set_cell_dimension(inmesh.cell_dimension());
+    else
+      set_cell_dimension(inmesh.cell_dimension()-1); 
+    break;
+  case NODE:
+    entdim = MVERTEX;
+    set_cell_dimension(0);
+    break;
+  default:
+    Errors::Message mesg("Unrecognized Entity_kind");
+    amanzi_throw(mesg);
+  }
+
+
+  
+
+
+  int mkid = MSTK_GetMarker();
+  MSet_ptr src_ents = MSet_New(inmesh_mstk,"src_ents",entdim);
+  for (int i = 0; i < setnames.size(); i++) {
+    MSet_ptr mset = MESH_MSetByName(inmesh_mstk,setnames[i].c_str());
+      
+    idx = 0;
+    MEntity_ptr ment;
+    while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
+      if (!MEnt_IsMarked(ment,mkid)) {
+        MSet_Add(src_ents,ment);
+        MEnt_Mark(ment,mkid);
+      }
+    }
+  }
+
+  MSet_Unmark(src_ents,mkid);
+  MSTK_FreeMarker(mkid);  
+
+
+  // Have to do some additional work for extruding an extracted mesh
+  // Extrusion applicable only in the case of entdim = MFACE/MEDGE
+
+  MAttrib_ptr copyatt = MAttrib_New(inmesh_mstk,"copyatt",POINTER,MALLTYPE);
+  parentatt = MAttrib_New(mesh,"parentatt",INT,MALLTYPE); 
+
+  switch (entdim) {
+  case MREGION:
+      
+    idx = 0; 
+    MRegion_ptr mr;
+    while ((mr = (MRegion_ptr) MSet_Next_Entry(src_ents,&idx))) {
+
+      List_ptr rfaces = MR_Faces(mr);                                  
+      int nrf = List_Num_Entries(rfaces);
+      MFace_ptr rfaces_new[MAXPF3];
+      int rfdirs_new[MAXPF3];
+      for (int i = 0; i < nrf; i++) {
+        MFace_ptr mf = List_Entry(rfaces,i);
+
+        MEnt_Get_AttVal(mf,copyatt,&ival,&rval,&pval);
+        if (pval) {
+          rfaces_new[i] = pval;
+          rfdirs_new[i] = MR_FaceDir_i(mr,i);
+        }
+        else {
+
+          List_ptr fverts = MF_Vertices(mf,1,0);
+          int nfv = List_Num_Entries(fverts);
+          MVertex_ptr fverts_new[MAXPV2];
+          for (int j = 0; j < nfv; j++) {
+            MVertex_ptr mv = List_Entry(fverts,j);
+            MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
+            if (pval)
+              fverts_new[j] = pval;
+            else {
+              fverts_new[j] = MV_New(mesh);
+              MV_Coords(mv,xyz);
+              MV_Set_Coords(fverts_new[j],xyz);
+              MV_Set_GEntDim(fverts_new[j],MV_GEntDim(mv));
+              MV_Set_GEntID(fverts_new[j],MV_GEntID(mv));
+              MEnt_Set_AttVal(mv,copyatt,ival,rval,fverts_new[j]);
+              MEnt_Set_AttVal(fverts_new[j],parentatt,MV_ID(mv),0.0,NULL);
+            }
+          }
+          List_Delete(fverts);
+            
+          rfaces_new[i] = MF_New(mesh);
+          MF_Set_Vertices(rfaces_new[i],nfv,fverts_new);
+          MF_Set_GEntDim(rfaces_new[i],MF_GEntDim(mf));
+          MF_Set_GEntID(rfaces_new[i],MF_GEntID(mf));
+          rfdirs_new[i] = MR_FaceDir_i(mr,i);
+
+          MEnt_Set_AttVal(mf,copyatt,ival,rval,rfaces_new[i]);
+          MEnt_Set_AttVal(rfaces_new[i],parentatt,MF_ID(mf),0.0,NULL);
+        }
+      }
+      List_Delete(rfaces);
+
+      MRegion_ptr mr_new = MR_New(mesh);
+      MR_Set_Faces(mr_new,nrf,rfaces_new,rfdirs_new);
+      MR_Set_GEntID(mr_new,MR_GEntID(mr));
+
+      MEnt_Set_AttVal(mr,copyatt,ival,rval,mr_new);
+      MEnt_Set_AttVal(mr_new,parentatt,MR_ID(mr),0.0,NULL);
+    }
+
+
+    idx = 0; 
+    while ((mr = (MRegion_ptr) MSet_Next_Entry(src_ents,&idx))) {
+
+      List_ptr rfaces = MR_Faces(mr);                                  
+      int nrf = List_Num_Entries(rfaces);
+
+      for (int i = 0; i < nrf; i++) {
+        MFace_ptr mf = List_Entry(rfaces,i);
+        MEnt_Rem_AttVal(mf,copyatt);
+
+        List_ptr fverts = MF_Vertices(mf,1,0);
+        int nfv = List_Num_Entries(fverts);
+
+        for (int j = 0; j < nfv; j++) {
+          MVertex_ptr mv = List_Entry(fverts,j);
+          MEnt_Rem_AttVal(mv,copyatt);
+        }
+        List_Delete(fverts);
+            
+        MEnt_Rem_AttVal(mf,copyatt);
+      }
+      List_Delete(rfaces);
+
+      MEnt_Rem_AttVal(mr,copyatt);
+    }
+
+    break;
+
+  case MFACE:
+
+    idx = 0; 
+    MFace_ptr mf;
+    while ((mf = (MFace_ptr) MSet_Next_Entry(src_ents,&idx))) {
+
+      List_ptr fverts = MF_Vertices(mf,1,0);
+      int nfv = List_Num_Entries(fverts);
+      MVertex_ptr fverts_new[MAXPV2];
+      for (int j = 0; j < nfv; j++) {
+        MVertex_ptr mv = List_Entry(fverts,j);
+        MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
+        if (pval)
+          fverts_new[j] = pval;
+        else {
+          fverts_new[j] = MV_New(mesh);
+          MV_Coords(mv,xyz);
+          if (flatten) xyz[2] = 0.0;
+          MV_Set_Coords(fverts_new[j],xyz);
+          MV_Set_GEntDim(fverts_new[j],MV_GEntDim(mv));
+          MV_Set_GEntID(fverts_new[j],MV_GEntID(mv));
+          MEnt_Set_AttVal(mv,copyatt,ival,rval,fverts_new[j]);
+          MEnt_Set_AttVal(fverts_new[j],parentatt,MV_ID(mv),0.0,NULL);
+        }
+      }
+      List_Delete(fverts);
+            
+      MFace_ptr mf_new = MF_New(mesh);
+      MF_Set_Vertices(mf_new,nfv,fverts_new);
+      MF_Set_GEntDim(mf_new,MF_GEntDim(mf));
+      MF_Set_GEntID(mf_new,MF_GEntID(mf));
+
+      MEnt_Set_AttVal(mf,copyatt,ival,rval,mf_new);
+      MEnt_Set_AttVal(mf_new,parentatt,MF_ID(mf),0.0,NULL);
+    }
+
+    idx = 0; 
+    while ((mf = (MFace_ptr) MSet_Next_Entry(src_ents,&idx))) {
+
+      List_ptr fverts = MF_Vertices(mf,1,0);
+      int nfv = List_Num_Entries(fverts);
+      for (int j = 0; j < nfv; j++) {
+        MVertex_ptr mv = List_Entry(fverts,j);
+        MEnt_Rem_AttVal(mv,copyatt);
+      }
+      List_Delete(fverts);
+            
+      MEnt_Rem_AttVal(mf,copyatt);
+    }
+
+    break;
+
+  case MEDGE:
+
+    idx = 0;
+    MEdge_ptr me;
+    while ((me = (MEdge_ptr) MSet_Next_Entry(src_ents,&idx))) {
+
+      MEdge_ptr me_new = ME_New(mesh);
+
+      for (int j = 0; j < 2; j++)  {
+        MVertex_ptr mv = ME_Vertex(me,j);
+
+        MVertex_ptr mv_new;
+
+        MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
+        if (pval)
+          mv_new = pval;
+        else {
+          MV_Coords(mv,xyz);
+          if (flatten) {
+            xyz[1] = 0.0;
+            xyz[2] = 0.0;
+          }
+          mv_new = MV_New(mesh);
+          MV_Set_Coords(mv_new,xyz);
+          MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
+          MV_Set_GEntID(mv_new,MV_GEntID(mv));
+
+          MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
+          MEnt_Set_AttVal(mv_new,parentatt,MV_ID(mv),0.0,NULL);
+        }
+
+        ME_Set_Vertex(me_new,j,mv_new);
+      }
+
+      MEnt_Set_AttVal(me,copyatt,ival,rval,me_new);
+      MEnt_Set_AttVal(me,parentatt,ME_ID(me),0.0,NULL);
+    }
+
+    idx = 0;
+    while ((me = (MEdge_ptr) MSet_Next_Entry(src_ents,&idx))) {
+      for (int j = 0; j < 2; j++)  {
+        MVertex_ptr mv = ME_Vertex(me,j);
+        MEnt_Rem_AttVal(mv,copyatt);
+      }
+      MEnt_Rem_AttVal(me,copyatt);
+    }
+
+    break;
+
+  case MVERTEX:
+
+    idx = 0;
+    MVertex_ptr mv;
+    while ((mv = (MVertex_ptr) MSet_Next_Entry(src_ents,&idx))) {
+
+      MVertex_ptr mv_new = MV_New(mesh);
+      MV_Set_Coords(mv_new,xyz);
+      if (flatten) xyz[2] = 0.0;
+      MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
+      MV_Set_GEntID(mv_new,MV_GEntID(mv));
+        
+      MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
+      MEnt_Set_AttVal(mv_new,parentatt,MV_ID(mv),0.0,NULL);
+    }
+
+    idx = 0;
+    while ((mv = (MVertex_ptr) MSet_Next_Entry(src_ents,&idx)))
+      MEnt_Rem_AttVal(mv,copyatt);
+
+    break;
+
+  default:
+    Errors::Message mesg("Unknown entity type");
+    amanzi_throw(mesg);
+  }
+
+  MAttrib_Delete(copyatt);
+  MSet_Delete(src_ents);
+
+
+  if (!serial_run) {
+
+    // Have to assign global IDs and build ghost entities 
+
+    // MSTK_Weave_Distributed_Meshes
+
+  }
+
+  // Do all the processing required for setting up the mesh for Amanzi 
+  
+  post_create_steps_();
+
+}
+
+
+
+
+
 Mesh_MSTK::~Mesh_MSTK() {
   delete cell_map_wo_ghosts_;
   delete cell_map_w_ghosts_;
@@ -521,11 +875,11 @@ Mesh_MSTK::~Mesh_MSTK() {
     orig_vids = (std::vector<Entity_ID> *) pval;
     delete orig_vids;
   }
-  MAttrib_Delete(orig_celltopo_att);
 
+  MAttrib_Delete(orig_celltopo_att);
   MAttrib_Delete(orig_celltype_att);
-    
   MAttrib_Delete(celltype_att);
+  if (parentatt) MAttrib_Delete(parentatt);
 
   MESH_Delete(mesh);
 }
@@ -2387,6 +2741,38 @@ unsigned int Mesh_MSTK::get_set_size (const Set_ID setid,
 
 
 
+// Parent entity in the source mesh if mesh was derived from another mesh
+
+Entity_ID Mesh_MSTK::entity_get_parent (const Entity_kind kind, const Entity_ID entid) const
+{
+  int ival;
+  double rval;
+  void *pval;
+  MEntity_ptr ment;
+
+  if (!parentatt) return 0;
+
+  switch(kind) {
+  case CELL:
+    ment = (MEntity_ptr) cell_id_to_handle[entid];
+    break;
+  case FACE:
+    ment = (MEntity_ptr) face_id_to_handle[entid];
+    break;
+  case NODE:
+    ment = (MEntity_ptr) vtx_id_to_handle[entid];
+    break;
+  }
+  
+
+  MEnt_Get_AttVal(ment,parentatt,&ival,&rval,&pval);
+
+  ival--;
+  return ival;
+}
+
+
+
 
 // Epetra map for cells - basically a structure specifying the
 // global IDs of cells owned or used by this processor
@@ -2651,6 +3037,15 @@ void Mesh_MSTK::clear_internals_ ()
   face_map_w_ghosts_ = face_map_wo_ghosts_ = NULL;
   node_map_w_ghosts_ = node_map_wo_ghosts_ = NULL;
 
+  mesh = NULL;
+
+  AllVerts = OwnedVerts = NotOwnedVerts = NULL;
+  AllFaces = OwnedFaces = NotOwnedFaces = NULL;
+  AllCells = OwnedCells = GhostCells = NULL;
+
+  celltype_att = orig_celltype_att = orig_celltopo_att = NULL;
+  parentatt = NULL;
+  
 } // Mesh_MSTK::clear_internals
 
 
@@ -3872,6 +4267,8 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension,
 
   Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
+
+  mpicomm = comm->GetMpiComm();
 
   set_space_dimension(space_dimension);
 
