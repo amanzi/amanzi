@@ -73,6 +73,7 @@ if (BUILD_TESTS)
 	                 test/test_hex_4x4x4_sets.cc
 		         test/test_hex_gen_4x4x4.cc
 		         test/test_quad_gen_4x4.cc
+			 test/test_extract_surface.cc
 	            LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES})		 
 
     # Test: mstk_mesh_parallel
