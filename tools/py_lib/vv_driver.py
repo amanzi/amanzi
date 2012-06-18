@@ -96,6 +96,18 @@ parser.add_option("--extract-time", dest="extract_time", default='last',
 parser.add_option("--vv-results", dest="vv_results", default='vv_results.h5',
                   help="Output V&V Results to FILE", metavar="FILE")
 
+# Compare file
+parser.add_option("--compare-file", dest="compare_file",
+                  help="Compare output results to data found in FILE", metavar="FILE")
+
+# Compare object
+parser.add_option("--compare-dataset", dest="compare_dataset",
+                 help="Compare V&V results against this dataset STRING", metavar="STRING")
+
+# Compare tolerance (relative)
+parser.add_option("--compare-tol", dest="compare_tol", default=0.05,
+                  help="Run h5diff with relative tolerance set to NUM", metavar="NUM")
+
 # --- Process the arguments
 (options,args) = parser.parse_args()
 
@@ -216,13 +228,13 @@ if options.extract_data != None:
       serialize_args.append(output_basename+'_data.h5')
       serialize_args.append(extract_source_file)
       try:
-        pipe=process.Popen(serialize_args)
+        serialize=process.Popen(serialize_args)
       except:
         print 'Failed to serialize the output data'
         raise
       else:
-        pipe.wait()
-        print 'Serialize command returned ' + str(pipe.returncode)
+        serialize.wait()
+        print 'Serialize command returned ' + str(serialize.returncode)
     else:
       extract_source_file=output_basename+'_data.h5'
     print 'Will extract "' + options.extract_data + '" from ' + source_file.filename
@@ -233,12 +245,43 @@ if options.extract_data != None:
     h5copy_args.append('--output='+options.vv_results)
     h5copy_args.append('--destination='+options.extract_data)
     try:
-      pipe=process.Popen(h5copy_args)
+      h5copy=process.Popen(h5copy_args)
     except:
       print 'Failed to extract "' +options.extract_data + '"'
     else:
-      pipe.wait()
-      print 'h5copy returned ' + str(pipe.returncode)
+      h5copy.wait()
+      print 'h5copy returned ' + str(h5copy.returncode)
+  
+    # Compare data if data file is set
+    if options.compare_file != None:
+      try:
+        print 'Will compare dataset ' + options.compare_dataset + ' found in ' + options.compare_file
+      except:
+        print 'Please define a dataset name to compare'
+        raise
+
+      h5diff_args=[options.h5diff]
+      h5diff_args.append('--relative='+str(options.compare_tol))
+      h5diff_args.append(options.compare_file)
+      h5diff_args.append(options.vv_results)
+      h5diff_args.append(options.compare_dataset)
+      h5diff_args.append(options.extract_data)
+      try:
+        h5diff=process.Popen(h5diff_args)
+      except:
+        print 'Failed to open h5diff process pipe'
+      else:
+        h5diff.wait()
+        print 'h5diff returned ' + str(h5diff.returncode)
+
+      if h5diff.returncode == 0:
+        print 'Results passed h5diff test with relative tolerance set to ' + str(options.compare_tol)
+      elif h5diff.returncode == 1:
+        print 'Results FAILED h5diff test with relative tolerance set to ' + str(options.compare_tol)
+      else:
+        print h5diff_args
+        print 'h5diff failed'
+
   else:
     print 'Failed to locate dataset ' + options.extract_data + ' at time ' + options.extract_time
 
