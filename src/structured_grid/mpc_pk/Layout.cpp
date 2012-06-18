@@ -232,6 +232,81 @@ MFTower::IsCompatible(const MFTower& rhs) const
 }
 
 #ifdef BL_USE_PETSC
+std::ostream& operator<< (std::ostream&  os, const Stencil& a)
+{
+  os << "(size=" << a.size() << ") ";
+  for (Stencil::const_iterator it=a.begin(), End=a.end(); it!=End; ++it) {
+    os << "[" << it->first << "," << it->second << "] ";
+  }
+  return os;
+}
+
+
+const Stencil operator*(Real val, const Stencil& lhs)
+{
+  Stencil ret(lhs);
+  ret *= val;
+  return ret;
+}
+
+const Stencil operator*(const Stencil& lhs, Real val)
+{
+  Stencil ret(lhs);
+  ret *= val;
+  return ret;
+}
+
+const Stencil operator+(const Stencil& lhs, const Stencil& rhs)
+{
+  Stencil ret(lhs);
+  ret += rhs;
+  return ret;
+}
+
+const Stencil operator-(const Stencil& lhs, const Stencil& rhs)
+{
+  Stencil ret(lhs);
+  ret -= rhs;
+  return ret;
+}
+
+Stencil&
+Stencil::operator+=(const Stencil& rhs)
+{
+  for (const_iterator it=rhs.begin(), End=rhs.end(); it!=End; ++it) {
+    const_iterator mit=find(it->first);
+    if (mit==end()) {
+      insert(std::pair<IntVect,Real>(it->first,it->second));
+    } else {
+      (*this)[it->first] += it->second;
+    }
+  }
+  return *this;
+}
+
+Stencil&
+Stencil::operator-=(const Stencil& rhs)
+{
+  for (const_iterator it=rhs.begin(), End=rhs.end(); it!=End; ++it) {
+    const_iterator mit=find(it->first);
+    if (mit==end()) {
+      insert(std::pair<IntVect,Real>(it->first,-it->second));
+    } else {
+      (*this)[it->first] -= it->second;
+    }
+  }
+  return *this;
+}
+
+Stencil&
+Stencil::operator*=(Real val)
+{
+  for (const_iterator it=begin(), End=end(); it!=End; ++it) {
+    (*this)[it->first] *= val;
+  }
+  return *this;
+}
+
 Layout::Layout(Amr* _parent)
     : initialized(false),
       nGrow(1),
@@ -319,19 +394,23 @@ Layout::Rebuild()
 
     // Declare here so we can use again below
     Array<BoxArray> bndryCells(nLevs);
+    NodeFab fnodeFab;
 
     Clear();
     nodes.resize(nLevs,PArrayManage);
     nodeIds.resize(nLevs,PArrayManage);
+    PArray<MultiNodeFab> crseNodes(nLevs,PArrayManage);
     int cnt = 0; // local node counter
     for (int lev=0; lev<nLevs; ++lev)
     {
         nodes.set(lev,new MultiNodeFab(gridArray[lev],1,nGrow));
+        MultiNodeFab& nodesLev = nodes[lev];
         nodeIds.set(lev,new MultiIntFab(gridArray[lev],1,nGrow));
 
-        for (MFIter fai(nodes[lev]); fai.isValid(); ++fai)
+
+        for (MFIter fai(nodesLev); fai.isValid(); ++fai)
         {
-            NodeFab& ifab = nodes[lev][fai];
+            NodeFab& ifab = nodesLev[fai];
             const Box box = ifab.box() & gridArray[lev][fai.index()];
             for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv))
                 ifab(iv,0) = Node(iv,lev,fai.index(),Node::VALID);
@@ -339,44 +418,57 @@ Layout::Rebuild()
             
         if (lev > 0)
         {
+            BoxArray cba = BoxArray(gridArray[lev]).coarsen(refRatio[lev-1]);
+            BoxArray cgba = BoxArray(cba).grow(1);
+            crseNodes.set(lev,new MultiNodeFab(cgba,1,0));
+            for (MFIter mfi(crseNodes[lev]); mfi.isValid(); ++mfi)
+            {
+                NodeFab& nfab=crseNodes[lev][mfi];
+                const Box box = nfab.box() & geomArray[lev-1].Domain();
+                for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv)) {
+                    nfab(iv,0) = Node(iv,lev-1,mfi.index(),Node::VALID);
+                }
+             }
+
+            for (MFIter mfi(crseNodes[lev]); mfi.isValid(); ++mfi)
+            {
+                NodeFab& nfab=crseNodes[lev][mfi];
+                const Box box = nfab.box() & geomArray[lev-1].Domain();
+                std::vector< std::pair<int,Box> > isects = cba.intersections(box);
+                for (int i=0; i<isects.size(); ++i) {
+                    const Box& ibox=isects[i].second;
+                    for (IntVect iv=ibox.smallEnd(), End=ibox.bigEnd(); iv<=End; ibox.next(iv)) {
+                        nfab(iv,0).type = Node::COVERED;
+                    }
+                }
+            }
+
             const Box rangeBox = Box(IntVect::TheZeroVector(),
                                      refRatio[lev-1] - IntVect::TheUnitVector());
+            bndryCells[lev] = BoxLib::intersect( GetBndryCells(nodesLev.boxArray(),refRatio[lev-1],geomArray[lev]),
+                                                 geomArray[lev].Domain() );
+            BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(refRatio[lev-1]);
 
-            bndryCells[lev] = GetBndryCells(nodes[lev].boxArray(),refRatio[lev-1],geomArray[lev]);
-
-            for (MFIter fai(nodes[lev]); fai.isValid(); ++fai)
+            for (MFIter mfi(nodesLev); mfi.isValid(); ++mfi)
             {
-                const Box box = Box(fai.validbox()).grow(refRatio[lev-1]) & gridArray[lev][fai.index()];
-                NodeFab& ifab = nodes[lev][fai];
-                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(box);
-                for (int i = 0; i < isects.size(); i++)
-                {
-                    Box co = isects[i].second & fai.validbox();
-                    if (co.ok())
-                        std::cout << "BAD ISECTS: " << co << std::endl;
-
-                    const Box& dstBox = isects[i].second;
-                    const Box& srcBox = BoxLib::coarsen(dstBox,refRatio[lev-1]);
-
-                    NodeFab dst(dstBox,1);
-                    for (IntVect iv(srcBox.smallEnd());
-                         iv<=srcBox.bigEnd();
-                         srcBox.next(iv))
-                    {
-                        const IntVect baseIV = refRatio[lev-1] * iv;
-                        for (IntVect ivt(rangeBox.smallEnd());ivt<=rangeBox.bigEnd();rangeBox.next(ivt))
-                            dst(baseIV + ivt,0) = Node(iv,lev-1,-1,Node::VALID);
+                NodeFab& nodeFab = nodesLev[mfi];
+                const Box& box = nodeFab.box();
+                Box gbox = Box(mfi.validbox()).grow(refRatio[lev-1]);
+                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(gbox);                
+                for (int i=0; i<isects.size(); ++i) {
+                    const Box& fbox = isects[i].second;
+                    Box ovlp = fbox & box;
+                    if (ovlp.ok()) {
+                        fnodeFab.resize(fbox,1);
+                        Box cbox = Box(fbox).coarsen(refRatio[lev-1]);
+                        for (IntVect civ = cbox.smallEnd(), End=cbox.bigEnd(); civ<=End; cbox.next(civ)) {
+                            const IntVect baseIV = refRatio[lev-1] * civ;
+                            for (IntVect ivt = rangeBox.smallEnd(), End=rangeBox.bigEnd(); ivt<=End;rangeBox.next(ivt)) {
+                                fnodeFab(baseIV + ivt,0) = crseNodes[lev][mfi](civ,0);
+                            }
+                        }
+                        nodeFab.copy(fnodeFab);
                     }
-                    const Box ovlp = dstBox & ifab.box();
-
-                    Box mo = ovlp & fai.validbox();
-                    if (mo.ok())
-                    {
-                        std::cout << "BAD OVERLAP: " << mo << std::endl;
-                        std::cout << "         vb: " << fai.validbox() << std::endl;
-                    }
-                    if (ovlp.ok())
-                        ifab.copy(dst,ovlp,0,ovlp,0,1);
                 }
             }
         }
@@ -387,9 +479,9 @@ Layout::Rebuild()
             const BoxArray coarsenedFineBoxes =
                 BoxArray(gridArray[lev+1]).coarsen(refRatio[lev]);
                 
-            for (MFIter fai(nodes[lev]); fai.isValid(); ++fai)
+            for (MFIter fai(nodesLev); fai.isValid(); ++fai)
             {
-                NodeFab& ifab = nodes[lev][fai];
+                NodeFab& ifab = nodesLev[fai];
                 const Box& box = ifab.box();
                 std::vector< std::pair<int,Box> > isects = coarsenedFineBoxes.intersections(box);
                 for (int i = 0; i < isects.size(); i++)
@@ -403,7 +495,7 @@ Layout::Rebuild()
 
         // Set nodeIds
         nodeIds[lev].setVal(-1);
-        for (MFIter fai(nodes[lev]); fai.isValid(); ++fai)
+        for (MFIter fai(nodesLev); fai.isValid(); ++fai)
         {
             NodeFab& ifab = nodes[lev][fai];
             IntFab& nfab = nodeIds[lev][fai];
@@ -497,8 +589,121 @@ Layout::Rebuild()
         {
             nodeIds[lev][mfi].copy(ng[mfi]); // put it all back
         }
-
     }
+
+
+    Array<IntVect> ivp(BL_SPACEDIM), ivpp(BL_SPACEDIM), ivm(BL_SPACEDIM), ivmm(BL_SPACEDIM);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        ivp[d] = BoxLib::BASISV(d);
+        ivpp[d] = ivp[d] + BoxLib::BASISV(d);
+        ivm[d] = -BoxLib::BASISV(d);
+        ivmm[d] = ivm[d] - BoxLib::BASISV(d);
+    }
+
+    Array<Array<std::map<IntVect,Stencil,IntVect::Compare> > > 
+        bndryStencil(nLevs, Array<std::map<IntVect,Stencil,IntVect::Compare> >(BL_SPACEDIM)); //[lev][dir][iv] = stencil to perform tang interp
+                     
+
+    for (int lev=1; lev<nLevs; ++lev)
+    {
+        for (MFIter mfi(nodes[lev]); mfi.isValid(); ++mfi)
+        {
+            const NodeFab& nodeFab = nodes[lev][mfi];
+            const Box& cgbox = crseNodes[lev][mfi].box();
+            for (int d=0; d<BL_SPACEDIM; ++d) {
+
+                Array<int> dtan;
+                for (int d0=0; d0<BL_SPACEDIM; ++d0) {
+                    if (d!=d0) {
+                        dtan.push_back(d0);
+                    }
+                }
+                
+                Box gdbox = Box(mfi.validbox()).grow(d,1) & geomArray[lev].Domain();
+                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(gdbox);
+                for (int i=0; i<isects.size(); ++i) {
+                    const Box& bndrySect = isects[i].second;
+                    for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
+                        
+                        IntVect ivC = nodeFab(iv,0).iv;
+                        BL_ASSERT(cgbox.contains(ivC) && crseNodes[lev][mfi](ivC,0).type==Node::VALID);
+                        std::map<int,Real> x;
+                        
+                        Stencil c; c[ivC] = 1;
+                        bndryStencil[lev][d][iv] = c;
+                        
+                        for (int d0=0; d0<dtan.size(); ++d0) {
+                            int itan = dtan[d0];
+                            Stencil der, der2;
+                            int r = refRatio[lev-1][itan];
+
+                            x[itan] = (iv[itan]%r - 0.5*(r-1))/r;
+                            
+                            IntVect ivR = ivC+ivp[itan];
+                            IntVect ivL = ivC+ivm[itan];
+                            
+                            bool Rvalid = cgbox.contains(ivR) && crseNodes[lev][mfi](ivR,0).type==Node::VALID;
+                            bool Lvalid = cgbox.contains(ivL) && crseNodes[lev][mfi](ivL,0).type==Node::VALID;
+                            
+                            if (Rvalid && Lvalid) {
+                                // Centered full
+                                der[ivL]  = -0.5;  der[ivR] = +0.5;
+                                der2[ivL] = +1.0; der2[ivC] = -2.0; der2[ivR] = +1.0;
+                            }
+                            else if (Rvalid) {
+                                IntVect ivRR = ivC+ivpp[itan];
+                                bool RRvalid = cgbox.contains(ivRR) && crseNodes[lev][mfi](ivRR,0).type==Node::VALID;
+                                if (RRvalid) {
+                                    // R-shifted full
+                                    der[ivC]  = -0.5;  der[ivRR] = +0.5;
+                                    der2[ivC] = +1.0; der2[ivR]  = -2.0; der2[ivRR] = +1.0;
+                                } else {
+                                    // R-shifted linear
+                                    der[ivC] = -1.0; der[ivR] = +1.0;
+                                }
+                            } else if (Lvalid) {
+                                IntVect ivLL = ivC+ivmm[itan];
+                                bool LLvalid = cgbox.contains(ivLL) && crseNodes[lev][mfi](ivLL,0).type==Node::VALID;
+                                if (LLvalid) {
+                                    // L-shifted full
+                                    der[ivLL]  = -0.5;  der[ivC] = +0.5;
+                                    der2[ivLL] = +1.0; der2[ivL] = -2.0; der2[ivC] = +1.0;
+                                } else {
+                                    // L-shifted linear
+                                    der[ivL] = -1.0; der[ivC] = +1.0;
+                                }
+                            } else {
+                                // piecewise constant (no derivatives)
+                            }
+                            bndryStencil[lev][d][iv] += x[itan]*der + 0.5*x[itan]*x[itan]*der2;
+                        } // tangential direction
+
+                        if (dtan.size()==2) {
+                            IntVect ivpp, ivmm, ivpm, ivmp;
+                            ivpp = ivC+ivp[dtan[0]]+ivp[dtan[1]];
+                            ivmm = ivC+ivm[dtan[0]]+ivm[dtan[1]];
+                            ivpm = ivC+ivp[dtan[0]]+ivm[dtan[1]];
+                            ivmp = ivC+ivm[dtan[0]]+ivp[dtan[1]];
+                        
+                            bool PPvalid = cgbox.contains(ivpp) && crseNodes[lev][mfi](ivpp,0).type==Node::VALID;
+                            bool MMvalid = cgbox.contains(ivmm) && crseNodes[lev][mfi](ivmm,0).type==Node::VALID;
+                            bool PMvalid = cgbox.contains(ivpm) && crseNodes[lev][mfi](ivpm,0).type==Node::VALID;
+                            bool MPvalid = cgbox.contains(ivmp) && crseNodes[lev][mfi](ivmp,0).type==Node::VALID;
+                        
+                            if (PPvalid && MMvalid && PMvalid && MPvalid) {
+                                Stencil crossterm;
+                                crossterm[ivpp] = +0.25;
+                                crossterm[ivmm] = +0.25;
+                                crossterm[ivpm] = -0.25;
+                                crossterm[ivmp] = -0.25;
+                                bndryStencil[lev][d][iv] += x[dtan[0]]*x[dtan[1]]*crossterm;
+                            }
+                        }
+                    } // bndry iv
+                } // bndry box
+            } // bc direction
+        } // fine box
+    } // lev
 
     int n = nNodes_local; // Number of local columns of J
     int m = nNodes_local; // Number of local rows of J
@@ -506,7 +711,9 @@ Layout::Rebuild()
     int M = nNodes_global; // Number of global rows of J 
     int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
     int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
-    PetscErrorCode ierr = MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat); CHKPETSC(ierr);
+    PetscErrorCode ierr = 
+        MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat);
+    CHKPETSC(ierr);
     mats_I_created.push_back(&J_mat);
     ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
     vecs_I_created.push_back(&JRowScale_vec);
@@ -688,6 +895,37 @@ std::ostream& operator<< (std::ostream&  os, const Layout::IntFab& ifab)
         }
         os << '\n';
     } 
+    return os;
+}
+
+std::ostream& operator<< (std::ostream&  os, const Layout::NodeFab& nfab)
+{
+    os << "NodeFab" << '\n';
+    const Box& box = nfab.box();
+    os << "Box: " << box << '\n';
+    for (IntVect iv(box.smallEnd()); iv<=box.bigEnd(); box.next(iv))
+    {
+        os << iv << " ";
+        for (int n=0; n<nfab.nComp(); ++n) {
+            os << nfab(iv,n) << " ";
+        }
+        os << '\n';
+    } 
+    return os;
+}
+
+std::ostream& operator<< (std::ostream&  os, const Layout::MultiNodeFab& mnf)
+{
+    os << "MultiNodeFab" << '\n';
+    const BoxArray& ba = mnf.boxArray();
+    os << "BoxArray: " << ba << '\n';
+    const DistributionMapping& dm = mnf.DistributionMap();
+    for (int i=0; i<mnf.size(); ++i) {
+        if (dm[i]==ParallelDescriptor::MyProc()) {
+            os << mnf[i] << std::endl;
+        }
+        ParallelDescriptor::Barrier();
+    }
     return os;
 }
 
