@@ -29,9 +29,17 @@ if ( PYTHON_FOUND )
   # Define the Amanzi binary install location
   if ( TARGET amanzi )
     get_target_property(base amanzi OUTPUT_NAME)
-
     set(Amanzi_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/bin/${base})
+  endif()
 
+  if ( TARGET unscramble_viz )
+    get_target_property(base unscramble_viz OUTPUT_NAME)
+    set(Amanzi_UnscrambleViz_BINARY ${CMAKE_INSTALL_PREFIX}/bin/${base})
+  endif()
+
+  if ( TARGET unscramble_restart )
+    get_target_property(base unscramble_restart OUTPUT_NAME)
+    set(Amanzi_UnscrambleRestart_BINARY ${CMAKE_INSTALL_PREFIX}/bin/${base})
   endif()
 
   # List of scripts to install

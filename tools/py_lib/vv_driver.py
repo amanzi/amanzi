@@ -38,6 +38,16 @@ parser.add_option("-b", "--binary", dest="binary", default=amanzi_dflt_binary,
 parser.add_option("-i", "--input", dest="input", 
                   help="Amanzi input file",metavar="FILE")
 
+# Unscramble Viz binary file
+unscram_viz_dflt_binary='@Amanzi_UnscrambleViz_BINARY@'
+parser.add_option("--unscramble-viz", dest="unscramble_viz", default=unscram_viz_dflt_binary, 
+                  help="Amanzi unscramble viz files binary ",metavar="FILE")
+
+# Unscramble Restart binary file
+unscram_restart_dflt_binary='@Amanzi_UnscrambleRestart_BINARY@'
+parser.add_option("--unscramble-restart", dest="unscramble_restart", default=unscram_restart_dflt_binary, 
+                  help="Amanzi unscramble restart files binary ",metavar="FILE")
+
 # STDOUT file
 parser.add_option("-o", "--output", dest="output",
                   help="Redirect STDOUT to file", metavar="FILE")
@@ -85,6 +95,18 @@ parser.add_option("--extract-time", dest="extract_time", default='last',
 # V&V output results file
 parser.add_option("--vv-results", dest="vv_results", default='vv_results.h5',
                   help="Output V&V Results to FILE", metavar="FILE")
+
+# Compare file
+parser.add_option("--compare-file", dest="compare_file",
+                  help="Compare output results to data found in FILE", metavar="FILE")
+
+# Compare object
+parser.add_option("--compare-dataset", dest="compare_dataset",
+                 help="Compare V&V results against this dataset STRING", metavar="STRING")
+
+# Compare tolerance (relative)
+parser.add_option("--compare-tol", dest="compare_tol", default=0.05,
+                  help="Run h5diff with relative tolerance set to NUM", metavar="NUM")
 
 # --- Process the arguments
 (options,args) = parser.parse_args()
@@ -163,6 +185,11 @@ print '>>>>>>>>> Amanzi RUN COMPLETE <<<<<<<<'
 
 
 # - Locate output files
+
+# Mesh file
+mesh_file=amanzi.find_mesh_file()
+
+# Viz Files
 amanzi.find_data_files(output_basename)
 if len(amanzi.data_files) == 0:
   print 'No XDMF XML files found'
@@ -194,18 +221,66 @@ if options.extract_data != None:
       idx=idx+1
 
   if source_file != None:
+    if options.nprocs > 1:
+      extract_source_file=output_basename+'_data_unscrambled.h5'
+      serialize_args=[options.unscramble_viz]
+      serialize_args.append(mesh_file)
+      serialize_args.append(output_basename+'_data.h5')
+      serialize_args.append(extract_source_file)
+      try:
+        serialize=process.Popen(serialize_args)
+      except:
+        print 'Failed to serialize the output data'
+        raise
+      else:
+        serialize.wait()
+        print 'Serialize command returned ' + str(serialize.returncode)
+    else:
+      extract_source_file=output_basename+'_data.h5'
     print 'Will extract "' + options.extract_data + '" from ' + source_file.filename
-    root_data_file=output_basename+'_data.h5'
     group_name=options.extract_data+'/'+str(source_file.cycle)
     h5copy_args = [options.h5copy]
-    h5copy_args.append('--input='+root_data_file)
+    h5copy_args.append('--input='+extract_source_file)
     h5copy_args.append('--source='+group_name)
     h5copy_args.append('--output='+options.vv_results)
     h5copy_args.append('--destination='+options.extract_data)
     try:
-      process.Popen(h5copy_args)
+      h5copy=process.Popen(h5copy_args)
     except:
       print 'Failed to extract "' +options.extract_data + '"'
+    else:
+      h5copy.wait()
+      print 'h5copy returned ' + str(h5copy.returncode)
+  
+    # Compare data if data file is set
+    if options.compare_file != None:
+      try:
+        print 'Will compare dataset ' + options.compare_dataset + ' found in ' + options.compare_file
+      except:
+        print 'Please define a dataset name to compare'
+        raise
+
+      h5diff_args=[options.h5diff]
+      h5diff_args.append('--relative='+str(options.compare_tol))
+      h5diff_args.append(options.compare_file)
+      h5diff_args.append(options.vv_results)
+      h5diff_args.append(options.compare_dataset)
+      h5diff_args.append(options.extract_data)
+      try:
+        h5diff=process.Popen(h5diff_args)
+      except:
+        print 'Failed to open h5diff process pipe'
+      else:
+        h5diff.wait()
+        print 'h5diff returned ' + str(h5diff.returncode)
+
+      if h5diff.returncode == 0:
+        print 'Results passed h5diff test with relative tolerance set to ' + str(options.compare_tol)
+      elif h5diff.returncode == 1:
+        print 'Results FAILED h5diff test with relative tolerance set to ' + str(options.compare_tol)
+      else:
+        print h5diff_args
+        print 'h5diff failed'
 
   else:
     print 'Failed to locate dataset ' + options.extract_data + ' at time ' + options.extract_time

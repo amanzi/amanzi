@@ -251,9 +251,17 @@ class AmanziInterface:
 
     return self.data_files
 
+  def find_mesh_file(self,input=None):
+    import glob
+    basename = self.plot_output_basename(input)
+
+    mesh_regex=basename+'_mesh.h5'
+    return glob.glob(mesh_regex)[0]
+
+
   def plot_output_basename(self,input=None):
 
-    import amanzi.trilinos.InputList as AmanziInput
+    from amanzi.trilinos import InputList as AmanziInput
 
     if input == None:
       input_tree = AmanziInput(self.input)
@@ -263,7 +271,7 @@ class AmanziInterface:
     output_ctrl = input_tree.find_sublist('Output')
     viz_ctrl    = output_ctrl.find_sublist('Visualization Data')
 
-    return viz_ctrl.find_paramter('File Name Base').get_value()
+    return viz_ctrl.find_parameter('File Name Base').get_value()
 
 
 if __name__ == '__main__':
