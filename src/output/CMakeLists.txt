@@ -82,6 +82,26 @@ add_install_library(output)
 file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
 
+#
+# Install Targets
+#
+add_executable(unscramble_viz unscramble_viz.cpp)
+target_link_libraries(unscramble_viz ${HDF5_LIBRARIES})
+add_install_binary(unscramble_viz)
+set_target_properties(unscramble_viz PROPERTIES
+                      OUTPUT_NAME unscramble_viz
+                      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
+
+#
+# Install Targets
+#
+add_executable(unscramble_restart unscramble_restart.cpp)
+target_link_libraries(unscramble_restart ${HDF5_LIBRARIES})
+add_install_binary(unscramble_restart)
+set_target_properties(unscramble_restart PROPERTIES
+                      OUTPUT_NAME unscramble_restart
+                      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
+
 
 if (BUILD_TESTS)
 

@@ -161,6 +161,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
         tempd;  // (free_site_stoich*surf_conc)
   }
   // complete the denominator within the brackets
+  sum_nu_i_sq_Si /= surface_site_.at(0).free_site_concentration();
   double Sx_plus_sum_nu_i_sq_Si = 1. + sum_nu_i_sq_Si;
 
   for (std::vector<SurfaceComplex>::iterator srfcplx =
@@ -211,7 +212,7 @@ void SurfaceComplexationRxn::display(void) const {
 
 void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
   std::stringstream message;
-  message << std::setw(15) << "---"
+  message << std::setw(7) << "---"
             << std::endl;
   chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
@@ -223,7 +224,7 @@ void SurfaceComplexationRxn::DisplayResults(void) const {
        site != surface_site_.end(); site++) {
     site->DisplayResults();
   }
-
+  chem_out->Write(kVerbose, "\n");
   surface_complexes_[0].DisplayResultsHeader();
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();

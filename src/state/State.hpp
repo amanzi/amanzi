@@ -14,10 +14,8 @@
 
 typedef enum { COMPLETE, UPDATING } status_type;
 
-class State  : public Teuchos::VerboseObject<State> {
-  
-public:
-
+class State : public Teuchos::VerboseObject<State> {
+ public:
   State( int, int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
 
   State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
@@ -38,7 +36,8 @@ public:
   Teuchos::RCP<Epetra_Vector>       get_vertical_permeability ()     { return vertical_permeability; };
   Teuchos::RCP<Epetra_Vector>       get_horizontal_permeability ()   { return horizontal_permeability; };
   Teuchos::RCP<Epetra_Vector>       get_material_ids ()     { return material_ids; };
-  
+  Teuchos::RCP<Epetra_Vector>       get_particle_density () { return particle_density; };
+
   Teuchos::RCP<double>              get_density()      { return density; } 
   Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
   Teuchos::RCP<double*>             get_gravity()      { return gravity; }
@@ -57,6 +56,9 @@ public:
   int get_number_of_components() const { return number_of_components; };
 
   const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
+
+  int get_component_number(const std::string component_name);
+  std::string get_component_name(const int component_number);
 
   // modify methods
   void set_time ( double new_time );
@@ -99,7 +101,6 @@ public:
   void set_number_of_components(const int n);
   void set_specific_storage(const double ss, const std::string region);
 
-
   // set methods 
   void set_darcy_flux ( const Epetra_Vector& darcy_flux_ );
   void set_water_saturation ( const Epetra_Vector& water_saturation_ );
@@ -114,6 +115,8 @@ public:
   void set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ );
   void set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ );
   void set_material_ids ( const Epetra_Vector& material_ids_ );
+  void set_particle_density( const Epetra_Vector& particle_density_);
+
 
   void set_linear_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
   void set_uniform_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
@@ -125,6 +128,7 @@ public:
   double water_mass();
   double point_value(const std::string& point_region, const std::string& comp_name);
       
+  void DeriveDarcyVelocity();
 
   void create_storage();
 
@@ -275,7 +279,7 @@ public:
     return isotherm_langmuir_b_;
   }
 
-private:
+ private:
   void initialize_from_parameter_list();
   void init_verbosity (Teuchos::ParameterList &parameter_list_);
   void create_default_compnames(int n);
@@ -297,6 +301,7 @@ private:
   Teuchos::RCP<Epetra_Vector> lambda;
   Teuchos::RCP<Epetra_Vector> darcy_flux;
   Teuchos::RCP<Epetra_Vector> porosity;
+  Teuchos::RCP<Epetra_Vector> particle_density;
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
   Teuchos::RCP<Epetra_Vector> water_saturation;
   Teuchos::RCP<Epetra_Vector> prev_water_saturation;

@@ -27,7 +27,7 @@ SUITE(BeakerTests) {
 
     Beaker::BeakerComponents components;
     components.free_ion.clear();
-    components.minerals.clear();
+    components.mineral_volume_fraction.clear();
     components.ion_exchange_sites.clear();
     components.total.clear();
     components.total_sorbed.clear();
@@ -36,7 +36,7 @@ SUITE(BeakerTests) {
     components.total.push_back(1.0e-3);  // HCO3-
     components.total.push_back(0.0);
     components.free_ion.push_back(0.0);
-    components.minerals.push_back(0.0);
+    components.mineral_volume_fraction.push_back(0.0);
     components.ion_exchange_sites.push_back(0.0);
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
@@ -65,7 +65,7 @@ SUITE(BeakerTests) {
 
     Beaker::BeakerComponents components;
     components.free_ion.clear();
-    components.minerals.clear();
+    components.mineral_volume_fraction.clear();
     components.ion_exchange_sites.clear();
     components.total.clear();
     components.total_sorbed.clear();
@@ -98,7 +98,7 @@ SUITE(BeakerTests) {
 
     Beaker::BeakerComponents components;
     components.free_ion.clear();
-    components.minerals.clear();
+    components.mineral_volume_fraction.clear();
     components.ion_exchange_sites.clear();
     components.total.clear();
     components.total_sorbed.clear();

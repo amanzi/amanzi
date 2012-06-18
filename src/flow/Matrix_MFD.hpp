@@ -54,9 +54,6 @@ class Matrix_MFD : public Epetra_Operator {
   void DeriveDarcyMassFlux(const Epetra_Vector& solution, 
                            const Epetra_Import& face_importer, 
                            Epetra_Vector& darcy_mass_flux);
-  void DeriveDarcyVelocity(const Epetra_Vector& darcy_mass_flux, 
-                           const Epetra_Import& face_importer, 
-                           Epetra_MultiVector& darcy_velocity) const;
 
   void InitML_Preconditioner(Teuchos::ParameterList& ML_list);
   void UpdateML_Preconditioner();

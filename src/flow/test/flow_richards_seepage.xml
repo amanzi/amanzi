@@ -67,7 +67,7 @@
 
       <ParameterList name="steady state time integrator">
         <Parameter name="time integration method" type="string" value="Picard"/>
-        <Parameter name="initialize with darcy" type="string" value="yes"/>
+        <Parameter name="initialize with darcy" type="bool" value="true"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
@@ -75,11 +75,11 @@
           <Parameter name="absolute error tolerance" type="double" value="10.0"/>
           <Parameter name="relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="convergence tolerance" type="double" value="1e-7"/>
-          <Parameter name="maximal number of iterations" type="int" value="4000"/>
+          <Parameter name="maximum number of iterations" type="int" value="4000"/>
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1.0e+10"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
-          <Parameter name="maximal time step" type="double" value="1.0e+8"/>
+          <Parameter name="maximum time step" type="double" value="1.0e+8"/>
         </ParameterList>
       </ParameterList>
 
@@ -149,7 +149,7 @@
     <ParameterList name="AztecOO GMRES">
       <Parameter name="error tolerance" type="double" value="1e-9"/>
       <Parameter name="iterative method" type="string" value="GMRES"/>
-      <Parameter name="maximal number of iterations" type="int" value="200"/>
+      <Parameter name="maximum number of iterations" type="int" value="200"/>
     </ParameterList>
   </ParameterList>
 

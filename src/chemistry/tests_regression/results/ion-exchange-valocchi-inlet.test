@@ -49,15 +49,6 @@
     Mg++X  = Mg++
                                             0.1666
 
----- Surface Sites
-        Species   Site Density
-
----- Surface Complexes
-    Reaction                               log Keq    charge
-
----- Equilibrium Sorption Isotherms
-     Species       isotherm     parameters
-
 ------------------------------------------------ Beaker description --
 --- Input Components -------------------------------------------------
 ---- Aqueous Components

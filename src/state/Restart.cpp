@@ -90,14 +90,12 @@ void Amanzi::Restart::dump_state(State& S, bool force)
       restart_output->writeDataReal(*S.get_pressure(),"pressure");
       restart_output->writeDataReal(*S.get_lambda(),"lambda");
       restart_output->writeDataReal(*S.get_porosity(),"porosity");
+      restart_output->writeDataReal(*S.get_particle_density(),"particle density");
       restart_output->writeDataReal(*S.get_water_saturation(),"water saturation");
       restart_output->writeDataReal(*S.get_prev_water_saturation(),"previous water saturation");
       restart_output->writeDataReal(*S.get_water_density(),"water density");
       restart_output->writeDataReal(*S.get_horizontal_permeability(),"horizontal permeability");
       restart_output->writeDataReal(*S.get_vertical_permeability(),"vertical permeability");
-      restart_output->writeDataReal(*(*S.get_darcy_velocity())(0),"darcy velocity x");
-      restart_output->writeDataReal(*(*S.get_darcy_velocity())(1),"darcy velocity y");
-      restart_output->writeDataReal(*(*S.get_darcy_velocity())(2),"darcy velocity z");
       restart_output->writeDataReal(*S.get_material_ids(),"material IDs");
       
       for (int i=0; i<S.get_number_of_components(); i++) {
@@ -235,6 +233,11 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   delete cell_vector;
 
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
+  restart_input->readData(*cell_vector,"particle density");
+  S.set_particle_density(*cell_vector);
+  delete cell_vector;
+
+  cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
   restart_input->readData(*cell_vector,"horizontal permeability");
   S.set_horizontal_permeability(*cell_vector);
   delete cell_vector;
@@ -249,14 +252,7 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   S.set_material_ids(*cell_vector);
   delete cell_vector;
 
-  Epetra_MultiVector* cell_multivector = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 3);
-  restart_input->readData(*(*cell_multivector)(0),"darcy velocity x");
-  restart_input->readData(*(*cell_multivector)(1),"darcy velocity y");
-  restart_input->readData(*(*cell_multivector)(2),"darcy velocity z");
-  S.set_darcy_velocity(*cell_multivector);
-  delete cell_multivector;        
-
-  cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), S.get_number_of_components());
+  Epetra_MultiVector* cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), S.get_number_of_components());
   for (int i=0; i< S.get_number_of_components(); i++)
     {
       std::stringstream tcc_name;

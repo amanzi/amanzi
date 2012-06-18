@@ -134,6 +134,9 @@ class AmanziInterface:
       pipe = subprocess.Popen(args,executable=executable,bufsize=-1,stdout=stdout_fh,stderr=stderr_fh)
     except ValueError:
       raise ValueError, 'Popen called with incorrect arguments'
+    except OSError:
+      print 'Failed to run ' + str(args)
+      raise OSError, 'Failed to run Amanzi binary ' + self.binary
     else:
       try:
           pipe.wait()
@@ -247,6 +250,28 @@ class AmanziInterface:
      self.data_files.append(AmanziDataOutput(output))
 
     return self.data_files
+
+  def find_mesh_file(self,input=None):
+    import glob
+    basename = self.plot_output_basename(input)
+
+    mesh_regex=basename+'_mesh.h5'
+    return glob.glob(mesh_regex)[0]
+
+
+  def plot_output_basename(self,input=None):
+
+    from amanzi.trilinos import InputList as AmanziInput
+
+    if input == None:
+      input_tree = AmanziInput(self.input)
+    else:
+      input_tree = AmanziInput(input)
+
+    output_ctrl = input_tree.find_sublist('Output')
+    viz_ctrl    = output_ctrl.find_sublist('Visualization Data')
+
+    return viz_ctrl.find_parameter('File Name Base').get_value()
 
 
 if __name__ == '__main__':

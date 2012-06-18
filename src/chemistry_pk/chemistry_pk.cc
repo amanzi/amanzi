@@ -130,7 +130,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
     // solve for initial free-ion concentrations
-    chem_->Speciate(beaker_components_, beaker_parameters_);
+    chem_->Speciate(&beaker_components_, beaker_parameters_);
     if (debug()) {
       chem_out->Write(kVerbose, "\nTest solution of initial conditions in cell 0:\n");
       chem_->DisplayResults();
@@ -161,7 +161,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     try {
       //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
       // solve for initial free-ion concentrations
-      chem_->Speciate(beaker_components_, beaker_parameters_);
+      chem_->Speciate(&beaker_components_, beaker_parameters_);
       chem_->CopyBeakerToComponents(&beaker_components_);
       CopyBeakerStructuresToCellState(cell);
     } catch (ChemistryException& geochem_error) {
@@ -359,12 +359,8 @@ void Chemistry_PK::SizeBeakerStructures(void) {
   // own value. If we want to over ride the global chemistry value
   // with cell by cell data, then we resize the containers here.
 
-  beaker_components_.total.clear();
-  beaker_components_.free_ion.clear();
-  beaker_components_.minerals.clear();
-
   beaker_components_.total.resize(number_aqueous_components(), 0.0);
-  beaker_components_.minerals.resize(number_minerals(), 0.0);
+  beaker_components_.mineral_volume_fraction.resize(number_minerals(), 0.0);
   beaker_components_.free_ion.resize(number_aqueous_components(), 1.0e-9);
 
   if (using_sorption()) {
@@ -374,9 +370,9 @@ void Chemistry_PK::SizeBeakerStructures(void) {
   }
 
   if (number_minerals()) {
-    beaker_parameters_.mineral_specific_surface_area.resize(number_minerals(), 0.0);
+    beaker_components_.mineral_specific_surface_area.resize(number_minerals(), 0.0);
   } else {
-    beaker_parameters_.mineral_specific_surface_area.clear();
+    beaker_components_.mineral_specific_surface_area.clear();
   }
 
   if (number_ion_exchange_sites() > 0) {
@@ -386,19 +382,19 @@ void Chemistry_PK::SizeBeakerStructures(void) {
   }
 
   if (number_sorption_sites() > 0) {
-    beaker_parameters_.sorption_site_density.resize(number_sorption_sites(), 0.0);
+    beaker_components_.surface_site_density.resize(number_sorption_sites(), 0.0);
   } else {
-    beaker_parameters_.sorption_site_density.clear();
+    beaker_components_.surface_site_density.clear();
   }
 
   if (using_sorption_isotherms()) {
-    beaker_parameters_.isotherm_kd.resize(number_aqueous_components(), 0.0);
-    beaker_parameters_.isotherm_freundlich_n.resize(number_aqueous_components(), 0.0);
-    beaker_parameters_.isotherm_langmuir_b.resize(number_aqueous_components(), 0.0);
+    beaker_components_.isotherm_kd.resize(number_aqueous_components(), 0.0);
+    beaker_components_.isotherm_freundlich_n.resize(number_aqueous_components(), 0.0);
+    beaker_components_.isotherm_langmuir_b.resize(number_aqueous_components(), 0.0);
   } else {
-    beaker_parameters_.isotherm_kd.clear();
-    beaker_parameters_.isotherm_freundlich_n.clear();
-    beaker_parameters_.isotherm_langmuir_b.clear();
+    beaker_components_.isotherm_kd.clear();
+    beaker_components_.isotherm_freundlich_n.clear();
+    beaker_components_.isotherm_langmuir_b.clear();
   }
 }  // end SizeBeakerStructures()
 
@@ -423,10 +419,10 @@ void Chemistry_PK::CopyCellStateToBeakerStructures(
 
   for (unsigned int m = 0; m < number_minerals(); m++) {
     double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    beaker_components_.minerals[m] = cell_minerals[cell_id];
+    beaker_components_.mineral_volume_fraction[m] = cell_minerals[cell_id];
     if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) {
       double* cells_ssa = (*chemistry_state_->mineral_specific_surface_area())[m];
-      beaker_parameters_.mineral_specific_surface_area.at(m) = cells_ssa[cell_id];
+      beaker_components_.mineral_specific_surface_area.at(m) = cells_ssa[cell_id];
     }
   }
 
@@ -435,6 +431,7 @@ void Chemistry_PK::CopyCellStateToBeakerStructures(
     for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
       double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
       beaker_components_.ion_exchange_sites[i] = cell_ion_exchange_sites[cell_id];
+      // TODO(bandre): need to save ion exchange ref cation conc here!
     }
   }
 
@@ -455,20 +452,21 @@ void Chemistry_PK::CopyCellStateToBeakerStructures(
     for (int s = 0; s < number_sorption_sites(); ++s) {
       double* cell_sorption_sites = 
           (*chemistry_state_->sorption_sites())[s];
-      beaker_parameters_.sorption_site_density[s] = cell_sorption_sites[cell_id];
+      beaker_components_.surface_site_density[s] = cell_sorption_sites[cell_id];
+      // TODO(bandre): need to save surface complexation free site conc here!
     }
   }
 
   if (using_sorption_isotherms()) {
     for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
       double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      beaker_parameters_.isotherm_kd.at(i) = cell_data[cell_id];
+      beaker_components_.isotherm_kd.at(i) = cell_data[cell_id];
       
       cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      beaker_parameters_.isotherm_freundlich_n.at(i) = cell_data[cell_id];
+      beaker_components_.isotherm_freundlich_n.at(i) = cell_data[cell_id];
       
       cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      beaker_parameters_.isotherm_langmuir_b.at(i) = cell_data[cell_id];
+      beaker_components_.isotherm_langmuir_b.at(i) = cell_data[cell_id];
     }
   }
 
@@ -492,10 +490,10 @@ void Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
 
   for (unsigned int m = 0; m < number_minerals(); m++) {
     double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    cell_minerals[cell_id] = beaker_components_.minerals.at(m);
+    cell_minerals[cell_id] = beaker_components_.mineral_volume_fraction.at(m);
     if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) {
       cell_minerals = (*chemistry_state_->mineral_specific_surface_area())[m];
-      cell_minerals[cell_id] = beaker_parameters_.mineral_specific_surface_area.at(m);
+      cell_minerals[cell_id] = beaker_components_.mineral_specific_surface_area.at(m);
     }
   }
 
@@ -508,24 +506,26 @@ void Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
 
   for (unsigned int i = 0; i < number_sorption_sites(); i++) {
     double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
-    cell_sorption_sites[cell_id] = beaker_parameters_.sorption_site_density.at(i);
+    cell_sorption_sites[cell_id] = beaker_components_.surface_site_density.at(i);
+    // TODO(bandre): need to save surface complexation free site conc here!
   }
 
   for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
     double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
     cell_ion_exchange_sites[cell_id] = beaker_components_.ion_exchange_sites.at(i);
+    // TODO(bandre): need to save ion exchange ref cation conc here!
   }
 
   if (using_sorption_isotherms()) {
     for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
       double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      cell_data[cell_id] = beaker_parameters_.isotherm_kd.at(i);
+      cell_data[cell_id] = beaker_components_.isotherm_kd.at(i);
 
       cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      cell_data[cell_id] = beaker_parameters_.isotherm_freundlich_n.at(i);
+      cell_data[cell_id] = beaker_components_.isotherm_freundlich_n.at(i);
 
       cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      cell_data[cell_id] = beaker_parameters_.isotherm_langmuir_b.at(i);
+      cell_data[cell_id] = beaker_components_.isotherm_langmuir_b.at(i);
     }
   }
 
@@ -687,7 +687,7 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
   saved_time_ += delta_time;
 
   if (debug() && false) {
-    chem_->Speciate(beaker_components_, beaker_parameters_);
+    chem_->Speciate(&beaker_components_, beaker_parameters_);
     chem_->DisplayResults();
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);

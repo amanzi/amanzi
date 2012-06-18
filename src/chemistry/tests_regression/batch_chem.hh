@@ -24,6 +24,8 @@ struct SimulationParameters {
   double delta_time;  // [s]
   int num_time_steps;  // [-]
   int output_interval;  // [steps]
+  int max_iterations;
+  double tolerance;
   bool display_free_columns;
   std::vector<double> mineral_ssa;  // specific surface area []
   std::vector<double> site_density;  // sorption site density []
@@ -47,6 +49,8 @@ struct SimulationParameters {
         delta_time(1.0),
         num_time_steps(0),
         output_interval(1),
+        max_iterations(250),
+        tolerance(1.0e-12),
         display_free_columns(false),
         mineral_ssa(),
         site_density(),
@@ -71,6 +75,8 @@ static const std::string kVolumeParam("volume");
 static const std::string kDeltaTimeParam("delta_time");
 static const std::string kNumTimeStepsParam("num_time_steps");
 static const std::string kOutputIntervalParam("output_interval");
+static const std::string kToleranceParam("tolerance");
+static const std::string kMaxIterationsParam("max_iterations");
 
 static const std::string kTotalSection("total");
 static const std::string kMineralSection("mineral");
@@ -119,14 +125,10 @@ void ParseComponentValue(const std::string& raw_line,
 
 void ModelSpecificParameters(const std::string model,
                              amanzi::chemistry::Beaker::BeakerParameters* parameters);
-void CopySimulationParametersToBeakeParameters(
-    const SimulationParameters& simulation_params,
-    amanzi::chemistry::Beaker::BeakerParameters* parameters);
 
 void PrintInput(const SimulationParameters& params,
                 const amanzi::chemistry::Beaker::BeakerComponents& components);
 void PrintSimulationParameters(const SimulationParameters& params);
-void PrintComponents(const amanzi::chemistry::Beaker::BeakerComponents& components);
 
 
 #endif  /* AMANZI_CHEMISTRY_BATCH_CHEM_HH_ */

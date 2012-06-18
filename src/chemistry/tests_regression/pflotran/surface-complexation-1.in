@@ -1,0 +1,171 @@
+:Description: equilibrium surface complexation based on Steefel's CrunchFlow Short Course Exercise 4
+
+:=========================== flow mode ========================================
+: Uniform velocity (see below). No flow mode specified.
+
+:=========================== useful tranport parameters ==================
+UNIFORM_VELOCITY 0.0 0.d0 0.d0 ! 1. meter/yr
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    H+
+    Na+
+    NO3-
+    Zn++
+  /
+
+  SECONDARY_SPECIES
+    OH-
+    Zn(OH)2(aq)
+    Zn(OH)3-
+    Zn(OH)4--
+    ZnOH+
+  /
+
+  SORPTION
+    SURFACE_COMPLEXATION_RXN
+      EQUILIBRIUM
+      SITE >FeOH_w 7.6355e4
+      COMPLEXES
+        >FeOH2+_w
+        >FeO-_w
+	>FeOHZn+_w
+      /
+    /
+  /
+  DATABASE surface-complexation.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS TIMESTEP
+  OUTPUT
+    all
+    TOTAL_SORBED
+  /
+END
+
+:=========================== solver options ===================================
+TIMESTEPPER TRANSPORT
+  MAX_STEPS -1
+END
+
+LINEAR_SOLVER TRANSPORT
+  SOLVER DIRECT
+END
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  NXYZ 100 1 1
+  BOUNDS
+    0.d0 0.d0 0.d0
+    1.d0 1.d0 1.d0
+  /
+END
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.d-9
+END
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.9d0
+  TORTUOSITY 1.d0
+END
+
+:=========================== output options ===================================
+OUTPUT
+  TIMES y 5. 10. 15. 20.
+  FORMAT TECPLOT POINT
+END
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 25.d0 y
+  INITIAL_TIMESTEP_SIZE 1.d0 h
+  MAXIMUM_TIMESTEP_SIZE 2.5d-1 y
+END
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION west
+  FACE west
+  COORDINATES
+    0.d0 0.d0 0.d0
+    0.d0 1.d0 1.d0
+  /
+END
+
+REGION east
+  FACE east
+  COORDINATES
+    100.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE zero_gradient
+  CONSTRAINT_LIST
+    0.d0 initial
+  /
+END
+
+TRANSPORT_CONDITION inlet
+  TYPE dirichlet_zero_gradient
+  CONSTRAINT_LIST
+    0.d0 inlet
+  /
+END
+
+:=========================== transport constraints ============================
+CONSTRAINT initial
+  CONCENTRATIONS
+    H+     5.0     P
+    Na+    1.0e-5  Z
+    NO3-   1.0e-1  T
+    Zn++   1.0e-7  T
+  /
+END
+
+CONSTRAINT inlet
+  CONCENTRATIONS
+    H+     1.0e-5  T
+    Na+    1.0e-5  Z
+    NO3-   1.0e-1  T
+    Zn++   1.0e-7  T
+  /
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+BOUNDARY_CONDITION outlet
+  TRANSPORT_CONDITION initial
+  REGION east
+END
+
+BOUNDARY_CONDITION inlet
+  TRANSPORT_CONDITION inlet
+  REGION west
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+

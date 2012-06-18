@@ -241,7 +241,9 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("***********************************************************\n");
+    std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("***********************************************************\n");
   }
 
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -421,19 +423,10 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume * specific_storage[c] / (rho_ * g * dT_prec);
+    double factor = volume * specific_storage[c] / (g * dT_prec);
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
-}
-
-
-/* ******************************************************************
-* A wrapper for a similar matrix call.  
-****************************************************************** */
-void Darcy_PK::DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity)
-{
-  matrix_->DeriveDarcyVelocity(flux, *face_importer_, velocity);
 }
 
 

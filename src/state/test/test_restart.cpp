@@ -218,12 +218,7 @@ SUITE(RESTART) {
     S0.set_permeability(*cell_vector);
     delete cell_vector;    
     
-    Epetra_MultiVector* cell_multivector = new Epetra_MultiVector(S0.get_mesh().cell_epetra_map(false), 3);
-    cell_multivector->Random();
-    S0.set_darcy_velocity(*cell_multivector);
-    delete cell_multivector;        
-
-    cell_multivector = new Epetra_MultiVector(S0.get_mesh().cell_epetra_map(false), number_of_components);
+    Epetra_MultiVector* cell_multivector = new Epetra_MultiVector(S0.get_mesh().cell_epetra_map(false), number_of_components);
     cell_multivector->Random();
     S0.set_total_component_concentration(*cell_multivector);
     delete cell_multivector;       
@@ -334,18 +329,6 @@ SUITE(RESTART) {
     for (int i=0; i<s0_size; i++) 
       {
   	CHECK_EQUAL((*S0.get_horizontal_permeability())[i],(*S1.get_horizontal_permeability())[i]);
-      }    
-
-    s0_size = S0.get_darcy_velocity()->MyLength();
-    s1_size = S1.get_darcy_velocity()->MyLength();
-    CHECK_EQUAL(s0_size, s1_size);
-
-    for (int i=0; i<s0_size; i++) 
-      {
-  	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(0))[i], (*(*S1.get_darcy_velocity())(0))[i]);
-  	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(1))[i], (*(*S1.get_darcy_velocity())(1))[i]);
-  	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(2))[i], (*(*S1.get_darcy_velocity())(2))[i]);
-
       }    
 
 

@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <string>
+#include <iomanip>
 
 //
 // Common stand alone utility functions
@@ -52,8 +53,12 @@ double ln_to_log(double d);
 template <typename T>
 void PrintVector(const std::string& name, 
                  const std::vector<T>& data,
-                 const bool comma_seperated=false) {
+                 const int precision = -1,
+                 const bool comma_seperated = false) {
   std::stringstream output;
+  if (precision > 0) {
+    output << std::setprecision(precision);
+  }
   output << name << " : { ";
   for (typename std::vector<T>::const_iterator i = data.begin();
        i != data.end(); ++i) {

@@ -2230,7 +2230,7 @@ int tnum = 1;
 	    }
             BL_ASSERT(n_total == n_sorbed);
 	  
-            components[ithread].minerals.resize(n_minerals,0);
+            components[ithread].mineral_volume_fraction.resize(n_minerals,0);
             components[ithread].total.resize(n_total,0);
             components[ithread].free_ion.resize(n_total,1.0e-9);
             components[ithread].total_sorbed.resize(n_sorbed,0);

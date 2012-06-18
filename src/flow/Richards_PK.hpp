@@ -28,6 +28,7 @@ Authors: Neil Carlson (version 1)
 #include "Flow_BC_Factory.hpp"
 #include "Matrix_MFD.hpp"
 #include "WaterRetentionModel.hpp"
+#include "TI_Specs.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -43,6 +44,7 @@ class Richards_PK : public Flow_PK {
   void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
+  void InitPicard(double T0);
 
   double CalculateFlowDt();
   int Advance(double dT_MPC); 
@@ -50,14 +52,12 @@ class Richards_PK : public Flow_PK {
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
 
-  int AdvanceToSteadyState_Picard();
-  int AdvanceToSteadyState_BackwardEuler();
-  int AdvanceToSteadyState_BDF1();
-  int AdvanceToSteadyState_BDF2();
+  int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_BDF2(TI_Specs& ti_specs);
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
-  void CommitStateForTransport(Teuchos::RCP<Flow_State> FS);
-  void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   // methods for experimental time integration
   int PicardTimeStep(double T, double dT, double& dTnext);
@@ -107,15 +107,16 @@ class Richards_PK : public Flow_PK {
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
   void ProcessStringRelativePermeability(const std::string name, int* method);
+  void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
   void VerifyStringMualemBurdine(const std::string name);
   void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
+  void CalculateWRMcurves(Teuchos::ParameterList& list);
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
   void ProcessSublistTimeIntegration(
-    Teuchos::ParameterList& list, const std::string name,
-    double* absolute_tol, double* relative_tol, double* residual_tol, int* max_itrs,
-    double* T0, double* T1, double* dT0, double* dTmax);
+      Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
+  void AnalysisTI_Specs();
 
   // water retention models
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -145,9 +146,6 @@ class Richards_PK : public Flow_PK {
   
   Matrix_MFD* preconditioner() { return preconditioner_; }
 
- public:
-  int num_nonlinear_steps;
-
  private:
   Teuchos::ParameterList rp_list_;
   Teuchos::ParameterList solver_list_;
@@ -172,21 +170,21 @@ class Richards_PK : public Flow_PK {
   BDF1Dae* bdf1_dae;
   int block_picard;
   int error_control_;
+  double functional_max_norm;
 
-  int ti_method_sss;  // Parameters for steady-state solution
+  TI_Specs ti_specs_igs_;  // Parameters for initial guess solution
+  int ti_method_igs, error_control_igs_;
+  std::string preconditioner_name_igs_;
+
+  TI_Specs ti_specs_sss_;  // Parameters for steady-state solution
+  int ti_method_sss, error_control_sss_;
   std::string preconditioner_name_sss_;
-  int num_itrs_sss, max_itrs_sss;
-  double absolute_tol_sss, relative_tol_sss, residual_tol_sss;
-  double T0_sss, T1_sss, dT0_sss, dTmax_sss;
-  int initialize_with_darcy;
 
-  int ti_method_trs;  // Parameters for transient solution
+  TI_Specs ti_specs_trs_; // Parameters for transient solution
+  int ti_method_trs, error_control_trs_; 
   std::string preconditioner_name_trs_;
-  double absolute_tol_trs, relative_tol_trs, residual_tol_trs;
-  int num_itrs_trs, max_itrs_trs;
-  double T0_trs, T1_trs, dT0_trs, dTmax_trs;
 
-  double absolute_tol, relative_tol;  // Generic parameters (sss or trs)
+  double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
   int ti_method, num_itrs, max_itrs;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
@@ -214,8 +212,6 @@ class Richards_PK : public Flow_PK {
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
-
-  double clip_saturation;  // initialization options
 
  private:
   void operator=(const Richards_PK& RPK);

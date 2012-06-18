@@ -100,14 +100,18 @@ Surface complex sites are listed by name and surface density. At this time all s
 Example::
 
   <Surface Complex Sites 
-  # name               ; surface_density [moles sites / m^2 mineral]
+  # name  ; site_density [moles sites / m^3 bulk]
+  >FeOH_w ;   3.70000E-04
 
 Surface Complexes....
 
 Example::
 
   <Surface Complexes
-  # name               =  coeff surface site  coeff primary_name ... ; log10(Keq) 25C ; charge 
+  # name     =  coeff surface site  coeff primary_name ... ; log10(Keq) 25C ; charge 
+  >FeOH2+_w  =   1.00 >FeOH_w  1.00 H+ ;  -7.18000E+00 ;   1.00
+  >FeO-_w    =   1.00 >FeOH_w -1.00 H+ ;   8.82000E+00 ;  -1.00
+  >FeOHZn+_w =   1.00 >FeOH_w -1.00 H+  1.00 Zn++ ;   2.32000E+00 ;   1.00
 
 
 Ion Exchange
@@ -116,14 +120,16 @@ Ion Exchange
 Example::
 
   <Ion Exchange Sites
+  # name ; charge ; mineral (ignored)
   X- ; -1.0 ; Kaolinite
 
   <Ion Exchange Complexes
-  Na+X = 1.0 Na+  1.00 X-  ;   1.00000E+00
-  UO2++X = 1.0 UO2++  2.00 X-  ;   2.23872E-01
-  Ca++X = 1.0 Ca++  2.00 X-  ;   3.16228E-01
-  Al+++X = 1.0 Al+++  3.00 X-  ;   1.71133E+00
-  H+X = 1.0 H+  1.00 X-  ;   2.51189E-02
+  # name   = coeff primar_name  coeff site_name  ; exchange coeff
+  NaX = 1.0 Na+  1.00 X-  ;   1.00000E+00
+  UO2X2 = 1.0 UO2++  2.00 X-  ;   2.23872E-01
+  CaX2 = 1.0 Ca++  2.00 X-  ;   3.16228E-01
+  AlX3 = 1.0 Al+++  3.00 X-  ;   1.71133E+00
+  HX = 1.0 H+  1.00 X-  ;   2.51189E-02
 
 
 

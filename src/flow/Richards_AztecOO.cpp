@@ -62,7 +62,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->TrueResidual();
-    std::printf("Richards PK: initial pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Richards PK: fully saturated solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
   delete solver_tmp;

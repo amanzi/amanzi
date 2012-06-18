@@ -3987,7 +3987,7 @@ PorousMedia::strang_chem (MultiFab&  state,
 
     for (int ithread = 0; ithread < tnum; ithread++)
     {
-        BL_ASSERT(components[ithread].minerals.size() == n_minerals);
+        BL_ASSERT(components[ithread].mineral_volume_fraction.size() == n_minerals);
         BL_ASSERT(components[ithread].total.size() == n_total);
         BL_ASSERT(components[ithread].free_ion.size() == n_total);
         BL_ASSERT(components[ithread].total_sorbed.size() == n_sorbed);
@@ -4105,7 +4105,7 @@ PorousMedia::strang_chem (MultiFab&  state,
 
                         if (solid.compare(name) == 0)
                         {
-                            TheComponent.minerals[idx_minerals++] = val;
+                            TheComponent.mineral_volume_fraction[idx_minerals++] = val;
                         }
                         else if (absorbed.compare(name) == 0)
                         {
@@ -4161,7 +4161,7 @@ PorousMedia::strang_chem (MultiFab&  state,
 
                         if (solid.compare(name) == 0)
                         {
-                            fab(iv,icmp) = TheComponent.minerals[idx_minerals++];
+                            fab(iv,icmp) = TheComponent.mineral_volume_fraction[idx_minerals++];
                         }
                         else if (absorbed.compare(name) == 0)
                         {
