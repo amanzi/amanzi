@@ -456,7 +456,7 @@ void Darcy_PK::UpdateSpecificYield()
       mesh_->cell_get_faces(c, &faces);
 
       int nfaces = faces.size();
-      for (int n = 1;  n < nfaces; n++) {
+      for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         int c2 = mfd3d.cell_get_face_adj_cell(c, f);
 
