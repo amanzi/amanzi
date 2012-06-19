@@ -52,6 +52,7 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   for (int i = 0; i < 3; i++) (*gravity_)[i] = 0.0;
 
   specific_storage_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  specific_yield_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   mesh_ = mesh;
 
@@ -81,6 +82,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   for (int i = 0; i < 3; i++) (*gravity_)[i] = (*(S->get_gravity()))[i];
 
   specific_storage_ = S->get_specific_storage();
+  specific_yield_ = S->get_specific_yield();
 
   mesh_ = S->get_mesh_maps();
 
@@ -107,6 +109,7 @@ Flow_State::Flow_State(State& S)
   for (int i = 0; i < 3; i++) (*gravity_)[i] = (*(S.get_gravity()))[i];
 
   specific_storage_ = S.get_specific_storage();
+  specific_yield_ = S.get_specific_yield();
 
   mesh_ = S.get_mesh_maps();
 
@@ -136,6 +139,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
 
     gravity_ = FS.gravity();
     specific_storage_ = FS.specific_storage();
+    specific_yield_ = FS.specific_yield();
 
     mesh_ = FS.mesh();
 
@@ -149,6 +153,7 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
 
     gravity_ = FS.gravity();
     specific_storage_ = FS.specific_storage();
+    specific_yield_ = FS.specific_yield();
     mesh_ = FS.mesh();
 
     // allocate memory for the next state

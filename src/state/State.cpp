@@ -245,11 +245,10 @@ void State::initialize_from_parameter_list()
       }  
 
       // set specific storage Ss or specific yield Sy in the same state variable
-      if (sublist.isParameter("Constant specific storage")) {
-        set_specific_storage(sublist.get<double>("Constant specific storage"), region);
-      } else if (sublist.isParameter("Constant specific yield")) {
-        set_specific_storage(sublist.get<double>("Constant specific yield"), region);
-      }
+      if (sublist.isParameter("Constant specific storage"))
+          set_specific_storage(sublist.get<double>("Constant specific storage"), region);
+      if (sublist.isParameter("Constant specific yield"))
+          set_specific_yield(sublist.get<double>("Constant specific yield"), region);
 
       // read the component concentrations from the xml file
       // and initialize them in mesh block mesh_block_ID
@@ -287,22 +286,23 @@ void State::create_storage()
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   prev_water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  vertical_permeability       = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  horizontal_permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  vertical_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  horizontal_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   total_component_concentration
       = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
-  darcy_velocity   = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
-  material_ids =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  darcy_velocity = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
+  material_ids = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   particle_density = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
-  density =   Teuchos::rcp(new double);
+  density = Teuchos::rcp(new double);
   viscosity = Teuchos::rcp(new double);
-  gravity =   Teuchos::rcp(new double*);
+  gravity = Teuchos::rcp(new double*);
   *gravity = new double[3];
 
   specific_storage = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
+  specific_yield = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
 
-  volume_ =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  volume_ = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
   // if chemistry in enabled, we'll always need free_ions stored.
   free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
@@ -617,10 +617,18 @@ void State::set_porosity( const double phi, const std::string region )
 }
 
 
-/* *******************************************************************/
+/* ********************************************************************
+ * Set constant specific storage and yield
+ *********************************************************************/
 void State::set_specific_storage(const double ss, const std::string region)
 {
   set_cell_value_in_region(ss, *specific_storage, region);
+}
+
+
+void State::set_specific_yield(const double sy, const std::string region)
+{
+  set_cell_value_in_region(sy, *specific_yield, region);
 }
 
 

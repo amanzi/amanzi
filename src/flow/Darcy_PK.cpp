@@ -194,6 +194,9 @@ void Darcy_PK::InitializeAuxiliaryData()
 
   ws_prev.PutScalar(1.0);
   ws.PutScalar(1.0);
+
+  // miscalleneous
+  UpdateSpecificYield();
 }
 
 
@@ -320,7 +323,6 @@ int Darcy_PK::Advance(double dT_MPC)
   if (time >= 0.0) T_physics = time;
 
   solver->SetAztecOption(AZ_output, AZ_none);
-  //solver->SetAztecOption(AZ_conv, AZ_Anorm);
 
   // update boundary conditions and source terms
   time = T_physics;
@@ -341,6 +343,7 @@ int Darcy_PK::Advance(double dT_MPC)
   matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
   AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix_);
+  AddTimeDerivativeSpecificYield(*solution_cells, dT, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->ComputeSchurComplement(bc_markers, bc_values);
@@ -409,8 +412,8 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 
 
 /* ******************************************************************
-* Adds time derivative to cell-based part of MFD algebraic system.
-* Specific storage at the moment is 1.                                              
+* Adds time derivative related to specific stroage to cell-based 
+* part of MFD algebraic system. 
 ****************************************************************** */
 void Darcy_PK::AddTimeDerivativeSpecificStorage(
     Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
@@ -424,6 +427,64 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = volume * specific_storage[c] / (g * dT_prec);
+    Acc_cells[c] += factor;
+    Fc_cells[c] += factor * pressure_cells[c];
+  }
+}
+
+
+/* ******************************************************************
+* Add area/length factor to specific yield. 
+****************************************************************** */
+void Darcy_PK::UpdateSpecificYield()
+{
+  // populate ghost cells
+#ifdef HAVE_MPI
+  Epetra_Vector specific_yield_wghost(mesh_->face_map(true));
+  for (int c = 0; c < ncells_owned; c++) specific_yield_wghost[c] = FS->ref_specific_yield()[c];
+
+  FS->CopyMasterCell2GhostCell(specific_yield_wghost);
+#else
+  Epetra_Vector& specific_yield_wghost = FS->ref_specific_yield();
+#endif
+
+  WhetStone::MFD3D mfd3d(mesh_);
+  AmanziMesh::Entity_ID_List faces;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    if (specific_yield_wghost[c] > 0.0) {
+      mesh_->cell_get_faces(c, &faces);
+
+      int nfaces = faces.size();
+      for (int n = 1;  n < nfaces; n++) {
+        int f = faces[n];
+        int c2 = mfd3d.cell_get_face_adj_cell(c, f);
+
+        if (specific_yield_wghost[c2] <= 0.0) {  // cell in the fully saturated layer
+          FS->ref_specific_yield()[c2] *= mesh_->face_area(f);
+          break;
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Adds time derivative related to specific yiled to cell-based part 
+* of MFD algebraic system. Area factor is alreafy inside Sy. 
+****************************************************************** */
+void Darcy_PK::AddTimeDerivativeSpecificYield(
+    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
+{
+  double g = fabs(gravity()[dim - 1]);
+  const Epetra_Vector& specific_yield = FS->ref_specific_yield();
+
+  std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
+  std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double factor = specific_yield[c] / (g * dT_prec);
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }

@@ -581,8 +581,8 @@ int Richards_PK::Advance(double dT_MPC)
 /* ******************************************************************
 * Transfer part of the internal data needed by transport to the 
 * flow state FS_MPC. MPC may request to populate the original FS.
-* The consistency condition is enforced by solving a steady state 
-* problem with a mass source.
+* The consistency condition is improved by adjusting saturation while
+* preserving its LED property.
 ****************************************************************** */
 void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 {
@@ -605,6 +605,9 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
+
+  // improve algebraic consistency 
+  // ImproveAlgebraicConsistentcy(flux, ws_prev, ws);
 
   dT = dTnext;
 
@@ -730,6 +733,37 @@ void Richards_PK::AddTimeDerivative_MFD(
     double factor = rho * phi[c] * dSdP[c] * volume / dT_prec;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
+  }
+}
+
+
+/* ******************************************************************
+* Saturation should be in exact balance with Darcy fluxes in order to
+* have local extrema dimishing (LED) property for concentrations. 
+* WARNING: we can enforce it strictly only in some cells.
+****************************************************************** */
+void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
+                                              const Epetra_Vector& ws_prev, Epetra_Vector& ws)
+{
+  // create a disctributed flux vector
+  Epetra_Vector flux_d(mesh_->face_map(true));
+  for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
+  FS->CombineGhostFace2MasterFace(flux_d);
+
+  const Epetra_Vector& phi = FS->ref_porosity();
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    ws[c] = ws_prev[c];
+    double factor = dT / (phi[c] * mesh_->cell_volume(c));
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      ws[c] -= factor * flux_d[f] * dirs[n]; 
+    }
   }
 }
 

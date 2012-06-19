@@ -60,6 +60,8 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void UpdateSpecificYield();
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);

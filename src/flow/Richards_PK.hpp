@@ -141,8 +141,8 @@ class Richards_PK : public Flow_PK {
   AmanziGeometry::Point& gravity() { return gravity_; }
 
   // developement members
-  void CalculateConsistentSaturation(const Epetra_Vector& flux, 
-                                     const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+  void ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
+                                   const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
   Matrix_MFD* preconditioner() { return preconditioner_; }
 

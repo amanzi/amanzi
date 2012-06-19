@@ -42,7 +42,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/hex_4x4x4_ss.exo", comm, 3, gm));
-   
+  
   // create a transport state with two component 
   int num_components = 2;
   State mpc_state(num_components, 0, mesh);
