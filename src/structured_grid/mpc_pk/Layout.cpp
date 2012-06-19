@@ -347,6 +347,7 @@ Layout::Clear()
     nodes.clear();
     nodeIds.clear();
     crseIds.clear();
+    bndryStencil.clear();
     DestroyPetscStructures();
     initialized = false;
 }
@@ -392,13 +393,12 @@ Layout::Rebuild()
         }
     }
 
-    // Declare here so we can use again below
-    Array<BoxArray> bndryCells(nLevs);
     NodeFab fnodeFab;
 
     Clear();
     nodes.resize(nLevs,PArrayManage);
     nodeIds.resize(nLevs,PArrayManage);
+    bndryCells.resize(nLevs);
     PArray<MultiNodeFab> crseNodes(nLevs,PArrayManage);
     int cnt = 0; // local node counter
     for (int lev=0; lev<nLevs; ++lev)
@@ -591,6 +591,10 @@ Layout::Rebuild()
         }
     }
 
+    //
+    // Build coarse-fine stencil
+    //
+    bndryStencil.resize(nLevs,Array<std::map<IntVect,Stencil,IntVect::Compare> >(BL_SPACEDIM)); 
 
     Array<IntVect> ivp(BL_SPACEDIM), ivpp(BL_SPACEDIM), ivm(BL_SPACEDIM), ivmm(BL_SPACEDIM);
     for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -599,10 +603,6 @@ Layout::Rebuild()
         ivm[d] = -BoxLib::BASISV(d);
         ivmm[d] = ivm[d] - BoxLib::BASISV(d);
     }
-
-    Array<Array<std::map<IntVect,Stencil,IntVect::Compare> > > 
-        bndryStencil(nLevs, Array<std::map<IntVect,Stencil,IntVect::Compare> >(BL_SPACEDIM)); //[lev][dir][iv] = stencil to perform tang interp
-                     
 
     for (int lev=1; lev<nLevs; ++lev)
     {
@@ -711,6 +711,7 @@ Layout::Rebuild()
     int M = nNodes_global; // Number of global rows of J 
     int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
     int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
+
     PetscErrorCode ierr = 
         MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat);
     CHKPETSC(ierr);
@@ -719,6 +720,65 @@ Layout::Rebuild()
     vecs_I_created.push_back(&JRowScale_vec);
     initialized = true;
 }
+
+void
+Layout::DoCoarseFineParallelInterp(MFTower& mft,
+                                   int      sComp,
+                                   int      nComp) const
+{
+    BL_ASSERT(IsCompatible(mft));
+
+    for (int lev=1; lev<nLevs; ++lev) {
+
+        MultiFab& mf = mft[lev];
+        BL_ASSERT(mf.nGrow()>=1);
+        BL_ASSERT(sComp+nComp<=mf.nComp());
+
+        BoxArray bacgd = BoxArray(mf.boxArray()).coarsen(refRatio[lev-1]).grow(1);
+        MultiFab crseMF(bacgd,nComp,0);
+        crseMF.copy(mft[lev-1],sComp,0,nComp); // parallel copy
+
+        BoxArray bnd = bndryCells[lev];
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+
+            int gridIdx = mfi.index();
+
+            FArrayBox& crseFab = crseMF[mfi];
+            FArrayBox& fineFab = mf[mfi];
+
+            for (int d=0; d<BL_SPACEDIM; ++d) {
+
+                Box boxgd = Box(mfi.validbox()).grow(d,1) & geomArray[lev].Domain();
+                std::vector< std::pair<int,Box> > isects = bnd.intersections(boxgd);
+                for (int i=0; i<isects.size(); ++i) {
+                    const Box& bndrySect = isects[i].second;
+                    for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
+                        
+                        
+                        std::map<IntVect,Stencil,IntVect::Compare>::const_iterator it=bndryStencil[lev][d].find(iv);
+                        if (it!=bndryStencil[lev][d].end()) {
+                            const Stencil& s = it->second;
+
+                            for (int n=0; n<nComp; ++n) {
+                                Real res = 0;
+                                for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
+                                    const IntVect& ivc=it->first;
+                                    BL_ASSERT(crseFab.box().contains(it->first));
+                                    res += crseFab(it->first,sComp+n) * it->second;
+                                }
+                                fineFab(iv,sComp+n) = res;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        mf.FillBoundary(sComp,nComp);
+        geomArray[lev].FillPeriodicBoundary(mf,sComp,nComp);
+    }
+}
+
 
 void
 Layout::SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const

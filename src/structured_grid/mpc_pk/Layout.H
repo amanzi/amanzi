@@ -114,6 +114,9 @@ struct Layout
                       int      nCompMF,
                       int      nGrowMF) const;
 
+    void DoCoarseFineParallelInterp(MFTower& mft,
+                                    int      sComp,
+                                    int      nComp) const;
 
     typedef BaseFab<Node> NodeFab;
     typedef FabArray<NodeFab> MultiNodeFab; 
@@ -130,6 +133,8 @@ protected:
     PArray<MultiNodeFab> nodes;
     PArray<MultiIntFab> nodeIds;
     PArray<MultiIntFab> crseIds;
+    Array<BoxArray> bndryCells;
+
     Array<Geometry> geomArray;
     Array<BoxArray> gridArray;
     Array<IntVect> refRatio;
@@ -138,6 +143,7 @@ protected:
     Amr* parent;
     int nNodes_global, nNodes_local;
 
+    Array<Array<std::map<IntVect,Stencil,IntVect::Compare> > > bndryStencil; //[lev][dir][iv] = stencil to perform tangential interp
 };
 
 

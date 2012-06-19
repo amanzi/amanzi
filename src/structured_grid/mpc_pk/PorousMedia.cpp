@@ -9998,59 +9998,60 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
       {
           cols[0] = nodeNums(iv);
-          rows[0] = cols[0];
-          vals[0] = (dalpha ? (*dalpha)[fpi](iv,0)  :  0);
-          Real rdt = (dt>0  ?  density[nc]*dt : 1); // The "b" factor
-          int cnt = 1;
-          for (int d=0; d<BL_SPACEDIM; ++d) {
-              vals[0] -= rdt * (*wrk[d])(iv,2);
-
-              IntVect ivp = iv + BoxLib::BASISV(d);
-              int np = nodeNums(ivp,0);
-              if (np>=0) {
-                  cols[cnt]  = np; 
-                  vals[cnt]  = -rdt * (*wrk[d])(iv,0);
-                  cnt++;
-              }
-              else {
-                  if (theBC.hi()[d]==FOEXTRAP) {
-                      vals[0] -= rdt * (*wrk[d])(iv,0);
+          if (cols[0]>=0) {
+              rows[0] = cols[0];
+              vals[0] = (dalpha ? (*dalpha)[fpi](iv,0)  :  0);
+              Real rdt = (dt>0  ?  density[nc]*dt : 1); // The "b" factor
+              int cnt = 1;
+              for (int d=0; d<BL_SPACEDIM; ++d) {
+                  vals[0] -= rdt * (*wrk[d])(iv,2);
+                  
+                  IntVect ivp = iv + BoxLib::BASISV(d);
+                  int np = nodeNums(ivp,0);
+                  if (np>=0) {
+                      cols[cnt]  = np; 
+                      vals[cnt]  = -rdt * (*wrk[d])(iv,0);
+                      cnt++;
+                  }
+                  else {
+                      if (theBC.hi()[d]==FOEXTRAP) {
+                          vals[0] -= rdt * (*wrk[d])(iv,0);
+                      }
+                  }
+                  
+                  IntVect ivn = iv - BoxLib::BASISV(d);
+                  int nn = nodeNums(ivn,0);
+                  if (nn>=0) {
+                      cols[cnt]  = nn; 
+                      vals[cnt]  = -rdt * (*wrk[d])(iv,1);
+                      cnt++;
+                  }
+                  else {
+                      if (theBC.lo()[d]==FOEXTRAP) {
+                          vals[0] -= rdt * (*wrk[d])(iv,1);
+                      }
                   }
               }
-
-              IntVect ivn = iv - BoxLib::BASISV(d);
-              int nn = nodeNums(ivn,0);
-              if (nn>=0) {
-                  cols[cnt]  = nn; 
-                  vals[cnt]  = -rdt * (*wrk[d])(iv,1);
-                  cnt++;
-              }
-              else {
-                  if (theBC.lo()[d]==FOEXTRAP) {
-                      vals[0] -= rdt * (*wrk[d])(iv,1);
-                  }
-              }
-          }
-
-          // Normalize matrix entries
+              
+              // Normalize matrix entries
 #if 1
-          Real max_abs = 1;
+              Real max_abs = 1;
 #else
-          Real max_abs = 0;
-          for (int n=0; n<cnt; ++n) {
-              max_abs = std::max(max_abs,std::abs(vals[n]));
-          }
-          max_abs = 1/max_abs;
-          for (int n=0; n<cnt; ++n) {
-              vals[n] *= max_abs;
-          }
+              Real max_abs = 0;
+              for (int n=0; n<cnt; ++n) {
+                  max_abs = std::max(max_abs,std::abs(vals[n]));
+              }
+              max_abs = 1/max_abs;
+              for (int n=0; n<cnt; ++n) {
+                  vals[n] *= max_abs;
+              }
 #endif
 
-          ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
-          ierr = VecSetValues(JRowScale,1,&(rows[0]),&max_abs,INSERT_VALUES);
+              ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+              ierr = VecSetValues(JRowScale,1,&(rows[0]),&max_abs,INSERT_VALUES);
+          }
+#endif
       }
-#endif
-
     }
 
 #ifdef BL_USE_PETSC
