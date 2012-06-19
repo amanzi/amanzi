@@ -9,6 +9,7 @@
 #endif
 
 #include <Amr.H>
+#include <BCRec.H>
 
 #ifdef BL_USE_PETSC
 #include <petscmat.h>
@@ -42,33 +43,76 @@ std::ostream& operator<< (std::ostream&  os, const Node& node);
 
 struct MFTower
 {
-    MFTower();
-    MFTower(const PArray<MultiFab>& pamf,
-            const Array<IntVect>&   ratio);
+    MFTower() {}
+    virtual ~MFTower() {}
+    const IntVect& refRatio(int lev) const {return ref_ratio[lev];} 
+    int NumLevels() const {return ref_ratio.size()+1;}
 
-    MFTower(const Array<BoxArray>& bat,
-            const Array<IntVect>&  ratio,
-            int                    nComp=1,
-            int                    nGrow=0);
+    virtual bool IsCompatible(const MFTower& rhs) const = 0;
+    virtual Real norm() const = 0;
+
+protected:
+    Array<IntVect> ref_ratio;
+};
+
+struct CCMFTower
+    : public MFTower
+{
+    CCMFTower();
+    ~CCMFTower();
+    CCMFTower(const PArray<MultiFab>& pamf,
+              const Array<IntVect>&   ratio);
+
+    CCMFTower(const Array<BoxArray>& bat,
+              const Array<IntVect>&  ratio,
+              int                    nComp=1,
+              int                    nGrow=0);
 
     void define(const Array<BoxArray>& bat,
                 const Array<IntVect>&  ratio,
                 int                    nComp=1,
                 int                    nGrow=0);
 
-    int size() const {return mft.size();}
-    const IntVect& refRatio(int lev) const {return ref_ratio[lev];} 
     MultiFab& operator[](int i) {return mft[i];}
     const MultiFab& operator[](int i) const {return mft[i];}
 
-    bool IsCompatible(const MFTower& rhs) const;
-    void AXPY(const MFTower& rhs,
-              Real           p = 1);
-    Real norm() const;
+    virtual bool IsCompatible(const MFTower& rhs) const;
+    void AXPY(const CCMFTower& rhs,
+              Real             p = 1);
+    virtual Real norm() const;
 
 protected:
-    Array<IntVect> ref_ratio;
     PArray<MultiFab> mft;
+};
+
+struct ECMFTower
+    : public MFTower
+{
+    ECMFTower();
+    virtual ~ECMFTower();
+    ECMFTower(const Array<PArray<MultiFab> >& pamf,
+              const Array<IntVect>&           ratio);
+
+    ECMFTower(const Array<BoxArray>& bat,
+              const Array<IntVect>&  ratio,
+              int                    nComp=1,
+              int                    nGrow=0);
+
+    void define(const Array<BoxArray>& bat,
+                const Array<IntVect>&  ratio,
+                int                    nComp=1,
+                int                    nGrow=0);
+
+    PArray<MultiFab>& operator[](int i) {return mft[i];}
+    const PArray<MultiFab>& operator[](int i) const {return mft[i];}
+
+    virtual bool IsCompatible(const MFTower& rhs) const;
+    void AXPY(const ECMFTower& rhs,
+              Real             p = 1);
+    virtual Real norm() const;
+    
+protected:
+    Array<PArray<MultiFab> > mft;
 };
 
 #ifdef BL_USE_PETSC
@@ -99,24 +143,30 @@ struct Layout
 
     Mat& Jacobian();
     Vec& JRowScale();
-    PetscErrorCode MFTowerToVec(Vec& V,
-                                const MFTower& mft,
-                                int comp); // non-const because we track all created Vecs and destroy them in ~Layout
+    PetscErrorCode CCMFTowerToVec(Vec& V,
+                                  const CCMFTower& mft,
+                                  int comp); // non-const because we track all created Vecs and destroy them in ~Layout
 
-    PetscErrorCode VecToMFTower(MFTower&   mft,
-                                const Vec& V,
-                                int        comp) const;
+    PetscErrorCode VecToCCMFTower(CCMFTower& mft,
+                                  const Vec& V,
+                                  int        comp) const;
 
     const Array<IntVect>& RefRatio() const {return refRatio;}
 
-    bool IsCompatible(const MFTower& mft) const;
-    void BuildMFTower(MFTower& mft,
-                      int      nCompMF,
-                      int      nGrowMF) const;
+    bool IsCompatible(const CCMFTower& mft) const;
+    void BuildCCMFTower(CCMFTower& mft,
+                        int        nCompMF,
+                        int        nGrowMF) const;
 
-    void DoCoarseFineParallelInterp(MFTower& mft,
-                                    int      sComp,
-                                    int      nComp) const;
+    void DoCoarseFineParallelInterp(CCMFTower& mft,
+                                    int        sComp,
+                                    int        nComp) const;
+
+    void DoOp(const CCMFTower&    mft,
+              int                 sComp,
+              int                 nComp,
+              const Array<BCRec>& bc,
+              const ECMFTower&    beta);
 
     typedef BaseFab<Node> NodeFab;
     typedef FabArray<NodeFab> MultiNodeFab; 

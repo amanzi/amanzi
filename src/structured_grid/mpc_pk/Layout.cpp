@@ -103,11 +103,15 @@ GetBndryCells (const BoxArray& ba,
     return BoxArray(gcells);
 }
 
-MFTower::MFTower()
+CCMFTower::CCMFTower()
 {
 }
 
-MFTower::MFTower(const Array<BoxArray>& bat,
+CCMFTower::~CCMFTower()
+{
+}
+
+CCMFTower::CCMFTower(const Array<BoxArray>& bat,
                  const Array<IntVect>&  ratio,
                  int                    nComp,
                  int                    nGrow)
@@ -117,7 +121,7 @@ MFTower::MFTower(const Array<BoxArray>& bat,
     define(bat,ratio,nComp,nGrow);
 }
 
-MFTower::MFTower(const PArray<MultiFab>& pamf,
+CCMFTower::CCMFTower(const PArray<MultiFab>& pamf,
                  const Array<IntVect>&   ratio)
 {
     int nLevs = pamf.size();
@@ -133,7 +137,7 @@ MFTower::MFTower(const PArray<MultiFab>& pamf,
 }
 
 void
-MFTower::define(const Array<BoxArray>& bat,
+CCMFTower::define(const Array<BoxArray>& bat,
                 const Array<IntVect>&  ratio,
                 int                    nComp,
                 int                    nGrow)
@@ -152,8 +156,8 @@ MFTower::define(const Array<BoxArray>& bat,
 }
 
 void
-MFTower::AXPY(const MFTower& rhs,
-              Real           p)
+CCMFTower::AXPY(const CCMFTower& rhs,
+                Real             p)
 {
     BL_ASSERT(IsCompatible(rhs));
     int nLevs = mft.size();
@@ -186,7 +190,7 @@ MFTower::AXPY(const MFTower& rhs,
 }
 
 Real
-MFTower::norm() const // currently only max norm supported
+CCMFTower::norm() const // currently only max norm supported
 {
     int nLevs = mft.size();
     FArrayBox fab;
@@ -217,15 +221,19 @@ MFTower::norm() const // currently only max norm supported
 }
 
 bool
-MFTower::IsCompatible(const MFTower& rhs) const
+CCMFTower::IsCompatible(const MFTower& rhs) const
 {
+    const CCMFTower* rp = dynamic_cast<const CCMFTower*>(&rhs);
+    if (!rp) {
+        return false;
+    }
     int nLevs = mft.size();
-    bool isok = nLevs==rhs.size();
+    bool isok = nLevs==rp->NumLevels();
     for (int lev=0; lev<nLevs; ++lev)
     {
-        isok &= rhs[lev].boxArray()==rhs[lev].boxArray();
+        isok &= (*rp)[lev].boxArray()==mft[lev].boxArray();
         if (lev < nLevs-1) {
-            isok &= rhs.refRatio(lev)==refRatio(lev);
+            isok &= rp->refRatio(lev)==refRatio(lev);
         }
     }
     return isok;
@@ -552,43 +560,48 @@ Layout::Rebuild()
 
     // Now communicate node numbering to neighbors grow cells
     crseIds.resize(nLevs-1,PArrayManage);
-    for (int lev=1; lev<nLevs; ++lev) // This is really concerned with filling c-f grow cells
+    for (int lev=0; lev<nLevs; ++lev)
     {
-        BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(refRatio[lev-1]);
-        
-        crseIds.set(lev-1,new MultiIntFab(bndC,1,0,Fab_allocate)); crseIds[lev-1].setVal(-1);
-        crseIds[lev-1].copy(nodeIds[lev-1]); // parallel copy
-
-        // "refine" crseIds
-        MultiIntFab fineIds(bndryCells[lev],1,0); fineIds.setVal(-1);
-        const Box rangeBox = Box(IntVect::TheZeroVector(),
-                                 refRatio[lev-1] - IntVect::TheUnitVector());
-        for (MFIter mfi(crseIds[lev-1]); mfi.isValid(); ++mfi)
+        if (lev>0) 
         {
-            const Box& cbox = crseIds[lev-1][mfi].box();
-            for (IntVect iv = cbox.smallEnd(), End=cbox.bigEnd(); iv<=End; cbox.next(iv)) {
-                int nodeIdx = crseIds[lev-1][mfi](iv,0);
-                const IntVect baseIV = refRatio[lev-1] * iv;
-                for (IntVect ivt = rangeBox.smallEnd(), End=rangeBox.bigEnd(); ivt<=End;rangeBox.next(ivt))
-                    fineIds[mfi](baseIV + ivt,0) = nodeIdx;
+            BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(refRatio[lev-1]);
+        
+            crseIds.set(lev-1,new MultiIntFab(bndC,1,0,Fab_allocate)); crseIds[lev-1].setVal(-1);
+            crseIds[lev-1].copy(nodeIds[lev-1]); // parallel copy
+
+            // "refine" crseIds
+            MultiIntFab fineIds(bndryCells[lev],1,0); fineIds.setVal(-1);
+            const Box rangeBox = Box(IntVect::TheZeroVector(),
+                                     refRatio[lev-1] - IntVect::TheUnitVector());
+            for (MFIter mfi(crseIds[lev-1]); mfi.isValid(); ++mfi)
+            {
+                const Box& cbox = crseIds[lev-1][mfi].box();
+                for (IntVect iv = cbox.smallEnd(), End=cbox.bigEnd(); iv<=End; cbox.next(iv)) {
+                    int nodeIdx = crseIds[lev-1][mfi](iv,0);
+                    const IntVect baseIV = refRatio[lev-1] * iv;
+                    for (IntVect ivt = rangeBox.smallEnd(), End=rangeBox.bigEnd(); ivt<=End;rangeBox.next(ivt))
+                        fineIds[mfi](baseIV + ivt,0) = nodeIdx;
+                }
+            }
+
+            nodeIds[lev].FillBoundary(0,1);
+            BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
+
+            MultiIntFab ng(BoxArray(nodeIds[lev].boxArray()).grow(nodeIds[lev].nGrow()),1,0);
+            for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
+            {
+                ng[mfi].copy(nodeIds[lev][mfi]); // get valid + f-f (+periodic f-f)
+            }
+        
+            ng.copy(fineIds); // Parallel copy to get c-f from bndryCells
+
+            for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
+            {
+                nodeIds[lev][mfi].copy(ng[mfi]); // put it all back
             }
         }
-
         nodeIds[lev].FillBoundary(0,1);
         BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
-
-        MultiIntFab ng(BoxArray(nodeIds[lev].boxArray()).grow(nodeIds[lev].nGrow()),1,0);
-        for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
-        {
-            ng[mfi].copy(nodeIds[lev][mfi]); // get valid + f-f (+periodic f-f)
-        }
-        
-        ng.copy(fineIds); // Parallel copy to get c-f from bndryCells
-
-        for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
-        {
-            nodeIds[lev][mfi].copy(ng[mfi]); // put it all back
-        }
     }
 
     //
@@ -722,7 +735,7 @@ Layout::Rebuild()
 }
 
 void
-Layout::DoCoarseFineParallelInterp(MFTower& mft,
+Layout::DoCoarseFineParallelInterp(CCMFTower& mft,
                                    int      sComp,
                                    int      nComp) const
 {
@@ -779,6 +792,20 @@ Layout::DoCoarseFineParallelInterp(MFTower& mft,
     }
 }
 
+void
+Layout::DoOp(const CCMFTower&    mft,
+             int                 sComp,
+             int                 nComp,
+             const Array<BCRec>& bc,
+             const ECMFTower&    beta)
+{
+    BL_ASSERT(IsCompatible(mft));
+
+    for (int lev=0; lev<nLevs; ++lev) {
+
+        const PArray<MultiFab>& mf = beta[lev];
+    }
+}
 
 void
 Layout::SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const
@@ -810,11 +837,11 @@ Layout::JRowScale()
 }
 
 bool
-Layout::IsCompatible(const MFTower& mft) const
+Layout::IsCompatible(const CCMFTower& mft) const
 {
     int myproc = ParallelDescriptor::MyProc();
     bool isio = ParallelDescriptor::IOProcessor();
-    bool isok = mft.size()==nLevs;
+    bool isok = mft.NumLevels()==nLevs;
     if (isio) {
         for (int lev=0; lev<nLevs; ++lev)
         {
@@ -825,7 +852,7 @@ Layout::IsCompatible(const MFTower& mft) const
 }
 
 void
-Layout::BuildMFTower(MFTower& mft,
+Layout::BuildCCMFTower(CCMFTower& mft,
                      int      nCompMF,
                      int      nGrowMF) const
 {
@@ -834,8 +861,8 @@ Layout::BuildMFTower(MFTower& mft,
 
 
 PetscErrorCode
-Layout::MFTowerToVec(Vec&           V,
-                     const MFTower& mft,
+Layout::CCMFTowerToVec(Vec&           V,
+                     const CCMFTower& mft,
                      int            comp)
 {
     BL_ASSERT(initialized);
@@ -891,9 +918,9 @@ Layout::MFTowerToVec(Vec&           V,
 }
 
 PetscErrorCode
-Layout::VecToMFTower(MFTower&   mft,
-                     const Vec& V,
-                     int        comp) const
+Layout::VecToCCMFTower(CCMFTower& mft,
+                       const Vec& V,
+                       int        comp) const
 {
     BL_ASSERT(initialized);
     BL_ASSERT(IsCompatible(mft));

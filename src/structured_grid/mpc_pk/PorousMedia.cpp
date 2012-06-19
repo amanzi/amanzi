@@ -9987,6 +9987,10 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       nodeNums.resize(gbox,1);
       PMParent()->GetLayout().SetNodeIds(nodeNums,level,idx);
 
+      std::cout << nodeNums << std::endl;
+
+#if 0
+
       Array<int> cols(1+2*BL_SPACEDIM);
       Array<int> rows(1);
       Array<Real> vals(cols.size());
@@ -10050,9 +10054,13 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
               ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
               ierr = VecSetValues(JRowScale,1,&(rows[0]),&max_abs,INSERT_VALUES);
           }
-#endif
       }
+#endif
+
+#endif
     }
+      BoxLib::Abort();
+
 
 #ifdef BL_USE_PETSC
   ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
