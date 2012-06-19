@@ -1,3 +1,14 @@
+/*
+This is the flow component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
+Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include "domain_function.hh"
 
 #include <algorithm>
@@ -5,8 +16,11 @@
 
 namespace Amanzi {
 
-void DomainFunction::Define(const std::vector<std::string> &regions,
-                            const Teuchos::RCP<const Function> &f)
+/* ******************************************************************
+* Calculate pairs <list of cells, function>
+****************************************************************** */
+void DomainFunction::Define(const std::vector<std::string>& regions,
+                            const Teuchos::RCP<const Function>& f)
 {
   // Form the set of cell indices that belong to any of the given regions.
   // We use a std::set here to filter out any duplicate indices.
@@ -46,4 +60,56 @@ void DomainFunction::Define(const std::vector<std::string> &regions,
   for (Domain::const_iterator d = this_domain.begin(); d != this_domain.end(); ++d) value_[*d];
 }
 
-} // namespace Amanzi
+
+/* ******************************************************************
+* Compute and normalize the result, so far by volume
+****************************************************************** */
+void DomainFunction::Compute(double t)
+{
+  int dim = (*mesh_).space_dimension();
+  double *args = new double[1+dim];
+  double *xargs = args+1;
+  args[0] = t;
+
+  for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
+    const Domain& domain = s->first;
+
+    double domain_volume = 0.0;
+    for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+      for (int i = 0; i < dim; ++i) xargs[i] = xc[i];
+      value_[*d] = (*(s->second))(args);
+    }
+  }
+  delete [] args;
+}
+
+
+/* ******************************************************************
+* Compute and normalize the result, so far by volume
+****************************************************************** */
+void DomainFunction::ComputeNormalized(double t, double* weight)
+{
+  int dim = (*mesh_).space_dimension();
+  double *args = new double[1+dim];
+  double *xargs = args+1;
+  args[0] = t;
+
+  for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
+    const Domain& domain = s->first;
+
+    double domain_volume = 0.0;
+    for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+      domain_volume += weight[*d] * mesh_->cell_volume(*d);
+    }
+
+    for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+      for (int i = 0; i < dim; ++i) xargs[i] = xc[i];
+      value_[*d] = (*(s->second))(args) * weight[*d] / domain_volume;
+    }
+  }
+  delete [] args;
+}
+
+}  // namespace Amanzi
