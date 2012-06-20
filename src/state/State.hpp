@@ -319,6 +319,11 @@ class State : public Teuchos::VerboseObject<State> {
   void set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
 				const std::string& region);
 
+  void write_vis_ (Amanzi::Vis& vis, bool chemistry_enabled,  bool force=false);
+  void write_vis_ (Amanzi::Vis& vis, 
+		   Teuchos::RCP<Epetra_MultiVector> auxdata, 
+		   const std::vector<std::string>& auxnames, 
+		   bool chemistry_enabled, bool force=false);
   // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  
   Teuchos::RCP<Epetra_Vector> pressure;

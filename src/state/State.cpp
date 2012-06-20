@@ -1096,86 +1096,94 @@ std::string State::get_component_name(const int component_number) {
 
 
 /* *******************************************************************/
+void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  
+  if (out.get() && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) {
+    *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
+  }
+  
+  // create the new time step...
+  vis.create_timestep(get_time()/(365.25*24*60*60),get_cycle());
+  
+  // dump all the state vectors into the file
+  vis.write_vector(*get_pressure(), "pressure");
+  vis.write_vector(*get_porosity(),"porosity");
+  vis.write_vector(*get_water_saturation(),"water saturation");
+  vis.write_vector(*get_water_density(),"water density");
+  vis.write_vector(*get_vertical_permeability(),"vertical permeability");
+  vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
+  vis.write_vector(*get_material_ids(),"material IDs");
+  
+  // compute volumetric water content for visualization (porosity*water_saturation)
+  Epetra_Vector vol_water( mesh_maps->cell_map(false) );
+  vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
+  vis.write_vector(vol_water,"volumetric water content");
+  
+  // compute gravimetric water content for visualization
+  // MUST have computed volumetric water content before
+  vol_water.Multiply(1.0, *water_density, vol_water, 0.0);
+  Epetra_Vector bulk_density( mesh_maps->cell_map(false) );
+  bulk_density.PutScalar(1.0);
+  bulk_density.Update(-1.0,*porosity,1.0);
+  bulk_density.Multiply(1.0,*particle_density,bulk_density,0.0);
+  vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
+  vis.write_vector(vol_water,"gravimetric water content");
+  
+  // compute hydrostatic head
+  // TO DO
+  
+  std::vector<std::string> names(3);
+  names[0] = "darcy velocity x";
+  names[1] = "darcy velocity y";
+  names[2] = "darcy velocity z";
+  DeriveDarcyVelocity();
+  vis.write_vector(*get_darcy_velocity(), names);
+  
+  // write component data
+  vis.write_vector( *get_total_component_concentration(), compnames);
+  
+  // write the geochemistry data
+  if (chemistry_enabled) WriteChemistryToVis(&vis);
+}
+
+/* *******************************************************************/
+void State::write_vis_(Amanzi::Vis& vis, 
+		       Teuchos::RCP<Epetra_MultiVector> auxdata, 
+		       const std::vector<std::string>& auxnames, 
+		       bool chemistry_enabled, bool force)  {  
+  // write auxillary data
+  if (!is_null(auxdata))  {
+    vis.write_vector( *auxdata , auxnames);
+  }
+}
+
+/* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
-  if (!vis.is_disabled()) {
+  if ( !vis.is_disabled() ) {
     if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
-      using Teuchos::OSTab;
-      Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-      OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-      
-      if (out.get() && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) {
-        *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
-      }
-      
-      // create the new time step...
-      vis.create_timestep(get_time()/(365.25*24*60*60),get_cycle());
-      
-      // dump all the state vectors into the file
-      vis.write_vector(*get_pressure(), "pressure");
-      vis.write_vector(*get_porosity(),"porosity");
-      vis.write_vector(*get_water_saturation(),"water saturation");
-      vis.write_vector(*get_water_density(),"water density");
-      vis.write_vector(*get_vertical_permeability(),"vertical permeability");
-      vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
-      vis.write_vector(*get_material_ids(),"material IDs");
-      
-      // compute volumetric water content for visualization (porosity*water_saturation)
-      Epetra_Vector vol_water( mesh_maps->cell_map(false) );
-      vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
-      vis.write_vector(vol_water,"volumetric water content");
-      
-      // compute gravimetric water content for visualization
-      // MUST have computed volumetric water content before
-      vol_water.Multiply(1.0, *water_density, vol_water, 0.0);
-      Epetra_Vector bulk_density( mesh_maps->cell_map(false) );
-      bulk_density.PutScalar(1.0);
-      bulk_density.Update(-1.0,*porosity,1.0);
-      bulk_density.Multiply(1.0,*particle_density,bulk_density,0.0);
-      vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
-      vis.write_vector(vol_water,"gravimetric water content");
-
-      // compute hydrostatic head
-      // TO DO
-
-      std::vector<std::string> names(3);
-      names[0] = "darcy velocity x";
-      names[1] = "darcy velocity y";
-      names[2] = "darcy velocity z";
-      DeriveDarcyVelocity();
-      vis.write_vector(*get_darcy_velocity(), names);
-      
-      // write component data
-      vis.write_vector( *get_total_component_concentration(), compnames);
-
-      // write the geochemistry data
-      if (chemistry_enabled) WriteChemistryToVis(&vis);
-
+      write_vis_(vis, chemistry_enabled, force);
       vis.finalize_timestep();
     }
   }
 }
-
 
 /* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, 
-                      Teuchos::RCP<Epetra_MultiVector> auxdata, 
-                      const std::vector<std::string>& auxnames, 
-                      bool chemistry_enabled, bool force)  {
-  write_vis(vis, chemistry_enabled, force);
-  
+		      Teuchos::RCP<Epetra_MultiVector> auxdata, 
+		      const std::vector<std::string>& auxnames, 
+		      bool chemistry_enabled, bool force)  {  
   if ( !vis.is_disabled() ) {
-    if ( force || vis.dump_requested(get_cycle())) {
-      // write auxillary data
-      if (!is_null(auxdata))  {
-        vis.write_vector( *auxdata , auxnames);
-      }
-      
+    if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
+      write_vis_(vis, chemistry_enabled, force);
+      write_vis_(vis, auxdata, auxnames, chemistry_enabled, force);
       vis.finalize_timestep();
     }
   }
 }
-
 
 /* *******************************************************************/
 void State::set_compnames(std::vector<std::string>& compnames_)
