@@ -7,6 +7,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "beaker.hh"
+
 // forward declarations
 class Epetra_Vector;
 class Epetra_MultiVector;
@@ -23,6 +25,9 @@ class Chemistry_State {
   explicit Chemistry_State(Teuchos::RCP<State> S);
 
   virtual ~Chemistry_State();
+
+  void AllocateAdditionalChemistryStorage(
+      const amanzi::chemistry::Beaker::BeakerComponents&);
 
   // stuff chemistry can't/shouldn't change
   Teuchos::RCP<const Mesh> mesh_maps() const {
@@ -56,6 +61,14 @@ class Chemistry_State {
     return simulation_state_->free_ion_concentrations();
   }
 
+  Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff() const {
+    return simulation_state_->primary_activity_coeff();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff() const {
+    return simulation_state_->secondary_activity_coeff();
+  }
+
   int number_of_minerals(void) const {
     return simulation_state_->number_of_minerals();
   }
@@ -80,12 +93,20 @@ class Chemistry_State {
     return simulation_state_->ion_exchange_sites();
   }
 
+  Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc() const {
+    return simulation_state_->ion_exchange_ref_cation_conc();
+  }
+
   int number_of_sorption_sites(void) const {
     return simulation_state_->number_of_sorption_sites();
   }
 
   Teuchos::RCP<Epetra_MultiVector> sorption_sites() const {
     return simulation_state_->sorption_sites();
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc() const {
+    return simulation_state_->surface_complex_free_site_conc();
   }
 
   bool using_sorption(void) const {

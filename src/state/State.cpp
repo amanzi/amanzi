@@ -304,49 +304,96 @@ void State::create_storage()
 
   volume_ = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
+  CreateStoragePrimarySpecies();
+  CreateStorageMinerals();
+  CreateStorageTotalSorbed();
+  CreateStorageIonExchange();
+  CreateStorageSurfaceComplexation();
+  CreateStorageSorptionIsotherms();
+
+}  // end create_storage()
+
+void State::CreateStoragePrimarySpecies(void) {
   // if chemistry in enabled, we'll always need free_ions stored.
-  free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
+  int size = number_of_components;
+  free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), size ) );
+  free_ion_concentrations_->PutScalar(1.0e-9);
 
-  // TODO(bandre): activity corrections. Need primaries and
-  // secondaries, but don't know number of secondaries when this
-  // function is called!
+  // TODO(bandre): don't always need activity coeffs, but it makes life easier for now...
+  primary_activity_coeff_ = Teuchos::rcp(
+      new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+  primary_activity_coeff_->PutScalar(1.0);
+}  // end CreateStoragePrimaryActivityCoeff()
 
+void State::CreateStorageSecondaryActivityCoeff(const int size) {
+  // NOTE: do not know the size of this array until after chemistry has been initialized!
+  if (size > 0) {
+    secondary_activity_coeff_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    secondary_activity_coeff_->PutScalar(1.0);
+  } else {
+    secondary_activity_coeff_ = Teuchos::null;
+  }
+}  // end CreateStorageSecondaryActivityCoeff()
+
+void State::CreateStorageMinerals() {
   if (number_of_minerals() > 0) {
     mineral_volume_fractions_ = Teuchos::rcp(
         new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
     mineral_specific_surface_area_ = Teuchos::rcp(
         new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
+    mineral_volume_fractions_->PutScalar(0.0);
+    mineral_specific_surface_area_->PutScalar(1.0);
   } else {
     mineral_volume_fractions_ = Teuchos::null;
     mineral_specific_surface_area_ = Teuchos::null;
   }
+}  // end CreateStorageMinerals()
 
+void State::CreateStorageTotalSorbed(void) {
   if (using_sorption()) {
     total_sorbed_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+    total_sorbed_->PutScalar(1.0);
   } else {
     total_sorbed_ = Teuchos::null;
   }
+}  // end CreateStorageTotalSorbed()
 
-  if (number_of_sorption_sites() > 0) {
-    // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
-    sorption_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), 
-                               number_of_sorption_sites()));
-  } else {
-    sorption_sites_ = Teuchos::null;
-  }
-
-  if (number_of_ion_exchange_sites() > 0) {
-    // TODO: eventually this probably needs to be a 3d array: [cell][mineral][site]
-    // for now we assume [cell][site], but site will always be one?
+void State::CreateStorageIonExchange(void) {
+  // TODO: eventually this probably needs to be a 3d array: [cell][mineral][site]
+  // for now we assume [cell][site], but site will always be one?
+  unsigned int size = number_of_ion_exchange_sites();
+  if (size > 0) {
     ion_exchange_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), 
-                               number_of_ion_exchange_sites()));    
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    ion_exchange_ref_cation_conc_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    ion_exchange_sites_->PutScalar(1.0);
+    ion_exchange_ref_cation_conc_->PutScalar(1.0);
   } else {
     ion_exchange_sites_ = Teuchos::null;
+    ion_exchange_ref_cation_conc_ = Teuchos::null;
   }
+}  // end CreateStorageIonExchange()
 
+void State::CreateStorageSurfaceComplexation(void) {
+  // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
+  unsigned int size = number_of_sorption_sites();
+  if (size > 0) {
+    sorption_sites_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    surface_complex_free_site_conc_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    sorption_sites_->PutScalar(1.0);
+    surface_complex_free_site_conc_->PutScalar(1.0);
+  } else {
+    sorption_sites_ = Teuchos::null;
+    surface_complex_free_site_conc_ = Teuchos::null;
+  }
+}  // end CreateStorageIonExchangeRefCationConc()
+
+void State::CreateStorageSorptionIsotherms(void) {
   if (use_sorption_isotherms()) {
     isotherm_kd_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
@@ -354,15 +401,15 @@ void State::create_storage()
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
     isotherm_langmuir_b_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+    isotherm_kd_->PutScalar(0.0);
+    isotherm_freundlich_n_->PutScalar(1.0);
+    isotherm_langmuir_b_->PutScalar(1.0);
   } else {
     isotherm_kd_ = Teuchos::null;
     isotherm_freundlich_n_ = Teuchos::null;
     isotherm_langmuir_b_ = Teuchos::null;
   }
-
-}  // end create_storage()
-
-
+}  // end CreateStorageSorptionIsotherms()
 
 void State::set_time ( double new_time ) {
   last_time = new_time;

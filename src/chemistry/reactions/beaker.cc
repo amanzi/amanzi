@@ -343,7 +343,6 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   ResetStatus();
   UpdateParameters(parameters, dt);
   CheckChargeBalance(components->total);
-
   CopyComponentsToBeaker(*components);
 
   // store current molalities
@@ -416,16 +415,19 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
     if (debug()) {
       message.str("--Iteration: ");
-      message << num_iterations << "\n";
+      message << num_iterations << "\n  max_rel_change(" << max_rel_index 
+              << ") : " << max_rel_change << "\n";
+      message << std::scientific << std::setprecision(16);
       for (int i = 0; i < ncomp(); i++) {
-        message << "  " << primary_species().at(i).name() << " " 
-                << primary_species().at(i).molality() << " " << total_.at(i);
+        message << std::setw(10) << primary_species().at(i).name()
+                << std::setw(25) << primary_species().at(i).molality()
+                << std::setw(25) << total_.at(i);
         if (total_sorbed_.size() > 0) {
-          message << " " << total_sorbed_.at(i);
+          message << std::setw(25) << total_sorbed_.at(i);
         }
         message << "\n";
       }
-      chem_out->Write(kDebugBeaker, message);
+      chem_out->Write(kVerbose, message);
     }
 
     num_iterations++;

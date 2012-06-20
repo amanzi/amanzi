@@ -1518,7 +1518,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 
           stt_mat.set<double>(ss.str(), conc);
 
-          conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-16);
+          conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-9);
           ss.clear();
           ss.str("");
           ss << "Free Ion Guess " << comp_names_map[ comp_names[ii] ];

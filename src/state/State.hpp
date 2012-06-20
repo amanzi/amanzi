@@ -132,6 +132,13 @@ class State : public Teuchos::VerboseObject<State> {
   void DeriveDarcyVelocity();
 
   void create_storage();
+  void CreateStoragePrimarySpecies(void);
+  void CreateStorageSecondaryActivityCoeff(const int size);
+  void CreateStorageMinerals(void);
+  void CreateStorageTotalSorbed(void);
+  void CreateStorageIonExchange(void);
+  void CreateStorageSurfaceComplexation(void);
+  void CreateStorageSorptionIsotherms(void);
 
   void write_vis (Amanzi::Vis& vis, bool chemistry_enabled,  bool force=false);
   void write_vis (Amanzi::Vis& vis, 
@@ -179,6 +186,14 @@ class State : public Teuchos::VerboseObject<State> {
 
   void set_free_ion_concentrations(const Epetra_MultiVector& free_ion_conc) {
     *free_ion_concentrations_ = free_ion_conc;
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff() const {
+    return primary_activity_coeff_;
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff() const {
+    return secondary_activity_coeff_;
   }
 
   int number_of_minerals(void) const {
@@ -243,6 +258,14 @@ class State : public Teuchos::VerboseObject<State> {
   void set_ion_exchange_sites(const Epetra_MultiVector& ion_exchange_sites) {
     *ion_exchange_sites_ = ion_exchange_sites;
   }
+
+  Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc() const {
+    return ion_exchange_ref_cation_conc_;
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc() const {
+    return surface_complex_free_site_conc_;
+  }  
 
   int number_of_sorption_sites(void) const {
     return number_of_sorption_sites_;
@@ -311,12 +334,17 @@ class State : public Teuchos::VerboseObject<State> {
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
   Teuchos::RCP<Epetra_Vector> material_ids;
   Teuchos::RCP<Epetra_Vector> volume_;
+
   Teuchos::RCP<Epetra_MultiVector> free_ion_concentrations_; 
+  Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff_;
+  Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff_;
   Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions_; // [cell][mineral]
   Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area_; // [cell][mineral]
   Teuchos::RCP<Epetra_MultiVector> total_sorbed_;  // [cell][species]
   Teuchos::RCP<Epetra_MultiVector> sorption_sites_;  // [cell][site], eventually [cell][mineral][site]
+  Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc_;
   Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites_; // CEC, [cell][mineral]
+  Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc_;
   Teuchos::RCP<Epetra_MultiVector> isotherm_kd_; // [cell][species]
   Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n_; // [cell][species]
   Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b_; // [cell][species]

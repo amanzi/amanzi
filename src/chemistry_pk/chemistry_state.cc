@@ -10,6 +10,7 @@
 
 //#include "cell_geometry.hh"
 
+#include "beaker.hh"
 #include "chemistry_exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -27,6 +28,13 @@ Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
 Chemistry_State::~Chemistry_State() {
 }  // end ~Chemistry_State
 
+void Chemistry_State::AllocateAdditionalChemistryStorage(
+    const Beaker::BeakerComponents& components) {
+  unsigned int size = components.secondary_activity_coeff.size();
+  if (size > 0) {
+    simulation_state_->CreateStorageSecondaryActivityCoeff(size);
+  }
+}  // end AllocateAdditionalChemistryStorage()
 
 }  // namespace chemistry
 }  // namespace amanzi
