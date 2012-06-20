@@ -61,11 +61,14 @@ void Darcy_PK::ProcessParameterList()
 
   // Create the source object if any
   if (dp_list_.isSublist("source terms")) {
+    string distribution_method_name = dp_list_.get<string>("source and sink distribution method", "none");
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
 
-    src_sink->Compute(time);
+    src_sink->Compute(time);  // remove it from this routine (lipnikov@lanl.gov)
   } else {
     src_sink = NULL;
   }
@@ -118,6 +121,24 @@ void Darcy_PK::ProcessStringLinearSolver(
   *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
 }
 
+
+/* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Darcy_PK::ProcessStringSourceDistribution(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "none") {
+    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_NONE;
+  } else if (name == "volume") {
+    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_VOLUME;
+  } else if (name == "premeability") {
+    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_PERMEABILITY;
+  } else {
+    msg << "Darcy PK: unknown source normalization method has been specified.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

@@ -143,37 +143,6 @@ void Richards_PK::AddTimeDerivative_MFDfake(
 }
 
 
-/* ******************************************************************
-* Saturation should be in exact balance with Darcy fluxes in order to
-* have extrema dimishing property for concentrations. 
-* WARNING: is NOT used
-****************************************************************** */
-void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux, 
-                                                const Epetra_Vector& ws_prev, Epetra_Vector& ws)
-{
-  // create a disctributed flux vector
-  Epetra_Vector flux_d(mesh_->face_map(true));
-  for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
-  FS->CombineGhostFace2MasterFace(flux_d);
-
-  const Epetra_Vector& phi = FS->ref_porosity();
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    ws[c] = ws_prev[c];
-    double factor = dT / (phi[c] * mesh_->cell_volume(c));
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      ws[c] -= factor * flux_d[f] * dirs[n]; 
-    }
-  }
-}
-
-
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

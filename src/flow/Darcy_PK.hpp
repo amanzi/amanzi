@@ -60,6 +60,8 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void UpdateSpecificYield();
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
@@ -67,6 +69,7 @@ class Darcy_PK : public Flow_PK {
   // io members
   void ProcessParameterList();
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringSourceDistribution(const std::string name, int* method);
 
   // control methods
   void PrintStatistics() const;
@@ -121,6 +124,7 @@ class Darcy_PK : public Flow_PK {
   std::vector<double> bc_values;
 
   DomainFunction* src_sink;  // Source and sink terms
+  int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 

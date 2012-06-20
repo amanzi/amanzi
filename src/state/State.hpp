@@ -26,26 +26,26 @@ class State : public Teuchos::VerboseObject<State> {
   ~State();
 
   // access methods
-  Teuchos::RCP<Epetra_Vector>       get_pressure ()         { return pressure; }; 
-  Teuchos::RCP<Epetra_Vector>       get_lambda ()           { return lambda; }
-  Teuchos::RCP<Epetra_Vector>       get_darcy_flux ()       { return darcy_flux; };
-  Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
-  Teuchos::RCP<Epetra_Vector>       get_water_saturation () { return water_saturation; };
-  Teuchos::RCP<Epetra_Vector>       get_prev_water_saturation () { return prev_water_saturation; };
-  Teuchos::RCP<Epetra_Vector>       get_water_density ()    { return water_density; };
-  Teuchos::RCP<Epetra_Vector>       get_vertical_permeability ()     { return vertical_permeability; };
-  Teuchos::RCP<Epetra_Vector>       get_horizontal_permeability ()   { return horizontal_permeability; };
-  Teuchos::RCP<Epetra_Vector>       get_material_ids ()     { return material_ids; };
-  Teuchos::RCP<Epetra_Vector>       get_particle_density () { return particle_density; };
+  Teuchos::RCP<Epetra_Vector>      get_pressure ()         { return pressure; }; 
+  Teuchos::RCP<Epetra_Vector>      get_lambda ()           { return lambda; }
+  Teuchos::RCP<Epetra_Vector>      get_darcy_flux ()       { return darcy_flux; };
+  Teuchos::RCP<Epetra_Vector>      get_porosity ()         { return porosity; };
+  Teuchos::RCP<Epetra_Vector>      get_water_saturation () { return water_saturation; };
+  Teuchos::RCP<Epetra_Vector>      get_prev_water_saturation () { return prev_water_saturation; };
+  Teuchos::RCP<Epetra_Vector>      get_water_density ()    { return water_density; };
+  Teuchos::RCP<Epetra_Vector>      get_vertical_permeability () { return vertical_permeability; };
+  Teuchos::RCP<Epetra_Vector>      get_horizontal_permeability () { return horizontal_permeability; };
+  Teuchos::RCP<Epetra_Vector>      get_material_ids ()     { return material_ids; };
+  Teuchos::RCP<Epetra_Vector>      get_particle_density () { return particle_density; };
 
-  Teuchos::RCP<double>              get_density()      { return density; } 
-  Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
-  Teuchos::RCP<double*>             get_gravity()      { return gravity; }
+  Teuchos::RCP<double>             get_density()   { return density; } 
+  Teuchos::RCP<double>             get_viscosity() { return viscosity; }
+  Teuchos::RCP<double*>            get_gravity()   { return gravity; }
 
-  Teuchos::RCP<Epetra_MultiVector>  get_darcy_velocity () { return darcy_velocity; }
-  Teuchos::RCP<Epetra_MultiVector>  get_total_component_concentration () 
-  { return total_component_concentration; };
-  Teuchos::RCP<Epetra_Vector>       get_specific_storage() { return specific_storage; }
+  Teuchos::RCP<Epetra_MultiVector> get_darcy_velocity () { return darcy_velocity; }
+  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration () { return total_component_concentration; };
+  Teuchos::RCP<Epetra_Vector>      get_specific_storage() { return specific_storage; }
+  Teuchos::RCP<Epetra_Vector>      get_specific_yield() { return specific_yield; }
   
   const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
@@ -100,6 +100,7 @@ class State : public Teuchos::VerboseObject<State> {
   void set_gravity(const double *g);
   void set_number_of_components(const int n);
   void set_specific_storage(const double ss, const std::string region);
+  void set_specific_yield(const double sy, const std::string region);
 
   // set methods 
   void set_darcy_flux ( const Epetra_Vector& darcy_flux_ );
@@ -320,6 +321,7 @@ class State : public Teuchos::VerboseObject<State> {
   Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n_; // [cell][species]
   Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b_; // [cell][species]
   Teuchos::RCP<Epetra_Vector> specific_storage; 
+  Teuchos::RCP<Epetra_Vector> specific_yield; 
 
   Teuchos::RCP<double*> gravity;
   Teuchos::RCP<double> density;

@@ -26,8 +26,8 @@ class MeshFunction {
 
   virtual void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const Function>& f) = 0;
   void DefineFromString(const std::string region, const Teuchos::RCP<const Function>& f);
+  virtual void Compute(double T) = 0;
   
-  void Compute(double);
   Iterator begin() const { return value_.begin(); }
   Iterator end() const  { return value_.end(); }
   Iterator find(const int j) const { return value_.find(j); }

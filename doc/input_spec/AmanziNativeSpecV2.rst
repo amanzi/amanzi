@@ -310,6 +310,11 @@ The remaining `"Flow`" parameters are
   The second option is still experimental (no papers were published) and produces 
   an optimal discretization.
 
+* `"source and sink distribution method`" [string] identifies a method for distributing
+  quantities defined as integral values over regions. At the moment, it is applied
+  only to source and sink terms. The available options are `"volume`",
+  `"none`", and `"permeability`".
+
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
   Here is an example:

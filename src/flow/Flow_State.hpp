@@ -63,6 +63,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> prev_water_saturation() { return prev_water_saturation_; }
 
   Teuchos::RCP<Epetra_Vector> specific_storage() { return specific_storage_; }
+  Teuchos::RCP<Epetra_Vector> specific_yield() { return specific_yield_; }
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
 
   State* state() { return S_; }
@@ -82,6 +83,7 @@ class Flow_State {
   Epetra_Vector& ref_prev_water_saturation() { return *prev_water_saturation_; }
 
   Epetra_Vector& ref_specific_storage() { return *specific_storage_; }
+  Epetra_Vector& ref_specific_yield() { return *specific_yield_; }
 
   // miscaleneous
   double get_time() { return (S_ == NULL) ? -1.0 : S_->get_time(); }
@@ -117,6 +119,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> prev_water_saturation_;
 
   Teuchos::RCP<Epetra_Vector> specific_storage_;
+  Teuchos::RCP<Epetra_Vector> specific_yield_;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 };
