@@ -84,6 +84,13 @@ _write_to_log("\tNo information available at this time")
 #_write_to_log( "\tLibraries:   ${CMAKE_REQUIRED_LIBRARIES}")
 _write_blank_line()
 
+_write_blank_line()
+_write_to_log("Repository Information")
+_write_to_log("\tMercurial Branch: ${Amanzi_HG_BRANCH}")
+_write_to_log("\tMercurial Global ID: ${Amanzi_HG_GLOBAL_HASH}")
+_write_to_log("\tMercurial Local ID: ${Amanzi_HG_LOCAL_ID}")
+_write_blank_line()
+
 # Write Package Information
 _write_to_log("Third Party Libraries")
 if(pack_found)
