@@ -141,19 +141,17 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
 
   // Eq. 2.3-47c
   unsigned int num_primary_species = primarySpecies.size();
-  double* nu_li_nu_i_Si = new double[num_primary_species];
-  for (unsigned int i = 0; i < num_primary_species; i++) {
-    nu_li_nu_i_Si[i] = 0.;
-  }
+  std::vector<double> nu_li_nu_i_Si(num_primary_species, 0.0);
+
   double sum_nu_i_sq_Si = 0.;
-  for (std::vector<SurfaceComplex>::iterator srfcplx =
-           surface_complexes_.begin();
+  std::vector<SurfaceComplex>::iterator srfcplx;
+  for (srfcplx = surface_complexes_.begin();
        srfcplx != surface_complexes_.end(); srfcplx++) {
     double tempd = srfcplx->free_site_stoichiometry() *
         srfcplx->surface_concentration();
     for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
       // sum of nu_li * nu_i * S_i
-      nu_li_nu_i_Si[srfcplx->species_id(icomp)] +=
+      nu_li_nu_i_Si.at(srfcplx->species_id(icomp)) +=
           srfcplx->stoichiometry(icomp) * tempd;
     }
     // sum of nu_i^2 * S_i
@@ -163,18 +161,25 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
   // complete the denominator within the brackets
   sum_nu_i_sq_Si /= surface_site_.at(0).free_site_concentration();
   double Sx_plus_sum_nu_i_sq_Si = 1. + sum_nu_i_sq_Si;
+  for (unsigned int i = 0; i < num_primary_species; ++i) {
+    nu_li_nu_i_Si.at(i) /= Sx_plus_sum_nu_i_sq_Si;
+    nu_li_nu_i_Si.at(i) *= -1.0;
+    // convert from dlogm to dm
+    nu_li_nu_i_Si.at(i) /= primarySpecies.at(i).molality();
+  }
 
-  for (std::vector<SurfaceComplex>::iterator srfcplx =
-           surface_complexes_.begin();
-       srfcplx != surface_complexes_.end(); srfcplx++) {
+  for (srfcplx = surface_complexes_.begin();
+       srfcplx != surface_complexes_.end(); ++srfcplx) {
     double surface_concentration = srfcplx->surface_concentration();
+    double nui_Si_over_Sx =
+        srfcplx->free_site_stoichiometry() * surface_concentration /
+        surface_site_.at(0).free_site_concentration();
     for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
       int primary_species_id_i = srfcplx->species_id(icomp);
       // 2.3-47c converted to non-log form
-      double dSi_mi = surface_concentration /
-          primarySpecies[primary_species_id_i].molality() *
-          (srfcplx->stoichiometry(icomp) -
-           (nu_li_nu_i_Si[icomp] / Sx_plus_sum_nu_i_sq_Si));
+      double dSi_mi = dSi_mi = (srfcplx->stoichiometry(icomp) * surface_concentration /
+                                primarySpecies.at(primary_species_id_i).molality()) +
+          nu_li_nu_i_Si.at(icomp) * nui_Si_over_Sx;
       for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
         double dPsij_dmi = dSi_mi * srfcplx->stoichiometry(jcomp);
@@ -182,7 +187,6 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
       }
     }
   }
-  delete [] nu_li_nu_i_Si;
 }  // end AddContributionToDTotal()
 
 void SurfaceComplexationRxn::DisplaySite(void) const {
