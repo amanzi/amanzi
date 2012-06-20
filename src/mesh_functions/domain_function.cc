@@ -86,9 +86,37 @@ void DomainFunction::Compute(double t)
 
 
 /* ******************************************************************
-* Compute and normalize the result, so far by volume
+* Compute and distribute the result by volume
 ****************************************************************** */
-void DomainFunction::ComputeNormalized(double t, double* weight)
+void DomainFunction::ComputeDistribute(double t)
+{
+  int dim = (*mesh_).space_dimension();
+  double *args = new double[1+dim];
+  double *xargs = args+1;
+  args[0] = t;
+
+  for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
+    const Domain& domain = s->first;
+
+    double domain_volume = 0.0;
+    for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+      domain_volume += mesh_->cell_volume(*d);
+    }
+
+    for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+      for (int i = 0; i < dim; ++i) xargs[i] = xc[i];
+      value_[*d] = (*(s->second))(args) / domain_volume;
+    }
+  }
+  delete [] args;
+}
+
+
+/* ******************************************************************
+* Compute and distribute the result by specified weight.
+****************************************************************** */
+void DomainFunction::ComputeDistribute(double t, double* weight)
 {
   int dim = (*mesh_).space_dimension();
   double *args = new double[1+dim];

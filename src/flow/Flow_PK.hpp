@@ -69,6 +69,10 @@ const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
 const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
 const int FLOW_TI_MAX_ITERATIONS = 400;
 
+const int FLOW_SOURCE_DISTRIBUTION_NONE = 0;
+const int FLOW_SOURCE_DISTRIBUTION_VOLUME = 1;
+const int FLOW_SOURCE_DISTRIBUTION_PERMEABILITY = 2;
+
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
 const int FLOW_HEX_EDGES = 12;

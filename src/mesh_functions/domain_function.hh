@@ -29,7 +29,8 @@ class DomainFunction : public MeshFunction {
 
   void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const Function>& f);
   void Compute(double T);
-  void ComputeNormalized(double T, double* weight);
+  void ComputeDistribute(double T);
+  void ComputeDistribute(double T, double* weight);
 };
 
 }  // namespace Amanzi
