@@ -248,7 +248,6 @@ MFTower::IsCompatible(const MFTower& rhs) const
 }
 
 
-#ifdef BL_USE_PETSC
 std::ostream& operator<< (std::ostream&  os, const Stencil& a)
 {
   os << "(size=" << a.size() << ") ";
@@ -348,6 +347,7 @@ Layout::SetParent(Amr* new_parent)
 void
 Layout::DestroyPetscStructures()
 {
+#ifdef BL_USE_PETSC
     for (int i=0; i<mats_I_created.size(); ++i) {
         PetscErrorCode ierr = MatDestroy(mats_I_created[i]); CHKPETSC(ierr);
     }
@@ -356,6 +356,7 @@ Layout::DestroyPetscStructures()
         PetscErrorCode ierr = VecDestroy(vecs_I_created[i]); CHKPETSC(ierr);
     }
     vecs_I_created.clear();
+#endif
 }
 
 void
@@ -614,6 +615,7 @@ Layout::Rebuild()
         BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
     }
 
+#ifdef BL_USE_PETSC
     int n = nNodes_local; // Number of local columns of J
     int m = nNodes_local; // Number of local rows of J
     int N = nNodes_global; // Number of global columns of J 
@@ -627,6 +629,7 @@ Layout::Rebuild()
     mats_I_created.push_back(&J_mat);
     ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
     vecs_I_created.push_back(&JRowScale_vec);
+#endif
     initialized = true;
 }
 
@@ -647,18 +650,6 @@ Layout::SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const
     }
 }
 
-Mat&
-Layout::Jacobian()
-{
-    return J_mat;
-}
-
-Vec&
-Layout::JRowScale()
-{
-    return JRowScale_vec;
-}
-
 bool
 Layout::IsCompatible(const MFTower& mft) const
 {
@@ -672,6 +663,19 @@ Layout::IsCompatible(const MFTower& mft) const
         }
     }
     return isok;
+}
+
+#ifdef BL_USE_PETSC
+Mat&
+Layout::Jacobian()
+{
+    return J_mat;
+}
+
+Vec&
+Layout::JRowScale()
+{
+    return JRowScale_vec;
 }
 
 PetscErrorCode
@@ -782,6 +786,7 @@ Layout::VecToMFTower(MFTower& mft,
     }
     return ierr;
 }
+#endif
 
 std::ostream& operator<< (std::ostream&  os, const Layout::IntFab& ifab)
 {
@@ -829,8 +834,6 @@ std::ostream& operator<< (std::ostream&  os, const Layout::MultiNodeFab& mnf)
     }
     return os;
 }
-
-#endif
 
 ABecTower::ABecTower(const Layout& _layout)
     : layout(_layout), gridArray(_layout.GridArray()), 

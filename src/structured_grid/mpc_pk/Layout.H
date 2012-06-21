@@ -79,7 +79,6 @@ protected:
     IndexType iType;
 };
 
-#ifdef BL_USE_PETSC
 class Stencil
     : public std::map<Node,Real>
 {
@@ -119,6 +118,7 @@ struct Layout
     const PArray<Layout::MultiNodeFab>& CrseNodes() const {return crseNodes;}
     const Array<BoxArray>& BndryCells() const {return bndryCells;}
 
+#ifdef BL_USE_PETSC
     Mat& Jacobian();
     Vec& JRowScale();
     PetscErrorCode MFTowerToVec(Vec& V,
@@ -128,6 +128,7 @@ struct Layout
     PetscErrorCode VecToMFTower(MFTower& mft,
                                 const Vec& V,
                                 int        comp) const;
+#endif
     
     const Array<IntVect>& RefRatio() const {return refRatio;}
 
@@ -135,10 +136,12 @@ struct Layout
 
 protected:
     void DestroyPetscStructures();
+#ifdef BL_USE_PETSC
     Mat J_mat;
     Vec JRowScale_vec;
     Array<Vec*> vecs_I_created;
     Array<Mat*> mats_I_created;
+#endif
 
     PArray<MultiNodeFab> nodes;
     PArray<MultiNodeFab> crseNodes;
@@ -159,7 +162,6 @@ protected:
 std::ostream& operator<< (std::ostream&  os, const Layout::IntFab& ifab);
 std::ostream& operator<< (std::ostream&  os, const Layout::NodeFab& nfab);
 std::ostream& operator<< (std::ostream&  os, const Layout::MultiNodeFab& mnf);
-#endif
 
 struct ABecTower
 {
