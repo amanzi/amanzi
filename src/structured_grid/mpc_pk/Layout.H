@@ -41,78 +41,43 @@ struct Node
 
 std::ostream& operator<< (std::ostream&  os, const Node& node);
 
+class Layout; // Forward declaration
+
+
 struct MFTower
 {
-    MFTower() {}
-    virtual ~MFTower() {}
-    const IntVect& refRatio(int lev) const {return ref_ratio[lev];} 
-    int NumLevels() const {return ref_ratio.size()+1;}
+    MFTower(const Layout&    layout,
+            const IndexType& t = IndexType(IntVect::TheZeroVector()),
+            int              nComp = 1,
+            int              nGrow = 0);
 
-    virtual bool IsCompatible(const MFTower& rhs) const = 0;
-    virtual Real norm() const = 0;
+    MFTower(Layout&           layout,
+            PArray<MultiFab>& pamf);
 
-protected:
-    Array<IntVect> ref_ratio;
-};
-
-struct CCMFTower
-    : public MFTower
-{
-    CCMFTower();
-    ~CCMFTower();
-    CCMFTower(const PArray<MultiFab>& pamf,
-              const Array<IntVect>&   ratio);
-
-    CCMFTower(const Array<BoxArray>& bat,
-              const Array<IntVect>&  ratio,
-              int                    nComp=1,
-              int                    nGrow=0);
-
-    void define(const Array<BoxArray>& bat,
-                const Array<IntVect>&  ratio,
-                int                    nComp=1,
-                int                    nGrow=0);
-
+    int NumLevels() const {return nLevs;}
+    int NComp() const {return nComp;}
+    int NGrow() const {return nGrow;}
     MultiFab& operator[](int i) {return mft[i];}
     const MultiFab& operator[](int i) const {return mft[i];}
+    const Array<BoxArray>& GridArray() const {return gridArray;}
+    const Array<Geometry>& GeomArray() const {return geomArray;}
+    const Array<IntVect>& RefRatio() const {return refRatio;}
+    bool IsCompatible(const MFTower& rhs) const;
 
-    virtual bool IsCompatible(const MFTower& rhs) const;
-    void AXPY(const CCMFTower& rhs,
-              Real             p = 1);
-    virtual Real norm() const;
+    Real norm() const;
+    void AXPY(const MFTower& rhs,
+              Real           p = 1);
 
 protected:
+    void define_alloc();
+    void define_noalloc(PArray<MultiFab>& pamf);
+    const Layout& layout;
+    const Array<BoxArray>& gridArray;
+    const Array<Geometry>& geomArray;
+    const Array<IntVect>& refRatio;
+    int nLevs, nComp, nGrow;
     PArray<MultiFab> mft;
-};
-
-struct ECMFTower
-    : public MFTower
-{
-    ECMFTower();
-    virtual ~ECMFTower();
-    ECMFTower(const Array<PArray<MultiFab> >& pamf,
-              const Array<IntVect>&           ratio);
-
-    ECMFTower(const Array<BoxArray>& bat,
-              const Array<IntVect>&  ratio,
-              int                    nComp=1,
-              int                    nGrow=0);
-
-    void define(const Array<BoxArray>& bat,
-                const Array<IntVect>&  ratio,
-                int                    nComp=1,
-                int                    nGrow=0);
-
-    PArray<MultiFab>& operator[](int i) {return mft[i];}
-    const PArray<MultiFab>& operator[](int i) const {return mft[i];}
-
-    virtual bool IsCompatible(const MFTower& rhs) const;
-    void AXPY(const ECMFTower& rhs,
-              Real             p = 1);
-    virtual Real norm() const;
-    
-protected:
-    Array<PArray<MultiFab> > mft;
+    IndexType iType;
 };
 
 #ifdef BL_USE_PETSC
@@ -132,6 +97,13 @@ std::ostream& operator<< (std::ostream&  os, const Stencil& a);
 
 struct Layout
 {
+    typedef std::map<IntVect,Stencil,IntVect::Compare> IVSMap;
+    typedef IVSMap::const_iterator IVScit;
+    typedef BaseFab<Node> NodeFab;
+    typedef FabArray<NodeFab> MultiNodeFab; 
+    typedef BaseFab<int> IntFab;
+    typedef FabArray<IntFab> MultiIntFab; 
+
     Layout(Amr* parent = 0);
     ~Layout();
     void Clear();
@@ -140,38 +112,29 @@ struct Layout
     void SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const;
     int NumberOfGlobalNodeIds() const {return nNodes_global;}
     int NumberOfLocalNodeIds() const {return nNodes_local;}
+    int NumLevels() const {return nLevs;}
+    const Array<BoxArray>& GridArray() const {return gridArray;}
+    const Array<Geometry>& GeomArray() const {return geomArray;}
+    const DistributionMapping& DistributionMap(int lev) const {return nodeIds[lev].DistributionMap();}
+    const Array<Array<IVSMap> >& BndryStencil() const {return bndryStencil;}
 
     Mat& Jacobian();
     Vec& JRowScale();
-    PetscErrorCode CCMFTowerToVec(Vec& V,
-                                  const CCMFTower& mft,
-                                  int comp); // non-const because we track all created Vecs and destroy them in ~Layout
+    PetscErrorCode MFTowerToVec(Vec& V,
+                                const MFTower& mft,
+                                int comp); // non-const because we track all created Vecs and destroy them in ~Layout
 
-    PetscErrorCode VecToCCMFTower(CCMFTower& mft,
-                                  const Vec& V,
-                                  int        comp) const;
-
+    PetscErrorCode VecToMFTower(MFTower& mft,
+                                const Vec& V,
+                                int        comp) const;
+    
     const Array<IntVect>& RefRatio() const {return refRatio;}
 
-    bool IsCompatible(const CCMFTower& mft) const;
-    void BuildCCMFTower(CCMFTower& mft,
-                        int        nCompMF,
-                        int        nGrowMF) const;
-
-    void DoCoarseFineParallelInterp(CCMFTower& mft,
-                                    int        sComp,
-                                    int        nComp) const;
-
-    void DoOp(const CCMFTower&    mft,
-              int                 sComp,
-              int                 nComp,
-              const Array<BCRec>& bc,
-              const ECMFTower&    beta);
-
-    typedef BaseFab<Node> NodeFab;
-    typedef FabArray<NodeFab> MultiNodeFab; 
-    typedef BaseFab<int> IntFab;
-    typedef FabArray<IntFab> MultiIntFab; 
+    bool IsCompatible(const MFTower& mft) const;
+    
+    void DoCoarseFineParallelInterp(MFTower& mft,
+                                    int      sComp,
+                                    int      nComp) const;
 
 protected:
     void DestroyPetscStructures();
@@ -193,7 +156,7 @@ protected:
     Amr* parent;
     int nNodes_global, nNodes_local;
 
-    Array<Array<std::map<IntVect,Stencil,IntVect::Compare> > > bndryStencil; //[lev][dir][iv] = stencil to perform tangential interp
+    Array<Array<IVSMap> > bndryStencil; //[lev][dir][iv] = stencil to perform tangential interp
 };
 
 
@@ -201,5 +164,28 @@ std::ostream& operator<< (std::ostream&  os, const Layout::IntFab& ifab);
 std::ostream& operator<< (std::ostream&  os, const Layout::NodeFab& nfab);
 std::ostream& operator<< (std::ostream&  os, const Layout::MultiNodeFab& mnf);
 #endif
+
+struct ABecTower
+{
+    ABecTower(const Layout& layout);
+    int NumLevels() const {return layout.NumLevels();}
+    const Array<BoxArray>& GridArray() const {return layout.GridArray();}
+    const Array<Geometry>& GeomArray() const {return layout.GeomArray();}
+    const MFTower& Coefficients(int i) const {return coefs[i];}
+    MFTower& Coefficients(int i) {return coefs[i];}
+    void BuildStencil(const BCRec& bc,
+                      int maxorder);
+
+protected:
+    int nLevs;
+    const Layout& layout;
+    const Array<BoxArray>& gridArray;
+    const Array<Geometry>& geomArray;
+    const Array<IntVect>& refRatio;
+    PArray<MFTower> coefs;
+
+    Array<std::map<IntVect,Stencil,IntVect::Compare> > perpInterpStencil; //[lev][iv] = stencil to perform perpInterp
+
+};
 
 #endif

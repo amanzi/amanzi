@@ -103,64 +103,78 @@ GetBndryCells (const BoxArray& ba,
     return BoxArray(gcells);
 }
 
-CCMFTower::CCMFTower()
+MFTower::MFTower(const Layout&    _layout,
+                 const IndexType& t,
+                 int              _nComp,
+                 int              _nGrow)
+    : layout(_layout), iType(t), nComp(_nComp), nGrow(_nGrow), nLevs(layout.NumLevels()),
+      gridArray(layout.GridArray()), geomArray(layout.GeomArray()), refRatio(layout.RefRatio())    
 {
+    define_alloc();
 }
 
-CCMFTower::~CCMFTower()
+MFTower::MFTower(Layout&           _layout,
+                 PArray<MultiFab>& pamf)
+    : layout(_layout), nComp(pamf[0].nComp()), nGrow(pamf[0].nGrow()), nLevs(layout.NumLevels()),
+    gridArray(layout.GridArray()), geomArray(layout.GeomArray()), refRatio(layout.RefRatio())    
 {
+    define_noalloc(pamf);
 }
 
-CCMFTower::CCMFTower(const Array<BoxArray>& bat,
-                 const Array<IntVect>&  ratio,
-                 int                    nComp,
-                 int                    nGrow)
-{
-    ref_ratio.clear();
-    mft.clear();
-    define(bat,ratio,nComp,nGrow);
-}
+static const IndexType CC(IntVect::TheZeroVector());
+static const IndexType NC(IntVect::TheUnitVector());
+static const IndexType ECI(BoxLib::BASISV(0));
+static const IndexType ECJ(BoxLib::BASISV(1));
+#if BL_SPACEDIM==3
+static const IndexType ECK(BoxLib::BASISV(2));
+#endif
 
-CCMFTower::CCMFTower(const PArray<MultiFab>& pamf,
-                 const Array<IntVect>&   ratio)
+void
+MFTower::define_alloc()
 {
-    int nLevs = pamf.size();
-    mft.resize(nLevs, PArrayNoManage);
-    ref_ratio.resize(nLevs-1);
+    mft.resize(nLevs,PArrayManage);
     for (int lev=0; lev<nLevs; ++lev)
     {
-        if (lev<nLevs-1) {
-            ref_ratio[lev] = ratio[lev];
+        BoxArray ba = gridArray[lev];
+        if (iType!=CC) {
+            if (iType == ECI) {
+                ba.surroundingNodes(0);
+            }
+            else if (iType == ECJ) {
+                ba.surroundingNodes(1);
+            }
+#if BL_SPACEDIM==3
+            else if (iType == ECK) {
+                ba.surroundingNodes(2);
+            }
+#endif
+            else if (iType == NC) {
+                ba.surroundingNodes();
+            }
         }
-        mft.set(lev,&(const_cast<MultiFab&>(pamf[lev]))); // careful...
+        mft.set(lev,new MultiFab(ba,nComp,nGrow));
     }
 }
 
 void
-CCMFTower::define(const Array<BoxArray>& bat,
-                const Array<IntVect>&  ratio,
-                int                    nComp,
-                int                    nGrow)
+MFTower::define_noalloc(PArray<MultiFab>& pamf)
 {
-    int nLevs = bat.size();
-    BL_ASSERT(nLevs == ratio.size()+1);
-    mft.resize(bat.size(), PArrayManage);
-    ref_ratio.resize(nLevs);
-    for (int lev=0; lev<bat.size(); ++lev)
+    iType = pamf[0].boxArray()[0].ixType();
+    mft.resize(nLevs,PArrayNoManage);
+    for (int lev=0; lev<nLevs; ++lev)
     {
-        if (lev<nLevs-1) {
-            ref_ratio[lev] = ratio[lev];
-        }
-        mft.set(lev,new MultiFab(bat[lev],nComp,nGrow));
+        BL_ASSERT(pamf[lev].boxArray() == gridArray[lev]);
+        BL_ASSERT(pamf[lev].nComp() == nComp);
+        BL_ASSERT(pamf[lev].nGrow() == nGrow);
+        mft.set(lev,&(pamf[lev]));
     }
 }
 
 void
-CCMFTower::AXPY(const CCMFTower& rhs,
-                Real             p)
+MFTower::AXPY(const MFTower& rhs,
+              Real           p)
 {
     BL_ASSERT(IsCompatible(rhs));
-    int nLevs = mft.size();
     FArrayBox fab;
     for (int lev=0; lev<nLevs; ++lev)
     {
@@ -170,7 +184,7 @@ CCMFTower::AXPY(const CCMFTower& rhs,
             fab.resize(vbox,1);
             fab.copy(rhs[lev][mfi]);
             if (lev<nLevs-1) {
-                BoxArray cba = BoxArray(mft[lev-1].boxArray()).refine(refRatio(lev));
+                BoxArray cba = BoxArray(gridArray[lev-1]).refine(refRatio[lev]);
                 std::vector< std::pair<int,Box> > isects = cba.intersections(vbox);
                 for (int i = 0; i < isects.size(); i++)
                 {
@@ -190,9 +204,8 @@ CCMFTower::AXPY(const CCMFTower& rhs,
 }
 
 Real
-CCMFTower::norm() const // currently only max norm supported
+MFTower::norm() const // currently only max norm supported
 {
-    int nLevs = mft.size();
     FArrayBox fab;
     Real norm = 0;
     for (int lev=0; lev<nLevs; ++lev)
@@ -203,7 +216,7 @@ CCMFTower::norm() const // currently only max norm supported
             fab.resize(vbox,1);
             fab.copy(mft[lev][mfi]);
             if (lev<nLevs-1) {
-                BoxArray cfba = BoxArray(mft[lev+1].boxArray()).coarsen(refRatio(lev));
+                BoxArray cfba = BoxArray(gridArray[lev-1]).coarsen(refRatio[lev-1]);
                 std::vector< std::pair<int,Box> > isects = cfba.intersections(vbox);
                 for (int i = 0; i < isects.size(); i++)
                 {
@@ -221,23 +234,19 @@ CCMFTower::norm() const // currently only max norm supported
 }
 
 bool
-CCMFTower::IsCompatible(const MFTower& rhs) const
+MFTower::IsCompatible(const MFTower& rhs) const
 {
-    const CCMFTower* rp = dynamic_cast<const CCMFTower*>(&rhs);
-    if (!rp) {
-        return false;
-    }
-    int nLevs = mft.size();
-    bool isok = nLevs==rp->NumLevels();
-    for (int lev=0; lev<nLevs; ++lev)
+    bool isok = nLevs==rhs.NumLevels();
+    for (int lev=0; lev<nLevs && isok; ++lev)
     {
-        isok &= (*rp)[lev].boxArray()==mft[lev].boxArray();
+        isok &= gridArray[lev] == rhs.gridArray[lev];
         if (lev < nLevs-1) {
-            isok &= rp->refRatio(lev)==refRatio(lev);
+            isok &= rhs.RefRatio()[lev]==refRatio[lev];
         }
     }
     return isok;
 }
+
 
 #ifdef BL_USE_PETSC
 std::ostream& operator<< (std::ostream&  os, const Stencil& a)
@@ -735,12 +744,11 @@ Layout::Rebuild()
 }
 
 void
-Layout::DoCoarseFineParallelInterp(CCMFTower& mft,
+Layout::DoCoarseFineParallelInterp(MFTower& mft,
                                    int      sComp,
                                    int      nComp) const
 {
     BL_ASSERT(IsCompatible(mft));
-
     for (int lev=1; lev<nLevs; ++lev) {
 
         MultiFab& mf = mft[lev];
@@ -793,21 +801,6 @@ Layout::DoCoarseFineParallelInterp(CCMFTower& mft,
 }
 
 void
-Layout::DoOp(const CCMFTower&    mft,
-             int                 sComp,
-             int                 nComp,
-             const Array<BCRec>& bc,
-             const ECMFTower&    beta)
-{
-    BL_ASSERT(IsCompatible(mft));
-
-    for (int lev=0; lev<nLevs; ++lev) {
-
-        const PArray<MultiFab>& mf = beta[lev];
-    }
-}
-
-void
 Layout::SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const
 {
     BL_ASSERT(initialized);
@@ -837,7 +830,7 @@ Layout::JRowScale()
 }
 
 bool
-Layout::IsCompatible(const CCMFTower& mft) const
+Layout::IsCompatible(const MFTower& mft) const
 {
     int myproc = ParallelDescriptor::MyProc();
     bool isio = ParallelDescriptor::IOProcessor();
@@ -851,18 +844,9 @@ Layout::IsCompatible(const CCMFTower& mft) const
     return isok;
 }
 
-void
-Layout::BuildCCMFTower(CCMFTower& mft,
-                     int      nCompMF,
-                     int      nGrowMF) const
-{
-    mft.define(gridArray,refRatio,nCompMF,nGrowMF);
-}
-
-
 PetscErrorCode
-Layout::CCMFTowerToVec(Vec&           V,
-                     const CCMFTower& mft,
+Layout::MFTowerToVec(Vec&           V,
+                     const MFTower& mft,
                      int            comp)
 {
     BL_ASSERT(initialized);
@@ -918,9 +902,9 @@ Layout::CCMFTowerToVec(Vec&           V,
 }
 
 PetscErrorCode
-Layout::VecToCCMFTower(CCMFTower& mft,
-                       const Vec& V,
-                       int        comp) const
+Layout::VecToMFTower(MFTower& mft,
+                     const Vec& V,
+                     int        comp) const
 {
     BL_ASSERT(initialized);
     BL_ASSERT(IsCompatible(mft));
@@ -1016,4 +1000,193 @@ std::ostream& operator<< (std::ostream&  os, const Layout::MultiNodeFab& mnf)
     return os;
 }
 
+#endif
+
+ABecTower::ABecTower(const Layout& _layout)
+    : layout(_layout), gridArray(_layout.GridArray()), 
+      geomArray(_layout.GeomArray()), nLevs(_layout.NumLevels()),
+      coefs(BL_SPACEDIM,PArrayManage), refRatio(_layout.RefRatio())
+{
+    Array<IndexType> itype(BL_SPACEDIM);
+    D_DECL(itype[0]=ECI,
+           itype[1]=ECJ,
+           itype[2]=ECK);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        coefs.set(d, new MFTower(layout,itype[d]));
+    }
+}
+
+/*
+     BuildInterpCoefs:
+     
+     This routine returns the Lagrange interpolating coefficients for a
+     polynomial through N points, evaluated at xInt=-1 (see Numerical Recipes,
+     v2, p102, e.g.):
+     
+             (x-x2)(x-x3)...(x-xN)              (x-x1)(x-x2)...(x-x(N-1))
+     P(x) = ----------------------- y1  + ... + ------------------------  yN
+            (x1-x2)(x1-x3)...(x1-xN)            (x1-x2)(x1-x3)...(x1-xN)
+
+      P(xInt) = sum_(i=1)^(N) y[i]*c[i]
+*/
+
+void
+BuildInterpCoefs(Real xVal, Array<Real>& coefs)
+{
+    int N = coefs.size();
+    Array<Real> x(N);
+    x[0] = -0.5-xVal; // xVal is location of off-grid Dirichlet value
+    for (int i=1; i<N; ++i) {
+        x[i] = i-1;
+    }
+    for (int j=0; j<N; ++j) {
+        Real num = 1;
+        Real den = 1;
+        for (int i=0; i<N; ++i) {
+            if (i!=j) {
+                num *= -1 - x[i];
+                den *= x[j] - x[i];
+            }
+        }
+        coefs[j] = num/den;
+    }
+}
+
+
+void
+ABecTower::BuildStencil(const BCRec& bc,
+                        int maxorder)
+{
+    int myproc = ParallelDescriptor::MyProc();
+    Array<Real> iCoefs(maxorder);
+
+    perpInterpStencil.resize(nLevs);
+    for (int lev=0; lev<nLevs; ++lev) {
+        const Box& dbox = geomArray[lev].Domain();
+        Array<Array<Box> > bndry(2, Array<Box>(BL_SPACEDIM));
+        for (int d=0; d<BL_SPACEDIM; ++d) {
+            bndry[0][d] = BoxLib::adjCellLo(dbox,d);
+            bndry[1][d] = BoxLib::adjCellHi(dbox,d);
+        }
+
+        const DistributionMapping dm = layout.DistributionMap(lev);
+        const BoxArray& ba = gridArray[lev];
+        for (int i=0; i<ba.size(); ++i) {
+            if (dm[i] == myproc) {
+                const Box& vbox = ba[i];
+                for (int d=0; d<BL_SPACEDIM; ++d) {
+                    Array<Box> myBndry(2);
+                    myBndry[0] = BoxLib::adjCellLo(vbox,d);
+                    myBndry[1] = BoxLib::adjCellHi(vbox,d);
+                    
+                    for (int hilo=0; hilo<2; ++hilo)
+                    {
+                        Box povlp = myBndry[hilo] & bndry[hilo][d];
+                        int bc_flag = (hilo==0 ? bc.lo()[d] : bc.hi()[d]);
+                        bool pbc = povlp.ok() && bc_flag==EXT_DIR;
+                        if (pbc) {
+                            BuildInterpCoefs(0,iCoefs); // value at wall
+                            for (IntVect iv=povlp.smallEnd(), End=povlp.bigEnd(); iv<=End; povlp.next(iv)) {
+                                Stencil perp;
+                                int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
+                                for (int k=0; k<iCoefs.size(); ++k) {
+                                    IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
+                                    perp[siv] = iCoefs[k];
+                                }
+                            }
+                        }
+                        else if (lev>0) {
+                            // Build c-f stencil
+                            BoxArray sba = BoxLib::complementIn(myBndry[hilo],ba);
+                            if (geomArray[lev].isPeriodic(d)) {
+                                BoxArray per_ba = BoxLib::intersect(sba,BoxArray(ba).shift(d,dbox.length(d)));
+                                for (int j=0; j<per_ba.size(); ++j) {
+                                    sba = BoxLib::complementIn(per_ba[j],sba);
+                                }
+                                per_ba = BoxLib::intersect(sba,BoxArray(ba).shift(d,-dbox.length(d)));
+                                for (int j=0; j<per_ba.size(); ++j) {
+                                    sba = BoxLib::complementIn(per_ba[j],sba);
+                                }
+                            } else {
+                                sba = BoxLib::intersect(sba,dbox);
+                            }
+                            if (sba.size()) {
+                                BuildInterpCoefs(0.5*refRatio[lev-1][d],iCoefs); // value at dxC/2
+                            }
+
+                            // Now, with coefs create stencil entries
+                            const Layout::IVSMap& bndryStencil = layout.BndryStencil()[lev][d];
+                            for (int j=0; j<sba.size(); ++j) {
+                                const Box& sbox = sba[j];
+                                for (IntVect iv=sbox.smallEnd(), End=sbox.bigEnd(); iv<=End; sbox.next(iv)) {
+
+                                    Layout::IVScit it = bndryStencil.find(iv);
+                                    BL_ASSERT(it!=bndryStencil.end());
+                                    const Stencil& parallelStencil = it->second;
+
+                                    Stencil totalStencil = iCoefs[0]*parallelStencil;
+
+                                    int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
+                                    for (int k=1; k<iCoefs.size(); ++k) {
+                                        IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
+                                        totalStencil[siv] = iCoefs[k];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#if 0
+#include <Tuple.H>
+void
+Layout::DoOp(const MFTower&      state,
+             int                 sComp,
+             int                 nComp,
+             const Array<BCRec>& bc,
+             const MFTower&      beta,
+             int                 max_order)
+{
+    BL_ASSERT(IsCompatible(state));
+
+    Array<IntVect> ivm(BL_SPACEDIM);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        ivm[d] = -BoxLib::BASISV(d);
+    }
+    IntVect ivc(IntVect::TheZeroVector());
+
+    for (int lev=0; lev<nLevs; ++lev) {
+        const MultiFab& slev = state[lev];
+        const PArray<MultiFab>& betalev = beta[lev];
+        const Box& dbox = geomArray[lev].Domain();
+        Tuple<Box,BL_SPACEDIM> bndryLo, bndryHi;
+        for (int d=0; d<BL_SPACEDIM; ++d) {
+            bndryLo[d] = BoxLib::adjCellLo(dbox,d); bndryLo[d].shift(+BoxLib::BASISV(d));
+            bndryHi[d] = BoxLib::adjCellHi(dbox,d); bndryHi[d].shift(-BoxLib::BASISV(d));
+        }
+
+        for (MFIter mfi(slev); mfi.isValid(); ++mfi) {
+            const Box& vbox = mfi.validbox();
+            for (int d=0; d<BL_SPACEDIM; ++d) {
+                Box ebox = Box(vbox).surroundingNodes(d);
+                BL_ASSERT(betalev[d][mfi].box().contains(ebox));
+
+                for (int n=0; n<nComp; ++n) {
+                    Stencil se;
+                    if (vbox.intersects(bndryLo[d]) && bc[n].lo()[d]==EXT_DIR) {
+                        se[ivm[d]] = 1;
+                    } else if (vbox.intersects(bndryHi[d]) && bc[n].hi()[d]==EXT_DIR) {
+                        se[ivc] = 1;
+                    } else {
+                        se[ivc]=0.5; se[ivm[d]]=0.5;
+                    }
+                }
+            }
+        }
+    }
+}
 #endif

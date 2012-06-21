@@ -2051,7 +2051,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       BL_ASSERT(pm_parent);
 
       Layout& layout = pm_parent->GetLayout();
-      const Array<IntVect>& ref_ratio = layout.RefRatio();
       bool ioproc = ParallelDescriptor::IOProcessor();
       int myproc = ParallelDescriptor::MyProc();
       MPI_Comm comm = ParallelDescriptor::Communicator();
@@ -2064,15 +2063,15 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&RhsV); CHKPETSC(ierr);
       ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&SolnV); CHKPETSC(ierr);
 
-      CCMFTower RhsMFT(Rhs,ref_ratio);
-      CCMFTower SolnMFT(Soln,ref_ratio);
+      MFTower RhsMFT(layout,Rhs);
+      MFTower SolnMFT(layout,Soln);
 
       if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
           BoxLib::Abort("MFT incompatible with layout");
       }
 
-      ierr = layout.CCMFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
-      ierr = layout.CCMFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
+      ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
+      ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
 
       // Apply column scaling of J to Rhs
       Real* RhsV_array, *JRowScale_array;
@@ -2093,13 +2092,12 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
       ierr = KSPDestroy(&ksp); CHKPETSC(ierr);
 
-      CCMFTower ResultMFT;      
+      MFTower ResultMFT(layout);
       if (use_petsc_result) {
-          ierr = layout.VecToCCMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
+          ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
       }
       else {
-          layout.BuildCCMFTower(ResultMFT,1,0);
-          ierr = layout.VecToCCMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
+           ierr = layout.VecToMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
 #if 0
           VisMF::Write(ResultMFT[0],"JUNK");
           if (ioproc) {

@@ -9798,6 +9798,13 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
   Vec& JRowScale = PMParent()->GetLayout().JRowScale();
   BaseFab<int> nodeNums;
   const BCRec& theBC = AmrLevel::desc_lst[Press_Type].getBC(0);
+  const Layout& layout = PMParent()->GetLayout();
+
+  ABecTower abec(layout);
+  int maxorder = 3;
+  abec.BuildStencil(theBC,maxorder);
+
+
 #endif
 
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
@@ -9985,7 +9992,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       const Box& vbox = grids[idx];
       Box gbox = Box(vbox).grow(1);
       nodeNums.resize(gbox,1);
-      PMParent()->GetLayout().SetNodeIds(nodeNums,level,idx);
+      layout.SetNodeIds(nodeNums,level,idx);
 
       Array<int> cols(1+2*BL_SPACEDIM);
       Array<int> rows(1);
