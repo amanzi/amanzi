@@ -362,9 +362,9 @@ void
 Layout::Clear()
 {
     nodes.clear();
+    crseNodes.clear();
     nodeIds.clear();
     crseIds.clear();
-    bndryStencil.clear();
     DestroyPetscStructures();
     initialized = false;
 }
@@ -416,7 +416,8 @@ Layout::Rebuild()
     nodes.resize(nLevs,PArrayManage);
     nodeIds.resize(nLevs,PArrayManage);
     bndryCells.resize(nLevs);
-    PArray<MultiNodeFab> crseNodes(nLevs,PArrayManage);
+    crseNodes.resize(nLevs,PArrayManage);
+
     int cnt = 0; // local node counter
     for (int lev=0; lev<nLevs; ++lev)
     {
@@ -613,120 +614,6 @@ Layout::Rebuild()
         BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
     }
 
-    //
-    // Build coarse-fine stencil
-    //
-    bndryStencil.resize(nLevs,Array<std::map<IntVect,Stencil,IntVect::Compare> >(BL_SPACEDIM)); 
-
-    Array<IntVect> ivp(BL_SPACEDIM), ivpp(BL_SPACEDIM), ivm(BL_SPACEDIM), ivmm(BL_SPACEDIM);
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-        ivp[d] = BoxLib::BASISV(d);
-        ivpp[d] = ivp[d] + BoxLib::BASISV(d);
-        ivm[d] = -BoxLib::BASISV(d);
-        ivmm[d] = ivm[d] - BoxLib::BASISV(d);
-    }
-
-    for (int lev=1; lev<nLevs; ++lev)
-    {
-        for (MFIter mfi(nodes[lev]); mfi.isValid(); ++mfi)
-        {
-            const NodeFab& nodeFab = nodes[lev][mfi];
-            const Box& cgbox = crseNodes[lev][mfi].box();
-            for (int d=0; d<BL_SPACEDIM; ++d) {
-
-                Array<int> dtan;
-                for (int d0=0; d0<BL_SPACEDIM; ++d0) {
-                    if (d!=d0) {
-                        dtan.push_back(d0);
-                    }
-                }
-                
-                Box gdbox = Box(mfi.validbox()).grow(d,1) & geomArray[lev].Domain();
-                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(gdbox);
-                for (int i=0; i<isects.size(); ++i) {
-                    const Box& bndrySect = isects[i].second;
-                    for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
-                        
-                        IntVect ivC = nodeFab(iv,0).iv;
-                        BL_ASSERT(cgbox.contains(ivC) && crseNodes[lev][mfi](ivC,0).type==Node::VALID);
-                        std::map<int,Real> x;
-                        
-                        Stencil c; c[ivC] = 1;
-                        bndryStencil[lev][d][iv] = c;
-                        
-                        for (int d0=0; d0<dtan.size(); ++d0) {
-                            int itan = dtan[d0];
-                            Stencil der, der2;
-                            int r = refRatio[lev-1][itan];
-
-                            x[itan] = (iv[itan]%r - 0.5*(r-1))/r;
-                            
-                            IntVect ivR = ivC+ivp[itan];
-                            IntVect ivL = ivC+ivm[itan];
-                            
-                            bool Rvalid = cgbox.contains(ivR) && crseNodes[lev][mfi](ivR,0).type==Node::VALID;
-                            bool Lvalid = cgbox.contains(ivL) && crseNodes[lev][mfi](ivL,0).type==Node::VALID;
-                            
-                            if (Rvalid && Lvalid) {
-                                // Centered full
-                                der[ivL]  = -0.5;  der[ivR] = +0.5;
-                                der2[ivL] = +1.0; der2[ivC] = -2.0; der2[ivR] = +1.0;
-                            }
-                            else if (Rvalid) {
-                                IntVect ivRR = ivC+ivpp[itan];
-                                bool RRvalid = cgbox.contains(ivRR) && crseNodes[lev][mfi](ivRR,0).type==Node::VALID;
-                                if (RRvalid) {
-                                    // R-shifted full
-                                    der[ivC]  = -0.5;  der[ivRR] = +0.5;
-                                    der2[ivC] = +1.0; der2[ivR]  = -2.0; der2[ivRR] = +1.0;
-                                } else {
-                                    // R-shifted linear
-                                    der[ivC] = -1.0; der[ivR] = +1.0;
-                                }
-                            } else if (Lvalid) {
-                                IntVect ivLL = ivC+ivmm[itan];
-                                bool LLvalid = cgbox.contains(ivLL) && crseNodes[lev][mfi](ivLL,0).type==Node::VALID;
-                                if (LLvalid) {
-                                    // L-shifted full
-                                    der[ivLL]  = -0.5;  der[ivC] = +0.5;
-                                    der2[ivLL] = +1.0; der2[ivL] = -2.0; der2[ivC] = +1.0;
-                                } else {
-                                    // L-shifted linear
-                                    der[ivL] = -1.0; der[ivC] = +1.0;
-                                }
-                            } else {
-                                // piecewise constant (no derivatives)
-                            }
-                            bndryStencil[lev][d][iv] += x[itan]*der + 0.5*x[itan]*x[itan]*der2;
-                        } // tangential direction
-
-                        if (dtan.size()==2) {
-                            IntVect ivpp, ivmm, ivpm, ivmp;
-                            ivpp = ivC+ivp[dtan[0]]+ivp[dtan[1]];
-                            ivmm = ivC+ivm[dtan[0]]+ivm[dtan[1]];
-                            ivpm = ivC+ivp[dtan[0]]+ivm[dtan[1]];
-                            ivmp = ivC+ivm[dtan[0]]+ivp[dtan[1]];
-                        
-                            bool PPvalid = cgbox.contains(ivpp) && crseNodes[lev][mfi](ivpp,0).type==Node::VALID;
-                            bool MMvalid = cgbox.contains(ivmm) && crseNodes[lev][mfi](ivmm,0).type==Node::VALID;
-                            bool PMvalid = cgbox.contains(ivpm) && crseNodes[lev][mfi](ivpm,0).type==Node::VALID;
-                            bool MPvalid = cgbox.contains(ivmp) && crseNodes[lev][mfi](ivmp,0).type==Node::VALID;
-                        
-                            if (PPvalid && MMvalid && PMvalid && MPvalid) {
-                                Stencil crossterm;
-                                crossterm[ivpp] = +0.25;
-                                crossterm[ivmm] = +0.25;
-                                crossterm[ivpm] = -0.25;
-                                crossterm[ivmp] = -0.25;
-                                bndryStencil[lev][d][iv] += x[dtan[0]]*x[dtan[1]]*crossterm;
-                            }
-                        }
-                    } // bndry iv
-                } // bndry box
-            } // bc direction
-        } // fine box
-    } // lev
-
     int n = nNodes_local; // Number of local columns of J
     int m = nNodes_local; // Number of local rows of J
     int N = nNodes_global; // Number of global columns of J 
@@ -741,63 +628,6 @@ Layout::Rebuild()
     ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
     vecs_I_created.push_back(&JRowScale_vec);
     initialized = true;
-}
-
-void
-Layout::DoCoarseFineParallelInterp(MFTower& mft,
-                                   int      sComp,
-                                   int      nComp) const
-{
-    BL_ASSERT(IsCompatible(mft));
-    for (int lev=1; lev<nLevs; ++lev) {
-
-        MultiFab& mf = mft[lev];
-        BL_ASSERT(mf.nGrow()>=1);
-        BL_ASSERT(sComp+nComp<=mf.nComp());
-
-        BoxArray bacgd = BoxArray(mf.boxArray()).coarsen(refRatio[lev-1]).grow(1);
-        MultiFab crseMF(bacgd,nComp,0);
-        crseMF.copy(mft[lev-1],sComp,0,nComp); // parallel copy
-
-        BoxArray bnd = bndryCells[lev];
-        for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-
-            int gridIdx = mfi.index();
-
-            FArrayBox& crseFab = crseMF[mfi];
-            FArrayBox& fineFab = mf[mfi];
-
-            for (int d=0; d<BL_SPACEDIM; ++d) {
-
-                Box boxgd = Box(mfi.validbox()).grow(d,1) & geomArray[lev].Domain();
-                std::vector< std::pair<int,Box> > isects = bnd.intersections(boxgd);
-                for (int i=0; i<isects.size(); ++i) {
-                    const Box& bndrySect = isects[i].second;
-                    for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
-                        
-                        
-                        std::map<IntVect,Stencil,IntVect::Compare>::const_iterator it=bndryStencil[lev][d].find(iv);
-                        if (it!=bndryStencil[lev][d].end()) {
-                            const Stencil& s = it->second;
-
-                            for (int n=0; n<nComp; ++n) {
-                                Real res = 0;
-                                for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
-                                    const IntVect& ivc=it->first;
-                                    BL_ASSERT(crseFab.box().contains(it->first));
-                                    res += crseFab(it->first,sComp+n) * it->second;
-                                }
-                                fineFab(iv,sComp+n) = res;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        mf.FillBoundary(sComp,nComp);
-        geomArray[lev].FillPeriodicBoundary(mf,sComp,nComp);
-    }
 }
 
 void
@@ -1052,6 +882,125 @@ BuildInterpCoefs(Real xVal, Array<Real>& coefs)
     }
 }
 
+void
+ABecTower::BuildCFParallelInterpStencil()
+{
+    // Some handy intvects
+    Array<IntVect> ivp(BL_SPACEDIM), ivpp(BL_SPACEDIM), ivm(BL_SPACEDIM), ivmm(BL_SPACEDIM);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        ivp[d] = BoxLib::BASISV(d);
+        ivpp[d] = ivp[d] + BoxLib::BASISV(d);
+        ivm[d] = -BoxLib::BASISV(d);
+        ivmm[d] = ivm[d] - BoxLib::BASISV(d);
+    }
+
+    const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
+    const PArray<Layout::MultiNodeFab>& crseNodes = layout.CrseNodes();
+    const Array<BoxArray>& bndryCells = layout.BndryCells();
+    parallelInterpStencil.resize(nLevs);
+
+    for (int lev=1; lev<nLevs; ++lev)
+    {
+        parallelInterpStencil[lev].resize(BL_SPACEDIM);
+        for (MFIter mfi(nodes[lev]); mfi.isValid(); ++mfi)
+        {
+            const Layout::NodeFab& nodeFab = nodes[lev][mfi];
+            const Box& cgbox = crseNodes[lev][mfi].box();
+            for (int d=0; d<BL_SPACEDIM; ++d) {
+
+                Array<int> dtan;
+                for (int d0=0; d0<BL_SPACEDIM; ++d0) {
+                    if (d!=d0) {
+                        dtan.push_back(d0);
+                    }
+                }
+                
+                Box gdbox = Box(mfi.validbox()).grow(d,1) & geomArray[lev].Domain();
+                std::vector< std::pair<int,Box> > isects = bndryCells[lev].intersections(gdbox);
+                for (int i=0; i<isects.size(); ++i) {
+                    const Box& bndrySect = isects[i].second;
+                    for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
+                        
+                        IntVect ivC = nodeFab(iv,0).iv;
+                        BL_ASSERT(cgbox.contains(ivC) && crseNodes[lev][mfi](ivC,0).type==Node::VALID);
+                        std::map<int,Real> x;
+                        
+                        Stencil c; c[ivC] = 1;
+                        parallelInterpStencil[lev][d][iv] = c;
+                        
+                        for (int d0=0; d0<dtan.size(); ++d0) {
+                            int itan = dtan[d0];
+                            Stencil der, der2;
+                            int r = refRatio[lev-1][itan];
+
+                            x[itan] = (iv[itan]%r - 0.5*(r-1))/r;
+                            
+                            IntVect ivR = ivC+ivp[itan];
+                            IntVect ivL = ivC+ivm[itan];
+                            
+                            bool Rvalid = cgbox.contains(ivR) && crseNodes[lev][mfi](ivR,0).type==Node::VALID;
+                            bool Lvalid = cgbox.contains(ivL) && crseNodes[lev][mfi](ivL,0).type==Node::VALID;
+                            
+                            if (Rvalid && Lvalid) {
+                                // Centered full
+                                der[ivL]  = -0.5;  der[ivR] = +0.5;
+                                der2[ivL] = +1.0; der2[ivC] = -2.0; der2[ivR] = +1.0;
+                            }
+                            else if (Rvalid) {
+                                IntVect ivRR = ivC+ivpp[itan];
+                                bool RRvalid = cgbox.contains(ivRR) && crseNodes[lev][mfi](ivRR,0).type==Node::VALID;
+                                if (RRvalid) {
+                                    // R-shifted full
+                                    der[ivC]  = -0.5;  der[ivRR] = +0.5;
+                                    der2[ivC] = +1.0; der2[ivR]  = -2.0; der2[ivRR] = +1.0;
+                                } else {
+                                    // R-shifted linear
+                                    der[ivC] = -1.0; der[ivR] = +1.0;
+                                }
+                            } else if (Lvalid) {
+                                IntVect ivLL = ivC+ivmm[itan];
+                                bool LLvalid = cgbox.contains(ivLL) && crseNodes[lev][mfi](ivLL,0).type==Node::VALID;
+                                if (LLvalid) {
+                                    // L-shifted full
+                                    der[ivLL]  = -0.5;  der[ivC] = +0.5;
+                                    der2[ivLL] = +1.0; der2[ivL] = -2.0; der2[ivC] = +1.0;
+                                } else {
+                                    // L-shifted linear
+                                    der[ivL] = -1.0; der[ivC] = +1.0;
+                                }
+                            } else {
+                                // piecewise constant (no derivatives)
+                            }
+                            parallelInterpStencil[lev][d][iv] += x[itan]*der + 0.5*x[itan]*x[itan]*der2;
+                        } // tangential direction
+
+                        if (dtan.size()==2) {
+                            IntVect ivpp, ivmm, ivpm, ivmp;
+                            ivpp = ivC+ivp[dtan[0]]+ivp[dtan[1]];
+                            ivmm = ivC+ivm[dtan[0]]+ivm[dtan[1]];
+                            ivpm = ivC+ivp[dtan[0]]+ivm[dtan[1]];
+                            ivmp = ivC+ivm[dtan[0]]+ivp[dtan[1]];
+                        
+                            bool PPvalid = cgbox.contains(ivpp) && crseNodes[lev][mfi](ivpp,0).type==Node::VALID;
+                            bool MMvalid = cgbox.contains(ivmm) && crseNodes[lev][mfi](ivmm,0).type==Node::VALID;
+                            bool PMvalid = cgbox.contains(ivpm) && crseNodes[lev][mfi](ivpm,0).type==Node::VALID;
+                            bool MPvalid = cgbox.contains(ivmp) && crseNodes[lev][mfi](ivmp,0).type==Node::VALID;
+                        
+                            if (PPvalid && MMvalid && PMvalid && MPvalid) {
+                                Stencil crossterm;
+                                crossterm[ivpp] = +0.25;
+                                crossterm[ivmm] = +0.25;
+                                crossterm[ivpm] = -0.25;
+                                crossterm[ivmp] = -0.25;
+                                parallelInterpStencil[lev][d][iv] += x[dtan[0]]*x[dtan[1]]*crossterm;
+                            }
+                        }
+                    } // bndry iv
+                } // bndry box
+            } // bc direction
+        } // fine box
+    } // lev
+}
 
 void
 ABecTower::BuildStencil(const BCRec& bc,
@@ -1059,6 +1008,8 @@ ABecTower::BuildStencil(const BCRec& bc,
 {
     int myproc = ParallelDescriptor::MyProc();
     Array<Real> iCoefs(maxorder);
+
+    BuildCFParallelInterpStencil();
 
     perpInterpStencil.resize(nLevs);
     for (int lev=0; lev<nLevs; ++lev) {
@@ -1093,6 +1044,7 @@ ABecTower::BuildStencil(const BCRec& bc,
                                     IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
                                     perp[siv] = iCoefs[k];
                                 }
+                                std::cout << "For " << iv << " stencil: " << perp << std::endl; 
                             }
                         }
                         else if (lev>0) {
@@ -1115,13 +1067,13 @@ ABecTower::BuildStencil(const BCRec& bc,
                             }
 
                             // Now, with coefs create stencil entries
-                            const Layout::IVSMap& bndryStencil = layout.BndryStencil()[lev][d];
+                            const Layout::IVSMap& parStencil = parallelInterpStencil[lev][d];
                             for (int j=0; j<sba.size(); ++j) {
                                 const Box& sbox = sba[j];
                                 for (IntVect iv=sbox.smallEnd(), End=sbox.bigEnd(); iv<=End; sbox.next(iv)) {
 
-                                    Layout::IVScit it = bndryStencil.find(iv);
-                                    BL_ASSERT(it!=bndryStencil.end());
+                                    Layout::IVScit it = parStencil.find(iv);
+                                    BL_ASSERT(it!=parStencil.end());
                                     const Stencil& parallelStencil = it->second;
 
                                     Stencil totalStencil = iCoefs[0]*parallelStencil;
@@ -1131,6 +1083,8 @@ ABecTower::BuildStencil(const BCRec& bc,
                                         IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
                                         totalStencil[siv] = iCoefs[k];
                                     }
+
+                                    std::cout << "For " << iv << " stencil: " << totalStencil << std::endl; 
                                 }
                             }
                         }
@@ -1141,52 +1095,62 @@ ABecTower::BuildStencil(const BCRec& bc,
     }
 }
 
-#if 0
-#include <Tuple.H>
 void
-Layout::DoOp(const MFTower&      state,
-             int                 sComp,
-             int                 nComp,
-             const Array<BCRec>& bc,
-             const MFTower&      beta,
-             int                 max_order)
+ABecTower::DoCoarseFineParallelInterp(MFTower& mft,
+                                      int      sComp,
+                                      int      nComp) const
 {
-    BL_ASSERT(IsCompatible(state));
+    BL_ASSERT(layout.IsCompatible(mft));
+    const Array<BoxArray>& bndryCells = layout.BndryCells();
 
-    Array<IntVect> ivm(BL_SPACEDIM);
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-        ivm[d] = -BoxLib::BASISV(d);
-    }
-    IntVect ivc(IntVect::TheZeroVector());
+    for (int lev=1; lev<nLevs; ++lev) {
 
-    for (int lev=0; lev<nLevs; ++lev) {
-        const MultiFab& slev = state[lev];
-        const PArray<MultiFab>& betalev = beta[lev];
-        const Box& dbox = geomArray[lev].Domain();
-        Tuple<Box,BL_SPACEDIM> bndryLo, bndryHi;
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-            bndryLo[d] = BoxLib::adjCellLo(dbox,d); bndryLo[d].shift(+BoxLib::BASISV(d));
-            bndryHi[d] = BoxLib::adjCellHi(dbox,d); bndryHi[d].shift(-BoxLib::BASISV(d));
-        }
+        MultiFab& mf = mft[lev];
+        BL_ASSERT(mf.nGrow()>=1);
+        BL_ASSERT(sComp+nComp<=mf.nComp());
 
-        for (MFIter mfi(slev); mfi.isValid(); ++mfi) {
-            const Box& vbox = mfi.validbox();
+        BoxArray bacgd = BoxArray(mf.boxArray()).coarsen(refRatio[lev-1]).grow(1);
+        MultiFab crseMF(bacgd,nComp,0);
+        crseMF.copy(mft[lev-1],sComp,0,nComp); // parallel copy
+
+        BoxArray bnd = bndryCells[lev];
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+
+            int gridIdx = mfi.index();
+
+            FArrayBox& crseFab = crseMF[mfi];
+            FArrayBox& fineFab = mf[mfi];
+
             for (int d=0; d<BL_SPACEDIM; ++d) {
-                Box ebox = Box(vbox).surroundingNodes(d);
-                BL_ASSERT(betalev[d][mfi].box().contains(ebox));
 
-                for (int n=0; n<nComp; ++n) {
-                    Stencil se;
-                    if (vbox.intersects(bndryLo[d]) && bc[n].lo()[d]==EXT_DIR) {
-                        se[ivm[d]] = 1;
-                    } else if (vbox.intersects(bndryHi[d]) && bc[n].hi()[d]==EXT_DIR) {
-                        se[ivc] = 1;
-                    } else {
-                        se[ivc]=0.5; se[ivm[d]]=0.5;
+                Box boxgd = Box(mfi.validbox()).grow(d,1) & geomArray[lev].Domain();
+                std::vector< std::pair<int,Box> > isects = bnd.intersections(boxgd);
+                for (int i=0; i<isects.size(); ++i) {
+                    const Box& bndrySect = isects[i].second;
+                    for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
+                        
+                        
+                        std::map<IntVect,Stencil,IntVect::Compare>::const_iterator it=parallelInterpStencil[lev][d].find(iv);
+                        if (it!=parallelInterpStencil[lev][d].end()) {
+                            const Stencil& s = it->second;
+
+                            for (int n=0; n<nComp; ++n) {
+                                Real res = 0;
+                                for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
+                                    const IntVect& ivc=it->first;
+                                    BL_ASSERT(crseFab.box().contains(it->first));
+                                    res += crseFab(it->first,sComp+n) * it->second;
+                                }
+                                fineFab(iv,sComp+n) = res;
+                            }
+                        }
                     }
                 }
             }
         }
+
+        mf.FillBoundary(sComp,nComp);
+        geomArray[lev].FillPeriodicBoundary(mf,sComp,nComp);
     }
 }
-#endif
+

@@ -116,7 +116,9 @@ struct Layout
     const Array<BoxArray>& GridArray() const {return gridArray;}
     const Array<Geometry>& GeomArray() const {return geomArray;}
     const DistributionMapping& DistributionMap(int lev) const {return nodeIds[lev].DistributionMap();}
-    const Array<Array<IVSMap> >& BndryStencil() const {return bndryStencil;}
+    const PArray<Layout::MultiNodeFab>& Nodes() const {return nodes;}
+    const PArray<Layout::MultiNodeFab>& CrseNodes() const {return crseNodes;}
+    const Array<BoxArray>& BndryCells() const {return bndryCells;}
 
     Mat& Jacobian();
     Vec& JRowScale();
@@ -131,10 +133,6 @@ struct Layout
     const Array<IntVect>& RefRatio() const {return refRatio;}
 
     bool IsCompatible(const MFTower& mft) const;
-    
-    void DoCoarseFineParallelInterp(MFTower& mft,
-                                    int      sComp,
-                                    int      nComp) const;
 
 protected:
     void DestroyPetscStructures();
@@ -144,6 +142,7 @@ protected:
     Array<Mat*> mats_I_created;
 
     PArray<MultiNodeFab> nodes;
+    PArray<MultiNodeFab> crseNodes;
     PArray<MultiIntFab> nodeIds;
     PArray<MultiIntFab> crseIds;
     Array<BoxArray> bndryCells;
@@ -155,8 +154,6 @@ protected:
     bool initialized;
     Amr* parent;
     int nNodes_global, nNodes_local;
-
-    Array<Array<IVSMap> > bndryStencil; //[lev][dir][iv] = stencil to perform tangential interp
 };
 
 
@@ -176,7 +173,13 @@ struct ABecTower
     void BuildStencil(const BCRec& bc,
                       int maxorder);
 
+    void DoCoarseFineParallelInterp(MFTower& mft,
+                                    int      sComp,
+                                    int      nComp) const;
+
 protected:
+    void BuildCFParallelInterpStencil();
+    
     int nLevs;
     const Layout& layout;
     const Array<BoxArray>& gridArray;
@@ -184,8 +187,8 @@ protected:
     const Array<IntVect>& refRatio;
     PArray<MFTower> coefs;
 
-    Array<std::map<IntVect,Stencil,IntVect::Compare> > perpInterpStencil; //[lev][iv] = stencil to perform perpInterp
-
+    Array<Array<Layout::IVSMap> > parallelInterpStencil; //[lev][dir][iv] = stencil to perform parallel bc Interp
+    Array<Layout::IVSMap> perpInterpStencil; //[lev][iv] = stencil to perform perpendicular bc Interp
 };
 
 #endif
