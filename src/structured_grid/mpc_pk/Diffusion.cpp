@@ -1924,6 +1924,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
   std::string tag = "       Newton step: ";
   std::string tag_ls = "  line-search:  ";
+  status.status = "Not Finished";
   //
   // This routine solves the time-dependent richards equation based on 
   // composite solve.
@@ -2177,7 +2178,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       }
       
       status.success = true;
-      status.status = "Finished";
       for (int lev = nlevs-2; lev >= 0; lev--)
 	{
 	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
@@ -2200,7 +2200,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
 		   Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
-
   if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
       status.reason = "Full linear step accepted";
       status.success = true;

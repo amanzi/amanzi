@@ -1058,7 +1058,7 @@ ABecTower::BuildStencil(const BCRec& bc,
                                 IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
                                 perp[fn(siv,0)] = iCoefsZero[k];
                             }
-                            std::cout << "For " << iv << " stencil: " << perp << std::endl; 
+                            //std::cout << "For " << iv << " stencil: " << perp << std::endl; 
                         }
                     }
                     else if (lev>0) {
@@ -1094,7 +1094,7 @@ ABecTower::BuildStencil(const BCRec& bc,
                                     IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
                                     totalStencil[fn(siv,0)] = iCoefsCF[d][k];
                                 }
-                                std::cout << "For " << iv << " stencil: " << totalStencil << std::endl; 
+                                //std::cout << "For " << iv << " stencil: " << totalStencil << std::endl; 
                             }
                         }
                     }
