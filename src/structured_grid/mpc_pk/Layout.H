@@ -20,13 +20,13 @@ struct Node
 {
     enum typeEnum{INIT=0, COVERED=1, VALID=2};
     Node()
-        : iv(IntVect(D_DECL(-1,-1,-1))), level(-1), grid(-1), type(Node::INIT) {}
-    Node(const IntVect& idx, int lev, int grd, typeEnum typ = INIT)
-        : iv(idx), level(lev), grid(grd), type(typ) {}
+        : iv(IntVect(D_DECL(-1,-1,-1))), level(-1), type(Node::INIT) {}
+    Node(const IntVect& idx, int lev, typeEnum typ = INIT)
+        : iv(idx), level(lev), type(typ) {}
     inline bool operator< (const Node& rhs) const
         {
             if (level < rhs.level) return true;
-            if ((level == rhs.level) && iv.lexLT(rhs.iv)) return true;
+            if ((level == rhs.level) && IntVect::Compare()(iv,rhs.iv)) return true;
             return false;
         }
     inline bool operator!= (const Node& rhs) const
@@ -35,7 +35,6 @@ struct Node
         }
     IntVect iv;
     int level;
-    int grid;
     typeEnum type;
 };
 
@@ -82,12 +81,12 @@ protected:
 
 #ifdef BL_USE_PETSC
 class Stencil
-    : public std::map<IntVect,Real,IntVect::Compare>
+    : public std::map<Node,Real>
 {
 public:
     Stencil() {}
-    typedef std::map<IntVect,Real>::const_iterator const_iterator;
-    typedef std::map<IntVect,Real>::iterator iterator;
+    typedef std::map<Node,Real>::const_iterator const_iterator;
+    typedef std::map<Node,Real>::iterator iterator;
     Stencil& operator*=(Real val);
     Stencil& operator+=(const Stencil& rhs);
     Stencil& operator-=(const Stencil& rhs);
@@ -97,7 +96,7 @@ std::ostream& operator<< (std::ostream&  os, const Stencil& a);
 
 struct Layout
 {
-    typedef std::map<IntVect,Stencil,IntVect::Compare> IVSMap;
+    typedef std::map<IntVect,Stencil> IVSMap;
     typedef IVSMap::const_iterator IVScit;
     typedef BaseFab<Node> NodeFab;
     typedef FabArray<NodeFab> MultiNodeFab; 

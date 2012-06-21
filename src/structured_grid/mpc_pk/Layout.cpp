@@ -2,13 +2,13 @@
 
 std::ostream& operator<< (std::ostream&  os, const Node& node)
 {
-    os << "Node: IntVect=" << node.iv << ", level=" << node.level << ", grid=" << node.grid << ", type="; 
+    os << "iv:" << node.iv << ",l:" << node.level << ",t:"; 
     if (node.type==Node::INIT)
-        os << "INIT";
+        os << "I";
     else if (node.type==Node::COVERED)
-        os << "COVERED";
+        os << "C";
     else
-        os << "VALID";
+        os << "V";
     if (os.fail())
         BoxLib::Error("operator<<(std::ostream&,Node&) failed");
     return os;
@@ -253,7 +253,7 @@ std::ostream& operator<< (std::ostream&  os, const Stencil& a)
 {
   os << "(size=" << a.size() << ") ";
   for (Stencil::const_iterator it=a.begin(), End=a.end(); it!=End; ++it) {
-    os << "[" << it->first << "," << it->second << "] ";
+    os << "(" << it->first << "):(" << it->second << ") ";
   }
   return os;
 }
@@ -293,7 +293,7 @@ Stencil::operator+=(const Stencil& rhs)
   for (const_iterator it=rhs.begin(), End=rhs.end(); it!=End; ++it) {
     const_iterator mit=find(it->first);
     if (mit==end()) {
-      insert(std::pair<IntVect,Real>(it->first,it->second));
+      insert(std::pair<Node,Real>(it->first,it->second));
     } else {
       (*this)[it->first] += it->second;
     }
@@ -307,7 +307,7 @@ Stencil::operator-=(const Stencil& rhs)
   for (const_iterator it=rhs.begin(), End=rhs.end(); it!=End; ++it) {
     const_iterator mit=find(it->first);
     if (mit==end()) {
-      insert(std::pair<IntVect,Real>(it->first,-it->second));
+      insert(std::pair<Node,Real>(it->first,-it->second));
     } else {
       (*this)[it->first] -= it->second;
     }
@@ -431,7 +431,7 @@ Layout::Rebuild()
             NodeFab& ifab = nodesLev[fai];
             const Box box = ifab.box() & gridArray[lev][fai.index()];
             for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv))
-                ifab(iv,0) = Node(iv,lev,fai.index(),Node::VALID);
+                ifab(iv,0) = Node(iv,lev,Node::VALID);
         }
             
         if (lev > 0)
@@ -444,7 +444,7 @@ Layout::Rebuild()
                 NodeFab& nfab=crseNodes[lev][mfi];
                 const Box box = nfab.box() & geomArray[lev-1].Domain();
                 for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv)) {
-                    nfab(iv,0) = Node(iv,lev-1,mfi.index(),Node::VALID);
+                    nfab(iv,0) = Node(iv,lev-1,Node::VALID);
                 }
              }
 
@@ -506,7 +506,7 @@ Layout::Rebuild()
                 {
                     const Box& ovlp = isects[i].second;
                     for (IntVect iv=ovlp.smallEnd(); iv<=ovlp.bigEnd(); ovlp.next(iv))
-                        ifab(iv,0) = Node(iv,lev,fai.index(),Node::COVERED);
+                        ifab(iv,0) = Node(iv,lev,Node::COVERED);
                 }
             }
         }
@@ -921,11 +921,11 @@ ABecTower::BuildCFParallelInterpStencil()
                     const Box& bndrySect = isects[i].second;
                     for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
                         
-                        IntVect ivC = nodeFab(iv,0).iv;
-                        BL_ASSERT(cgbox.contains(ivC) && crseNodes[lev][mfi](ivC,0).type==Node::VALID);
+                        Node nC = nodeFab(iv,0);
+                        BL_ASSERT(cgbox.contains(nC.iv) && nC.type==Node::VALID);
                         std::map<int,Real> x;
                         
-                        Stencil c; c[ivC] = 1;
+                        Stencil c; c[nC] = 1;
                         parallelInterpStencil[lev][d][iv] = c;
                         
                         for (int d0=0; d0<dtan.size(); ++d0) {
@@ -935,38 +935,38 @@ ABecTower::BuildCFParallelInterpStencil()
 
                             x[itan] = (iv[itan]%r - 0.5*(r-1))/r;
                             
-                            IntVect ivR = ivC+ivp[itan];
-                            IntVect ivL = ivC+ivm[itan];
+                            const Node& nR = crseNodes[lev][mfi](nC.iv+ivp[itan],0);
+                            const Node& nL = crseNodes[lev][mfi](nC.iv+ivm[itan],0);
                             
-                            bool Rvalid = cgbox.contains(ivR) && crseNodes[lev][mfi](ivR,0).type==Node::VALID;
-                            bool Lvalid = cgbox.contains(ivL) && crseNodes[lev][mfi](ivL,0).type==Node::VALID;
+                            bool Rvalid = nR.type==Node::VALID;
+                            bool Lvalid = nL.type==Node::VALID;
                             
                             if (Rvalid && Lvalid) {
                                 // Centered full
-                                der[ivL]  = -0.5;  der[ivR] = +0.5;
-                                der2[ivL] = +1.0; der2[ivC] = -2.0; der2[ivR] = +1.0;
+                                der[nL]  = -0.5;  der[nR] = +0.5;
+                                der2[nL] = +1.0; der2[nC] = -2.0; der2[nR] = +1.0;
                             }
                             else if (Rvalid) {
-                                IntVect ivRR = ivC+ivpp[itan];
-                                bool RRvalid = cgbox.contains(ivRR) && crseNodes[lev][mfi](ivRR,0).type==Node::VALID;
+                                const Node& nRR = crseNodes[lev][mfi](nC.iv+ivpp[itan],0);
+                                bool RRvalid = nRR.type==Node::VALID;
                                 if (RRvalid) {
                                     // R-shifted full
-                                    der[ivC]  = -0.5;  der[ivRR] = +0.5;
-                                    der2[ivC] = +1.0; der2[ivR]  = -2.0; der2[ivRR] = +1.0;
+                                    der[nC]  = -0.5;  der[nRR] = +0.5;
+                                    der2[nC] = +1.0; der2[nR]  = -2.0; der2[nRR] = +1.0;
                                 } else {
                                     // R-shifted linear
-                                    der[ivC] = -1.0; der[ivR] = +1.0;
+                                    der[nC] = -1.0; der[nR] = +1.0;
                                 }
                             } else if (Lvalid) {
-                                IntVect ivLL = ivC+ivmm[itan];
-                                bool LLvalid = cgbox.contains(ivLL) && crseNodes[lev][mfi](ivLL,0).type==Node::VALID;
+                                const Node& nLL = crseNodes[lev][mfi](nC.iv+ivmm[itan],0);
+                                bool LLvalid = nLL.type==Node::VALID;
                                 if (LLvalid) {
                                     // L-shifted full
-                                    der[ivLL]  = -0.5;  der[ivC] = +0.5;
-                                    der2[ivLL] = +1.0; der2[ivL] = -2.0; der2[ivC] = +1.0;
+                                    der[nLL]  = -0.5;  der[nC] = +0.5;
+                                    der2[nLL] = +1.0; der2[nL] = -2.0; der2[nC] = +1.0;
                                 } else {
                                     // L-shifted linear
-                                    der[ivL] = -1.0; der[ivC] = +1.0;
+                                    der[nL] = -1.0; der[nC] = +1.0;
                                 }
                             } else {
                                 // piecewise constant (no derivatives)
@@ -975,23 +975,22 @@ ABecTower::BuildCFParallelInterpStencil()
                         } // tangential direction
 
                         if (dtan.size()==2) {
-                            IntVect ivpp, ivmm, ivpm, ivmp;
-                            ivpp = ivC+ivp[dtan[0]]+ivp[dtan[1]];
-                            ivmm = ivC+ivm[dtan[0]]+ivm[dtan[1]];
-                            ivpm = ivC+ivp[dtan[0]]+ivm[dtan[1]];
-                            ivmp = ivC+ivm[dtan[0]]+ivp[dtan[1]];
+                            const Node& npp = crseNodes[lev][mfi](nC.iv+ivp[dtan[0]]+ivp[dtan[1]],0);
+                            const Node& nmm = crseNodes[lev][mfi](nC.iv+ivm[dtan[0]]+ivm[dtan[1]],0);
+                            const Node& npm = crseNodes[lev][mfi](nC.iv+ivp[dtan[0]]+ivm[dtan[1]],0);
+                            const Node& nmp = crseNodes[lev][mfi](nC.iv+ivm[dtan[0]]+ivp[dtan[1]],0);
                         
-                            bool PPvalid = cgbox.contains(ivpp) && crseNodes[lev][mfi](ivpp,0).type==Node::VALID;
-                            bool MMvalid = cgbox.contains(ivmm) && crseNodes[lev][mfi](ivmm,0).type==Node::VALID;
-                            bool PMvalid = cgbox.contains(ivpm) && crseNodes[lev][mfi](ivpm,0).type==Node::VALID;
-                            bool MPvalid = cgbox.contains(ivmp) && crseNodes[lev][mfi](ivmp,0).type==Node::VALID;
+                            bool PPvalid = npp.type==Node::VALID;
+                            bool MMvalid = nmm.type==Node::VALID;
+                            bool PMvalid = npm.type==Node::VALID;
+                            bool MPvalid = nmp.type==Node::VALID;
                         
                             if (PPvalid && MMvalid && PMvalid && MPvalid) {
                                 Stencil crossterm;
-                                crossterm[ivpp] = +0.25;
-                                crossterm[ivmm] = +0.25;
-                                crossterm[ivpm] = -0.25;
-                                crossterm[ivmp] = -0.25;
+                                crossterm[npp] = +0.25;
+                                crossterm[nmm] = +0.25;
+                                crossterm[npm] = -0.25;
+                                crossterm[nmp] = -0.25;
                                 parallelInterpStencil[lev][d][iv] += x[dtan[0]]*x[dtan[1]]*crossterm;
                             }
                         }
@@ -1010,6 +1009,7 @@ ABecTower::BuildStencil(const BCRec& bc,
     Array<Real> iCoefs(maxorder);
 
     BuildCFParallelInterpStencil();
+    const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
 
     perpInterpStencil.resize(nLevs);
     for (int lev=0; lev<nLevs; ++lev) {
@@ -1020,72 +1020,68 @@ ABecTower::BuildStencil(const BCRec& bc,
             bndry[1][d] = BoxLib::adjCellHi(dbox,d);
         }
 
-        const DistributionMapping dm = layout.DistributionMap(lev);
         const BoxArray& ba = gridArray[lev];
-        for (int i=0; i<ba.size(); ++i) {
-            if (dm[i] == myproc) {
-                const Box& vbox = ba[i];
-                for (int d=0; d<BL_SPACEDIM; ++d) {
-                    Array<Box> myBndry(2);
-                    myBndry[0] = BoxLib::adjCellLo(vbox,d);
-                    myBndry[1] = BoxLib::adjCellHi(vbox,d);
-                    
-                    for (int hilo=0; hilo<2; ++hilo)
-                    {
-                        Box povlp = myBndry[hilo] & bndry[hilo][d];
-                        int bc_flag = (hilo==0 ? bc.lo()[d] : bc.hi()[d]);
-                        bool pbc = povlp.ok() && bc_flag==EXT_DIR;
-                        if (pbc) {
-                            BuildInterpCoefs(0,iCoefs); // value at wall
-                            for (IntVect iv=povlp.smallEnd(), End=povlp.bigEnd(); iv<=End; povlp.next(iv)) {
-                                Stencil perp;
-                                int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
-                                for (int k=0; k<iCoefs.size(); ++k) {
-                                    IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
-                                    perp[siv] = iCoefs[k];
-                                }
-                                std::cout << "For " << iv << " stencil: " << perp << std::endl; 
+        for (MFIter mfi(nodes[lev]); mfi.isValid(); ++mfi) {
+            const Box& vbox = mfi.validbox();
+            for (int d=0; d<BL_SPACEDIM; ++d) {
+                Array<Box> myBndry(2);
+                myBndry[0] = BoxLib::adjCellLo(vbox,d);
+                myBndry[1] = BoxLib::adjCellHi(vbox,d);
+                
+                for (int hilo=0; hilo<2; ++hilo)
+                {
+                    Box povlp = myBndry[hilo] & bndry[hilo][d];
+                    int bc_flag = (hilo==0 ? bc.lo()[d] : bc.hi()[d]);
+                    bool pbc = povlp.ok() && bc_flag==EXT_DIR;
+                    if (pbc) {
+                        BuildInterpCoefs(0,iCoefs); // value at wall
+                        for (IntVect iv=povlp.smallEnd(), End=povlp.bigEnd(); iv<=End; povlp.next(iv)) {
+                            Stencil perp;
+                            int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
+                            for (int k=0; k<iCoefs.size(); ++k) {
+                                IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
+                                perp[nodes[lev][mfi](siv,0)] = iCoefs[k];
                             }
+                            std::cout << "For " << iv << " stencil: " << perp << std::endl; 
                         }
-                        else if (lev>0) {
-                            // Build c-f stencil
-                            BoxArray sba = BoxLib::complementIn(myBndry[hilo],ba);
-                            if (geomArray[lev].isPeriodic(d)) {
-                                BoxArray per_ba = BoxLib::intersect(sba,BoxArray(ba).shift(d,dbox.length(d)));
-                                for (int j=0; j<per_ba.size(); ++j) {
-                                    sba = BoxLib::complementIn(per_ba[j],sba);
-                                }
-                                per_ba = BoxLib::intersect(sba,BoxArray(ba).shift(d,-dbox.length(d)));
-                                for (int j=0; j<per_ba.size(); ++j) {
-                                    sba = BoxLib::complementIn(per_ba[j],sba);
-                                }
-                            } else {
-                                sba = BoxLib::intersect(sba,dbox);
+                    }
+                    else if (lev>0) {
+                        // Build c-f stencil
+                        BoxArray sba = BoxLib::complementIn(myBndry[hilo],ba);
+                        if (geomArray[lev].isPeriodic(d)) {
+                            BoxArray per_ba = BoxLib::intersect(sba,BoxArray(ba).shift(d,dbox.length(d)));
+                            for (int j=0; j<per_ba.size(); ++j) {
+                                sba = BoxLib::complementIn(per_ba[j],sba);
                             }
-                            if (sba.size()) {
-                                BuildInterpCoefs(0.5*refRatio[lev-1][d],iCoefs); // value at dxC/2
+                            per_ba = BoxLib::intersect(sba,BoxArray(ba).shift(d,-dbox.length(d)));
+                            for (int j=0; j<per_ba.size(); ++j) {
+                                sba = BoxLib::complementIn(per_ba[j],sba);
                             }
-
-                            // Now, with coefs create stencil entries
-                            const Layout::IVSMap& parStencil = parallelInterpStencil[lev][d];
-                            for (int j=0; j<sba.size(); ++j) {
-                                const Box& sbox = sba[j];
-                                for (IntVect iv=sbox.smallEnd(), End=sbox.bigEnd(); iv<=End; sbox.next(iv)) {
-
-                                    Layout::IVScit it = parStencil.find(iv);
-                                    BL_ASSERT(it!=parStencil.end());
-                                    const Stencil& parallelStencil = it->second;
-
-                                    Stencil totalStencil = iCoefs[0]*parallelStencil;
-
-                                    int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
-                                    for (int k=1; k<iCoefs.size(); ++k) {
-                                        IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
-                                        totalStencil[siv] = iCoefs[k];
-                                    }
-
-                                    std::cout << "For " << iv << " stencil: " << totalStencil << std::endl; 
+                        } else {
+                            sba = BoxLib::intersect(sba,dbox);
+                        }
+                        if (sba.size()) {
+                            BuildInterpCoefs(0.5*refRatio[lev-1][d],iCoefs); // value at dxC/2
+                        }
+                        
+                        // Now, with coefs create stencil entries
+                        const Layout::IVSMap& parStencil = parallelInterpStencil[lev][d];
+                        for (int j=0; j<sba.size(); ++j) {
+                            const Box& sbox = sba[j];
+                            for (IntVect iv=sbox.smallEnd(), End=sbox.bigEnd(); iv<=End; sbox.next(iv)) {
+                                
+                                Layout::IVScit it = parStencil.find(iv);
+                                BL_ASSERT(it!=parStencil.end());
+                                const Stencil& parallelStencil = it->second;
+                                
+                                Stencil totalStencil = iCoefs[0]*parallelStencil;
+                                
+                                int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
+                                for (int k=1; k<iCoefs.size(); ++k) {
+                                    IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
+                                    totalStencil[nodes[lev][mfi](siv,0)] = iCoefs[k];
                                 }
+                                std::cout << "For " << iv << " stencil: " << totalStencil << std::endl; 
                             }
                         }
                     }
@@ -1137,9 +1133,9 @@ ABecTower::DoCoarseFineParallelInterp(MFTower& mft,
                             for (int n=0; n<nComp; ++n) {
                                 Real res = 0;
                                 for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
-                                    const IntVect& ivc=it->first;
-                                    BL_ASSERT(crseFab.box().contains(it->first));
-                                    res += crseFab(it->first,sComp+n) * it->second;
+                                    const IntVect& ivs=(it->first).iv;
+                                    BL_ASSERT(crseFab.box().contains(ivs));
+                                    res += crseFab(ivs,sComp+n) * it->second;
                                 }
                                 fineFab(iv,sComp+n) = res;
                             }
