@@ -1006,10 +1006,13 @@ ABecTower::BuildStencil(const BCRec& bc,
                         int maxorder)
 {
     int myproc = ParallelDescriptor::MyProc();
-    Array<Real> iCoefs(maxorder);
 
     BuildCFParallelInterpStencil();
     const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
+
+    // Precompute an often-used interp stencil
+    Array<Real> iCoefsZero(maxorder); BuildInterpCoefs(0,iCoefsZero); // value at wall
+    Array<Array<Real> > iCoefsCF(BL_SPACEDIM, Array<Real>(maxorder));
 
     perpInterpStencil.resize(nLevs);
     for (int lev=0; lev<nLevs; ++lev) {
@@ -1020,9 +1023,20 @@ ABecTower::BuildStencil(const BCRec& bc,
             bndry[1][d] = BoxLib::adjCellHi(dbox,d);
         }
 
+        // Precompute other often-used interp stencils
+        if (lev>0) {
+            for (int d=0; d<BL_SPACEDIM; ++d) {
+                const IntVect& rat = refRatio[lev-1];
+                BuildInterpCoefs(0.5*rat[d],iCoefsCF[d]); // value at wall
+            }
+        }
+
         const BoxArray& ba = gridArray[lev];
-        for (MFIter mfi(nodes[lev]); mfi.isValid(); ++mfi) {
+        const Layout::MultiNodeFab& fmn = nodes[lev];
+        const Geometry& gl = geomArray[lev];
+        for (MFIter mfi(fmn); mfi.isValid(); ++mfi) {
             const Box& vbox = mfi.validbox();
+            const Layout::NodeFab& fn = fmn[mfi];
             for (int d=0; d<BL_SPACEDIM; ++d) {
                 Array<Box> myBndry(2);
                 myBndry[0] = BoxLib::adjCellLo(vbox,d);
@@ -1034,13 +1048,12 @@ ABecTower::BuildStencil(const BCRec& bc,
                     int bc_flag = (hilo==0 ? bc.lo()[d] : bc.hi()[d]);
                     bool pbc = povlp.ok() && bc_flag==EXT_DIR;
                     if (pbc) {
-                        BuildInterpCoefs(0,iCoefs); // value at wall
                         for (IntVect iv=povlp.smallEnd(), End=povlp.bigEnd(); iv<=End; povlp.next(iv)) {
                             Stencil perp;
                             int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
-                            for (int k=0; k<iCoefs.size(); ++k) {
+                            for (int k=0; k<iCoefsZero.size(); ++k) {
                                 IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
-                                perp[nodes[lev][mfi](siv,0)] = iCoefs[k];
+                                perp[fn(siv,0)] = iCoefsZero[k];
                             }
                             std::cout << "For " << iv << " stencil: " << perp << std::endl; 
                         }
@@ -1048,7 +1061,7 @@ ABecTower::BuildStencil(const BCRec& bc,
                     else if (lev>0) {
                         // Build c-f stencil
                         BoxArray sba = BoxLib::complementIn(myBndry[hilo],ba);
-                        if (geomArray[lev].isPeriodic(d)) {
+                        if (gl.isPeriodic(d)) {
                             BoxArray per_ba = BoxLib::intersect(sba,BoxArray(ba).shift(d,dbox.length(d)));
                             for (int j=0; j<per_ba.size(); ++j) {
                                 sba = BoxLib::complementIn(per_ba[j],sba);
@@ -1059,9 +1072,6 @@ ABecTower::BuildStencil(const BCRec& bc,
                             }
                         } else {
                             sba = BoxLib::intersect(sba,dbox);
-                        }
-                        if (sba.size()) {
-                            BuildInterpCoefs(0.5*refRatio[lev-1][d],iCoefs); // value at dxC/2
                         }
                         
                         // Now, with coefs create stencil entries
@@ -1074,12 +1084,12 @@ ABecTower::BuildStencil(const BCRec& bc,
                                 BL_ASSERT(it!=parStencil.end());
                                 const Stencil& parallelStencil = it->second;
                                 
-                                Stencil totalStencil = iCoefs[0]*parallelStencil;
+                                Stencil totalStencil = iCoefsCF[d][0]*parallelStencil;
                                 
                                 int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
-                                for (int k=1; k<iCoefs.size(); ++k) {
+                                for (int k=1; k<iCoefsCF[d].size(); ++k) {
                                     IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
-                                    totalStencil[nodes[lev][mfi](siv,0)] = iCoefs[k];
+                                    totalStencil[fn(siv,0)] = iCoefsCF[d][k];
                                 }
                                 std::cout << "For " << iv << " stencil: " << totalStencil << std::endl; 
                             }
@@ -1110,6 +1120,9 @@ ABecTower::DoCoarseFineParallelInterp(MFTower& mft,
         crseMF.copy(mft[lev-1],sComp,0,nComp); // parallel copy
 
         BoxArray bnd = bndryCells[lev];
+        const Geometry& gl = geomArray[lev];
+        const Array<Layout::IVSMap>& parInterpLev = parallelInterpStencil[lev];
+
         for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
 
             int gridIdx = mfi.index();
@@ -1119,15 +1132,16 @@ ABecTower::DoCoarseFineParallelInterp(MFTower& mft,
 
             for (int d=0; d<BL_SPACEDIM; ++d) {
 
-                Box boxgd = Box(mfi.validbox()).grow(d,1) & geomArray[lev].Domain();
+                const Layout::IVSMap& parInterp = parInterpLev[d];
+                Box boxgd = Box(mfi.validbox()).grow(d,1) & gl.Domain();
                 std::vector< std::pair<int,Box> > isects = bnd.intersections(boxgd);
                 for (int i=0; i<isects.size(); ++i) {
                     const Box& bndrySect = isects[i].second;
                     for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
                         
                         
-                        std::map<IntVect,Stencil,IntVect::Compare>::const_iterator it=parallelInterpStencil[lev][d].find(iv);
-                        if (it!=parallelInterpStencil[lev][d].end()) {
+                        Layout::IVScit it=parInterp.find(iv);
+                        if (it!=parInterp.end()) {
                             const Stencil& s = it->second;
 
                             for (int n=0; n<nComp; ++n) {
@@ -1135,6 +1149,7 @@ ABecTower::DoCoarseFineParallelInterp(MFTower& mft,
                                 for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
                                     const IntVect& ivs=(it->first).iv;
                                     BL_ASSERT(crseFab.box().contains(ivs));
+                                    BL_ASSERT((it->first).level==lev-1);
                                     res += crseFab(ivs,sComp+n) * it->second;
                                 }
                                 fineFab(iv,sComp+n) = res;
@@ -1146,7 +1161,7 @@ ABecTower::DoCoarseFineParallelInterp(MFTower& mft,
         }
 
         mf.FillBoundary(sComp,nComp);
-        geomArray[lev].FillPeriodicBoundary(mf,sComp,nComp);
+        gl.FillPeriodicBoundary(mf,sComp,nComp);
     }
 }
 
