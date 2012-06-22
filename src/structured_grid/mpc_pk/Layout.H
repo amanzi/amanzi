@@ -95,7 +95,7 @@ std::ostream& operator<< (std::ostream&  os, const Stencil& a);
 
 struct Layout
 {
-    typedef std::map<IntVect,Stencil> IVSMap;
+    typedef std::map<IntVect,Stencil,IntVect::Compare> IVSMap;
     typedef IVSMap::const_iterator IVScit;
     typedef BaseFab<Node> NodeFab;
     typedef FabArray<NodeFab> MultiNodeFab; 
@@ -163,21 +163,37 @@ std::ostream& operator<< (std::ostream&  os, const Layout::IntFab& ifab);
 std::ostream& operator<< (std::ostream&  os, const Layout::NodeFab& nfab);
 std::ostream& operator<< (std::ostream&  os, const Layout::MultiNodeFab& mnf);
 
-struct ABecTower
+struct MFTGrowFill
 {
-    ABecTower(const Layout& layout);
+    MFTGrowFill(const Layout& layout);
     int NumLevels() const {return layout.NumLevels();}
+    const Layout& GetLayout() const {return layout;}
     const Array<BoxArray>& GridArray() const {return layout.GridArray();}
     const Array<Geometry>& GeomArray() const {return layout.GeomArray();}
-    const MFTower& Coefficients(int i) const {return coefs[i];}
-    MFTower& Coefficients(int i) {return coefs[i];}
     void BuildStencil(const BCRec& bc,
                       int maxorder);
 
     void DoCoarseFineParallelInterp(MFTower& mft,
                                     int      sComp,
                                     int      nComp) const;
+    void FillGrowCells(MFTower& mft,
+                       int      sComp,
+                       int      nComp) const;
+    
+    void CCtoECgrad(PArray<MFTower>& mft_ec,
+                    const MFTower&   mft_cc,
+                    Real             mult,
+                    int              sComp,
+                    int              dComp,
+                    int              nComp) const;
 
+    void ECtoCCdiv(MFTower&               mft_cc,
+                   const PArray<MFTower>& mft_ec,
+                   Real                   mult,
+                   int                    sComp,
+                   int                    dComp,
+                   int                    nComp) const;
+    
 protected:
     void BuildCFParallelInterpStencil();
     
@@ -186,10 +202,26 @@ protected:
     const Array<BoxArray>& gridArray;
     const Array<Geometry>& geomArray;
     const Array<IntVect>& refRatio;
-    PArray<MFTower> coefs;
 
     Array<Array<Layout::IVSMap> > parallelInterpStencil; //[lev][dir][iv] = stencil to perform parallel bc Interp
-    Array<Layout::IVSMap> perpInterpStencil; //[lev][iv] = stencil to perform perpendicular bc Interp
+    Array<Array<Layout::IVSMap> > perpInterpStencil; //[lev][dir][iv] = stencil to perform perpendicular bc Interp
+};
+
+class RichardOp
+{
+public:
+    RichardOp(const MFTGrowFill& mftgrow);
+    const MFTower& Coefficients(int dir) const {return coefs[dir];}
+    MFTower& Coefficients(int dir) {return coefs[dir];}
+
+protected:
+    int nLevs;
+    const MFTGrowFill& mftgrow;
+    const Layout& layout;
+    const Array<BoxArray>& gridArray;
+    const Array<Geometry>& geomArray;
+    const Array<IntVect>& refRatio;
+    PArray<MFTower> coefs;
 };
 
 #endif
