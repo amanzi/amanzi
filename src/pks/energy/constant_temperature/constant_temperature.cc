@@ -139,7 +139,7 @@ double ConstantTemperature::enorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const Epetra_MultiVector> temp_vec = u->data()->ViewComponent("cell", false);
   Teuchos::RCP<const Epetra_MultiVector> temp_dot_vec = du->data()->ViewComponent("cell", false);
 
-  for (unsigned int lcv=0; lcv != temp_vec->MyLength(); ++lcv) {
+  for (int lcv=0; lcv != temp_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*temp_dot_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*temp_vec)(0))[lcv]));
     enorm_val = std::max<double>(enorm_val, tmp);
   }

@@ -23,7 +23,7 @@ add_library(pk_energy_three_phase three_phase_pk.cc three_phase_ti.cc three_phas
 
 #   # Test: miscaleneous transport routines
 #   add_executable(three_phase_test test/Main.cc test/energy_test_class.cc test/three_phase_advance_simple.cc)
-#   target_link_libraries(three_phase_test ${pk_factory} amanzi_data_structures pk_energy_three_phase energy_bc_factory ${energy_relations_thermal_conductivity} energy_relations_internal_energy advection divgrad amanzi_solvers amanzi_time_integration amanzi_whetstone amanzi_mesh amanzi_cell_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state ${Amanzi_TPL_UnitTest_LIBRARIES})
+#   target_link_libraries(three_phase_test ${pk_factory} amanzi_data_structures pk_energy_three_phase energy_bc_factory ${energy_relations_thermal_conductivity} energy_relations_internal_energy advection divgrad amanzi_solvers amanzi_time_integration amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state ${Amanzi_TPL_UnitTest_LIBRARIES})
 
 # endif()
 

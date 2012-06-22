@@ -125,7 +125,7 @@ void TwoPhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
 
   // NOTE: gas and liquid are done in a ?? basis, but rock is done in a mass basis
 
-  int c_owned = S_next_->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     // calculte the energy density at the old and new times
     double edens_liq1 = (*density_liq1)(c) * (*sat_liq1)(c) *
@@ -167,7 +167,7 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
   Teuchos::RCP<const CompositeVector> dens_liq = S->GetFieldData("density_liquid");
   Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
 
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   if (iem_liquid_->IsMolarBasis()) {
     // this is clean:
     // if u is in units of J/mol, then the rate of change of energy [J/s] is given by:
@@ -241,12 +241,8 @@ void TwoPhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
   Teuchos::RCP<CompositeVector> thermal_conductivity =
     S->GetFieldData("thermal_conductivity", "energy");
 
-  for (int c=0; c != Ke_.size(); ++c) {
-    Ke_[c](0,0) = (*thermal_conductivity)("cell", c);
-  }
-
   // calculate the div-grad operator, apply it to temperature, and add to residual
-  matrix_->CreateMFDstiffnessMatrices(Ke_);
+  matrix_->CreateMFDstiffnessMatrices(*thermal_conductivity);
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
@@ -258,7 +254,7 @@ void TwoPhase::InternalEnergyGas_(const Teuchos::RCP<State>& S,
         const CompositeVector& mol_frac_gas,
         const Teuchos::RCP<CompositeVector>& int_energy_gas) {
   // just a single model for now -- ignore blocks
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*int_energy_gas)("cell",0,c) = iem_gas_->
       InternalEnergy(temp("cell",0,c), mol_frac_gas("cell",0,c));
@@ -269,7 +265,7 @@ void TwoPhase::InternalEnergyLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_liquid) {
   // just a single model for now -- ignore blocks
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*int_energy_liquid)("cell",0,c) = iem_liquid_->
       InternalEnergy(temp("cell",0,c));
@@ -280,7 +276,7 @@ void TwoPhase::InternalEnergyRock_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
         const Teuchos::RCP<CompositeVector>& int_energy_rock) {
   // just a single model for now -- ignore blocks
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*int_energy_rock)("cell",0,c) = iem_rock_->
       InternalEnergy(temp("cell",0,c));
@@ -293,7 +289,7 @@ void TwoPhase::EnthalpyLiquid_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& enthalpy_liq) {
 
   // just a single model for now -- ignore blocks
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*enthalpy_liq)("cell",0,c) = int_energy_liquid("cell",0,c)
                               + pres("cell",0,c)/dens_liq("cell",0,c);
@@ -306,7 +302,7 @@ void TwoPhase::ThermalConductivity_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& thermal_conductivity) {
 
   // just a single model for now -- ignore blocks
-  int c_owned = S->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     (*thermal_conductivity)("cell",0,c) = thermal_conductivity_model_->
       CalculateConductivity(porosity("cell",0,c), sat_liq("cell",0,c));

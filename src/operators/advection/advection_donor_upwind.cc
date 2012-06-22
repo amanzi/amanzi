@@ -19,12 +19,12 @@ AdvectionDonorUpwind::AdvectionDonorUpwind(Teuchos::ParameterList& advect_plist,
     Advection(advect_plist, mesh) {
 
   f_begin_ = mesh_->face_map(true).MinLID();
-  f_count_ = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  f_count_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   f_owned_ = f_begin_ + f_count_;
   f_end_ = mesh_->face_map(true).MaxLID() + 1;
 
   c_begin_ = mesh_->cell_map(true).MinLID();
-  c_count_ = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  c_count_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   c_owned_ = c_begin_ + c_count_;
   c_end_ = mesh_->cell_map(true).MaxLID() + 1;
 

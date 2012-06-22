@@ -40,7 +40,7 @@ double PassiveTracer::enorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const Epetra_MultiVector> conc_vec = u->data()->ViewComponent(false);
   Teuchos::RCP<const Epetra_MultiVector> conc_dot_vec = du->data()->ViewComponent(false);
 
-  for (unsigned int lcv=0; lcv != conc_vec->MyLength(); ++lcv) {
+  for (int lcv=0; lcv != conc_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*conc_dot_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*conc_vec)(0))[lcv]));
     enorm_val = std::max<double>(enorm_val, tmp);
   }

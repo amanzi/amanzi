@@ -27,7 +27,7 @@ WHOLE_ARCHIVE(pk_factory)
 
 #     # Test: miscaleneous transport routines
 #     add_executable(permafrost_test test/Main.cc test/flow_test_class.cc test/permafrost_advance_simple.cc)
-#     target_link_libraries(permafrost_test ${pk_factory} pk_flow_permafrost flow_bc_factory ${flow_relations_eos} ${flow_relations_wrm} divgrad amanzi_solvers amanzi_time_integration amanzi_whetstone amanzi_mesh amanzi_cell_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state amanzi_data_structures ${Amanzi_TPL_UnitTest_LIBRARIES})
+#     target_link_libraries(permafrost_test ${pk_factory} pk_flow_permafrost flow_bc_factory ${flow_relations_eos} ${flow_relations_wrm} divgrad amanzi_solvers amanzi_time_integration amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state amanzi_data_structures ${Amanzi_TPL_UnitTest_LIBRARIES})
 
 # endif()
 

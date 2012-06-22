@@ -103,16 +103,12 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<CompositeVector> thermal_conductivity =
     S_next_->GetFieldData("thermal_conductivity", "energy");
 
-  for (int c=0; c != Ke_.size(); ++c) {
-    Ke_[c](0,0) = (*thermal_conductivity)("cell", c);
-  }
-
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  preconditioner_->CreateMFDstiffnessMatrices(Ke_);
+  preconditioner_->CreateMFDstiffnessMatrices(*thermal_conductivity);
   preconditioner_->CreateMFDrhsVectors();
 
   // update with accumulation terms

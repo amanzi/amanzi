@@ -42,7 +42,7 @@ AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
   solution_ = solution;
 
   // -- parameters
-  S->RequireField("thermal_conductivity", "energy", AmanziMesh::CELL, 1, true);
+  S->RequireField("thermal_conductivity","energy",AmanziMesh::CELL,1,true);
 
   // independent variables (not owned by this pk)
   S->RequireField("darcy_flux", AmanziMesh::FACE, 1, true);
@@ -116,6 +116,10 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   state_to_solution(S, solution_);
   atol_ = energy_plist_.get<double>("Absolute error tolerance",1e-5);
   rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+
+  // initialize the operators
+  matrix_->CreateMFDmassMatrices(Ke_);
+  preconditioner_->CreateMFDmassMatrices(Ke_);
 
   // initialize the timesteppper
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {

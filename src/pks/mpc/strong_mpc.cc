@@ -37,9 +37,9 @@ StrongMPC::StrongMPC(Teuchos::ParameterList &mpc_plist, const Teuchos::RCP<State
   if (mpc_plist.isParameter("PKs order")) {
     // ordered
     Teuchos::Array<std::string> pk_order = mpc_plist.get< Teuchos::Array<std::string> >("PKs order");
-    unsigned int npks = pk_order.size();
+    int npks = pk_order.size();
 
-    for (unsigned int i=0; i!=npks; ++i) {
+    for (int i=0; i!=npks; ++i) {
       std::string name_i = pk_order[i];
 
       // set up the solution
