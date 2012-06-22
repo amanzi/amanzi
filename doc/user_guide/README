@@ -1,0 +1,106 @@
+==============================================================================
+User Guide: Instructions and Notes
+==============================================================================
+
+The User Guide uses the Sphinx documentation generator
+
+http://sphinx.pocoo.org/contents.html
+
+which builds on Python docutils.  This approach allows us to use
+reStructured Text (rst) files so that its possible to maintain one
+source file and readily display it in a Trac Wiki page, as well as
+build a complete HTML and PDF documents.  Sphinx can use MathJax to
+include LaTeX math equations that look very good in both HTML and PDF.
+
+Building the User Guide
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+There is a Makefile in the top-level directory that allows you to
+build either HTML or PDF, e.g.,
+
+make html
+
+or 
+
+make latexpdf
+
+The documents are built under the _build directory
+
+_build/html
+_build/latex
+
+A good mode for development is to load the html as a local file in
+your browser and then simply reload when you've created an new build.
+
+To remove the old builds and temporary files, use make clean.
+
+
+Draft Layout
+~~~~~~~~~~~~~~
+
+Here is a suggested layout, with plausible deadlines for content.
+Each major section will have its own subdirectory
+
+  * Background / About (6/30/12)
+
+  * Building / Installing (6/30/12)
+
+    * overview of key steps
+    * supported systems
+    * building TPLs
+      - prebuilt 
+      - building your own
+    * building Amanzi
+      - pre-built
+      - with SuperBuild
+      - tips/guide for supported systems 
+        * OSX 
+        * Linux / *nix
+      - tips/guide for institutional systems
+        * Hopper 
+        * Conejo
+ 
+  * Running the tests (6/30/12)
+
+    * What did I build
+    * Where did I install it
+    * How do I run the tests
+    * Reporting problems
+
+  * Tutorial (6/30/12)
+
+    * Input Specification  (detailed spec in appendix)
+    * point to the detailed spec
+    * step through a simple input file 
+      * the minimum: define a mesh
+      * put a field on it and visualize it
+      * simple saturated flow computation 
+      * simple 1D advective transport (isolated)
+      * Richards flow with advective transport
+      * visualize capillary pressure
+
+  * Examples from Phase 2 (8/25/12)
+
+    * 1D and 2D DVZ problems 
+    * F-Area problem 
+
+  * Verification Tests
+
+    * Richards steady-state flow (6/30/12)
+
+
+Appendices
+
+ * Raw input specification  (6/30/12)
+
+ * Meshing in Amanzi (8/25/12)
+
+      * Unstructured
+        * create a simple mesh on the fly
+        * read a mesh on a single processor
+        * partition a mesh and then read it in parallel
+      * Structured 
+        * create a simple mesh on the fly
+        * initiate adaptivity processs?
+        * read /restart with an adapted mesh?
+
