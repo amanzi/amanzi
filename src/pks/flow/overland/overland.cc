@@ -278,7 +278,7 @@ void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
-      if (flux("face",0,n) * dirs[n] >= 0.0) {
+      if (flux("face",0,f) * dirs[n] >= 0.0) {
         (*upwind_conductivity)("face",0,f) = conductivity("cell",0,c);
       } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
         (*upwind_conductivity)("face",0,f) = conductivity("cell",0,c);

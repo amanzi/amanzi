@@ -77,7 +77,7 @@ void OverlandFlow::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   int c_owned = S_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     (*g)("cell",0,c) += (cell_volume1("cell",0,c)*pres1("cell",0,c)
-                         - cell_volume1("cell",0,c)*pres0("cell",0,c))/dt ;
+                         - cell_volume0("cell",0,c)*pres0("cell",0,c))/dt ;
   }
 };
 

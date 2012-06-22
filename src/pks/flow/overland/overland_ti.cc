@@ -32,7 +32,7 @@ void OverlandFlow::fun( double t_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
   std::cout << "OverlandFlow Residual calculation:" << std::endl;
   std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
-  std::cout << "  p1: " << (*u)("cell",0,9) << " " << (*u)("face",0,497) << std::endl;
+  std::cout << "  p1: " << (*u)("cell",0,9) << " " << (*u)("face",0,29) << std::endl;
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -50,12 +50,12 @@ void OverlandFlow::fun( double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
   std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-  std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+  std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,29) << std::endl;
 
   // accumulation term
   AddAccumulation_(res);
   std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-  std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+  std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,29) << std::endl;
 
   // add rhs load value
   AddLoadValue_(S_next_,res);
@@ -67,11 +67,11 @@ void OverlandFlow::fun( double t_old,
 void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
-  std::cout << "  p1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
+  std::cout << "  p1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,29) << std::endl;
   //preconditioner_->ApplyInverse(*u->data(), Pu->data());
   *Pu = *u ;
   std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
-  std::cout << "  PC*p1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,497) << std::endl;
+  std::cout << "  PC*p1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,29) << std::endl;
 };
 
 
