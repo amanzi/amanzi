@@ -102,33 +102,26 @@ private:
   void SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S);
   void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
 
-  // -- rel perm calculation for fluxes
-  // void Calculate_Relative_Permeability_Upwind_Gravity_ ( const Teuchos::RCP<State>& S,
-  //                                                        const CompositeVector & rel_perm_cells,
-  //                                                        CompositeVector & rel_perm_faces );
-  
-  void Calculate_Relative_Permeability_Upwind_Flux_    ( const Teuchos::RCP<State>& S,
-                                                         const CompositeVector & flux, 
-                                                         const CompositeVector & rel_perm_cells,
-                                                         CompositeVector & rel_perm_faces );
+  void CalculateRelativePermeabilityUpwindFlux_(
+          const Teuchos::RCP<State>& S,
+          const CompositeVector& flux,
+          const CompositeVector& rel_perm_cells,
+          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
 
-  // void Calculate_Relative_Permeability_Arithmetic_Mean_( const Teuchos::RCP<State>& S,
-  //                                                        const CompositeVector & rel_perm_cells,
-  //                                                        CompositeVector & rel_perm_faces );
-  
+
   // physical methods
   // -- diffusion term
   void ApplyDiffusion_(const Teuchos::RCP<State>& S, const Teuchos::RCP<CompositeVector>& g);
-  
+
   // -- accumulation term
   void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
-  
+
   void AddLoadValue_(const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<CompositeVector>& g) ;
 
   // -- add elevation to overland pressure
   void AddElevation_(const Teuchos::RCP<Amanzi::State>&) ;
-  
+
   // -- update secondary variables from primary variables T,p
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
 

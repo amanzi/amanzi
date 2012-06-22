@@ -43,7 +43,7 @@ void FlowTest::commit_step() {
 void FlowTest::initialize_owned() {
   Teuchos::RCP<CompositeVector> pres = S0->GetFieldData("overland_pressure", "overland_flow");
 
-  int c_owned = S0->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S0->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*pres)("cell",c) = my_f(xc, 0.0);
@@ -59,7 +59,7 @@ void FlowTest::evaluate_error_pressure(double t, double & L1, double & L2) {
   double d;
   L1 = 0.0;
   L2 = 0.0;
-  int c_owned = S0->mesh()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S0->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);

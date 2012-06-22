@@ -351,9 +351,9 @@ void Richards::CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<St
       int f = faces[n];
       const AmanziGeometry::Point& normal = S->mesh()->face_normal(f);
       if ((normal * Kgravity) * dirs[n] >= 0.0) {
-        (*rel_perm_faces)(f) = rel_perm_cells(c);
+        (*rel_perm_faces)("face",0,f) = rel_perm_cells("cell",0,c);
       } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-        (*rel_perm_faces)(f) = rel_perm_cells(c);
+        (*rel_perm_faces)("face",0,f) = rel_perm_cells("cell",0,c);
       }
     }
   }
@@ -376,10 +376,9 @@ void Richards::CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
-      if (flux(n) * dirs[n] >= 0.0) {
-        (*rel_perm_faces)(f) = rel_perm_cells(c);
-      } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-        (*rel_perm_faces)(f) = rel_perm_cells(c);
+      if ((flux("face",0,f) * dirs[n] >= 0.0) ||
+          (bc_markers_[f] != Operators::MFD_BC_NULL)) {
+        (*rel_perm_faces)("face",0,f) = rel_perm_cells("cell",0,c);
       }
     }
   }
