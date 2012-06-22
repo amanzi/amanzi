@@ -177,21 +177,23 @@ An example of the van Genuchten model specification is:
        <Parameter name="regularization interval" type="double" value="0.0"/>
        <Parameter name="relative permeability model" type="string" value="Burdine"/>
     </ParameterList>
-    <Parameter name="calculate WRM curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
+    <Parameter name="calculate krel-pc curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
 
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
-The relative permeability curves can be calculated and saved in the file wrm_curves.txt
-using the following optional command:
+The relative permeability curves can be calculated and saved in the file krel_pc.txt
+and krel_sat.txt using the following optional commands:
 
 .. code-block:: xml
 
-    <Parameter name="calculate WRM curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
+    <Parameter name="calculate krel-pc curves" type="Array double" value="{0.0, 0.1, 3000.0}"/>
+    <Parameter name="calculate krel-sat curves" type="Array double" value="{0.0001, 0.01, 1.0}"/>
 
-The triple of doubles means the starting capillary pressure, the period, and the final capillary pressure.
-Each line in the output file will contain the capilalry pressure and relative permeability values for
-all water retention models in the order they appear in the input spec.
-This output requires verbosity level `"high`" or higher. 
+The triple of doubles means the starting capillary pressure (resp., saturation), the period, and 
+the final capillary pressure (resp., saturation).
+Each line in the output file will contain the capilalry pressure (resp., saturation) and relative 
+permeability values for all water retention models in the order they appear in the input spec.
+This output requires verbosity level `"medium`" or higher. 
 
 
 Boundary conditions
@@ -309,6 +311,11 @@ The remaining `"Flow`" parameters are
   The third option is recommended for orthogonal meshes and diagonal absolute permeability.
   The second option is still experimental (no papers were published) and produces 
   an optimal discretization.
+
+* `"source and sink distribution method`" [string] identifies a method for distributing
+  quantities defined as integral values over regions. At the moment, it is applied
+  only to source and sink terms. The available options are `"volume`",
+  `"none`", and `"permeability`".
 
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".

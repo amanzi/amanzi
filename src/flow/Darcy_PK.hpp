@@ -69,6 +69,7 @@ class Darcy_PK : public Flow_PK {
   // io members
   void ProcessParameterList();
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringSourceDistribution(const std::string name, int* method);
 
   // control methods
   void PrintStatistics() const;
@@ -123,6 +124,7 @@ class Darcy_PK : public Flow_PK {
   std::vector<double> bc_values;
 
   DomainFunction* src_sink;  // Source and sink terms
+  int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 

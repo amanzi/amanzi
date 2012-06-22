@@ -10,6 +10,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(BinaryManager)
 
 #
 # Define a project name
@@ -138,19 +139,19 @@ add_install_library(udriv)
 #
 # Binary: verify_mesh
 #
-add_executable(verify_mesh verify_mesh.cc)
-target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
-                      ${Boost_LIBRARIES})
-add_install_binary(verify_mesh)		     
+add_amanzi_executable(verify_mesh
+                      SOURCE verify_mesh.cc
+                      LINK_LIBS mesh_factory mesh mesh_audit ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
 
 #
-# Binary: verify_mesh
+# Binary: verify_hex
 #
 if ( ENABLE_CGNS )
-    add_executable(verify_hex verify_hex.cc)
-    target_link_libraries(verify_hex mesh_factory mesh mesh_audit output
-                          ${Boost_LIBRARIES} ${CGNS_LIBRARIES})
-    add_install_binary(verify_hex)		     
+    add_amanzi_executable(verify_hex
+                          SOURCE verify_hex.cc
+                          LINK_LIBS mesh_factory
+                                    mesh mesh_audit
+                                    output ${Boost_LIBRARIES} ${CGNS_LIBRARIES})
 endif()
 
 #
@@ -165,13 +166,18 @@ endif()
 #endif()
 
 #
-# Binary: verify_mesh
+# Binary: verify_deform
 #
-add_executable(verify_deform verify_deform.cc)
-target_link_libraries(verify_deform mesh_factory mesh ${amanzi_mesh_libs}
-                      output ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-add_install_binary(verify_deform)		     
+add_amanzi_executable(verify_deform
+                      SOURCE verify_deform.cc
+                      LINK_LIBS mesh_factory
+                                mesh
+                                ${amanzi_mesh_libs}
+                                output
+                                ${Epetra_LIBRARIES}
+                                ${Teuchos_LIBRARIES})
 
+                                
 #
 #
 #

@@ -28,9 +28,9 @@ Getting TPL-Build
 -----------------
 
 TPL-Build is a separate CMake project in the Amanzi repository. You will need 
-a clone of the Amanzi repository,
+a clone of the Amanzi repository, ::
 
-``hg clone https://software.lanl.gov/ascem/hg/amanzi``.
+  hg clone https://software.lanl.gov/ascem/hg/amanzi
 
 The root directory for TPL-Build is amanzi/config/SuperBuild. 
 
@@ -39,24 +39,37 @@ Building TPLs
 -------------
 
 In most cases, the entire suite of TPL software can be built with the following steps
-    1. cmake  \
+
+    1. Configure with cmake 
+       :: 
+
+        cmake  \
            -D CMAKE_C_COMPILER=/full/path/mpicc \
 	       -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
 	       -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
 	       -D TPL_INSTALL_PREFIX=/full/path/to/tpls
 	       /full/path/to/amanzi/config/SuperBuild
-    2. make -j n, where n is the number of make jobs.
-    3. make install
-    
+
+    2. Build with make (in parallel if desired)::
+ 
+        make -j n
+
+       where n is the number of make jobs.
+
+    3. Install with make::
+
+        make install
+
 The final step, make install, copies a CMake configuration file,amanzi-tpl-config.cmake,
 to the install location under share/cmake that is useful when building Amanzi. 
 Passing this configuration to cmake using the -C option defines all the TPL locations
 needed to build amanzi.
 
-For example,
+For example ::
 
-``cmake -C /full/path/to/amanzi-tpl-config.cmake [Additional CMake opts] /full/path/amanzi``
-
+ cmake -C /full/path/to/amanzi-tpl-config.cmake \ 
+   [Additional CMake opts] /full/path/amanzi
+ 
 will build and link amanzi linked against the TPLs built with this 
 project, reducing the need for complicated build scripts.
 
@@ -70,18 +83,30 @@ scripts and functionality is available.
 For now, we recommended users that wish to SuperBuild Amanzi do the following,
 
     1. Install CMake. See http://www.cmake.org for more information.
+
     2. Clone the Amanzi repository.
-       `` hg clone https://software.lanl.gov/ascem/hg/amanzi``
-    3. Configure SuperBuild.
-           cmake \
-           -D CMAKE_C_COMPILER=/full/path/mpicc \
+       ::
+ 
+          hg clone https://software.lanl.gov/ascem/hg/amanzi``
+
+    3. Configure SuperBuild 
+       ::
+
+          cmake \
+               -D CMAKE_C_COMPILER=/full/path/mpicc \
 	       -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
 	       -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
 	       -D TPL_INSTALL_PREFIX=/full/path/to/install/tpls \
 	       -D BUILD_Amanzi=TRUE \
 	       -D Amanzi_INSTALL_PREFIX=/full/path/to/install/amanzi \
 	       /full/path/to/amanzi/config/SuperBuild
-    4. make [-j n] amanzi, where ``-j n`` is the number of parallel make threads.
+
+    4. Build with make (in parallel if desired)
+       ::
+
+        make [-j n] amanzi
+
+       where ``-j n`` is the number of parallel make threads.
 
 There is a script called bootstrap.sh under development that eventually will install all
 the required software, including CMake but is not ready for general use at this time.

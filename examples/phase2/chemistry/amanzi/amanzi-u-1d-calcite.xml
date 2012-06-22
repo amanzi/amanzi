@@ -1,8 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
   <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="1D Flow and Transport"/>
-    <Parameter name="Author" type="string" value="Glenn Hammond"/>
+    <Parameter name="Model ID" type="string" value="1D Flow and Transport with calcite kinetics"/>
   </ParameterList>
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
@@ -99,12 +98,6 @@
       <ParameterList name="Intrinsic Permeability: Uniform">
         <Parameter name="Value" type="double" value="1.E-12"/>
       </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.E-04"/>
-        <Parameter name="Sr" type="double" value="0.1"/>
-        <Parameter name="m" type="double" value="0.5"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-      </ParameterList>
       <Parameter name="Assigned Regions" type="Array string" value="{Soil_1}"/>
       <ParameterList name="Mineralogy">
 	<ParameterList name="Calcite">
@@ -119,12 +112,6 @@
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Uniform">
         <Parameter name="Value" type="double" value="1.E-12"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.E-04"/>
-        <Parameter name="Sr" type="double" value="0.1"/>
-        <Parameter name="m" type="double" value="0.5"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array string" value="{Soil_2}"/>
       <ParameterList name="Mineralogy">

@@ -246,6 +246,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("Darcy PK: source/sink distribution method (id) %1d\n", src_sink_distribution);
     std::printf("***********************************************************\n");
   }
 
@@ -331,7 +332,15 @@ int Darcy_PK::Advance(double dT_MPC)
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
 
-  if (src_sink != NULL) src_sink->Compute(time);
+  if (src_sink != NULL) {
+    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
+      src_sink->Compute(time);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
+      src_sink->ComputeDistribute(time);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+      src_sink->ComputeDistribute(time, Krel_cells->Values());  // incomplete since Krel=1 but K is a tensor
+    } 
+  }
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,

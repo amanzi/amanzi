@@ -780,7 +780,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       std::string flow_model = plist->sublist("Execution Control").get<std::string>("Flow Model");
-      if ( flow_model == "Steady State Saturated" )
+      if (flow_model == "Steady State Saturated") {
 	Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem"); 
 	darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level); 
 	darcy_problem.set<double>("atmospheric pressure", 101325.0); 
@@ -790,7 +790,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	// insert the flow BC sublist 
 	Teuchos::ParameterList& flow_bc = darcy_problem.sublist("boundary conditions"); 
 	flow_bc = create_SS_FlowBC_List(plist); 
-      } else if ( flow_model == "Richards" || flow_model == "Steady State Richards")
+      } else if (flow_model == "Richards" || flow_model == "Steady State Richards") {
 	Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem"); 
         richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
@@ -1518,7 +1518,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 
           stt_mat.set<double>(ss.str(), conc);
 
-          conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-16);
+          conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-9);
           ss.clear();
           ss.str("");
           ss << "Free Ion Guess " << comp_names_map[ comp_names[ii] ];

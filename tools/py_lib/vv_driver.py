@@ -208,9 +208,10 @@ if options.extract_data != None:
   
   source_file=None
   if options.extract_time == 'last':
+    sorted_list=amanzi.sort_data_files(files=search_files)
 
     try:
-      source_file=search_files[-1]
+      source_file=sorted_list[-1]
     except:
       print 'Search file list is empty'
   else:
