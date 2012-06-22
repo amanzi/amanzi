@@ -1307,9 +1307,15 @@ MFTGrowFill::ECtoCCdiv(MFTower&               mftc,
 }
 
 RichardOp::RichardOp(const MFTGrowFill& _mftgrow)
-    : mftgrow(_mftgrow), layout(_mftgrow.GetLayout()), gridArray(_mftgrow.GetLayout().GridArray()), 
-      geomArray(_mftgrow.GetLayout().GeomArray()), nLevs(_mftgrow.GetLayout().NumLevels()),
-      coefs(BL_SPACEDIM,PArrayManage), refRatio(_mftgrow.GetLayout().RefRatio())
+    : mftgrow(_mftgrow),
+      layout(_mftgrow.GetLayout()),
+      gridArray(_mftgrow.GetLayout().GridArray()), 
+      geomArray(_mftgrow.GetLayout().GeomArray()), 
+      nLevs(_mftgrow.GetLayout().NumLevels()),
+      refRatio(_mftgrow.GetLayout().RefRatio()),
+      coefs(BL_SPACEDIM,PArrayManage),
+      lambda_allocated(false), 
+      saturation_allocated(false)
 {
     Array<IndexType> itype(BL_SPACEDIM);
     D_DECL(itype[0]=ECI,
@@ -1318,4 +1324,12 @@ RichardOp::RichardOp(const MFTGrowFill& _mftgrow)
     for (int d=0; d<BL_SPACEDIM; ++d) {
         coefs.set(d, new MFTower(layout,itype[d]));
     }
+}
+
+void
+RichardOp::Residual(MFTower&       Rmft,
+                    const MFTower& Pnew_mft,
+                    const MFTower& Pold_mft,
+                    const Real     dt)
+{
 }

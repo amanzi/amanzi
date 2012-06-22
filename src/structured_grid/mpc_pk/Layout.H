@@ -211,8 +211,14 @@ class RichardOp
 {
 public:
     RichardOp(const MFTGrowFill& mftgrow);
+
     const MFTower& Coefficients(int dir) const {return coefs[dir];}
     MFTower& Coefficients(int dir) {return coefs[dir];}
+
+    void Residual(MFTower&       Rmft,
+                  const MFTower& Pnew_mft,
+                  const MFTower& Pold_mft,
+                  const Real     dt);
 
 protected:
     int nLevs;
@@ -221,7 +227,11 @@ protected:
     const Array<BoxArray>& gridArray;
     const Array<Geometry>& geomArray;
     const Array<IntVect>& refRatio;
+
     PArray<MFTower> coefs;
+    MFTower* lambda;     // Managed in/externally.  lambda_allocated must be true prior to many of the function calls
+    MFTower* saturation; // Managed in/externally.  saturation_allocated must be true prior to many of the function calls
+    bool lambda_allocated, saturation_allocated;
 };
 
 #endif
