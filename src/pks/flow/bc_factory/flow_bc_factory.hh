@@ -105,6 +105,8 @@ public:
   Teuchos::RCP<BoundaryFunction> CreatePressure() const;
   Teuchos::RCP<BoundaryFunction> CreateMassFlux() const;
   Teuchos::RCP<BoundaryFunction> CreateStaticHead(double, double, AmanziGeometry::Point&) const;
+  Teuchos::RCP<BoundaryFunction> CreateZeroGradient() const;
+
 
 private:
   void ProcessPressureList(const Teuchos::ParameterList&,
@@ -119,6 +121,10 @@ private:
         const Teuchos::ParameterList&, const Teuchos::RCP<BoundaryFunction>&) const;
   void ProcessStaticHeadSpec(double, double, AmanziGeometry::Point&,
         const Teuchos::ParameterList&, const Teuchos::RCP<BoundaryFunction>&) const;
+  void ProcessZeroGradientList(const Teuchos::ParameterList&,
+          const Teuchos::RCP<BoundaryFunction>&) const;
+  void ProcessZeroGradientSpec(const Teuchos::ParameterList&,
+          const Teuchos::RCP<BoundaryFunction>&) const;
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
