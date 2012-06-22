@@ -10,6 +10,9 @@ requirements documented here https://software.lanl.gov/ascem/trac/wiki/Amanzi/Bu
 
 Users are required to provide the following to build
 
+    * A recent and stable GCC or Intel compiler. We have successfully built with
+      GNU versions 4.4, 4.5 and 4.6, and Intel versions 11 and 12. There
+      are known issues with GCC 4.7.
     * CMake version 2.8.6 or higher.
     * Mercurial version 0.98 or higher.
     * MPI installation with compiler wrappers. (mpicc, mpicxx, etc.)
@@ -23,6 +26,156 @@ Users are required to provide the following to build
       target, the user must have read and write permission for this location.
     * The build directory will need approximately 2.1 Gb of space and the 
       install directory tree requires 300 Mb.
+
+On most UNIX-like OS (including Mac OSX) systems, the entire TPL software stack can
+be built using the bootstrap.sh shell script found in the config directory. The script
+searches for CMake and will build CMake 2.8.7, if it does locate the cmake command. 
+At this time, the script does not build compilers, MPI or LAPACK/BLAS. Please refer
+to later sections of this document on how to obtain and install these packages.
+
+The boostrap.sh script will create build directories one for the TPLs, TPL_BUILD, and amanzi,
+amanzi-build, in the directory the script is called from. Users can control the 
+install location of the TPLs and Amanzi through command line arguments.
+The command ::
+
+  <amanzi source root>/config/bootstrap.sh --help
+
+will print all the available options and default values. 
+
+Obtaining A Supported Compiler
+++++++++++++++++++++++++++++++
+
+At this time, Amanzi can be built with recent versions of GCC, 4.4 through 4.6, and
+Intel versions 11.* and 12.*. The Trilinos package Amanzi requires does not build
+with GCC 4.7 unless it is patched. Since GCC is widely used by the development team
+and it is free, we recommend using one of the supported GCC compilers. 
+
+GCC On Mac OSX
+**************
+
+The default GCC install on Mac OSX does not include a Fortran compiler. Mac users
+should use the MacPorts software http://www.macports.org/ to install GCC. Once 
+MacPorts is installed, ::
+
+  port install gcc4x
+
+will install GCC 4.x in the /opt/local directory. Be aware that Apple requires these
+compiler names to be gcc-mp-4.x and g++-mp-4.x, not the standard gcc or g++.
+
+GCC On Ubuntu
+*************
+
+Use the apt-get utility, ::
+
+  apt-get install gcc
+
+Building GCC From Source
+************************
+
+Please contact your local IT support before attempting to build compiler. The binaries may be
+available in a non-standard location. 
+
+Building GCC requires several precision libraries that must be installed before building GCC.
+See http://gcc.gnu.org/install/prerequisites.html for more information. Once these
+packages are installed, GCC must be configured with C, C++ and Fortran enabled. Documentation
+of the available configure options is here http://gcc.gnu.org/install/configure.html. 
+The quickest way to determine the best configure options is to find a similiar 
+machine with a matching OS that has the target GCC already installed, and look at
+the verbose version output. The command ::
+
+  gcc -v
+
+will print out the configure options used to build GCC compiler. One important note to 
+remember: DO NOT BUILD GCC IN THE SOURCE DIRECTORY. Create a seperate build directory.
+The GCC build time is long. On most systems it will need more than 2 hours to complete.
+
+
+Obtaining MPI
++++++++++++++
+
+Amanzi has been built against both MPICH2 and OpenMPI. Both are easy to build and install,
+but on clusters, users should contact their local support before building either one. Many
+vendors provide tuned and optimized MPI libraries that should be used to maximize performance.
+Otherwise, install either MPICH2 or OpenMPI.
+
+MPICH2
+******
+
+We recommend that users install a stable version of MPICH2. MPICH versions where the
+minor version number (Ex: 1.4.1 minor version is 4) is even are stable. Odd minor
+versions are beta releases.
+
+Steps to build and install MPICH2 are
+
+    1. Download MPICH2 http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=downloads 
+
+    2. Unpack the tar file and create a separate build directory. In this build directory,
+       configure MPICH2 with ::
+
+       configure --prefix=<install prefix> \
+                 --enable-f77 \
+                 --enable-fc \
+                 --enable-cxx \
+                 --enable-romio \
+                 --enable-shared \
+                 --enable-static \
+                 CC=<full path to C compiler>
+                 CXX=<full path to C++ compiler>
+                 FC=<full path to Fortran compiler>
+                 F77=<full path to Fortran compiler that support F77>
+
+    3. Build, test and install. MPICH does not support parallel builds. ::
+
+       make all; make test; make install
+
+    4. Set environment variables, PATH, LD_LIBRARY_PATH ::
+
+       setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
+       setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
+    
+    5. Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this 
+       directory when this is set. ::
+
+       setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
+
+OpenMPI
+*******
+       
+Steps to build and install OpenMPI are
+
+    1. Download OpenMPI http://www.open-mpi.org
+
+    2. Unpack the tar file in a directory and create a separate build directory. In this build directory
+       configure OpenMPI with ::
+
+       configure --prefix=<install prefix> \
+                 --enable-mpi-f77 \
+                 --enable-mpi-f90 \
+                 --enable-mpi-cxx \
+                 --enable-shared \
+                 --enable-static \
+                 CC=<full path to C compiler>
+                 CXX=<full path to C++ compiler>
+                 FC=<full path to Fortran compiler>
+                 F77=<full path to Fortran compiler that support F77>
+
+    3. Build, test and install. OpenMPI does support parallel builds. ::
+
+       make all; make test; make install
+
+    4. Set environment variables, PATH, LD_LIBRARY_PATH ::
+
+       setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
+       setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
+    
+    5. Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this 
+       directory when this is set. ::
+
+       setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
+
+Obtaining LAPACK/BLAS
+*********************
+
 
 Getting TPL-Build
 -----------------
@@ -38,7 +191,10 @@ The root directory for TPL-Build is amanzi/config/SuperBuild.
 Building TPLs
 -------------
 
-In most cases, the entire suite of TPL software can be built with the following steps
+We recommend that users run the provided bootstrap.sh in the config directory, to build
+the TPLs. The instructions in this section are for advanced users and developers.
+
+The steps to build entire suite of TPL software from the command line are
 
     1. Configure with cmake 
        :: 
@@ -119,6 +275,22 @@ wish to rebuild Amanzi without rebuilding the TPLs, cd to ``amanzi-build`` and c
 
 Known Issues
 ------------
+
+Trilinos fails to build with GCC 4.7
+++++++++++++++++++++++++++++++++++++
+The Trilinos packages requires patches to compile correctly with GCC 4.7. We do not
+supply these patches through SuperBuild. We are hoping to move to a current Trilinos 
+version by September 2012 and this newer version will compile with the GCC 4.7
+compiler. In the mean time, we recommended that users use an older GCC
+compiler (4.4, 4.5 or 4.6).
+
+NetCDF fails to configure on Mac OSX
+++++++++++++++++++++++++++++++++++++
+This problem occurs when a user has HDF5 installed through MacPorts through and uses
+the MacPorts OpenMPI. This is an issue with NetCDF's configure script which
+does not allow the user to control the HDF5 prefix installation. Users can either
+install OpenMPI in another directory and use the wrappers in that directory (RECOMMENDED)
+or set ENABLE_NetCDF4:BOOL=FALSE while configuring SuperBuild from the command line. 
 
 TPL build fails with any PGI compiler
 +++++++++++++++++++++++++++++++++++++
