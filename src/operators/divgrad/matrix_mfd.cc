@@ -109,18 +109,16 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
           Bff(m, n) = Mff(m,n) * Krel("cell",0,c);
         }
       }
-    } else {
-      if (Krel("cell",0,c) == 1.0) {
-        for (int n=0; n!=nfaces; ++n) {
-          for (int m=0; m!=nfaces; ++m) {
-            Bff(m, n) = Mff(m,n) * Krel("face",0,faces[m]);
-          }
+    } else if (!Krel.has_name("cell")) {
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * Krel("face",0,faces[m]);
         }
-      } else {
-        for (int n=0; n!=nfaces; ++n) {
-          for (int m=0; m!=nfaces; ++m) {
-            Bff(m, n) = Mff(m,n) * Krel("cell",0,c) * Krel("face",0,faces[m]);
-          }
+      }
+    } else {
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * Krel("cell",0,c) * Krel("face",0,faces[m]);
         }
       }
     }
