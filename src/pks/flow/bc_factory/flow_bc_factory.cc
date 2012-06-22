@@ -6,6 +6,7 @@ Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
 */
 
 #include "boundary-function.hh"
+#include "constant-function.hh"
 #include "function-factory.hh"
 #include "errors.hh"
 
@@ -69,6 +70,26 @@ Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateStaticHead(double p0,
   } catch (Teuchos::Exceptions::InvalidParameterType& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"static head\" sublist error: not a sublist: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  return bc;
+}
+
+
+/* ******************************************************************
+* Process Zero Gradient BC (pressure), step 1.
+****************************************************************** */
+Teuchos::RCP<BoundaryFunction> FlowBCFactory::CreateZeroGradient() const {
+  Teuchos::RCP<BoundaryFunction> bc = Teuchos::rcp(new BoundaryFunction(mesh_));
+  try {
+    ProcessZeroGradientList(plist_.sublist("zero-gradient"), bc);
+  } catch (Errors::Message& msg) {
+    Errors::Message m;
+    m << "FlowBCFactory: \"zero-gradient\" sublist error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  } catch (Teuchos::Exceptions::InvalidParameterType& msg) {
+    Errors::Message m;
+    m << "FlowBCFactory: \"zero-gradient\" sublist error: not a sublist: " << msg.what();
     Exceptions::amanzi_throw(m);
   }
   return bc;
@@ -315,5 +336,60 @@ void FlowBCFactory::ProcessStaticHeadSpec(double p0, double density,
   bc->Define(regions, f);
 }
 
+
+/* ******************************************************************
+* Process Dirichet BC (pressure), step 2.
+****************************************************************** */
+void FlowBCFactory::ProcessZeroGradientList(const Teuchos::ParameterList& list,
+                                        const Teuchos::RCP<BoundaryFunction>& bc) const {
+  // Iterate through the BC specification sublists in the list.
+  // All are expected to be sublists of identical structure.
+  for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
+    std::string name = i->first;
+    if (list.isSublist(name)) {
+      Teuchos::ParameterList spec = list.sublist(name);
+      try {
+        ProcessZeroGradientSpec(spec, bc);
+      } catch (Errors::Message& msg) {
+        Errors::Message m;
+        m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
+        Exceptions::amanzi_throw(m);
+      }
+    } else { // ERROR -- parameter is not a sublist
+      Errors::Message m;
+      m << "parameter \"" << name.c_str() << "\" is not a sublist";
+      Exceptions::amanzi_throw(m);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Process Dirichet BC (pressure), step 3.
+****************************************************************** */
+void FlowBCFactory::ProcessZeroGradientSpec(const Teuchos::ParameterList& list,
+        const Teuchos::RCP<BoundaryFunction>& bc) const {
+  Errors::Message m;
+  std::vector<std::string> regions;
+
+  if (list.isParameter("regions")) {
+    if (list.isType<Teuchos::Array<std::string> >("regions")) {
+      regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
+    } else {
+      m << "parameter \"regions\" is not of type \"Array string\"";
+      Exceptions::amanzi_throw(m);
+    }
+  } else {  // Parameter "regions" is missing.
+    m << "parameter \"regions\" is missing";
+    Exceptions::amanzi_throw(m);
+  }
+
+  // Make the boundary function.  This simply puts in zero -- the PK
+  // is expected to handle this condition correctly.
+  Teuchos::RCP<Function> f = Teuchos::rcp(new ConstantFunction(0.0));
+
+  // Add this BC specification to the boundary function.
+  bc->Define(regions, f);
+}
 }  // namespace AmanziFlow
 }  // namespace Amanzi
