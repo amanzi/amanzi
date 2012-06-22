@@ -29,19 +29,6 @@ GetBndryCells (const BoxArray& ba,
 	gcells.join(BoxLib::boxDiff(BoxLib::grow(ba[i],ngrow),ba[i]));
     }
 
-    BoxArray lba;
-    if (dm) {
-        BoxList sbl;
-        for (int i=0; i<ba.size(); ++i) {
-            if ((*dm)[i]==ParallelDescriptor::MyProc()) {
-                sbl.push_back(ba[i]);
-            }
-        }
-        lba = BoxArray(sbl);
-    }
-    else {
-        lba = ba;
-    }
     //
     // Now strip out intersections with original BoxArray (or, local boxes)
     //
@@ -841,13 +828,6 @@ MFTGrowFill::MFTGrowFill(const Layout& _layout)
       geomArray(_layout.GeomArray()), nLevs(_layout.NumLevels()),
       refRatio(_layout.RefRatio())
 {
-    Array<IndexType> itype(BL_SPACEDIM);
-    D_DECL(itype[0]=ECI,
-           itype[1]=ECJ,
-           itype[2]=ECK);
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-        coefs.set(d, new MFTower(layout,itype[d]));
-    }
 }
 
 /*
