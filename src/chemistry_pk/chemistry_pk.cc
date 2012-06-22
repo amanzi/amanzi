@@ -676,6 +676,9 @@ void Chemistry_PK::advance(
       // chemistry computations for this cell
       int num_iterations = chem_->ReactionStep(&beaker_components_,
                                                beaker_parameters_, delta_time);
+      //std::stringstream message;
+      //message << "--- " << cell << "\n";
+      //beaker_components_.Display(message.str().c_str());
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
         imax = cell;

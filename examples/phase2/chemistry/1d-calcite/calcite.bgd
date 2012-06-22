@@ -1,6 +1,6 @@
 # pflotran database preprocessing :
-#        date : 20120511   182302.799
-#       input : calcite-kinetics-large-time-steps.in
+#        date : 20120621   164034.087
+#       input : 1d-calcite.in
 
 <Primary Species
 H+  ;   9.00 ;   1.00 ;   1.01
