@@ -72,7 +72,7 @@ Use the apt-get utility, ::
 Building GCC From Source
 ************************
 
-Please contact your local IT support before attempting to build compiler. The binaries may be
+Please contact your local IT support before attempting to build GCC from source. The binaries may be
 available in a non-standard location. 
 
 Building GCC requires several precision libraries that must be installed before building GCC.
@@ -110,7 +110,7 @@ Steps to build and install MPICH2 are
     1. Download MPICH2 http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=downloads 
 
     2. Unpack the tar file and create a separate build directory. In this build directory,
-       configure MPICH2 with ::
+       configure MPICH2 with::
 
        configure --prefix=<install prefix> \
                  --enable-f77 \
@@ -124,17 +124,17 @@ Steps to build and install MPICH2 are
                  FC=<full path to Fortran compiler>
                  F77=<full path to Fortran compiler that support F77>
 
-    3. Build, test and install. MPICH does not support parallel builds. ::
+    3. Build, test and install. MPICH does not support parallel builds.::
 
        make all; make test; make install
 
-    4. Set environment variables, PATH, LD_LIBRARY_PATH ::
+    4. Set environment variables, PATH, LD_LIBRARY_PATH::
 
        setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
        setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
     
     5. Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this 
-       directory when this is set. ::
+       directory when this is set.::
 
        setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
 
@@ -146,24 +146,28 @@ Steps to build and install OpenMPI are
     1. Download OpenMPI http://www.open-mpi.org
 
     2. Unpack the tar file in a directory and create a separate build directory. In this build directory
-       configure OpenMPI with ::
+       configure OpenMPI with
+       ::
 
-       configure --prefix=<install prefix> \
-                 --enable-mpi-f77 \
-                 --enable-mpi-f90 \
-                 --enable-mpi-cxx \
-                 --enable-shared \
-                 --enable-static \
-                 CC=<full path to C compiler>
-                 CXX=<full path to C++ compiler>
-                 FC=<full path to Fortran compiler>
-                 F77=<full path to Fortran compiler that support F77>
+        configure \
+                  --prefix=<install prefix> \
+                  --enable-mpi-f77 \
+                  --enable-mpi-f90 \
+                  --enable-mpi-cxx \
+                  --enable-shared \
+                  --enable-static \
+                  CC=<full path to C compiler>
+                  CXX=<full path to C++ compiler>
+                  FC=<full path to Fortran compiler>
+                  F77=<full path to Fortran compiler that support F77>
 
-    3. Build, test and install. OpenMPI does support parallel builds. ::
+       where the compilers are defined explicity on the command line.           
+
+    3. Build, test and install. OpenMPI does support parallel builds.::
 
        make all; make test; make install
 
-    4. Set environment variables, PATH, LD_LIBRARY_PATH ::
+    4. Set environment variables, PATH, LD_LIBRARY_PATH::
 
        setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
        setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
@@ -286,7 +290,7 @@ compiler (4.4, 4.5 or 4.6).
 
 NetCDF fails to configure on Mac OSX
 ++++++++++++++++++++++++++++++++++++
-This problem occurs when a user has HDF5 installed through MacPorts through and uses
+This problem occurs when a user has HDF5 installed through MacPorts and uses
 the MacPorts OpenMPI. This is an issue with NetCDF's configure script which
 does not allow the user to control the HDF5 prefix installation. Users can either
 install OpenMPI in another directory and use the wrappers in that directory (RECOMMENDED)
