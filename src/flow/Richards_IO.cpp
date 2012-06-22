@@ -393,17 +393,38 @@ std::string Richards_PK::FindStringLinearSolver(const Teuchos::ParameterList& li
 void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    if (list.isParameter("calculate WRM curves")) {
-      std::printf("Richards PK: saving WRM curves in file wrm_curves.txt\n");
+    if (list.isParameter("calculate krel-pc curves")) {
+      std::printf("Richards PK: saving krel-pc curves in file krel_pc.txt\n");
       ofstream ofile;
-      ofile.open("wrm_curves.txt");
+      ofile.open("krel_pc.txt");
 
       std::vector<double> spe;
-      spe = list.get<Teuchos::Array<double> >("calculate WRM curves").toVector();
+      spe = list.get<Teuchos::Array<double> >("calculate krel-pc curves").toVector();
 
       for (double pc = spe[0]; pc < spe[2]; pc += spe[1]) {
         ofile << pc << " ";
         for (int mb = 0; mb < WRM.size(); mb++) {
+          double krel = WRM[mb]->k_relative(pc);
+          ofile << krel << " ";
+        }
+        ofile << endl;
+      }
+      ofile.close();
+    }
+
+    if (list.isParameter("calculate krel-sat curves")) {
+      std::printf("Richards PK: saving krel-sat curves in file krel_sat.txt\n");
+      ofstream ofile;
+      ofile.open("krel_sat.txt");
+
+      std::vector<double> spe;
+      spe = list.get<Teuchos::Array<double> >("calculate krel-sat curves").toVector();
+
+      for (double s = spe[0]; s < spe[2]; s += spe[1]) {
+        ofile << s << " ";
+        for (int mb = 0; mb < WRM.size(); mb++) {
+          double ss = std::max<double>(s, WRM[mb]->residualSaturation());
+          double pc = WRM[mb]->capillaryPressure(ss);
           double krel = WRM[mb]->k_relative(pc);
           ofile << krel << " ";
         }
