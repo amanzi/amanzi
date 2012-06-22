@@ -7229,7 +7229,7 @@ void PorousMedia::post_restart()
 #ifdef BL_USE_PETSC
   if (level==0)
   {
-      PMParent()->GetLayout().Rebuild();
+      PMAmr::GetLayout().Rebuild();
   }
 #endif
 }
@@ -7246,13 +7246,7 @@ PorousMedia::post_regrid (int lbase,
 #ifdef BL_USE_PETSC
   if (lbase==0)
   {
-      PMAmr* pm_parent = dynamic_cast<PMAmr*>(parent);
-      if (pm_parent) {
-          pm_parent->GetLayout().Rebuild();
-      }
-      else {
-          BoxLib::Abort("Bad cast");
-      }
+      PMAmr::GetLayout().Rebuild();
   }
 #endif
 
@@ -9794,16 +9788,11 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 
 #ifdef BL_USE_PETSC
   PetscErrorCode ierr;
-  Mat& J = PMParent()->GetLayout().Jacobian();
-  Vec& JRowScale = PMParent()->GetLayout().JRowScale();
+  Mat& J = PMAmr::GetLayout().Jacobian();
+  Vec& JRowScale = PMAmr::GetLayout().JRowScale();
   BaseFab<int> nodeNums;
   const BCRec& theBC = AmrLevel::desc_lst[Press_Type].getBC(0);
-  const Layout& layout = PMParent()->GetLayout();
-
-  ABecTower abec(layout);
-  int maxorder = 3;
-  abec.BuildStencil(theBC,maxorder);
-
+  const Layout& layout = PMAmr::GetLayout();
 
 #endif
 
@@ -10879,7 +10868,7 @@ PorousMedia::derive (const std::string& name,
         BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
 
         mf.setVal(-1,dcomp,1,ngrow);
-        Layout& layout = PMParent()->GetLayout();
+        Layout& layout = PMAmr::GetLayout();
 
         Layout::IntFab ifab;
         for (MFIter mfi(mf); mfi.isValid(); ++mfi)
