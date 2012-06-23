@@ -169,7 +169,6 @@ class DarcyProblem {
     }
     return sqrt(error_L2);
   }
-
 };
 
 

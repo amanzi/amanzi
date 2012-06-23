@@ -180,7 +180,7 @@ void Transport_PK::LimiterTensorial(const int component,
     }
   }
 
-  TS_nextBIG->distribute_cell_multivector(*gradient);
+  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*gradient);
 }
 
 
@@ -331,7 +331,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
     }
   }
 
-  TS_nextBIG->distribute_cell_vector(*limiter);
+  TS_nextBIG->CopyMasterCell2GhostCell(*limiter);
 }
 
 
@@ -499,7 +499,7 @@ void Transport_PK::LimiterKuzmin(const int component,
     }
   }
 
-  TS_nextBIG->distribute_cell_multivector(*gradient);
+  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*gradient);
 }
 
 

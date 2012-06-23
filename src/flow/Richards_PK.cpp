@@ -748,8 +748,14 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
   // create a disctributed flux vector
   Epetra_Vector flux_d(mesh_->face_map(true));
   for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
-  FS->CombineGhostFace2MasterFace(flux_d);
+  FS->CopyMasterFace2GhostFace(flux_d);
 
+  // create a distributed saturation vector
+  Epetra_Vector ws_d(mesh_->cell_map(true));
+  for (int c = 0; c < ncells_owned; c++) ws_d[c] = ws[c];
+  FS->CopyMasterCell2GhostCell(ws_d);
+
+  WhetStone::MFD3D mfd(mesh_);
   const Epetra_Vector& phi = FS->ref_porosity();
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -758,12 +764,27 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    // calculate min/max values
+    double wsmin, wsmax;
+    wsmin = wsmax = ws[c];
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      int c2 = mfd.cell_get_face_adj_cell(c, f);
+      wsmin = std::min<double>(wsmin, ws[c2]);
+      wsmax = std::max<double>(wsmax, ws[c2]);
+    }
+
+    // predict new saturation
     ws[c] = ws_prev[c];
     double factor = dT / (phi[c] * mesh_->cell_volume(c));
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       ws[c] -= factor * flux_d[f] * dirs[n]; 
     }
+
+    // limit new saturation
+    ws[c] = std::max<double>(ws[c], wsmin);
+    ws[c] = std::min<double>(ws[c], wsmax);
   }
 }
 

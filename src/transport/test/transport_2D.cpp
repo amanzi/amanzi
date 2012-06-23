@@ -60,10 +60,10 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
-  TS->analytic_darcy_flux(f_velocity);
-  TS->analytic_porosity();
-  TS->analytic_water_saturation();
-  TS->analytic_water_density();
+  TS->AnalyticDarcyFlux(f_velocity);
+  TS->AnalyticPorosity();
+  TS->AnalyticWaterSaturation();
+  TS->AnalyticWaterDensity();
 
   /* initialize a transport process kernel from a transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
