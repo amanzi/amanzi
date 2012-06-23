@@ -430,8 +430,6 @@ public:
   static Array<std::string> chk_cycle_macros, chk_time_macros;
   static int echo_inputs;
 
-protected:
-
   void BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs);
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);

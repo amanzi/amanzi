@@ -158,33 +158,39 @@ MFTower::define_noalloc(PArray<MultiFab>& pamf)
 
 void
 MFTower::AXPY(const MFTower& rhs,
-              Real           p)
+              Real           p,
+              int            sComp,
+              int            dComp,
+              int            _nComp,
+              int            _nGrow)
 {
     BL_ASSERT(IsCompatible(rhs));
+    BL_ASSERT(rhs.NComp()>sComp+_nComp);
+    BL_ASSERT(sComp+_nComp<nComp);
+    BL_ASSERT(_nGrow<=nGrow);
+    BL_ASSERT(_nGrow<=rhs.NGrow());
     FArrayBox fab;
     for (int lev=0; lev<nLevs; ++lev)
     {
         for (MFIter mfi(mft[lev]); mfi.isValid(); ++mfi)
         {
-            Box vbox = mfi.validbox();
-            fab.resize(vbox,1);
-            fab.copy(rhs[lev][mfi]);
+            const Box& vbox = mfi.validbox();
+            Box gbox = Box(vbox).grow(_nGrow);
+            fab.resize(gbox,_nComp);
+            fab.copy(rhs[lev][mfi],sComp,0,_nComp);
             if (lev<nLevs-1) {
-                BoxArray cba = BoxArray(gridArray[lev-1]).refine(refRatio[lev]);
-                std::vector< std::pair<int,Box> > isects = cba.intersections(vbox);
+                BoxArray fba = BoxArray(gridArray[lev+1]).coarsen(refRatio[lev]);
+                std::vector< std::pair<int,Box> > isects = fba.intersections(gbox);
                 for (int i = 0; i < isects.size(); i++)
                 {
-                    Box ovlp = isects[i].second & vbox;
-                    if (ovlp.ok()) {
-                        fab.setVal(0);
-                    }
+                    fab.setVal(0,isects[i].second,0,_nComp);
                 }
             }
 
             if (p!=1) {
-                fab.mult(p);
+                fab.mult(p,0,_nComp);
             }
-            mft[lev][mfi].plus(fab);
+            mft[lev][mfi].plus(fab,0,dComp,_nComp);
         }
     }
 }
@@ -869,6 +875,10 @@ BuildInterpCoefs(Real xVal, Array<Real>& coefs)
 void
 MFTGrowFill::BuildCFParallelInterpStencil()
 {
+    if (myhash.maxorder>=0) {
+        return; // We have already made this stencil and it is independent of maxorder
+    }
+
     // Some handy intvects
     Array<IntVect> ivp(BL_SPACEDIM), ivpp(BL_SPACEDIM), ivm(BL_SPACEDIM), ivmm(BL_SPACEDIM);
     for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -986,10 +996,38 @@ MFTGrowFill::BuildCFParallelInterpStencil()
     } // lev
 }
 
+MFTGrowFill::MyHash::MyHash(const BCRec& _bc, int _maxorder)
+{
+    maxorder = _maxorder;
+    bc = BCRec(_bc.lo(),_bc.hi());
+}
+
+bool
+operator==(const MFTGrowFill::MyHash& lhs, const MFTGrowFill::MyHash& rhs)
+{
+    if (lhs.maxorder!=rhs.maxorder) return false;
+
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        if (lhs.bc.lo(d) != rhs.bc.lo(d) ) return false;
+        if (lhs.bc.hi(d) != rhs.bc.hi(d) ) return false;
+    }
+    return true;
+}
+
+bool 
+operator!=(const MFTGrowFill::MyHash& lhs, const MFTGrowFill::MyHash& rhs)
+{
+    return !operator==(lhs,rhs);
+}
+
 void
 MFTGrowFill::BuildStencil(const BCRec& bc,
                           int maxorder)
 {
+    if (MyHash(bc,maxorder)==myhash) {
+        return; // we have already made what we need
+    }
+
     int myproc = ParallelDescriptor::MyProc();
 
     BuildCFParallelInterpStencil();
@@ -1092,6 +1130,8 @@ MFTGrowFill::BuildStencil(const BCRec& bc,
             }
         }
     }
+
+    myhash = MyHash(bc,maxorder);
 }
 
 void
@@ -1181,9 +1221,8 @@ MFTGrowFill::FillGrowCells(MFTower& mft,
             crseMF.copy(mft[lev-1],sComp,0,nComp); // parallel copy (maybe excessive data copied?)
         }
 
-        BoxArray bnd = GetBndryCells(gridArray[lev],IntVect::TheUnitVector(),
-                                     geomArray[lev]); // Note: layout Bndrycells excluded phys
         const Geometry& gl = geomArray[lev];
+        BoxArray bnd = GetBndryCells(gridArray[lev],IntVect::TheUnitVector(),gl); // Note: layout Bndrycells excluded phys
 
         for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
             
@@ -1220,6 +1259,70 @@ MFTGrowFill::FillGrowCells(MFTower& mft,
                                     }
                                 }
                                 fineFab(iv,sComp+n) = res;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        mf.FillBoundary(sComp,nComp);
+        gl.FillPeriodicBoundary(mf,sComp,nComp);
+    }
+}
+
+void
+MFTGrowFill::FillGrowCellsSimple(MFTower& mft,
+                                 int      sComp,
+                                 int      nComp) const
+{
+    // Note: Assumes that Dirichlet values have been loaded into the MultiFab grow cells at
+    // physical boundaries (and that these values are to be applied at the cell walls).
+    //
+    // The simple version effectively does the full stuff, but with a first order interpolant
+    // both parallel and perpendicular....ie, piecewise constant.  Since this is trivial to 
+    // construct, we do not bother with the heavy guns
+    BL_ASSERT(layout.IsCompatible(mft));
+
+    const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
+    for (int lev=0; lev<nLevs; ++lev) {
+
+        MultiFab& mf = mft[lev];
+        BL_ASSERT(mf.nGrow()>=1);
+        BL_ASSERT(sComp+nComp<=mf.nComp());
+
+        MultiFab crseMF;
+        if (lev>0) {
+            BoxArray bacgd = BoxArray(mf.boxArray()).coarsen(refRatio[lev-1]).grow(1);
+            crseMF.define(bacgd,nComp,0,Fab_allocate);
+            crseMF.copy(mft[lev-1],sComp,0,nComp); // parallel copy (maybe excessive data copied?)
+        }
+
+        const Geometry& gl = geomArray[lev];
+        BoxArray bnd = GetBndryCells(gridArray[lev],IntVect::TheUnitVector(),gl); // Note: layout Bndrycells excluded phys
+        const Layout::MultiNodeFab& nodesLev = nodes[lev];
+
+        
+        if (lev>0) {
+            for (MFIter mfi(mf); mfi.isValid(); ++mfi) {            
+                FArrayBox& crseFab = crseMF[mfi];
+                FArrayBox& fineFab = mf[mfi];
+                const Layout::NodeFab& nodesFab = nodesLev[mfi];
+                
+                // fill c-f grow cells (physbc values already assumed to be in place
+                for (int d=0; d<BL_SPACEDIM; ++d) {                
+                    Box boxdg = Box(mfi.validbox()).grow(d,1);
+                    std::vector< std::pair<int,Box> > isects = bnd.intersections(boxdg);
+                    for (int i=0; i<isects.size(); ++i) {
+                        const Box& bndrySect = isects[i].second;
+                        for (IntVect iv=bndrySect.smallEnd(), End=bndrySect.bigEnd(); iv<=End; bndrySect.next(iv)) {
+                            const Node& node = nodesFab(iv,0);
+                            int slev = node.level;
+                            BL_ASSERT(slev = lev-1);
+                            const IntVect& ivs = node.iv;
+                            BL_ASSERT(crseFab.box().contains(ivs));
+                            for (int n=0; n<nComp; ++n) {
+                                fineFab(iv,sComp+n) = crseFab(ivs,sComp+n);
                             }
                         }
                     }
@@ -1306,17 +1409,101 @@ MFTGrowFill::ECtoCCdiv(MFTower&               mftc,
     }
 }
 
-RichardOp::RichardOp(const MFTGrowFill& _mftgrow)
+CalcCoefficients::CalcCoefficients(MFTGrowFill& _mftgrow,
+                                   PMAmr&       _pmamr)
     : mftgrow(_mftgrow),
+      pmamr(_pmamr),
       layout(_mftgrow.GetLayout()),
-      gridArray(_mftgrow.GetLayout().GridArray()), 
-      geomArray(_mftgrow.GetLayout().GeomArray()), 
-      nLevs(_mftgrow.GetLayout().NumLevels()),
-      refRatio(_mftgrow.GetLayout().RefRatio()),
-      coefs(BL_SPACEDIM,PArrayManage),
-      lambda_allocated(false), 
-      saturation_allocated(false)
+      nLevs(_mftgrow.GetLayout().NumLevels())
 {
+}
+
+
+void
+CalcCoefficients::operator()(PArray<MFTower>&       coefficients,
+                             MFTower&               pressure,
+                             MFTower&               saturation,
+                             MFTower&               lambda,
+                             const PArray<MFTower>& DarcyVelocity,
+                             Real                   mult,
+                             int                    presComp,
+                             int                    satComp,
+                             int                    lamComp,
+                             int                    darcComp,
+                             int                    coefComp,
+                             int                    nComp)
+{
+    BL_ASSERT(layout.IsCompatible(pressure));
+
+    // This will set physbc and c-f grow cells without interpolation (ie, "piecewise-constant interp")
+    // For c-f: copy the underlaying coarse cell value
+    // For phys: the Dirichlet value (should already be there on entry to this routine)
+    mftgrow.FillGrowCellsSimple(pressure,presComp,nComp);
+
+    // Assumes lev=0 here corresponds to Amr.level=0
+    for (int lev=0; lev<nLevs; ++lev) {
+        PorousMedia* pmp = dynamic_cast<PorousMedia*>(&(pmamr.getLevel(lev)));
+        if (!pmp) {
+            BoxLib::Abort("Bad cast in CalcCoefficients::operator()");
+        }
+        MultiFab& pressureLev = pressure[lev];
+        MultiFab& saturationLev = saturation[lev];
+        MultiFab& lambdaLev = saturation[lev];
+        pmp->calcInvPressure(saturationLev,pressureLev); // FIXME: Writes/reads only to comp=0
+        pmp->calcLambda(&lambdaLev,saturationLev); // FIXME: Writes/reads only to comp=0
+    }
+
+    for (int lev=0; lev<nLevs; ++lev) {
+        MultiFab& lamlev = lambda[lev];
+        for (MFIter mfi(lamlev); mfi.isValid(); ++mfi) {
+            FArrayBox& lamfab = lamlev[mfi];
+            const Box& vccbox = mfi.validbox();
+            for (int d=0; d<BL_SPACEDIM; ++d) {            
+                FArrayBox& coefab = coefficients[d][lev][mfi];
+                const FArrayBox& darfab = DarcyVelocity[d][lev][mfi];
+                BL_ASSERT(coefComp+nComp<=coefab.nComp());
+                BL_ASSERT(darcComp+nComp<=darfab.nComp());
+                BL_ASSERT(Box(vccbox).surroundingNodes(d).contains(coefab.box()));
+                BL_ASSERT(Box(vccbox).surroundingNodes(d).contains(darfab.box()));
+
+                FORT_CC_TO_EC_UPW(coefab.dataPtr(coefComp),ARLIM(coefab.loVect()), ARLIM(coefab.hiVect()),
+                                  lamfab.dataPtr(lamComp), ARLIM(lamfab.loVect()), ARLIM(lamfab.hiVect()),
+                                  darfab.dataPtr(darcComp),ARLIM(darfab.loVect()), ARLIM(darfab.hiVect()),
+                                  vccbox.loVect(), vccbox.hiVect(), &mult, &d, &nComp);
+            }
+        }
+    }
+}
+
+RichardContext::RichardContext(PMAmr&           _pmamr,
+                               MFTGrowFill&     _mftgfill,
+                               MFTower&         _pressure_old,
+                               MFTower&         _saturation,
+                               MFTower&         _lambda,
+                               PArray<MFTower>& _darcyVelocity,
+                               const BCRec&     pressure_bc,
+                               int              pressure_maxorder)
+    : pmamr(_pmamr), 
+      layout(PMAmr::GetLayout()),
+      mftgfill(_mftgfill),
+      pressure_old(_pressure_old),
+      saturation(_saturation),
+      lambda(_lambda),
+      darcyVelocity(_darcyVelocity)
+{
+    mftgfill.BuildStencil(pressure_bc, pressure_maxorder);
+    calcCoefs = new CalcCoefficients(mftgfill,pmamr);
+}
+
+
+RichardOp::RichardOp(RichardContext& _richardContext)
+    : richardContext(_richardContext),
+      pmamr(_richardContext.PMAMR()),
+      layout(PMAmr::GetLayout()),
+      coefs(BL_SPACEDIM,PArrayManage),
+      bc_initialized(false)
+{
+    mftgrow = new MFTGrowFill(layout);
     Array<IndexType> itype(BL_SPACEDIM);
     D_DECL(itype[0]=ECI,
            itype[1]=ECJ,
@@ -1326,10 +1513,49 @@ RichardOp::RichardOp(const MFTGrowFill& _mftgrow)
     }
 }
 
-void
-RichardOp::Residual(MFTower&       Rmft,
-                    const MFTower& Pnew_mft,
-                    const MFTower& Pold_mft,
-                    const Real     dt)
+RichardOp::~RichardOp()
 {
+    delete mftgrow;
 }
+
+void
+RichardOp::DarcyVelocity(PArray<MFTower>& velocity_ec,
+                         MFTower&         pressure_cc,
+                         int              sComp,
+                         int              dComp,
+                         int              nComp) const
+{
+    BL_ASSERT(pressure_cc.NComp()>=sComp+nComp);
+    Real mult = 1;
+    Real nGrow = 0;
+    mftgrow->FillGrowCells(pressure_cc,sComp,nComp);
+    mftgrow->CCtoECgrad(velocity_ec,pressure_cc,mult,sComp,dComp,nComp);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        BL_ASSERT(velocity_ec[d].NComp()>dComp);
+        velocity_ec[d].AXPY(coefs[d],mult,0,dComp,nComp,nGrow);
+    }
+    // FIXME: Add gravity term here
+}
+
+void
+RichardOp::Residual(MFTower&               residual,
+                    MFTower&               pressure,
+                    const Real             dt)
+{
+    // Grab refs to temporary data
+    MFTower& pressure_old = richardContext.PressureOld();
+    MFTower& saturation = richardContext.Saturation();
+    MFTower& lambda = richardContext.Lambda();
+    PArray<MFTower>& darcyVelocity = richardContext.DarcyVelocity();
+    CalcCoefficients& calcCoefs = richardContext.CalcCoefs();
+    
+    // Update coefficients
+    calcCoefs(coefs,pressure,saturation,lambda,darcyVelocity);
+
+    // Compute Darcy velocity
+    DarcyVelocity(darcyVelocity,pressure);
+
+    // Compute the divergence
+    mftgrow->ECtoCCdiv(residual,darcyVelocity);
+}
+

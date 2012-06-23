@@ -4,6 +4,10 @@
 
 #include <Amr.H>
 #include <EventCoord.H>
+
+class Layout; 
+class MFTGrowFill; 
+
 #include <Layout.H>
 
 class PMAmr

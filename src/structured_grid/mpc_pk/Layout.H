@@ -65,7 +65,11 @@ struct MFTower
 
     Real norm() const;
     void AXPY(const MFTower& rhs,
-              Real           p = 1);
+              Real           p = 1,
+              int            sComp = 0,
+              int            dComp = 0,
+              int            nComp = 1,
+              int            nGrow = 0);
 
 protected:
     void define_alloc();
@@ -170,33 +174,49 @@ struct MFTGrowFill
     const Layout& GetLayout() const {return layout;}
     const Array<BoxArray>& GridArray() const {return layout.GridArray();}
     const Array<Geometry>& GeomArray() const {return layout.GeomArray();}
+
     void BuildStencil(const BCRec& bc,
-                      int maxorder);
+                      int          maxorder);
 
     void DoCoarseFineParallelInterp(MFTower& mft,
-                                    int      sComp,
-                                    int      nComp) const;
+                                    int      sComp=1,
+                                    int      nComp=1) const;
     void FillGrowCells(MFTower& mft,
-                       int      sComp,
-                       int      nComp) const;
+                       int      sComp=0,
+                       int      nComp=1) const;
+    
+    void FillGrowCellsSimple(MFTower& mft,
+                             int      sComp=0,
+                             int      nComp=1) const;
     
     void CCtoECgrad(PArray<MFTower>& mft_ec,
                     const MFTower&   mft_cc,
-                    Real             mult,
-                    int              sComp,
-                    int              dComp,
-                    int              nComp) const;
+                    Real             mult=1,
+                    int              sComp=0,
+                    int              dComp=0,
+                    int              nComp=1) const;
 
     void ECtoCCdiv(MFTower&               mft_cc,
                    const PArray<MFTower>& mft_ec,
-                   Real                   mult,
-                   int                    sComp,
-                   int                    dComp,
-                   int                    nComp) const;
+                   Real                   mult=1,
+                   int                    sComp=0,
+                   int                    dComp=0,
+                   int                    nComp=1) const;
     
+    struct MyHash // Unique characteristics
+    {
+        MyHash()
+            : maxorder(-1) {}
+        MyHash(const BCRec& _bc, int maxorder);
+        BCRec bc;
+        int maxorder;
+    };
+
 protected:
     void BuildCFParallelInterpStencil();
-    
+
+
+    MyHash myhash;
     int nLevs;
     const Layout& layout;
     const Array<BoxArray>& gridArray;
@@ -207,31 +227,107 @@ protected:
     Array<Array<Layout::IVSMap> > perpInterpStencil; //[lev][dir][iv] = stencil to perform perpendicular bc Interp
 };
 
+inline bool operator==(const MFTGrowFill::MyHash& lhs, const MFTGrowFill::MyHash& rhs);
+inline bool operator!=(const MFTGrowFill::MyHash& lhs, const MFTGrowFill::MyHash& rhs);
+
+class PMAmr;
+class MFTGrowFill;
+#include <PMAmr.H>
+#include <PorousMedia.H>
+
+class CalcCoefficients
+{
+public:
+    CalcCoefficients(MFTGrowFill& mftgrow,
+                     PMAmr&       pmamr);
+
+    void operator()(PArray<MFTower>&       coefficients,
+                    MFTower&               pressure,
+                    MFTower&               saturation,
+                    MFTower&               lambda,
+                    const PArray<MFTower>& DarcyVelocity,
+                    Real                   mult = 1,
+                    int                    presComp = 0,
+                    int                    satComp = 0,
+                    int                    lamComp = 0,
+                    int                    darcComp = 0,
+                    int                    coefComp = 0,
+                    int                    nComp = 1);
+protected:
+    int nLevs;
+    MFTGrowFill& mftgrow;
+    const Layout& layout;
+    PMAmr& pmamr;
+};
+
+struct RichardContext
+{
+    RichardContext(PMAmr&           pmamr,
+                   MFTGrowFill&     mftgfill,
+                   MFTower&         pressure_old,
+                   MFTower&         saturation,
+                   MFTower&         lambda,
+                   PArray<MFTower>& darcyVelocity,
+                   const BCRec&     pressure_bc,
+                   int              pressure_maxorder);
+    PMAmr& PMAMR() {return pmamr;}
+    CalcCoefficients& CalcCoefs() {return *calcCoefs;}
+    MFTower& PressureOld() {return pressure_old;}
+    MFTower& Saturation() {return saturation;}
+    MFTower& Lambda() {return lambda;}
+    PArray<MFTower>& DarcyVelocity() {return darcyVelocity;}
+
+protected:
+    MFTower& pressure_old;
+    MFTower& saturation;
+    MFTower& lambda;
+    PArray<MFTower>& darcyVelocity;
+
+    PMAmr& pmamr;
+    Layout& layout;
+    MFTGrowFill& mftgfill;
+    CalcCoefficients* calcCoefs;
+};
+
 class RichardOp
 {
 public:
-    RichardOp(const MFTGrowFill& mftgrow);
+    RichardOp(RichardContext& richardContext);
+    ~RichardOp();
+
+    const Array<BoxArray>& gridArray() const {return layout.GridArray();}
+    const Array<Geometry>& geomArray() const {return layout.GeomArray();}
+    const Array<IntVect>& refRatio() const {return layout.RefRatio();}
+
+    void SetBC(const BCRec& bc, 
+               int          maxorder); // Note: triggers build of mftgrow stencil
+
+    void Residual(MFTower&               residual,
+                  MFTower&               pressure,
+                  const Real             dt);
+
+    void DarcyVelocity(PArray<MFTower>& velocity_ec,
+                       MFTower&         pressure_cc,
+                       int              sComp = 0,
+                       int              dComp = 0,
+                       int              nComp=1) const;
+
 
     const MFTower& Coefficients(int dir) const {return coefs[dir];}
     MFTower& Coefficients(int dir) {return coefs[dir];}
 
-    void Residual(MFTower&       Rmft,
-                  const MFTower& Pnew_mft,
-                  const MFTower& Pold_mft,
-                  const Real     dt);
-
 protected:
+    void AllocLambda();
+    void AllocSaturation();
+
     int nLevs;
-    const MFTGrowFill& mftgrow;
+    MFTGrowFill* mftgrow;
+    PMAmr& pmamr;
     const Layout& layout;
-    const Array<BoxArray>& gridArray;
-    const Array<Geometry>& geomArray;
-    const Array<IntVect>& refRatio;
 
     PArray<MFTower> coefs;
-    MFTower* lambda;     // Managed in/externally.  lambda_allocated must be true prior to many of the function calls
-    MFTower* saturation; // Managed in/externally.  saturation_allocated must be true prior to many of the function calls
-    bool lambda_allocated, saturation_allocated;
+    RichardContext& richardContext;
+    bool bc_initialized;
 };
 
 #endif

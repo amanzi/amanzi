@@ -2074,6 +2074,26 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
       ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
 
+
+#if 0
+      IndexType ccType = IndexType(IntVect::TheZeroVector());
+      MFTower PnewMFT(layout,Pnew_p);
+      MFTower PoldMFT(layout,ccType,1,0);
+      MFTower SatMFT(layout,ccType,1,0);
+      MFTower LambdaMFT(layout,ccType,1,0);
+      PArray<MFTower> DarcyVelocity(BL_SPACEDIM,PArrayManage);
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+          DarcyVelocity.set(d, new MFTower(layout,IndexType(BoxLib::BASISV(d)),1,0));
+      }
+      
+      int pressure_maxorder = 4;
+      MFTGrowFill mftgfill(layout);
+      RichardContext richardContext(*pm_parent,mftgfill,PoldMFT,SatMFT,LambdaMFT,
+                                    DarcyVelocity,bc,pressure_maxorder);
+      RichardOp richardOp(richardContext);
+      richardOp.Residual(RhsMFT,PnewMFT,dt);
+#endif
+
       // Apply column scaling of J to Rhs
       Real* RhsV_array, *JRowScale_array;
       ierr = VecGetArray(RhsV,&RhsV_array); CHKPETSC(ierr);
