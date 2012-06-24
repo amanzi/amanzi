@@ -129,15 +129,6 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
                 ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity","overland_flow")->set_io_vis(false);
 
-  // abs perm tensor
-  variable_abs_perm_ = false;
-  int c_owned = S->Mesh("surface")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  K_.resize(c_owned);
-  for (int c=0; c!=c_owned; ++c) {
-    K_[c].init(S->Mesh("surface")->space_dimension(), 1);
-    K_[c](0,0) = 1.0;
-  }
-
   // boundary conditions
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
   FlowBCFactory bc_factory(S->Mesh("surface"), bc_plist);
@@ -246,8 +237,8 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   bc_flux_->Compute(S->time());
 
   // Initialize operators.
-  matrix_->CreateMFDmassMatrices(K_);
-  preconditioner_->CreateMFDmassMatrices(K_);
+  matrix_->CreateMFDmassMatrices(Teuchos::null);
+  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
 
   // Initialize the timestepper.
   solution_->set_data(pres);
@@ -424,54 +415,28 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  // get reference to relative permeability
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("overland_conductivity");
+  upwinding_->Update(S.ptr());
 
-  Teuchos::RCP<CompositeVector> upwind_conductivity =
-    S->GetFieldData("upwind_overland_conductivity", "overland_flow");
-
-  rel_perm->ScatterMasterToGhosted();
-
-  Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
-  CalculateRelativePermeabilityUpwindFlux_(S, *flux, *rel_perm,
-          upwind_conductivity);
-};
-
-
-// -----------------------------------------------------------------------------
-// Defines upwinded relative permeabilities for faces using a given flux.
-// -----------------------------------------------------------------------------
-void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
-        const Teuchos::RCP<State>& S,
-        const CompositeVector& flux,
-        const CompositeVector& conductivity,
-        const Teuchos::RCP<CompositeVector>& upwind_conductivity ) {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
+  // patch up at the boundary condition
   Teuchos::RCP<const CompositeVector> pressure =
     S->GetFieldData("overland_pressure");
   Teuchos::RCP<const CompositeVector> slope =
     S->GetFieldData("slope_magnitude");
   Teuchos::RCP<const CompositeVector> manning =
     S->GetFieldData("manning_coef");
+  Teuchos::RCP<CompositeVector> upwind_conductivity =
+    S->GetFieldData("upwind_overland_conductivity", "flow");
 
+  AmanziMesh::Entity_ID_List cells;
   double eps = 1.e-14;
 
-  upwind_conductivity->ViewComponent("face",true)->PutScalar(0.0);
-  int c_owned = upwind_conductivity->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh("surface")->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-    for (int n=0; n!=faces.size(); ++n) {
-      int f = faces[n];
-      if ((flux("face",f) * dirs[n] >= 0.0)) {
-        (*upwind_conductivity)("face",f) = conductivity("cell",c);
-      } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-        double scaling = (*manning)("cell",c) * std::sqrt((*slope)("cell",c) + eps);
-        (*upwind_conductivity)("face",f) = std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ;
-      }
+  int nfaces = upwind_conductivity->size("face");
+  for (int f=0; f!=nfaces; ++f) {
+    if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+      upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      int c = cells[0];
+      double scaling = (*manning)("cell",c) * std::sqrt((*slope)("cell",c) + eps);
+      (*upwind_conductivity)("face",f) = std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ;
     }
   }
 }

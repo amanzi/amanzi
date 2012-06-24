@@ -65,9 +65,9 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
                           // The use of SetComponent() implies this is final.
 
   CompositeVectorFactory one_cell_factory;
-  one_cell_owned_factory.SetMesh(S->Mesh());
-  one_cell_owned_factory.SetGhosted();
-  one_cell_owned_factory.AddComponent("cell", AmanziMesh::CELL, 1);
+  one_cell_factory.SetMesh(S->Mesh());
+  one_cell_factory.SetGhosted();
+  one_cell_factory.AddComponent("cell", AmanziMesh::CELL, 1);
                           // The use of AddComponent() implies the actual
                           // vector may include other components.
 
@@ -104,14 +104,6 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
 
   S->RequireField("pressure")->SetMesh(S->Mesh())->SetGhosted()
                                 ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  // abs conductivity tensor
-  int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  Ke_.resize(c_owned);
-  for (int c=0; c!=c_owned; ++c) {
-    Ke_[c].init(S->Mesh()->space_dimension(),1);
-    Ke_[c](1,1) = 1.0;
-  }
 
   // constitutive relations
   // -- thermal conductivity
@@ -150,7 +142,7 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->Mesh()));
   matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
-  matrix_->CreateMFDmassMatrices(Ke_);
+  matrix_->CreateMFDmassMatrices(Teuchos::null);
 
   // preconditioner
   // NOTE: may want to allow these to be the same/different?
@@ -158,7 +150,7 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh()));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
-  preconditioner_->CreateMFDmassMatrices(Ke_);
+  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
   preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
 };
