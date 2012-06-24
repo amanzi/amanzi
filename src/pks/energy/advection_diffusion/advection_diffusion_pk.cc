@@ -95,17 +95,9 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   // initial timestep size
   dt_ = energy_plist_.get<double>("Initial time step", 1.);
 
-  // initialize thermal conductivity
-  int ncells = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  Ke_.resize(ncells);
-  for (int c=0; c!=ncells; ++c) {
-    Ke_[c].init(S->Mesh()->space_dimension(),1);
-    Ke_[c](0,0) = 1.0;
-  }
-
   // initialize the operators
-  matrix_->CreateMFDmassMatrices(Ke_);
-  preconditioner_->CreateMFDmassMatrices(Ke_);
+  matrix_->CreateMFDmassMatrices(Teuchos::null);
+  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
 
   // initialize boundary conditions
   int nfaces = S->Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);

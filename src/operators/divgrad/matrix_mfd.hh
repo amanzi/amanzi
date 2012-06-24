@@ -85,7 +85,7 @@ public:
   // main computational methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
 
-  void CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
+  void CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K);
   void CreateMFDstiffnessMatrices(const CompositeVector& Krel);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
           const Epetra_Vector& new_scale);

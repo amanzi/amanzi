@@ -30,7 +30,7 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
  * Calculate elemental inverse mass matrices.
  * WARNING: The original Aff_ matrices are destroyed.
  ****************************************************************** */
-void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
+void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K) {
   int dim = mesh_->space_dimension();
 
   // TODO: fix -- MFD3D should NOT need a non-const mesh
@@ -44,26 +44,37 @@ void MatrixMFD::CreateMFDmassMatrices(std::vector<WhetStone::Tensor>& K) {
   int ok;
   nokay_ = npassed_ = 0;
 
-  for (int c=0; c!=K.size(); ++c) {
+  WhetStone::Tensor Kc;
+  if (K == Teuchos::null) {
+    Kc.init(mesh_->space_dimension(), 1);
+    Kc(0,0) = 1.0;
+  }
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
 
+    if (K != Teuchos::null) {
+      Kc = (*K)[c];
+    }
+
     if (method_ == MFD_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) {
-        ok = mfd.darcy_mass_inverse_hex(c, K[c], Mff);
+        ok = mfd.darcy_mass_inverse_hex(c, Kc, Mff);
       } else {
-        ok = mfd.darcy_mass_inverse(c, K[c], Mff);
+        ok = mfd.darcy_mass_inverse(c, Kc, Mff);
       }
     } else if (method_ == MFD_TWO_POINT_FLUX) {
-      ok = mfd.darcy_mass_inverse_diagonal(c, K[c], Mff);
+      ok = mfd.darcy_mass_inverse_diagonal(c, Kc, Mff);
     } else if (method_ == MFD_SUPPORT_OPERATOR) {
-      ok = mfd.darcy_mass_inverse_SO(c, K[c], Mff);
+      ok = mfd.darcy_mass_inverse_SO(c, Kc, Mff);
     } else if (method_ == MFD_OPTIMIZED) {
-      ok = mfd.darcy_mass_inverse_optimized(c, K[c], Mff);
+      ok = mfd.darcy_mass_inverse_optimized(c, Kc, Mff);
     } else {
-      ok = mfd.darcy_mass_inverse(c, K[c], Mff);
+      ok = mfd.darcy_mass_inverse(c, Kc, Mff);
     }
 
     Mff_cells_.push_back(Mff);

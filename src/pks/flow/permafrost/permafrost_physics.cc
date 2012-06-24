@@ -12,29 +12,6 @@
 namespace Amanzi {
 namespace Flow {
 
-// -------------------------------------------------------------
-// Diffusion term, div K grad p
-// -------------------------------------------------------------
-void Permafrost::ApplyDiffusion_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& g) {
-
-  // update the rel perm on faces according to the scheme of choice
-  UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> num_rel_perm =
-    S->GetFieldData("numerical_rel_perm", "flow");
-
-  // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(*num_rel_perm);
-  matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_(S, matrix_);
-  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
-
-  // calculate the residual
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  matrix_->ComputeNegativeResidual(*pres, g);
-};
-
 
 // -------------------------------------------------------------
 // Accumulation of water term du/dt
@@ -148,97 +125,6 @@ void Permafrost::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
 //          Update*() methods as generic "secondary variable PKs",
 //          i.e. algebraic PKs.
 // -------------------------------------------------------------
-void Permafrost::UpdateDensityLiquid_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  Teuchos::RCP<CompositeVector> rho_liq = S->GetFieldData("density_liquid", "flow");
-  Teuchos::RCP<CompositeVector> n_liq =
-    S->GetFieldData("molar_density_liquid", "flow");
-
-  DensityLiquid_(S, *temp, *pres, rho_liq, n_liq);
-};
-
-
-// -------------------------------------------------------------
-// Evaluate EOS of the liquid phase.
-// -------------------------------------------------------------
-void Permafrost::DensityLiquid_(const Teuchos::RCP<State>& S,
-        const CompositeVector& temp, const CompositeVector& pres,
-        const Teuchos::RCP<CompositeVector>& rho_liq,
-        const Teuchos::RCP<CompositeVector>& n_liq) {
-
-  double Mw = eos_liquid_->molar_mass();
-
-  int c_owned = rho_liq->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    double rho = eos_liquid_->MassDensity(temp("cell",c), pres("cell",c));
-    (*rho_liq)("cell",c) = rho;
-    (*n_liq)("cell",c) = rho/Mw;
-  }
-};
-
-
-// -------------------------------------------------------------
-// Update the viscosity of liquid in state S.
-// -------------------------------------------------------------
-void Permafrost::UpdateViscosityLiquid_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<CompositeVector> visc_liq = S->GetFieldData("viscosity_liquid", "flow");
-
-  ViscosityLiquid_(S, *temp, visc_liq);
-};
-
-
-// -------------------------------------------------------------
-// Evaluate EOS of the liquid phase for viscosity.
-// -------------------------------------------------------------
-void Permafrost::ViscosityLiquid_(const Teuchos::RCP<State>& S,
-        const CompositeVector& temp,
-        const Teuchos::RCP<CompositeVector>& visc_liq) {
-  int c_owned = visc_liq->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    (*visc_liq)("cell",c) = eos_liquid_->Viscosity(temp("cell",c));
-  }
-};
-
-
-// -------------------------------------------------------------
-// Update the density of gas in state S.
-// -------------------------------------------------------------
-void Permafrost::UpdateDensityGas_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  Teuchos::RCP<CompositeVector> rho_gas = S->GetFieldData("density_gas", "flow");
-  Teuchos::RCP<CompositeVector> n_gas = S->GetFieldData("molar_density_gas", "flow");
-  Teuchos::RCP<CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas", "flow");
-  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
-
-  DensityGas_(S, *temp, *pres, *p_atm, mol_frac_gas, rho_gas, n_gas);
-};
-
-
-// -------------------------------------------------------------
-// Evaluate EOS of the gas phase.
-// -------------------------------------------------------------
-void Permafrost::DensityGas_(const Teuchos::RCP<State>& S,
-                           const CompositeVector& temp,
-                           const CompositeVector& pres, const double& p_atm,
-                           const Teuchos::RCP<CompositeVector>& mol_frac_gas,
-                           const Teuchos::RCP<CompositeVector>& dens_gas,
-                           const Teuchos::RCP<CompositeVector>& mol_dens_gas) {
-
-  int c_owned = dens_gas->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    double p_sat = eos_gas_->SaturatedVaporPressure(temp("cell",c));
-    (*mol_frac_gas)("cell",c) = p_sat/p_atm;
-    double Mv = eos_gas_->molar_mass((*mol_frac_gas)("cell",c));
-    double n = eos_gas_->MolarDensity(temp("cell",c), pres("cell",c));
-    (*dens_gas)("cell",c) = Mv*n;
-    (*mol_dens_gas)("cell",c) = n;
-  }
-};
-
-
 // -------------------------------------------------------------
 // Update the density of ice in state S.
 // -------------------------------------------------------------
@@ -411,6 +297,8 @@ void Permafrost::RelativePermeability_(const Teuchos::RCP<State>& S,
         const CompositeVector& sat_liq,
         const Teuchos::RCP<CompositeVector>& rel_perm) {
 
+  AmanziMesh::Entity_ID_List faces;
+
   // loop over region/wrm pairs
   for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
        wrm!=wrm_.end(); ++wrm) {
@@ -424,121 +312,22 @@ void Permafrost::RelativePermeability_(const Teuchos::RCP<State>& S,
     for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
       double pc = (*wrm)->second->capillaryPressure(sat_liq("cell",*c));
       (*rel_perm)("cell",*c) = (*wrm)->second->k_relative(pc);
-    }
-  }
-};
 
-
-// -------------------------------------------------------------
-// Convert abs perm vector to tensor.
-// -------------------------------------------------------------
-void Permafrost::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
-  // currently assumes isotropic perm, should be updated
-  Teuchos::RCP<const CompositeVector> perm = S->GetFieldData("permeability");
-  int ncells = perm->size("cell");
-  int ndofs = perm->num_dofs("cell");
-
-  if (ndofs == 1) { // isotropic
-    for (int c=0; c!=ncells; ++c) {
-      K_[c](0, 0) = (*perm)("cell",c);
-    }
-  } else if (ndofs == 2 && S->Mesh()->space_dimension() == 3) {
-    // horizontal and vertical perms
-    for (int c=0; c!=ncells; ++c) {
-      K_[c](0, 0) = (*perm)("cell",0,c);
-      K_[c](1, 1) = (*perm)("cell",0,c);
-      K_[c](2, 2) = (*perm)("cell",1,c);
-    }
-  } else if (ndofs == S->Mesh()->space_dimension()) {
-    // diagonal tensor
-    for (int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
-      for (int c=0; c!=ncells; ++c) {
-        K_[c](lcv_dof, lcv_dof) = (*perm)("cell",lcv_dof,c);
-      }
-    }
-  } else {
-    // ERROR -- unknown perm type
-    ASSERT(0);
-  }
-};
-
-
-// -----------------------------------------------------------------------------
-// Update elemental discretization matrices with gravity terms.
-//
-// Must be called before applying boundary conditions and global assembling.
-// -----------------------------------------------------------------------------
-void Permafrost::AddGravityFluxes_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<Operators::MatrixMFD>& matrix) {
-
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
-  Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("rel_perm_faces");
-
-  AmanziGeometry::Point gravity(g_vec->MyLength());
-  for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  int c_owned = rho->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-    double& Fc = matrix->Fc_cells()[c];
-
-    for (int n=0; n!=nfaces; ++n) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
-
-      double outward_flux = ( (K_[c] * gravity) * normal) * dirs[n]
-              * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c);
-      Ff[n] += outward_flux;
-      Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
-    }
-  }
-};
-
-
-// -----------------------------------------------------------------------------
-// Updates global Darcy vector calculated by a discretization method.
-// -----------------------------------------------------------------------------
-void Permafrost::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& darcy_flux) {
-
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
-  Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_perm_faces");
-
-  AmanziGeometry::Point gravity(g_vec->MyLength());
-  for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  int f_used = darcy_flux->size("face", true);
-  int f_owned = darcy_flux->size("face", false);
-  std::vector<bool> done(f_used, false);
-
-  int c_owned = rho->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int n=0; n!=nfaces; ++n) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
-
-      if (f<f_owned && !done[f]) {
-        (*darcy_flux)("face",f) += ((K_[c] * gravity) * normal)
-          * (*Krel)("cell",c) * (*Krel)("face",f) * (*rho)("cell",c);
-        done[f] = true;
+      // and also on the BC faces
+      // NOTE: this is 1st order on the boundary now, but we don't
+      //   have sat on teh boundary, which would require a lot of
+      //   extra work.
+      rel_perm->mesh()->cell_get_faces(*c, &faces);
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+          (*rel_perm)("face",f) = (*rel_perm)("cell", *c);
+        }
       }
     }
   }
 };
+
 
 } //namespace
 } //namespace

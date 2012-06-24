@@ -20,6 +20,7 @@ Authors: Gianmarco Manzini
 #include "tree_vector.hh"
 #include "state.hh"
 #include "matrix_mfd.hh"
+#include "upwinding.hh"
 #include "boundary_function.hh"
 #include "composite_vector_function.hh"
 
@@ -99,12 +100,6 @@ private:
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
 
-  void CalculateRelativePermeabilityUpwindFlux_(
-          const Teuchos::RCP<State>& S,
-          const CompositeVector& flux,
-          const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
-
   // -- Update the elevation and slope magnitude from the mesh or functions.
   void UpdateElevationAndSlope_(const Teuchos::RCP<State>& S);
 
@@ -169,7 +164,7 @@ private:
   Teuchos::ParameterList flow_plist_;
 
   // work data space
-  std::vector<WhetStone::Tensor> K_;  // tensor of absolute permeability
+  Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // rainfall flow rate model
   Teuchos::RCP<Functions::CompositeVectorFunction> rain_rate_function_;
