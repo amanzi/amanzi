@@ -7226,12 +7226,10 @@ void PorousMedia::post_restart()
           observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 
-#ifdef BL_USE_PETSC
   if (level==0)
   {
       PMAmr::GetLayout().Rebuild();
   }
-#endif
 }
 
 //
@@ -7243,12 +7241,10 @@ PorousMedia::post_regrid (int lbase,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_regrid()");
 
-#ifdef BL_USE_PETSC
   if (lbase==0)
   {
       PMAmr::GetLayout().Rebuild();
   }
-#endif
 
   //if (level > lbase)
   {
@@ -10857,7 +10853,6 @@ PorousMedia::derive (const std::string& name,
         }
 
     }
-#ifdef BL_USE_PETSC
     else if (name=="Cell_ID") {
         
         BL_ASSERT(dcomp < mf.nComp());
@@ -10884,7 +10879,6 @@ PorousMedia::derive (const std::string& name,
             }
         }
     }
-#endif
     else if (name=="Capillary_Pressure") {
         
         if (have_capillary)
