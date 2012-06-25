@@ -16,5 +16,7 @@
       save /probdt1/, /probdt2/, /probdt3/, /probdt4/, /probdt5/
 
       REAL_T sThresh
-      common /eoscom/ sThresh
-      save /eoscom/
+      integer use_shifted_kr
+      common /eoscomr/ sThresh
+      common /eoscomi/ use_shifted_kr
+      save /eoscomr/, /eoscomi/

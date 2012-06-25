@@ -1323,10 +1323,17 @@ namespace Amanzi {
                 }
                 else {
 
-                    if (rlist.isParameter("Saturation Threshold For Kr")) {
+		    std::string sat_str = "Saturation Threshold For vg Kr";
+                    if (rlist.isParameter(sat_str)) {
                         double saturation_threshold_for_vg_Kr;
-                        saturation_threshold_for_vg_Kr = rlist.get<double>("Saturation Threshold For Kr");
-                        rock_list.set("saturation_threshold_for_vg_Kr",saturation_threshold_for_vg_Kr);
+                        saturation_threshold_for_vg_Kr = rlist.get<double>(sat_str);
+                        rock_list.set(underscore(sat_str),saturation_threshold_for_vg_Kr);
+                    }
+                    
+		    std::string shift_str = "Use Shifted Kr Eval";
+                    if (rlist.isParameter(shift_str)) {
+                        bool use_shifted_kr_eval = rlist.get<bool>(shift_str);
+                        rock_list.set(underscore(shift_str),(int)use_shifted_kr_eval);
                     }
                     
                     if (rlist.isParameter("Permeability Output File"))

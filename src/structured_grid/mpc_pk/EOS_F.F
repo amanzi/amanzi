@@ -82,15 +82,17 @@ c      end do
 c ::: -----------------------------------------------------------
 c ::: Initiate data in probdata.H for get_kr function
 c ::: -----------------------------------------------------------
-      subroutine FORT_KR_INIT(sThresh_in)
+      subroutine FORT_KR_INIT(sThresh_in,use_shifted_kr_in)
 
       implicit none
 
 #include "probdata.H"      
 
       REAL_T sThresh_in
+      integer use_shifted_kr_in
 
       sThresh = sThresh_in
+      use_shifted_kr = use_shifted_kr_in
       end
 
 
@@ -534,28 +536,38 @@ c ::: -----------------------------------------------------------
          end do
       elseif (kr_type .eq. 3) then
 
-         if (sThresh .gt. 0) then
+         if (use_shifted_kr .ne. 1) then
+
+            if (sThresh .lt. 0) then
+c     The standard van Genuchten parameterization, no fits/shifts/etc
+               m = kr_coef
+               n = 1.d0/m
+               kr(1) = sqrt(sat(1))*(one-(one-(sat(1))**n)**m)**2
+            else
 c
 c     Try kr-smoothing: If se<sThresh, fit
 c     cubic Hermite polynomial matching kr(s=1), kr(s=sThresh),
 c     dkr/ds(sThresh) and setting dkr/ds(s=1) = constant
-c
-            m = kr_coef
-            if (sat(1) .le. sThresh) then
-               kr(1) = vgk(m,sat(1))
-            else
-               k_st = vgk(m,sThresh)
-               ds = (one - sThresh)*1.d-3
-               k_st1 = vgk(m,sThresh+ds)
-               msat = (k_st - one)/(one - sThresh)
-               mt = -(k_st1-k_st)/ds
-               dels = one - sat(1)
-               dels1 = one - sThresh
-               kr(1) = one + dels*dels * msat/dels1 + 
-     &              dels*dels * (dels-dels1) * (mt-2*msat) 
-     &              / (dels1*dels1)
+c     
+               m = kr_coef
+               if (sat(1) .le. sThresh) then
+                  kr(1) = vgk(m,sat(1))
+               else
+                  k_st = vgk(m,sThresh)
+                  ds = (one - sThresh)*1.d-3
+                  k_st1 = vgk(m,sThresh+ds)
+                  msat = (k_st - one)/(one - sThresh)
+                  mt = -(k_st1-k_st)/ds
+                  dels = one - sat(1)
+                  dels1 = one - sThresh
+                  kr(1) = one + dels*dels * msat/dels1 + 
+     &                 dels*dels * (dels-dels1) * (mt-2*msat) 
+     &                 / (dels1*dels1)
+               endif
+               
             endif
 
+c     Shifted eval: Georges original implementation, activated when use_shifted_kr=1
          else
 c
 c     Van Genuchten-Gualem function
@@ -571,7 +583,6 @@ c
             alpha_scale = dsqrt(alpha)*(one-(one-alpha**n)**m)**2
             kr(1) = sqrt(alpha*sat(1))*(one-(one-(alpha*sat(1))**n)**m)**2
             kr(1) = kr(1)/alpha_scale
-c           kr(1) = sqrt(sat(1))*(one-(one-(sat(1))**n)**m)**2
          endif
 
 c     # no scaling for the gas permeability function, add checks in the derivatives

@@ -999,6 +999,7 @@ protected:
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
   static Real        saturation_threshold_for_vg_Kr;
+  static int         use_shifted_Kr_eval;
 
 
   // Phases and components

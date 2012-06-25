@@ -152,7 +152,8 @@
     
      void FORT_TCRPARAMS (int* ntracers);
 
-     void FORT_KR_INIT (Real* sThresh);
+     void FORT_KR_INIT (Real* sThresh,
+                        int* use_shifted_kr_eval);
 
      void FORT_COREREACT_PARAMS(int*nreact, Real* rhosec); 
     

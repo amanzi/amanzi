@@ -102,6 +102,7 @@ bool        PorousMedia::permeability_from_fine;
 PArray<Rock> PorousMedia::rocks;
 bool        PorousMedia::material_is_layered;
 Real        PorousMedia::saturation_threshold_for_vg_Kr;
+int         PorousMedia::use_shifted_Kr_eval;
 //
 // Source.
 //
@@ -517,6 +518,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::have_capillary = 0;
 
   PorousMedia::saturation_threshold_for_vg_Kr = -1; // <0 bypasses smoothing
+  PorousMedia::use_shifted_Kr_eval = 0; //
 
   PorousMedia::variable_scal_diff = 1; 
 
@@ -1217,8 +1219,10 @@ PorousMedia::read_rock()
     pp.query("porosity_file", pfile);
     pp.query("gslib_file",gsfile);
 
-    pp.query("saturation_threshold_for_vg_Kr",saturation_threshold_for_vg_Kr);
-    FORT_KR_INIT(&saturation_threshold_for_vg_Kr);
+    pp.query("Use_Shifted_Kr_Eval",use_shifted_Kr_eval);
+    pp.query("Saturation_Threshold_For_vg_Kr",saturation_threshold_for_vg_Kr);
+    FORT_KR_INIT(&saturation_threshold_for_vg_Kr,
+		 &use_shifted_Kr_eval);
     
     // The I/O processor makes the directory if it doesn't already exist.
     if (ParallelDescriptor::IOProcessor())
