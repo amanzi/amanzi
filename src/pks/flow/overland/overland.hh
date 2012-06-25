@@ -26,6 +26,7 @@
 #include "bdf_time_integrator.hh"
 
 #include "wrm.hh"
+#include "my_macro.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -193,6 +194,13 @@ private:
 
   // factory registration
   static RegisteredPKFactory<OverlandFlow> reg_;  
+
+  // DEBUGGING STUFF
+  void print_pressure( const Teuchos::RCP<State>& S, string prt_str="" ) const ;
+  void print_vector( const Teuchos::RCP<State>& S, const Teuchos::RCP<const CompositeVector>& p, string prt_str="" ) const ;
+
+
+
 };
 
 }  // namespace AmanziFlow

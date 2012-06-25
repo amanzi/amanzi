@@ -59,9 +59,6 @@ TEST(ADVANCE_WITH_SIMPLE) {
     cout << endl;
   }
 
-  DBGF(eccomi qui!!!) ;
-
-
   int n_max = 2 ;
   int n = 0 ;
   double t_final = 4000. ;
@@ -78,7 +75,10 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
     if (iter < 10) {
       printf( "time=%6.2f  p(x):", time );
-      for( int k=0; k<15; k++ ) printf("%7.4f", (*pressure)("cell",k));
+      for( int k=0; k<10; k++ ) { 
+	//printf("%7.4f", (*pressure)("cell",k)); 
+	PRTM("cell",k,(*pressure));
+      }
       cout << endl;
     }
 
