@@ -11,6 +11,10 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
+#define BOOST_FILESYSTEM_VERSION 2
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
+
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -421,8 +425,32 @@ Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plis
  ****************************************************************** */
 Teuchos::ParameterList get_Regions_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList reg_list;
-
   if (plist->isSublist("Regions")) {
+    // check labeled set consistency, file specified here must match file specified
+    // in the Mesh list
+    // first find the mesh file name specified in the Mesh list
+    std::string meshfile;
+    if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
+      meshfile = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("File");
+    }
+    Teuchos::ParameterList& rlist = plist->sublist("Regions");
+    // loop over all regions and find possible labeled set definitions
+    for (Teuchos::ParameterList::ConstIterator i = rlist.begin(); i != rlist.end(); i++) {
+      // only count sublists
+      if (rlist.isSublist(rlist.name(i))) {
+	if (rlist.sublist((rlist.name(i))).isSublist("Region: Labeled Set")) {
+	  std::string file = rlist.sublist((rlist.name(i))).sublist("Region: Labeled Set").get<std::string>("File");
+	  boost::filesystem::path meshfile_path(meshfile);
+	  boost::filesystem::path labeled_set_meshfile_path(file);
+	  if (!boost::filesystem::equivalent(meshfile_path, labeled_set_meshfile_path)) {
+	    Errors::Message message("There is a labeled set region that refers to a mesh file that is different from the mesh file that is defined in the Mesh list: " + file);
+	    Exceptions::amanzi_throw(message);
+	  }
+	}
+      }   
+    }
+    // all is well, return the Regions list for insertion into the
+    // native list
     reg_list = plist->sublist("Regions");
   }
 
