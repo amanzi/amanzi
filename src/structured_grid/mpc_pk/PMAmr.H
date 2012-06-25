@@ -27,11 +27,9 @@ public:
 
     Real StartTime() const {return strt_time;}
 
-#ifdef BL_USE_PETSC
     static Layout& GetLayout() {return layout;}
 protected:
     static Layout layout;
-#endif
 
 protected:
     static EventCoord event_coord;

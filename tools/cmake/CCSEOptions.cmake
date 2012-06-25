@@ -91,16 +91,18 @@ elseif (AMANZI_CHEMEVOL_PKG STREQUAL "COREREACT")
   list(APPEND BL_DEFINES "COREREACT")
 endif()
 
-set(BL_USE_PETSC TRUE)
-if (BL_USE_PETSC)
+if (ENABLE_PETSC)
+
+  message(STATUS "Building in PETSc support")
+
   set(PETSC_DIR $ENV{PETSC_DIR})
   if ("${PETSC_DIR}" STREQUAL "")
-    message(FATAL_ERROR "Must define env variable PETSC_DIR if BL_USE_PETSC")
+    message(FATAL_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
   endif()
 
   set(PETSC_ARCH $ENV{PETSC_ARCH})
   if ("${PETSC_ARCH}" STREQUAL "")
-    message(FATAL_ERROR "Must define env variable PETSC_ARCH if BL_USE_PETSC")
+    message(FATAL_ERROR "Must define env variable PETSC_ARCH if ENABLE_PETSC=ON")
   endif()
 
   include_directories(${PETSC_DIR}/include)

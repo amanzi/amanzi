@@ -67,6 +67,11 @@ if (ENABLE_TESTS)
     set(BUILD_TESTS 1)
 endif()    
 
+if (DEFINED ENABLE_PETSC)
+else()
+  set(ENABLE_PETSC FALSE CACHE BOOL "Enables the PETSc library." FORCE)
+endif()
+
 # Some platforms require all binaries linking to MPI
 # only run through the MPIEXEC binary
 option(TESTS_REQUIRE_MPIEXEC "Run all tests with the MPIEXEC binary" FALSE)
