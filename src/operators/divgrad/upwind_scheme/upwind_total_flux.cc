@@ -43,14 +43,24 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   std::vector<int> dirs;
   double flow_eps = 1.e-10;
 
-  face_coef->ViewComponent("cell")->PutScalar(1.0);
+  // initialize the face coefficients
+  face_coef->ViewComponent("face",true)->PutScalar(0.0);
+  if (face_coef->has_component("cell")) {
+    face_coef->ViewComponent("cell",true)->PutScalar(1.0);
+  }
 
+  // Note that by scattering, and then looping over all USED cells, we
+  // end up getting the correct upwind values in all faces (owned or
+  // not) bordering an owned cell.  This is the necessary data for
+  // making the local matrices in MFD, so there is no need to
+  // communicate the resulting face coeficients.
+
+  // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
+  flux.ScatterMasterToGhosted("face");
 
-  int c_used = cell_coef.size("cell", true);
-  for (int c=0; c!=c_used; ++c) {
+  for (int c=0; c!=cell_coef.size("cell", true); ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
-
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
 

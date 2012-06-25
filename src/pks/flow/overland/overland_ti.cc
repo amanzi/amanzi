@@ -19,7 +19,7 @@ namespace Flow {
 }}
 #endif
 
-#define debug_flag 0
+#define debug_flag 1
 
 
 // Overland is a BDFFnBase
@@ -37,7 +37,7 @@ void OverlandFlow::fun( double t_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
 #if debug_flag
   std::cout << "OverlandFlow Residual calculation:" << std::endl;
-  std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
+  std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
   std::cout << "  p1: " << (*u)("cell",0,9) << " " << (*u)("face",0,29) << std::endl;
 #endif
   //print_vector(S_next_,u,"fun") ;
@@ -58,21 +58,21 @@ void OverlandFlow::fun( double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
 #if debug_flag
-  std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
   std::cout << "  res1 (after diffusion): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
 #endif
 
   // accumulation term
   AddAccumulation_(res);
 #if debug_flag
-  std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
   std::cout << "  res1 (after accumulation): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
 #endif
 
   // add rhs load value
   AddLoadValue_(S_next_,res);
 #if debug_flag
-  std::cout << "  res0 (after source): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
+  std::cout << "  res0 (after source): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
   std::cout << "  res1 (after source): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
 #endif
 
@@ -84,15 +84,16 @@ void OverlandFlow::fun( double t_old,
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
 void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+
 #if debug_flag
   std::cout << "Precon application:" << std::endl;
-  std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
+  std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
   std::cout << "  p1: " << (*u->data())("cell",0,9) << " " << (*u->data())("face",0,29) << std::endl;
 #endif
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
   //*Pu = *u ;
 #if debug_flag
-  std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
+  std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
   std::cout << "  PC*p1: " << (*Pu->data())("cell",0,9) << " " << (*Pu->data())("face",0,29) << std::endl;
 #endif
 };
@@ -112,7 +113,6 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_val = std::max<double>(enorm_val, tmp);
     //    printf("cell: %5i %14.7e %14.7e\n",lcv,(*(*dpres_vec)(0))[lcv],tmp);
   }
-  
 
   Teuchos::RCP<const Epetra_MultiVector> fpres_vec = u->data()->ViewComponent("face", false);
   Teuchos::RCP<const Epetra_MultiVector> fdpres_vec = du->data()->ViewComponent("face", false);
@@ -125,11 +125,12 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
     //    printf("face: %5i %14.7e %14.7e\n",lcv,(*(*fdpres_vec)(0))[lcv],tmp);
   }
 
+  std::cout << "enorm val: " << enorm_val << std::endl;
 #ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
-
+  std::cout << "enorm val: " << enorm_val << std::endl;
   return enorm_val;
 };
 
