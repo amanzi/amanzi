@@ -34,6 +34,8 @@ void OverlandFlow::fun( double t_old,
   std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
   std::cout << "  p1: " << (*u)("cell",0,9) << " " << (*u)("face",0,29) << std::endl;
 
+  //print_vector(S_next_,u,"fun") ;
+
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
   UpdateSecondaryVariables_(S_next_);
@@ -61,6 +63,8 @@ void OverlandFlow::fun( double t_old,
   AddLoadValue_(S_next_,res);
   std::cout << "  res0 (after source): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after source): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
+
+  //print_vector(S_next_,res, "residual") ;
 };
 
 /* ******************************************************************

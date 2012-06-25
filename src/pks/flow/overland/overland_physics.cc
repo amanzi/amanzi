@@ -38,13 +38,16 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   const CompositeVector& pres_elev = *(S->GetFieldData("pres_elev"));
   matrix_->ComputeNegativeResidual( pres_elev, g );
 
-  // 
-  BoundaryFunction::Iterator bc;
-  const CompositeVector & elevation = *(S->GetFieldData("elevation"));
-  for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
-    int f = bc->first;
-    (*g)("face",0,f) += elevation("face",0,f);
-  }
+  // std::cout << "  res0 (after diff, pre fix): " << (*g)("cell",0,0) << " " << (*g)("face",0,3) << std::endl;
+  // std::cout << "  res1 (after diff, pre fix): " << (*g)("cell",0,9) << " " << (*g)("face",0,29) << std::endl;
+
+  // // 
+  // BoundaryFunction::Iterator bc;
+  // const CompositeVector & elevation = *(S->GetFieldData("elevation"));
+  // for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
+  //   int f = bc->first;
+  //   (*g)("face",0,f) += elevation("face",0,f);
+  // }
 };
 
 void OverlandFlow::AddElevation_(const Teuchos::RCP<State>& S) {
@@ -114,7 +117,7 @@ void OverlandFlow::RelativePermeability_( const Teuchos::RCP<State>& S,
                                           const Teuchos::RCP<CompositeVector>& rel_perm ) {
 
   double manning_coeff = manning[0] ;
-  double slope_coeff   = slope_x[0] ;
+  double slope_coeff   = slope_x[0]+1.e-14 ;
   double scaling       = manning_coeff * std::sqrt(slope_coeff) ;
 
   int ncells = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
