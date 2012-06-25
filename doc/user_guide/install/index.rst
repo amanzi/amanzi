@@ -9,5 +9,5 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   building_amanzi.rst
    building_tpls.rst
+   building_amanzi.rst
