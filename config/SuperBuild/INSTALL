@@ -110,33 +110,44 @@ Steps to build and install MPICH2 are
     1. Download MPICH2 http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=downloads 
 
     2. Unpack the tar file and create a separate build directory. In this build directory,
-       configure MPICH2 with::
+       configure MPICH2 with ::
 
-       configure --prefix=<install prefix> \
-                 --enable-f77 \
-                 --enable-fc \
-                 --enable-cxx \
-                 --enable-romio \
-                 --enable-shared \
-                 --enable-static \
-                 CC=<full path to C compiler>
-                 CXX=<full path to C++ compiler>
-                 FC=<full path to Fortran compiler>
-                 F77=<full path to Fortran compiler that support F77>
+        configure --prefix=<install prefix> \
+                  --enable-f77 \
+                  --enable-fc \
+                  --enable-cxx \
+                  --enable-romio \
+                  --enable-shared \
+                  --enable-static \
+                  CC=<full path to C compiler>
+                  CXX=<full path to C++ compiler>
+                  FC=<full path to Fortran compiler>
+                  F77=<full path to Fortran compiler that support F77>
 
-    3. Build, test and install. MPICH does not support parallel builds.::
+    3. Build, test and install. MPICH does not support parallel builds. ::
 
-       make all; make test; make install
+        make all; make test; make install
 
-    4. Set environment variables, PATH, LD_LIBRARY_PATH::
+    4. Set environment variables, PATH, LD_LIBRARY_PATH.  For csh and tcsh, use setenv ::
 
-       setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
-       setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
+        setenv PATH <install prefix>/bin:${PATH}
+	setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH}
+
+       and for bash, use export ::
+
+        export PATH=<install prefix>/bin:${PATH}
+        export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
     
-    5. Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this 
-       directory when this is set.::
+    5. Set environment variable MPI_ROOT. For csh and tcsh ::
 
-       setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
+        setenv MPI_ROOT <install prefix> 
+
+       and for bash ::
+
+        export MPI_ROOT=<install prefix>
+
+       The bootstrap.sh script searches for compiler wrappers in this directory when this is set. 
+
 
 OpenMPI
 *******
@@ -165,17 +176,28 @@ Steps to build and install OpenMPI are
 
     3. Build, test and install. OpenMPI does support parallel builds.::
 
-       make all; make test; make install
+        make all; make test; make install
 
-    4. Set environment variables, PATH, LD_LIBRARY_PATH::
+    4. Set environment variables, PATH, LD_LIBRARY_PATH. For csh and tcsh, use setenv ::
 
-       setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
-       setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
+        setenv PATH <install prefix>/bin:${PATH} 
+        setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH}
+
+       and for bash, use export ::
+
+        export PATH=<install prefix>/bin:${PATH}
+        export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
     
-    5. Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this 
-       directory when this is set. ::
+    5. Set environment variable MPI_ROOT. For csh and tcsh, use setenv ::
 
-       setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
+        setenv MPI_ROOT <install prefix> 
+
+       and for bash, use export ::
+ 
+        export MPI_ROOT=<install prefix>
+
+       The bootstrap.sh script searches for compiler wrappers in this directory when this is set. 
+
 
 Obtaining LAPACK/BLAS
 *********************
