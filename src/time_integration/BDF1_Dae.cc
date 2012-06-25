@@ -70,6 +70,17 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
 
+  state.nonlinear_solver = BDFNKA;
+  std::string nstype = paramList_->get<std::string>("nonlinear solver","NKA");
+  if (nstype == "NKA") {
+    state.nonlinear_solver = BDFNKA;
+  } else if (nstype == "JFNK") {
+    state.nonlinear_solver = BDFJFNK;
+  } else {
+    Errors::Message m("(native spec) bdf1 nonlinear solver must either be NKA or JFNK");
+    Exceptions::amanzi_throw(m);
+  }
+
 
   // sanity check
   if ( ! ((state.minitr < state.maxitr) && (state.maxitr < state.mitr) )) {
@@ -277,10 +288,14 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
     
   try {
-
-    solve_bce(tnew, h, u0, u);
-//     solve_bce_jfnk(tnew, h, u0, u);
-//     exit(0);
+    if (state.nonlinear_solver == BDFNKA) {
+      solve_bce(tnew, h, u0, u);
+    } else if (state.nonlinear_solver == BDFJFNK) {
+      // solve_bce_jfnk(tnew, h, u0, u);
+    } else {
+      Errors::Message m("bdf1 nonlinear solver undefined");
+      Exceptions::amanzi_throw(m);
+    }
   }
   catch (int itr) { 
     // we end up in here either if the solver took too many iterations, 
