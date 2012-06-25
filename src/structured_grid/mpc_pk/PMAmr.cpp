@@ -3,16 +3,12 @@
 #include <Observation.H>
 
 EventCoord PMAmr::event_coord;
-#ifdef BL_USE_PETSC
 Layout PMAmr::layout;
-#endif
 
 void
 PMAmr::CleanupStatics ()
 {
-#ifdef BL_USE_PETSC
     layout.Clear();
-#endif
 }
 
 
@@ -24,9 +20,7 @@ PMAmr::PMAmr()
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         initialized = true;
     }
-#ifdef BL_USE_PETSC
     layout.SetParent(this);
-#endif
 }
 
 PMAmr::~PMAmr()

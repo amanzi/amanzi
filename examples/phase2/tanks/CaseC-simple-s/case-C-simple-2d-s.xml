@@ -27,17 +27,18 @@
   </ParameterList>
 
   <ParameterList name="Execution Control">
-    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="CaseC_rev3/chk00000"/> -->
+    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="case-C-simple-2d-s-restart1"/> -->
     <Parameter name="Flow Model" type="string" value="Richards"/>
-    <Parameter name="Transport Model" type="string" value="Off"/>
+    <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
         <Parameter name="Start" type="double" value="0"/>
         <Parameter name="End" type="double" value="315360000"/>
-        <Parameter name="Initial Time Step" type="double" value="1.e7"/>
-	<Parameter name="Maximum Time Step Size" type="double" value="1e8"/>
-	<Parameter name="Maximum Cycle Number" type="int" value="0"/>
+        <Parameter name="End" type="double" value="3.2e6"/>
+        <Parameter name="Initial Time Step" type="double" value="1.e13"/>
+	<Parameter name="Maximum Time Step Size" type="double" value="1e14"/>
+	<Parameter name="Maximum Cycle Number" type="int" value="3"/>
         <Parameter name="Maximum Time Step Change" type="double" value="1."/>
         <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/>
       </ParameterList>
@@ -103,6 +104,8 @@
 	    <Parameter name="v" type="int" value="0"/>
             <!-- <Parameter name="max_L0_growth" type="double" value="1.2"/> -->
             <Parameter name="max_L0_growth" type="double" value="10"/>
+            <!-- <Parameter name="smoother" type="int" value="2"/> -->
+            <!-- <Parameter name="omega" type="double" value=".75"/> -->
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
@@ -276,7 +279,7 @@
     <ParameterList name="BC lower">
       <Parameter name="Assigned Regions" type="Array string" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array double" value="{0,1000000}"/>
+        <Parameter name="Times" type="Array double" value="{0,2000000}"/>
         <Parameter name="Values" type="Array double" value="{101325., 101325.}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
       </ParameterList>
@@ -296,7 +299,7 @@
     <ParameterList name="BC upper">
       <Parameter name="Assigned Regions" type="Array string" value="{YHIBC}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array double" value="{0,1000000}"/>
+        <Parameter name="Times" type="Array double" value="{0,2000000}"/>
         <Parameter name="Inward Volumetric Flux" type="Array double" value="{2.e-10, 2.e-10}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
       </ParameterList>

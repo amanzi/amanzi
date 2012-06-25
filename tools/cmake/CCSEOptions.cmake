@@ -93,8 +93,6 @@ endif()
 
 if (ENABLE_PETSC)
 
-  message(STATUS "Building in PETSc support")
-
   set(PETSC_DIR $ENV{PETSC_DIR})
   if ("${PETSC_DIR}" STREQUAL "")
     message(FATAL_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
