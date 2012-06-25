@@ -187,6 +187,13 @@ void MPC::mpc_init() {
         mpc_parameter_list.sublist("Restart from Checkpoint Data File");
 
     restart_from_filename = restart_parameter_list.get<string>("Checkpoint Data File Name");
+
+    // make sure that the restart file actually exists, if not throw an error
+    boost::filesystem::path restart_from_filename_path(restart_from_filename);
+    if (!exists(restart_from_filename_path)) {
+      Errors::Message message("MPC: the specified restart file does not exist or is not a regular file.");
+      Exceptions::amanzi_throw(message);
+    }
   }
 }
 
