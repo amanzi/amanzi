@@ -138,7 +138,7 @@
       </ParameterList>
       <ParameterList name="Facies_3">
         <ParameterList name="Porosity: Uniform">
-          <Parameter name="Value" type="double" value="0.2340"/>
+          <Parameter name="Value" type="double" value="0.2400"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
           <Parameter name="Horizontal" type="double" value="2.0706E-09"/>
