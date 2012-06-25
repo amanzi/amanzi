@@ -190,7 +190,7 @@ void MPC::mpc_init() {
 
     // make sure that the restart file actually exists, if not throw an error
     boost::filesystem::path restart_from_filename_path(restart_from_filename);
-    if (!exists(restart_from_filename_path)) {
+    if (!boost::filesystem::exists(restart_from_filename_path)) {
       Errors::Message message("MPC: the specified restart file does not exist or is not a regular file.");
       Exceptions::amanzi_throw(message);
     }
