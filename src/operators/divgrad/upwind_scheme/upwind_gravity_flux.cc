@@ -49,13 +49,22 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
   AmanziGeometry::Point gravity(g_vec.MyLength());
   for (int i=0; i!=g_vec.MyLength(); ++i) gravity[i] = g_vec[i];
 
-  face_coef->ViewComponent("cell")->PutScalar(1.0);
+  // initialize the face coefficients
+  face_coef->ViewComponent("face",true)->PutScalar(0.0);
+  if (face_coef->has_component("cell")) {
+    face_coef->ViewComponent("cell",true)->PutScalar(1.0);
+  }
 
-  // communicate cell values to ghosted
+  // Note that by scattering, and then looping over all USED cells, we
+  // end up getting the correct upwind values in all faces (owned or
+  // not) bordering an owned cell.  This is the necessary data for
+  // making the local matrices in MFD, so there is no need to
+  // communicate the resulting face coeficients.
+
+  // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
 
-  int c_used = cell_coef.size("cell", true);
-  for (int c=0; c!=c_used; ++c) {
+  for (int c=0; c!=cell_coef.size("cell", true); ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     AmanziGeometry::Point Kgravity = (*K_)[c] * gravity;
 
@@ -63,7 +72,6 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
       int f = faces[n];
 
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-
       if ((normal * Kgravity) * dirs[n] >= flow_eps) {
         (*face_coef)("face",f) = cell_coef("cell",c);
       } else if (std::abs((normal * Kgravity) * dirs[n]) < flow_eps) {

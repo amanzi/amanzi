@@ -199,7 +199,6 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 
   // update face pressures as a hint?
   Teuchos::RCP<CompositeVector> pres = S->GetFieldData("pressure", "flow");
-  pres->ScatterMasterToGhosted();
   DeriveFaceValuesFromCellValues_(S, pres);
 
   // declare secondary variables initialized, as they will be done by
@@ -371,6 +370,7 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
 void Richards::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
   AmanziMesh::Entity_ID_List cells;
+  pres->ScatterMasterToGhosted("cell");
 
   int f_owned = pres->size("face");
   for (int f=0; f!=f_owned; ++f) {

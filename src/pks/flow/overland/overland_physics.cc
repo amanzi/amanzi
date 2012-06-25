@@ -30,6 +30,9 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const CompositeVector> upwind_conductivity =
     S->GetFieldData("upwind_overland_conductivity", "overland_flow");
 
+  std::cout << "rel p: " << (*upwind_conductivity)("cell",0) << " "
+            << (*upwind_conductivity)("cell",0) << std::endl;
+
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(*upwind_conductivity);
   matrix_->CreateMFDrhsVectors();
@@ -276,6 +279,9 @@ void OverlandFlow::UpdateElevationAndSlope_(const Teuchos::RCP<State>& S) {
       }
     }
   }
+
+  elev->ScatterMasterToGhosted();
+  slope->ScatterMasterToGhosted();
 };
 
 

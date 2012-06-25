@@ -37,10 +37,19 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
   AmanziMesh::Entity_ID_List faces;
 
+  // initialize the face coefficients
+  face_coef->ViewComponent("face",true)->PutScalar(0.0);
   if (face_coef->has_component("cell")) {
-    face_coef->ViewComponent("cell")->PutScalar(1.0);
+    face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 
+  // Note that by scattering, and then looping over all USED cells, we
+  // end up getting the correct upwind values in all faces (owned or
+  // not) bordering an owned cell.  This is the necessary data for
+  // making the local matrices in MFD, so there is no need to
+  // communicate the resulting face coeficients.
+
+  // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
 
   int c_used = cell_coef.size("cell", true);
