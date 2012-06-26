@@ -3,7 +3,7 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
-cmake_minimum_required(VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.5)
 
 if ("${CMAKE_PATCH_VERSION}" GREATER 3)
   set(ADJUST_POLICY "True")

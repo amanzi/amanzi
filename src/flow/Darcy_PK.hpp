@@ -78,10 +78,13 @@ class Darcy_PK : public Flow_PK {
   // access methods
   Epetra_Vector& ref_solution_faces() { return *solution_faces; }
   Epetra_Import& ref_face_importer() { return *face_importer_; }
+  const Epetra_Map& super_map() { return *super_map_;}
 
   double rho() { return rho_; }
   double mu() { return mu_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
+
+  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) {Y=X;};
 
  private:
   Teuchos::ParameterList dp_list_;

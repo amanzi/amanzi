@@ -79,6 +79,7 @@ file(GLOB mpc_inc_files "*.hpp")
 add_install_include_file(${mpc_inc_files})
 
 if (BUILD_TESTS)
+#if (0)
 
   include_directories(${MESH_SIMPLE_SOURCE_DIR})
 

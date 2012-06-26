@@ -136,7 +136,7 @@ class Richards_PK : public Flow_PK {
   void PrintStatistics() const;
   
   // access methods
-  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
+  Teuchos::RCP<AmanziMesh::Mesh> mesh() { cout<<"Richards_PK\n";return mesh_; }
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
 
@@ -145,6 +145,7 @@ class Richards_PK : public Flow_PK {
                                    const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
   Matrix_MFD* preconditioner() { return preconditioner_; }
+  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
  private:
   Teuchos::ParameterList rp_list_;

@@ -159,6 +159,8 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStringMFD3D(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
 
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(){cout<<"FlowPK\n";};
+
  public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;

@@ -78,7 +78,7 @@ file(GLOB flow_inc_files "*.hpp")
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-
+#if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 

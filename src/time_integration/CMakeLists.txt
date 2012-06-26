@@ -61,8 +61,8 @@ target_link_libraries(time_integration error_handling solvers ${time_integration
 file(GLOB time_int_inc_files "*.hpp" "*.hh")
 add_install_include_file(${time_int_inc_files})
 
-
-if (BUILD_TESTS)
+#if (BUILD_TESTS)
+if (0)
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -80,15 +80,15 @@ if (BUILD_TESTS)
     add_amanzi_test(time_integration test_time_integration
                     KIND unit
                     SOURCE 
-		          test/Main.cc
-			  test/test_solhist.cpp
-			  test/test_1Dfem.cpp
-			  test/test_Explicit_RK.cpp 
+   		          test/Main.cc
+   			  test/test_solhist.cpp
+   			  test/test_1Dfem.cpp
+   			  test/test_Explicit_RK.cpp 
                     LINK_LIBS
-		          time_integration
-			  solvers
-			  error_handling
-			  ${UnitTest_LIBRARIES}
-			  ${time_integration_tpl_libs})
+   		          time_integration
+   			  solvers
+   			  error_handling
+   			  ${UnitTest_LIBRARIES}
+   			  ${time_integration_tpl_libs})
 
 endif()
