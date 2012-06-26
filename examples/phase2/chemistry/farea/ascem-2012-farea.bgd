@@ -72,7 +72,7 @@ Goethite =   2.00 H2O  -3.00 H+   1.00 Fe+++  ;   5.34500E-01 ;   8.88537E+01 ; 
 
 <Mineral Kinetics
 Schoepite ; TST ; log10_rate_constant   3.01030E-01 moles/cm^2/sec 
-Kaolinite ; TST ; log10_rate_constant     -Infinity moles/cm^2/sec  ; H+   7.77000E-01 H+  -4.72000E-01 
+Kaolinite ; TST ; log10_rate_constant   -12.967 moles/cm^2/sec  ; H+   7.77000E-01
 Gibbsite ; TST ; log10_rate_constant  -1.15000E+01 moles/cm^2/sec 
 Jurbanite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
 Basaluminite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
