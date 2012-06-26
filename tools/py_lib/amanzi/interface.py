@@ -134,21 +134,24 @@ class AmanziInterface:
       pipe = subprocess.Popen(args,executable=executable,bufsize=-1,stdout=stdout_fh,stderr=stderr_fh)
     except ValueError:
       raise ValueError, 'Popen called with incorrect arguments'
+    except OSError:
+      print 'Failed to run ' + str(args)
+      raise OSError, 'Failed to run Amanzi binary ' + self.binary
     else:
       try:
           pipe.wait()
       except KeyboardInterrupt:
-	try:
-	  kill_signal=signal.SIGKILL
-	except AttributeError:
-	  kill_signal=signal.SIGTERM
-	print 'Sending SIGTERM to Amanzi run PID='+str(pipe.pid)
-	os.kill(pipe.pid,signal.SIGTERM)
-	time.sleep(1)
-	while pipe.poll() == None:
-	  print 'PID='+str(pipe,pid)+' still alive. Sending signal (SIGKILL) '+str(kill_signal)
-	  os.kill(pipe.pid,kill_signal)
-	  time.sleep(5)
+          try:
+              kill_signal=signal.SIGKILL
+          except AttributeError:
+              kill_signal=signal.SIGTERM
+              print 'Sending SIGTERM to Amanzi run PID='+str(pipe.pid)
+              os.kill(pipe.pid,signal.SIGTERM)
+              time.sleep(1)
+              while pipe.poll() == None:
+                  print 'PID='+str(pipe,pid)+' still alive. Sending signal (SIGKILL) '+str(kill_signal)
+                  os.kill(pipe.pid,kill_signal)
+                  time.sleep(5)
 
     # Set the return code 
     self.exit_code=pipe.returncode
@@ -248,6 +251,52 @@ class AmanziInterface:
 
     return self.data_files
 
+  def sort_data_files(self,files=[]):
+    if len(files) == 0:
+      if len(self.data_files) == 0:
+        basename=self.plot_output_basename()
+        self.find_data_files(basename)
+      files=self.data_files
+
+    search_dict = {}
+    for data_file in files:
+      search_dict[data_file.cycle]=data_file
+  
+    sorted_cycles=search_dict.keys()
+    sorted_cycles.sort()
+    sorted_files=[]
+    for n in sorted_cycles:
+      sorted_files.append(search_dict.get(n))
+
+    return sorted_files
+
+  def find_mesh_file(self,input=None):
+    import glob
+    basename = self.plot_output_basename(input)
+
+    mesh_regex=basename+'_mesh.h5'
+    try:
+      mesh_file=glob.glob(mesh_regex)[0]
+    except:
+      print "Could not find mesh file matching '" +mesh_regex+"' pattern" 
+      mesh_file=None
+
+    return mesh_file
+
+
+  def plot_output_basename(self,input=None):
+
+    from amanzi.trilinos import InputList as AmanziInput
+
+    if input == None:
+      input_tree = AmanziInput(self.input)
+    else:
+      input_tree = AmanziInput(input)
+
+    output_ctrl = input_tree.find_sublist('Output')
+    viz_ctrl    = output_ctrl.find_sublist('Visualization Data')
+
+    return viz_ctrl.find_parameter('File Name Base').get_value()
 
 if __name__ == '__main__':
 

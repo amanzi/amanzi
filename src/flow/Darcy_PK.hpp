@@ -40,6 +40,7 @@ class Darcy_PK : public Flow_PK {
   void InitPK();
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
+  void InitPicard(double T0) {};  // not used yet.
 
   double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
@@ -48,8 +49,6 @@ class Darcy_PK : public Flow_PK {
   void InitializeSteadySaturated();
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
-  void CommitStateForTransport(Teuchos::RCP<Flow_State> FS) {};
-  void DeriveDarcyVelocity(const Epetra_Vector& flux, Epetra_MultiVector& velocity);
 
   // methods required for time integration
   void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0) {};
@@ -61,6 +60,8 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void UpdateSpecificYield();
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
@@ -68,6 +69,7 @@ class Darcy_PK : public Flow_PK {
   // io members
   void ProcessParameterList();
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringSourceDistribution(const std::string name, int* method);
 
   // control methods
   void PrintStatistics() const;
@@ -122,6 +124,7 @@ class Darcy_PK : public Flow_PK {
   std::vector<double> bc_values;
 
   DomainFunction* src_sink;  // Source and sink terms
+  int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 

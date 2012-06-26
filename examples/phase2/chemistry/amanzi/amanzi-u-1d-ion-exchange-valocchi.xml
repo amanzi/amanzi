@@ -1,11 +1,10 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
   <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="1D Flow and Transport"/>
-    <Parameter name="Author" type="string" value="Glenn Hammond"/>
+    <Parameter name="Model ID" type="string" value="1D Flow and Transport with ion exchange"/>
   </ParameterList>
   <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Richards"/>
+    <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="On"/>
     <ParameterList name="Time Integration Mode">
@@ -51,7 +50,7 @@
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array int" value="{2, 1, 1}"/>
+          <Parameter name="Number of Cells" type="Array int" value="{100, 1, 1}"/>
           <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0,  0.0}" />
           <Parameter name="Domain High Corner" type="Array double" value="{1.0, 1.0, 1.0}" />
         </ParameterList>
@@ -98,12 +97,6 @@
       <ParameterList name="Intrinsic Permeability: Uniform">
         <Parameter name="Value" type="double" value="1.E-12"/>
       </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.E-04"/>
-        <Parameter name="Sr" type="double" value="0.1"/>
-        <Parameter name="m" type="double" value="0.5"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-      </ParameterList>
       <Parameter name="Assigned Regions" type="Array string" value="{Soil_1}"/>
       <ParameterList name="Mineralogy">
 	<ParameterList name="Halite">
@@ -119,12 +112,6 @@
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Uniform">
         <Parameter name="Value" type="double" value="1.E-12"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.E-04"/>
-        <Parameter name="Sr" type="double" value="0.1"/>
-        <Parameter name="m" type="double" value="0.5"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array string" value="{Soil_2}"/>
       <ParameterList name="Mineralogy">

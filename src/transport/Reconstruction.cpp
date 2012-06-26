@@ -44,15 +44,6 @@ void Reconstruction::Init()
   number_owned_faces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   fmax_owned = fmin + number_owned_faces - 1;
 
-  /*
-  double *memory;  // we need to allocate sufficient memory for LAPACK routines
-  memory = new double(TRANSPORT_MAX_FACES * TRANSPORT_MAX_FACES);
-  Teuchos::SerialDenseMatrix<int, double> matrix(Teuchos::View,
-                                                 memory,
-                                                 TRANSPORT_MAX_FACES,
-                                                 TRANSPORT_MAX_FACES,
-                                                 TRANSPORT_MAX_FACES);
-  */
   Teuchos::SerialDenseMatrix<int, double> matrix(TRANSPORT_MAX_FACES,
                                                  TRANSPORT_MAX_FACES);
 
@@ -185,7 +176,7 @@ void Reconstruction::populateLeastSquareSystem(AmanziGeometry::Point& centroid,
 
 
 /* ******************************************************************
- * Optimized linear algebra: norm, determinant, etc
+ * Optimized linear algebra: norm
 ****************************************************************** */
 double Reconstruction::calculateMatrixNorm(Teuchos::SerialDenseMatrix<int, double>& matrix)
 {
@@ -196,6 +187,10 @@ double Reconstruction::calculateMatrixNorm(Teuchos::SerialDenseMatrix<int, doubl
   return a;
 }
 
+
+/* ******************************************************************
+ * Optimized linear algebra: determinant
+****************************************************************** */
 double Reconstruction::calculateMatrixDeterminant(Teuchos::SerialDenseMatrix<int, double>& matrix)
 {
   double a = 0.0;
@@ -213,6 +208,10 @@ double Reconstruction::calculateMatrixDeterminant(Teuchos::SerialDenseMatrix<int
   return a;
 }
 
+
+/* ******************************************************************
+ * Search routine.
+****************************************************************** */
 int Reconstruction::findMinimalDiagonalEntry(Teuchos::SerialDenseMatrix<int, double>& matrix)
 {
   double a = matrix(0, 0);  // We assume that matrix is SPD.
@@ -230,7 +229,7 @@ int Reconstruction::findMinimalDiagonalEntry(Teuchos::SerialDenseMatrix<int, dou
 
 
 /* ******************************************************************
- * I/O routines
+ * IO routines
 ****************************************************************** */
 void Reconstruction::printLeastSquareSystem(Teuchos::SerialDenseMatrix<int, double>matrix, double* rhs)
 {

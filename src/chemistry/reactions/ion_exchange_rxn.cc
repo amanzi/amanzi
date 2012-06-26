@@ -102,8 +102,8 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
       double dres_dref_cation_X = 1.;
       for (unsigned int i = 1; i < ionx_complexes_.size(); i++) {
         int icomp = ionx_complexes_[i].primary_id();
-        dres_dref_cation_X += primarySpecies[icomp].charge()*
-                              ionx_complexes_[i].X()/ref_cation_X;
+        dres_dref_cation_X += (primarySpecies[icomp].charge() / ref_cation_Z) *
+            (ionx_complexes_[i].X() / ref_cation_X);
       }
       double dref_cation_X = -res / dres_dref_cation_X;
       ref_cation_X -= dref_cation_X;
@@ -163,7 +163,7 @@ void IonExchangeRxn::AddContributionToDTotal(
            ionx_complexes_.begin();
        ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
-    double temp = primarySpecies[icomp].charge()*sumZX;
+    double temp = primarySpecies[icomp].charge() / sumZX;
     for (std::vector<IonExchangeComplex>::iterator ionx2 =
              ionx_complexes_.begin();
          ionx2 != ionx_complexes_.end(); ionx2++) {

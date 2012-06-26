@@ -129,7 +129,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   }
   */
 
-  TS_nextBIG->distribute_cell_vector(f_component);
+  TS_nextBIG->CopyMasterCell2GhostCell(f_component);
 }
 
 }  // namespace AmanziTransport

@@ -1,8 +1,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Import.h"
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -106,7 +109,7 @@ void State::create_default_compnames(int n)
   for (int i=0; i<n; i++)
   {
     std::stringstream ss;
-    ss << "component " << i;
+    ss << "Component " << i;
     compnames[i] = ss.str();
   }
 }
@@ -163,7 +166,6 @@ void State::initialize_from_parameter_list()
 
   set_zero_total_component_concentration();
   set_water_density(parameter_list.get<double>("Constant water density"));
-  // set_water_saturation(parameter_list.get<double>("Constant water saturation"));
   set_viscosity(parameter_list.get<double>("Constant viscosity"));
 
 
@@ -207,6 +209,8 @@ void State::initialize_from_parameter_list()
       // initialize the arrays with some constants from the input file
       set_porosity(sublist.get<double>("Constant porosity"), region);
 
+      set_cell_value_in_region(sublist.get<double>("Constant particle density",1.0), *particle_density, region);
+
       if (sublist.isParameter("Constant permeability")) {
         set_permeability(sublist.get<double>("Constant permeability"), region);
       } else {
@@ -241,11 +245,10 @@ void State::initialize_from_parameter_list()
       }  
 
       // set specific storage Ss or specific yield Sy in the same state variable
-      if (sublist.isParameter("Constant specific storage")) {
-        set_specific_storage(sublist.get<double>("Constant specific storage"), region);
-      } else if (sublist.isParameter("Constant specific yield")) {
-        set_specific_storage(sublist.get<double>("Constant specific yield"), region);
-      }
+      if (sublist.isParameter("Constant specific storage"))
+          set_specific_storage(sublist.get<double>("Constant specific storage"), region);
+      if (sublist.isParameter("Constant specific yield"))
+          set_specific_yield(sublist.get<double>("Constant specific yield"), region);
 
       // read the component concentrations from the xml file
       // and initialize them in mesh block mesh_block_ID
@@ -283,65 +286,114 @@ void State::create_storage()
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   prev_water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  vertical_permeability       = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  horizontal_permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  vertical_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  horizontal_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   total_component_concentration
       = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
-  darcy_velocity   = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
-  material_ids =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  darcy_velocity = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
+  material_ids = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  particle_density = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
-  density =   Teuchos::rcp(new double);
+  density = Teuchos::rcp(new double);
   viscosity = Teuchos::rcp(new double);
-  gravity =   Teuchos::rcp(new double*);
+  gravity = Teuchos::rcp(new double*);
   *gravity = new double[3];
 
   specific_storage = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
+  specific_yield = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
 
-  volume_ =     Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  volume_ = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
+  CreateStoragePrimarySpecies();
+  CreateStorageMinerals();
+  CreateStorageTotalSorbed();
+  CreateStorageIonExchange();
+  CreateStorageSurfaceComplexation();
+  CreateStorageSorptionIsotherms();
+
+}  // end create_storage()
+
+void State::CreateStoragePrimarySpecies(void) {
   // if chemistry in enabled, we'll always need free_ions stored.
-  free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
+  int size = number_of_components;
+  free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), size ) );
+  free_ion_concentrations_->PutScalar(1.0e-9);
 
-  // TODO(bandre): activity corrections. Need primaries and
-  // secondaries, but don't know number of secondaries when this
-  // function is called!
+  // TODO(bandre): don't always need activity coeffs, but it makes life easier for now...
+  primary_activity_coeff_ = Teuchos::rcp(
+      new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+  primary_activity_coeff_->PutScalar(1.0);
+}  // end CreateStoragePrimaryActivityCoeff()
 
+void State::CreateStorageSecondaryActivityCoeff(const int size) {
+  // NOTE: do not know the size of this array until after chemistry has been initialized!
+  if (size > 0) {
+    secondary_activity_coeff_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    secondary_activity_coeff_->PutScalar(1.0);
+  } else {
+    secondary_activity_coeff_ = Teuchos::null;
+  }
+}  // end CreateStorageSecondaryActivityCoeff()
+
+void State::CreateStorageMinerals() {
   if (number_of_minerals() > 0) {
     mineral_volume_fractions_ = Teuchos::rcp(
         new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
     mineral_specific_surface_area_ = Teuchos::rcp(
         new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
+    mineral_volume_fractions_->PutScalar(0.0);
+    mineral_specific_surface_area_->PutScalar(1.0);
   } else {
     mineral_volume_fractions_ = Teuchos::null;
     mineral_specific_surface_area_ = Teuchos::null;
   }
+}  // end CreateStorageMinerals()
 
+void State::CreateStorageTotalSorbed(void) {
   if (using_sorption()) {
     total_sorbed_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+    total_sorbed_->PutScalar(1.0);
   } else {
     total_sorbed_ = Teuchos::null;
   }
+}  // end CreateStorageTotalSorbed()
 
-  if (number_of_sorption_sites() > 0) {
-    // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
-    sorption_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), 
-                               number_of_sorption_sites()));
-  } else {
-    sorption_sites_ = Teuchos::null;
-  }
-
-  if (number_of_ion_exchange_sites() > 0) {
-    // TODO: eventually this probably needs to be a 3d array: [cell][mineral][site]
-    // for now we assume [cell][site], but site will always be one?
+void State::CreateStorageIonExchange(void) {
+  // TODO: eventually this probably needs to be a 3d array: [cell][mineral][site]
+  // for now we assume [cell][site], but site will always be one?
+  unsigned int size = number_of_ion_exchange_sites();
+  if (size > 0) {
     ion_exchange_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), 
-                               number_of_ion_exchange_sites()));    
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    ion_exchange_ref_cation_conc_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    ion_exchange_sites_->PutScalar(1.0);
+    ion_exchange_ref_cation_conc_->PutScalar(1.0);
   } else {
     ion_exchange_sites_ = Teuchos::null;
+    ion_exchange_ref_cation_conc_ = Teuchos::null;
   }
+}  // end CreateStorageIonExchange()
 
+void State::CreateStorageSurfaceComplexation(void) {
+  // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
+  unsigned int size = number_of_sorption_sites();
+  if (size > 0) {
+    sorption_sites_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    surface_complex_free_site_conc_ = Teuchos::rcp(
+        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
+    sorption_sites_->PutScalar(1.0);
+    surface_complex_free_site_conc_->PutScalar(1.0);
+  } else {
+    sorption_sites_ = Teuchos::null;
+    surface_complex_free_site_conc_ = Teuchos::null;
+  }
+}  // end CreateStorageIonExchangeRefCationConc()
+
+void State::CreateStorageSorptionIsotherms(void) {
   if (use_sorption_isotherms()) {
     isotherm_kd_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
@@ -349,15 +401,15 @@ void State::create_storage()
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
     isotherm_langmuir_b_ = Teuchos::rcp(
         new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
+    isotherm_kd_->PutScalar(0.0);
+    isotherm_freundlich_n_->PutScalar(1.0);
+    isotherm_langmuir_b_->PutScalar(1.0);
   } else {
     isotherm_kd_ = Teuchos::null;
     isotherm_freundlich_n_ = Teuchos::null;
     isotherm_langmuir_b_ = Teuchos::null;
   }
-
-}  // end create_storage()
-
-
+}  // end CreateStorageSorptionIsotherms()
 
 void State::set_time ( double new_time ) {
   last_time = new_time;
@@ -612,10 +664,18 @@ void State::set_porosity( const double phi, const std::string region )
 }
 
 
-/* *******************************************************************/
+/* ********************************************************************
+ * Set constant specific storage and yield
+ *********************************************************************/
 void State::set_specific_storage(const double ss, const std::string region)
 {
   set_cell_value_in_region(ss, *specific_storage, region);
+}
+
+
+void State::set_specific_yield(const double sy, const std::string region)
+{
+  set_cell_value_in_region(sy, *specific_yield, region);
 }
 
 
@@ -749,6 +809,7 @@ double State::water_mass()
 }
 
 
+
 /* *******************************************************************/
 double State::point_value(const std::string& point_region, const std::string& name)
 {
@@ -797,6 +858,16 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
+  } else if (var == "Gravimetric water content") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*porosity)[ic] * (*water_saturation)[ic] * (*water_density)[ic] 
+	/ ( (*particle_density)[ic] * (1.0 - (*porosity)[ic] ) )  * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }    
   } else if (var == "Aqueous pressure") {
     value = 0.0;
     volume = 0.0;
@@ -806,6 +877,25 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*pressure)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
+  } else if (var == "Aqueous saturation") {
+    value = 0.0;
+    volume = 0.0;
+    
+    for (int i=0; i<mesh_block_size; i++) {
+      int ic = cell_ids[i];
+      value += (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }    
+  // } else if (var == "Hydrostatic Head") {
+  //   value = 0.0;
+  //   volume = 0.0;
+
+  //   for (int i=0; i<mesh_block_size; ++i) {
+  //     int ic = cell_ids[i];
+  //     value += (*pressure)[ic]/ ( (*density) * (*gravity)[2]);
+  //     value *= mesh_maps->cell_volume(ic);
+  //     volume += mesh_maps->cell_volume(ic);
+  //   }
   } else {
     std::stringstream ss;
     ss << "State::point_value: cannot make an observation for variable " << name;
@@ -847,6 +937,12 @@ void State::set_porosity(const Epetra_Vector& porosity_)
 {
   *porosity = porosity_;
 };
+
+void State::set_particle_density(const Epetra_Vector& particle_density_)
+{
+  *particle_density = particle_density_;
+};
+
 
 
 /* *******************************************************************/
@@ -955,6 +1051,7 @@ void State::set_uniform_saturation(const Teuchos::ParameterList& unif_s_list, co
   // get value from paramter list
   const double value = unif_s_list.get<double>("value");
   set_cell_value_in_region(value, *water_saturation, region);
+  set_cell_value_in_region(value, *prev_water_saturation, region);
 };
 
 
@@ -969,76 +1066,124 @@ void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, cons
   Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
 
   set_cell_value_in_region(lin_p, *water_saturation, region);
+  set_cell_value_in_region(lin_p, *prev_water_saturation, region);
+  
 }
 
+
+// return component number, -1 if the component does not exist
+int State::get_component_number(const std::string component_name) {
+  std::map<std::string, int>::const_iterator it = comp_no.find(component_name);
+  if (it != comp_no.end()) {
+    return it->second;
+  } else {
+    return -1;
+  }
+}
+
+
+// return component name, empty string if number does not exist
+std::string State::get_component_name(const int component_number) {
+  return compnames[component_number];
+
+  // if ( component_number < 0  || component_number >= compnames.size() ) { 
+  //   return compnames[component_number];
+  // } else {
+  //   return std::string("");
+  // }
+}
+
+
+
+/* *******************************************************************/
+void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  
+  if (out.get() && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) {
+    *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
+  }
+  
+  // create the new time step...
+  vis.create_timestep(get_time()/(365.25*24*60*60),get_cycle());
+  
+  // dump all the state vectors into the file
+  vis.write_vector(*get_pressure(), "pressure");
+  vis.write_vector(*get_porosity(),"porosity");
+  vis.write_vector(*get_water_saturation(),"water saturation");
+  vis.write_vector(*get_water_density(),"water density");
+  vis.write_vector(*get_vertical_permeability(),"vertical permeability");
+  vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
+  vis.write_vector(*get_material_ids(),"material IDs");
+  
+  // compute volumetric water content for visualization (porosity*water_saturation)
+  Epetra_Vector vol_water( mesh_maps->cell_map(false) );
+  vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
+  vis.write_vector(vol_water,"volumetric water content");
+  
+  // compute gravimetric water content for visualization
+  // MUST have computed volumetric water content before
+  vol_water.Multiply(1.0, *water_density, vol_water, 0.0);
+  Epetra_Vector bulk_density( mesh_maps->cell_map(false) );
+  bulk_density.PutScalar(1.0);
+  bulk_density.Update(-1.0,*porosity,1.0);
+  bulk_density.Multiply(1.0,*particle_density,bulk_density,0.0);
+  vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
+  vis.write_vector(vol_water,"gravimetric water content");
+  
+  // compute hydrostatic head
+  // TO DO
+  
+  std::vector<std::string> names(3);
+  names[0] = "darcy velocity x";
+  names[1] = "darcy velocity y";
+  names[2] = "darcy velocity z";
+  DeriveDarcyVelocity();
+  vis.write_vector(*get_darcy_velocity(), names);
+  
+  // write component data
+  vis.write_vector( *get_total_component_concentration(), compnames);
+  
+  // write the geochemistry data
+  if (chemistry_enabled) WriteChemistryToVis(&vis);
+}
+
+/* *******************************************************************/
+void State::write_vis_(Amanzi::Vis& vis, 
+		       Teuchos::RCP<Epetra_MultiVector> auxdata, 
+		       const std::vector<std::string>& auxnames, 
+		       bool chemistry_enabled, bool force)  {  
+  // write auxillary data
+  if (!is_null(auxdata))  {
+    vis.write_vector( *auxdata , auxnames);
+  }
+}
 
 /* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
-  if (!vis.is_disabled()) {
+  if ( !vis.is_disabled() ) {
     if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
-      using Teuchos::OSTab;
-      Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-      OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-      
-      if (out.get() && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) {
-        *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
-      }
-      
-      // create the new time step...
-      vis.create_timestep(get_time()/(365.25*24*60*60),get_cycle());
-      
-      // dump all the state vectors into the file
-      vis.write_vector(*get_pressure(), "pressure");
-      vis.write_vector(*get_porosity(),"porosity");
-      vis.write_vector(*get_water_saturation(),"water saturation");
-      vis.write_vector(*get_water_density(),"water density");
-      vis.write_vector(*get_vertical_permeability(),"vertical permeability");
-      vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
-      vis.write_vector(*get_material_ids(),"material IDs");
-      
-      // compute volumetric water content for visualization (porosity*water_saturation)
-      Epetra_Vector vol_water( mesh_maps->cell_map(false) );
-      vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
-      vis.write_vector(vol_water,"volumetric water content");
-      
-      std::vector<std::string> names(3);
-      names[0] = "darcy velocity x";
-      names[1] = "darcy velocity y";
-      names[2] = "darcy velocity z";
-      vis.write_vector(*get_darcy_velocity(), names);
-      
-      // write component data
-      vis.write_vector( *get_total_component_concentration(), compnames);
-
-      // write the geochemistry data
-      if (chemistry_enabled) WriteChemistryToVis(&vis);
-
+      write_vis_(vis, chemistry_enabled, force);
       vis.finalize_timestep();
     }
   }
 }
-
 
 /* *******************************************************************/
 void State::write_vis(Amanzi::Vis& vis, 
-                      Teuchos::RCP<Epetra_MultiVector> auxdata, 
-                      const std::vector<std::string>& auxnames, 
-                      bool chemistry_enabled, bool force)  {
-  write_vis(vis, chemistry_enabled, force);
-  
+		      Teuchos::RCP<Epetra_MultiVector> auxdata, 
+		      const std::vector<std::string>& auxnames, 
+		      bool chemistry_enabled, bool force)  {  
   if ( !vis.is_disabled() ) {
-    if ( force || vis.dump_requested(get_cycle())) {
-      // write auxillary data
-      if (!is_null(auxdata))  {
-        vis.write_vector( *auxdata , auxnames);
-      }
-      
+    if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
+      write_vis_(vis, chemistry_enabled, force);
+      write_vis_(vis, auxdata, auxnames, chemistry_enabled, force);
       vis.finalize_timestep();
     }
   }
 }
-
 
 /* *******************************************************************/
 void State::set_compnames(std::vector<std::string>& compnames_)
@@ -1486,3 +1631,56 @@ void State::WriteIonExchangeSitesToVis(Amanzi::Vis* vis) {
     vis->write_vector(*(*ion_exchange_sites_)(0), name);
   }
 }  // end WriteIonExchangeSitesToVis()
+
+
+
+
+void State::DeriveDarcyVelocity() {
+  const Epetra_Map& source_fmap = mesh_maps->face_map(false);
+  const Epetra_Map& target_fmap = mesh_maps->face_map(true);
+  Epetra_Import face_importer(target_fmap, source_fmap);  
+
+#ifdef HAVE_MPI
+  Epetra_Vector darcy_flux_wghost(mesh_maps->face_map(true));
+  darcy_flux_wghost.Import(*darcy_flux, face_importer, Insert);
+#else
+  Epetra_Vector& darcy_flux_wghost = *darcy_flux;
+#endif
+
+  Teuchos::LAPACK<int, double> lapack;
+
+  int dim = mesh_maps->space_dimension();
+  Teuchos::SerialDenseMatrix<int, double> matrix(dim, dim);
+  double rhs_cell[dim];
+
+  Amanzi::AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int ncells_owned = mesh_maps->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_maps->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int i = 0; i < dim; i++) rhs_cell[i] = 0.0;
+    matrix.putScalar(0.0);
+
+    for (int n = 0; n < nfaces; n++) {  // populate least-square matrix
+      int f = faces[n];
+      const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
+      double area = mesh_maps->face_area(f);
+
+      for (int i = 0; i < dim; i++) {
+        rhs_cell[i] += normal[i] * darcy_flux_wghost[f];
+        matrix(i, i) += normal[i] * normal[i];
+        for (int j = i+1; j < dim; j++) {
+          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
+        }
+      }
+    }
+
+    int info;
+    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
+
+    for (int i = 0; i < dim; i++) (*darcy_velocity)[i][c] = rhs_cell[i];
+  }
+}

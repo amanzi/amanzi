@@ -490,10 +490,11 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
     
     if (rgn->id() == id) {
       
-      // For regions of type Labeled Set, the dimension parameter is
-      // not guaranteed to be correct
+      // For regions of type Labeled Set and Color Function, the
+      // dimension parameter is not guaranteed to be correct
 
-      if (rgn->type() == AmanziGeometry::LABELEDSET) return true;
+      if (rgn->type() == AmanziGeometry::LABELEDSET ||
+          rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
 
       // If we are looking for a cell set the region has to be 
       // of the same topological dimension as the cells
@@ -535,10 +536,11 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
     
     if (rgn->name() == name) {
 
-      // For regions of type Labeled Set, the dimension parameter is
-      // not guaranteed to be correct
+      // For regions of type Labeled Set and Color Function, the dimension 
+      // parameter is not guaranteed to be correct
 
-      if (rgn->type() == AmanziGeometry::LABELEDSET) return true;
+      if (rgn->type() == AmanziGeometry::LABELEDSET ||
+          rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
 
       // If we are looking for a cell set the region has to be 
       // of the same topological dimension as the cells or it

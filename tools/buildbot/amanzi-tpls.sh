@@ -240,8 +240,8 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.84
 TRILINOS_VERSION=10.6.4
-CCSE_VERSION=1.0.1
-ASCEMIO_VERSION=1.2
+CCSE_VERSION=1.0.7
+ASCEMIO_VERSION=2.1
 
 AMANZI_TPL_ARCHIVES=https://software.lanl.gov/ascem/tpls
 WGET_FLAGS=--no-check-certificate
@@ -343,8 +343,8 @@ function download_archives {
 	wget ${WGET_FLAGS} $URL
     fi
 
-    if [  ! -f ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tgz ]; then
-	URL=${AMANZI_TPL_ARCHIVES}/ascem-io-${ASCEMIO_VERSION}.tgz
+    if [  ! -f ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tar.gz ]; then
+	URL=${AMANZI_TPL_ARCHIVES}/ascem-io-${ASCEMIO_VERSION}.tar.gz
 	wget ${WGET_FLAGS} $URL
     fi
 
@@ -769,7 +769,7 @@ function install_ascemio {
     ASCEMIO_DIR=${PREFIX}/ascem-io/ascem-io-${ASCEMIO_VERSION}
     rm -rf ${ASCEMIO_DIR}
     mkdir -p ${PREFIX}/ascem-io
-    tar ${TAR_FLAGS} ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tgz -C ${PREFIX}/ascem-io
+    tar ${TAR_FLAGS} ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tar.gz -C ${PREFIX}/ascem-io
     cd ${ASCEMIO_DIR}
 
     # no configuration, just make
@@ -1138,7 +1138,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
 	-D ENABLE_MPI:BOOL=\${ENABLE_MPI} \\
 	-D MPI_EXEC:FILEPATH=${MPI_PREFIX}/bin/mpiexec \\
 	-D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \\
-	-D MPI_EXEC_ARGS:STRING="${MPIEXEC_ARGS}" \\
+	-D MPI_EXEC_GLOBAL_ARGS:STRING="${MPIEXEC_ARGS}" \\
 	-D ENABLE_TESTS:BOOL=ON \\
 	-D BOOST_ROOT:FILEPATH=${BOOST_PREFIX} \\
 	-D UnitTest_DIR:FILEPATH=${UNITTEST_PREFIX} \\
@@ -1162,6 +1162,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
 	-D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
 	-D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
 	-D ASCEMIO_DIR:FILEPATH=${PREFIX} \\
+        -D TESTS_REQUIRE_FULLPATH:BOOL=TRUE \\
 	..
 
     if [ \$? -ne 0 ]; then

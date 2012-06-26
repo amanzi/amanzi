@@ -45,6 +45,8 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  nseepage_prev = 0;
 }
 
 
@@ -158,14 +160,14 @@ void Flow_PK::ProcessBoundaryConditions(
     mesh_->get_comm()->SumAll(&missed_tmp, &missed, 1);
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
-    if (MyPID == 0 && nseepage > 0) {
-      std::printf("Richards PK: number of influx seepage faces is %9d\n", nseepage);
+    if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
+      std::printf("Richards PK: new number of influx seepage faces is %9d\n", nseepage);
     }
   }
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
     std::printf("Richards PK: assigned zero flux boundary condition to%7d faces\n", missed);
   }
-
+  nseepage_prev = nseepage;
 }
 
 
@@ -298,8 +300,22 @@ void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 }
 
 
-
-
+/* ******************************************************************
+* Calculate change of water volume per second due to boundary flux.                                          
+****************************************************************** */
+double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers,
+                                           Epetra_Vector& darcy_flux)
+{
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  double volume = 0.0;
+  for (int f = 0; f < nfaces; f++) {
+    if (bc_markers[f] != FLOW_BC_FACE_NULL) {
+      double area = mesh_->face_area(f);
+      volume -= darcy_flux[f] * area;
+    }
+  }
+  return volume;
+}
 
 
 /* ****************************************************************

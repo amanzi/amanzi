@@ -26,10 +26,10 @@ class MeshFunction {
 
   virtual void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const Function>& f) = 0;
   void DefineFromString(const std::string region, const Teuchos::RCP<const Function>& f);
+  virtual void Compute(double T) = 0;
   
-  void Compute(double);
   Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
+  Iterator end() const { return value_.end(); }
   Iterator find(const int j) const { return value_.find(j); }
   
   std::map<int,double>::size_type size() { return value_.size(); }
@@ -40,6 +40,6 @@ class MeshFunction {
   std::map<int,double> value_;
 };
 
-} // namespace Amanzi
+}  // namespace Amanzi
 
 #endif  // AMANZI_MESH_FUNCTION_HH_

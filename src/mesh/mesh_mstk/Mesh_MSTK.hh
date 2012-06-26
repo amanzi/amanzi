@@ -85,6 +85,12 @@ private:
   // flag whether to flip a face dir or not when returning nodes of a face
   
   bool *faceflip;
+
+
+  // Parent entity attribute - populated if the mesh is derived from
+  // another mesh
+
+  MAttrib_ptr parentatt;
   
   // Private methods
   // ----------------------------
@@ -157,6 +163,19 @@ public:
 	    (AmanziGeometry::GeometricModelPtr) NULL);
 
 
+  // Construct a mesh by extracting a subset of entities from another
+  // mesh. In some cases like extracting a surface mesh from a volume
+  // mesh, constructor can be asked to "flatten" the mesh to a lower
+  // dimensional space or to extrude the mesh to give higher
+  // dimensional cells
+
+  Mesh_MSTK(const Mesh_MSTK& inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
+
+
   ~Mesh_MSTK ();
 
 
@@ -169,6 +188,13 @@ public:
   // Get cell type
     
   Cell_type cell_get_type(const Entity_ID cellid) const;
+
+
+  // Parent entity in the source mesh if mesh was derived from another mesh
+
+  Entity_ID entity_get_parent (const Entity_kind kind, const Entity_ID entid) const;
+
+
         
    
   //
@@ -432,7 +458,6 @@ public:
 
 
 };
-
 
 
     

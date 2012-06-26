@@ -53,8 +53,7 @@ int main(int argc, char *argv[]) {
     
     // make sure only PE0 can write to std::cout
     int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-    
+    rank = mpiSession.getRank();
     //if (rank != 0) cout.rdbuf(0);
 
     Teuchos::CommandLineProcessor CLP;
@@ -70,13 +69,7 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor::EParseCommandLineReturn
       parseReturn = CLP.parse(argc, argv);
        
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
-#ifdef HAVE_MPI
-    Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
-#else  
-    Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
-    
+
     // read the main parameter list
     Teuchos::ParameterList driver_parameter_list;
     Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
@@ -113,6 +106,7 @@ int main(int argc, char *argv[]) {
 #endif
     }
     
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Amanzi::ObservationData output_observations;  
     Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list, output_observations);
 
@@ -122,7 +116,7 @@ int main(int argc, char *argv[]) {
 
     // print out observation file in ASCII format 
     Teuchos::ParameterList obs_list;
-    if (driver_parameter_list.get<bool>("Native Unstructured Input",false)) {
+    if (driver_parameter_list.get<bool>("Native Unstructured Input",true)) {
       obs_list = driver_parameter_list.sublist("Observation Data");
     } else {
       obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
@@ -181,7 +175,6 @@ int main(int argc, char *argv[]) {
     std::cout << Amanzi::timer_manager << std::endl;
     
     delete simulator;
-    delete comm;
   }
 
   catch (std::exception& e) {

@@ -134,7 +134,6 @@ void MPC::mpc_init() {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
     } else if (flow_model == "Steady State Saturated") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
-      // FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else if (flow_model == "Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
     } else if (flow_model == "Steady State Richards") {
@@ -188,6 +187,13 @@ void MPC::mpc_init() {
         mpc_parameter_list.sublist("Restart from Checkpoint Data File");
 
     restart_from_filename = restart_parameter_list.get<string>("Checkpoint Data File Name");
+
+    // make sure that the restart file actually exists, if not throw an error
+    boost::filesystem::path restart_from_filename_path(restart_from_filename);
+    if (!boost::filesystem::exists(restart_from_filename_path)) {
+      Errors::Message message("MPC: the specified restart file does not exist or is not a regular file.");
+      Exceptions::amanzi_throw(message);
+    }
   }
 }
 
@@ -208,6 +214,8 @@ void MPC::read_parameter_list()  {
 
     dTsteady = init_to_steady_list.get<double>("Steady Initial Time Step");
     dTtransient = init_to_steady_list.get<double>("Transient Initial Time Step");
+
+    do_picard_ = init_to_steady_list.get<bool>("Use Picard",false);
   } else if ( ti_list.isSublist("Steady")) {
     ti_mode = STEADY;
     
@@ -216,6 +224,8 @@ void MPC::read_parameter_list()  {
     T0 = steady_list.get<double>("Start");
     T1 = steady_list.get<double>("End");
     dTsteady = steady_list.get<double>("Initial Time Step");
+    
+    do_picard_ = steady_list.get<bool>("Use Picard",false);
   } else if ( ti_list.isSublist("Transient") ) {
     ti_mode = TRANSIENT;
 
@@ -225,6 +235,7 @@ void MPC::read_parameter_list()  {
     T1 = transient_list.get<double>("End");
     dTtransient =  transient_list.get<double>("Initial Time Step");
 
+    do_picard_ = false;
   } else {
     Errors::Message message("MPC: no valid Time Integration Mode was specified, you must specify exactly one of Initialize To Steady, Steady, or Transient.");
     Exceptions::amanzi_throw(message);    
@@ -313,8 +324,12 @@ void MPC::cycle_driver() {
 	reset_times_dt_.erase(reset_times_dt_.begin());
       }
     }
-  } else { // no restart, we will call the PKs to allow them to init their auxilary data
-    FPK->InitializeAuxiliaryData();
+  } else { // no restart, we will call the PKs to allow them to init their auxilary data and massage initial conditions
+    if (flow_enabled) FPK->InitializeAuxiliaryData();
+    if (do_picard_) { 
+      FPK->InitPicard(S->get_time());
+      FPK->CommitState(FS);
+    }
   }
 
 
@@ -343,7 +358,6 @@ void MPC::cycle_driver() {
       if (!restart_requested) {
 	FPK->InitSteadyState(S->get_time(), dTsteady);
 	FPK->InitializeSteadySaturated();
-	FPK->CommitStateForTransport(FS);
 	FPK->CommitState(FS);
 	S->advance_time(Tswitch-T0);
       }
@@ -408,9 +422,9 @@ void MPC::cycle_driver() {
 
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch)) {
         if (transport_enabled) {
-          double transport_dT_tmp = TPK->EstimateTransportDt();
+	  double transport_dT_tmp = TPK->EstimateTransportDt();
           if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
-        }
+	}
         if (chemistry_enabled) {
           chemistry_dT = CPK->max_time_step();
         }
@@ -441,19 +455,18 @@ void MPC::cycle_driver() {
 
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
-        if (!reset_times_.empty()) {
-          // this is probably iffy...
-          if (S->get_time() == reset_times_.front()) {
-            *out << "Resetting the time integrator at time = " << S->get_time() << std::endl;
-            mpc_dT = reset_times_dt_.front();
+	if (!reset_times_.empty()) {
+	  // this is probably iffy...
+	  if (S->get_time() == reset_times_.front()) {
+	    *out << "Resetting the time integrator at time = " << S->get_time() << std::endl;
+	    mpc_dT = reset_times_dt_.front();
 	    mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
-            tslimiter = MPC_LIMITS;
+	    tslimiter = MPC_LIMITS;
 	    // now reset the flow time integrator..
-	    FPK->InitTransient(S->get_time(), mpc_dT);
+	    if (flow_enabled) FPK->InitTransient(S->get_time(), mpc_dT);
 	  }
-        }
+	}
       }
-
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow
       // first advance flow
@@ -476,7 +489,7 @@ void MPC::cycle_driver() {
 	      *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
 	    }
 	  } while (redo);
-	  FPK->CommitStateForTransport(FS);
+	  FPK->CommitState(FS);
 	}
       }
 
@@ -541,8 +554,6 @@ void MPC::cycle_driver() {
       }
       
       // update the time in the state object
-      *out << "mpc_dT = " << mpc_dT << std::endl;
-
       S->advance_time(mpc_dT);
       // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
@@ -550,7 +561,7 @@ void MPC::cycle_driver() {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      FPK->CommitState(FS);
+      // if (flow_enabled) FPK->CommitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) TPK->CommitState(TS);
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);

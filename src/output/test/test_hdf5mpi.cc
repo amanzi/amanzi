@@ -104,7 +104,6 @@ TEST(HDF5_MPI) {
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
   
   // write out string dataset
-  /*
   int num_wstrs = 5;
   char **strArray;
   strArray = (char**) malloc(5*sizeof(char*));
@@ -116,9 +115,7 @@ TEST(HDF5_MPI) {
   sprintf(strArray[2], "Uranium");
   sprintf(strArray[3], "Unobtainium");
   sprintf(strArray[4], "My Favorite Mineral in the Whole World");
-    
   restart_output->writeDataString(strArray,num_wstrs,"string_dataset");
-  */
   
   delete viz_output;
   delete restart_output;
@@ -146,7 +143,6 @@ TEST(HDF5_MPI) {
   cout << "E>> cell map:" << endl << Mesh.cell_map(false);
 
   // reading back string dataset
-  /*
   char **strBack;
   int num_rstrs = 0;
   restart_input->readDataString(&strBack, &num_rstrs, "string_dataset");
@@ -154,7 +150,6 @@ TEST(HDF5_MPI) {
   for (int i=0 ; i<num_rstrs; i++) {
     cout << "    " << strBack[i] << endl;
   }
-  */
   
   delete restart_input;
 

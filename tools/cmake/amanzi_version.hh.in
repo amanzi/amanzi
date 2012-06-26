@@ -1,0 +1,17 @@
+/*
+
+   Amanzi Version Defines
+
+*/
+
+#ifndef AMANZI_VERSION_HH_
+#define AMANZI_VERSION_HH_
+
+#define AMANZI_VERSION @AMANZI_VERSION@
+
+#define AMANZI_HG_BRANCH      @AMANZI_HG_BRANCH@
+#define AMANZI_HG_GLOBAL_HASH @AMANZI_HG_GLOBAL_HASH@
+#define AMANZI_HG_LOCAL_ID    @AMANZI_HG_LOCAL_ID@
+
+
+#endif

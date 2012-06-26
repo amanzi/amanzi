@@ -63,7 +63,6 @@ extern ChemistryOutput* chem_out;
 #include <string>
 #include <sstream>
 #include <vector>
-#include <ostream>
 #include <fstream>
 
 #include "chemistry_containers.hh"

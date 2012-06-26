@@ -187,6 +187,9 @@ void SurfaceComplex::DisplayResultsHeader(void) const {
   message << std::setw(15) << "Complex Name"
             << std::setw(15) << "Concentration"
             << std::endl;
+  message << std::setw(15) << " "
+            << std::setw(15) << "[mol/m^3]"
+            << std::endl;
   chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 

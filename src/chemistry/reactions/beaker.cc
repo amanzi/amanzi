@@ -29,6 +29,7 @@
 #include "surface_complexation_rxn.hh"
 #include "lu_solver.hh"
 #include "matrix_block.hh"
+#include "chemistry_utilities.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 
@@ -63,7 +64,7 @@ Beaker::Beaker()
       water_density_kg_m3_(water_density_kg_m3_default_),
       water_density_kg_L_(1.0),
       volume_(volume_default_),
-      dt_(0.0),
+      dt_(1.0),
       aqueous_accumulation_coef_(0.0),
       sorbed_accumulation_coef_(0.0),
       por_sat_den_vol_(0.0),
@@ -149,12 +150,6 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   parameters.water_density = water_density_kg_m3_default_;  // kg / m^3
   parameters.volume = volume_default_;  // m^3
 
-  parameters.mineral_specific_surface_area.clear();
-  parameters.sorption_site_density.clear();
-  parameters.isotherm_kd.clear();
-  parameters.isotherm_langmuir_b.clear();
-  parameters.isotherm_freundlich_n.clear();
-
   return parameters;
 }  // end GetDefaultParameters()
 
@@ -179,46 +174,6 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
   parameters.water_density = water_density_kg_m3();  // kg / m^3
   parameters.volume = volume();  // m^3
 
-  parameters.mineral_specific_surface_area.resize(minerals_.size(), 0.0);
-  for (int m = 0; m < minerals_.size(); ++m) {
-    double ssa = minerals_.at(m).specific_surface_area();
-    parameters.mineral_specific_surface_area.at(m) = ssa;
-  }
-
-  if (sorption_isotherm_rxns_.size() > 0) {
-    parameters.isotherm_kd.resize(sorption_isotherm_rxns_.size(), 0.0);
-    parameters.isotherm_langmuir_b.resize(sorption_isotherm_rxns_.size(), 0.0);
-    parameters.isotherm_freundlich_n.resize(sorption_isotherm_rxns_.size(), 0.0);
-
-    std::vector<SorptionIsothermRxn>::const_iterator rxn;
-    for (rxn = sorption_isotherm_rxns_.begin(); 
-         rxn != sorption_isotherm_rxns_.end(); ++rxn) {
-      std::vector<double> params;
-      params = rxn->GetIsothermParameters();
-      parameters.isotherm_kd.at(rxn->species_id()) = params.at(0);
-      if (rxn->IsothermName() == "freundlich") {
-        parameters.isotherm_freundlich_n.at(rxn->species_id()) = params.at(1);
-      } else if (rxn->IsothermName() == "langmuir") {
-        parameters.isotherm_langmuir_b.at(rxn->species_id()) = params.at(1);
-      }
-    }
-  } else {
-    parameters.isotherm_kd.clear();
-    parameters.isotherm_langmuir_b.clear();
-    parameters.isotherm_freundlich_n.clear();
-  }
-
-  if (surfaceComplexationRxns_.size() > 0) {
-    parameters.sorption_site_density.resize(surfaceComplexationRxns_.size(), 0.0);
-    std::vector<SurfaceComplexationRxn>::const_iterator rxn;
-    for (rxn = surfaceComplexationRxns_.begin(); 
-         rxn != surfaceComplexationRxns_.end(); ++rxn) {
-      parameters.sorption_site_density.at(rxn->SiteId()) = rxn->GetSiteDensity();
-    }
-  } else {
-    parameters.sorption_site_density.clear();
-  }
-
   return parameters;
 }  // end GetCurrentParameters()
 
@@ -235,34 +190,6 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
   update_accumulation_coefficients();
   update_por_sat_den_vol();
 
-  if (parameters.mineral_specific_surface_area.size() > 0) {
-    for (int m = 0; m < minerals_.size(); ++m) {
-      minerals_.at(m).set_specific_surface_area(parameters.mineral_specific_surface_area.at(m));
-    }
-  }
-
-  if (parameters.sorption_site_density.size() > 0) {
-    for (int scr = 0; scr < surfaceComplexationRxns_.size(); ++scr) {
-      surfaceComplexationRxns_.at(scr).UpdateSiteDensity(parameters.sorption_site_density.at(scr));
-    }
-  }
-
-  if (parameters.isotherm_kd.size() > 0) {
-    std::vector<SorptionIsothermRxn>::iterator rxn;
-    for (rxn = sorption_isotherm_rxns_.begin();
-         rxn != sorption_isotherm_rxns_.end(); ++rxn) {
-      std::vector<double> params(2, 0.0);
-      int id = rxn->species_id();
-      params.at(0) = parameters.isotherm_kd.at(id);
-      if (rxn->IsothermName() == "langmuir") {
-        params.at(1) = parameters.isotherm_langmuir_b.at(id);
-      } else if (rxn->IsothermName() == "freundlich") {
-        params.at(1) = parameters.isotherm_freundlich_n.at(id);
-      } // else linear --> do nothing
-      rxn->SetIsothermParameters(params);
-    }
-  }
-
 }  // end SetParameters()
 
 //
@@ -270,16 +197,16 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
 //
 
 // if no water density provided, default is 1000.0 kg/m^3
-int Beaker::Speciate(const Beaker::BeakerComponents& components,
+int Beaker::Speciate(Beaker::BeakerComponents* components,
                      const Beaker::BeakerParameters& parameters) {
   std::stringstream message;
   double speciation_tolerance = 1.e-12;
   double residual_tolerance = 1.e-12;
   ResetStatus();
-  UpdateParameters(parameters, 0.0);
-  CheckChargeBalance(components.total);
+  UpdateParameters(parameters, 1.0);  // NOTE: need dt=1 to avoid divide by zero
+  CheckChargeBalance(components->total);
 
-  CopyComponentsToBeaker(components);
+  CopyComponentsToBeaker(*components);
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++) {
@@ -300,7 +227,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // calculate residual
     // units of residual: mol/sec
     for (int i = 0; i < ncomp(); i++) {
-      residual_.at(i) = total_.at(i) - components.total.at(i);
+      residual_.at(i) = total_.at(i) - components->total.at(i);
     }
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
@@ -384,6 +311,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
   UpdateEquilibriumChemistry();
+  CopyBeakerToComponents(components);
   status_.num_newton_iterations = num_iterations;
   if (max_rel_change < tolerance()) {
     status_.converged = true;
@@ -415,7 +343,6 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   ResetStatus();
   UpdateParameters(parameters, dt);
   CheckChargeBalance(components->total);
-
   CopyComponentsToBeaker(*components);
 
   // store current molalities
@@ -430,7 +357,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   unsigned int num_iterations = 0;
 
   // lagging activity coefficients by a time step in this case
-  UpdateActivityCoefficients();
+  //UpdateActivityCoefficients();
 
   // calculate portion of residual at time level t
   CalculateFixedAccumulation(components->total, components->total_sorbed,
@@ -488,16 +415,19 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
     if (debug()) {
       message.str("--Iteration: ");
-      message << num_iterations << "\n";
+      message << num_iterations << "\n  max_rel_change(" << max_rel_index 
+              << ") : " << max_rel_change << "\n";
+      message << std::scientific << std::setprecision(16);
       for (int i = 0; i < ncomp(); i++) {
-        message << "  " << primary_species().at(i).name() << " " 
-                << primary_species().at(i).molality() << " " << total_.at(i);
+        message << std::setw(10) << primary_species().at(i).name()
+                << std::setw(25) << primary_species().at(i).molality()
+                << std::setw(25) << total_.at(i);
         if (total_sorbed_.size() > 0) {
-          message << " " << total_sorbed_.at(i);
+          message << std::setw(25) << total_sorbed_.at(i);
         }
         message << "\n";
       }
-      chem_out->Write(kDebugBeaker, message);
+      chem_out->Write(kVerbose, message);
     }
 
     num_iterations++;
@@ -536,6 +466,15 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // update total concentrations
   UpdateEquilibriumChemistry();
   UpdateKineticMinerals();
+
+  // TODO(bandre): not convinced this is the correct place to call
+  // UpdateActivityCoefficients. Should be before the call to
+  // UpdateEquilibriumChemistry()? But that changes the numerical
+  // results and I need to look more closely at what is going on.
+
+  // lagging activity coefficients by a time step
+  UpdateActivityCoefficients();
+
   CopyBeakerToComponents(components);
   ValidateSolution();
 
@@ -544,67 +483,142 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
 
 void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
-  // Copy the beaker primary variables into a component struct that
-  // can be returned to the driver
-  for (int i = 0; i < ncomp(); i++) {
+  // Copy the beaker state into variables are be returned to the
+  // driver for long term storage.
+
+  // NOTE: The components struct may have been only partially
+  // initialized be the driver (it doesn't know about the size of
+  // internal memory for surface complexation or ion exchange....
+  // For now we assert the things the driver should know....
+
+  //
+  // totals
+  //
+  assert(components->total.size() == total_.size());
+  for (int i = 0; i < ncomp(); ++i) {
     components->total.at(i) = total_.at(i);
+  }
 
-    if (!components->free_ion.size() > 0) {
-      components->free_ion.resize(ncomp(), 1.0e-9);
-    }
-    components->free_ion.at(i) = primary_species().at(i).molality();
-
-    if (components->total_sorbed.size() > 0 &&
-        total_sorbed_.size() > 0) {
+  if (total_sorbed_.size() > 0) {
+    assert(components->total_sorbed.size() == total_sorbed_.size());
+    for (int i = 0; i < ncomp(); ++i) {
       components->total_sorbed.at(i) = total_sorbed_.at(i);
     }
   }
 
-  for (unsigned int m = 0; m < minerals_.size(); m++) {
-    components->minerals.at(m) = minerals_.at(m).volume_fraction();
+  //
+  // free ion
+  //
+  assert(components->free_ion.size() == ncomp());
+  for (int i = 0; i < ncomp(); ++i) {
+    components->free_ion.at(i) = primary_species().at(i).molality();
   }
 
-  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
-    components->ion_exchange_sites.at(i) = ion_exchange_rxns_.at(i).site().cation_exchange_capacity();
+  //
+  // activity coeff
+  //
+  if (components->primary_activity_coeff.size() != ncomp()) {
+    components->primary_activity_coeff.resize(ncomp());
   }
+  for (int i = 0; i < ncomp(); ++i) {
+    components->primary_activity_coeff.at(i) = primary_species().at(i).act_coef();
+  }
+  if (components->secondary_activity_coeff.size() != aqComplexRxns_.size()) {
+    components->secondary_activity_coeff.resize(aqComplexRxns_.size());
+  }
+  for (int i = 0; i < aqComplexRxns_.size(); ++i) {
+    components->secondary_activity_coeff.at(i) = aqComplexRxns_.at(i).act_coef();
+  }
+
+  //
+  // minerals
+  //
+  assert(components->mineral_volume_fraction.size() == minerals_.size());
+  for (unsigned int m = 0; m < minerals_.size(); ++m) {
+    components->mineral_volume_fraction.at(m) = minerals_.at(m).volume_fraction();
+  }
+
+  if (components->mineral_specific_surface_area.size() != minerals_.size()) {
+    components->mineral_specific_surface_area.resize(minerals_.size());
+  }
+  for (int m = 0; m < minerals_.size(); ++m) {
+    double ssa = minerals_.at(m).specific_surface_area();
+    components->mineral_specific_surface_area.at(m) = ssa;
+  }
+
+  //
+  // ion exchange
+  //
+  if (components->ion_exchange_sites.size() != ion_exchange_rxns_.size()) {
+    components->ion_exchange_sites.resize(ion_exchange_rxns_.size());
+  }
+  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); ++i) {
+    components->ion_exchange_sites.at(0) = 
+        ion_exchange_rxns_.at(0).site().cation_exchange_capacity();
+  }
+
+  if (components->ion_exchange_ref_cation_conc.size() != 
+      ion_exchange_rxns_.size()) {
+    components->ion_exchange_ref_cation_conc.resize( 
+        ion_exchange_rxns_.size());
+  }
+  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); ++i) {
+    components->ion_exchange_ref_cation_conc.at(i) = 
+        ion_exchange_rxns_[i].ref_cation_sorbed_conc();
+  }
+
+  //
+  // surface complexation
+  //
+  if (components->surface_complex_free_site_conc.size() != 
+      surfaceComplexationRxns_.size()) {
+    components->surface_complex_free_site_conc.resize( 
+        surfaceComplexationRxns_.size());
+  }
+  for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); ++i) {
+    components->surface_complex_free_site_conc.at(i) =
+        surfaceComplexationRxns_.at(i).free_site_concentration();
+  }
+
+  if (components->surface_site_density.size() != 
+      surfaceComplexationRxns_.size()) {
+    components->surface_site_density.resize(surfaceComplexationRxns_.size());
+  }
+  for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); ++i) {
+    components->surface_site_density.at(i) =
+        surfaceComplexationRxns_.at(i).GetSiteDensity();
+  }
+
+  //
+  // sorption isotherms
+  //
+  if (components->isotherm_kd.size() != sorption_isotherm_rxns_.size()) {
+    components->isotherm_kd.resize(sorption_isotherm_rxns_.size());
+  }
+  if (components->isotherm_langmuir_b.size() != sorption_isotherm_rxns_.size()) {
+    components->isotherm_langmuir_b.resize(sorption_isotherm_rxns_.size());
+  }
+  if (components->isotherm_freundlich_n.size() != sorption_isotherm_rxns_.size()) {
+    components->isotherm_freundlich_n.resize(sorption_isotherm_rxns_.size());
+  }
+  for (int r = 0; r < sorption_isotherm_rxns_.size(); ++r) {
+    std::vector<double> params;
+    params = sorption_isotherm_rxns_.at(r).GetIsothermParameters();
+    int id = sorption_isotherm_rxns_.at(r).species_id();
+    components->isotherm_kd.at(id) = params.at(0);
+    if (sorption_isotherm_rxns_.at(r).IsothermName() == "freundlich") {
+      components->isotherm_freundlich_n.at(id) = params.at(1);
+    } else if (sorption_isotherm_rxns_.at(r).IsothermName() == "langmuir") {
+      components->isotherm_langmuir_b.at(id) = params.at(1);
+    }
+  }
+
 }  // end CopyBeakerToComponents()
 
 void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents* to) {
-  if (to->total.size() != from.total.size()) {
-    to->total.resize(from.total.size());
-  }
-  for (unsigned int i = 0; i < from.total.size(); i++) {
-    to->total.at(i) = from.total.at(i);
-  }
-
-  if (to->free_ion.size() != from.free_ion.size()) {
-    to->free_ion.resize(from.free_ion.size());
-  }
-  for (unsigned int i = 0; i < from.free_ion.size(); i++) {
-    to->free_ion.at(i) = from.free_ion.at(i);
-  }
-
-  if (to->total_sorbed.size() != from.total_sorbed.size()) {
-    to->total_sorbed.resize(from.total_sorbed.size());
-  }
-  for (unsigned int i = 0; i < from.total_sorbed.size(); i++) {
-    to->total_sorbed.at(i) = from.total_sorbed.at(i);
-  }
-
-  if (to->minerals.size() != from.minerals.size()) {
-    to->minerals.resize(from.minerals.size());
-  }
-  for (unsigned int i = 0; i < from.minerals.size(); i++) {
-    to->minerals.at(i) = from.minerals.at(i);
-  }
-
-  if (to->ion_exchange_sites.size() != from.ion_exchange_sites.size()) {
-    to->ion_exchange_sites.resize(from.ion_exchange_sites.size());
-  }
-  for (unsigned int i = 0; i < from.ion_exchange_sites.size(); i++) {
-    to->ion_exchange_sites.at(i) = from.ion_exchange_sites.at(i);
-  }
+  // this function doesn't really do anything...
+  *to = from;
 }  // end Beaker::CopyComponents()
 
 void Beaker::GetPrimaryNames(std::vector<std::string>* names) const {
@@ -683,7 +697,7 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
     for (unsigned int m = 0; m < minerals_.size(); m++) {
       message << std::setw(15) << minerals_.at(m).name()
               << std::setw(15) << std::fixed << std::setprecision(5)
-              << components.minerals.at(m) << std::endl;
+              << components.mineral_volume_fraction.at(m) << std::endl;
     }
   }
 
@@ -831,7 +845,7 @@ void Beaker::DisplayTotalColumns(const double time,
   }
   if (minerals().size() > 0) {
     for (int m = 0; m < minerals().size(); ++m) {
-      message << std::setw(15) << components.minerals.at(m);
+      message << std::setw(15) << components.mineral_volume_fraction.at(m);
     }
   }
   message << std::endl;
@@ -911,10 +925,10 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
                  << ") do not match.\n";
   }
 
-  if (this->minerals().size() != components.minerals.size()) {
+  if (this->minerals().size() != components.mineral_volume_fraction.size()) {
     error = true;
     error_stream << "minerals.size(" << this->minerals().size()
-                 << ") and components.minerals.size(" << components.minerals.size()
+                 << ") and components.mineral_volume_fraction.size(" << components.mineral_volume_fraction.size()
                  << ") do not match.\n";
   }
 
@@ -940,16 +954,65 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
 }  // end VerifyComponentSizes()
 
 void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) {
-  // initialize free-ion concentrations, these are actual
-  // concentrations, so the value must be positive or ln(free_ion)
-  // will return a nan!
+  // NOTE: Do not copy total and total_sorbed here!
+
+  //
+  // free ion
+  //
   if (components.free_ion.size() > 0) {
     InitializeMolalities(components.free_ion);
   } else {
     InitializeMolalities(1.e-9);
   }
 
-  unsigned int size = components.ion_exchange_sites.size();
+  //
+  // activity coefficients
+  //
+  if (components.primary_activity_coeff.size() > 0) {
+    assert(components.primary_activity_coeff.size() == primary_species().size());
+    for (int i = 0; i < primary_species().size(); ++i) {
+      double value = components.primary_activity_coeff.at(i);
+      primary_species_.at(i).act_coef(value);
+    }
+  }
+  if (components.secondary_activity_coeff.size() > 0) {
+    assert(components.secondary_activity_coeff.size() == aqComplexRxns_.size());
+    for (int i = 0; i < aqComplexRxns_.size(); ++i) {
+      double value = components.secondary_activity_coeff.at(i);
+      aqComplexRxns_.at(i).act_coef(value);
+    }
+  }
+
+  //
+  // minerals
+  //
+
+  unsigned int size = components.mineral_volume_fraction.size();
+  if (minerals().size() == size) {
+    for (unsigned int m = 0; m < size; m++) {
+      minerals_.at(m).set_volume_fraction(components.mineral_volume_fraction.at(m));
+    }
+  } else {
+    std::ostringstream error_stream;
+    error_stream << "Beaker::CopyComponentsToBeaker(): \n";
+    error_stream << "minerals.size(" << minerals().size()
+                 << ") and components.mineral_volume_fraction.size(" << size
+                 << ") do not match.\n";
+    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
+  }
+
+  if (components.mineral_specific_surface_area.size() > 0) {
+    assert(components.mineral_specific_surface_area.size() == minerals_.size());
+    for (unsigned int m = 0; m < minerals_.size(); ++m) {
+      double value = components.mineral_specific_surface_area.at(m);
+      minerals_.at(m).set_specific_surface_area(value);
+    }
+  }
+
+  //
+  // ion exchange
+  //
+  size = components.ion_exchange_sites.size();
   if (ion_exchange_rxns().size() == size) {
     for (unsigned int ies = 0; ies < size; ies++) {
       ion_exchange_rxns_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
@@ -963,19 +1026,71 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
-  // NOTE: SSA updated by the call to UpdateParameters()!
-  size = components.minerals.size();
-  if (minerals().size() == size) {
-    for (unsigned int m = 0; m < size; m++) {
-      minerals_.at(m).set_volume_fraction(components.minerals.at(m));
+  if (ion_exchange_rxns().size() > 0) {
+    // check for the ref cation conc....
+    if (components.ion_exchange_ref_cation_conc.size() ==
+        ion_exchange_rxns().size()) {
+      // we have a value from a previous solve, restore it.
+      for (int i = 0; i < ion_exchange_rxns().size(); ++i) {
+        double value = components.ion_exchange_ref_cation_conc.at(i);
+        ion_exchange_rxns_[i].set_ref_cation_sorbed_conc(value);
+      }
+    } else {
+      // no previous value, provide a guess
+      for (int i = 0; i < ion_exchange_rxns().size(); ++i) {
+        ion_exchange_rxns_[i].set_ref_cation_sorbed_conc(1.0e-9);
+      }
     }
-  } else {
-    std::ostringstream error_stream;
-    error_stream << "Beaker::CopyComponentsToBeaker(): \n";
-    error_stream << "minerals.size(" << minerals().size()
-                 << ") and components.minerals.size(" << size 
-                 << ") do not match.\n";
-    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
+  }
+
+  //
+  // surface complexation
+  //
+  if (components.surface_site_density.size() > 0) {
+    assert(components.surface_site_density.size() == surfaceComplexationRxns_.size());
+    for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); ++i) {
+      double value = components.surface_site_density.at(i);
+      surfaceComplexationRxns_.at(i).UpdateSiteDensity(value);
+    }
+  }
+
+  if (surfaceComplexationRxns_.size() > 0) {
+    if (components.surface_complex_free_site_conc.size() ==
+        surfaceComplexationRxns_.size()) {
+      // we have a value from a previous solve, restore it.
+      for (int r = 0; r < surfaceComplexationRxns_.size(); ++r) {
+        double value = components.surface_complex_free_site_conc.size();
+        surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
+      }
+    } else {
+      // no previous value, provide a guess
+      for (int r = 0; r < surfaceComplexationRxns_.size(); ++r) {
+        //double value = 0.1 * surfaceComplexationRxns_.at(r).GetSiteDensity();
+        double value = 1.0e-9;
+        surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
+      }
+    }
+  }
+
+  //
+  // sorption isotherms
+  //
+  if (components.isotherm_kd.size() > 0) {
+    assert(components.isotherm_kd.size() == sorption_isotherm_rxns_.size());
+    assert(components.isotherm_freundlich_n.size() == sorption_isotherm_rxns_.size());
+    assert(components.isotherm_langmuir_b.size() == sorption_isotherm_rxns_.size());
+    std::vector<double> params(10);
+    for (int r = 0; r < sorption_isotherm_rxns_.size(); ++r) {
+      int id = sorption_isotherm_rxns_.at(r).species_id();
+      params.at(0) = components.isotherm_kd.at(id);
+      std::string isotherm_name = sorption_isotherm_rxns_.at(r).IsothermName();
+      if (isotherm_name == "freundlich") {
+        params.at(1) = components.isotherm_freundlich_n.at(id);
+      } else if (isotherm_name == "langmuir") {
+        params.at(1) = components.isotherm_langmuir_b.at(id);
+      }
+      sorption_isotherm_rxns_.at(r).SetIsothermParameters(params);
+    }
   }
 }  // end CopyComponentsToBeaker()
 
@@ -1621,11 +1736,14 @@ void Beaker::DisplayIonExchangeComplexes(void) const {
 }  // end DisplayIonExchangeComplexes()
 
 void Beaker::DisplaySurfaceSites(void) const {
-  if (total_sorbed_.size() > 0) {
+  if (surfaceComplexationRxns_.size() > 0) {
     std::stringstream message;
     message << "---- Surface Sites" << std::endl;
     message << std::setw(15) << "Species"
             << std::setw(15) << "Site Density"
+            << std::endl;
+    message << std::setw(15) << " "
+            << std::setw(15) << "[mol/m^3]"
             << std::endl;
     chem_out->Write(kVerbose, message);
     std::vector<SurfaceComplexationRxn>::const_iterator s;
@@ -1638,7 +1756,7 @@ void Beaker::DisplaySurfaceSites(void) const {
 }  // end DisplaySurfaceSites()
 
 void Beaker::DisplaySurfaceComplexes(void) const {
-  if (total_sorbed_.size() > 0) {
+  if (surfaceComplexationRxns_.size() > 0) {
     std::stringstream message;
     message << "---- Surface Complexes" << std::endl;
     message << std::setw(12) << "Reaction"
@@ -1656,7 +1774,7 @@ void Beaker::DisplaySurfaceComplexes(void) const {
 }  // end DisplaySurfaceComplexes()
 
 void Beaker::DisplaySorptionIsotherms(void) const {
-  if (total_sorbed_.size() > 0) {
+  if (sorption_isotherm_rxns_.size() > 0) {
     std::stringstream message;
     message << "---- Equilibrium Sorption Isotherms" << std::endl;
     message << std::setw(12) << "Species"

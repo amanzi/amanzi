@@ -205,6 +205,8 @@ Usage:
 
    * [SU] `"Initial Time Step`" [double]: The initial time step for the steady calculation.
 
+   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
+
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
    * [SU] `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
@@ -232,6 +234,8 @@ Usage:
    * [U] `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
 
    * [U] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+
+   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
 
  * [U] `"Time Period Control`" (Optional)
 
@@ -317,6 +321,22 @@ Usage:
    * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation.
  
    * [U] `"linear solver method`" [string] Select the AztecOO linear solver that may be used in a saturated steady state computation. For example, GMRES.
+
+   * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution.
+
+   * [U] `"pseudo time integrator clipping saturation value`" [double]
+
+   * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currrently only Picard is supported).
+
+   * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method.
+
+   * [U] `"pseudo time integrator linear solver`" [string] select the linear solver to be used in the pseudo time integration method.
+
+   * [U] `"pseudo time integrator error control options`" [Array string]
+
+   * [U] `"pseudo time integrator picard convergence tolerance`" [double] Picard convergence tolerance.
+
+   * [U] `"pseudo time integrator picard maximum number of iterations`" [int] Picard maximum number of iterations.
 
   If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
@@ -701,6 +721,8 @@ the following set of physical properties using the supported models described be
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
+  * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
@@ -765,30 +787,37 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [SU] `"alpha`" [double] to specify alpha in Equation 3.7.
 
- * [SU] `"Sr`" [double] to specify sr in Eq 3.5.
+ * [SU] `"Sr`" [double] to specify the residual saturation, s^r_l, in Equation 3.5.
 
  * [SU] `"m`" [double] to specify m in Equation 3.7.
 
- * [U] `"ell`" [double]
+ * [U] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
 
- * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") to determine n from Eq 3.10.
+ * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
+   in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
  * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing. 
 
 * [U] `"Capillary Pressure: Brooks Corey`" [list] requires
 
- * [U] `"lambda`" [double]
+ * [U] `"lambda`" [double] to specify lambda in Equation 3.9
 
- * [U] `"alpha`" [double]
+ * [U] `"alpha`" [double]  to specify alpha in Equation 3.9 
 
- * [U] `"ell`" [double]
+ * [U] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
 
- * [U] `"Sr`" [double]
+ * [U] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
 
- * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
+ * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
+   relative permeability (either Equation 3.15, or Equation 3.14, respectively)
 
- * [U] `"krel smoothing interval`" [double]
+ * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
 
+The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
+
+* [U] `"Particle Density: Uniform`" [list] requires 
+ 
+ * [U] `"Value`" [double] to specify the constant value of rock density.
 
 Example:
 
@@ -926,7 +955,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU, all except file for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+  * [SU, all except file and velocity for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`", `"IC: Uniform Velocity`" (see below)
 
   * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -976,6 +1005,7 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
 
+* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
 
 The following boundary condition parameterizations are supported:
 
@@ -1027,7 +1057,7 @@ Due to its length, an XML example of the `"Phases`" parameter list appears in th
 Output
 ======
 
-Output data from Amanzi is currently organized into four specific groups: `"Observations`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
+Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
 Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint Data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
@@ -1056,6 +1086,7 @@ The user must specify when the various types of output are desired.  For Observa
  * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
  * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
  * MaterialID
+ * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
 
 Note that MaterialID will be treated as a double that is unique to each defined material.  Its value will be generated internal to Amanzi.  The log file will be appended with the (material name)->(integer) mapping used.  Also note that this list tacitly assumes the presence of Aqueous Water as one of the transported components.  Presently, it is an error if the `"Phase Definition`" above does not sufficiently define this component.
 

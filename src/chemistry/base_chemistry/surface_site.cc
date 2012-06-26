@@ -86,6 +86,9 @@ void SurfaceSite::DisplayResultsHeader(void) const {
   message << std::setw(15) << "Site Name"
           << std::setw(15) << "Free Conc."
           << std::endl;
+  message << std::setw(15) << " "
+          << std::setw(15) << "[mol/m^3 bulk]"
+          << std::endl;
   chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 

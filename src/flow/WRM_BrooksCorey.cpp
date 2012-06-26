@@ -101,8 +101,9 @@ double WRM_BrooksCorey::dSdPc(double pc)
 ****************************************************************** */
 double WRM_BrooksCorey::capillaryPressure(double s)
 {
+  if (s == sr_) return 0.0;
   double se = (s - sr_) / (1.0 - sr_);
-  return pow(se, -1.0/alpha_) / alpha_;
+  return pow(se, -1.0/lambda_) / alpha_;
 }
 
 

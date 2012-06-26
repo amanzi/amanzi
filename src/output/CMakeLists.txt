@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(BinaryManager)
 
 #
 # Define a project name
@@ -82,7 +83,25 @@ add_install_library(output)
 file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
 
+#
+# Binaries
+#
+add_amanzi_executable(unscramble_viz
+                      SOURCE unscramble_viz.cpp
+                      LINK_LIBS ${HDF5_LIBRARIES}
+                      OUTPUT_NAME unscramble_viz
+                      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
 
+add_amanzi_executable(unscramble_restart
+                      SOURCE unscramble_restart.cpp
+                      LINK_LIBS ${HDF5_LIBRARIES}
+                      OUTPUT_NAME unscramble_restart
+                      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
+
+
+#
+# Tests
+#
 if (BUILD_TESTS)
 
     # Add UnitTest

@@ -13,6 +13,7 @@ Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Richards_PK.hpp"
+#include "TI_Specs.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -22,7 +23,7 @@ namespace AmanziFlow {
 * permeabilities do not depend explicitly on time.
 * WARNING: temporary replacement for missing BDF1 time integrator.                                                    
 ****************************************************************** */
-int Richards_PK::AdvanceToSteadyState_BackwardEuler()
+int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
@@ -33,9 +34,14 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
 
+  int max_itrs = ti_specs_sss_.max_itrs;
+  double T1 = ti_specs_sss_.T1;
+  double dTmax = ti_specs_sss_.dTmax;
+  double residual_tol = ti_specs_sss_.residual_tol;
+
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
-  while (L2error > residual_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > residual_tol && itrs < max_itrs) {
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
@@ -107,14 +113,14 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler()
       }
 
       ifail = 0;
-      dT = std::min(dT*1.25, dTmax_sss);
+      dT = std::min(dT*1.25, dTmax);
       itrs++;
     }
 
-    if (T_physics > T1_sss) break;
+    if (T_physics > T1) break;
   }
 
-  num_nonlinear_steps = itrs;
+  ti_specs_sss_.num_itrs = itrs;
   return 0;
 }
 
@@ -133,37 +139,6 @@ void Richards_PK::AddTimeDerivative_MFDfake(
     double factor = volume / dT_prec;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
-  }
-}
-
-
-/* ******************************************************************
-* Saturation should be in exact balance with Darcy fluxes in order to
-* have extrema dimishing property for concentrations. 
-* WARNING: is NOT used
-****************************************************************** */
-void Richards_PK::CalculateConsistentSaturation(const Epetra_Vector& flux, 
-                                                const Epetra_Vector& ws_prev, Epetra_Vector& ws)
-{
-  // create a disctributed flux vector
-  Epetra_Vector flux_d(mesh_->face_map(true));
-  for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
-  FS->CombineGhostFace2MasterFace(flux_d);
-
-  const Epetra_Vector& phi = FS->ref_porosity();
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    ws[c] = ws_prev[c];
-    double factor = dT / (phi[c] * mesh_->cell_volume(c));
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      ws[c] -= factor * flux_d[f] * dirs[n]; 
-    }
   }
 }
 

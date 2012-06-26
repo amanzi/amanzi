@@ -208,13 +208,18 @@ void MatrixBlock::AddValues(int ioffset, int joffset, MatrixBlock* b, double sca
 }
 
 void MatrixBlock::Print() const {
+  Print("");
+}
+
+void MatrixBlock::Print(const std::string& name) const {
   std::stringstream message;
+  message << name << " : \n";
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
       if (std::fabs(A_[j][i]) > 0.) {
         // TODO(bandre): is the [j][i] indexing here intentional for comparison to fortran...?
         message << i << " " << j << " : "
-                  << std::scientific << A_[j][i] << std::endl;
+                << std::scientific << std::setprecision(12) << A_[j][i] << std::endl;
       }
     }
   }
