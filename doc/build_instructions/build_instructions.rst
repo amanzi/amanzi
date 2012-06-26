@@ -2,42 +2,6 @@
 Building and Installing Amanzi 
 ==============================================
 
-
-Building Amanzi
----------------
-
-Amanzi depends on several external software packages or third party libraries
-(TPL) to build. Before building Amanzi a user must either build each of these 
-TPLs, provide an installation path for each TPL or define the include directories
-and libraries needed for each TPL. We recommend that users build Amanzi and all the
-TPLs using the ``boostrap.sh`` shell script found the ``config`` directory. 
-The script can be run from the source directory. On most
-UNIX flavored systems, this script will build and install Amanzi and all the required
-TPLs with little information from the user. The script has prerequisites for
-compilers, ``LAPACK``/``BLAS`` and ``MPI``. Please read 
-Amanzi Third Party Library (TPL) Build System section for more information.
-
-We recommended that users install the TPLs in separate directory, since a full TPL build
-should be an infrequent task. This is the default behavior of the ``bootstrap.sh`` 
-script. See ``bootstrap.sh --help`` for more information on how to
-control the installation paths. The TPL build will generate a CMake configuration file
-that defines all the required TPL directories and CMake variables to build Amanzi.
-Once the user has installed all the required TPLs, the process to build
-Amanzi from the command line is:
-
-* Generate build files (Makefile, XCode project files, etc.) using CMake ::
-
-    cmake -C <TPL install prefix>/share/cmake/amanzi-tpl-config.cmake \
-           [Addtional CMake variable definitions]
-           <Amanzi source directory>,
-
-* Use the build files to build Amanzi, i.e. ``make``,
-
-or the user can run ``bootstrap.sh`` defining a previously built TPL configuration with ::
-
- bootstrap.sh --tpl-config-file=<TPL install prefix>/share/cmake/amanzi-tpl-config.cmake
-
-
 CMake Quickstart
 ++++++++++++++++
 
@@ -77,9 +41,49 @@ passed in as a configuration setting on the command line are
     optimized (Release) or debug (Debug) builds.
 * ``BUILD_SHARED_LIBS`` a boolean flag (ON,OFF) that controls if shared 
    libraries are built.
+* ``CMAKE_EXE_LINKER_FLAGS``, a space deliminated string that defines 
+  linking flags.
+* ``CMAKE_SHARED_LINKER_FLAGS``, a space deliminated string that defines 
+  linking flags for shared libraries.
 
 For more CMake documentation, run ``cmake --help-html`` to produce the
 HTML documentation.
+
+
+
+Building Amanzi
+---------------
+
+Amanzi depends on several external software packages or third party libraries
+(TPL) to build. Before building Amanzi a user must either build each of these 
+TPLs, provide an installation path for each TPL or define the include directories
+and libraries needed for each TPL. We recommend that users build Amanzi and all the
+TPLs using the ``boostrap.sh`` shell script found the ``config`` directory. 
+The script can be run from the source directory. On most
+UNIX flavored systems, this script will build and install Amanzi and all the required
+TPLs with little information from the user. The script has prerequisites for
+compilers, ``LAPACK``/``BLAS`` and ``MPI``. Please read 
+Amanzi Third Party Library (TPL) Build System section for more information.
+
+We recommended that users install the TPLs in separate directory, since a full TPL build
+should be an infrequent task. This is the default behavior of the ``bootstrap.sh`` 
+script. See ``bootstrap.sh --help`` for more information on how to
+control the installation paths. The TPL build will generate a CMake configuration file
+that defines all the required TPL directories and CMake variables to build Amanzi.
+Once the user has installed all the required TPLs, the process to build
+Amanzi from the command line is:
+
+* Generate build files (Makefile, XCode project files, etc.) using CMake ::
+
+    cmake -C <TPL install prefix>/share/cmake/amanzi-tpl-config.cmake \
+           [Addtional CMake variable definitions]
+           <Amanzi source directory>,
+
+* Use the build files to build Amanzi, i.e. ``make``,
+
+or the user can run ``bootstrap.sh`` defining a previously built TPL configuration with ::
+
+ bootstrap.sh --tpl-config-file=<TPL install prefix>/share/cmake/amanzi-tpl-config.cmake
 
 
 Amanzi TPL Configuration Settings

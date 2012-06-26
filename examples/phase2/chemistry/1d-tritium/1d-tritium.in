@@ -1,39 +1,33 @@
-:Description: 1D tracer advection problem
-
-:=========================== flow mode ========================================
-: Uniform velocity (see below). No flow mode specified.
-
-:=========================== useful tranport parameters ==================
-UNIFORM_VELOCITY 3.170979d-8 0.d0 0.d0 ! 1. meter/yr
-:UNIFORM_VELOCITY 6.02486e-7 0.d0 0.d0 !m/s (19 m/y)
+:Description: 1-d fixed velocity flow w/ tritium decay
 
 :=========================== chemistry ========================================
 CHEMISTRY
   PRIMARY_SPECIES
-    Tracer
+    Tritium
   /
-
-  DATABASE ./ascem-2012-farea.dat
+  GENERAL_REACTION
+    REACTION Tritium <-> 
+    FORWARD_RATE 1.78577E-09 ! t_1/2 = 12.32 years
+    BACKWARD_RATE 0.d0
+  /
+  DATABASE ./tritium.dat
   LOG_FORMULATION
-  OPERATOR_SPLITTING
-  ACTIVITY_COEFFICIENTS TIMESTEP
-  MOLAL
+  ACTIVITY_COEFFICIENTS OFF
   OUTPUT
-    all
+    All
   /
 END
-
 
 :=========================== solver options ===================================
-LINEAR_SOLVER TRANSPORT
-  SOLVER DIRECT
-END
-
+TIMESTEPPER
+  TS_ACCELERATION 8
+/
 
 :=========================== discretization ===================================
 GRID
   TYPE structured
-  NXYZ 1000 1 1
+  ORIGIN 0.d0 0.d0 0.d0
+  NXYZ 100 1 1
   BOUNDS
     0.d0 100.d0
     0.d0 1.d0
@@ -41,43 +35,38 @@ GRID
   /
 END
 
+:=========================== flow =============================================
+UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0
 
 :=========================== fluid properties =================================
 FLUID_PROPERTY 
-  DIFFUSION_COEFFICIENT 1.d-32
-END
-
+  DIFFUSION_COEFFICIENT 1.d-9
+/
 
 :=========================== material properties ==============================
-MATERIAL_PROPERTY bulk
+MATERIAL_PROPERTY soil1
   ID 1
-  POROSITY 1.0
-  TORTUOSITY 1.0
-END
+  POROSITY 0.25d0
+/
 
+:=========================== observation points ===============================
+OBSERVATION
+  REGION all
+  AT_CELL_CENTER
+/
 
 :=========================== output options ===================================
 OUTPUT
-  :SCREEN PERIODIC 50
-  times y 1.0 5.0 10.0 20.0 30.0 40.0 50.0
-  :FORMAT TECPLOT POINT
   FORMAT HDF5
-  VELOCITIES
-  MASS_BALANCE
-END
-
+  PERIODIC TIME 1 y
+/
 
 :=========================== times ============================================
 TIME
-  FINAL_TIME 100.d0 y
-  :for operator splitting
-  :INITIAL_TIMESTEP_SIZE 1.92105 d
-  :MAXIMUM_TIMESTEP_SIZE 1.92105 d
-  INITIAL_TIMESTEP_SIZE 0.005 y
-  MAXIMUM_TIMESTEP_SIZE 0.005 y
-
-END
-
+  FINAL_TIME 50.d0 y
+  INITIAL_TIMESTEP_SIZE 1.d-6 y
+  MAXIMUM_TIMESTEP_SIZE 1.d-1 y
+/
 
 :=========================== regions ==========================================
 REGION all
@@ -87,7 +76,7 @@ REGION all
   /
 END
 
-REGION inlet
+REGION west
   FACE WEST
   COORDINATES
     0.d0 0.d0 0.d0
@@ -95,14 +84,13 @@ REGION inlet
   /
 END
 
-REGION outlet
+REGION east
   FACE EAST
   COORDINATES
     100.d0 0.d0 0.d0
     100.d0 1.d0 1.d0
   /
 END
-
 
 :=========================== transport conditions =============================
 TRANSPORT_CONDITION initial
@@ -112,55 +100,56 @@ TRANSPORT_CONDITION initial
   /
 END
 
-TRANSPORT_CONDITION source
+TRANSPORT_CONDITION west
   TYPE dirichlet
   CONSTRAINT_LIST
-    0.d0 source
+    0.d0 west
   /
 END
 
-TRANSPORT_CONDITION outlet
-  TYPE zero_gradient
+TRANSPORT_CONDITION east
+  TYPE dirichlet_zero_gradient
   CONSTRAINT_LIST
-    0.d0 initial
+    0.d0 west
   /
 END
-
 
 :=========================== constraints ======================================
 CONSTRAINT initial
   CONCENTRATIONS
-    Tracer 0.0 T
+    Tritium  1.0e-20    T
   /
 END
 
-CONSTRAINT source
+CONSTRAINT west
   CONCENTRATIONS
-    Tracer 1.0 T
+    Tritium  1.d-3      T
   /
 END
-
 
 :=========================== condition couplers ===============================
+: initial condition
 INITIAL_CONDITION
   TRANSPORT_CONDITION initial
   REGION all
 END
 
+: west boundary condition
 BOUNDARY_CONDITION
-  TRANSPORT_CONDITION source
-  REGION inlet
+  TRANSPORT_CONDITION west
+  REGION west
 END
 
+: east boundary condition
 BOUNDARY_CONDITION
-  TRANSPORT_CONDITION outlet
-  REGION outlet
+  TRANSPORT_CONDITION east
+  REGION east
 END
-
 
 :=========================== stratigraphy couplers ============================
 STRATA
   REGION all
-  MATERIAL bulk
+  MATERIAL soil1
 END
+
 
