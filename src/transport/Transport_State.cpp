@@ -169,9 +169,10 @@ void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& ta
 
 
 /* *******************************************************************
-* Copy data in ghost positions for a vector.              
+* Copy cell-based data from master to ghost positions.              
+* WARNING: MultiVector v must contain ghost cells.                
 ******************************************************************* */
-void Transport_State::distribute_cell_vector(Epetra_Vector& v)
+void Transport_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -190,7 +191,7 @@ void Transport_State::distribute_cell_vector(Epetra_Vector& v)
 /* *******************************************************************
 * Copy data in ghost positions for a multivector.              
 ******************************************************************* */
-void Transport_State::distribute_cell_multivector(Epetra_MultiVector& v)
+void Transport_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -211,7 +212,7 @@ void Transport_State::distribute_cell_multivector(Epetra_MultiVector& v)
 * is measuared relative to state v0; so that v1 is at time dT. The
 * interpolated data are at time dT_int.            
 ******************************************************************* */
-void Transport_State::interpolateCellVector(
+void Transport_State::InterpolateCellVector(
     const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -225,7 +226,7 @@ void Transport_State::interpolateCellVector(
 /* *******************************************************************
  * DEBUG: create constant analytical Darcy velocity fieldx u     
  ****************************************************************** */
-void Transport_State::analytic_darcy_flux(const AmanziGeometry::Point& u)
+void Transport_State::AnalyticDarcyFlux(const AmanziGeometry::Point& u)
 {
   const Epetra_BlockMap& fmap = (*darcy_flux_).Map();
 
@@ -234,7 +235,7 @@ void Transport_State::analytic_darcy_flux(const AmanziGeometry::Point& u)
     (*darcy_flux_)[f] = u * normal;
   }
 }
-void Transport_State::analytic_darcy_flux(
+void Transport_State::AnalyticDarcyFlux(
     AmanziGeometry::Point f_vel(const AmanziGeometry::Point&, double), double t)
 {
   const Epetra_BlockMap& fmap = (*darcy_flux_).Map();
@@ -250,7 +251,7 @@ void Transport_State::analytic_darcy_flux(
 /* *******************************************************************
  * DEBUG: create analytical concentration C = f(x, t)       
  ****************************************************************** */
-void Transport_State::analytic_total_component_concentration(double f(const AmanziGeometry::Point&, double), double t)
+void Transport_State::AnalyticTotalComponentConcentration(double f(const AmanziGeometry::Point&, double), double t)
 {
   const Epetra_BlockMap& cmap = (*total_component_concentration_).Map();
 
@@ -259,7 +260,7 @@ void Transport_State::analytic_total_component_concentration(double f(const Aman
     (*total_component_concentration_)[0][c] = f(xc, t);
   }
 }
-void Transport_State::analytic_total_component_concentration(double tcc)
+void Transport_State::AnalyticTotalComponentConcentration(double tcc)
 {
   const Epetra_BlockMap& cmap = (*total_component_concentration_).Map();
 
@@ -294,7 +295,7 @@ void Transport_State::error_total_component_concentration(
 /* *******************************************************************
  * DEBUG: create constant analytical porosity                    
  ****************************************************************** */
-void Transport_State::analytic_porosity(double phi)
+void Transport_State::AnalyticPorosity(double phi)
 {
   const Epetra_BlockMap& cmap = (*porosity_).Map();
 
@@ -307,7 +308,7 @@ void Transport_State::analytic_porosity(double phi)
 /* ******************************************************************
  * DEBUG: create constant analytical water saturation            
  ***************************************************************** */
-void Transport_State::analytic_water_saturation(double ws)
+void Transport_State::AnalyticWaterSaturation(double ws)
 {
   const Epetra_BlockMap& cmap = (*water_saturation_).Map();
 
@@ -321,7 +322,7 @@ void Transport_State::analytic_water_saturation(double ws)
 /* *****************************************************************
  * DEBUG: create constant analytical water density               
  **************************************************************** */
-void Transport_State::analytic_water_density(double wd)
+void Transport_State::AnalyticWaterDensity(double wd)
 {
   const Epetra_BlockMap& cmap = (*water_density_).Map();
 

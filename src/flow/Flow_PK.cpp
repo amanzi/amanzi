@@ -300,8 +300,22 @@ void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 }
 
 
-
-
+/* ******************************************************************
+* Calculate change of water volume per second due to boundary flux.                                          
+****************************************************************** */
+double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers,
+                                           Epetra_Vector& darcy_flux)
+{
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  double volume = 0.0;
+  for (int f = 0; f < nfaces; f++) {
+    if (bc_markers[f] != FLOW_BC_FACE_NULL) {
+      double area = mesh_->face_area(f);
+      volume -= darcy_flux[f] * area;
+    }
+  }
+  return volume;
+}
 
 
 /* ****************************************************************

@@ -65,11 +65,11 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
  
     Point u(1.0, 0.0, 0.0);
-    TS->analytic_darcy_flux(u);
-    TS->analytic_total_component_concentration(f_cubic);
-    TS->analytic_porosity(1.0);
-    TS->analytic_water_saturation(1.0);
-    TS->analytic_water_density(1.0);
+    TS->AnalyticDarcyFlux(u);
+    TS->AnalyticTotalComponentConcentration(f_cubic);
+    TS->AnalyticPorosity(1.0);
+    TS->AnalyticWaterSaturation(1.0);
+    TS->AnalyticWaterDensity(1.0);
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
@@ -150,11 +150,11 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
     Point u(1.0, 0.0, 0.0);
-    TS->analytic_darcy_flux(u);
-    TS->analytic_total_component_concentration(f_cubic);
-    TS->analytic_porosity(1.0);
-    TS->analytic_water_saturation(1.0);
-    TS->analytic_water_density(1.0);
+    TS->AnalyticDarcyFlux(u);
+    TS->AnalyticTotalComponentConcentration(f_cubic);
+    TS->AnalyticPorosity(1.0);
+    TS->AnalyticWaterSaturation(1.0);
+    TS->AnalyticWaterDensity(1.0);
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);

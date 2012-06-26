@@ -589,7 +589,7 @@ void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varn
   }
    */
   
-  //parallelIO_write_str_array(x, num_entries, file,  h5path,  &IOgroup_);
+  parallelIO_write_str_array(x, num_entries, file,  h5path,  &IOgroup_);
   
   parallelIO_close_file(file, &IOgroup_);
 }
@@ -618,7 +618,7 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string var
     strData[i] = (char *)malloc(MAX_STRING_LENGTH*sizeof(char));
   }
   
-  //parallelIO_read_str_array(&strData, &tmpsize, file, h5path, &IOgroup_);
+  parallelIO_read_str_array(&strData, &tmpsize, file, h5path, &IOgroup_);
   
   *x = strData;
   *num_entries = tmpsize;

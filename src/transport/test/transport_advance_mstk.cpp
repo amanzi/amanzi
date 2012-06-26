@@ -53,12 +53,12 @@ TEST(ADVANCE_WITH_MSTK) {
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);
-  TS->analytic_darcy_flux(u);
-  TS->analytic_porosity();
-  TS->analytic_water_saturation();
-  TS->analytic_water_density();
+  TS->AnalyticDarcyFlux(u);
+  TS->AnalyticPorosity();
+  TS->AnalyticWaterSaturation();
+  TS->AnalyticWaterDensity();
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
 

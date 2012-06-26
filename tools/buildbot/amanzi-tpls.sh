@@ -240,8 +240,8 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.84
 TRILINOS_VERSION=10.6.4
-CCSE_VERSION=1.0.1
-ASCEMIO_VERSION=1.2
+CCSE_VERSION=1.0.7
+ASCEMIO_VERSION=2.1
 
 AMANZI_TPL_ARCHIVES=https://software.lanl.gov/ascem/tpls
 WGET_FLAGS=--no-check-certificate
@@ -343,8 +343,8 @@ function download_archives {
 	wget ${WGET_FLAGS} $URL
     fi
 
-    if [  ! -f ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tgz ]; then
-	URL=${AMANZI_TPL_ARCHIVES}/ascem-io-${ASCEMIO_VERSION}.tgz
+    if [  ! -f ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tar.gz ]; then
+	URL=${AMANZI_TPL_ARCHIVES}/ascem-io-${ASCEMIO_VERSION}.tar.gz
 	wget ${WGET_FLAGS} $URL
     fi
 
@@ -769,7 +769,7 @@ function install_ascemio {
     ASCEMIO_DIR=${PREFIX}/ascem-io/ascem-io-${ASCEMIO_VERSION}
     rm -rf ${ASCEMIO_DIR}
     mkdir -p ${PREFIX}/ascem-io
-    tar ${TAR_FLAGS} ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tgz -C ${PREFIX}/ascem-io
+    tar ${TAR_FLAGS} ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tar.gz -C ${PREFIX}/ascem-io
     cd ${ASCEMIO_DIR}
 
     # no configuration, just make

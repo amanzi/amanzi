@@ -296,11 +296,11 @@ void Transport_PK::Advance(double dT_MPC)
       if (swap) {  // Initial water saturation is in 'start'.
         water_saturation_start = ws_subcycle_start;
         water_saturation_end = ws_subcycle_end;
-        TS->interpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_end);
+        TS->InterpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_end);
       } else {  // Initial water saturation is in 'end'.
         water_saturation_start = ws_subcycle_end;
         water_saturation_end = ws_subcycle_start;
-        TS->interpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_start);
+        TS->InterpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_start);
       }
       swap = 1 - swap;
     }

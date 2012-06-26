@@ -787,29 +787,31 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [SU] `"alpha`" [double] to specify alpha in Equation 3.7.
 
- * [SU] `"Sr`" [double] to specify sr in Eq 3.5.
+ * [SU] `"Sr`" [double] to specify the residual saturation, s^r_l, in Equation 3.5.
 
  * [SU] `"m`" [double] to specify m in Equation 3.7.
 
- * [U] `"ell`" [double]
+ * [U] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
 
- * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") to determine n from Eq 3.10.
+ * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
+   in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
  * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing. 
 
 * [U] `"Capillary Pressure: Brooks Corey`" [list] requires
 
- * [U] `"lambda`" [double]
+ * [U] `"lambda`" [double] to specify lambda in Equation 3.9
 
- * [U] `"alpha`" [double]
+ * [U] `"alpha`" [double]  to specify alpha in Equation 3.9 
 
- * [U] `"ell`" [double]
+ * [U] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
 
- * [U] `"Sr`" [double]
+ * [U] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
 
- * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
+ * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
+   relative permeability (either Equation 3.15, or Equation 3.14, respectively)
 
- * [U] `"krel smoothing interval`" [double]
+ * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
 
 The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
 

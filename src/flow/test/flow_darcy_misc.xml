@@ -10,7 +10,7 @@
         <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
       <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="mstk::mesh"/>
+        <Parameter name="Framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>    

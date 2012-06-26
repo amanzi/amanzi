@@ -17,11 +17,6 @@ enable_language(C)
 enable_language(CXX)
 enable_language(Fortran)
 
-# Set the build type for now we only fully support a debug version
-if (CMAKE_BUILD_TYPE) 
-  message(WARNING "Only Debug builds are fully supported. You may not get the TPL versions you expect.")
-endif()
-
 # No idea why we need this.
 # I think it was required for Franklin build. -- lpritch
 if(PREFER_STATIC_LIBRARIES)

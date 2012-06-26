@@ -129,6 +129,9 @@ class Flow_PK : public BDF2::fnBase {
 
   void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
+  double WaterVolumeChangePerSecond(std::vector<int>& bc_markers, 
+                                    Epetra_Vector& darcy_flux);
+
   // gravity members
   void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
                             const Epetra_Vector& Krel_cells,
@@ -139,7 +142,7 @@ class Flow_PK : public BDF2::fnBase {
                                   const Epetra_Vector& Krel_faces,
                                   Epetra_Vector& darcy_mass_flux);
 
-  // access members  
+  // access members 
   Teuchos::RCP<Flow_State> flow_state() { return FS; }
   int flow_status() { return flow_status_; }
 

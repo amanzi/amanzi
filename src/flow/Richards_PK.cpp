@@ -492,6 +492,12 @@ void Richards_PK::InitTransient(double T0, double dT0)
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
   DeriveSaturationFromPressure(pressure, water_saturation);
 
+  // calculate total water mass
+  mass_bc = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    mass_bc += water_saturation[c] * rho * mesh_->cell_volume(c); 
+  }
+
   // control options
   absolute_tol = ti_specs_trs_.atol;
   relative_tol = ti_specs_trs_.rtol;
@@ -528,6 +534,7 @@ int Richards_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
+  // predict water mass change during time step
   time = T_physics;
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
@@ -606,8 +613,19 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
-  // improve algebraic consistency 
-  // ImproveAlgebraicConsistentcy(flux, ws_prev, ws);
+  // update mass balance
+  // ImproveAlgebraicConsistency(flux, ws_prev, ws);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    mass_bc += WaterVolumeChangePerSecond(bc_markers, flux) * rho * dT;
+
+    mass_amanzi = 0.0;
+    for (int c = 0; c < ncells_owned; c++) {
+      mass_amanzi += ws[c] * rho * mesh_->cell_volume(c);
+    }
+    double mass_loss = mass_bc - mass_amanzi; 
+    std::printf("Richards PK: water mass %9.4e %9.4e\n", mass_amanzi, mass_loss);
+  }
 
   dT = dTnext;
 
@@ -748,8 +766,14 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
   // create a disctributed flux vector
   Epetra_Vector flux_d(mesh_->face_map(true));
   for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
-  FS->CombineGhostFace2MasterFace(flux_d);
+  FS->CopyMasterFace2GhostFace(flux_d);
 
+  // create a distributed saturation vector
+  Epetra_Vector ws_d(mesh_->cell_map(true));
+  for (int c = 0; c < ncells_owned; c++) ws_d[c] = ws[c];
+  FS->CopyMasterCell2GhostCell(ws_d);
+
+  WhetStone::MFD3D mfd(mesh_);
   const Epetra_Vector& phi = FS->ref_porosity();
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -758,12 +782,27 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    // calculate min/max values
+    double wsmin, wsmax;
+    wsmin = wsmax = ws[c];
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      int c2 = mfd.cell_get_face_adj_cell(c, f);
+      wsmin = std::min<double>(wsmin, ws[c2]);
+      wsmax = std::max<double>(wsmax, ws[c2]);
+    }
+
+    // predict new saturation
     ws[c] = ws_prev[c];
     double factor = dT / (phi[c] * mesh_->cell_volume(c));
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       ws[c] -= factor * flux_d[f] * dirs[n]; 
     }
+
+    // limit new saturation
+    ws[c] = std::max<double>(ws[c], wsmin);
+    ws[c] = std::min<double>(ws[c], wsmax);
   }
 }
 
