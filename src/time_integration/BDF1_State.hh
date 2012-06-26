@@ -10,6 +10,8 @@
 
 namespace Amanzi {
 
+enum bdf_nonlinear_solver_t { BDFNKA, BDFJFNK }; 
+
 struct BDF1State {
   
  public:
@@ -32,6 +34,8 @@ struct BDF1State {
     hlimit = 1e10;
     elimit = 1e15;
     maxpclag = 0;
+
+    nonlinear_solver = BDFNKA;
 
     verbose = false;
   }
@@ -72,6 +76,8 @@ struct BDF1State {
   double hmax;           // maximum step size used on a successful step
   double hinc;           // stepsize increase factor
   double hred;           // stepsize reduction factor
+
+  bdf_nonlinear_solver_t nonlinear_solver;
 
   // Diagnostics
   bool   verbose;

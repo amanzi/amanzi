@@ -28,12 +28,13 @@ Users are required to provide the following to build
       install directory tree requires 300 Mb.
 
 On most UNIX-like OS (including Mac OSX) systems, the entire TPL software stack can
-be built using the bootstrap.sh shell script found in the config directory. The script
-searches for CMake and will build CMake 2.8.7, if it does locate the cmake command. 
-At this time, the script does not build compilers, MPI or LAPACK/BLAS. Please refer
-to later sections of this document on how to obtain and install these packages.
+be built using the ``bootstrap.sh`` shell script found in the config directory. The script
+searches for CMake and will build CMake 2.8.7, if it does not locate the cmake command. 
+At this time, the script does not build compilers, ``MPI``, ``LAPACK`` or ``BLAS``. See the
+compilers_ section on how to obtain a supported compiler, the MPI_ section for ``MPI`` support
+and LAPACK_ for ``LAPACK`` and ``BLAS`` suggestions. 
 
-The boostrap.sh script will create build directories one for the TPLs, TPL_BUILD, and amanzi,
+The ``boostrap.sh`` script will create build directories one for the TPLs, TPL_BUILD, and amanzi,
 amanzi-build, in the directory the script is called from. Users can control the 
 install location of the TPLs and Amanzi through command line arguments.
 The command ::
@@ -41,6 +42,8 @@ The command ::
   <amanzi source root>/config/bootstrap.sh --help
 
 will print all the available options and default values. 
+
+.. _compilers:
 
 Obtaining A Supported Compiler
 ++++++++++++++++++++++++++++++
@@ -79,16 +82,17 @@ Building GCC requires several precision libraries that must be installed before 
 See http://gcc.gnu.org/install/prerequisites.html for more information. Once these
 packages are installed, GCC must be configured with C, C++ and Fortran enabled. Documentation
 of the available configure options is here http://gcc.gnu.org/install/configure.html. 
-The quickest way to determine the best configure options is to find a similiar 
+The quickest way to determine the best configure options is to find a similar 
 machine with a matching OS that has the target GCC already installed, and look at
 the verbose version output. The command ::
 
   gcc -v
 
-will print out the configure options used to build GCC compiler. One important note to 
-remember: DO NOT BUILD GCC IN THE SOURCE DIRECTORY. Create a seperate build directory.
+will print out the configure options used to build that GCC compiler. One important note to 
+remember: DO NOT BUILD GCC IN THE SOURCE DIRECTORY. Create a separate build directory.
 The GCC build time is long. On most systems it will need more than 2 hours to complete.
 
+.. _MPI:
 
 Obtaining MPI
 +++++++++++++
@@ -101,9 +105,8 @@ Otherwise, install either MPICH2 or OpenMPI.
 MPICH2
 ******
 
-We recommend that users install a stable version of MPICH2. MPICH versions where the
-minor version number (Ex: 1.4.1 minor version is 4) is even are stable. Odd minor
-versions are beta releases.
+We recommend that users install a stable version of MPICH2. MPICH even minor versions 
+(Ex: 1.4.1 minor version is 4) are stable. Odd minor versions are beta releases.
 
 Steps to build and install MPICH2 are
 
@@ -112,31 +115,36 @@ Steps to build and install MPICH2 are
     2. Unpack the tar file and create a separate build directory. In this build directory,
        configure MPICH2 with::
 
-       configure --prefix=<install prefix> \
-                 --enable-f77 \
-                 --enable-fc \
-                 --enable-cxx \
-                 --enable-romio \
-                 --enable-shared \
-                 --enable-static \
-                 CC=<full path to C compiler>
-                 CXX=<full path to C++ compiler>
-                 FC=<full path to Fortran compiler>
-                 F77=<full path to Fortran compiler that support F77>
+         configure --prefix=<install prefix> \
+                   --enable-f77 \
+                   --enable-fc \
+                   --enable-cxx \
+                   --enable-romio \
+                   --enable-shared \
+                   --enable-static \
+                   CC=<full path to C compiler>
+                   CXX=<full path to C++ compiler>
+                   FC=<full path to Fortran compiler>
+                   F77=<full path to Fortran compiler that support F77>
 
     3. Build, test and install. MPICH does not support parallel builds.::
 
-       make all; make test; make install
+        make all; make test; make install
 
-    4. Set environment variables, PATH, LD_LIBRARY_PATH::
+    4. Set environment variables, PATH, LD_LIBRARY_PATH on UNIX/Linux system::
 
-       setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
-       setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
+        setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
+        setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
+
+       For  Mac OSX, set PATH and DYLD_LIBRARY_PATH environment variables::
+
+        setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
+        setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
     
-    5. Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this 
+    5. Set environment variable MPI_ROOT. The ``bootstrap.sh`` script searches for compiler wrappers in this 
        directory when this is set.::
 
-       setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
+        setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
 
 OpenMPI
 *******
@@ -149,47 +157,66 @@ Steps to build and install OpenMPI are
        configure OpenMPI with
        ::
 
-        configure \
-                  --prefix=<install prefix> \
-                  --enable-mpi-f77 \
-                  --enable-mpi-f90 \
-                  --enable-mpi-cxx \
-                  --enable-shared \
-                  --enable-static \
-                  CC=<full path to C compiler>
-                  CXX=<full path to C++ compiler>
-                  FC=<full path to Fortran compiler>
-                  F77=<full path to Fortran compiler that support F77>
+         configure \
+                   --prefix=<install prefix> \
+                   --enable-mpi-f77 \
+                   --enable-mpi-f90 \
+                   --enable-mpi-cxx \
+                   --enable-shared \
+                   --enable-static \
+                   CC=<full path to C compiler>
+                   CXX=<full path to C++ compiler>
+                   FC=<full path to Fortran compiler>
+                   F77=<full path to Fortran compiler that support F77>,
 
-       where the compilers are defined explicity on the command line.           
+       where the compilers are defined explicitly on the command line.           
 
     3. Build, test and install. OpenMPI does support parallel builds.::
 
-       make all; make test; make install
+        make all; make test; make install
 
-    4. Set environment variables, PATH, LD_LIBRARY_PATH::
+    4. Set environment variables, PATH, LD_LIBRARY_PATH UNIX/Linux systems::
+        setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
+        setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
 
-       setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
-       setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
-    
+       For  Mac OSX, set PATH and DYLD_LIBRARY_PATH environment variables::
+
+        setenv PATH <install prefix>/bin:${PATH} or export PATH=<install prefix>/bin:${PATH}
+        setenv LD_LIBRARY_PATH <install prefix>/lib:${LD_LIBRARY_PATH} or export LD_LIBRARY_PATH=<install prefix>/lib:${LD_LIBRARY_PATH}
+
     5. Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this 
        directory when this is set. ::
 
-       setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
+        setenv MPI_ROOT <install prefix> or export MPI_ROOT=<install prefix>
+
+.. _LAPACK:
 
 Obtaining LAPACK/BLAS
-*********************
++++++++++++++++++++++
+
+Most system have ``LAPACK`` and ``BLAS`` installed. Building optimized libraries is difficult. 
+We recommend that user attempt to build Amanzi before building ``LAPACK`` and ``BLAS`` from
+source. Trilnos, the package that requires both, detects the libraries in their build system 
+and in many cases finds them automatically. If the Trilinos build system fails to find the
+libraries or if the user wants to build against non-standard ``LAPACK``/``BLAS`` distributions,
+please read the Trilinos_ configuration section.
+
+If the user must build ``LAPACK`` and ``BLAS``, we recommend ``ATLAS``, a sofware package
+that automatically builds tuned ``BLAS`` libraries and a small subset of ``LAPACK``. By default
+``ATLAS`` does not build a full ``LAPACK`` distribution, but Amanzi requires a full ``LAPACK`` library.
+Read the ``ATLAS`` documentation on how to build ``ATLAS`` with a full ``LAPACK`` installation.
+``ATLAS`` downloads are available at http://math-atlas.sourceforge.net.
 
 
-Getting TPL-Build
------------------
+Getting SuperBuild
+------------------
 
-TPL-Build is a separate CMake project in the Amanzi repository. You will need 
+SuperBuild is a separate CMake project in the Amanzi repository. You will need 
 a clone of the Amanzi repository, ::
 
   hg clone https://software.lanl.gov/ascem/hg/amanzi
 
-The root directory for TPL-Build is amanzi/config/SuperBuild. 
+The root directory for SuperBuild is ``amanzi/config/SuperBuild``. 
 
 
 Building TPLs
@@ -317,6 +344,7 @@ to find the system OpenSSL. If this find fails, define the installation
 location of OpenSSL with ``-D OPENSSL_ROOT_DIR:FILEPATH=<directory>`` when 
 configuring and rerun cmake.
 
+.. _Trilinos:
 
 Trilinos Configuration
 ----------------------
@@ -374,7 +402,7 @@ Consult the documentation for the particular library for more information.
 Trilinos Build Configuration Files
 ++++++++++++++++++++++++++++++++++
 
-TPL-Build contains Trilinos CMake configuration files for specific platforms and
+SuperBuild contains Trilinos CMake configuration files for specific platforms and
 compilers. The files are located under the tpl-build/cmake directory.
 The file name should be defined while configuring tpl-build with the option
 ``-D Trilinos_Build_Config_File:STRING=<file>``. This configuration file will 
