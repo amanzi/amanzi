@@ -26,6 +26,9 @@
 #include <petscksp.h>
 #endif
 
+#include <MFTower.H>
+#include <Richard.H>
+
 #if defined(BL_OSF1)
 #if defined(BL_USE_DOUBLE)
 const Real BL_BOGUS      = DBL_QNAN;
@@ -2087,11 +2090,13 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       }
       
       int pressure_maxorder = 4;
-      MFTGrowFill mftgfill(layout);
-      RichardContext richardContext(*pm_parent,mftgfill,PoldMFT,SatMFT,LambdaMFT,
+      MFTFillPatch mftfp(layout);
+      RichardContext richardContext(*pm_parent,mftfp,PoldMFT,SatMFT,LambdaMFT,
                                     DarcyVelocity,bc,pressure_maxorder);
       RichardOp richardOp(richardContext);
       richardOp.Residual(RhsMFT,PnewMFT,dt);
+      richardOp.Write("JUNK");
+      BoxLib::Abort();
 #endif
 
       // Apply column scaling of J to Rhs
