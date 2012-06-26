@@ -20,11 +20,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})
 
-set(CXX_source_files Diffusion.cpp Godunov.cpp MacOperator.cpp MacProj.cpp Observation.cpp PMBld.cpp PM_setup.cpp PorousMedia.cpp Region.cpp Rock.cpp Source.cpp ViscBndry.cpp PressBndry.cpp RegionData.cpp PMAmr.cpp Layout.cpp)
+set(CXX_source_files Diffusion.cpp Godunov.cpp MacOperator.cpp MacProj.cpp Observation.cpp PMBld.cpp PM_setup.cpp PorousMedia.cpp Region.cpp Rock.cpp Source.cpp ViscBndry.cpp PressBndry.cpp RegionData.cpp PMAmr.cpp Layout.cpp MFTower.cpp Richard.cpp)
 set(F90_source_files bivar.f90)
 set(F77_source_files math_d.f vode.f)
 
-set(FPP_source_files DERIVE_${AMANZI_SPACEDIM}D.F DIFFUSION_${AMANZI_SPACEDIM}D.F EOS_${AMANZI_SPACEDIM}D.F EOS_F.F GODUNOV_${AMANZI_SPACEDIM}D.F GODUNOV_F.F MACOPERATOR_${AMANZI_SPACEDIM}D.F MACPROJ_${AMANZI_SPACEDIM}D.F POROUS_${AMANZI_SPACEDIM}D.F POROUSMEDIA_${AMANZI_SPACEDIM}D.F TURN_F.F VISCOPERATOR_${AMANZI_SPACEDIM}D.F LAYOUT_${AMANZI_SPACEDIM}D.F)
+set(FPP_source_files DERIVE_${AMANZI_SPACEDIM}D.F DIFFUSION_${AMANZI_SPACEDIM}D.F EOS_${AMANZI_SPACEDIM}D.F EOS_F.F GODUNOV_${AMANZI_SPACEDIM}D.F GODUNOV_F.F MACOPERATOR_${AMANZI_SPACEDIM}D.F MACPROJ_${AMANZI_SPACEDIM}D.F POROUS_${AMANZI_SPACEDIM}D.F POROUSMEDIA_${AMANZI_SPACEDIM}D.F TURN_F.F VISCOPERATOR_${AMANZI_SPACEDIM}D.F MFTOWER_${AMANZI_SPACEDIM}D.F RICHARD_${AMANZI_SPACEDIM}D.F)
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "COREREACT")
   list(APPEND CXX_source_files PChemDriver.cpp)
