@@ -583,6 +583,29 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::echo_inputs         = 0;
 }
 
+std::pair<std::string,std::string>
+SplitDirAndName(const std::string& orig)
+{
+    if (orig[orig.length()-1] == '/') {
+        BoxLib::Abort(std::string("Invalid filename:" + orig).c_str());
+    }
+    vector<std::string> tokens = BoxLib::Tokenize(orig,std::string("/"));
+    std::pair<std::string,std::string> result;
+    int size = tokens.size();
+    BL_ASSERT(tokens.size()>0);
+    if (size>1) {
+        for (int i=0; i<size-2; ++i) {
+            result.first += tokens[i] + "/";
+        }
+        result.first += tokens[size-2];
+    }
+    else {
+        result.first = ".";
+    }
+    result.second = tokens[size-1];
+    return result;
+}
+
 void
 PorousMedia::variableSetUp ()
 {
@@ -604,9 +627,17 @@ PorousMedia::variableSetUp ()
   if (pproot.countval("dump_parmparse_table")) {
       pproot.get("dump_parmparse_table",pp_dump_file);
       std::ofstream ofs;
+      std::pair<std::string,std::string> df = SplitDirAndName(pp_dump_file);
+      if (ParallelDescriptor::IOProcessor()) {
+          if (!BoxLib::UtilCreateDirectory(df.first, 0755)) {
+              BoxLib::CreateDirectoryFailed(df.first);
+          }
+      }
+      ParallelDescriptor::Barrier();
+
       ofs.open(pp_dump_file.c_str());
       if (ofs.fail()) {
-          BoxLib::Abort("Cannot open pp dump file");
+          BoxLib::Abort(std::string("Cannot open pp dump file: "+pp_dump_file).c_str());
       }
       if (verbose>1 && ParallelDescriptor::IOProcessor())
       {
