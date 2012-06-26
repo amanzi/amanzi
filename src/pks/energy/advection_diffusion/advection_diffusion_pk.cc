@@ -114,8 +114,8 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   UpdateBoundaryConditions_();
 
   state_to_solution(S, solution_);
-  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e-5);
-  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e0);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e0);
 
   // initialize the operators
   matrix_->CreateMFDmassMatrices(Ke_);

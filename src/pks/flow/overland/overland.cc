@@ -147,8 +147,8 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize the timestepper
   state_to_solution(S, solution_);
-  atol_ = flow_plist_.get<double>("Absolute error tolerance",1e-5);
-  rtol_ = flow_plist_.get<double>("Relative error tolerance",1e-5);
+  atol_ = flow_plist_.get<double>("Absolute error tolerance",1e0);
+  rtol_ = flow_plist_.get<double>("Relative error tolerance",1e0);
 
   if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- instantiate time stepper
