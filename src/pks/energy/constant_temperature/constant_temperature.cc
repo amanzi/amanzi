@@ -57,7 +57,7 @@ void ConstantTemperature::initialize(const Teuchos::RCP<State>& S) {
 
   state_to_solution(S, solution_);
   atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
-  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1.0);
 
   // initialize the timesteppper
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
