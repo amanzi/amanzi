@@ -1622,8 +1622,12 @@ FluxToRhoSat::transform(Real aqueous_Darcy_flux) const
     //std::cout << "gstar: " << gstar << std::endl;
     //std::cout << "visc: " << visc[0] << std::endl;
 
-    FORT_FIND_INV_FLUX(&sol, &aqueous_Darcy_flux, &nc, &vtot, &gstar,
-                       visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
+    if (ncomps > 1) 
+      FORT_FIND_INV_FLUX(&sol, &aqueous_Darcy_flux, &nc, &vtot, &gstar,
+			 visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
+    else
+      FORT_FIND_INV_RFLUX(&sol,&aqueous_Darcy_flux, &gstar,visc.dataPtr(),
+			  &ncomps,&lkrtype,&lkrcoef);
     
     rhoSat[0] = density[0]*(sol*(1.0-lsatres)+lsatres);
     if (ncomps > 1) {

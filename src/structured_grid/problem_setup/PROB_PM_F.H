@@ -30,6 +30,7 @@
 #    define FORT_MK_FORCE    mkforce
 #    define FORT_MK_TFORCE   mktforce
 #    define FORT_FIND_INV_FLUX findinvflux
+#    define FORT_FIND_INV_RFLUX findinvrflux
 #else
 #  if  defined(BL_FORT_USE_UPPERCASE)
 #    define FORT_INITDATA    INITDATA
@@ -63,6 +64,7 @@
 #    define FORT_MK_TFORCE   MKTFORCE
 #    define FORT_MAKEFORCE   MAKEFORCE
 #    define FORT_FIND_INV_FLUX FINDINVFLUX
+#    define FORT_FIND_INV_RFLUX FINDINVRFLUX
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_INITDATA    initdata
 #    define FORT_INIT_TRACER inittracer
@@ -95,6 +97,7 @@
 #    define FORT_MK_FORCE    mkforce
 #    define FORT_MK_TFORCE   mktforce
 #    define FORT_FIND_INV_FLUX findinvflux
+#    define FORT_FIND_INV_RFLUX findinvrflux
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_INITDATA    initdata_
 #    define FORT_INIT_TRACER inittracer_
@@ -126,6 +129,7 @@
 #    define FORT_MK_FORCE    mkforce_
 #    define FORT_MK_TFORCE   mktforce_
 #    define FORT_FIND_INV_FLUX findinvflux_
+#    define FORT_FIND_INV_RFLUX findinvrflux_
 #  endif
 
 #include "ArrayLim.H"
@@ -303,10 +307,14 @@
 			 const int* scomp, const int * ncomp, 
 			 const int* do_rho_scale);
 
-     void FORT_FIND_INV_FLUX(Real* sol, const Real* vel, const int* nc,
-			     const Real* vtot,const Real* gstar,const Real* muval,
+    void FORT_FIND_INV_FLUX(Real* sol, const Real* vel, const int* nc,
+			    const Real* vtot,const Real* gstar,const Real* muval,
+			    const int* ncomps, const int* kr_type, const Real* kr_coef);
+    
+    void FORT_FIND_INV_RFLUX(Real* sol, const Real* vel,
+			     const Real* gstar,const Real* muval,
 			     const int* ncomps, const int* kr_type, const Real* kr_coef);
-
+    
 #ifdef COREREACT
     void FORT_CHEM (const Real* s, ARLIM_P(slo), ARLIM_P(shi), int* nc,
 		    const int* lo, const int* hi, Real* dt, 

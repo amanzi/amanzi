@@ -520,7 +520,7 @@ c ::: -----------------------------------------------------------
 
       REAL_T k_st, k_st1, k_sat, msat, mt, ds, dels, dels1, vgk, sa
 
-      vgk(m,sa) = sqrt(sa)*(one-(one-sa**(one/m))**m)**2
+      vgk(m,sa) = sqrt(sa)*(one-(one-sa**(one/m))**m)**2.d0
 
       call get_st(sat,s,rho,sres,nc)
 
@@ -542,7 +542,7 @@ c ::: -----------------------------------------------------------
 c     The standard van Genuchten parameterization, no fits/shifts/etc
                m = kr_coef
                n = 1.d0/m
-               kr(1) = sqrt(sat(1))*(one-(one-(sat(1))**n)**m)**2
+               kr(1) = vgk(m,sat(1))
             else
 c
 c     Try kr-smoothing: If se<sThresh, fit
@@ -590,14 +590,14 @@ c     # to avoid blow-up
 c     # In order to write the gas permeability function in terms of s_eff, we write
 c     # the gas saturation in terms of s_eff.  This way we know that when get_kr
 c     # is called in other functions, we are using consistent saturations. 
-         satl = sat(1)*(one-sres) + sres
-
+         
          if (nc > 1) then
-            if (satl .eq. one) then
-               kr(2) = zero
-            else
-               kr(2) = ((one-satl)**third)*(one-satl**n)**twom
-            end if
+c            satl = sat(1)*(one-sres) + sres
+c            if (satl .eq. one) then
+c               kr(2) = zero
+c            else
+c               kr(2) = ((one-satl)**third)*(one-satl**n)**twom
+c            end if
             kr(2) = one - kr(1)
          end if
       end if
@@ -969,9 +969,8 @@ c     given a velocity of a phase, find the corresponding saturation
       if (ncomps < 2) then
          mtmp(1) = muval(1)
          mtmp(2) = 0.018
-c         call bl_abort('FORT_FIND_INV_FLUX only works for 2-phase flow!')
+         call bl_abort('FORT_FIND_INV_FLUX only works for 2-phase flow!')
       end if
-
 
       s1 = 0
       s2 = 0
