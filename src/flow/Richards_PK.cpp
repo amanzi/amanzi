@@ -492,6 +492,12 @@ void Richards_PK::InitTransient(double T0, double dT0)
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
   DeriveSaturationFromPressure(pressure, water_saturation);
 
+  // calculate total water mass
+  mass_bc = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    mass_bc += water_saturation[c] * rho * mesh_->cell_volume(c); 
+  }
+
   // control options
   absolute_tol = ti_specs_trs_.atol;
   relative_tol = ti_specs_trs_.rtol;
@@ -528,6 +534,7 @@ int Richards_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
+  // predict water mass change during time step
   time = T_physics;
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
@@ -606,8 +613,19 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
-  // improve algebraic consistency 
-  // ImproveAlgebraicConsistentcy(flux, ws_prev, ws);
+  // update mass balance
+  // ImproveAlgebraicConsistency(flux, ws_prev, ws);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    mass_bc += WaterVolumeChangePerSecond(bc_markers, flux) * rho * dT;
+
+    mass_amanzi = 0.0;
+    for (int c = 0; c < ncells_owned; c++) {
+      mass_amanzi += ws[c] * rho * mesh_->cell_volume(c);
+    }
+    double mass_loss = mass_bc - mass_amanzi; 
+    std::printf("Richards PK: water mass %9.4e %9.4e\n", mass_amanzi, mass_loss);
+  }
 
   dT = dTnext;
 

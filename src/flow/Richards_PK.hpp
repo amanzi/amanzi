@@ -213,6 +213,8 @@ class Richards_PK : public Flow_PK {
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 
+  double mass_bc, mass_amanzi;
+
  private:
   void operator=(const Richards_PK& RPK);
 };
