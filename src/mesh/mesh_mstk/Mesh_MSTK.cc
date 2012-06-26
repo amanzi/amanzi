@@ -2405,11 +2405,14 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
         case FACE:
 
-          if (rgn->dimension() != celldim-1) 
-            {
-              std::cerr << "No region of dimension " << celldim-1 << " defined in geometric model" << std::endl;
-              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
-            }
+          //
+          // Commented out so that we can ask for a face set in a 3D box
+          //
+          //          if (rgn->dimension() != celldim-1) 
+          //            {
+          //              std::cerr << "No region of dimension " << celldim-1 << " defined in geometric model" << std::endl;
+          //              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
+          //            }
 
           if (rgn->type() == AmanziGeometry::BOX) 
             {
