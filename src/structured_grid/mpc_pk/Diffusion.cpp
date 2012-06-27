@@ -2082,8 +2082,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       IndexType ccType = IndexType(IntVect::TheZeroVector());
       MFTower PnewMFT(layout,Pnew_p);
       MFTower PoldMFT(layout,ccType,1,0);
-      MFTower SatMFT(layout,ccType,1,0);
-      MFTower LambdaMFT(layout,ccType,1,0);
+      MFTower SatMFT(layout,ccType,1,1);
+      MFTower LambdaMFT(layout,ccType,1,1);
       PArray<MFTower> DarcyVelocity(BL_SPACEDIM,PArrayManage);
       for (int d=0; d<BL_SPACEDIM; ++d) {
           DarcyVelocity.set(d, new MFTower(layout,IndexType(BoxLib::BASISV(d)),1,0));
@@ -2095,7 +2095,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
                                     DarcyVelocity,bc,pressure_maxorder);
       RichardOp richardOp(richardContext);
       richardOp.Residual(RhsMFT,PnewMFT,dt);
-      richardOp.Write("JUNK");
       BoxLib::Abort();
 #endif
 
