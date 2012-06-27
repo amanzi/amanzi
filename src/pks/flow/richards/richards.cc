@@ -140,8 +140,6 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   FlowBCFactory bc_factory(S->Mesh(), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
-  // head boundary conditions not yet implemented, as they depend on constant density
-  // bc_head_ = bc_factory.CreateStaticHead(0.0, 0.0, g);
 
   // Relative permeability method
   string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
@@ -186,19 +184,21 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   bc_values_.resize(nfaces, 0.0);
 
   // update face pressures as a hint?
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-  DeriveFaceValuesFromCellValues_(S, temp);
+  Teuchos::RCP<CompositeVector> pres = S->GetFieldData("pressure", "flow");
+  DeriveFaceValuesFromCellValues_(S, pres);
 
   // declare secondary variables initialized, as they will be done by
   // the commit_state call
   S->GetRecord("saturation_liquid","flow")->set_initialized();
-  S->GetRecord("saturation_gas","flow")->set_initialized();
   S->GetRecord("density_liquid","flow")->set_initialized();
-  S->GetRecord("viscosity_liquid","flow")->set_initialized();
-  S->GetRecord("density_gas","flow")->set_initialized();
   S->GetRecord("molar_density_liquid","flow")->set_initialized();
+  S->GetRecord("viscosity_liquid","flow")->set_initialized();
+
+  S->GetRecord("saturation_gas","flow")->set_initialized();
+  S->GetRecord("density_gas","flow")->set_initialized();
   S->GetRecord("molar_density_gas","flow")->set_initialized();
   S->GetRecord("mol_frac_gas","flow")->set_initialized();
+
   S->GetRecord("relative_permeability","flow")->set_initialized();
   S->GetRecord("darcy_flux", "flow")->set_initialized();
   S->GetRecord("darcy_velocity", "flow")->set_initialized();
