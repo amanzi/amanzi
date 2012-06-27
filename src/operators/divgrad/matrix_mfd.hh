@@ -27,7 +27,6 @@
 #include "Mesh.hh"
 #include "Point.hh"
 #include "composite_vector.hh"
-#include "boundary-function.hh"
 #include "mfd3d.hpp"
 
 namespace Amanzi {
@@ -61,10 +60,11 @@ enum Matrix_bc {
   MFD_BC_FLUX
 };
 
-class MatrixMFD : public Epetra_Operator {
+class MatrixMFD { // : public Epetra_Operator {
 
 public:
-  MatrixMFD(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh);
+  MatrixMFD(Teuchos::ParameterList& plist,
+            const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   // access to data for updating manually
   std::vector<double>& Acc_cells() { return Acc_cells_; }
@@ -103,8 +103,8 @@ public:
           const std::vector<double>& bc_values);
 
   // operator methods: MatrixMFD is an Epetra_Operator
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  // int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  // int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   bool UseTranspose() const { return false; }
   int SetUseTranspose(bool) { return 1; }
 
@@ -137,7 +137,7 @@ public:
                           const Teuchos::RCP<CompositeVector>& velocity) const;
 
 private:
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
   bool flag_symmetry_;
   MFD_method method_;

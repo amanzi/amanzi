@@ -8,7 +8,8 @@ EnergyTest::EnergyTest(Teuchos::ParameterList& plist_,
   // create states
   Teuchos::ParameterList state_plist =
     parameter_list.get<Teuchos::ParameterList>("State");
-  S0 = Teuchos::rcp(new State(state_plist, mesh));
+  S0 = Teuchos::rcp(new State(state_plist));
+  S0->RegisterDomainMesh(mesh);
   Teuchos::ParameterList energy_plist =
     parameter_list.get<Teuchos::ParameterList>("Energy");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector("solution"));
@@ -43,11 +44,11 @@ void EnergyTest::commit_step() {
 void EnergyTest::initialize_owned() {
   Teuchos::RCP<CompositeVector> temp = S0->GetFieldData("temperature", "energy");
 
-  int c_owned = S0->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = temp->size("cell");
   for (int c=0; c != c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     for (int lcv_comp=0; lcv_comp != num_components; ++lcv_comp) {
-      (*temp)(lcv_comp,c) = my_f(xc, 0.0);
+      (*temp)("cell",lcv_comp,c) = my_f(xc, 0.0);
     }
   }
   S0->GetRecord("temperature", "energy")->set_initialized();
@@ -61,7 +62,7 @@ void EnergyTest::initialize_darcy_flux() {
   for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     const AmanziGeometry::Point& fc = mesh->face_centroid(f);
-    (*darcy_flux)(f) = my_u(fc, 0.0) * normal;
+    (*darcy_flux)("face",f) = my_u(fc, 0.0) * normal;
   }
   S0->GetRecord("darcy_flux", "state")->set_initialized();
 }
@@ -78,7 +79,7 @@ void EnergyTest::evaluate_error_temp(double t, double* L1, double* L2) {
     double volume = mesh->cell_volume(c);
 
     for (int lcv_comp=0; lcv_comp != num_components; ++lcv_comp) {
-      d = (*temp)(lcv_comp,c) - my_f(xc, t);
+      d = (*temp)("cell",lcv_comp,c) - my_f(xc, t);
 
       *L1 += fabs(d) * volume;
       *L2 += d * d * volume;

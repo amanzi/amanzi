@@ -235,9 +235,9 @@ void ThreePhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
 
     double face_value = 0.0;
     for (int n=0; n!=ncells; ++n) {
-      face_value += (*temp)("cell",0,cells[n]);
+      face_value += (*temp)("cell",cells[n]);
     }
-    (*temp)("face",0,f) = face_value / ncells;
+    (*temp)("face",f) = face_value / ncells;
   }
 };
 

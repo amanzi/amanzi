@@ -9,6 +9,8 @@ Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
 #include "function-factory.hh"
+#include "vector_function.hh"
+#include "composite_function.hh"
 #include "errors.hh"
 
 #include "energy_bc_factory.hh"
@@ -128,8 +130,12 @@ void EnergyBCFactory::ProcessTemperatureSpec_(const Teuchos::ParameterList& list
     Exceptions::amanzi_throw(message);
   }
 
+  // A bit hacky -- this entire code needs to be revisited in light of the new
+  // options for mesh_functions.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 };
 
 
@@ -204,8 +210,12 @@ void EnergyBCFactory::ProcessEnthalpyFluxSpec_(const Teuchos::ParameterList& lis
     Exceptions::amanzi_throw(message);
   }
 
+  // A bit hacky -- this entire code needs to be revisited in light of the new
+  // options for mesh_functions.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 };
 
 }  // namespace Energy

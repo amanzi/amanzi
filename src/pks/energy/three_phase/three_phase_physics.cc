@@ -119,7 +119,7 @@ void ThreePhase::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
                       (1-(*poro0)(c)) * (edens_rock0)) * (*cell_volume0)(c);
 
     // add the time derivative of energy density to the residual
-    (*g)("cell",0,c) += (energy1 - energy0)/dt;
+    (*g)("cell",c) += (energy1 - energy0)/dt;
   }
 };
 
@@ -147,15 +147,15 @@ void ThreePhase::AddAdvection_(const Teuchos::RCP<State> S,
     // if u is in units of J/mol, then the rate of change of energy [J/s] is given by:
     // [flux * u * face_area] = mol/(m^2*s) * J/mol * m^2 = J/s
     for (int c=0; c!=c_owned; ++c) {
-      (*field)("cell",0,c) = (*enthalpy_liq)("cell",0,c);
+      (*field)("cell",c) = (*enthalpy_liq)("cell",c);
     }
   } else {
     // this is ugly because the flux is in a molar basis:
     // if u is in units of J/kg, then the rate of change of energy [J/s] is given by:
     // [flux * rho/n * u * face_area] = mol/(m^2*s) * kg/mol * J/kg * m^2 = J/s
     for (int c=0; c!=c_owned; ++c) {
-      (*field)("cell",0,c) = (*enthalpy_liq)("cell",0,c)
-                        * (*dens_liq)("cell",0,c) / (*n_liq)("cell",0,c);
+      (*field)("cell",c) = (*enthalpy_liq)("cell",c)
+                        * (*dens_liq)("cell",c) / (*n_liq)("cell",c);
     }
   }
 
@@ -185,10 +185,10 @@ void ThreePhase::AddAdvection_(const Teuchos::RCP<State> S,
       if (c >= 0) { // only the inward cell is > 0
         double enthalpy = int_energy;
         if (!iem_liquid_->IsMolarBasis()) {
-          enthalpy *= (*dens_liq)("cell",0,c) / (*n_liq)("cell",0,c);
+          enthalpy *= (*dens_liq)("cell",c) / (*n_liq)("cell",c);
         }
-        enthalpy += (*pres)("face",0,f)/(*n_liq)("cell",0,c);
-        (*field)("face",0,f) = enthalpy * fabs((*darcy_flux)(f));
+        enthalpy += (*pres)("face",f)/(*n_liq)("cell",c);
+        (*field)("face",f) = enthalpy * fabs((*darcy_flux)(f));
       }
     }
   }
@@ -252,8 +252,8 @@ void ThreePhase::InternalEnergyGas_(const Teuchos::RCP<State>& S,
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*int_energy_gas)("cell",0,c) = iem_gas_->
-      InternalEnergy(temp("cell",0,c), mol_frac_gas("cell",0,c));
+    (*int_energy_gas)("cell",c) = iem_gas_->
+      InternalEnergy(temp("cell",c), mol_frac_gas("cell",c));
   }
 };
 
@@ -273,7 +273,7 @@ void ThreePhase::InternalEnergyLiquid_(const Teuchos::RCP<State>& S,
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*int_energy_liquid)("cell",0,c) = iem_liquid_->InternalEnergy(temp("cell",0,c));
+    (*int_energy_liquid)("cell",c) = iem_liquid_->InternalEnergy(temp("cell",c));
   }
 };
 
@@ -293,7 +293,7 @@ void ThreePhase::InternalEnergyIce_(const Teuchos::RCP<State>& S,
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*int_energy_ice)("cell",0,c) = iem_ice_->InternalEnergy(temp("cell",0,c));
+    (*int_energy_ice)("cell",c) = iem_ice_->InternalEnergy(temp("cell",c));
   }
 };
 
@@ -313,8 +313,8 @@ void ThreePhase::InternalEnergyRock_(const Teuchos::RCP<State>& S,
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*int_energy_rock)("cell",0,c) = iem_rock_->
-      InternalEnergy(temp("cell",0,c));
+    (*int_energy_rock)("cell",c) = iem_rock_->
+      InternalEnergy(temp("cell",c));
   }
 };
 
@@ -348,8 +348,8 @@ void ThreePhase::EnthalpyLiquid_(const Teuchos::RCP<State>& S,
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*enthalpy_liq)("cell",0,c) = int_energy_liquid("cell",0,c)
-                              + pres("cell",0,c)/dens_liq("cell",0,c);
+    (*enthalpy_liq)("cell",c) = int_energy_liquid("cell",c)
+                              + pres("cell",c)/dens_liq("cell",c);
   }
 };
 
@@ -377,8 +377,8 @@ void ThreePhase::ThermalConductivity_(const Teuchos::RCP<State>& S,
   // just a single model for now -- ignore blocks
   int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c != c_owned; ++c) {
-    (*thermal_conductivity)("cell",0,c) = thermal_conductivity_model_->
-      CalculateConductivity(porosity("cell",0,c), sat_liq("cell",0,c), sat_ice("cell",0,c));
+    (*thermal_conductivity)("cell",c) = thermal_conductivity_model_->
+      CalculateConductivity(porosity("cell",c), sat_liq("cell",c), sat_ice("cell",c));
   }
 };
 
