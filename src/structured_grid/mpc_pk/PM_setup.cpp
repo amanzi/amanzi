@@ -83,7 +83,7 @@ namespace
 //
 // The num_state_type actually varies with model.
 //
-// Add 2 if do_chem == 1 later.
+// Add 2 if do_chem>0 later.
 //
 int PorousMedia::num_state_type;
 //
@@ -101,6 +101,8 @@ bool        PorousMedia::porosity_from_fine;
 bool        PorousMedia::permeability_from_fine;
 PArray<Rock> PorousMedia::rocks;
 bool        PorousMedia::material_is_layered;
+Real        PorousMedia::saturation_threshold_for_vg_Kr;
+int         PorousMedia::use_shifted_Kr_eval;
 //
 // Source.
 //
@@ -143,6 +145,25 @@ Array<Real>         PorousMedia::tDen;
 Array<PArray<RegionData> > PorousMedia::tic_array;
 Array<PArray<RegionData> > PorousMedia::tbc_array;
 std::map<std::string,Array<int> > PorousMedia::group_map;
+
+//
+// Minerals and Sorption sites
+//
+int                PorousMedia::nminerals;
+Array<std::string> PorousMedia::minerals;
+int                PorousMedia::nsorption_sites;
+Array<std::string> PorousMedia::sorption_sites;
+int                PorousMedia::ncation_exchange;
+Array<std::string> PorousMedia::aux_chem_variables;
+PorousMedia::ChemICMap PorousMedia::sorption_isotherm_ics;
+PorousMedia::ChemICMap PorousMedia::mineralogy_ics;
+PorousMedia::ChemICMap PorousMedia::surface_complexation_ics;
+PorousMedia::ICLabelParmPair PorousMedia::cation_exchange_ics;
+PorousMedia::LabelIdx PorousMedia::mineralogy_label_map;
+PorousMedia::LabelIdx PorousMedia::sorption_isotherm_label_map;
+PorousMedia::LabelIdx PorousMedia::surface_complexation_label_map;
+std::map<std::string,int> PorousMedia::cation_exchange_label_map;
+
 // Pressure.
 //
 #ifdef MG_USE_FBOXLIB
@@ -179,6 +200,7 @@ int  PorousMedia::NUM_STATE;
 int  PorousMedia::full_cycle;
 int  PorousMedia::max_step;
 Real PorousMedia::stop_time;
+Real PorousMedia::dt_init;
 
 Array<AdvectionForm> PorousMedia::advectionType;
 Array<DiffusionForm> PorousMedia::diffusionType;
@@ -215,6 +237,7 @@ Real PorousMedia::dt_chem;
 int  PorousMedia::max_grid_size_chem;
 bool PorousMedia::no_initial_values;
 bool PorousMedia::use_funccount;
+bool PorousMedia::do_richard_sat_solve;
 //
 // Lists.
 //
@@ -251,28 +274,49 @@ int  PorousMedia::it_pressure;
 bool PorousMedia::do_any_diffuse;
 int  PorousMedia::do_cpl_advect;
 
+int  PorousMedia::richard_solver_verbose;
 //
 // Init to steady
 //
 bool PorousMedia::do_richard_init_to_steady;
 int  PorousMedia::richard_init_to_steady_verbose;
 int  PorousMedia::steady_min_iterations;
+int  PorousMedia::steady_min_iterations_2;
 int  PorousMedia::steady_max_iterations;
 int  PorousMedia::steady_limit_iterations;
 Real PorousMedia::steady_time_step_reduction_factor;
 Real PorousMedia::steady_time_step_increase_factor;
+Real PorousMedia::steady_time_step_increase_factor_2;
 Real PorousMedia::steady_time_step_retry_factor_1;
 Real PorousMedia::steady_time_step_retry_factor_2;
 Real PorousMedia::steady_time_step_retry_factor_f;
-int  PorousMedia::max_consecutive_failures_1;
-int  PorousMedia::max_consecutive_failures_2;
+int  PorousMedia::steady_max_consecutive_failures_1;
+int  PorousMedia::steady_max_consecutive_failures_2;
 Real PorousMedia::steady_tolerance;
-Real PorousMedia::steady_initial_time_step;
-Real PorousMedia::steady_maximum_time_steps;
-int  PorousMedia::max_num_consecutive_success;
+Real PorousMedia::steady_init_time_step;
+Real PorousMedia::steady_max_time_steps;
+Real PorousMedia::steady_max_psuedo_time;
+int  PorousMedia::steady_max_num_consecutive_success;
 Real PorousMedia::steady_extra_time_step_increase_factor;
-int  PorousMedia::max_num_consecutive_increases;
-Real PorousMedia::consecutive_increase_reduction_factor;
+int  PorousMedia::steady_max_num_consecutive_increases;
+Real PorousMedia::steady_consecutive_increase_reduction_factor;
+int  PorousMedia::richard_max_ls_iterations;
+Real PorousMedia::richard_min_ls_factor;
+Real PorousMedia::richard_ls_acceptance_factor;
+Real PorousMedia::richard_ls_reduction_factor;
+int PorousMedia::richard_monitor_linear_solve;
+int PorousMedia::richard_monitor_line_search;
+
+static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
+namespace
+{
+    static void PM_Setup_CleanUpStatics() 
+    {
+        for (std::map<std::string,EventCoord::Event*>::iterator it=defined_events.begin(); it!=defined_events.end(); ++it) {
+            delete it->second;
+        }
+    }
+}
 
 static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
@@ -426,7 +470,20 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::idx_dominant = -1;
 
   PorousMedia::ntracers = 0; 
-
+  PorousMedia::nminerals = 0; 
+  PorousMedia::minerals.clear();
+  PorousMedia::nsorption_sites = 0; 
+  PorousMedia::sorption_sites.clear();
+  PorousMedia::aux_chem_variables.clear();
+  PorousMedia::sorption_isotherm_ics.clear();
+  PorousMedia::mineralogy_ics.clear();
+  PorousMedia::surface_complexation_ics.clear();
+  PorousMedia::cation_exchange_ics.clear();
+  PorousMedia::mineralogy_label_map.clear();
+  PorousMedia::sorption_isotherm_label_map.clear();
+  PorousMedia::surface_complexation_label_map.clear();
+  PorousMedia::cation_exchange_label_map.clear();
+  
 #ifdef MG_USE_FBOXLIB
   PorousMedia::richard_iter = 100;
 #endif
@@ -438,6 +495,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::verbose      = 0;
   PorousMedia::cfl          = 0.8;
   PorousMedia::init_shrink  = 1.0;
+  PorousMedia::dt_init      = -1.0; // Ignore if < 0
   PorousMedia::change_max   = 1.1;
   PorousMedia::fixed_dt     = -1.0;
   PorousMedia::richard_max_dt = 5.e5;
@@ -459,9 +517,12 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::have_capillary = 0;
 
+  PorousMedia::saturation_threshold_for_vg_Kr = -1; // <0 bypasses smoothing
+  PorousMedia::use_shifted_Kr_eval = 0; //
+
   PorousMedia::variable_scal_diff = 1; 
 
-  PorousMedia::do_chem            = -1;
+  PorousMedia::do_chem            = 0;
   PorousMedia::do_tracer_transport          = -1;
   PorousMedia::do_full_strang     = 1;
   PorousMedia::n_chem_interval    = 0;
@@ -487,6 +548,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::it_pressure         = 0;  
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
+  PorousMedia::do_richard_sat_solve = false;
+
+  PorousMedia::richard_solver_verbose = 1;
 
   PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::richard_init_to_steady_verbose = 1;
@@ -498,17 +562,48 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_time_step_retry_factor_1 = 0.5;
   PorousMedia::steady_time_step_retry_factor_2 = 0.1;
   PorousMedia::steady_time_step_retry_factor_f = 0.01;
-  PorousMedia::max_consecutive_failures_1 = 3;
-  PorousMedia::max_consecutive_failures_2 = 4;
+  PorousMedia::steady_max_consecutive_failures_1 = 3;
+  PorousMedia::steady_max_consecutive_failures_2 = 4;
   PorousMedia::steady_tolerance = 1.e-8;
-  PorousMedia::steady_initial_time_step = 1.e2;
-  PorousMedia::steady_maximum_time_steps = 8000;
-  PorousMedia::max_num_consecutive_success = 3;
+  PorousMedia::steady_init_time_step = 1.e2;
+  PorousMedia::steady_max_time_steps = 8000;
+  PorousMedia::steady_max_psuedo_time = 1.e10;
+  PorousMedia::steady_max_num_consecutive_success = 3;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
-  PorousMedia::max_num_consecutive_increases = 3;
-  PorousMedia::consecutive_increase_reduction_factor = 0.15;
+  PorousMedia::steady_max_num_consecutive_increases = 3;
+  PorousMedia::steady_consecutive_increase_reduction_factor = 0.15;
+
+  PorousMedia::richard_max_ls_iterations = 10;
+  PorousMedia::richard_min_ls_factor = 1.e-8;
+  PorousMedia::richard_ls_acceptance_factor = 1.4;
+  PorousMedia::richard_ls_reduction_factor = 0.1;
+  PorousMedia::richard_monitor_linear_solve = 0;
+  PorousMedia::richard_monitor_line_search = 0;
 
   PorousMedia::echo_inputs         = 0;
+}
+
+std::pair<std::string,std::string>
+SplitDirAndName(const std::string& orig)
+{
+    if (orig[orig.length()-1] == '/') {
+        BoxLib::Abort(std::string("Invalid filename:" + orig).c_str());
+    }
+    vector<std::string> tokens = BoxLib::Tokenize(orig,std::string("/"));
+    std::pair<std::string,std::string> result;
+    int size = tokens.size();
+    BL_ASSERT(tokens.size()>0);
+    if (size>1) {
+        for (int i=0; i<size-2; ++i) {
+            result.first += tokens[i] + "/";
+        }
+        result.first += tokens[size-2];
+    }
+    else {
+        result.first = ".";
+    }
+    result.second = tokens[size-1];
+    return result;
 }
 
 void
@@ -528,6 +623,34 @@ PorousMedia::variableSetUp ()
   }
 
   setup_list();
+  std::string pp_dump_file = ""; 
+  if (pproot.countval("dump_parmparse_table")) {
+      pproot.get("dump_parmparse_table",pp_dump_file);
+      std::ofstream ofs;
+      std::pair<std::string,std::string> df = SplitDirAndName(pp_dump_file);
+      if (ParallelDescriptor::IOProcessor()) {
+          if (!BoxLib::UtilCreateDirectory(df.first, 0755)) {
+              BoxLib::CreateDirectoryFailed(df.first);
+          }
+      }
+      ParallelDescriptor::Barrier();
+
+      ofs.open(pp_dump_file.c_str());
+      if (ofs.fail()) {
+          BoxLib::Abort(std::string("Cannot open pp dump file: "+pp_dump_file).c_str());
+      }
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "\nDumping ParmParse table:\n";
+      }
+      ParmParse::dumpTable(ofs);
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "... done dumping ParmParse table.\n" << '\n';
+      }
+      ofs.close();
+  }
+
   read_params(); 
   BCRec bc;
 
@@ -628,6 +751,89 @@ PorousMedia::variableSetUp ()
       is_diffusive[i] = false;
     }
 
+  bool needs_aux_chem_data = aux_chem_variables.size() || 
+      ( (nminerals>0)  ||  (nsorption_sites>0)  ||   (ncation_exchange>0) );
+
+  if (needs_aux_chem_data)
+  {
+      if (ntracers>0)
+      {
+          Array<std::string> solute_data_names;
+          solute_data_names.push_back("Total_Sorbed");
+          solute_data_names.push_back("Kd");
+          solute_data_names.push_back("Freundlich_n");
+          solute_data_names.push_back("Langmuir_b");
+          if (do_chem>0) {
+              solute_data_names.push_back("Free_Ion_Guess");
+              solute_data_names.push_back("Activity_Coefficient");
+          }
+          for (int i=0; i<tNames.size(); ++i) {
+              const std::string& name = tNames[i];
+              for (int j=0; j<solute_data_names.size(); ++j) {
+                  const std::string label = solute_data_names[j]+"_"+name;
+                  sorption_isotherm_label_map[name][solute_data_names[j]] = aux_chem_variables.size();
+                  aux_chem_variables.push_back(label);
+              }
+          }
+      }      
+
+      if (nminerals>0)
+      {
+          Array<std::string> mineral_data_names;
+          mineral_data_names.push_back("Volume_Fraction");
+          mineral_data_names.push_back("Specific_Surface_Area");
+
+          for (int i=0; i<minerals.size(); ++i) {
+              const std::string& name = minerals[i];
+              for (int j=0; j<mineral_data_names.size(); ++j) {
+                  const std::string label = mineral_data_names[j]+"_"+name;
+                  mineralogy_label_map[name][mineral_data_names[j]] = aux_chem_variables.size();
+                  aux_chem_variables.push_back(label);
+              }
+          }
+      }      
+
+      if (nsorption_sites>0)
+      {
+          Array<std::string> sorption_site_data_names;
+          sorption_site_data_names.push_back("Site_Density");
+
+          for (int i=0; i<sorption_sites.size(); ++i) {
+              const std::string& name = sorption_sites[i];
+              for (int j=0; j<sorption_site_data_names.size(); ++j) {
+                  const std::string label = sorption_site_data_names[j]+"_"+name;
+                  surface_complexation_label_map[name][sorption_site_data_names[j]] = aux_chem_variables.size();
+                  aux_chem_variables.push_back(label);
+              }
+          }
+      }
+
+      if (ncation_exchange>0)
+      {
+          Array<std::string> cation_exchange_data_names;
+          cation_exchange_data_names.push_back("Cation_Exchange_Capacity");
+
+          for (int j=0; j<cation_exchange_data_names.size(); ++j) {
+              cation_exchange_label_map[cation_exchange_data_names[j]] = aux_chem_variables.size();
+              aux_chem_variables.push_back(cation_exchange_data_names[j]);
+          }
+      }
+
+      int num_aux_chem_variables = aux_chem_variables.size();
+      Array<BCRec> cbcs(num_aux_chem_variables);
+      for (int i = 0; i < num_aux_chem_variables; i++) 
+      {
+          cbcs[i] = bc;
+      }
+
+      desc_lst.addDescriptor(Aux_Chem_Type,IndexType::TheCellType(),
+                             StateDescriptor::Point,0,num_aux_chem_variables,
+                             &cell_cons_interp);
+      desc_lst.setComponent(Aux_Chem_Type,0,aux_chem_variables,cbcs,
+                            BndryFunc(FORT_ONE_N_FILL,FORT_ALL_T_FILL));
+
+  }
+
   //
   // **************  DEFINE PRESSURE VARIABLE  ********************
   //
@@ -697,11 +903,11 @@ PorousMedia::variableSetUp ()
 #endif
 
 #if defined(AMANZI)
-  if (do_chem>-1)
+  if (do_chem>0)
     {
       // add function count
       desc_lst.addDescriptor(FuncCount_Type, IndexType::TheCellType(),
-			     StateDescriptor::Point,0,1, &cell_cons_interp);
+			     StateDescriptor::Point,1,1, &cell_cons_interp);
       desc_lst.setComponent(FuncCount_Type, 0, "FuncCount", 
 			    bc, BndryFunc(FORT_ONE_N_FILL));
     }
@@ -768,27 +974,8 @@ PorousMedia::variableSetUp ()
       }
   }
 
+  BoxLib::ExecOnFinalize(PM_Setup_CleanUpStatics);
 
-
-  std::string pp_dump_file = ""; 
-  if (pproot.countval("dump_parmparse_table")) {
-      pproot.get("dump_parmparse_table",pp_dump_file);
-      std::ofstream ofs;
-      ofs.open(pp_dump_file.c_str());
-      if (ofs.fail()) {
-          BoxLib::Abort("Cannot open pp dump file");
-      }
-      if (verbose>1 && ParallelDescriptor::IOProcessor())
-      {
-          std::cout << "\nDumping ParmParse table:\n";
-      }
-      ParmParse::dumpTable(ofs);
-      if (verbose>1 && ParallelDescriptor::IOProcessor())
-      {
-          std::cout << "... done dumping ParmParse table.\n" << '\n';
-      }
-      ofs.close();
-  }
 }
 
 //
@@ -817,9 +1004,10 @@ void PorousMedia::read_geometry()
   // set up  1+2*BL_SPACEDIM default regions
   bool generate_default_regions = true; pp.query("generate_default_regions",generate_default_regions);
   int nregion_DEF = 0;
+  regions.clear();
   if (generate_default_regions) {
       nregion_DEF = 1 + 2*BL_SPACEDIM;
-      regions.resize(nregion_DEF);
+      regions.resize(nregion_DEF,PArrayManage);
       regions.set(0, new   allRegion(problo,probhi));
       regions.set(1, new allBCRegion(0,0,problo,probhi));
       regions.set(2, new allBCRegion(0,1,problo,probhi));
@@ -845,7 +1033,7 @@ void PorousMedia::read_geometry()
       Array<std::string> r_name;
       pp.getarr("regions",r_name,0,nregion_user);
       nregion += nregion_user;
-      regions.resize(nregion);
+      regions.resize(nregion,PArrayManage);
 
       for (int j=0; j<nregion_user; ++j)
       {
@@ -925,6 +1113,7 @@ PorousMedia::read_rock()
         BoxLib::Abort("At least one rock type must be defined.");
     }
     Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
+    rocks.clear();
     rocks.resize(nrock,PArrayManage);
 
     Array<std::string> material_regions;
@@ -988,6 +1177,64 @@ PorousMedia::read_rock()
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
                               rkrType,rkrParam,rcplType,rcplParam,rregions));
                   
+        if (ntracers>0 && do_chem>0) {
+            Array<std::pair<std::string,Real> > parameters;
+            parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 0));
+            parameters.push_back(std::make_pair<std::string,Real>(                  "Kd", 0));
+            parameters.push_back(std::make_pair<std::string,Real>(          "Langmuir_b", 0));
+            parameters.push_back(std::make_pair<std::string,Real>(        "Freundlich_n", 1));
+            parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 0));
+            parameters.push_back(std::make_pair<std::string,Real>("Activity_Coefficient", 0));
+
+            for (int k=0; k<tNames.size(); ++k) {
+                for (int j=0; j<parameters.size(); ++j) {
+                    const std::string& str = parameters[j].first;
+                    const std::string prefixM(prefix+".Sorption_Isotherms."+tNames[k]);
+                    ParmParse pprm(prefixM.c_str());
+                    sorption_isotherm_ics[rname][tNames[k]][str] = parameters[j].second;
+                    pprm.query(str.c_str(),sorption_isotherm_ics[rname][tNames[k]][str]);
+                }
+            }
+        }
+
+        if (nminerals>0 && do_chem>0) {
+            Array<std::pair<std::string,Real> > parameters;
+            parameters.push_back(std::make_pair<std::string,Real>(       "Volume_Fraction", 0));
+            parameters.push_back(std::make_pair<std::string,Real>("Specific_Surface_Area", 0));
+
+            for (int k=0; k<minerals.size(); ++k) {
+                for (int j=0; j<parameters.size(); ++j) {
+                    const std::string& str = parameters[j].first;
+                    const std::string prefixM(prefix+".Mineralogy."+minerals[k]);
+                    ParmParse pprm(prefixM.c_str());
+                    mineralogy_ics[rname][minerals[k]][str] = parameters[j].second;
+                    pprm.query(str.c_str(),mineralogy_ics[rname][minerals[k]][str]);
+                }
+            }
+        }
+        
+        if (nsorption_sites>0 && do_chem>0) {
+            Array<std::pair<std::string,Real> > parameters;
+            parameters.push_back(std::make_pair<std::string,Real>("Site_Density", 0));
+
+            for (int k=0; k<sorption_sites.size(); ++k) {
+                for (int j=0; j<parameters.size(); ++j) {
+                    const std::string& str = parameters[j].first;
+                    const std::string prefixM(prefix+".Surface_Complexation_Sites."+sorption_sites[k]);
+                    ParmParse pprm(prefixM.c_str());
+                    surface_complexation_ics[rname][sorption_sites[k]][str] = parameters[j].second;
+                    pprm.query(str.c_str(),surface_complexation_ics[rname][sorption_sites[k]][str]);
+                }
+            }
+        }
+
+        if (ncation_exchange>0 && do_chem>0) {
+            Array<std::pair<std::string,Real> > parameters;
+            parameters.push_back(std::make_pair<std::string,Real>("Cation_Exchange_Capacity", 0));
+            for (int j=0; j<parameters.size(); ++j) {
+                cation_exchange_ics[rname][parameters[j].first] = parameters[j].second;
+            }
+        }
         
     }
     
@@ -1002,6 +1249,11 @@ PorousMedia::read_rock()
     pp.query("permeability_file", kfile);
     pp.query("porosity_file", pfile);
     pp.query("gslib_file",gsfile);
+
+    pp.query("Use_Shifted_Kr_Eval",use_shifted_Kr_eval);
+    pp.query("Saturation_Threshold_For_vg_Kr",saturation_threshold_for_vg_Kr);
+    FORT_KR_INIT(&saturation_threshold_for_vg_Kr,
+		 &use_shifted_Kr_eval);
     
     // The I/O processor makes the directory if it doesn't already exist.
     if (ParallelDescriptor::IOProcessor())
@@ -1065,33 +1317,32 @@ PorousMedia::read_rock()
 
         BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
         
-        if (kappadata == 0)
-            kappadata = new MultiFab;
-        
-        kappadata->define(ba,BL_SPACEDIM,0,Fab_allocate);
-        
-        for (int i=0; i<rocks.size(); ++i) 
-        {
-            // these are temporary work around.   
-            // Should utilizes region to determine size.
-            Rock& r = rocks[i];
-            r.max_level = max_level;
-            r.n_cell = n_cell;
-            r.fratio = fratio;
-            r.problo = problo;
-            r.probhi = probhi;
-            r.build_kmap(*kappadata, gsfile);
-	}
-        
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished building kmap on finest level.  Writing..." << std::endl;
+        if (kappadata == 0) {
 
-        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-        VisMF::Write(*kappadata,kfile);
-
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished writing kmap..." << std::endl;
-
+            kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate);
+        
+            for (int i=0; i<rocks.size(); ++i) 
+            {
+                // these are temporary work around.   
+                // Should utilizes region to determine size.
+                Rock& r = rocks[i];
+                r.max_level = max_level;
+                r.n_cell = n_cell;
+                r.fratio = fratio;
+                r.problo = problo;
+                r.probhi = probhi;
+                r.build_kmap(*kappadata, gsfile);
+            }
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished building kmap on finest level.  Writing..." << std::endl;
+            
+            VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+            VisMF::Write(*kappadata,kfile);
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished writing kmap..." << std::endl;
+        }
     }
     
     if (build_full_pmap)
@@ -1101,34 +1352,34 @@ PorousMedia::read_rock()
 
         BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
         
-        if (phidata == 0)
-            phidata = new MultiFab;
-        
-        phidata->define(ba,1,0,Fab_allocate);
-        
-        for (int i=0; i<rocks.size(); ++i)
-        {
-            // these are temporary work around.   
-            // Should utilizes region to determine size.
-            Rock& r = rocks[i];
-            r.max_level = max_level;
-            r.n_cell = n_cell;
-            r.fratio = fratio;
-            r.problo = problo;
-            r.probhi = probhi;
-            r.build_pmap(*phidata, gsfile);
-	}
-        
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished building pmap on finest level.  Writing..." << std::endl;
+        if (phidata == 0) {
 
-        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-        VisMF::Write(*phidata,pfile);
+            phidata = new MultiFab(ba,1,0,Fab_allocate);
 
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished writing pmap..." << std::endl;
+            for (int i=0; i<rocks.size(); ++i)
+            {
+                // these are temporary work around.   
+                // Should utilizes region to determine size.
+                Rock& r = rocks[i];
+                r.max_level = max_level;
+                r.n_cell = n_cell;
+                r.fratio = fratio;
+                r.problo = problo;
+                r.probhi = probhi;
+                r.build_pmap(*phidata, gsfile);
+            }
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished building pmap on finest level.  Writing..." << std::endl;
+            
+            VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+            VisMF::Write(*phidata,pfile);
+            
+            if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+                std::cout << "   Finished writing pmap..." << std::endl;
+        }
     }
-    
+
     if (ParallelDescriptor::IOProcessor()) {
         std::cout << "Rock name mapping in output: " << std::endl;
     }
@@ -1179,6 +1430,10 @@ void PorousMedia::read_prob()
   pp.query("max_step",max_step);
   pp.query("stop_time",stop_time);
 
+  std::string event_name = "Stop_Time";
+  defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
+  PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
+
   //
   // Get run options.
   //  
@@ -1195,29 +1450,38 @@ void PorousMedia::read_prob()
 
   // Verbosity
   pb.query("v",verbose);
+  pb.query("richard_solver_verbose",richard_solver_verbose);
+  pb.query("do_richard_sat_solve",do_richard_sat_solve);
+
   pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
   pb.query("steady_min_iterations",steady_min_iterations);
+  pb.query("steady_min_iterations_2",steady_min_iterations_2);
   pb.query("steady_max_iterations",steady_max_iterations);
   pb.query("steady_limit_iterations",steady_limit_iterations);
   pb.query("steady_time_step_reduction_factor",steady_time_step_reduction_factor);
+  pb.query("steady_time_step_increase_factor_2",steady_time_step_increase_factor_2);
   pb.query("steady_time_step_increase_factor",steady_time_step_increase_factor);
   pb.query("steady_time_step_retry_factor_1",steady_time_step_retry_factor_1);
   pb.query("steady_time_step_retry_factor_2",steady_time_step_retry_factor_2);
   pb.query("steady_time_step_retry_factor_f",steady_time_step_retry_factor_f);
-  pb.query("max_consecutive_failures_1",max_consecutive_failures_1);
-  pb.query("max_consecutive_failures_2",max_consecutive_failures_2);
+  pb.query("steady_max_consecutive_failures_1",steady_max_consecutive_failures_1);
+  pb.query("steady_max_consecutive_failures_2",steady_max_consecutive_failures_2);
   pb.query("steady_tolerance",steady_tolerance);
-  pb.query("steady_initial_time_step",steady_initial_time_step);
-  pb.query("steady_maximum_time_steps",steady_maximum_time_steps);
-  pb.query("max_num_consecutive_success",max_num_consecutive_success);
+  pb.query("steady_init_time_step",steady_init_time_step);
+  pb.query("steady_max_time_steps",steady_max_time_steps);
+  pb.query("steady_max_psuedo_time",steady_max_psuedo_time);
+  pb.query("steady_max_num_consecutive_success",steady_max_num_consecutive_success);
   pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
-  pb.query("max_num_consecutive_increases",max_num_consecutive_increases);
-  pb.query("consecutive_increase_reduction_factor",consecutive_increase_reduction_factor);
+  pb.query("steady_max_num_consecutive_increases",steady_max_num_consecutive_increases);
+  pb.query("consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
+  pb.query("richard_monitor_linear_solve",richard_monitor_linear_solve);
+  pb.query("richard_monitor_linear_solve",richard_monitor_line_search);
   
   // Get timestepping parameters.
   pb.get("cfl",cfl);
   pb.query("init_shrink",init_shrink);
+  pb.query("dt_init",dt_init);
   pb.query("dt_cutoff",dt_cutoff);
   pb.query("change_max",change_max);
   pb.query("fixed_dt",fixed_dt);
@@ -1249,7 +1513,7 @@ void PorousMedia::read_prob()
   pb.query("visc_abs_tol",visc_abs_tol);
   pb.query("be_cn_theta",be_cn_theta);
   if (be_cn_theta > 1.0 || be_cn_theta < .5)
-    BoxLib::Abort("PorousMedia::read_params():Must have be_cn_theta <= 1.0 && >= .5");   
+    BoxLib::Abort("PorousMedia::read_prob():Must have be_cn_theta <= 1.0 && >= .5");   
   pb.query("harm_avg_cen2edge", def_harm_avg_cen2edge);
 
   // if capillary pressure flag is true, then we make sure 
@@ -1261,9 +1525,9 @@ void PorousMedia::read_prob()
 	{
 	  if (ParallelDescriptor::IOProcessor())
 	    {
-	      std::cerr << "PorousMedia::read_params: nphases != 2 && ncomps !=nphases "
+	      std::cerr << "PorousMedia::read_prob: nphases != 2 && ncomps !=nphases "
 			<< "although have_capillary == 1.\n ";
-	      BoxLib::Abort("PorousMedia::read_params()");
+	      BoxLib::Abort("PorousMedia::read_prob()");
 	    }
 	}
     }
@@ -1389,8 +1653,12 @@ FluxToRhoSat::transform(Real aqueous_Darcy_flux) const
     //std::cout << "gstar: " << gstar << std::endl;
     //std::cout << "visc: " << visc[0] << std::endl;
 
-    FORT_FIND_INV_FLUX(&sol, &aqueous_Darcy_flux, &nc, &vtot, &gstar,
-                       visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
+    if (ncomps > 1) 
+      FORT_FIND_INV_FLUX(&sol, &aqueous_Darcy_flux, &nc, &vtot, &gstar,
+			 visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
+    else
+      FORT_FIND_INV_RFLUX(&sol,&aqueous_Darcy_flux, &gstar,visc.dataPtr(),
+			  &ncomps,&lkrtype,&lkrcoef);
     
     rhoSat[0] = density[0]*(sol*(1.0-lsatres)+lsatres);
     if (ncomps > 1) {
@@ -1481,14 +1749,14 @@ void  PorousMedia::read_comp()
 		  std::cerr << "PorousMedia::variableSetUp:periodic in direction "
 			    << dir
 			    << " but low BC is not Interior\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	      if (hi_bc[dir] != Interior)
 		{
 		  std::cerr << "PorousMedia::variableSetUp:periodic in direction "
 			    << dir
 			    << " but high BC is not Interior\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	    } 
         }
@@ -1506,14 +1774,14 @@ void  PorousMedia::read_comp()
 		  std::cerr << "PorousMedia::variableSetUp:Interior bc in direction "
 			    << dir
 			    << " but not defined as periodic\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	      if (hi_bc[dir] == Interior)
 		{
 		  std::cerr << "PorousMedia::variableSetUp:Interior bc in direction "
 			    << dir
 			    << " but not defined as periodic\n";
-		  BoxLib::Abort("PorousMedia::read_params()");
+		  BoxLib::Abort("PorousMedia::read_comp()");
 		}
 	    }
         }
@@ -1627,6 +1895,7 @@ void  PorousMedia::read_comp()
 	pres_bc.setHi(j,4);
       }	  
 
+      EventCoord& event_coord = PMAmr::eventCoord();
       for (int i = 0; i<n_bcs; i++)
       {
           const std::string& bcname = bc_names[i];
@@ -1673,7 +1942,8 @@ void  PorousMedia::read_comp()
               PressToRhoSat p_to_sat;
               bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
                                                         bc_type,ncomps,p_to_sat));
-
+              defined_events[bcname] = new EventCoord::TimeEvent(times);
+              event_coord.Register(bcname,defined_events[bcname]);
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -1725,6 +1995,8 @@ void  PorousMedia::read_comp()
               component_bc = 1;
               pressure_bc = 1;
 	      bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
+              defined_events[bcname] = new EventCoord::TimeEvent(times);
+              event_coord.Register(bcname,defined_events[bcname]);
           }
           else if (bc_type == "noflow")
           {
@@ -1818,45 +2090,45 @@ void  PorousMedia::read_tracer()
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          if (do_chem > -1  ||  do_tracer_transport == 1) {
-              std::string g; ppr.get("group",g);
+          if (do_chem>0  ||  do_tracer_transport == 1) {
+              std::string g="Total"; ppr.query("group",g); // FIXME: is this relevant anymore?
               group_map[g].push_back(i+ncomps);
           }
 
+          // Initial condition and boundary condition  
+          Array<std::string> tic_names;
+          int n_ic = ppr.countval("tinits");
+          if (n_ic <= 0)
+          {
+              BoxLib::Abort("each tracer must be initialized");
+          }
+          ppr.getarr("tinits",tic_names,0,n_ic);
+          tic_array[i].resize(n_ic,PArrayManage);
+          
+          for (int n = 0; n<n_ic; n++)
+          {
+              const std::string prefixIC(prefix + "." + tic_names[n]);
+              ParmParse ppri(prefixIC.c_str());
+              int n_ic_region = ppri.countval("regions");
+              Array<std::string> region_names;
+              ppri.getarr("regions",region_names,0,n_ic_region);
+              const PArray<Region> tic_regions = build_region_PArray(region_names);
+              std::string tic_type; ppri.get("type",tic_type);
+              
+              if (tic_type == "concentration")
+              {
+                  Real val = 0; ppri.query("val",val);
+                  tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
+              }
+              else {
+                  std::string m = "Tracer IC: \"" + tic_names[n] 
+                      + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
+                  BoxLib::Abort(m.c_str());
+              }
+          }
+              
           if (do_tracer_transport)
           {
-              // Initial condition and boundary condition  
-              Array<std::string> tic_names;
-              int n_ic = ppr.countval("tinits");
-              if (n_ic <= 0)
-              {
-                  BoxLib::Abort("each tracer must be initialized");
-              }
-              ppr.getarr("tinits",tic_names,0,n_ic);
-              tic_array[i].resize(n_ic,PArrayManage);
-              
-              for (int n = 0; n<n_ic; n++)
-              {
-                  const std::string prefixIC(prefix + "." + tic_names[n]);
-                  ParmParse ppri(prefixIC.c_str());
-                  int n_ic_region = ppri.countval("regions");
-                  Array<std::string> region_names;
-                  ppri.getarr("regions",region_names,0,n_ic_region);
-                  const PArray<Region> tic_regions = build_region_PArray(region_names);
-                  std::string tic_type; ppri.get("type",tic_type);
-                  
-                  if (tic_type == "concentration")
-                  {
-                      Real val = 0; ppri.query("val",val);
-                      tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
-                  }
-                  else {
-                      std::string m = "Tracer IC: \"" + tic_names[n] 
-                          + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
-                      BoxLib::Abort(m.c_str());
-                  }
-              }
-              
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
               if (n_tbc <= 0)
@@ -2041,11 +2313,11 @@ void PorousMedia::read_observation()
           ppc.get("start",start);
           ppc.get("period",period);
           ppc.get("stop",stop);
-          event_coord.InsertCycleEvent(cmacroNames[i],start,period,stop);
+          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(start,period,stop);
       }
       else if (type == "cycles" ){
           Array<int> cycles; ppc.getarr("cycles",cycles,0,ppc.countval("cycles"));
-          event_coord.InsertCycleEvent(cmacroNames[i],cycles);
+          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(cycles);
       }
       else {
           BoxLib::Abort("Unrecognized cycle macros type");
@@ -2066,19 +2338,17 @@ void PorousMedia::read_observation()
           ppt.get("start",start);
           ppt.get("period",period);
           ppt.get("stop",stop);
-          event_coord.InsertTimeEvent(tmacroNames[i],start,period,stop);
+          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(start,period,stop);
       }
       else if (type == "times" ){
           Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
-          event_coord.InsertTimeEvent(tmacroNames[i],times);
+          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(times);
       }
       else {
           BoxLib::Abort("Unrecognized time macros type");
       }
       tmacro_map[tmacroNames[i]] = i;
   }
-
-
 
   ParmParse pp("observation");
   
@@ -2119,54 +2389,49 @@ void PorousMedia::read_observation()
   ppa.queryarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
   ppa.queryarr("chk_time_macros",chk_time_macros,0,ppa.countval("chk_time_macros"));
 
+  std::map<std::string,EventCoord::Event*>::const_iterator eit;
+
   for (int i=0; i<vis_cycle_macros.size(); ++i)
   {
-      bool pcm_found = false;
-      for (int j=0; j<cmacroNames.size(); ++j) {
-          if (cmacroNames[j] == vis_cycle_macros[i]) {
-              pcm_found = true;
-          }
+      eit = defined_events.find(vis_cycle_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!pcm_found) {
+      else {
           std::string m = "vis_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
+
   for (int i=0; i<vis_time_macros.size(); ++i)
   {
-      bool pcm_found = false;
-      for (int j=0; j<tmacroNames.size(); ++j) {
-          if (tmacroNames[j] == vis_time_macros[i]) {
-              pcm_found = true;
-          }
+      eit = defined_events.find(vis_time_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsTime() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!pcm_found) {
+      else {
           std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
   for (int i=0; i<chk_cycle_macros.size(); ++i)
   {
-      bool ccm_found = false;
-      for (int j=0; j<cmacroNames.size(); ++j) {
-          if (cmacroNames[j] == chk_cycle_macros[i]) {
-              ccm_found = true;
-          }
+      eit = defined_events.find(chk_cycle_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!ccm_found) {
+      else {
           std::string m = "chk_cycle_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
   for (int i=0; i<chk_time_macros.size(); ++i)
   {
-      bool ccm_found = false;
-      for (int j=0; j<tmacroNames.size(); ++j) {
-          if (tmacroNames[j] == chk_time_macros[i]) {
-              ccm_found = true;
-          }
+      eit = defined_events.find(chk_time_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsTime() ) {
+          event_coord.Register(eit->first,eit->second);
       }
-      if (!ccm_found) {
+      else {
           std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_time_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
@@ -2176,7 +2441,7 @@ void PorousMedia::read_observation()
 void  PorousMedia::read_chem()
 {
 
-  ParmParse pp("chem");
+  ParmParse pp("prob");
 
   // get Chemistry stuff
   pp.query("do_chem",do_chem);
@@ -2188,16 +2453,57 @@ void  PorousMedia::read_chem()
     }
       
 #ifdef AMANZI
-  // get input file name, create SimpleThermoDatabase, process
-  if (do_chem > -1)
-    {
-int tnum = 1;
 
+
+#ifdef AMANZI
+  amanzi::chemistry::SetupDefaultChemistryOutput();
+  amanzi::chemistry::chem_out->AddLevel("silent");
+#endif
+
+  // get input file name, create SimpleThermoDatabase, process
+  if (do_chem>0)
+    {
+
+        ParmParse ppm("mineral");
+        nminerals = ppm.countval("minerals");
+        minerals.resize(nminerals);
+        if (nminerals>0) {
+            ppm.getarr("minerals",minerals,0,nminerals);
+        }
+
+        ParmParse pps("sorption_site");
+        nsorption_sites = pps.countval("sorption_sites");
+        sorption_sites.resize(nsorption_sites);
+        if (nsorption_sites>0) {
+            pps.getarr("sorption_sites",sorption_sites,0,nsorption_sites);
+        }
+
+        ncation_exchange = 1;
+
+        int tnum = 1;
 #ifdef _OPENMP
 	tnum = omp_get_max_threads();
 #endif
         ParmParse pb("prob.amanzi");
+
+        std::string verbose_chemistry_init = "silent"; pb.query("verbose_chemistry_init",verbose_chemistry_init);
+        std::string fmt = "simple"; pb.query("Thermodynamic_Database_Format",fmt);
 	pb.query("file", amanzi_input_file);
+
+        const std::string& activity_model_dh = amanzi::chemistry::ActivityModelFactory::debye_huckel;
+        const std::string& activity_model_ph = amanzi::chemistry::ActivityModelFactory::pitzer_hwm;
+        const std::string& activity_model_u  = amanzi::chemistry::ActivityModelFactory::unit;
+        std::string activity_model = activity_model_dh; pp.query("Activity_Model",activity_model);
+
+        Real tolerance=1.5e-12; pp.query("Tolerance",tolerance);
+        int max_num_Newton_iters = 150; pp.query("Maximum_Newton_Iterations",max_num_Newton_iters);
+        std::string outfile=""; pp.query("Output_File_Name",outfile);
+        bool use_stdout = true; pp.query("user_stdout",use_stdout);
+        int num_aux = pp.countval("Auxiliary_Data");
+        if (num_aux>0) {
+            aux_chem_variables.resize(num_aux);
+            pp.getarr("Auxiliary_Data",aux_chem_variables,0,num_aux);
+        }
         //
 	// In order to thread the AMANZI chemistry, we had to give each thread 
 	// its own chemSolve and components object.
@@ -2206,8 +2512,6 @@ int tnum = 1;
         components.resize(tnum);
 	parameters.resize(tnum);
 
-        bool verbose_chemistry_init = false;
-        pb.query("verbose_chemistry_init",verbose_chemistry_init);
 
 	for (int ithread = 0; ithread < tnum; ithread++)
         {
@@ -2215,7 +2519,11 @@ int tnum = 1;
 	  
             parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
             parameters[ithread].thermo_database_file = amanzi_input_file;
-            parameters[ithread].activity_model_name = amanzi::chemistry::ActivityModelFactory::debye_huckel;    
+            parameters[ithread].activity_model_name = activity_model;
+            if (ParallelDescriptor::IOProcessor() && ithread == 0) {
+                BoxLib::Warning("PM_setup::read_chem: Translate ntracers, nminerals, nsorption_sites, etc into amanzi chem parlance");
+            }
+#if 0
             n_minerals = 0;
             n_sorbed   = 0;
             n_total    = 0;
@@ -2244,10 +2552,11 @@ int tnum = 1;
 	  
             chemSolve[ithread].Setup(components[ithread],parameters[ithread]);
 
-            if (verbose_chemistry_init && ParallelDescriptor::IOProcessor() && ithread == 0) {
+            if (verbose_chemistry_init!="silent" && ParallelDescriptor::IOProcessor() && ithread == 0) {
                 chemSolve[ithread].Display();
                 chemSolve[ithread].DisplayComponents(components[ithread]);
             }
+#endif
 	}
     }
 #endif
@@ -2275,6 +2584,21 @@ void PorousMedia::read_params()
       }
   }
 
+  // chemistry
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read chemistry."<< std::endl;
+  read_chem();
+
+  // components and phases
+  read_comp();
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read components."<< std::endl;
+  
+  // tracers
+  read_tracer();
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read tracers."<< std::endl;
+
   // rock
   read_rock();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -2287,31 +2611,15 @@ void PorousMedia::read_params()
       }
   }
 
-  // components and phases
-  read_comp();
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read components."<< std::endl;
-  
-  // chemistry
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read chemistry."<< std::endl;
-  read_chem();
-
-  // tracers
-  read_tracer();
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read tracers."<< std::endl;
-
   // source
   //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
   //  std::cout << "Read sources."<< std::endl;
   //read_source();
 
-  // source
+  // observation
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read observation."<< std::endl;
   read_observation();
-
 
   FORT_INITPARAMS(&ncomps,&nphases,&model,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
@@ -2321,5 +2629,4 @@ void PorousMedia::read_params()
     FORT_TCRPARAMS(&ntracers);
 
 }
-
 

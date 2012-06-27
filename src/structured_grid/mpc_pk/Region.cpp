@@ -46,7 +46,7 @@ Region::setVal(FArrayBox&         fab,
       }
       if (inregion(x))
       {
-          for (int n=scomp; n<ncomp;n++) {
+          for (int n=scomp; n<scomp+ncomp;n++) {
               fab(idx,n) = val[n-scomp];
           }
       }

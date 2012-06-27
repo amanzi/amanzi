@@ -1,0 +1,103 @@
+#ifndef _MFTower_
+#define _MFTower_
+
+
+#include <winstd.H>
+#include <MultiFab.H>
+#include <PArray.H>
+#include <Array.H>
+#include <Geometry.H>
+#include <BCRec.H>
+
+struct Layout;
+struct Stencil;
+struct IVSMap;
+
+struct MFTower
+{
+    MFTower(const Layout&    layout,
+            const IndexType& t = IndexType(IntVect::TheZeroVector()),
+            int              nComp = 1,
+            int              nGrow = 0);
+
+    MFTower(Layout&           layout,
+            PArray<MultiFab>& pamf);
+
+    int NComp() const;
+    int NGrow() const;
+    MultiFab& operator[](int i);
+    const MultiFab& operator[](int i) const;
+    bool IsCompatible(const MFTower& rhs) const;
+    Real norm() const;
+    const Layout& GetLayout() const;
+ 
+    static IndexType EC[BL_SPACEDIM], CC, NC;
+
+protected:
+    void define_alloc();
+    void define_noalloc(PArray<MultiFab>& pamf);
+    const Layout& layout;
+    int nLevs, nComp, nGrow;
+    PArray<MultiFab> mft;
+    IndexType iType;
+};
+
+
+struct MFTFillPatch
+{
+    MFTFillPatch(const Layout& layout);
+    int NumLevels() const;
+    const Layout& GetLayout() const;
+
+    void BuildStencil(const BCRec& bc,
+                      int          maxorder);
+
+    void DoCoarseFineParallelInterp(MFTower& mft,
+                                    int      sComp=1,
+                                    int      nComp=1) const;
+    void FillGrowCells(MFTower& mft,
+                       int      sComp=0,
+                       int      nComp=1) const;
+    
+    void FillGrowCellsSimple(MFTower& mft,
+                             int      sComp=0,
+                             int      nComp=1) const;
+    
+    void CCtoECgrad(PArray<MFTower>& mft_ec,
+                    const MFTower&   mft_cc,
+                    Real             mult=1,
+                    int              sComp=0,
+                    int              dComp=0,
+                    int              nComp=1) const;
+
+    void ECtoCCdiv(MFTower&               mft_cc,
+                   const PArray<MFTower>& mft_ec,
+                   Real                   mult=1,
+                   int                    sComp=0,
+                   int                    dComp=0,
+                   int                    nComp=1) const;
+    
+    struct MyHash // Unique characteristics
+    {
+        MyHash()
+            : maxorder(-1) {}
+        MyHash(const BCRec& _bc, int maxorder);
+        BCRec bc;
+        int maxorder;
+    };
+
+protected:
+    void BuildCFParallelInterpStencil();
+
+
+    MyHash myhash;
+    int nLevs;
+    const Layout& layout;
+    Array<Array<IVSMap> > parallelInterpStencil; //[lev][dir][iv] = stencil to perform parallel bc Interp
+    Array<Array<IVSMap> > perpInterpStencil; //[lev][dir][iv] = stencil to perform perpendicular bc Interp
+};
+
+inline bool operator==(const MFTFillPatch::MyHash& lhs, const MFTFillPatch::MyHash& rhs);
+inline bool operator!=(const MFTFillPatch::MyHash& lhs, const MFTFillPatch::MyHash& rhs);
+
+#endif

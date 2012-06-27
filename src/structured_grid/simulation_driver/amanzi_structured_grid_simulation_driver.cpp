@@ -34,10 +34,22 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     int argc=0;
     char** argv;
 
+#ifdef BL_USE_PETSC
+    std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
+    std::string petsc_file_str = "Petsc Options File";
+    std::string petsc_options_file;
+    if (input_parameter_list.isParameter(petsc_file_str))
+    {
+	petsc_options_file = Teuchos::getParameter<std::string>(input_parameter_list, petsc_file_str);
+    }
+    PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
+#endif
+
     BoxLib::Initialize(argc,argv,false,mpi_comm);
+
     if (input_parameter_list.isParameter("PPfile"))
       {
-	std::string PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
+	const std::string& PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
 	ParmParse::Initialize(argc,argv,PPfile.c_str());
       }
 
@@ -51,7 +63,11 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     else
       converted_parameter_list = input_parameter_list;
 
-    Teuchos::writeParameterListToXmlFile(converted_parameter_list,"tmpfile");
+    if (input_parameter_list.isParameter("EchoXMLfile"))
+      {
+        const std::string& EchoXMLfile = Teuchos::getParameter<std::string>(input_parameter_list, "EchoXMLfile");
+        Teuchos::writeParameterListToXmlFile(converted_parameter_list,EchoXMLfile);
+      }
 
     BoxLib::Initialize_ParmParse(converted_parameter_list);
 
@@ -121,7 +137,11 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         std::cout << "Run time = " << run_stop << std::endl;
 	std::cout << "SCOMPLETED\n";
       }
+
     BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
+#ifdef BL_USE_PETSC
+    PetscFinalize();
+#endif
 
     return Amanzi::Simulator::SUCCESS;
 }

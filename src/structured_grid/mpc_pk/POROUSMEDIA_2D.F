@@ -2436,12 +2436,13 @@ c ::: ------------------------------------------------------------------
 
             if (ncomps == 1) then
                gstar = -kappa(i,j)*rhoval(1)*grav
+               call FORT_FIND_INV_RFLUX(sol,vel(i,j),gstar,muval,
+     &              ncomps,l_kr_type,l_kr_coef)
             else
                gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
+               call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
+     &              ncomps,l_kr_type,l_kr_coef)
             end if
-
-            call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
-     &           ncomps,l_kr_type,l_kr_coef)
 
             sol = sol*(1.0-l_sat_res)+l_sat_res
             

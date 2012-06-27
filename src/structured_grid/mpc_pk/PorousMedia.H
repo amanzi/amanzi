@@ -26,12 +26,14 @@
 #include <Observation.H>
 #include <RegionData.H>
 
+#include <PMAmr.H>
+
 #ifdef AMANZI
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #endif
 
-enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type};
+enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type};
 
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
@@ -122,6 +124,81 @@ public:
   friend class MacProj;
   friend class Diffusion;
   friend class Observation;
+
+  enum Reason
+  {
+      RICHARD_SUCCESS, 
+      RICHARD_NEWTON_FAIL,
+      RICHARD_LINEAR_FAIL
+  };
+
+    struct RichardNLSdata {
+        RichardNLSdata(int slev, int nlevs, Amr* amrp);
+        void SetMaxNewtonIterations(int max_iter);
+        void SetMaxJacobianReuse(int max_num_reuse);
+        void SetMaxConsecutiveFails(int max_num);
+        void SetDtRetryFactor(Real factor);
+        void SetMaxConsecutiveFails2(int max_num);
+        void SetDtRetryFactor2(Real factor);
+        void SetDtRetryFactorF(Real factor);
+        void SetMaxConsecutiveErrIncrease(int max_num);
+        void SetConsecutiveErrIncreaseDtReduction(Real factor);
+
+        void SetMaxNewtonIterationsForDt(int max_iter);
+        void SetMaxConsecutiveSuccess(int max_num);
+        void SetDtIncreaseFactor(Real factor);
+        void SetMinNewtonIterationsForDt(int max_iter);
+        void SetDtIncreaseFactor2(Real factor);
+        void SetMinNewtonIterationsForDt2(int max_iter);
+        void SetDtReductionFactor(Real factor);
+
+        bool UpdateJacobian(int lev);
+        void ResetJacobianCounter(int lev);
+        void ResetJacobianCounter();
+        int NLIterationsTaken() {return nl_iterations_taken;}
+        int MaxNLIterations() {return max_nl_iterations;}
+        void operator++() {nl_iterations_taken++;}
+        void operator++(int) {nl_iterations_taken++;}
+        void ResetCounters();
+
+        bool AdjustDt(Real                dt, 
+                      PorousMedia::Reason nl_solver_status, 
+                      Real                abs_err, 
+                      Real                rel_err, 
+                      Real&               new_dt); // Note: return bool for whether run should stop
+      
+        bool AdjustDt(Real                dt, 
+                      PorousMedia::Reason nl_solver_status, 
+                      Real&               new_dt); // Note: return bool for whether run should stop
+        
+        Array < PArray <MultiFab> > Hcoeffs;
+        Array < PArray <MultiFab> > Jacobian;
+        PArray <MultiFab>  DAlpha;
+        Array <MultiFab*> velPhase;
+        PArray <MultiFab>  initialState;
+
+    private:
+        void Build(Amr* amrp);
+        int start_level, end_level;
+        int max_num_Jacobian_reuse;
+        Array<int> num_Jacobian_reuses_remaining;
+        int max_nl_iterations, nl_iterations_taken;
+        Real max_nl_residual_norm, nl_residual_norm; 
+
+        int max_num_consecutive_success, num_consecutive_success;
+        int max_num_consecutive_failures_1, num_consecutive_failures_1;
+        int max_num_consecutive_failures_2, num_consecutive_failures_2;
+        int max_num_consecutive_increases, num_consecutive_increases;
+        Real consecutive_increase_reduction_factor;
+        int min_nl_iterations_for_dt, min_nl_iterations_for_dt_2, max_nl_iterations_for_dt;
+        Real time_step_increase_factor, time_step_increase_factor_2, time_step_reduction_factor;
+        Real time_step_retry_factor, time_step_retry_factor_2, time_step_retry_factor_f;
+        bool last_chance;
+        Real prev_abs_err;
+        bool first;
+    };
+
+    RichardNLSdata BuildInitNLS();
 
   PorousMedia ();
 
@@ -353,7 +430,7 @@ public:
   static Array<std::string> chk_cycle_macros, chk_time_macros;
   static int echo_inputs;
 
-protected:
+  void BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs);
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
     
@@ -495,13 +572,12 @@ protected:
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
-  enum Reason {RICHARD_SUCCESS, RICHARD_NEWTON_FAIL, RICHARD_LINEAR_FAIL};
   PorousMedia::Reason richard_scalar_update (Real dt, 
                                   int& total_nwt_iter,
                                   MultiFab* u_mac = 0);
 
   PorousMedia::Reason richard_composite_update (Real dt, 
-                                                int& total_nwt_iter);
+                                                RichardNLSdata& nl_data);
 
   void richard_init_to_steady();
 
@@ -730,12 +806,14 @@ protected:
   // Calculate the diffusive term in the jacobian of richard's equation
   //
   void calc_richard_jac (MultiFab*  diffusivity[BL_SPACEDIM],
+                         MultiFab*  dalpha,
 			 const MultiFab* lbd,
 			 const MultiFab* umac,
-			 const Real time,
-			 const int  nc = 0,
-			 const int do_upwind = 0,
-			 const bool do_n = true);
+			 Real time,
+                         Real dt,
+			 int  nc,
+			 int do_upwind,
+			 bool do_n);
 
   //
   // Calculate the dt term in the jacobian for p-formulation
@@ -897,6 +975,8 @@ protected:
   static std::string model_name;
   static int model;
 
+  PMAmr* PMParent();
+
 protected:
 
   static void InitializeStaticVariables();
@@ -918,6 +998,9 @@ protected:
   static MultiFab*   phidata;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
+  static Real        saturation_threshold_for_vg_Kr;
+  static int         use_shifted_Kr_eval;
+
 
   // Phases and components
   static int nphases;
@@ -943,7 +1026,28 @@ protected:
   static Array<PArray<RegionData> > tbc_array;
   static std::map<std::string,Array<int> > group_map;
 
+  // Minerals, Sorption sites
+  static int nminerals; 
+  static Array<std::string> minerals;
+  static int nsorption_sites; 
+  static Array<std::string> sorption_sites;
+  static int ncation_exchange; 
+  static Array<std::string> aux_chem_variables;
+
+  typedef std::map<std::string,Real> ICParmPair;
+  typedef std::map<std::string, ICParmPair > ICLabelParmPair;
+  typedef std::map<std::string, ICLabelParmPair> ChemICMap;
+  static ChemICMap sorption_isotherm_ics;
+  static ChemICMap mineralogy_ics;
+  static ChemICMap surface_complexation_ics;
+  static ICLabelParmPair cation_exchange_ics;
   static Array<Real> tInflow;
+
+  typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
+  static LabelIdx mineralogy_label_map;
+  static LabelIdx sorption_isotherm_label_map;
+  static LabelIdx surface_complexation_label_map;
+  static std::map<std::string,int> cation_exchange_label_map;
 
   // Pressure
   static Real wt_lo;
@@ -1073,6 +1177,8 @@ protected:
   static Real dt_cutoff;     // minimum dt allowed
   static int  sum_interval;  // number of timesteps for conservation stats
   static int  full_cycle;
+  static Real dt_init; // if >0, initial time step size
+
   //
   // Internal parameters for options.
   //
@@ -1121,30 +1227,45 @@ protected:
   static int  do_cpl_advect;
   static int  max_step;
   static Real stop_time;
+  static bool do_richard_sat_solve;
+
+  static int  richard_solver_verbose;
 
   //
   // Init-to-steady parameters
   //
   static bool do_richard_init_to_steady;
-  static int richard_init_to_steady_verbose;
-  static int steady_min_iterations;
-  static int steady_max_iterations;
-  static int steady_limit_iterations;
+  static int  richard_init_to_steady_verbose;
+  static int  steady_min_iterations;
+  static int  steady_min_iterations_2;
+  static int  steady_max_iterations;
+  static int  steady_limit_iterations;
   static Real steady_time_step_reduction_factor;
   static Real steady_time_step_increase_factor;
+  static Real steady_time_step_increase_factor_2;
   static Real steady_time_step_retry_factor_1;
   static Real steady_time_step_retry_factor_2;
   static Real steady_time_step_retry_factor_f;
-  static int max_consecutive_failures_1;
-  static int max_consecutive_failures_2;
+  static int  steady_max_consecutive_failures_1;
+  static int  steady_max_consecutive_failures_2;
   static Real steady_tolerance;
-  static Real steady_initial_time_step;
-  static Real steady_maximum_time_steps;
-  static int max_num_consecutive_success;
+  static Real steady_init_time_step;
+  static Real steady_max_time_steps;
+  static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
-  static int max_num_consecutive_increases;
-  static Real consecutive_increase_reduction_factor;
-    
+  static int  steady_max_num_consecutive_increases;
+  static Real steady_consecutive_increase_reduction_factor;
+  static Real steady_max_psuedo_time;
+  //
+  // Newton step defaults
+  //
+  static int  richard_max_ls_iterations;
+  static Real richard_min_ls_factor;
+  static Real richard_ls_acceptance_factor;
+  static Real richard_ls_reduction_factor;
+  static int richard_monitor_linear_solve;
+  static int richard_monitor_line_search;
+
   //
   // Number of states
   //
