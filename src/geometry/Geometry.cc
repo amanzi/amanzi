@@ -270,7 +270,7 @@ namespace Amanzi
         
         Point v3 = v1^v2;
         
-        *area = sqrt(v1*v1);
+        *area = sqrt(v3*v3) / 2;
         (*centroid) = center;   
       }
       else {
