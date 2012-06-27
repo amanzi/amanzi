@@ -90,6 +90,7 @@ endif()
 
 if(ENABLE_Structured)
   set(structured_grid_libs pmamr gsint boxprob boxdriv structutils ${CCSE_LIBRARIES})
+  link_directories(${CCSE_EXT_LIBRARY_DIRS})
   if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
     #message(">>>>>> using darwin ld flags")
     set(ld_flag_prefix -force_load)
@@ -104,31 +105,30 @@ if(ENABLE_Structured)
   foreach(lib ${structured_grid_libs})
     set(ssc_structured_grid_libs ${ssc_structured_grid_libs} ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
   endforeach(lib)
-  if (ENABLE_PETSC)
-    list(APPEND ssc_structured_grid_libs ${PETSC_LIBS})
-    list(APPEND ssc_structured_grid_libs ${PETSC_EXT_LIBS})
-  endif()
-#message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
+else()
+  set(ssc_structured_grid_libs)
 endif()
+#message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
 set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
-set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
-set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
+set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs}) 
+set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${CCSE_EXT_LIBRARIES})
+if(ENABLE_Structured)
+  list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
+endif()
 
 add_executable(amanzi main.cpp)
-
 target_link_libraries(amanzi ${ssc_tpl_libs_incl} ${ssc_tpl_libs})
 set_target_properties(amanzi PROPERTIES 
-                      OUTPUT_NAME amanzi
 		      OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 #message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
 add_install_binary(amanzi)
 
-
-if (BUILD_TESTS)
-
+ 
+ if (BUILD_TESTS)
+ 
   if (ENABLE_Structured)
 
     add_amanzi_test(ssc-structured-test-0 amanzi "--xml_file=t0-structured.xml" KIND unit)
