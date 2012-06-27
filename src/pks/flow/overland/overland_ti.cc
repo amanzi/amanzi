@@ -18,6 +18,8 @@ namespace Flow {
 }}
 #endif
 
+#define debug_flag 0
+
 /* ******************************************************************
  * Calculate f(u, du/dt) = d(s u)/dt + A*u - g.
  ****************************************************************** */
@@ -30,10 +32,11 @@ void OverlandFlow::fun( double t_old,
   S_next_ ->set_time(t_new);
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
+#if debug_flag
   std::cout << "OverlandFlow Residual calculation:" << std::endl;
   std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
   std::cout << "  p1: " << (*u)("cell",0,9) << " " << (*u)("face",0,29) << std::endl;
-
+#endif
   //print_vector(S_next_,u,"fun") ;
 
   // pointer-copy temperature into state and update any auxilary data
@@ -51,18 +54,24 @@ void OverlandFlow::fun( double t_old,
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
+#if debug_flag
   std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after diffusion): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
+#endif
 
   // accumulation term
   AddAccumulation_(res);
+#if debug_flag
   std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after accumulation): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
+#endif
 
   // add rhs load value
   AddLoadValue_(S_next_,res);
+#if debug_flag
   std::cout << "  res0 (after source): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after source): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
+#endif
 
   //print_vector(S_next_,res, "residual") ;
 };
@@ -71,15 +80,18 @@ void OverlandFlow::fun( double t_old,
 * Apply preconditioner to u and return the result in Pu.
 ****************************************************************** */
 void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+#if debug_flag
   std::cout << "Precon application:" << std::endl;
   std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
   std::cout << "  p1: " << (*u->data())("cell",0,9) << " " << (*u->data())("face",0,29) << std::endl;
+#endif
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
   //*Pu = *u ;
+#if debug_flag
   std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
   std::cout << "  PC*p1: " << (*Pu->data())("cell",0,9) << " " << (*Pu->data())("face",0,29) << std::endl;
+#endif
 };
-
 
 /* ******************************************************************
  * computes a norm on u-du and returns the result
@@ -93,14 +105,19 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
   for (int lcv=0; lcv!=pres_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*dpres_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*pres_vec)(0))[lcv]));
     enorm_val = std::max<double>(enorm_val, tmp);
+    //    printf("cell: %5i %14.7e %14.7e\n",lcv,(*(*dpres_vec)(0))[lcv],tmp);
   }
+  
 
   Teuchos::RCP<const Epetra_MultiVector> fpres_vec = u->data()->ViewComponent("face", false);
   Teuchos::RCP<const Epetra_MultiVector> fdpres_vec = du->data()->ViewComponent("face", false);
 
+  LINE(---) ;
+
   for (int lcv=0; lcv!=fpres_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*fdpres_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*fpres_vec)(0))[lcv]));
     enorm_val = std::max<double>(enorm_val, tmp);
+    //    printf("face: %5i %14.7e %14.7e\n",lcv,(*(*fdpres_vec)(0))[lcv],tmp);
   }
 
 #ifdef HAVE_MPI
@@ -150,7 +167,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
     Fc_cells[c] += (*cell_volume)("cell",0,c) / h * (*pres)("cell",0,c);
 
     // source term
-    Fc_cells[c] += rhs_load_value(S_next_->time()) * (*cell_volume)("cell",0,c);
+    //Fc_cells[c] += rhs_load_value(S_next_->time()) * (*cell_volume)("cell",0,c);
+    Fc_cells[c] += rhs_load_value() * (*cell_volume)("cell",0,c);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
