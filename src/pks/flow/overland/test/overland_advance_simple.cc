@@ -31,14 +31,16 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   // read parameter list
   Teuchos::ParameterList parameter_list;
-  string xmlFileName = "test/overland_advance_simple.xml";
+  //string xmlFileName = "test/overland_advance_simple.xml";
+  string xmlFileName = "test/overland_advance_simple_2Dtestcase.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create an SIMPLE mesh framework
   Teuchos::ParameterList region_list =
     parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
-  Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0, 183.0,1.0, 10, 1, comm, gm));
+  //Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0, 182.87999414784019,1.0, 100, 1, comm, gm));
+  Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,1620,1000.0,81,50, comm, gm));
 
   // create and initialize the test class
   FlowTestOne test(parameter_list, mesh, 1);
@@ -59,30 +61,23 @@ TEST(ADVANCE_WITH_SIMPLE) {
     cout << endl;
   }
 
-  int n_max = 2 ;
   int n = 0 ;
-  double t_final = 4000. ;
+
+  // test 1D
+  //double t_final = 3600. ;
+
+  // test 2D
+  double t_final = 10400. ;
 
   double L1, L2;
   while (time < t_final ) {
-
-    if ( n++>n_max ) { exit(0) ; }
-    
     double dtime = test.FPK->get_dt();
     test.FPK->advance(dtime);
     time += dtime;
     iter++;
-
-    if (iter < 10) {
-      printf( "time=%6.2f  p(x):", time );
-      for( int k=0; k<10; k++ ) { 
-	//printf("%7.4f", (*pressure)("cell",k)); 
-	PRTM("cell",k,(*pressure));
-      }
-      cout << endl;
-    }
-
-     test.commit_step();
+    //if ( iter==3 ) { exit(0); }
+    //if ( time>1800 ) { exit(0); }
+    test.commit_step();
    }
   delete comm;
 }
