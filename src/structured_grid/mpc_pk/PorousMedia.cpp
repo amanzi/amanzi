@@ -5592,7 +5592,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 
   MultiFab* dalpha = 0;
   if (!do_richard_sat_solve) {
-      dalpha->define(grids,1,1,Fab_allocate);
+      dalpha = new MultiFab(grids,1,1,Fab_allocate); // Note: requires a delete
   }
   calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
 
@@ -5686,6 +5686,9 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   }
 
   delete alpha;
+  if (!do_richard_sat_solve) {
+      delete dalpha;
+  }
   diffusion->removeFluxBoxesLevel(cmp_pcp1);
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
 
