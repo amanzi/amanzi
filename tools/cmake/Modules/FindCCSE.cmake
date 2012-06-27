@@ -256,6 +256,11 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
         set(CCSE_EXT_LIBRARY_DIRS ${PETSC_DIR}/${PETSC_ARCH}/lib)
         list(APPEND CCSE_INCLUDE_DIRS ${PETSC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include ${X11_INCLUDE_DIR})
 
+    else()
+
+        set(CCSE_EXT_LIBRARIES "")
+        set(CCSE_EXT_LIBRARY_DIRS "")
+
     endif()
 
 endif(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)    
@@ -265,9 +270,7 @@ find_package_handle_standard_args(CCSE DEFAULT_MSG
                                   CCSE_LIBRARIES
                                   CCSE_LIBRARY_DIRS
                                   CCSE_INCLUDE_DIRS
-                                  CCSE_PERL_DIR
-                                  CCSE_EXT_LIBRARIES
-                                  CCSE_EXT_LIBRARY_DIRS)
+                                  CCSE_PERL_DIR)
 
 mark_as_advanced(
   CCSE_INCLUDE_DIR
@@ -276,6 +279,4 @@ mark_as_advanced(
   CCSE_LIBRARY_DIR
   CCSE_LIBRARY_DIRS
   CCSE_PERL_DIR
-  CCSE_EXT_LIBRARIES
-  CCSE_EXT_LIBRARY_DIRS
 )
