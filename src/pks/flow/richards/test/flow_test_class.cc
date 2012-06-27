@@ -8,7 +8,8 @@ FlowTest::FlowTest(Teuchos::ParameterList& plist_,
   // create states
   Teuchos::ParameterList state_plist =
     parameter_list.get<Teuchos::ParameterList>("State");
-  S0 = Teuchos::rcp(new State(state_plist, mesh));
+  S0 = Teuchos::rcp(new State(state_plist));
+  S0->RegisterDomainMesh(mesh);
   Teuchos::ParameterList flow_plist =
     parameter_list.get<Teuchos::ParameterList>("Flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector("solution"));
@@ -43,7 +44,7 @@ void FlowTest::commit_step() {
 void FlowTest::initialize_owned() {
   Teuchos::RCP<CompositeVector> pres = S0->GetFieldData("pressure", "flow");
 
-  int c_owned = S0->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = pres->size("cell");
   for (int c=0; c != c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*pres)("cell",c) = my_f(xc, 0.0);
@@ -59,7 +60,7 @@ void FlowTest::evaluate_error_pressure(double t, double* L1, double* L2) {
   double d;
   *L1 = 0.0;
   *L2 = 0.0;
-  int c_owned = S0->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = pres->size("cell");
   for (int c=0; c!=c_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);

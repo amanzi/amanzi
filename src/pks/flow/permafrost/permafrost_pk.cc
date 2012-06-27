@@ -1,11 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/*
+
+/* -------------------------------------------------------------------------
 This is the flow component of the Amanzi code. 
 License: BSD
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
-         Ethan Coon (ATS version) (ecoon@lanl.gov)
-*/
+Authors: Ethan Coon (ecoon@lanl.gov)
+------------------------------------------------------------------------- */
+
 
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
@@ -19,72 +19,84 @@ namespace Flow {
 
 RegisteredPKFactory<Permafrost> Permafrost::reg_("permafrost flow");
 
-// constructor
-Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
-                   const Teuchos::RCP<TreeVector>& solution) :
+
+// -------------------------------------------------------------
+// Constructor
+// -------------------------------------------------------------
+Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
+                       const Teuchos::RCP<State>& S,
+                       const Teuchos::RCP<TreeVector>& solution) :
     flow_plist_(flow_plist) {
 
+  solution_ = solution;
 
-  // just the extras...
-  // data layouts for fields
+  // require fields
+
+  // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
+  std::vector<int> num_dofs2(2,1);
   locations2[0] = AmanziMesh::CELL;
   locations2[1] = AmanziMesh::FACE;
   names2[0] = "cell";
   names2[1] = "face";
 
-  // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
-  std::vector< std::vector<std::string> > subfield_names(2);
-  subfield_names[0].resize(1);
-  subfield_names[0][0] = "pressure";
-  subfield_names[1].resize(1);
-  subfield_names[1][0] = "pressure_lambda";
-  S->RequireField("pressure", "flow", names2, locations2, 1, true);
-  Teuchos::RCP<CompositeVector> pressure = S->GetFieldData("pressure", "flow");
-  pressure->set_subfield_names(subfield_names);
-
-  // update the tree-vector solution with flow's primary variable
-  solution->set_data(pressure);
-  solution_ = solution;
+  S->RequireField("pressure", "flow")->SetMesh(S->Mesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
 
   // -- secondary variables
-  S->RequireField("darcy_flux", "flow", AmanziMesh::FACE, 1, true);
-  S->RequireField("darcy_velocity", "flow", AmanziMesh::CELL, 3, false);
+  CompositeVectorFactory one_cell_owned_factory;
+  one_cell_owned_factory.SetMesh(S->Mesh());
+  one_cell_owned_factory.SetGhosted();
+  one_cell_owned_factory.SetComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireField("saturation_liquid", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("density_liquid", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("molar_density_liquid", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("viscosity_liquid", "flow", AmanziMesh::CELL, 1, true);
+  CompositeVectorFactory one_cell_factory;
+  one_cell_owned_factory.SetMesh(S->Mesh());
+  one_cell_owned_factory.SetGhosted();
+  one_cell_owned_factory.AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireField("saturation_ice", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("density_ice", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("molar_density_ice", "flow", AmanziMesh::CELL, 1, true);
+  S->RequireField("darcy_flux", "flow")->SetMesh(S->Mesh())->SetGhosted()
+                                ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("darcy_velocity", "flow")->SetMesh(S->Mesh())->SetGhosted()
+                                ->SetComponent("cell", AmanziMesh::CELL, 3);
 
-  S->RequireField("saturation_gas", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("density_gas", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("mol_frac_gas", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("molar_density_gas", "flow", AmanziMesh::CELL, 1, true);
+  S->RequireField("saturation_liquid", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("density_liquid", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("molar_density_liquid", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("viscosity_liquid", "flow")->Update(one_cell_owned_factory);
 
-  S->RequireField("permeability", "flow", AmanziMesh::CELL, 1, true);
-  S->RequireField("relative_permeability", "flow", AmanziMesh::CELL, 1, true);
+  S->RequireField("saturation_gas", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("density_gas", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("molar_density_gas", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("mol_frac_gas", "flow")->Update(one_cell_owned_factory);
+
+  S->RequireField("saturation_ice", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("density_ice", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("molar_density_ice", "flow")->Update(one_cell_owned_factory);
+
+  // -- For now, we assume scalar permeability.  This will change.
+  S->RequireField("permeability", "flow")->Update(one_cell_owned_factory);
+  S->RequireField("relative_permeability", "flow")->Update(one_cell_owned_factory);
   S->RequireScalar("atmospheric_pressure", "flow");
 
   // -- independent variables not owned by this PK
-  S->RequireField("porosity", AmanziMesh::CELL, 1, true);
-  S->RequireField("cell_volume", AmanziMesh::CELL, 1, true);
-  S->RequireField("temperature", AmanziMesh::CELL, 1, true);
+  S->RequireField("cell_volume")->Update(one_cell_factory);
+  S->RequireField("porosity")->Update(one_cell_factory);
+  S->RequireField("temperature")->Update(one_cell_factory);
   S->RequireGravity();
 
   // -- work vectors
-  S->RequireField("numerical_rel_perm", "flow", AmanziMesh::FACE, 1, true);
+  S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
   S->GetRecord("numerical_rel_perm","flow")->set_io_vis(false);
 
   // abs perm tensor
   variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
-  int c_owned = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_.resize(c_owned);
-  for (int c=0; c!=c_owned; ++c) K_[c].init(S->mesh()->space_dimension(),1);
+  for (int c=0; c!=c_owned; ++c) {
+    K_[c].init(S->Mesh()->space_dimension(),1);
+  }
 
   // constitutive relations
   FlowRelations::EOSFactory eos_factory;
@@ -105,7 +117,7 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
 
   // -- pc_il model.  cap pressure for ice-water interfaces are a
   // -- function of temperature.  See notes eqn 9
-  Teuchos::ParameterList pc_il_plist = flow_plist_.sublist("Capillary Pressure Ice-Liquid");
+  Teuchos::ParameterList pc_il_plist =flow_plist_.sublist("Capillary Pressure Ice-Liquid");
   pc_ice_liq_model_ = Teuchos::rcp(new FlowRelations::PCIceWater(pc_il_plist));
 
   // -- water retention model
@@ -137,8 +149,6 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   FlowBCFactory bc_factory(S->mesh(), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
-  // head boundary conditions not yet implemented, as they depend on constant density
-  // bc_head_ = bc_factory.CreateStaticHead(0.0, 0.0, g);
 
   // Relative permeability method
   string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
@@ -169,7 +179,10 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<St
   preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
 };
 
-// -- Initialize owned (dependent) variables.
+
+// -------------------------------------------------------------
+// Initialize PK
+// -------------------------------------------------------------
 void Permafrost::initialize(const Teuchos::RCP<State>& S) {
   // initial timestep size
   dt_ = flow_plist_.get<double>("Initial time step", 1.);
@@ -180,21 +193,25 @@ void Permafrost::initialize(const Teuchos::RCP<State>& S) {
   bc_values_.resize(nfaces, 0.0);
 
   // update face pressures as a hint?
-  DeriveFaceValuesFromCellValues_(S, S->GetFieldData("pressure", "flow"));
+  Teuchos::RCP<CompositeVector> pres = S->GetFieldData("pressure", "flow");
+  DeriveFaceValuesFromCellValues_(S, pres);
 
   // declare secondary variables initialized, as they will be done by
   // the commit_state call
   S->GetRecord("saturation_liquid","flow")->set_initialized();
-  S->GetRecord("saturation_ice","flow")->set_initialized();
-  S->GetRecord("saturation_gas","flow")->set_initialized();
   S->GetRecord("density_liquid","flow")->set_initialized();
-  S->GetRecord("viscosity_liquid","flow")->set_initialized();
-  S->GetRecord("density_ice","flow")->set_initialized();
-  S->GetRecord("density_gas","flow")->set_initialized();
   S->GetRecord("molar_density_liquid","flow")->set_initialized();
-  S->GetRecord("molar_density_ice","flow")->set_initialized();
+  S->GetRecord("viscosity_liquid","flow")->set_initialized();
+
+  S->GetRecord("saturation_gas","flow")->set_initialized();
+  S->GetRecord("density_gas","flow")->set_initialized();
   S->GetRecord("molar_density_gas","flow")->set_initialized();
   S->GetRecord("mol_frac_gas","flow")->set_initialized();
+
+  S->GetRecord("saturation_ice","flow")->set_initialized();
+  S->GetRecord("density_ice","flow")->set_initialized();
+  S->GetRecord("molar_density_ice","flow")->set_initialized();
+
   S->GetRecord("relative_permeability","flow")->set_initialized();
   S->GetRecord("darcy_flux", "flow")->set_initialized();
   S->GetRecord("darcy_velocity", "flow")->set_initialized();
@@ -213,11 +230,10 @@ void Permafrost::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize the timesteppper
   state_to_solution(S, solution_);
-  atol_ = flow_plist_.get<double>("Absolute error tolerance",1e0);
-  rtol_ = flow_plist_.get<double>("Relative error tolerance",1e0);
+  atol_ = flow_plist_.get<double>("Absolute error tolerance",1.0);
+  rtol_ = flow_plist_.get<double>("Relative error tolerance",1.0);
 
   if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
-    // model evaluator params
     // -- instantiate time stepper
     Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(flow_plist_.sublist("Time integrator")));
