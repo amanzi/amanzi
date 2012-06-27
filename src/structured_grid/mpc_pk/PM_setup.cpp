@@ -2338,11 +2338,11 @@ void PorousMedia::read_observation()
           ppt.get("start",start);
           ppt.get("period",period);
           ppt.get("stop",stop);
-          defined_events[cmacroNames[i]] = new EventCoord::TimeEvent(start,period,stop);
+          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(start,period,stop);
       }
       else if (type == "times" ){
           Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
-          defined_events[cmacroNames[i]] = new EventCoord::TimeEvent(times);
+          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(times);
       }
       else {
           BoxLib::Abort("Unrecognized time macros type");
@@ -2410,7 +2410,7 @@ void PorousMedia::read_observation()
           event_coord.Register(eit->first,eit->second);
       }
       else {
-          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
+          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
@@ -2432,7 +2432,7 @@ void PorousMedia::read_observation()
           event_coord.Register(eit->first,eit->second);
       }
       else {
-          std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
+          std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_time_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
