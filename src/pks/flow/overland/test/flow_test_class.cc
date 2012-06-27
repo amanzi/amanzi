@@ -89,5 +89,3 @@ FlowTestTwoDOne::FlowTestTwoDOne(Teuchos::ParameterList& plist_,
 double FlowTestTwoDOne::my_f(const AmanziGeometry::Point& x, double t) {
   return 101325.0;
 }
-
-
