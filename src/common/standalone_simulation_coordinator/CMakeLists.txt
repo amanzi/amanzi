@@ -110,13 +110,16 @@ else()
   set(ssc_structured_grid_libs)
 endif()
 #message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
-endif()
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
 set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
 set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
 set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
+
+if (ENABLE_Structured)
+  list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
+endif()
 
 
 # 
@@ -140,9 +143,6 @@ if (BUILD_TESTS)
     add_amanzi_test(ssc-structured-test-2 amanzi "--xml_file=t2-structured.xml" KIND unit)
 
     if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/probin ${SSC_BINARY_DIR})
-
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/Color.txt ${SSC_BINARY_DIR})
 
