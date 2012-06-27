@@ -35,10 +35,15 @@ CalcCoefficients::operator()(PArray<MFTower>&       coefficients,
 {
     BL_ASSERT(layout.IsCompatible(pressure));
 
+    BL_ASSERT(pressure.NGrow()>=1);
+    BL_ASSERT(lambda.NGrow()>=pressure.NGrow());
+    BL_ASSERT(saturation.NGrow()>=pressure.NGrow());
+
     // This will set physbc and c-f grow cells without interpolation (ie, "piecewise-constant interp")
     // For c-f: copy the underlaying coarse cell value
     // For phys: the Dirichlet value (should already be there on entry to this routine)
-    mftfp.FillGrowCellsSimple(pressure,presComp,nComp);
+    //mftfp.FillGrowCellsSimple(pressure,presComp,nComp);
+    mftfp.FillGrowCells(pressure,presComp,nComp);
 
     // Assumes lev=0 here corresponds to Amr.level=0
     for (int lev=0; lev<nLevs; ++lev) {
@@ -48,7 +53,7 @@ CalcCoefficients::operator()(PArray<MFTower>&       coefficients,
         }
         MultiFab& pressureLev = pressure[lev];
         MultiFab& saturationLev = saturation[lev];
-        MultiFab& lambdaLev = saturation[lev];
+        MultiFab& lambdaLev = lambda[lev];
         pmp->calcInvPressure(saturationLev,pressureLev); // FIXME: Writes/reads only to comp=0
         pmp->calcLambda(&lambdaLev,saturationLev); // FIXME: Writes/reads only to comp=0
     }
