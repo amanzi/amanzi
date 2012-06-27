@@ -28,10 +28,10 @@ class AdvectionDonorUpwind : public Advection {
 public:
 
   AdvectionDonorUpwind(Teuchos::ParameterList& advect_plist,
-                       Teuchos::RCP<AmanziMesh::Mesh> mesh);
+                       const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   virtual void set_flux(const Teuchos::RCP<const CompositeVector>& flux);
-  virtual void Apply(const Teuchos::RCP<BoundaryFunction>& bc_flux);
+  virtual void Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux);
 
 private:
   void IdentifyUpwindCells_();

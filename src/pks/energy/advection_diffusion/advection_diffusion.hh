@@ -89,8 +89,8 @@ private:
   double dt_;
 
   // boundary conditions
-  Teuchos::RCP<BoundaryFunction> bc_temperature_;
-  Teuchos::RCP<BoundaryFunction> bc_flux_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
 

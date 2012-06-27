@@ -87,8 +87,8 @@ private:
   bool advance_analytic_(double dt);
   bool advance_bdf_(double dt);
 
-  // states
-  double T_;
+  // initial temperature
+  Teuchos::RCP<CompositeVector> temp0_;
 
   // misc setup information
   Teuchos::ParameterList energy_plist_;

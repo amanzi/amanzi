@@ -15,7 +15,7 @@ namespace Operators {
 
 
 AdvectionDonorUpwind::AdvectionDonorUpwind(Teuchos::ParameterList& advect_plist,
-        Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+        const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     Advection(advect_plist, mesh) {
 
   f_begin_ = mesh_->face_map(true).MinLID();
@@ -41,7 +41,7 @@ void AdvectionDonorUpwind::set_flux(const Teuchos::RCP<const CompositeVector>& f
 };
 
 
-void AdvectionDonorUpwind::Apply(const Teuchos::RCP<BoundaryFunction>& bc_flux) {
+  void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux) {
 
   field_->ScatterMasterToGhosted("cell"); // communicate the cells
 
@@ -55,7 +55,7 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<BoundaryFunction>& bc_flux) 
     int c2 = (*downwind_cell_)[f];
 
     if (c1 >=0) {
-      u = fabs((*flux_)(f));
+      u = fabs((*flux_)("face",0,f));
       for (int i=0; i != num_dofs_; ++i) {
         (*field_)("face",i,f) = u * (*field_)("cell",i,c1);
       }
@@ -63,7 +63,7 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<BoundaryFunction>& bc_flux) 
   }
 
   // patch up Neumann bcs -- only works for 1 dof?
-  for (BoundaryFunction::Iterator bc = bc_flux->begin();
+  for (Functions::BoundaryFunction::Iterator bc = bc_flux->begin();
        bc!=bc_flux->end(); ++bc) {
     if ((*upwind_cell_)[bc->first] >= 0) {
       (*field_)("face",0,bc->first) = bc->second*mesh_->face_area(bc->second);
@@ -105,7 +105,7 @@ void AdvectionDonorUpwind::IdentifyUpwindCells_() {
 
     for (int i = 0; i != faces.size(); ++i) {
       int f = faces[i];
-      if ((*flux_)(f) * fdirs[i] >= 0) {
+      if ((*flux_)("face",0,f) * fdirs[i] >= 0) {
         (*upwind_cell_)[f] = c;
       } else {
         (*downwind_cell_)[f] = c;
