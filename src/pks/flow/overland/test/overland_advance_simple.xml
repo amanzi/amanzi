@@ -10,7 +10,7 @@
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{183.,1.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{182.87999414784019,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
@@ -27,7 +27,7 @@
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{183.,1.}"/>
+        <Parameter name="Location" type="Array double" value="{182.87999414784019,1.}"/>
         <Parameter name="Direction" type="Array double" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
@@ -70,7 +70,7 @@
       <Parameter name="limit iterations" type="int" value="50"/>
       <Parameter name="max iterations" type="int" value="20"/>
       <Parameter name="min iterations" type="int" value="5"/>
-      <Parameter name="nonlinear tolerance" type="double" value="1.e-8"/>
+      <Parameter name="nonlinear tolerance" type="double" value="1.e-12"/>
       <Parameter name="time step reduction factor" type="double" value="0.8"/>
       <Parameter name="time step increase factor" type="double" value="1.2"/>
       <Parameter name="max time step" type="double" value="1.e10"/>

@@ -145,7 +145,7 @@ private:
   void SetUpElevation_( const Teuchos::RCP<State>& S ) ;
 
   // loading term
-  double rhs_load_value( double t ) ;
+  double rhs_load_value() ;
 
 private:
   // OVERLAND parameters
@@ -161,8 +161,9 @@ private:
   int internal_tests_;  // output information
   bool variable_abs_perm_;
 
-  //int Krel_method_;
-
+  // time stuff
+  int    niter_ ;
+  double flow_time_;
   double dt_;
   double dt0_;
 
@@ -197,9 +198,20 @@ private:
 
   // DEBUGGING STUFF
   void print_pressure( const Teuchos::RCP<State>& S, string prt_str="" ) const ;
-  void print_vector( const Teuchos::RCP<State>& S, const Teuchos::RCP<const CompositeVector>& p, string prt_str="" ) const ;
+  void print_vector ( const Teuchos::RCP<State>& S, const Teuchos::RCP<const CompositeVector>& p, string prt_str="" ) const ;
+  void print_vector2( const Teuchos::RCP<State>& S, 
+                      const Teuchos::RCP<const CompositeVector>& pres, 
+                      const Teuchos::RCP<const CompositeVector>& elev, 
+                      string prt_str="" ) const ;
+
+  void print_faceval( const Teuchos::RCP<State>& S, 
+                      const Teuchos::RCP<const CompositeVector>& vec, 
+                      string prt_str ) const ;
+  
 
 
+  // write flow rate on disk
+  void output_flow_rate() ;
 
 };
 
