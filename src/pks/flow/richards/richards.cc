@@ -216,7 +216,7 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   preconditioner_->CreateMFDmassMatrices(K_);
 
   // initialize the timesteppper
-  solution_->set_data(temp);
+  solution_->set_data(pres);
   atol_ = flow_plist_.get<double>("Absolute error tolerance",1.0);
   rtol_ = flow_plist_.get<double>("Relative error tolerance",1.0);
 
