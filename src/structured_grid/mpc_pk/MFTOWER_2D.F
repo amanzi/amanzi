@@ -87,7 +87,7 @@
       subroutine FORT_COARSEN_EC(ce,DIMS(ce),
      &     fe,DIMS(fe),celo,cehi,ratio,dir,nc)
       implicit none      
-      integer ratio, dir, nc
+      integer ratio(SDIM), dir, nc
       integer DIMDEC(ce)
       integer DIMDEC(fe)
       integer celo(SDIM),cehi(SDIM)

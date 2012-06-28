@@ -2061,7 +2061,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       MFTower RhsMFT(layout,Rhs);
       MFTower SolnMFT(layout,Soln);
 
-#if 0
+#if 1
       IndexType ccType = IndexType(IntVect::TheZeroVector());
       MFTower PnewMFT(layout,Pnew_p);
       MFTower PoldMFT(layout,ccType,1,0);
