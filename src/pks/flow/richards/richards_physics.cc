@@ -15,7 +15,7 @@ namespace Amanzi {
 namespace Flow {
 
 // -------------------------------------------------------------
-// Diffusion term, div K grad T
+// Diffusion term, div K grad p
 // -------------------------------------------------------------
 void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
@@ -29,7 +29,6 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   matrix_->CreateMFDstiffnessMatrices(*rel_perm);
   matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_(S, matrix_);
-  std::cout << "BC in res: " << bc_values_[3] << ", " << bc_values_[5] << std::endl;
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
@@ -40,7 +39,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 
 
 // -------------------------------------------------------------
-// Accumulation of internal energy term du/dt
+// Accumulation of water term du/dt
 // -------------------------------------------------------------
 void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> poro0 =
@@ -102,36 +101,15 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
 // Update variables, like densities, saturations, etc, from constitutive models.
 // -----------------------------------------------------------------------------
 void Richards::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
-  // get needed fields
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
-
-  Teuchos::RCP<CompositeVector> dens_liq = S->GetFieldData("density_liquid", "flow");
-  Teuchos::RCP<CompositeVector> mol_dens_liq = S->GetFieldData("molar_density_liquid", "flow");
-  Teuchos::RCP<CompositeVector> visc_liq = S->GetFieldData("viscosity_liquid", "flow");
-
-  Teuchos::RCP<CompositeVector> dens_gas = S->GetFieldData("density_gas", "flow");
-  Teuchos::RCP<CompositeVector> mol_dens_gas = S->GetFieldData("molar_density_gas", "flow");
-  Teuchos::RCP<CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas", "flow");
-
-  Teuchos::RCP<CompositeVector> sat_gas = S->GetFieldData("saturation_gas", "flow");
-  Teuchos::RCP<CompositeVector> sat_liq = S->GetFieldData("saturation_liquid", "flow");
-  Teuchos::RCP<CompositeVector> rel_perm = S->GetFieldData("relative_permeability", "flow");
-
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", "flow");
-
   // calculate liquid properties
-  DensityLiquid_(S, *temp, *pres, dens_liq, mol_dens_liq);
-  ViscosityLiquid_(S, *temp, visc_liq);
+  UpdateDensityLiquid_(S);
+  UpdateViscosityLiquid_(S);
 
   // calculate molar fraction of vapor and density of gas
-  DensityGas_(S, *temp, *pres, *p_atm, mol_frac_gas, dens_gas, mol_dens_gas);
+  UpdateDensityGas_(S);
 
   // calculate saturations using WRM
-  Saturation_(S, *pres, *p_atm, sat_liq);
-  sat_gas->PutScalar(1.0);
-  sat_gas->Update(-1.0, *sat_liq, 1.0);
+  UpdateSaturation_(S);
 
   // update abs perm if needed
   if (variable_abs_perm_) {
@@ -139,7 +117,28 @@ void Richards::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
   }
 
   // calculate rel perm using WRM
-  RelativePermeability_(S, *pres, *p_atm, rel_perm);
+  UpdateRelativePermeability_(S);
+};
+
+
+// -------------------------------------------------------------
+// Update variables, like internal energy, conductivity, etc
+//
+//    Note: UpdatePhysicalQuantity() methods take only a State as an
+//          argument, while PhysicalQuantity() methods take the needed
+//          vector quantities as arguments.  This division is on
+//          purpose, as future versions of this code may use the
+//          Update*() methods as generic "secondary variable PKs",
+//          i.e. algebraic PKs.
+// -------------------------------------------------------------
+void Richards::UpdateDensityLiquid_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<CompositeVector> rho_liq = S->GetFieldData("density_liquid", "flow");
+  Teuchos::RCP<CompositeVector> n_liq =
+    S->GetFieldData("molar_density_liquid", "flow");
+
+  DensityLiquid_(S, *temp, *pres, rho_liq, n_liq);
 };
 
 
@@ -147,7 +146,8 @@ void Richards::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
 // Evaluate EOS of the liquid phase.
 // -------------------------------------------------------------
 void Richards::DensityLiquid_(const Teuchos::RCP<State>& S,
-        const CompositeVector& temp, const CompositeVector& pres,
+        const CompositeVector& temp,
+        const CompositeVector& pres,
         const Teuchos::RCP<CompositeVector>& dens_liq,
         const Teuchos::RCP<CompositeVector>& mol_dens_liq) {
 
@@ -163,7 +163,18 @@ void Richards::DensityLiquid_(const Teuchos::RCP<State>& S,
 
 
 // -------------------------------------------------------------
-// Evaluate EOS of the liquid phase.
+// Update the viscosity of liquid in state S.
+// -------------------------------------------------------------
+void Richards::UpdateViscosityLiquid_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<CompositeVector> visc_liq = S->GetFieldData("viscosity_liquid", "flow");
+
+  ViscosityLiquid_(S, *temp, visc_liq);
+};
+
+
+// -------------------------------------------------------------
+// Evaluate EOS of the liquid phase for viscosity.
 // -------------------------------------------------------------
 void Richards::ViscosityLiquid_(const Teuchos::RCP<State>& S,
         const CompositeVector& temp,
@@ -176,11 +187,27 @@ void Richards::ViscosityLiquid_(const Teuchos::RCP<State>& S,
 
 
 // -------------------------------------------------------------
+// Update the density of gas in state S.
+// -------------------------------------------------------------
+void Richards::UpdateDensityGas_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<CompositeVector> rho_gas = S->GetFieldData("density_gas", "flow");
+  Teuchos::RCP<CompositeVector> n_gas = S->GetFieldData("molar_density_gas", "flow");
+  Teuchos::RCP<CompositeVector> mol_frac_gas = S->GetFieldData("mol_frac_gas", "flow");
+  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
+
+  DensityGas_(S, *temp, *pres, *p_atm, mol_frac_gas, rho_gas, n_gas);
+};
+
+
+// -------------------------------------------------------------
 // Evaluate EOS of the gas phase.
 // -------------------------------------------------------------
 void Richards::DensityGas_(const Teuchos::RCP<State>& S,
                            const CompositeVector& temp,
-                           const CompositeVector& pres, const double& p_atm,
+                           const CompositeVector& pres,
+                           const double& p_atm,
                            const Teuchos::RCP<CompositeVector>& mol_frac_gas,
                            const Teuchos::RCP<CompositeVector>& dens_gas,
                            const Teuchos::RCP<CompositeVector>& mol_dens_gas) {
@@ -194,6 +221,25 @@ void Richards::DensityGas_(const Teuchos::RCP<State>& S,
     (*dens_gas)("cell",c) = Mv*n;
     (*mol_dens_gas)("cell",c) = n;
   }
+};
+
+
+// -------------------------------------------------------------
+// Update saturation of all phases in state S.
+// -------------------------------------------------------------
+void Richards::UpdateSaturation_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
+
+  Teuchos::RCP<CompositeVector> sat_liq =
+    S->GetFieldData("saturation_liquid", "flow");
+  Teuchos::RCP<CompositeVector> sat_gas =
+    S->GetFieldData("saturation_gas", "flow");
+
+  Saturation_(S, *pres, *p_atm, sat_liq);
+
+  sat_gas->PutScalar(1.0);
+  sat_gas->Update(-1.0, *sat_liq, 1.0);
 };
 
 
@@ -240,6 +286,17 @@ void Richards::DSaturationDp_(const Teuchos::RCP<State>& S,
       (*dsat_liq)("cell",*c) = -(*wrm)->second->d_saturation(p_atm - pres("cell",*c));
     }
   }
+};
+
+
+// -------------------------------------------------------------
+// Evaluate WRM for Krel
+// -------------------------------------------------------------
+void Richards::UpdateRelativePermeability_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
+  Teuchos::RCP<CompositeVector> rel_perm = S->GetFieldData("relative_permeability", "flow");
+  RelativePermeability_(S, *pres, *p_atm, rel_perm);
 };
 
 

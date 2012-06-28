@@ -336,7 +336,6 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
 
   num_rel_perm->PutScalar(1.0);
-
   int ncells = num_rel_perm->size("cell");
   if (Krel_method_ == FLOW_RELATIVE_PERM_CENTERED) {
     // symmetric method, no faces needed
@@ -385,6 +384,10 @@ void Richards::CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<St
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
+
+      // TODO: FIX ME.  This should be picked up from boundary value of
+      //       pressure if on the boundary, not the down-wind cell as is
+      //       currently done.
       if ((normal * Kgravity) * dirs[n] >= 0.0 ||
           (bc_markers_[f] != Operators::MFD_BC_NULL)) {
         (*rel_perm)("face",f) = rel_perm_cells("cell",c);
@@ -410,6 +413,10 @@ void Richards::CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
+
+      // TODO: FIX ME.  This should be picked up from boundary value of
+      //       pressure if on the boundary, not the down-wind cell as is
+      //       currently done.
       if ((flux("face",f) * dirs[n] >= 0.0) ||
           (bc_markers_[f] != Operators::MFD_BC_NULL)) {
         (*rel_perm)("face",f) = rel_perm_cells("cell",c);
