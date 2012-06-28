@@ -62,6 +62,8 @@ GeometricModel::GeometricModel(const unsigned int dim,
     throw std::exception();
   }
 
+  const int region_id_offset = 59049; // arbitrary number to avoid clashing
+                                      // with IDs of LabeledSet regions
   int ngregions = 0; // Number of regions 
 
   // Go through the parameter list and populate the geometric model with regions
@@ -77,7 +79,7 @@ GeometricModel::GeometricModel(const unsigned int dim,
 
           // Region ID - our internal numerical identifier
 
-          unsigned int region_id = ++ngregions;
+          unsigned int region_id = ++ngregions+region_id_offset;
 
 
           // Extract sublist specifying region
