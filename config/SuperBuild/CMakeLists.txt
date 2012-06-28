@@ -331,6 +331,12 @@ if ( ENABLE_MOAB_Mesh )
 	     -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
 
+# HYPRE
+option(ENABLE_HYPRE "Build the HYPRE solver package" FALSE)
+if ( ENABLE_HYPRE )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
+endif()
+
 # Trilinos  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS

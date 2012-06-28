@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+
+#
+export CC=@CMAKE_C_COMPILER@
+export CXX=@CMAKE_CXX_COMPILER@
+export F77=@CMAKE_Fortran_COMPILER@
+
+cd @HYPRE_source_dir@/src
+configure --prefix=@TPL_INSTALL_PREFIX@ --with-MPI
+
+exit $?
