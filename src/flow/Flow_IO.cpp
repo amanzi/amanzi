@@ -23,6 +23,34 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ****************************************************************
+* Process time integration sublist.
+**************************************************************** */
+void Flow_PK::ProcessSublistTimeIntegration(
+    Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs)
+{
+  Errors::Message msg;
+
+  if (list.isSublist(name)) {
+    Teuchos::ParameterList& tmp_list = list.sublist(name);
+    ti_specs.atol = tmp_list.get<double>("absolute error tolerance", FLOW_TI_ABSOLUTE_TOLERANCE);
+    ti_specs.rtol = tmp_list.get<double>("relative error tolerance", FLOW_TI_RELATIVE_TOLERANCE);
+    ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
+    ti_specs.max_itrs = tmp_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
+
+    ti_specs.T0 = tmp_list.get<double>("start time", 0.0);
+    ti_specs.T1 = tmp_list.get<double>("end time", 0.0);
+    ti_specs.dTfactor = tmp_list.get<double>("time step increase factor", 1.0);
+    ti_specs.dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
+    ti_specs.dTmax = tmp_list.get<double>("maximum time step", AmanziFlow::FLOW_MAXIMUM_DT);
+
+  } else if (name != "none") {
+    msg << "\nFlow PK: specified time integration sublist does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
 * Process string for the discretization method.
 **************************************************************** */
 void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
