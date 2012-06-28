@@ -20,6 +20,7 @@
 #include "tree_vector.hh"
 #include "state.hh"
 #include "matrix_mfd.hh"
+#include "boundary_function.hh"
 
 #include "PK.hh"
 #include "pk_factory.hh"
@@ -87,9 +88,9 @@ public:
 
 private:
   // boundary condition members
-  virtual void UpdateBoundaryConditions_( const Teuchos::RCP<State>& S, 
-                                          const CompositeVector & pres );
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S, CompositeVector & pres );
+  virtual void UpdateBoundaryConditions_(const Teuchos::RCP<State>& S);
+  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<CompositeVector>& pres );
 
   // bdf needs help
   void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
@@ -100,7 +101,6 @@ private:
   bool variable_abs_perm() { return variable_abs_perm_; }
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
-  void SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S);
   void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
 
   void CalculateRelativePermeabilityUpwindFlux_(
@@ -186,10 +186,10 @@ private:
   double time_step_reduction_factor_;
 
   // boundary condition data
-  Teuchos::RCP<BoundaryFunction> bc_pressure_;
-  Teuchos::RCP<BoundaryFunction> bc_zero_gradient_;
-  Teuchos::RCP<BoundaryFunction> bc_head_;
-  Teuchos::RCP<BoundaryFunction> bc_flux_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
 

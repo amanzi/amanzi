@@ -302,7 +302,7 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   std::vector<AmanziMesh::Entity_kind> locations(2);
   locations[0] = AmanziMesh::CELL; locations[1] = AmanziMesh::FACE;
 
-  std::vector<int> num_dofs(1,1);
+  std::vector<int> num_dofs(2,1);
   rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
   rhs_->CreateData();
 }
@@ -418,7 +418,6 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
 void MatrixMFD::Apply(const CompositeVector& X,
                      const Teuchos::RCP<CompositeVector>& Y) const {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nvectors = X.num_dofs(0);
 
   int ierr;
 
@@ -457,7 +456,6 @@ void MatrixMFD::Apply(const CompositeVector& X,
 void MatrixMFD::ApplyInverse(const CompositeVector& X,
                      const Teuchos::RCP<CompositeVector>& Y) const {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nvectors = X.num_dofs(0);
 
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));

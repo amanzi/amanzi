@@ -34,7 +34,8 @@ void Coordinator::coordinator_init() {
 
   // create the state object
   Teuchos::ParameterList state_plist = parameter_list_.sublist("State");
-  S_ = Teuchos::rcp(new State(state_plist, mesh_));
+  S_ = Teuchos::rcp(new State(state_plist));
+  S_->RegisterDomainMesh(mesh_);
 
   // vis for the state
   Teuchos::ParameterList vis_plist = parameter_list_.sublist("Visualization");

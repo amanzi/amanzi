@@ -20,9 +20,11 @@ namespace Flow {
 
 #define debug_flag 0
 
-/* ******************************************************************
- * Calculate f(u, du/dt) = d(s u)/dt + A*u - g.
- ****************************************************************** */
+
+// Overland is a BDFFnBase
+// -----------------------------------------------------------------------------
+// computes the non-linear functional g = g(t,u,udot)
+// -----------------------------------------------------------------------------
 void OverlandFlow::fun( double t_old,
                         double t_new,
                         Teuchos::RCP<TreeVector> u_old,
@@ -45,8 +47,8 @@ void OverlandFlow::fun( double t_old,
 
   // update boundary conditions
   bc_pressure_->Compute(t_new);
-  bc_flux_    ->Compute(t_new);
-  UpdateBoundaryConditions_(S_next_, *u);
+  bc_flux_->Compute(t_new);
+  UpdateBoundaryConditions_(S_next_);
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->data();
@@ -76,9 +78,10 @@ void OverlandFlow::fun( double t_old,
   //print_vector(S_next_,res, "residual") ;
 };
 
-/* ******************************************************************
-* Apply preconditioner to u and return the result in Pu.
-****************************************************************** */
+
+// -----------------------------------------------------------------------------
+// Apply the preconditioner to u and return the result in Pu.
+// -----------------------------------------------------------------------------
 void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
 #if debug_flag
   std::cout << "Precon application:" << std::endl;
@@ -93,9 +96,10 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
 #endif
 };
 
-/* ******************************************************************
- * computes a norm on u-du and returns the result
- ****************************************************************** */
+
+// -----------------------------------------------------------------------------
+// Compute a norm on (u,du)
+// -----------------------------------------------------------------------------
 double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
@@ -128,21 +132,21 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
   return enorm_val;
 };
 
-/* ******************************************************************
- * Compute new preconditioner B(p, dT_prec).
- ****************************************************************** */
+
+// -----------------------------------------------------------------------------
+// Update the preconditioner at time t and u = up
+// -----------------------------------------------------------------------------
 void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   std::cout << "Precon update at t = " << t << std::endl;
   // update state with the solution up.
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_);
-  Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("overland_pressure");
   UpdateSecondaryVariables_(S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_    ->Compute(S_next_->time());
-  UpdateBoundaryConditions_( S_next_, *pres );
+  UpdateBoundaryConditions_(S_next_);
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_);
@@ -158,17 +162,18 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   Teuchos::RCP<const CompositeVector> cell_volume =
     S_next_->GetFieldData("cell_volume");
 
+  Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("overland_pressure");
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  int ncells = S_next_->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = cell_volume->size("cell");
   for (int c=0; c!=ncells; ++c) {
     // accumulation term
-    Acc_cells[c] += (*cell_volume)("cell",0,c) / h;
-    Fc_cells[c] += (*cell_volume)("cell",0,c) / h * (*pres)("cell",0,c);
+    Acc_cells[c] += (*cell_volume)("cell",c) / h;
+    Fc_cells[c] += (*pres)("cell",c) * (*cell_volume)("cell",c) / h;
 
     // source term
     //Fc_cells[c] += rhs_load_value(S_next_->time()) * (*cell_volume)("cell",0,c);
-    Fc_cells[c] += rhs_load_value() * (*cell_volume)("cell",0,c);
+    Fc_cells[c] += rhs_load_value() * (*cell_volume)("cell",c);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

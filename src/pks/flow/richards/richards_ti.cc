@@ -14,7 +14,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-// TwoPhase is a BDFFnBase
+// Richards is a BDFFnBase
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
