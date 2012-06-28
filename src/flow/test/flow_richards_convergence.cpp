@@ -113,6 +113,9 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   string xmlFileName = "test/flow_richards_convergence.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
+  // convergence estimate
+  std::vector<double> h, p_error, v_error;
+
   for (int n = 40; n < 321; n*=2) {
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
@@ -146,7 +149,20 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     delete RPK;
     delete S;
+
+    h.push_back(10.0 / n);
+    p_error.push_back(pressure_err);
+    v_error.push_back(flux_err);
   }
+
+  // convergence rates
+  double p_rate = Amanzi::AmanziFlow::bestLSfit(h, p_error);
+  double v_rate = Amanzi::AmanziFlow::bestLSfit(h, v_error);
+  printf("convergence rates: %23.2f %22.2f\n", p_rate, v_rate);
+
+  CHECK_CLOSE(p_rate, 2.0, 0.2);
+  CHECK_CLOSE(v_rate, 2.0, 0.2);
+
   delete comm;
 }
 

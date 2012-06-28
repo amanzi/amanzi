@@ -96,6 +96,8 @@ const int FLOW_VERBOSITY_EXTREME = 4;
 
 const int FLOW_AMANZI_VERSION = 2;  
 
+double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
+
 
 class Flow_PK : public BDF2::fnBase {
  public:
