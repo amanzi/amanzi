@@ -217,7 +217,7 @@ void Darcy_PK::InitializeSteadySaturated()
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
-  dT_desirable_ = dT0;  // The desirable time step from now on.
+  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   num_itrs_sss = 0;
 
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -254,7 +254,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   *solution_cells = pressure;
 
   set_time(T0, dT0);
-  dT_desirable_ = dT0;  // The desirable time step from now on.
+  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   num_itrs_trs = 0;
 
   // initialize mass matrices
@@ -373,6 +373,8 @@ int Darcy_PK::Advance(double dT_MPC)
     double linear_residual = solver->TrueResidual();
     std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
+
+  dT_desirable_ *= ti_specs_sss.dTfactor;
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }

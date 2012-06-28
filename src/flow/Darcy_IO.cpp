@@ -80,6 +80,9 @@ void Darcy_PK::ProcessParameterList()
   // Time integrator for period I, temporary called steady state time integrator
   Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");
 
+  string ti_method_name = sss_list.get<string>("time integration method", "none");
+  ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss);
+
   if (sss_list.isParameter("preconditioner")) {
     preconditioner_name_sss_ = sss_list.get<string>("preconditioner");
   } else {

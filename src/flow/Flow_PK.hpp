@@ -24,6 +24,7 @@ Usage:
 
 #include "Flow_State.hpp"
 #include "Matrix_MFD.hpp"
+#include "TI_Specs.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -159,6 +160,7 @@ class Flow_PK : public BDF2::fnBase {
   void IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
   // io members
+  void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
   void ProcessStringMFD3D(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
 

@@ -22,6 +22,7 @@ class TI_Specs {
     preconditioner_name = "";
     num_itrs = max_itrs = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
+    dTfactor = 1.0;
     atol = 1.0; 
     rtol = residual_tol = 0.0;
     initialize_with_darcy = false;
@@ -33,7 +34,7 @@ class TI_Specs {
   std::string preconditioner_name;
   int num_itrs, max_itrs;
 
-  double T0, T1, dT0, dTmax;
+  double T0, T1, dT0, dTmax, dTfactor;
   double atol, rtol;  // obsolete options
   double residual_tol; 
 
