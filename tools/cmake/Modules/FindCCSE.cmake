@@ -243,23 +243,16 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
             message(SEND_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
         endif()
 
-        set(PETSC_ARCH $ENV{PETSC_ARCH})
-        if ("${PETSC_ARCH}" STREQUAL "")
-           message(SEND_ERROR "Must define env variable PETSC_ARCH if ENABLE_PETSC=ON")
-        endif()
-
         message(STATUS "CCSE requires PETSc and X11 since ENABLE_PETSC=ON")
         message(STATUS "     using PETSC_DIR=${PETSC_DIR}")
-        message(STATUS "       and PETSC_ARCH=${PETSC_ARCH}")
 
+        # NOTE: Not sure why we have to explicitly include X11 stuff, since FindX11 was supposed to do it...
         set(CCSE_EXT_LIBRARIES petsc ${X11_LIBRARIES})
-        set(CCSE_EXT_LIBRARY_DIRS ${PETSC_DIR}/${PETSC_ARCH}/lib)
-        list(APPEND CCSE_INCLUDE_DIRS ${PETSC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include ${X11_INCLUDE_DIR})
+        list(APPEND CCSE_INCLUDE_DIRS ${PETSC_DIR}/include ${X11_INCLUDE_DIR})
 
     else()
 
         set(CCSE_EXT_LIBRARIES "")
-        set(CCSE_EXT_LIBRARY_DIRS "")
 
     endif()
 

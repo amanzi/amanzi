@@ -1252,6 +1252,14 @@ PorousMedia::read_rock()
 
     pp.query("Use_Shifted_Kr_Eval",use_shifted_Kr_eval);
     pp.query("Saturation_Threshold_For_vg_Kr",saturation_threshold_for_vg_Kr);
+
+    if (use_shifted_Kr_eval!=1 && saturation_threshold_for_vg_Kr>1) {
+        if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "WARNING: Reducing Saturation_Threshold_For_vg_Kr to 1!" << std::endl;
+        }
+        saturation_threshold_for_vg_Kr = 1;
+    }
+
     FORT_KR_INIT(&saturation_threshold_for_vg_Kr,
 		 &use_shifted_Kr_eval);
     
@@ -1270,9 +1278,10 @@ PorousMedia::read_rock()
     
     if (read_full_kmap)
     {
-        std::cout << "Current code only allows reading in "
-                  << "the distribution in full." << std::endl;
-        
+        if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "Current code only allows reading in "
+                      << "the distribution in full." << std::endl;
+        }
         if (kappadata == 0)
             kappadata = new MultiFab;
         
@@ -1281,9 +1290,10 @@ PorousMedia::read_rock()
     
     if (read_full_pmap)
     {
-        std::cout << "Current code only allows reading in "
-                  << "the distribution in full.\n";
-        
+        if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "Current code only allows reading in "
+                      << "the distribution in full.\n";
+        }
         if (phidata == 0)
             phidata = new MultiFab;
         

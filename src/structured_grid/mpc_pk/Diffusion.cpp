@@ -2051,7 +2051,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
       bool use_petsc_result = true;
       //bool use_petsc_result = false;
-#ifdef BL_USE_PETSC
       BL_ASSERT(pm_parent);
 
       Layout& layout = pm_parent->GetLayout();
@@ -2059,24 +2058,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       int myproc = ParallelDescriptor::MyProc();
       MPI_Comm comm = ParallelDescriptor::Communicator();
 
-      Vec RhsV, SolnV;
-      PetscErrorCode ierr; 
-      int num_local = layout.NumberOfLocalNodeIds();
-      int num_global = layout.NumberOfGlobalNodeIds();
-
-      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&RhsV); CHKPETSC(ierr);
-      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&SolnV); CHKPETSC(ierr);
-
       MFTower RhsMFT(layout,Rhs);
       MFTower SolnMFT(layout,Soln);
-
-      if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
-          BoxLib::Abort("MFT incompatible with layout");
-      }
-
-      ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
-      ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
-
 
 #if 0
       IndexType ccType = IndexType(IntVect::TheZeroVector());
@@ -2089,14 +2072,33 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           DarcyVelocity.set(d, new MFTower(layout,IndexType(BoxLib::BASISV(d)),1,0));
       }
       
+      if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
+          BoxLib::Abort("MFT incompatible with layout");
+      }
+
       int pressure_maxorder = 4;
       MFTFillPatch mftfp(layout);
       RichardContext richardContext(*pm_parent,mftfp,PoldMFT,SatMFT,LambdaMFT,
                                     DarcyVelocity,bc,pressure_maxorder);
       RichardOp richardOp(richardContext);
       richardOp.Residual(RhsMFT,PnewMFT,dt);
+      VisMF::Write(RhsMFT[0],"JUNK0");
+      VisMF::Write(RhsMFT[1],"JUNK1");
       BoxLib::Abort();
 #endif
+
+#ifdef BL_USE_PETSC
+      Vec RhsV, SolnV;
+      PetscErrorCode ierr; 
+      int num_local = layout.NumberOfLocalNodeIds();
+      int num_global = layout.NumberOfGlobalNodeIds();
+
+      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&RhsV); CHKPETSC(ierr);
+      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&SolnV); CHKPETSC(ierr);
+
+      ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
+      ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
+
 
       // Apply column scaling of J to Rhs
       Real* RhsV_array, *JRowScale_array;

@@ -136,12 +136,104 @@ MFTower::IsCompatible(const MFTower& rhs) const
     return isok;
 }
 
+void
+MFTower::CCtoECgrad(PArray<MFTower>& mfte,
+                    const MFTower&   mftc,
+                    Real             mult,
+                    int              sComp,
+                    int              dComp,
+                    int              nComp)
+{
+    // Note: Assumes that grow cells of mftc have been filled "properly":
+    //    f-f: COI
+    //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
+    //   phys: Dirichlet data at wall extrapolated to fine cc in grow
+    // 
+    const Layout& theLayout = mftc.GetLayout();
+    for (int d=0; d<BL_SPACEDIM; ++d) {            
+        BL_ASSERT(theLayout.IsCompatible(mfte[d]));
+    }
+    const Array<Geometry>& geomArray = theLayout.GeomArray();
+    int the_nLevs = theLayout.NumLevels();
+    for (int lev=0; lev<the_nLevs; ++lev) {
+        const MultiFab& mfc = mftc[lev];
+        BL_ASSERT(mfc.nGrow()>=1);
+        BL_ASSERT(sComp+nComp<=mfc.nComp());
+
+        const Real* dx = geomArray[lev].CellSize();
+        for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
+            const FArrayBox& cfab = mfc[mfi];
+            const Box& vcbox = mfi.validbox();
+            
+            for (int d=0; d<BL_SPACEDIM; ++d) {            
+                FArrayBox& efab = mfte[d][lev][mfi];
+                BL_ASSERT(dComp+nComp<=efab.nComp());
+                efab.setVal(0);
+                BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
+
+                FORT_CC_TO_EC_GRAD(efab.dataPtr(dComp),ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
+                                   cfab.dataPtr(sComp),ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
+                                   vcbox.loVect(), vcbox.hiVect(),dx,&mult,&d,&nComp);
+            }
+        }
+    }
+}
+
+void
+MFTower::ECtoCCdiv(MFTower&               mftc,
+                   const PArray<MFTower>& mfte,
+                   Real                   mult,
+                   int                    sComp,
+                   int                    dComp,
+                   int                    nComp)
+{
+    const Layout& theLayout = mftc.GetLayout();
+    for (int d=0; d<BL_SPACEDIM; ++d) {            
+        BL_ASSERT(theLayout.IsCompatible(mfte[d]));
+    }
+
+    const Array<Geometry>& geomArray = theLayout.GeomArray();
+    int the_nLevs = theLayout.NumLevels();
+    for (int lev=0; lev<the_nLevs; ++lev) {
+        MultiFab& mfc = mftc[lev];
+        BL_ASSERT(dComp+nComp<=mfc.nComp());
+
+        const Real* dx = geomArray[lev].CellSize();
+        for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
+            FArrayBox& cfab = mfc[mfi];
+            const Box& vcbox = mfi.validbox();
+
+            cfab.setVal(0);
+            
+            for (int d=0; d<BL_SPACEDIM; ++d) {            
+                const FArrayBox& efab = mfte[d][lev][mfi];
+                BL_ASSERT(sComp+nComp<=efab.nComp());
+                BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
+
+                FORT_EC_TO_CC_DIV(cfab.dataPtr(dComp),ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
+                                  efab.dataPtr(sComp),ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
+                                  vcbox.loVect(), vcbox.hiVect(),dx,&mult,&d,&nComp);
+            }
+        }
+    }
+}
 
 
 MFTFillPatch::MFTFillPatch(const Layout& _layout)
     : layout(_layout), nLevs(_layout.NumLevels())
 {
 }
+
+void
+MFTFillPatch::operator()(MFTower& mft,
+                         int      sComp,
+                         int      nComp,
+                         bool     do_piecewise_constant) const
+{
+    FillGrowCells(mft,sComp,nComp,do_piecewise_constant);
+}
+
+
 
 /*
      BuildInterpCoefs:
@@ -350,6 +442,11 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
 
     // Precompute an often-used interp stencil
     Array<Real> iCoefsZero(maxorder); BuildInterpCoefs(0,iCoefsZero); // value at wall
+    Array<Real> iCoefsFO(1); BuildInterpCoefs(0.5,iCoefsFO); // value at grow center (FOEXTRAP)
+    Array<Real> iCoefsHO(maxorder); BuildInterpCoefs(0.5,iCoefsHO); // value at grow center (HOEXTRAP)
+    Array<Real> iCoefsRE(1,1);
+    Array<Real> iCoefsRO(1,-1);
+
     Array<Array<Real> > iCoefsCF(BL_SPACEDIM, Array<Real>(maxorder));
     const Array<Geometry>& geomArray = layout.GeomArray();
     const Array<IntVect>& refRatio = layout.RefRatio();
@@ -391,20 +488,43 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                 {
                     Box povlp = myBndry[hilo] & bndry[hilo][d];
                     int bc_flag = (hilo==0 ? bc.lo()[d] : bc.hi()[d]);
-                    bool pbc = povlp.ok() && bc_flag==EXT_DIR;
-                    if (pbc) {
+                    if (povlp.ok()) {
+
+                        Array<Real>* interpCoef;
+                        if (bc_flag==EXT_DIR) {
+                            interpCoef = &iCoefsZero;
+                        }
+                        else if (bc_flag==FOEXTRAP) {
+                            interpCoef = &iCoefsFO;
+                        }
+                        else if (bc_flag==HOEXTRAP) {
+                            interpCoef = &iCoefsHO;
+                        }
+                        else if (bc_flag==REFLECT_EVEN) {
+                            interpCoef = &iCoefsRE;
+                        }
+                        else if (bc_flag==REFLECT_ODD) {
+                            interpCoef = &iCoefsRO;
+                        }
+                        else {
+                            BoxLib::Abort("Unrecognized BC type");
+                        }
+
+                        int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
                         for (IntVect iv=povlp.smallEnd(), End=povlp.bigEnd(); iv<=End; povlp.next(iv)) {
                             Stencil& stencil = perpInterpLevDir[iv];
-                            int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
+                            
+                            int icnt = 0;
+                            if (bc_flag == EXT_DIR) {
+                                Node n = fn(iv,0); // This will have been an invalid node until now
+                                n.level = lev; n.iv = iv; n.type=Node::VALID;
+                                stencil[n] = (*interpCoef)[icnt++];
 
-                            Node n = fn(iv,0); // This will have been an invalid node until now
-                            n.level = lev; n.iv = iv; n.type=Node::VALID; // This cell is holding the Dirichlet value
-                            stencil[n] = iCoefsZero[0];
-                            for (int k=1; k<iCoefsZero.size(); ++k) {
-                                IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
-                                stencil[fn(siv,0)] = iCoefsZero[k];
                             }
-                            //std::cout << "For " << iv << " stencil: " << stencil << std::endl; 
+                            for (int k=0; icnt<interpCoef->size(); ++k, ++icnt) {
+                                IntVect siv = iv + sgn*(k+1)*BoxLib::BASISV(d);
+                                stencil[fn(siv,0)] = (*interpCoef)[icnt];
+                            }
                         }
                     }
                     else if (lev>0) {
@@ -521,9 +641,15 @@ MFTFillPatch::DoCoarseFineParallelInterp(MFTower& mft,
 
 void
 MFTFillPatch::FillGrowCells(MFTower& mft,
-                           int      sComp,
-                           int      nComp) const
+                            int      sComp,
+                            int      nComp,
+                            bool     do_piecewise_constant) const
 {
+    if (do_piecewise_constant) {
+        FillGrowCellsSimple(mft,sComp,nComp);
+        return;
+    }
+
     // Note: Assumes that Dirichlet values have been loaded into the MultiFab grow cells at
     // physical boundaries (and that these values are to be applied at the cell walls).
     BL_ASSERT(layout.IsCompatible(mft));
@@ -660,81 +786,6 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
 
         mf.FillBoundary(sComp,nComp);
         gl.FillPeriodicBoundary(mf,sComp,nComp);
-    }
-}
-
-void
-MFTFillPatch::CCtoECgrad(PArray<MFTower>& mfte,
-                        const MFTower&   mftc,
-                        Real             mult,
-                        int              sComp,
-                        int              dComp,
-                        int              nComp) const
-{
-    // Note: Assumes that grow cells of mftc have been filled "properly":
-    //    f-f: COI
-    //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
-    //   phys: Dirichlet data at wall extrapolated to fine cc in grow
-    // 
-    BL_ASSERT(layout.IsCompatible(mftc));
-
-    const Array<Geometry>& geomArray = layout.GeomArray();
-    for (int lev=0; lev<nLevs; ++lev) {
-        const MultiFab& mfc = mftc[lev];
-        BL_ASSERT(mfc.nGrow()>=1);
-        BL_ASSERT(sComp+nComp<=mfc.nComp());
-
-        const Real* dx = geomArray[lev].CellSize();
-        for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
-            const FArrayBox& cfab = mfc[mfi];
-            const Box& vcbox = mfi.validbox();
-            
-            for (int d=0; d<BL_SPACEDIM; ++d) {            
-                FArrayBox& efab = mfte[d][lev][mfi];
-                BL_ASSERT(dComp+nComp<=efab.nComp());
-                efab.setVal(0);
-                BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
-
-                FORT_CC_TO_EC_GRAD(efab.dataPtr(dComp),ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
-                                   cfab.dataPtr(sComp),ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
-                                   vcbox.loVect(), vcbox.hiVect(),dx,&mult,&d,&nComp);
-            }
-        }
-    }
-}
-
-void
-MFTFillPatch::ECtoCCdiv(MFTower&               mftc,
-                       const PArray<MFTower>& mfte,
-                       Real                   mult,
-                       int                    sComp,
-                       int                    dComp,
-                       int                    nComp) const
-{
-    BL_ASSERT(layout.IsCompatible(mftc));
-
-    const Array<Geometry>& geomArray = layout.GeomArray();
-    for (int lev=0; lev<nLevs; ++lev) {
-        MultiFab& mfc = mftc[lev];
-        BL_ASSERT(dComp+nComp<=mfc.nComp());
-
-        const Real* dx = geomArray[lev].CellSize();
-        for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
-            FArrayBox& cfab = mfc[mfi];
-            const Box& vcbox = mfi.validbox();
-
-            cfab.setVal(0);
-            
-            for (int d=0; d<BL_SPACEDIM; ++d) {            
-                const FArrayBox& efab = mfte[d][lev][mfi];
-                BL_ASSERT(sComp+nComp<=efab.nComp());
-                BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
-
-                FORT_EC_TO_CC_DIV(cfab.dataPtr(dComp),ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
-                                  efab.dataPtr(sComp),ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
-                                  vcbox.loVect(), vcbox.hiVect(),dx,&mult,&d,&nComp);
-            }
-        }
     }
 }
 

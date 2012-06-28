@@ -23,18 +23,10 @@ public:
     CalcCoefficients(MFTFillPatch& mftfp,
                      PMAmr&        pmamr);
 
-    void operator()(PArray<MFTower>&       coefficients,
-                    MFTower&               pressure,
-                    MFTower&               saturation,
-                    MFTower&               lambda,
-                    const PArray<MFTower>& DarcyVelocity,
-                    Real                   mult = 1,
-                    int                    presComp = 0,
-                    int                    satComp = 0,
-                    int                    lamComp = 0,
-                    int                    darcComp = 0,
-                    int                    coefComp = 0,
-                    int                    nComp = 1);
+    void operator()(PArray<MFTower>& coefficients,
+                    MFTower&         pressure,
+                    MFTower&         saturation,
+                    MFTower&         lambda);
 protected:
     int nLevs;
     MFTFillPatch& mftfp;
@@ -60,7 +52,7 @@ struct RichardContext
     PArray<MFTower>& DarcyVelocity() {return darcyVelocity;}
     const Array<Real>& Density() {return density;}
     const Array<Real>& Gravity() {return gravity;}
-    MFTFillPatch& FillPatch() {return mftfp;}
+    void FillPatch(MFTower& mft, bool do_piecewise_constant=false);
     const Layout& GetLayout() {return mftfp.GetLayout();}
 
 protected:
@@ -94,16 +86,8 @@ public:
                   MFTower&               pressure,
                   const Real             dt);
 
-    void DarcyVelocity(PArray<MFTower>& velocity,
-                       MFTower&         pressure,
-                       int              sComp = 0,
-                       int              dComp = 0,
-                       int              nComp=1) const;
-
-
     const MFTower& Coefficients(int dir) const {return coefs[dir];}
     MFTower& Coefficients(int dir) {return coefs[dir];}
-
     void Write(const std::string& fileName) const;
 
 protected:
@@ -117,6 +101,29 @@ protected:
                 int                dComp,
                 int                nComp,
                 int                nGrow) const;
+
+    void FillPatch(MFTower& mft,
+                   bool do_piecewise_constant=false);
+
+    void CenterToEdgeUpwind(PArray<MFTower>&       mfte,
+                            MFTower&               mftc,
+                            const PArray<MFTower>& sgn,
+                            int                    nComp) const;
+
+    void YmultX(MFTower&           Y,
+                const MFTower&     X,
+                int                sComp=0,
+                int                dComp=0,
+                int                nComp=1,
+                int                nGrow=0) const;
+    
+    void CCtoECgradAdd(PArray<MFTower>& mfte,
+                       const MFTower&   mftc,
+                       const FArrayBox& a,
+                       int              sComp=0,
+                       int              dComp=0,
+                       int              nComp=1) const;
+
     void AllocLambda();
     void AllocSaturation();
 

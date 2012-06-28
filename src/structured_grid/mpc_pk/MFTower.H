@@ -31,6 +31,20 @@ struct MFTower
     Real norm() const;
     const Layout& GetLayout() const;
  
+    static void CCtoECgrad(PArray<MFTower>& mft_ec,
+                           const MFTower&   mft_cc,
+                           Real             mult=1,
+                           int              sComp=0,
+                           int              dComp=0,
+                           int              nComp=1);
+    
+    static void ECtoCCdiv(MFTower&               mft_cc,
+                          const PArray<MFTower>& mft_ec,
+                          Real                   mult=1,
+                          int                    sComp=0,
+                          int                    dComp=0,
+                          int                    nComp=1);
+    
     static IndexType EC[BL_SPACEDIM], CC, NC;
 
 protected:
@@ -57,25 +71,17 @@ struct MFTFillPatch
                                     int      nComp=1) const;
     void FillGrowCells(MFTower& mft,
                        int      sComp=0,
-                       int      nComp=1) const;
-    
+                       int      nComp=1,
+                       bool     do_piecewise_constant = false) const;
+
+    void operator()(MFTower& mft,
+                    int      sComp=0,
+                    int      nComp=1,
+                    bool     do_piecewise_constant = false) const;
+     
     void FillGrowCellsSimple(MFTower& mft,
                              int      sComp=0,
                              int      nComp=1) const;
-    
-    void CCtoECgrad(PArray<MFTower>& mft_ec,
-                    const MFTower&   mft_cc,
-                    Real             mult=1,
-                    int              sComp=0,
-                    int              dComp=0,
-                    int              nComp=1) const;
-
-    void ECtoCCdiv(MFTower&               mft_cc,
-                   const PArray<MFTower>& mft_ec,
-                   Real                   mult=1,
-                   int                    sComp=0,
-                   int                    dComp=0,
-                   int                    nComp=1) const;
     
     struct MyHash // Unique characteristics
     {

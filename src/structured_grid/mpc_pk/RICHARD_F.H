@@ -2,25 +2,43 @@
 #define _RICHARD_F_H
 
 #ifdef BL_LANG_FORT
-#    define FORT_CC_TO_EC_UPW     cctoecupw
+#    define FORT_RICHARD_GXPA     richardgxpa
+#    define FORT_RICHARD_YMULTX   richymultx
+#    define FORT_RICHARD_CTE_UPW  richacteupw
 #else
 #  if  defined(BL_FORT_USE_UPPERCASE)
-#    define FORT_CC_TO_EC_UPW     CCTOECUPW
+#    define FORT_RICHARD_GXPA     RICHARDGXPA
+#    define FORT_RICHARD_YMULTX   RICHYMULTX
+#    define FORT_RICHARD_CTE_UPW  RICHACTEUPW
 #  elif defined(BL_FORT_USE_LOWERCASE)
-#    define FORT_CC_TO_EC_UPW     cctoecupw
+#    define FORT_RICHARD_GXPA     richardgxpa
+#    define FORT_RICHARD_YMULTX   richymultx
+#    define FORT_RICHARD_CTE_UPW  richacteupw
 #  elif defined(BL_FORT_USE_UNDERSCORE)
-#    define FORT_CC_TO_EC_UPW     cctoecupw_
+#    define FORT_RICHARD_GXPA     richardgxpa_
+#    define FORT_RICHARD_YMULTX   richymultx_
+#    define FORT_RICHARD_CTE_UPW  richacteupw_
 #  endif
 
 #include <ArrayLim.H>
 
 extern "C"
 {
-    void FORT_CC_TO_EC_UPW(Real* coef,    ARLIM_P(clo), ARLIM_P(chi),
-                           const Real* l, ARLIM_P(llo), ARLIM_P(lhi),
-                           const Real* v, ARLIM_P(vlo), ARLIM_P(vhi),
+    void FORT_RICHARD_GXPA(Real* y,       ARLIM_P(ylo), ARLIM_P(yhi),
+                           const Real* x, ARLIM_P(xlo), ARLIM_P(xhi),
                            const int*  ccvlo, const int*  ccvhi,
-                           const Real* mult, const int* dir,const int* nc);
+                           const Real* dx, const Real* a, 
+                           const int* dir,const int* nc);
+
+    void FORT_RICHARD_YMULTX(Real*       Yfab, ARLIM_P(Ylo), ARLIM_P(Yhi),
+                             const Real* Xfab, ARLIM_P(Xlo), ARLIM_P(Xhi),
+                             const int* lo, const int* hi, const int* nc);
+
+    void FORT_RICHARD_CTE_UPW (Real* ec,        ARLIM_P(elo), ARLIM_P(ehi),
+                               const Real* cc,  ARLIM_P(clo), ARLIM_P(chi),
+                               const Real* sgn, ARLIM_P(slo), ARLIM_P(shi),
+                               const int*  ccvlo, const int*  ccvhi, 
+                               const int* dir, const int* nc);
 }
 
 #endif
