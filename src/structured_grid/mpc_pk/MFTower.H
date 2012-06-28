@@ -30,6 +30,7 @@ struct MFTower
     bool IsCompatible(const MFTower& rhs) const;
     Real norm() const;
     const Layout& GetLayout() const;
+    const IndexType& ixType() const;
  
     static void CCtoECgrad(PArray<MFTower>& mft_ec,
                            const MFTower&   mft_cc,
@@ -44,6 +45,10 @@ struct MFTower
                           int                    sComp=0,
                           int                    dComp=0,
                           int                    nComp=1);
+    
+    static void AverageDown(MFTower& mft,
+                            int      sComp=0,
+                            int      nComp=1);
     
     static IndexType EC[BL_SPACEDIM], CC, NC;
 

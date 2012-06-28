@@ -83,3 +83,65 @@
          call bl_pd_abort()
       endif
       end     
+
+      subroutine FORT_COARSEN_EC(ce,DIMS(ce),
+     &     fe,DIMS(fe),celo,cehi,ratio,dir,nc)
+      implicit none      
+      integer ratio, dir, nc
+      integer DIMDEC(ce)
+      integer DIMDEC(fe)
+      integer celo(SDIM),cehi(SDIM)
+      REAL_T  ce(DIMV(ce),nc)
+      REAL_T  fe(DIMV(fe),nc)
+      
+      integer i, j, ii, jj, n, rim1, rjm1, ir, jr
+      REAL_T areaInv
+
+      rim1 = ratio(1) - 1
+      rjm1 = ratio(2) - 1
+      
+      if (dir.eq.0) then
+         areaInv = 1.d0/ratio(2)
+      else if (dir.eq.1) then
+         areaInv = 1.d0/ratio(1)
+      else
+         print *, 'FORT_COARSEN_EC::bad dir: ',dir
+         call bl_pd_abort()
+      endif
+
+      if (dir.eq.0) then
+         do n=1,nc
+            do jr=0,rjm1
+               do j = celo(2),cehi(2)
+                  jj = ratio(2)*j + jr
+                  do i = celo(1),cehi(1)
+                     ii = ratio(1)*i
+                     ce(i,j,n) = ce(i,j,n) + fe(ii,jj,n)
+                  enddo
+               enddo
+            enddo
+         enddo
+      else if (dir.eq.1) then
+         do n=1,nc
+            do ir=0,rim1
+               do i = celo(1),cehi(1)
+                  ii = ratio(1)*i + ir
+                  do j = celo(2),cehi(2)
+                     jj = ratio(2)*j
+                     ce(i,j,n) = ce(i,j,n) + fe(ii,jj,n)
+                  enddo
+               enddo
+            enddo
+         enddo
+      endif
+
+      do n=1,nc
+         do j = celo(2),cehi(2)
+            do i = celo(1),cehi(1)
+               ce(i,j,n) = ce(i,j,n) * areaInv
+            enddo
+         enddo
+      enddo
+
+      end     
+

@@ -111,3 +111,95 @@
          call bl_pd_abort()
       endif
       end     
+
+      subroutine FORT_COARSEN_EC(ce,DIMS(ce),
+     &     fe,DIMS(fe),celo,cehi,ratio,dir,nc)
+      implicit none      
+      integer ratio, dir, nc
+      integer DIMDEC(ce)
+      integer DIMDEC(fe)
+      integer celo(SDIM),cehi(SDIM)
+      REAL_T  ce(DIMV(ce),nc)
+      REAL_T  fe(DIMV(fe),nc)
+      
+      integer i, j, k, ii, jj, kk, n, rim1, rjm1, rkm1, ir, jr, kr
+      REAL_T areaInv
+
+      rim1 = ratio(1) - 1
+      rjm1 = ratio(2) - 1
+      rkm1 = ratio(3) - 1
+      
+      if (dir.eq.0) then
+         areaInv = 1.d0/(ratio(2)*ratio(3))
+      else if (dir.eq.1) then
+         areaInv = 1.d0/(ratio(1)*ratio(3))
+      else if (dir.eq.2) then
+         areaInv = 1.d0/(ratio(1)*ratio(2))
+      else
+         print *, 'FORT_COARSEN_EC::bad dir: ',dir
+         call bl_pd_abort()
+      endif
+
+      if (dir.eq.0) then
+         do n=1,nc
+            do jr=0,rjm1
+               do kr=0,rkm1
+                  do k = celo(3),cehi(3)
+                     kk = ratio(3)*k + kr
+                     do j = celo(2),cehi(2)
+                        jj = ratio(2)*j + jr
+                        do i = celo(1),cehi(1)
+                           ii = ratio(1)*i
+                           ce(i,j,k,n) = ce(i,j,k,n) + fe(ii,jj,kk,n)
+                        enddo
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+      else if (dir.eq.1) then
+         do n=1,nc
+            do ir=0,rim1
+               do kr=0,rkm1
+                  kk = ratio(3)*k + kr
+                  do i = celo(1),cehi(1)
+                     ii = ratio(1)*i + ir
+                     do j = celo(2),cehi(2)
+                        jj = ratio(2)*j
+                        ce(i,j,k,n) = ce(i,j,k,n) + fe(ii,jj,kk,n)
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+      else if (dir.eq.2) then
+         do n=1,nc
+            do ir=0,rim1
+               do jr=0,rjm1
+                  do i = celo(1),cehi(1)
+                     ii = ratio(1)*i + ir
+                     do j = celo(2),cehi(2)
+                        jj = ratio(2)*j + jr
+                        do k = celo(3),cehi(3)
+                           kk = ratio(3)*k
+                           ce(i,j,k,n) = ce(i,j,k,n) + fe(ii,jj,kk,n)
+                        enddo
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+      endif
+      
+      do n=1,nc
+         do k = celo(3),cehi(3)
+            do j = celo(2),cehi(2)
+               do i = celo(1),cehi(1)
+                  ce(i,j,k,n) = ce(i,j,k,n) * areaInv
+               enddo
+            enddo
+         enddo
+      enddo
+
+      end     
+

@@ -273,27 +273,26 @@ RichardOp::Residual(MFTower&   residual,
     for (int d=0; d<BL_SPACEDIM; ++d) {
         Real* ap = a.dataPtr(d);
         for (int n=0; n<nComp; ++n) {
-            ap[n] = richardContext.Density()[n] * richardContext.Gravity()[d];
+            ap[n] = - richardContext.Density()[n] * richardContext.Gravity()[d];
         }
     }
     
     // Update cell-centered coefficients
     calcCoefs(coefs,pressure,saturation,lambda);
 
-    // Get  Grad(p) + rho.g
+    // Get  Grad(p) - rho.g
     FillPatch(pressure);
     CCtoECgradAdd(velocity,pressure,a,sComp,dComp,nComp);
 
     // Get edge-centered coefficients based on the sign of (Grad(p) - rho.g)
     CenterToEdgeUpwind(coefs,lambda,velocity,nComp);
 
-    // Get Darcy flux = H * (Grad(p) - rho.g)
+    // Get Darcy flux = H * (Grad(p) - rho.g). average down
     for (int d=0; d<BL_SPACEDIM; ++d) {
         BL_ASSERT(velocity[d].NComp()>dComp);
         YmultX(velocity[d],coefs[d]);
+        MFTower::AverageDown(velocity[d]);
     }
-
-    // Average down Darcy flux to coarse faces
 
     // Get the divergence of the Darcy Flux
     MFTower::ECtoCCdiv(residual,velocity);

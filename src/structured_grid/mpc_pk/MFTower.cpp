@@ -45,6 +45,13 @@ IndexType MFTower::EC[BL_SPACEDIM] = {D_DECL(IndexType(BoxLib::BASISV(0)),
 IndexType MFTower::CC(IntVect::TheZeroVector());
 IndexType MFTower::NC(IntVect::TheUnitVector());
 
+const IndexType&
+MFTower::ixType() const
+{
+    return iType;
+}
+
+
 void
 MFTower::define_alloc()
 {
@@ -218,6 +225,50 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
     }
 }
 
+void
+MFTower::AverageDown(MFTower& mft,
+                     int      sComp,
+                     int      nComp)
+{
+    int dir = -1;
+    for (int d=0; d<BL_SPACEDIM; ++d) {            
+        if (mft.ixType() == EC[d]) {
+            dir = d;
+        }
+    }
+    if (dir<0) {
+        BoxLib::Error("MFTower::AverageDown not implemented for this centering yet");
+    }
+
+    const Layout& theLayout = mft.GetLayout();
+    const Array<IntVect>& refRatio = theLayout.RefRatio();
+    const Array<BoxArray>& gridArray = theLayout.GridArray();
+    int the_nLevs = theLayout.NumLevels();
+    FArrayBox cfab;
+    for (int lev=1; lev<the_nLevs; ++lev) {
+        MultiFab& mfe = mft[lev];
+        BL_ASSERT(sComp+nComp<=mfe.nComp());
+        const IntVect& ratio = refRatio[lev-1];
+
+        // Build a container to hold the coarsened data on the fine distribution
+        BoxArray eba = BoxArray(gridArray[lev]).coarsen(ratio).surroundingNodes(dir);
+        MultiFab cemf(eba,nComp,0);
+        cemf.setVal(0);
+
+        for (MFIter mfi(mfe); mfi.isValid(); ++mfi) {
+            const FArrayBox& fefab = mfe[mfi];
+            FArrayBox& cefab = cemf[mfi];
+            const Box& cebox = cefab.box();
+
+            FORT_COARSEN_EC(cefab.dataPtr(sComp),ARLIM(cefab.loVect()), ARLIM(cefab.hiVect()),
+                            fefab.dataPtr(sComp),ARLIM(fefab.loVect()), ARLIM(fefab.hiVect()),
+                            cebox.loVect(), cebox.hiVect(), ratio.getVect(), &dir, &nComp);
+
+        }
+
+        mft[lev-1].copy(cemf); // parallel copy
+    }
+}
 
 MFTFillPatch::MFTFillPatch(const Layout& _layout)
     : layout(_layout), nLevs(_layout.NumLevels())
