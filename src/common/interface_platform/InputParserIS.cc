@@ -1,5 +1,5 @@
 #include "InputParserIS.hh"
-
+#include "InputParserIS-defaults.hh"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <string>
@@ -811,7 +811,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
       if (flow_model == "Steady State Saturated") {
 	Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem"); 
 	darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level); 
-	darcy_problem.set<double>("atmospheric pressure", 101325.0); 
+	darcy_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE); 
 	Teuchos::ParameterList& steady_time_integrator = darcy_problem.sublist("steady state time integrator"); 
 	steady_time_integrator.set<std::string>("linear solver","AztecOO"); 
 	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML"); 
@@ -823,7 +823,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-        richards_problem.set<double>("atmospheric pressure", 101325.0);
+        richards_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
 	// see if we need to generate a Picard list
 	bool use_picard(false);
 	Teuchos::ParameterList& ti_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
@@ -852,7 +852,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    Teuchos::Array<std::string> error_ctrl(1);
 	    error_ctrl[0] = std::string("pressure");
 	    picard_list.set<Teuchos::Array<std::string> >("error control options",num_params_list.get<Teuchos::Array<std::string> >("pseudo time integrator error control options",error_ctrl));
-	    picard_list.sublist("Picard").set<double>("convergence tolerance",num_params_list.get<double>("pseudo time integrator picard convergence tolerance",1e-7));
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",num_params_list.get<double>("pseudo time integrator picard convergence tolerance",PICARD_TOLERANCE));
 	    picard_list.sublist("Picard").set<int>("maximum number of iterations",num_params_list.get<int>("pseudo time integrator picard maximum number of iterations",400));
 	  } else {
 	    picard_list.set<bool>("initialize with darcy",true);
@@ -863,7 +863,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    Teuchos::Array<std::string> error_ctrl(1);
 	    error_ctrl[0] = std::string("pressure");
 	    picard_list.set<Teuchos::Array<std::string> >("error control options",error_ctrl);
-	    picard_list.sublist("Picard").set<double>("convergence tolerance",1e-7);
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",PICARD_TOLERANCE);
 	    picard_list.sublist("Picard").set<int>("maximum number of iterations",400);
 	  }
 	}
@@ -887,7 +887,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    sti_bdf1_param.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
 	    sti_bdf1_param.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
 	    sti_bdf1_param.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
-	    sti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
+	    sti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE));
 	    sti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
 	    sti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
 	    sti_bdf1_param.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
@@ -901,7 +901,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  sti_bdf1_param.set<int>("max iterations",10);
 	  sti_bdf1_param.set<int>("min iterations",5);
 	  sti_bdf1_param.set<int>("limit iterations",20);
-	  sti_bdf1_param.set<double>("nonlinear tolerance",1.0);
+	  sti_bdf1_param.set<double>("nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE);
 	  sti_bdf1_param.set<double>("time step reduction factor",0.8);
 	  sti_bdf1_param.set<double>("time step increase factor",1.2);
 	  sti_bdf1_param.set<double>("max time step", 1.0e+8);
@@ -927,7 +927,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
             tti_bdf1_param.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
             tti_bdf1_param.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
             tti_bdf1_param.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
-            tti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
+            tti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE));
             tti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
             tti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
             tti_bdf1_param.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
@@ -941,7 +941,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           tti_bdf1_param.set<int>("max iterations",10);
           tti_bdf1_param.set<int>("min iterations",5);
           tti_bdf1_param.set<int>("limit iterations",20);
-          tti_bdf1_param.set<double>("nonlinear tolerance",1.0);
+          tti_bdf1_param.set<double>("nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE);
           tti_bdf1_param.set<double>("time step reduction factor",0.8);
           tti_bdf1_param.set<double>("time step increase factor",1.2);
           tti_bdf1_param.set<double>("max time step", 1.0e+8);
@@ -1342,10 +1342,10 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 
   stt_list.set<double>("Gravity x", 0.0);
   if (spatial_dimension_ == 2) {
-    stt_list.set<double>("Gravity y", -9.81);
+    stt_list.set<double>("Gravity y", - GRAVITY_MAGNITUDE);
   } else {
     stt_list.set<double>("Gravity y", 0.0);
-    stt_list.set<double>("Gravity z", -9.81);
+    stt_list.set<double>("Gravity z", - GRAVITY_MAGNITUDE);
   }
 
   // find the viscosity
@@ -1412,7 +1412,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       }
       
       // particle density, for now we make the default 1.0 since we do not want to require this input parameter in the input spec, yet
-      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",1.0);
+      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",PARTICLE_DENSITY);
 
       // extract the mineralogy for this material
       Teuchos::ParameterList mineralogy;
