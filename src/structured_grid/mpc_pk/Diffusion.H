@@ -182,6 +182,7 @@ public:
 				   Array<PArray<MultiFab> >& beta,
 				   Array<PArray<MultiFab> >& beta_dp,
                                    Array<MultiFab*>&         umac,
+				   const bool                update_jac,
 				   const bool                do_upwind,
                                    Diffusion::NewtonStepInfo& status); 
  

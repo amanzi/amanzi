@@ -85,7 +85,6 @@ PMAmr::init (Real strt_time_,
     if (!restart_file.empty() && restart_file != "init")
     {
         restart(restart_file);
-        //cumtime = strt_time;
     }
     else
     {
@@ -94,7 +93,7 @@ PMAmr::init (Real strt_time_,
         bool write_plot, write_check;
         Array<int> initial_observations;
         process_events(write_plot,write_check,initial_observations,event_coord,
-                       strt_time, dt_level[0], level_steps[0], 0);
+                       cumtime, dt_level[0], level_steps[0], 0);
 
         if (write_plot) {
 
@@ -111,7 +110,7 @@ void
 PMAmr::coarseTimeStep (Real stop_time)
 {
     const Real run_strt = ParallelDescriptor::second() ;    
-
+    
     //
     // Compute new dt.
     //
@@ -127,6 +126,7 @@ PMAmr::coarseTimeStep (Real stop_time)
                                   stop_time,
                                   post_regrid_flag);
     }
+
 
     if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())
     {
@@ -283,7 +283,6 @@ PMAmr::initialInit (Real strt_time,
     delete [] RanAmpl;
     delete [] RanPhase;
 #endif
-
     cumtime = strt_time;
     //
     // Define base level grids.

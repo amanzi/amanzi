@@ -1920,10 +1920,11 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 				     Array<PArray<MultiFab> >& beta,
 				     Array<PArray<MultiFab> >& beta_dp,
                                      Array<MultiFab*>&         umac,
+				     const bool               update_jac,
 				     const bool                do_upwind,
                                      Diffusion::NewtonStepInfo& status)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_composite_iter()");
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_composite_iter_p()");
 
   std::string tag = "       Newton step: ";
   std::string tag_ls = "  line-search:  ";
@@ -1932,6 +1933,9 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   // This routine solves the time-dependent richards equation based on 
   // composite solve.
   //
+
+  const Real strt_time = ParallelDescriptor::second();
+  
   PArray<PorousMedia> pm(nlevs,PArrayNoManage);
   for (int lev = 0; lev < nlevs; lev++) 
   {
@@ -1953,12 +1957,13 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   // Build some handy pointer arrays, and allocate work space for Soln, Rhs
   PArray<MultiFab> Snew(nlevs,PArrayNoManage);
   PArray<MultiFab> Pnew_p(nlevs,PArrayNoManage);
+  PArray<MultiFab> lambda(nlevs,PArrayNoManage);
   Array<MultiFab*> Rhs_p(Rhs.size());
   Array<MultiFab*> Soln_p(Soln.size());
   Array<MultiFab*> Snew_p(Snew.size());
   Array<PArray<MultiFab> > beta_pp(BL_SPACEDIM);
   Array<Array<MultiFab*> > beta_lp(nlevs);
-  PArray<MultiFab> lambda(nlevs,PArrayManage);
+  Array<Array<MultiFab*> > beta_ldp(nlevs);
 
   for (int dir=0; dir<BL_SPACEDIM; dir++) {
       beta_pp[dir].resize(nlevs, PArrayNoManage);
@@ -1969,7 +1974,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       MultiFab& S = pm[lev].get_new_data(State_Type);
       MultiFab& P = pm[lev].get_new_data(Press_Type);
       Pnew_p.set(lev,&P);
-      Snew.set(lev,&S);
+      Snew.set(lev,&S); 
+      lambda.set(lev,pm[lev].lambdap1_cc);
       Snew_p[lev] = &(Snew[lev]);
 
       bav[lev] = S.boxArray();
@@ -1977,20 +1983,21 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       geom[lev] = parent->Geom(lev+level);
 
       beta_lp[lev].resize(BL_SPACEDIM);
+      beta_ldp[lev].resize(BL_SPACEDIM);
       for (int dir=0; dir<BL_SPACEDIM; dir++)
       {
           beta_lp[lev][dir] = &(beta[dir][lev]);
+	  beta_ldp[lev][dir] = &(beta_dp[dir][lev]);
 	  beta_pp[dir].set(lev,&(beta[dir][lev]));
       }
 
       Rhs.set(lev, new MultiFab(bav[lev],1,0));
       Rhs_p[lev] = &(Rhs[lev]);
-      Rhs[lev].setVal(0.);
 
       Soln.set(lev, new MultiFab(bav[lev],1,1));
       Soln_p[lev] = &(Soln[lev]);
 
-      lambda.set(lev, new MultiFab(bav[lev],pm[lev].ncomps,1));
+     
     }
 
   // FIXME: Should rather do this with a modified getBndryData
@@ -2020,9 +2027,11 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev]); // Set sat from p
       pm[lev].calcLambda(&lambda[lev],Snew[lev]);
       pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
-      MultiFab::Copy(Rhs[lev],res_fix[lev],0,0,1,0);
+      if (update_jac)
+	pm[lev].calc_richard_jac(beta_ldp[lev].dataPtr(),&(dalpha[lev]),&(lambda[lev]),umac[lev],
+				 cur_time,dt,0,do_upwind,false);
     }
-
+ 
   MGT_Solver mgt_solver = getOp(0,nlevs,geom,bav,dmv, xa, xb,cur_time,
 				visc_bndry,bc,true);
   mgt_solver.set_maxorder(2);
@@ -2037,7 +2046,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   }
 
   // preconditioning the residual.
-  // If beta_dp is the exact Jacobian, then this is the Newton step.  
+  // If beta_dp is the exact Jacobian, then this is the Newton step. 
   if (beta_dp.size() > 0)
     {
       for (int lev=0; lev<nlevs; lev++)
@@ -2050,6 +2059,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       Real final_resnorm;
 
       bool use_petsc_result = true;
+
       //bool use_petsc_result = false;
       BL_ASSERT(pm_parent);
 
@@ -2061,7 +2071,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       MFTower RhsMFT(layout,Rhs);
       MFTower SolnMFT(layout,Soln);
 
-#if 1
+#if 0
       IndexType ccType = IndexType(IntVect::TheZeroVector());
       MFTower PnewMFT(layout,Pnew_p);
       MFTower PoldMFT(layout,ccType,1,0);
@@ -2138,7 +2148,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 #else
       use_petsc_result = false;
 #endif
-
+      
       if (!use_petsc_result)
       {
           const Real S_tol     = visc_tol;
@@ -2205,23 +2215,21 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       
       status.success = true;
       for (int lev = nlevs-2; lev >= 0; lev--)
-	{
-	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
-	  pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
-	}
+	pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
     }
-  
+
+
   PArray<MultiFab> Ptmp(nlevs,PArrayManage);
   for (int lev=0; lev<nlevs; lev++)
   {
       Ptmp.set(lev, new MultiFab(bav[lev],1,1));
       MultiFab::Copy(Ptmp[lev],Pnew_p[lev],0,0,1,1);
       MultiFab::Add(Ptmp[lev],Soln[lev],0,0,1,0); // Now Ptmp has new trial pressure
-      pm[lev].calcInvPressure(Snew[lev],Ptmp[lev]);
+      pm[lev].calcInvPressure(Snew[lev],Ptmp[lev]);   
       pm[lev].calcLambda(&(lambda[lev]),Snew[lev]);
-      pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
-      MultiFab::Copy(Rhs[lev],res_fix[lev],0,0,1,0);
+      pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);  
   }
+
   mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
   residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
 		   Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
@@ -2254,13 +2262,12 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           MultiFab::Copy(Ptmp[lev],Soln[lev],0,0,1,1);
           Ptmp[lev].mult(status.ls_factor);
           MultiFab::Add(Ptmp[lev],Pnew_p[lev],0,0,1,1); // Now Ptmp has new trial pressure
-          
+	  
           pm[lev].calcInvPressure(Snew[lev],Ptmp[lev]);
           pm[lev].calcLambda(&(lambda[lev]),Snew[lev]);
           pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
-          MultiFab::Copy(Rhs[lev],res_fix[lev],0,0,1,0);
       }
-
+ 
       mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
       residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
                        Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
@@ -2302,9 +2309,23 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       }
   }
 
+
   for (int lev=0; lev<nlevs;lev++) {
       MultiFab::Copy(Pnew_p[lev],Ptmp[lev],0,nc,1,1);
+      pm[lev].FillStateBndry(cur_time,Press_Type,0,1);
+      pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev]); 
+      pm[lev].compute_vel_phase(umac[lev],0,cur_time);
   }
+
+  Real total_time = ParallelDescriptor::second() - strt_time;
+
+  if (verbose > 1)
+    {
+      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
+      ParallelDescriptor::ReduceRealMax(total_time,IOProc);
+      if (ParallelDescriptor::IOProcessor())
+	std::cout << "Diffusion::composite_iter_p(): time: " << total_time << std::endl;
+    }
 
   delete[] a1_p;
 }

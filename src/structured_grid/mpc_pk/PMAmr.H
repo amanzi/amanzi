@@ -25,6 +25,8 @@ public:
 
     static EventCoord& eventCoord() {return event_coord;}
 
+    void set_cumTime(Real strt_time) {cumtime = strt_time;}
+  
     Real StartTime() const {return strt_time;}
 
     static Layout& GetLayout() {return layout;}

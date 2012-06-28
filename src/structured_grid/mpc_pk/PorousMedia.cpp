@@ -1286,7 +1286,7 @@ PorousMedia::RichardNLSdata::RichardNLSdata(int slev, int nlevs, Amr* amrp)
     min_nl_iterations_for_dt_2 = 3;
     max_nl_iterations_for_dt = 10;
     time_step_increase_factor = 1.5;
-    time_step_increase_factor_2 = 10;
+    time_step_increase_factor_2 = 2.0;
     time_step_reduction_factor = 0.8;
     time_step_retry_factor = 0.5;
     time_step_retry_factor_2 = 0.1;
@@ -1788,12 +1788,14 @@ PorousMedia::richard_init_to_steady()
 
                 //
                 // Re-instate timestep.
-                //
+                //		
+		PMParent()->set_cumTime(t_max);
+		cur_time = t_max;
                 parent->setDtLevel(dt_save);
                 parent->setNCycle(nc_save);
                 for (int k = 0; k <= finest_level; k++)
                 {
-                    getLevel(k).setTimeLevel(cur_time,dt_save[k],dt_save[k]);
+		  getLevel(k).setTimeLevel(cur_time,dt_save[k],dt_save[k]);
                 }
 
                 // Fix up pressure field
@@ -2976,7 +2978,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 		    << " Current time: " << t 
 		    << " Current time step: " << dt_iter 
 		    << " Next time step " <<  dt_new << std::endl;
-
+	
 	dt_iter = std::min(dt_new, t_max - t);
 	continue_subtimestep =  (dt_iter > t_eps) && (k < k_max) && (t < t_max);
       }
@@ -5814,30 +5816,12 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
       res_fix[lev].mult(-1.0);
       fine_lev.compute_vel_phase(u_mac_local[lev],0,pcTime);
       fine_lev.calc_richard_velbc(res_fix[lev],u_mac_local[lev],dt*density[0]);
-
-      MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
-      MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
-      for (int dir=0;dir<BL_SPACEDIM;dir++)
-      {
-	tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
-	tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
-      }
       
-      fine_lev.calcLambda(pcTime);
-
-      fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
-				 u_mac_local[lev],0,do_upwind,pcTime);
-
-      if (nl_data.UpdateJacobian(lev))
-      {
-          fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,&(dalpha[lev]),fine_lev.lambdap1_cc,
-                                    u_mac_local[lev],pcTime,dt,0,do_upwind,do_richard_sat_solve);
-      }
 
       if (do_richard_sat_solve) 
 	{
             // FIXME: pulled from above after calcLambda
-      fine_lev.calcCapillary(pcTime);
+	  fine_lev.calcCapillary(pcTime);
             // FIXME: in the scalar version, this is done inside the do_richard_sat_solve loop below
             //fine_lev.calcLambda(pcTime);
 	  MultiFab::Copy(P_lev,*(fine_lev.pcnp1_cc),0,0,1,1);
@@ -5853,6 +5837,8 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
   linear_status.ls_reduction_factor = richard_ls_reduction_factor;
   linear_status.monitor_linear_solve = richard_monitor_linear_solve;
   linear_status.monitor_line_search = richard_monitor_line_search;
+
+  Real solve_time = 0;
 
   if (do_richard_sat_solve)
     {
@@ -5900,44 +5886,15 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
       while ((nl_data.NLIterationsTaken() < nl_data.MaxNLIterations()) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
           nl_data++;
+
+	  bool update_jac = false;
+	  for (int lev=0;lev<nlevs;lev++) update_jac = nl_data.UpdateJacobian(lev) || update_jac;
+	  const Real tmp_time = ParallelDescriptor::second();
 	  diffusion->richard_composite_iter_p(dt,nlevs,nc,gravity,density,res_fix,
                                               alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
-                                              u_mac_local,do_upwind,linear_status); 
-
+                                              u_mac_local,update_jac,do_upwind,linear_status); 
+	  solve_time+= ParallelDescriptor::second() - tmp_time;
           err_nwt = linear_status.residual_norm_post_ls;
-
-          for (int lev=0; lev<nlevs; lev++)
-          {
-              PorousMedia&  fine_lev = getLevel(lev);    
-              MultiFab& S_lev        = fine_lev.get_new_data(State_Type);
-              MultiFab& P_lev        = fine_lev.get_new_data(Press_Type);
-              
-
-              fine_lev.calcInvPressure(S_lev,P_lev);
-              if (model != model_list["richard"])
-                  fine_lev.scalar_adjust_constraint(0,ncomps-1);
-
-              fine_lev.FillStateBndry(pcTime,Press_Type,0,1);
-              fine_lev.calcInvPressure(S_lev,P_lev); 
-              fine_lev.calcLambda(pcTime);
-
-              MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
-              MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
-              for (int dir=0;dir<BL_SPACEDIM;dir++)
-              {
-                  tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
-                  tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
-              }
-                
-              fine_lev.compute_vel_phase(u_mac_local[lev],0,pcTime);
-              fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
-                                         u_mac_local[lev],0,do_upwind,pcTime);
-              if (nl_data.UpdateJacobian(lev)) {
-                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,&(dalpha[lev]),fine_lev.lambdap1_cc,
-                                            u_mac_local[lev],pcTime,dt,0,do_upwind,do_richard_sat_solve);
-              }
-              //fine_lev.calc_richard_alpha(&dalpha[lev],pcTime);
-          }
 	}
     }
 
@@ -5966,9 +5923,10 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
   Real run_time = ParallelDescriptor::second() - strt_time;
   richard_time = run_time;
   ParallelDescriptor::ReduceRealMax(richard_time);
+  ParallelDescriptor::ReduceRealMax(solve_time);
   richard_time_min = std::min(richard_time_min,richard_time);
   
-  if (verbose > 1)
+  if (verbose > -1)
     { 
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       ParallelDescriptor::ReduceRealMax(run_time,IOProc);
@@ -5976,7 +5934,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 
       if (ParallelDescriptor::IOProcessor())
         std::cout << "PorousMedia::richard_update(): time: " 
-		  << run_time << '\n';
+		  << run_time << ' ' << solve_time  << '\n';
     }
   //
   // Write out the min and max of each component of the new state.
@@ -6927,7 +6885,6 @@ PorousMedia::computeNewDt (int                   finest_level,
       n_factor *= n_cycle[i];
       dt_0      = std::min(dt_0,n_factor*dt_min[i]);
     }
-
   // 
   // Limit by max_dt: redundant?
   //
@@ -9949,30 +9906,30 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 	  else
 	    {
 	      deps = 1.e-8;
-	    FORT_RICHARD_NJAC2(dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
-			       dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
+	      FORT_RICHARD_NJAC2(dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
+				 dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
 #if(BL_SPACEDIM==3)
-			       dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
+				 dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
 #endif	
-			       uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
-			       uydat, ARLIM(uy_lo), ARLIM(uy_hi),
+				 uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
+				 uydat, ARLIM(uy_lo), ARLIM(uy_hi),
 #if(BL_SPACEDIM==3)
-			       uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
+				 uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
 #endif
-			       kpxdat, ARLIM(kpx_lo), ARLIM(kpx_hi),
-			       kpydat, ARLIM(kpy_lo), ARLIM(kpy_hi),
+				 kpxdat, ARLIM(kpx_lo), ARLIM(kpx_hi),
+				 kpydat, ARLIM(kpy_lo), ARLIM(kpy_hi),
 #if(BL_SPACEDIM==3)
-			       kpzdat, ARLIM(kpz_lo), ARLIM(kpz_hi),
+				 kpzdat, ARLIM(kpz_lo), ARLIM(kpz_hi),
 #endif
-			       lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
-			       prdat, ARLIM(pr_lo), ARLIM(pr_hi),
-			       pdat, ARLIM(p_lo), ARLIM(p_hi),
-			       kdat, ARLIM(k_lo), ARLIM(k_hi),
-			       krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
-			       cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
-			       lo, hi, domlo, domhi, dx, bc.dataPtr(), 
-			       rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
-			       &deps, &do_upwind);
+				 lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
+				 prdat, ARLIM(pr_lo), ARLIM(pr_hi),
+				 pdat, ARLIM(p_lo), ARLIM(p_hi),
+				 kdat, ARLIM(k_lo), ARLIM(k_hi),
+				 krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
+				 cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
+				 lo, hi, domlo, domhi, dx, bc.dataPtr(), 
+				 rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
+				 &deps, &do_upwind);
 	    }
 	}
 
