@@ -374,7 +374,7 @@ int Darcy_PK::Advance(double dT_MPC)
     std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
-  dT_desirable_ *= ti_specs_sss.dTfactor;
+  dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }
