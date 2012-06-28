@@ -1,7 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
   <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="1D Flow and Transport with tritium decay"/>
+    <Parameter name="Model ID" type="string" value="1D Flow and Transport with equilibrium surface complexation"/>
   </ParameterList>
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
@@ -86,6 +86,14 @@
       <ParameterList name="Intrinsic Permeability: Uniform">
         <Parameter name="Value" type="double" value="1.E-12"/>
       </ParameterList>
+      <ParameterList name="Surface Complexation Sites">
+	<ParameterList name=">FeOH_s">
+	  <Parameter name="Site Density" type="double" value="7.63550E+04"/>
+	</ParameterList>
+	<ParameterList name=">FeOH_w">
+	  <Parameter name="Site Density" type="double" value="1.90800E+03"/>
+	</ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Phase Definitions">
@@ -100,10 +108,13 @@
       </ParameterList>
       <ParameterList name="Phase Components">
         <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array string" value="{Tritium}"/>
+          <Parameter name="Component Solutes" type="Array string" value="{H+, Na+, NO3-, Zn++}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Solid">
+      <Parameter name="Sorption Sites" type="Array string" value="{>FeOH_w, >FeOH_s}"/>
+    </ParameterList> <!-- solid phase -->
   </ParameterList>
   <ParameterList name="Initial Conditions">
     <ParameterList name="Initial Condition">
@@ -115,9 +126,27 @@
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-            <ParameterList name="Tritium">
+            <ParameterList name="H+">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Value" type="double" value="1.2008579209719604E-05"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="TBC"/>
+            </ParameterList>
+            <ParameterList name="Na+">
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0027257177167301E-01"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="TBC"/>
+            </ParameterList>
+            <ParameterList name="NO3-">
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0028477959804127E-01"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="TBC"/>
+            </ParameterList>
+            <ParameterList name="Zn++">
+              <ParameterList name="IC: Uniform Concentration">
+                <Parameter name="Value" type="double" value="1.0027906509700472E-07"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
@@ -138,11 +167,37 @@
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-            <ParameterList name="Tritium">
+            <ParameterList name="H+">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.e-3, 1.e-3}"/>
+                <Parameter name="Values" type="Array double" value="{1.2008583610986616E-06, 1.2008583610986616E-06}"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+            </ParameterList>
+            <ParameterList name="Na+">
+              <ParameterList name="BC: Uniform Concentration">
+                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                <Parameter name="Values" type="Array double" value="{1.0028158678565192E-01, 1.0028158678565192E-01}"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+            </ParameterList>
+            <ParameterList name="NO3-">
+              <ParameterList name="BC: Uniform Concentration">
+                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                <Parameter name="Values" type="Array double" value="{1.0028477959804127E-01
+, 1.0028477959804127E-01
+}"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+            </ParameterList>
+            <ParameterList name="Zn++">
+              <ParameterList name="BC: Uniform Concentration">
+                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                <Parameter name="Values" type="Array double" value="{1.0022749329832621E-06, 1.0022749329832621E-06}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -160,7 +215,31 @@
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-            <ParameterList name="Tritium">
+            <ParameterList name="H+">
+              <ParameterList name="BC: Zero Gradient">
+                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                <Parameter name="Values" type="Array double" value="{1.e-20, 1.e-20}"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+            </ParameterList>
+            <ParameterList name="Na+">
+              <ParameterList name="BC: Zero Gradient">
+                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                <Parameter name="Values" type="Array double" value="{1.e-20, 1.e-20}"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+            </ParameterList>
+            <ParameterList name="NO3-">
+              <ParameterList name="BC: Zero Gradient">
+                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                <Parameter name="Values" type="Array double" value="{1.e-20, 1.e-20}"/>
+              </ParameterList>
+              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+            </ParameterList>
+            <ParameterList name="Zn++">
               <ParameterList name="BC: Zero Gradient">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
@@ -183,7 +262,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="tritium"/>
+      <Parameter name="File Name Base" type="string" value="surface-complexation"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
       <Parameter name="Time Macro" type="string" value="Every_year"/>
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_0.05_year"/> -->
@@ -192,11 +271,12 @@
 
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="tritium.bgd" />
+    <Parameter name="Thermodynamic Database File" type="string" value="surface-complexation.bgd" />
     <Parameter name="Verbosity" type="Array string" value="{verbose}" />
     <Parameter name="Activity Model" type="string" value="unit" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
+    <Parameter name="Auxiliary Data" type="Array string" value="{pH}"/>
   </ParameterList> <!-- Chemistry -->
 </ParameterList>
