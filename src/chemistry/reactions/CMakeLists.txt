@@ -34,6 +34,5 @@ set(SRCS
 	./sorption_isotherm_rxn.cc 
 )
 
-add_library(geochemrxns ${SRCS}) 
-add_install_library(geochemrxns)
+add_amanzi_library(geochemrxns SOURCE ${SRCS}) 
 

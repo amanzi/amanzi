@@ -18,7 +18,6 @@ set(SRCS
 	 ./chemistry_verbosity.cc
 )
 
-add_library(geochemutil ${SRCS}) 
-add_install_library(geochemutil)
+add_amanzi_library(geochemutil SOURCE ${SRCS}) 
 
 

@@ -33,15 +33,11 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Library: mesh_data
 #
 file(GLOB mesh_data_source_files "*.cc")
-add_library(mesh_data ${mesh_data_source_files})
-add_install_library(mesh_data)
-target_link_libraries(mesh_data error_handling geometry ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
-
-#
-# Install Targets
-#
 file(GLOB mesh_data_inc_files "*.hh")
-add_install_include_file(${mesh_data_inc_files})
+set(boost_libs_used ${Boost_SYSTEM_LIBRARIES} ${Boost_FILESYSTEM_LIBRARIES} ${Boost_REGEX_LIBRARIES})
+add_amanzi_library(mesh_data 
+                   SOURCE ${mesh_data_source_files} HEADERS ${mesh_data_inc_files}
+                   LINK_LIBS error_handling geometry ${boost_libs_used} ${Epetra_LIBRARIES})
 
 if (BUILD_TESTS)
 
@@ -56,16 +52,16 @@ if (BUILD_TESTS)
                    KIND unit
                    SOURCE  
                          test/Main.cc
-			 test/test_Coords.cc
-			 test/test_Data.cc
-			 test/test_Fields.cc 
+                         test/test_Coords.cc
+                         test/test_Data.cc
+                         test/test_Fields.cc 
                          test/test_Side_set.cc
-			 test/test_Hex_mesh.cc
-                         LINK_LIBS mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+                         test/test_Hex_mesh.cc
+                   LINK_LIBS mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
 
    # Test: mesh_hex 
    add_amanzi_test(mesh_data_parallel test_hex_mesh
-		   KIND unit
+           KIND unit
                    NPROCS 2 
                    SOURCE test/Main.cc test/test_Hex_mesh.cc
                    LINK_LIBS mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})

@@ -37,16 +37,10 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 # Library: stk_mesh
 #
 file(GLOB stk_mesh_files "*.cc") 
-add_library(stk_mesh ${stk_mesh_files})
-add_install_library(stk_mesh)
-target_link_libraries(stk_mesh error_handling mesh_data mesh 
-                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${STK_LIBRARIES} ${ExodusII_LIBRARIES})
-
-#
-# Install Targets
-#
 file(GLOB stk_inc_files "*.hh")
-add_install_include_file(${stk_inc_files})
+add_amanzi_library(stk_mesh
+                   SOURCE ${stk_mesh_files} HEADERS ${stk_inc_files}
+                   LINK_LIBS geometry mesh mesh_data ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${STK_LIBRARIES} ${ExodusII_LIBRARIES})
 
 if (BUILD_TESTS)
 
@@ -64,13 +58,13 @@ if (BUILD_TESTS)
     # Test: stk_mesh
     add_amanzi_test(stk_mesh test_stk_mesh
                     KIND unit
-		    SOURCE
+                    SOURCE
                           test/Main.cc
-			  test/test_Mesh.cc
+                          test/test_Mesh.cc
                           test/test_Maps.cc
-			  test/test_Hex.cc
-			  test/test_STK.cc
-		    LINK_LIBS
+                          test/test_Hex.cc
+                          test/test_STK.cc
+                    LINK_LIBS
                           stk_mesh mesh_audit
                           ${UnitTest_LIBRARIES} )
 
@@ -86,7 +80,7 @@ if (BUILD_TESTS)
     # Test: stk_mesh_parallel
     add_amanzi_test(stk_mesh_parallel test_stk_mesh_parallel
                     KIND unit
-		    NPROCS 4
+                    NPROCS 4
                     SOURCE test/Main.cc test/test_Hex.cc
                     LINK_LIBS stk_mesh mesh_audit
                               ${UnitTest_LIBRARIES})
