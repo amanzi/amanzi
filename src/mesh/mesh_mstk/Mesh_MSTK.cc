@@ -523,6 +523,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
   }
 
 
+  // CODE_LABEL_NUMBER 1 - referred to by a comment later 
+  //
   // Access all the requested sets to make sure they get
   // created within MSTK (they get created the first time
   // this set is accessed)
@@ -571,13 +573,39 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
   }
 
 
-  
-
 
   int mkid = MSTK_GetMarker();
   MSet_ptr src_ents = MSet_New(inmesh_mstk,"src_ents",entdim);
   for (int i = 0; i < setnames.size(); i++) {
-    MSet_ptr mset = MESH_MSetByName(inmesh_mstk,setnames[i].c_str());
+    MSet_ptr mset;
+    
+    AmanziGeometry::GeometricModelPtr gm = inmesh.geometric_model();
+    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
+
+    if (rgn->type() == AmanziGeometry::LABELEDSET) {
+      
+      // We are doing no error checking here because the call made
+      // earlier to initialize the sets (get_set_size) should have
+      // trapped any errors that might be present
+      // See CODE_LABEL_NUMBER 1
+
+      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      std::string label = lsrgn->label();
+      std::string entity_type = lsrgn->entity_str();
+      
+      char internal_name[256];
+
+      if (entity_type == "CELL")
+        sprintf(internal_name,"matset_%s",label.c_str());
+      else if (entity_type == "FACE")
+        sprintf(internal_name,"sideset_%s",label.c_str());
+      else if (entity_type == "NODE")
+        sprintf(internal_name,"nodeset_%s",label.c_str());
+
+      mset = MESH_MSetByName(inmesh_mstk,internal_name);
+    }
+    else
+      mset = MESH_MSetByName(inmesh_mstk,setnames[i].c_str());
       
     idx = 0;
     MEntity_ptr ment;
