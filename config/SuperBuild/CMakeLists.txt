@@ -323,7 +323,7 @@ if ( ENABLE_MOAB_Mesh )
 endif()
 
 # HYPRE
-option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
+option(ENABLE_HYPRE "Build the HYPRE solver package" FALSE)
 if ( ENABLE_HYPRE )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
 endif()
