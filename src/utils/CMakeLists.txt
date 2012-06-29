@@ -11,6 +11,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -23,27 +24,11 @@ project(ATK)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-set(atk_inc_files Utils.hh
-                  Timer.hh
-                  TimerManager.hh
-		  time_step_manager.hh
-)
 
-include_directories(${Boost_INCLUDE_DIRS})
-
-add_library(atk Timer.cc
-                TimerManager.cc
-		time_step_manager.cc
-)
-
-add_install_library(atk)
-
-#
-# Install Targets
-#
-add_install_include_file(${atk_inc_files})
-
-
+add_amanzi_library(atk
+                   SOURCE Timer.cc TimerManager.cc time_step_manager.cc
+                   HEADERS Utils.hh Timer.hh TimerManager.hh time_step_manager.hh
+                   )
 if (BUILD_TESTS)
   
     # Add UnitTest include directoy

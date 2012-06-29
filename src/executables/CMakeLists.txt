@@ -41,6 +41,7 @@ include_directories(${EXO_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 
 # Chemistry includes directory
@@ -88,13 +89,13 @@ add_definitions("-DUSE_MPI")
           copy_directory ${EXEC_SOURCE_DIR}/inputfiles ${EXEC_BINARY_DIR}/inputfiles ) 
     endif()
 
-include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
-add_library(udriv amanzi_unstructured_grid_simulation_driver.cpp)
-target_link_libraries(udriv ${Epetra_LIBRARIES} 
+add_amanzi_library(udriv
+                   SOURCE amanzi_unstructured_grid_simulation_driver.cpp
+                   LINK_LIBS 
+                            ${Epetra_LIBRARIES} 
                             ${Teuchos_LIBRARIES}
                             mesh mesh_audit state mpc error_handling
-			    ${Boost_LIBRARIES})
-add_install_library(udriv)
+			                ${Boost_LIBRARIES})
 
 #
 # Binary: amanzi-demo-driver

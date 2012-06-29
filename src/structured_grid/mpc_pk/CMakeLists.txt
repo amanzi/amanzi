@@ -34,11 +34,11 @@ endif()
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
-add_library(pmamr ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files})
-add_install_library(pmamr)
+file(GLOB h_inc_files "*.H")
+add_amanzi_library(pmamr
+                   SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
+                   HEADERS ${h_inc_files})
 
-file(GLOB _inc_files "*.H")
-add_install_include_file(${_inc_files})
 
 if (BUILD_TESTS)
 endif()

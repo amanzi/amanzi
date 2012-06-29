@@ -1,4 +1,6 @@
 # -*- mode: cmake -*-
+include(TestManager)
+include(LibraryManager)
 
 include(PreprocessBoxLibFortran)
 

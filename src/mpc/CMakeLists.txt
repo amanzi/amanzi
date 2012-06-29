@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -58,25 +59,15 @@ add_definitions("-DUSE_MPI")
 #
 # Library: mpc
 #
-add_library(mpc MPC.cpp Unstructured_observations.cpp)
-add_install_library(mpc)
-set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
+set(boost_libs_used ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY})
+set(mpc_tpl_libs ${boost_libs_used} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
 list(REVERSE mpc_tpl_libs)
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 list(REVERSE mpc_tpl_libs)
-target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data ${mpc_tpl_libs})
-
-#
-# Install Targets
-#
 file(GLOB mpc_inc_files "*.hpp")
-add_install_include_file(${mpc_inc_files})
-
-#
-# Install Targets
-#
-file(GLOB mpc_inc_files "*.hpp")
-add_install_include_file(${mpc_inc_files})
+add_amanzi_library(mpc 
+                   SOURCE MPC.cpp Unstructured_observations.cpp HEADERS ${mpc_inc_files}
+                   LINK_LIBS time_integration solvers output state simple_mesh mesh_data ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
 
