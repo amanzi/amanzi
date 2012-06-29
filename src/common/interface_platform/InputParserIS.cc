@@ -342,16 +342,19 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       }
 
       // Time Macro
-      // Iterate through the array
       if ( vis_list.isParameter("Time Macro") ) {
-        std::string time_macro = vis_list.get<std::string>("Time Macro");
-        // Create a local parameter list and store the time macro (3 doubles)
-        Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
-        if (time_macro_list.isParameter("Start_Period_Stop")) {
-          vis_list.sublist("time start period stop").sublist(time_macro).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
-        }
-        if (time_macro_list.isParameter("Values")) {
-          vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+        std::vector<std::string> time_macros;
+        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macro").toVector();
+
+        for (int i=0; i < time_macros.size(); i++) {
+          // Create a local parameter list and store the time macro (3 doubles)
+          Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macros[i], plist);
+          if (time_macro_list.isParameter("Start_Period_Stop")) {
+            vis_list.sublist("time start period stop").sublist(time_macros[i]).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+          }
+          if (time_macro_list.isParameter("Values")) {
+            vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+          }
         }
         vis_list.remove("Time Macro");
       }
