@@ -214,3 +214,90 @@ TEST(Extract_Surface_MSTK2)
   
 }
 
+TEST(Extract_Surface_MSTK3)
+{
+
+  std::string filename("test/hex_4x4x4_ss.exo");
+
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+
+  Teuchos::ParameterList parameterlist;
+
+ 
+  // create a sublist name Regions and put a reference to it in
+  // reg_spec and other sublists as references. Turns out it is
+  // important to define reg_spec and other lists below as references
+  // - otherwise, a new copy is made of the sublist that is retrieved
+
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  
+  Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Labeled Set");
+  top_surface_def.set<std::string>("Label","106");
+  top_surface_def.set<std::string>("File",filename.c_str());
+  top_surface_def.set<std::string>("Format","Exodus II");
+  top_surface_def.set<std::string>("Entity","Face");
+  
+
+  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
+
+
+  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
+
+  // Read a mesh from the file
+
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm.get(),3,gm);
+
+
+  std::vector<std::string> setnames;
+  setnames.push_back(std::string("Top Surface"));
+
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,setnames,Amanzi::AmanziMesh::FACE);
+
+
+  // Number of cells (quadrilaterals) in surface mesh
+
+  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  CHECK_EQUAL(9,ncells_surf);
+      
+  // Number of "faces" (edges) in surface mesh
+
+  int nfaces_surf = surfmesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  CHECK_EQUAL(24,nfaces_surf);
+
+  // Number of nodes in surface mesh
+
+  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  CHECK_EQUAL(16,nnodes_surf);
+
+
+  int exp_parent_faces[9] = {79,83,91,87,94,101,97,104,107};
+
+  int *found = new int[ncells_surf];
+  for (int k = 0; k < ncells_surf; k++) {
+    Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::CELL,k);
+        
+    found[k] = 0;
+    for (int kk = 0; kk < ncells_surf; kk++) {
+      if (exp_parent_faces[kk] == parent) {        
+        Amanzi::AmanziGeometry::Point centroid1 = mesh.face_centroid(parent);
+        Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
+        CHECK_ARRAY_EQUAL(centroid1,centroid2,3);
+        found[k]++;
+      }
+    }
+  }
+  
+  for (int k = 0; k < ncells_surf; k++)
+    CHECK_EQUAL(1,found[k]);
+
+
+  // Once we can make RegionFactory work with reference counted pointers 
+  // we can get rid of this code
+
+  for (int i = 0; i < gm->Num_Regions(); i++)
+    delete (gm->Region_i(i));
+  delete gm;
+
+  
+}
