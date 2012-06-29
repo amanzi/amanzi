@@ -6,7 +6,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(MSTK
                              TARGET mstk
-                             DEPENDS HDF5 NetCDF ExodusII METIS)
+                             DEPENDS HDF5 NetCDF ExodusII METIS Trilinos)
 
 
 # --- Define the configure parameters
