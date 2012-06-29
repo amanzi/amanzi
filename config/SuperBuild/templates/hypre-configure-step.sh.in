@@ -10,6 +10,6 @@ export CXX=@CMAKE_CXX_COMPILER@
 export F77=@CMAKE_Fortran_COMPILER@
 
 cd @HYPRE_source_dir@/src
-configure --prefix=@TPL_INSTALL_PREFIX@ --with-MPI
+./configure --prefix=@TPL_INSTALL_PREFIX@ --with-MPI
 
 exit $?
