@@ -99,6 +99,11 @@ void Flow_PK::ProcessStringPreconditioner(const std::string name, int* precondit
     *preconditioner = FLOW_PRECONDITIONER_TRILINOS_ML;
   } else if (name == "Hypre AMG") {
     *preconditioner = FLOW_PRECONDITIONER_HYPRE_AMG;
+#ifndef HAVE_HYPRE_API
+    Errors::Message msg;
+    msg << "\nFlow PK: Hypre TPL has not been activated.";
+    Exceptions::amanzi_throw(msg);   
+#endif
   }
 }
 

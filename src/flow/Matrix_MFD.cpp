@@ -421,7 +421,9 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     ML_list = prec_list;
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else {
+#ifdef HAVE_HYPRE_API
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
+#endif
   }
 }
 
@@ -436,6 +438,7 @@ void Matrix_MFD::UpdatePreconditioner()
     MLprec->SetParameterList(ML_list);
     MLprec->ComputePreconditioner();
   } else {
+#ifdef HAVE_HYPRE_API
     Teuchos::RCP<FunctionParameter> functs[10];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
@@ -457,6 +460,7 @@ void Matrix_MFD::UpdatePreconditioner()
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
     IfpHypre_Sff_->Compute();
+#endif
   }
 }
 
@@ -549,10 +553,13 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   Tf.Update(1.0, Xf, -1.0);
 
   // Solve the Schur complement system Sff * Yf = Tf.
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML)
+  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Tf, Yf);
-  else 
+  } else { 
+#ifdef HAVE_HYPRE_API
     IfpHypre_Sff_->ApplyInverse(Tf, Yf);
+#endif
+  }
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
   ierr |= (*Acf_).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
