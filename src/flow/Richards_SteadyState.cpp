@@ -197,7 +197,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
-    preconditioner_->UpdateML_Preconditioner();
+    preconditioner_->UpdatePreconditioner();
 
     // check convergence of non-linear residual
     L2error = matrix_->ComputeResidual(solution_new, residual);

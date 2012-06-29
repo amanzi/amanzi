@@ -89,6 +89,19 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
   }
 }
 
+
+/* ****************************************************************
+* Process string for the preconitioner.
+**************************************************************** */
+void Flow_PK::ProcessStringPreconditioner(const std::string name, int* preconditioner)
+{
+  if (name == "Trilinos ML") {
+    *preconditioner = FLOW_PRECONDITIONER_TRILINOS_ML;
+  } else if (name == "Hypre AMG") {
+    *preconditioner = FLOW_PRECONDITIONER_HYPRE_AMG;
+  }
+}
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

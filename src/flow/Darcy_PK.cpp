@@ -17,6 +17,7 @@ Authors: Neil Carlson (version 1)
 #include "tensor.hpp"
 
 #include "Flow_State.hpp"
+#include "Flow_constants.hpp"
 #include "Darcy_PK.hpp"
 #include "Matrix_MFD.hpp"
 
@@ -94,6 +95,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
+  preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
   verbosity = FLOW_VERBOSITY_HIGH;
 }
 
@@ -170,7 +172,7 @@ void Darcy_PK::InitPK()
 
   // Preconditioner
   Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   flow_status_ = FLOW_STATUS_INIT;
 };
@@ -293,7 +295,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->ComputeSchurComplement(bc_markers, bc_values);
-  matrix_->UpdateML_Preconditioner();
+  matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
   Epetra_Vector b(*rhs);
@@ -356,7 +358,7 @@ int Darcy_PK::Advance(double dT_MPC)
   matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->ComputeSchurComplement(bc_markers, bc_values);
-  matrix_->UpdateML_Preconditioner();
+  matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);

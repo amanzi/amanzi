@@ -251,15 +251,16 @@ void Richards_PK::InitPicard(double T0)
   }
 
   // set up new preconditioner
+  preconditioner_method = ti_specs_igs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_igs_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters"); 
 
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   // set up new time integration or solver
   solver = new AztecOO;
@@ -336,6 +337,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   }
 
   // set up new preconditioner
+  preconditioner_method = ti_specs_sss_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_sss_);
   Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
 
@@ -344,7 +346,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   // set up new time integration or solver
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
@@ -437,6 +439,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
   set_time(T0, dT0);
 
   // set up new preconditioner
+  preconditioner_method = ti_specs_trs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
   Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
 
@@ -445,7 +448,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
     if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset BDF2 is to delete it.
@@ -501,7 +504,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
   // control options
   absolute_tol = ti_specs_trs_.atol;
   relative_tol = ti_specs_trs_.rtol;
-
   ti_method = ti_method_trs;
   num_itrs = 0;
   block_picard = 0;
@@ -673,7 +675,7 @@ void Richards_PK::ComputePreconditionerMFD(
   matrix_operator->AssembleGlobalMatrices();
   if (flag_update_ML) {
     matrix_operator->ComputeSchurComplement(bc_markers, bc_values);
-    matrix_operator->UpdateML_Preconditioner();
+    matrix_operator->UpdatePreconditioner();
   }
 
   // DEBUG
