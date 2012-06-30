@@ -163,6 +163,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
     S_next_->GetFieldData("cell_volume");
 
   Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("overland_pressure");
+  Teuchos::RCP<const CompositeVector> rain = S_next_->GetFieldData("rainfall_rate");
+
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
   int ncells = cell_volume->size("cell");
@@ -173,7 +175,7 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 
     // source term
     //Fc_cells[c] += rhs_load_value(S_next_->time()) * (*cell_volume)("cell",0,c);
-    Fc_cells[c] += rhs_load_value() * (*cell_volume)("cell",c);
+    Fc_cells[c] += (*rain)("cell",c) * (*cell_volume)("cell",c);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

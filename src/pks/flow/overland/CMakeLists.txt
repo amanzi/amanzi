@@ -18,18 +18,15 @@ WHOLE_ARCHIVE(pk_factory)
 
 if ( BUILD_TESTS )
     # Add UnitTest includes
-    set(amanzi_libs geometry mesh mesh_audit mstk_mesh state whetstone mesh_functions)
-
     include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
     add_definitions("-DMSTK_HAVE_MPI")
-    
-    include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
 
+    include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
     include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland)
 
     # Test: miscaleneous transport routines
     add_executable(overland_test test/Main.cc test/flow_test_class.cc test/overland_advance_simple.cc)
-    target_link_libraries(overland_test ${pk_factory} pk_flow_overland flow_bc_factory ${flow_relations_eos} ${flow_relations_wrm} divgrad amanzi_solvers amanzi_time_integration amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state amanzi_data_structures ${Amanzi_TPL_UnitTest_LIBRARIES})
+    target_link_libraries(overland_test ${pk_factory} pk_flow_overland flow_bc_factory amanzi_mesh_functions ${flow_relations_eos} ${flow_relations_wrm} divgrad amanzi_solvers amanzi_time_integration amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_factory amanzi_input amanzi_output amanzi_data_structures amanzi_state amanzi_data_structures ${Amanzi_TPL_UnitTest_LIBRARIES})
 
 endif()
 

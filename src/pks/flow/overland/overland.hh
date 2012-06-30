@@ -21,6 +21,7 @@
 #include "state.hh"
 #include "matrix_mfd.hh"
 #include "boundary_function.hh"
+#include "composite_vector_function.hh"
 
 #include "PK.hh"
 #include "pk_factory.hh"
@@ -41,12 +42,12 @@ const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
 const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN   = 4;
 
 class OverlandFlow : public PK {
-  
+
 public:
   OverlandFlow(Teuchos::ParameterList& flow_plist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& solution);
-  
+
   // main methods
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::RCP<State>& S);
@@ -59,7 +60,7 @@ public:
   // -- transfer operators -- pointer copy
   virtual void state_to_solution(const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln);
-  
+
   virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
                                  const Teuchos::RCP<State>& S);
 
@@ -126,6 +127,8 @@ private:
   // -- update secondary variables from primary variables T,p
   void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
 
+  void UpdateLoadValue_(const Teuchos::RCP<State>& S);
+
   void RelativePermeability_( const Teuchos::RCP<State>& S,
                               const CompositeVector    & pres,
                               const Teuchos::RCP<CompositeVector>& rel_perm);
@@ -144,14 +147,8 @@ private:
   // -- setup of elevation pars
   void SetUpElevation_( const Teuchos::RCP<State>& S ) ;
 
-  // loading term
-  double rhs_load_value() ;
-
 private:
   // OVERLAND parameters
-  double load_value ;
-  double t_rain ;
-
   std::vector<double> manning ;
   std::vector<double> slope_x ;
   std::vector<double> slope_y ;
@@ -160,6 +157,7 @@ private:
   // control switches
   int internal_tests_;  // output information
   bool variable_abs_perm_;
+  bool standalone_mode_; // domain mesh == surface mesh
 
   // time stuff
   int    niter_ ;
@@ -173,9 +171,11 @@ private:
   // work data space
   std::vector<WhetStone::Tensor> K_;  // tensor of absolute permeability
 
-  // wrms specified on a region-basis
-  typedef std::pair< std::string, Teuchos::RCP<FlowRelations::WRM> > WRMRegionPair;
-  std::vector< Teuchos::RCP<WRMRegionPair> > wrm_;
+  // rainfall flow rate model
+  Teuchos::RCP<Functions::CompositeVectorFunction> rain_rate_function_;
+
+  // rainfall flow rate model
+  Teuchos::RCP<Functions::CompositeVectorFunction> elevation_function_;
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
