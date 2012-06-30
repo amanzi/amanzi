@@ -160,7 +160,7 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 
   // 2. Update local matrices diagonal with the accumulation terms.
   Teuchos::RCP<const CompositeVector> cell_volume =
-    S_next_->GetFieldData("cell_volume");
+    S_next_->GetFieldData("surface_cell_volume");
 
   Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("overland_pressure");
   Teuchos::RCP<const CompositeVector> rain = S_next_->GetFieldData("rainfall_rate");

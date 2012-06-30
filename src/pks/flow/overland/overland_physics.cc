@@ -49,8 +49,8 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 void OverlandFlow::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   const CompositeVector & pres0        = *(S_inter_->GetFieldData("overland_pressure"));
   const CompositeVector & pres1        = *(S_next_ ->GetFieldData("overland_pressure"));
-  const CompositeVector & cell_volume0 = *(S_inter_->GetFieldData("cell_volume"));
-  const CompositeVector & cell_volume1 = *(S_next_ ->GetFieldData("cell_volume"));
+  const CompositeVector & cell_volume0 = *(S_inter_->GetFieldData("surface_cell_volume"));
+  const CompositeVector & cell_volume1 = *(S_next_ ->GetFieldData("surface_cell_volume"));
 
   double dt = S_next_->time() - S_inter_->time();
 
@@ -68,7 +68,7 @@ void OverlandFlow::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
 void OverlandFlow::AddLoadValue_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
 
-  Teuchos::RCP <const CompositeVector> cell_volume = S->GetFieldData("cell_volume");
+  Teuchos::RCP <const CompositeVector> cell_volume = S->GetFieldData("surface_cell_volume");
   Teuchos::RCP <const CompositeVector> rain = S->GetFieldData("rainfall_rate");
 
   int c_owned = g->size("cell");
