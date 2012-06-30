@@ -36,6 +36,7 @@ WHOLE_ARCHIVE(flow_relations_eos)
 WHOLE_ARCHIVE(flow_relations_wrm)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
+WHOLE_ARCHIVE(amanzi_mesh_functions)
 
 target_link_libraries(ats
                       coordinator

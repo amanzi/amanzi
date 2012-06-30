@@ -66,13 +66,16 @@ void OverlandFlow::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
 // Source term
 // -------------------------------------------------------------
 void OverlandFlow::AddLoadValue_(const Teuchos::RCP<State>& S,
-                                 const Teuchos::RCP<CompositeVector>& g) {
+        const Teuchos::RCP<CompositeVector>& g) {
+
+  Teuchos::RCP <const CompositeVector> cell_volume = S->GetFieldData("cell_volume");
+  Teuchos::RCP <const CompositeVector> rain = S->GetFieldData("rainfall_rate");
+
   int c_owned = g->size("cell");
-  const CompositeVector& cell_volume = *(S->GetFieldData("cell_volume"));
   for (int c=0; c!=c_owned; ++c) {
-    (*g)("cell",c) -= rhs_load_value() * cell_volume("cell",c) ;
+    (*g)("cell",c) -= (*rain)("cell",c) * (*cell_volume)("cell",c);
   }
-}
+};
 
 
 // -----------------------------------------------------------------------------
@@ -89,6 +92,9 @@ void OverlandFlow::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
 
   // compute non-linear coefficient
   RelativePermeability_(S, pres, cond);
+
+  // update rainfall
+  UpdateLoadValue_(S);
 };
 
 
@@ -115,12 +121,24 @@ void OverlandFlow::AddElevation_(const Teuchos::RCP<State>& S) {
 }
 
 
+// -----------------------------------------------------------------------------
+// Update the rainfall rate.
+// -----------------------------------------------------------------------------
+void OverlandFlow::UpdateLoadValue_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<CompositeVector> rain_rate =
+    S->GetFieldData("rainfall_rate", "overland_flow");
+  rain_rate_function_->Compute(S->time(), rain_rate.ptr());
+  std::cout << "Rain at time (s): " << S->time() << " = "
+            << (*rain_rate)("cell",0) << std::endl;
+};
+
+
 /* ******************************************************************
  * OVERLAND Update secondary variables, calculated in various methods below.
  ****************************************************************** */
 #if 0
 void OverlandFlow::RelativePermeability_( const Teuchos::RCP<State>& S,
-                                          const CompositeVector & pres, 
+                                          const CompositeVector & pres,
                                           const Teuchos::RCP<CompositeVector>& rel_perm ) {
 
   double manning_coeff = manning[0] ;
@@ -140,7 +158,7 @@ void OverlandFlow::RelativePermeability_( const Teuchos::RCP<State>& S,
   int ncells = rel_perm->size("cell");
   for (int c=0; c!=ncells; ++c ) {
     // get cell center coords
-    Amanzi::AmanziGeometry::Point pc = S->Mesh()->cell_centroid(c);
+    Amanzi::AmanziGeometry::Point pc = S->Mesh("surface")->cell_centroid(c);
     // get coefficients
     int izn = TestTwoZoneFlag_( pc[0], pc[1] ) ;
     //int izn = 0 ; // 1D-pblm, single zone
