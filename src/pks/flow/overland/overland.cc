@@ -72,6 +72,16 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
     //Errors::Message message("Pulling surface mesh from volume mesh not yet implemented.");
     //Exceptions::amanzi_throw(message);
 
+    int nfaces = S->Mesh("surface")->get_set_size("Left side", AmanziMesh::FACE, AmanziMesh::OWNED);
+    std::cout << "Left side surface mesh size: " << nfaces << std::endl;
+
+    AmanziMesh::Entity_ID_List faces(nfaces);
+    S->Mesh("surface")->get_set_entities("Left side", AmanziMesh::FACE, AmanziMesh::OWNED, &faces);
+    for (AmanziMesh::Entity_ID_List::const_iterator face=faces.begin();
+         face != faces.end(); ++face) {
+      std::cout << "left side face: " << *face << " at centroid: " <<  S->Mesh("surface")->face_centroid(*face) << std::endl;
+    }
+
     standalone_mode_ = false;
   } else {
     Errors::Message message("Invalid mesh dimension for overland flow.");
@@ -89,34 +99,35 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField("overland_pressure", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
-                            ->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField("overland_pressure", "overland_flow")->SetMesh(S->Mesh("surface"))
+                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
 
   // -- secondary variable: elevation on both cells and faces, ghosted, with 1 dof
   S->RequireField("elevation", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
-                            ->SetComponents(names2, locations2, num_dofs2);
+                ->SetComponents(names2, locations2, num_dofs2);
 
   // -- secondary variable: pres_elev on both cells and faces, ghosted, with 1 dof
   S->RequireField("pres_elev", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
-                            ->SetComponents(names2, locations2, num_dofs2);
+                ->SetComponents(names2, locations2, num_dofs2);
 
   // -- other secondary variables
-  S->RequireField("overland_flux", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
-                                ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("overland_velocity", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
-                                ->SetComponent("cell", AmanziMesh::CELL, 3);
-  S->RequireField("overland_conductivity", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
-                                ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("rainfall_rate", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
-                                ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("overland_flux", "overland_flow")->SetMesh(S->Mesh("surface"))
+                ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("overland_velocity", "overland_flow")->SetMesh(S->Mesh("surface"))
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
+  S->RequireField("overland_conductivity", "overland_flow")->SetMesh(S->Mesh("surface"))
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("rainfall_rate", "overland_flow")->SetMesh(S->Mesh("surface"))
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // -- independent variables not owned by this PK
-  S->RequireField("cell_volume")->SetMesh(S->Mesh("surface"))->SetGhosted()
+  S->RequireField("surface_cell_volume")->SetMesh(S->Mesh("surface"))->SetGhosted()
                                 ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- work vectors
-  S->RequireField("upwind_overland_conductivity", "overland_flow")->SetMesh(S->Mesh("surface"))
-                        ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField("upwind_overland_conductivity", "overland_flow")
+                ->SetMesh(S->Mesh("surface"))->SetGhosted()
+                ->SetComponents(names2, locations2, num_dofs2);
   S->GetRecord("upwind_overland_conductivity","overland_flow")->set_io_vis(false);
 
   // abs perm tensor
