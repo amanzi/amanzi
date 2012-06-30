@@ -511,9 +511,11 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
   }
 
 
-  if (setkind != FACE && (flatten || extrude)) {
-    Errors::Message mesg("Flattening or extruding allowed only for submesh of type FACE, not CELL or NODE");
-    amanzi_throw(mesg);
+  if (flatten || extrude) {
+    if ((setkind == CELL  && inmesh.cell_dimension() == 3) || setkind == NODE) {
+      Errors::Message mesg("Flattening or extruding allowed only for sets of FACEs in volume mesh or CELLs in surface meshes");
+      amanzi_throw(mesg);
+    }
   }
 
 
@@ -553,11 +555,17 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
   MType entdim;
   switch (setkind) {
   case CELL:
-    entdim = inmesh.space_dimension() == 3 ? MREGION : MFACE;
+    if (inmesh.space_dimension() == 3)
+      entdim = inmesh.cell_dimension() == 3 ? MREGION : MFACE;
+    else if (inmesh.space_dimension() == 2)
+      entdim = MFACE;
     set_cell_dimension(inmesh.cell_dimension()); 
     break;
   case FACE:
-    entdim = inmesh.space_dimension() == 3 ? MFACE : MEDGE;
+    if (inmesh.space_dimension() == 3)
+      entdim = inmesh.cell_dimension() == 3 ? MFACE : MEDGE;
+    else if (inmesh.space_dimension() == 2)
+      entdim = MEDGE; // We are not supporting 1D meshes 
     if (extrude)
       set_cell_dimension(inmesh.cell_dimension());
     else
