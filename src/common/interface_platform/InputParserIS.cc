@@ -761,11 +761,12 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
- * Collects preconditioners
+ * Collects default preconditioners
  ****************************************************************** */
 Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList prec_list;
   prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
+  prec_list.sublist("Hypre AMG") = create_HypreAMG_List(plist);
   return prec_list;
 }
 
@@ -1079,7 +1080,7 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 
 
 /* ******************************************************************
- * DPC sublist
+ * ML preconditioner sublist
  ****************************************************************** */
 Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
 {
@@ -1125,6 +1126,22 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("coarse: type", "Amesos-KLU");
   ml_list.set<int>("coarse: max size", 256);
+
+  return dpc_list;
+}
+
+
+/* ******************************************************************
+ * Hypre BoomerAMG preconditioner sublist
+ ****************************************************************** */
+Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
+{
+  Teuchos::ParameterList dpc_list;
+
+  dpc_list.set<std::string>("discretization method", "optimized mfd");
+
+  Teuchos::ParameterList& amg_list = dpc_list.sublist("BoomerAMG Parameters");
+  amg_list.set<int>("to be populated", 0);
 
   return dpc_list;
 }
