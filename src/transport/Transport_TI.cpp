@@ -23,7 +23,7 @@ namespace AmanziTransport {
 void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
+  const Epetra_Vector& ws  = *water_saturation_start;
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
 
   // transport routines need an RCP pointer

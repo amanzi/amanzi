@@ -127,6 +127,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   // advection members
   void AdvanceDonorUpwind(double dT);
   void AdvanceSecondOrderUpwind(double dT);
+  void AdvanceSecondOrderUpwindEulerTI(double dT);
   void AdvanceArbitraryOrderUpwind(double dT);
 
   // time integration members

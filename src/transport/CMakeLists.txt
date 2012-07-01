@@ -48,7 +48,8 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 file(GLOB transport_inc_files "*.hpp")
 set(transport_src_files Transport_PK.cpp Transport_State.cpp Transport_TI.cpp 
-                        Transport_Limiters.cpp Transport_VandV.cpp Transport_IO.cpp
+                        Transport_Limiters.cpp Transport_Dispersion.cpp 
+                        Transport_VandV.cpp Transport_IO.cpp
                         Reconstruction.cpp)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
