@@ -82,16 +82,11 @@ void OverlandFlow::AddLoadValue_(const Teuchos::RCP<State>& S,
 // Update variables, like p + z and rel perm.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdateSecondaryVariables_(const Teuchos::RCP<State>& S) {
-  // get needed fields
-  const CompositeVector & pres = *(S->GetFieldData ("overland_pressure"));
-  Teuchos::RCP<CompositeVector> cond =
-    S->GetFieldData("overland_conductivity", "overland_flow");
-
   // add elevation
   AddElevation_(S) ;
 
   // compute non-linear coefficient
-  RelativePermeability_(S, pres, cond);
+  UpdateConductivity_(S);
 
   // update rainfall
   UpdateLoadValue_(S);
@@ -128,48 +123,41 @@ void OverlandFlow::UpdateLoadValue_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> rain_rate =
     S->GetFieldData("rainfall_rate", "overland_flow");
   rain_rate_function_->Compute(S->time(), rain_rate.ptr());
-  std::cout << "Rain at time (s): " << S->time() << " = "
-            << (*rain_rate)("cell",0) << std::endl;
 };
 
 
-/* ******************************************************************
- * OVERLAND Update secondary variables, calculated in various methods below.
- ****************************************************************** */
-#if 0
-void OverlandFlow::RelativePermeability_( const Teuchos::RCP<State>& S,
-                                          const CompositeVector & pres,
-                                          const Teuchos::RCP<CompositeVector>& rel_perm ) {
+// -----------------------------------------------------------------------------
+// Update the conductivity.
+// -----------------------------------------------------------------------------
+void OverlandFlow::UpdateConductivity_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("overland_pressure");
+  Teuchos::RCP<const CompositeVector> mann = S->GetFieldData("manning_coef");
+  Teuchos::RCP<const CompositeVector> slope = S->GetFieldData("slope_magnitude");
 
-  double manning_coeff = manning[0] ;
-  double slope_coeff   = slope_x[0]+1.e-14 ;
-  double scaling       = manning_coeff * std::sqrt(slope_coeff) ;
+  Teuchos::RCP<CompositeVector> cond =
+    S->GetFieldData("overland_conductivity", "overland_flow");
 
-  int ncells = S->mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  Conductivity_(S, *pres, *mann, *slope, cond);
+};
+
+
+// -----------------------------------------------------------------------------
+// Update the "relative permeability".
+// -----------------------------------------------------------------------------
+void OverlandFlow::Conductivity_(const Teuchos::RCP<State>& S,
+                                 const CompositeVector& pressure,
+                                 const CompositeVector& manning_coef,
+                                 const CompositeVector& slope_mag,
+                                 const Teuchos::RCP<CompositeVector>& conductivity) {
+  double eps = 1.e-14;
+  double exponent = 1.0 + manning_exp_;
+
+  int ncells = conductivity->size("cell");
   for (int c=0; c!=ncells; ++c ) {
-    (*rel_perm)("cell",0,c) = pow( pres("cell",0,c), 5./3. )/scaling ;
+    double scaling = manning_coef("cell",c) * std::sqrt(slope_mag("cell",c) + eps);
+    (*conductivity)("cell",c) = std::pow(pressure("cell",c), exponent) / scaling;
   }
 };
-#else
-void OverlandFlow::RelativePermeability_( const Teuchos::RCP<State>& S,
-                                          const CompositeVector & pres, 
-                                          const Teuchos::RCP<CompositeVector>& rel_perm ) {
-
-  int ncells = rel_perm->size("cell");
-  for (int c=0; c!=ncells; ++c ) {
-    // get cell center coords
-    Amanzi::AmanziGeometry::Point pc = S->Mesh("surface")->cell_centroid(c);
-    // get coefficients
-    int izn = TestTwoZoneFlag_( pc[0], pc[1] ) ;
-    //int izn = 0 ; // 1D-pblm, single zone
-    double manning_coeff = manning[izn] ;
-    double slope_coeff = std::sqrt(std::pow(slope_x[izn],2)+std::pow(slope_y[izn],2))+1.e-14 ;
-    double scaling = manning_coeff * std::sqrt(slope_coeff) ;
-    // compute the krel term
-    (*rel_perm)("cell",c) = std::pow( pres("cell",c), 5./3. )/scaling ;
-  }
-};
-#endif
 
 } //namespace
 } //namespace
