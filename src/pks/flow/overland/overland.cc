@@ -39,13 +39,9 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   solution_ = solution;
 
   // Create mesh
-  if (S->Mesh()->cell_dimension() == 2) {
-    // The domain mesh is a surface mesh, so simply register it as the surface
-    // mesh as well.
-    S->RegisterMesh("surface", S->Mesh());
-    standalone_mode_ = true;
-  } else if (S->Mesh()->cell_dimension() == 3) {
-    // The domain mesh is a 3D volume mesh -- construct the surface mesh.
+  if (S->Mesh()->space_dimension() == 3) {
+    // The domain mesh is a 3D volume mesh or a 3D surface mesh -- construct
+    // the surface mesh.
 
     // -- Ensure the domain mesh is MSTK.
     Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mesh =
@@ -69,20 +65,13 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
     // push the mesh into state
     S->RegisterMesh("surface", surface_mesh);
 
-    //Errors::Message message("Pulling surface mesh from volume mesh not yet implemented.");
-    //Exceptions::amanzi_throw(message);
-
-    int nfaces = S->Mesh("surface")->get_set_size("Left side", AmanziMesh::FACE, AmanziMesh::OWNED);
-    std::cout << "Left side surface mesh size: " << nfaces << std::endl;
-
-    AmanziMesh::Entity_ID_List faces(nfaces);
-    S->Mesh("surface")->get_set_entities("Left side", AmanziMesh::FACE, AmanziMesh::OWNED, &faces);
-    for (AmanziMesh::Entity_ID_List::const_iterator face=faces.begin();
-         face != faces.end(); ++face) {
-      std::cout << "left side face: " << *face << " at centroid: " <<  S->Mesh("surface")->face_centroid(*face) << std::endl;
-    }
-
     standalone_mode_ = false;
+
+  } else if (S->Mesh()->space_dimension() == 2) {
+    // The domain mesh is already a 2D mesh, so simply register it as the surface
+    // mesh as well.
+    S->RegisterMesh("surface", S->Mesh());
+    standalone_mode_ = true;
   } else {
     Errors::Message message("Invalid mesh dimension for overland flow.");
     Exceptions::amanzi_throw(message);
@@ -105,6 +94,8 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   // -- secondary variable: elevation on both cells and faces, ghosted, with 1 dof
   S->RequireField("elevation", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField("slope_magnitude", "overland_flow")->SetMesh(S->Mesh("surface"))
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // -- secondary variable: pres_elev on both cells and faces, ghosted, with 1 dof
   S->RequireField("pres_elev", "overland_flow")->SetMesh(S->Mesh("surface"))->SetGhosted()
@@ -118,6 +109,8 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   S->RequireField("overland_conductivity", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField("rainfall_rate", "overland_flow")->SetMesh(S->Mesh("surface"))
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("manning_coef", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // -- independent variables not owned by this PK
@@ -189,58 +182,77 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
     elevation_function_ =
       Functions::CreateCompositeVectorFunction(elev_plist, elev.ptr());
     elevation_function_->Compute(S->time(), elev.ptr());
+
+    // Slope field is not already known -- get a function to specify it.
+    Teuchos::RCP<CompositeVector> slope = S->GetFieldData("slope_magnitude", "overland_flow");
+    Teuchos::ParameterList slope_plist = flow_plist_.sublist("Slope model");
+    slope_function_ =
+      Functions::CreateCompositeVectorFunction(slope_plist, slope.ptr());
+    slope_function_->Compute(S->time(), slope.ptr());
   } else {
     // Elevation field can be set by the background mesh.
-    Errors::Message message("Pulling elevation from volume mesh not yet implemented.");
+    Errors::Message message("Pulling elevation/slope from volume mesh not yet implemented.");
     Exceptions::amanzi_throw(message);
   }
   S->GetField("elevation","overland_flow")->set_initialized();
+  S->GetField("slope_magnitude","overland_flow")->set_initialized();
 
-  // initialize the rainfall model
+  // Initialize the rainfall model.
   Teuchos::RCP<const CompositeVector> rain = S->GetFieldData("rainfall_rate");
   Teuchos::ParameterList rain_plist = flow_plist_.sublist("Rainfall model");
   rain_rate_function_ =
     Functions::CreateCompositeVectorFunction(rain_plist, rain.ptr());
 
-  // declare secondary variables initialized, as they will be done by
-  // the commit_state call
+  // Initialize Manning Coefficient.
+  Teuchos::RCP<CompositeVector> mann = S->GetFieldData("manning_coef", "overland_flow");
+  Teuchos::ParameterList mann_plist = flow_plist_.sublist("Manning coefficient");
+  manning_coef_function_ =
+    Functions::CreateCompositeVectorFunction(mann_plist, mann.ptr());
+  manning_coef_function_->Compute(S->time(), mann.ptr());
+  S->GetField("manning_coef","overland_flow")->set_initialized();
+
+  // Get the Manning exponent.
+  manning_exp_ = flow_plist_.get<double>("Manning exponent");
+
+  // Declare secondary variables initialized, as they will be done by
+  // the commit_state call.
   S->GetField("overland_conductivity", "overland_flow")->set_initialized();
   S->GetField("overland_flux", "overland_flow")->set_initialized();
   S->GetField("overland_velocity", "overland_flow")->set_initialized();
   S->GetField("pres_elev", "overland_flow")->set_initialized();
   S->GetField("rainfall_rate", "overland_flow")->set_initialized();
 
-  // rel perm is special -- if the mode is symmetric, it needs to be
-  // initialized to 1
+  // Rel perm is special -- if the mode is symmetric, it needs to be
+  // initialized to 1.
   S->GetFieldData("upwind_overland_conductivity","overland_flow")->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity", "overland_flow")->set_initialized();
 
-  // initialize bcs
+  // Initialize BCs.
   bc_pressure_->Compute(S->time());
   bc_zero_gradient_->Compute(S->time());
   bc_flux_->Compute(S->time());
 
-  // initialize operators
+  // Initialize operators.
   matrix_->CreateMFDmassMatrices(K_);
   preconditioner_->CreateMFDmassMatrices(K_);
 
-  // initialize the timestepper
+  // Initialize the timestepper.
   solution_->set_data(pres);
   atol_ = flow_plist_.get<double>("Absolute error tolerance",1e-6);
   rtol_ = flow_plist_.get<double>("Relative error tolerance",1e0);
 
   if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
-    // -- instantiate time stepper
+    // -- Instantiate the time stepper.
     Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(flow_plist_.sublist("Time integrator")));
     time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf1_plist_p, solution_));
     time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
-    // -- initialize time derivative
+    // -- Initialize the time derivative.
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);
 
-    // -- set initial state
+    // -- Set the initial state.
     time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
   }
 };

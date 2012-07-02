@@ -36,11 +36,6 @@ namespace Flow {
 }}
 #endif
 
-const int FLOW_RELATIVE_PERM_CENTERED          = 1;
-const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY    = 2;
-const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
-const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN   = 4;
-
 class OverlandFlow : public PK {
 
 public:
@@ -129,9 +124,12 @@ private:
 
   void UpdateLoadValue_(const Teuchos::RCP<State>& S);
 
-  void RelativePermeability_( const Teuchos::RCP<State>& S,
-                              const CompositeVector    & pres,
-                              const Teuchos::RCP<CompositeVector>& rel_perm);
+  void UpdateConductivity_(const Teuchos::RCP<State>& S);
+  void Conductivity_( const Teuchos::RCP<State>& S,
+                      const CompositeVector& pressure,
+                      const CompositeVector& manning_coef,
+                      const CompositeVector& slope_magnitude,
+                      const Teuchos::RCP<CompositeVector>& conductivity);
 
   // -- test 1, elevation methods
   void   TestOneSetUpElevationPars_() ;
@@ -174,8 +172,11 @@ private:
   // rainfall flow rate model
   Teuchos::RCP<Functions::CompositeVectorFunction> rain_rate_function_;
 
-  // rainfall flow rate model
+  // Conductivity model
   Teuchos::RCP<Functions::CompositeVectorFunction> elevation_function_;
+  Teuchos::RCP<Functions::CompositeVectorFunction> slope_function_;
+  Teuchos::RCP<Functions::CompositeVectorFunction> manning_coef_function_;
+  double manning_exp_;
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
@@ -194,21 +195,19 @@ private:
   std::vector<double> bc_values_;
 
   // factory registration
-  static RegisteredPKFactory<OverlandFlow> reg_;  
+  static RegisteredPKFactory<OverlandFlow> reg_;
 
   // DEBUGGING STUFF
   void print_pressure( const Teuchos::RCP<State>& S, string prt_str="" ) const ;
   void print_vector ( const Teuchos::RCP<State>& S, const Teuchos::RCP<const CompositeVector>& p, string prt_str="" ) const ;
-  void print_vector2( const Teuchos::RCP<State>& S, 
-                      const Teuchos::RCP<const CompositeVector>& pres, 
-                      const Teuchos::RCP<const CompositeVector>& elev, 
+  void print_vector2( const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<const CompositeVector>& pres,
+                      const Teuchos::RCP<const CompositeVector>& elev,
                       string prt_str="" ) const ;
 
-  void print_faceval( const Teuchos::RCP<State>& S, 
-                      const Teuchos::RCP<const CompositeVector>& vec, 
+  void print_faceval( const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<const CompositeVector>& vec,
                       string prt_str ) const ;
-  
-
 
   // write flow rate on disk
   void output_flow_rate() ;
