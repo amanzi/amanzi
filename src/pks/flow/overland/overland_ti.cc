@@ -1,10 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-/*
-A base two-phase, thermal Richard's equation with water vapor.
-
-Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
-*/
+/* -----------------------------------------------------------------------------
+This is the overland flow component of ATS.
+License: BSD
+Authors: Gianmarco Manzini
+         Ethan Coon (ecoon@lanl.gov)
+----------------------------------------------------------------------------- */
 
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"

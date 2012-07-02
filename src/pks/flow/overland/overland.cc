@@ -1,11 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/*
-This is the flow component of the Amanzi code. 
+
+/* -----------------------------------------------------------------------------
+This is the overland flow component of ATS.
 License: BSD
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
-         Ethan Coon (ATS version) (ecoon@lanl.gov)
-*/
+Authors: Gianmarco Manzini
+         Ethan Coon (ecoon@lanl.gov)
+----------------------------------------------------------------------------- */
 
 #include "EpetraExt_MultiVectorOut.h"
 #include "Epetra_MultiVector.h"
@@ -173,27 +173,23 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
     S->GetFieldData("overland_pressure", "overland_flow");
   DeriveFaceValuesFromCellValues_(S, pres ) ;
 
-  // initialize the elevation field
+  // Initialize the elevation field and its slope.
   if (standalone_mode_) {
-    SetUpElevation_(S);
-    // Elevation field is not already known -- get a function to specify it.
+    // -- Elevation field is not already known -- get a function to specify it.
     Teuchos::RCP<CompositeVector> elev = S->GetFieldData("elevation", "overland_flow");
     Teuchos::ParameterList elev_plist = flow_plist_.sublist("Elevation model");
     elevation_function_ =
       Functions::CreateCompositeVectorFunction(elev_plist, elev.ptr());
-    elevation_function_->Compute(S->time(), elev.ptr());
 
-    // Slope field is not already known -- get a function to specify it.
+    // -- Slope field is not already known -- get a function to specify it.
     Teuchos::RCP<CompositeVector> slope = S->GetFieldData("slope_magnitude", "overland_flow");
     Teuchos::ParameterList slope_plist = flow_plist_.sublist("Slope model");
     slope_function_ =
       Functions::CreateCompositeVectorFunction(slope_plist, slope.ptr());
-    slope_function_->Compute(S->time(), slope.ptr());
-  } else {
-    // Elevation field can be set by the background mesh.
-    Errors::Message message("Pulling elevation/slope from volume mesh not yet implemented.");
-    Exceptions::amanzi_throw(message);
   }
+
+  // -- Evaluate the functions or use the mesh to get the values.
+  UpdateElevationAndSlope_(S);
   S->GetField("elevation","overland_flow")->set_initialized();
   S->GetField("slope_magnitude","overland_flow")->set_initialized();
 

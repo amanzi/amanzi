@@ -1,11 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-/*
-  A base two-phase, thermal Richard's equation with water vapor.
-
-  License: BSD
-  Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
-*/
+/* -----------------------------------------------------------------------------
+This is the overland flow component of ATS.
+License: BSD
+Authors: Gianmarco Manzini
+         Ethan Coon (ecoon@lanl.gov)
+----------------------------------------------------------------------------- */
 
 #ifndef PK_FLOW_OVERLAND_HH_
 #define PK_FLOW_OVERLAND_HH_
@@ -105,6 +105,8 @@ private:
           const CompositeVector& rel_perm_cells,
           const Teuchos::RCP<CompositeVector>& rel_perm_faces);
 
+  // -- Update the elevation and slope magnitude from the mesh or functions.
+  void UpdateElevationAndSlope_(const Teuchos::RCP<State>& S);
 
   // physical methods
   // -- diffusion term
