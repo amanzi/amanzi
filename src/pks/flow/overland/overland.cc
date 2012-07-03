@@ -233,7 +233,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   names[0][2] = "Z-Component";
   velocity->set_subfield_names(names);
   velocity->set_initialized();
-  S->GetFieldData("overland_velocity","overland_flow")->PutScalar(1.0);
+  S->GetFieldData("overland_velocity","overland_flow")->PutScalar(0.0);
 
   // Rel perm is special -- if the mode is symmetric, it needs to be
   // initialized to 1.
