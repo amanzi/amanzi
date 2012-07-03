@@ -364,17 +364,6 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> darcy_flux =
     S->GetFieldData("overland_flux", "overland_flow");
 
-  std::cout << "pres cell: " << (*pres)("cell",0) << std::endl;
-  std::cout << "pres cell: " << (*pres)("face",1) << ", "
-            << (*pres)("face",2) << ", " << (*pres)("face",3) << ", "
-            << (*pres)("face",4) << std::endl;
-  std::cout << "krel cell: " << (*upwind_conductivity)("cell",0) << std::endl;
-  std::cout << "krel cell: " << (*upwind_conductivity)("face",1) << ", "
-            << (*upwind_conductivity)("face",2) << ", "
-            << (*upwind_conductivity)("face",3) << ", "
-            << (*upwind_conductivity)("face",4) << std::endl;
-
-
   matrix_->CreateMFDstiffnessMatrices(*upwind_conductivity);
   matrix_->DeriveFlux(*pres_elev, darcy_flux);
 
@@ -459,6 +448,9 @@ void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
 
   double eps = 1.e-14;
 
+  double max_flux;
+  double eps_flux = 1.e-12;
+
   upwind_conductivity->ViewComponent("face",true)->PutScalar(0.0);
   int c_owned = upwind_conductivity->size("cell");
   for (int c=0; c!=c_owned; ++c) {
@@ -466,11 +458,14 @@ void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
-      if ((flux("face",f) * dirs[n] >= 0.0)) {
-        (*upwind_conductivity)("face",f) = conductivity("cell",c);
-      } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+      if (bc_markers_[f] != Operators::MFD_BC_NULL) {
         double scaling = (*manning)("cell",c) * std::sqrt((*slope)("cell",c) + eps);
-        (*upwind_conductivity)("face",f) = std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ;
+        (*upwind_conductivity)("face",f) =
+          std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ; // boundary
+      } else if ((flux("face",f) * dirs[n] > eps_flux)) {
+        (*upwind_conductivity)("face",f) = conductivity("cell",c); // upwind face
+      } else if (std::abs(flux("face",f)) <= eps_flux) {
+        (*upwind_conductivity)("face",f) += conductivity("cell",c)/2.; // Almost vertical face
       }
     }
   }

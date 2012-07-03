@@ -192,7 +192,7 @@ void Coordinator::cycle_driver() {
 
   // set the states in the PKs
   Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
-  pk_->set_states(cS, S_, S_next_);
+  pk_->set_states(cS, S_, S_next_); // note this does not allow subcycling
 
   // iterate process kernels
   double dt;
@@ -227,10 +227,6 @@ void Coordinator::cycle_driver() {
     S_next_->advance_cycle();
 
     if (!fail) {
-      // update the new state with the new solution
-      pk_->solution_to_state(soln_, S_next_);
-      pk_->commit_state(dt, S_next_);
-
       // make observations
       //      observations_->MakeObservations(*S_next_);
 
