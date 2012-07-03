@@ -270,7 +270,7 @@ MFTower::AverageDown(MFTower& mft,
     }
 }
 
-MFTFillPatch::MFTFillPatch(const Layout& _layout)
+MFTFillPatch::MFTFillPatch(Layout& _layout)
     : layout(_layout), nLevs(_layout.NumLevels())
 {
 }
@@ -448,8 +448,8 @@ MFTFillPatch::BuildCFParallelInterpStencil()
     } // lev
 }
 
-const Layout&
-MFTFillPatch::GetLayout() const
+Layout&
+MFTFillPatch::GetLayout()
 {
     return layout;
 }
@@ -495,8 +495,8 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
     Array<Real> iCoefsZero(maxorder); BuildInterpCoefs(0,iCoefsZero); // value at wall
     Array<Real> iCoefsFO(1); BuildInterpCoefs(0.5,iCoefsFO); // value at grow center (FOEXTRAP)
     Array<Real> iCoefsHO(maxorder); BuildInterpCoefs(0.5,iCoefsHO); // value at grow center (HOEXTRAP)
-    Array<Real> iCoefsRE(1,1);
-    Array<Real> iCoefsRO(1,-1);
+    Array<Real> iCoefsRE(1,1); // FIXME: Need to go to maxorder
+    Array<Real> iCoefsRO(1,-1);// FIXME: Need to go to maxorder
 
     Array<Array<Real> > iCoefsCF(BL_SPACEDIM, Array<Real>(maxorder));
     const Array<Geometry>& geomArray = layout.GeomArray();
@@ -570,7 +570,6 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                                 Node n = fn(iv,0); // This will have been an invalid node until now
                                 n.level = lev; n.iv = iv; n.type=Node::VALID;
                                 stencil[n] = (*interpCoef)[icnt++];
-
                             }
                             for (int k=0; icnt<interpCoef->size(); ++k, ++icnt) {
                                 IntVect siv = iv + sgn*(k+1)*BoxLib::BASISV(d);
@@ -611,7 +610,6 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                                     IntVect siv = iv + sgn*k*BoxLib::BASISV(d);
                                     stencil[fn(siv,0)] = iCoefsCF[d][k];
                                 }
-                                //std::cout << "For " << iv << " stencil: " << stencil << std::endl; 
                             }
                         }
                     }
@@ -711,7 +709,6 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
     const Array<BoxArray>& gridArray = layout.GridArray();
     for (int lev=0; lev<nLevs; ++lev) {
         const Array<IVSMap>& perpInterpLev = perpInterpStencil[lev];
-
         MultiFab& mf = mft[lev];
         BL_ASSERT(mf.nGrow()>=1);
         BL_ASSERT(sComp+nComp<=mf.nComp());

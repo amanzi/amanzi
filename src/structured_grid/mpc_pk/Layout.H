@@ -86,6 +86,7 @@ struct Layout
     const DistributionMapping& DistributionMap(int lev) const {return nodeIds[lev].DistributionMap();}
     const PArray<Layout::MultiNodeFab>& Nodes() const {return nodes;}
     const PArray<Layout::MultiNodeFab>& CrseNodes() const {return crseNodes;}
+    const PArray<Layout::MultiIntFab>& NodeIds() const {return nodeIds;}
     const Array<BoxArray>& BndryCells() const {return bndryCells;}
 
 

@@ -2091,9 +2091,9 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       RichardContext richardContext(*pm_parent,mftfp,PoldMFT,SatMFT,LambdaMFT,
                                     DarcyVelocity,bc,pressure_maxorder);
       RichardOp richardOp(richardContext);
+      richardOp.BuildOpSkel();
       richardOp.Residual(RhsMFT,PnewMFT,dt);
-      VisMF::Write(RhsMFT[0],"JUNK0");
-      VisMF::Write(RhsMFT[1],"JUNK1");
+      ParallelDescriptor::Barrier();
       BoxLib::Abort();
 #endif
 

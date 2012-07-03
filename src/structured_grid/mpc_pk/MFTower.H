@@ -64,9 +64,9 @@ protected:
 
 struct MFTFillPatch
 {
-    MFTFillPatch(const Layout& layout);
+    MFTFillPatch(Layout& layout);
     int NumLevels() const;
-    const Layout& GetLayout() const;
+    Layout& GetLayout();
 
     void BuildStencil(const BCRec& bc,
                       int          maxorder);
@@ -87,7 +87,9 @@ struct MFTFillPatch
     void FillGrowCellsSimple(MFTower& mft,
                              int      sComp=0,
                              int      nComp=1) const;
-    
+
+    const Array<Array<IVSMap> >& GrowCellStencil() const {return perpInterpStencil;} //[lev][dir][iv] = stencil to fill grow cells
+
     struct MyHash // Unique characteristics
     {
         MyHash()
@@ -103,7 +105,7 @@ protected:
 
     MyHash myhash;
     int nLevs;
-    const Layout& layout;
+    Layout& layout;
     Array<Array<IVSMap> > parallelInterpStencil; //[lev][dir][iv] = stencil to perform parallel bc Interp
     Array<Array<IVSMap> > perpInterpStencil; //[lev][dir][iv] = stencil to perform perpendicular bc Interp
 };

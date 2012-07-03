@@ -47,6 +47,23 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
 
+    bool pause_for_debug = false;
+    if (input_parameter_list.isParameter("Pause For Debug"))
+      {
+          pause_for_debug= Teuchos::getParameter<bool>(input_parameter_list, "Pause For Debug");
+      }
+
+    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
+        std::string junk;
+        std::cout << "Waiting to attach debugger.  Enter any string to continue ";
+        std::cin >> junk;
+    }
+    ParallelDescriptor::Barrier();
+
+    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
+        std::cout << "   continuing run..." << std::endl;
+    }
+
     if (input_parameter_list.isParameter("PPfile"))
       {
 	const std::string& PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");

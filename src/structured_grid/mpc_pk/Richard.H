@@ -53,7 +53,8 @@ struct RichardContext
     const Array<Real>& Density() {return density;}
     const Array<Real>& Gravity() {return gravity;}
     void FillPatch(MFTower& mft, bool do_piecewise_constant=false);
-    const Layout& GetLayout() {return mftfp.GetLayout();}
+    Layout& GetLayout() {return mftfp.GetLayout();}
+    const MFTFillPatch& GetFillPatch() {return mftfp;}
 
 protected:
     MFTower& pressure_old;
@@ -78,6 +79,9 @@ public:
     const Array<BoxArray>& GridArray() const {return GetLayout().GridArray();}
     const Array<Geometry>& GeomArray() const {return GetLayout().GeomArray();}
     const Array<IntVect>& RefRatio() const {return GetLayout().RefRatio();}
+
+
+    void BuildOpSkel();
 
     void SetBC(const BCRec& bc, 
                int          maxorder); // Note: triggers build of mftfp stencil
