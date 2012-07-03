@@ -58,7 +58,7 @@ MgUO2(CO3)3-- =   3.00 H2O  -6.00 H+   3.00 CO2(aq)   1.00 Mg++   1.00 UO2++  ; 
 UO2OSi(OH)3+ =   2.00 H2O  -1.00 H+   1.00 SiO2(aq)   1.00 UO2++  ;    2.48100 ;    9.00000 ;    1.00000 ;  365.13500
 
 <General Kinetics
-  1.00 tritium <->  ;   1.00 tritium ;  -1.78577E-09 ;  ;   0.00000E+00
+  1.00 tritium <->  ;   1.00 tritium ;  1.78577E-09 ;  ;   0.00000E+00
 
 <Minerals
 Schoepite =   3.00 H2O  -2.00 H+   1.00 UO2++  ;   4.83330E+00 ;   3.22058E+02 ;   6.60800E+01 ;   1.00000E+00
@@ -91,9 +91,9 @@ Al+++X = 1.0 Al+++  3.00 X-  ;   1.71133E+00
 H+X = 1.0 H+  1.00 X-  ;   2.51189E-02
 
 <Surface Complex Sites
->dong_kOH ;   3.81930E-06
->dong_FeOH ;   4.98170E-06
->SiOH ;   1.66000E-05
+>dong_kOH ;   2.05250E+02
+>dong_FeOH ;   3.44980E+02
+>SiOH ;   6.15800E+00
 
 <Surface Complexes
 (>dong_kOH)2UO2+ =   2.00 >dong_kOH  1.00 H2O  -2.00 H+  1.00 CO2(aq)  1.00 UO2++ ;   1.44700E-01 ;  -1.00

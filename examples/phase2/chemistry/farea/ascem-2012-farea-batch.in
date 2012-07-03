@@ -80,7 +80,7 @@ CHEMISTRY
 
   GENERAL_REACTION
     REACTION tritium <-> 
-    FORWARD_RATE -1.78577e-09 : [s^-1] half life of 12.3 y
+    FORWARD_RATE 1.78577e-09 : [s^-1] half life of 12.3 y
     BACKWARD_RATE 0.d0
   /
 
@@ -96,6 +96,7 @@ CHEMISTRY
         : neutral
         RATE_CONSTANT -12.967
       /
+skip
       PREFACTOR
       : acid
         RATE_CONSTANT -11.098
@@ -110,6 +111,7 @@ CHEMISTRY
           ALPHA -0.472
         /
       /
+noskip
     /
 skip
     Kaolinite
@@ -166,8 +168,8 @@ noskip
   SORPTION
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      MINERAL Kaolinite
-      SITE >dong_kOH 3.8193e-6   : [mol/m^3]
+:      MINERAL Kaolinite
+      SITE >dong_kOH 205.25   : [mol/m^3]
       COMPLEXES
         (>dong_kOH)2UO2+
         (>dong_kOH)2UO2CO3-
@@ -178,8 +180,8 @@ noskip
     /
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      MINERAL Goethite 
-      SITE >dong_FeOH 4.9817e-6   : [mol/m^3]
+:      MINERAL Goethite
+      SITE >dong_FeOH 344.98   : [mol/m^3]
       COMPLEXES
         (>dong_FeOH)2UO2+
         (>dong_FeOH)2UO2CO3-
@@ -190,8 +192,8 @@ noskip
     /
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      MINERAL Quartz
-      SITE >SiOH 16.6e-06   : [mol/m^3]
+:      MINERAL Quartz
+      SITE >SiOH 6.158   : [mol/m^3]
       COMPLEXES
         >SiOH2+
         >SiO-
@@ -199,7 +201,7 @@ noskip
       /
     /
     ION_EXCHANGE_RXN
-      MINERAL Kaolinite
+:      MINERAL Kaolinite
       CEC 24.986855814  : [mol/m^3]
       CATIONS
         Na+   1.0
@@ -279,8 +281,8 @@ TIME
 
 :=========================== output options ===================================
 OUTPUT
-  times y 1.0 2.0 10.0 20.0 40.0 60.0
-
+  :times y 1.0 2.0 10.0 20.0 40.0 60.0
+  PERIODIC TIME 1 y
   FORMAT TECPLOT POINT
   FORMAT HDF5
   VELOCITIES
@@ -299,8 +301,8 @@ END
 TRANSPORT_CONDITION initial
   TYPE zero_gradient
   CONSTRAINT_LIST
-:    0.d0 background
-    0.d0 seepage
+    0.d0 background
+:    0.d0 seepage
   /
 END
 
