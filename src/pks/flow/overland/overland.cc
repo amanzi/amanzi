@@ -53,17 +53,22 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
     }
 
     // Check that the surface mesh has a subset
-    std::cout << "Region Surface mesh size: " << mesh->get_set_size("ss7",
+    std::string surface_sideset_name =
+      flow_plist_.get<std::string>("Surface sideset name");
+    std::cout << "Region Surface mesh size: " << mesh->get_set_size(surface_sideset_name,
             AmanziMesh::FACE, AmanziMesh::OWNED) << std::endl;
 
     // -- Call the MSTK constructor to rip off the surface of the MSTK domain
     // -- mesh.
-    std::vector<std::string> setnames(1,"ss7");
+    std::vector<std::string> setnames(1,surface_sideset_name);
+    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d =
+      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
     Teuchos::RCP<AmanziMesh::Mesh> surface_mesh =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
 
     // push the mesh into state
     S->RegisterMesh("surface", surface_mesh);
+    S->RegisterMesh("surface_3d", surface_mesh_3d);
 
     standalone_mode_ = false;
 
@@ -106,6 +111,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
                 ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("overland_velocity", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
+                                  // NOTE this is 3 because VisIt is dumb.
   S->RequireField("overland_conductivity", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField("rainfall_rate", "overland_flow")->SetMesh(S->Mesh("surface"))
@@ -214,9 +220,20 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   // the commit_state call.
   S->GetField("overland_conductivity", "overland_flow")->set_initialized();
   S->GetField("overland_flux", "overland_flow")->set_initialized();
-  S->GetField("overland_velocity", "overland_flow")->set_initialized();
   S->GetField("pres_elev", "overland_flow")->set_initialized();
   S->GetField("rainfall_rate", "overland_flow")->set_initialized();
+
+  // velocity needs component names to get it into a vector
+  Teuchos::RCP<FieldCompositeVector> velocity =
+    Teuchos::rcp_static_cast<FieldCompositeVector>(S->GetField("overland_velocity", "overland_flow"));
+  std::vector<std::vector<std::string> > names(1);
+  names[0].resize(3);
+  names[0][0] = "X-Component";
+  names[0][1] = "Y-Component";
+  names[0][2] = "Z-Component";
+  velocity->set_subfield_names(names);
+  velocity->set_initialized();
+  S->GetFieldData("overland_velocity","overland_flow")->PutScalar(1.0);
 
   // Rel perm is special -- if the mode is symmetric, it needs to be
   // initialized to 1.
@@ -390,7 +407,14 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", "overland_flow");
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
+  Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData("overland_pressure");
   matrix_->DeriveCellVelocity(*flux, velocity);
+
+  int ncells = velocity->size("cell");
+  for (int c=0; c!=ncells; ++c) {
+    (*velocity)("cell",0,c) /= (*pressure)("cell",c);
+    (*velocity)("cell",1,c) /= (*pressure)("cell",c);
+  }
 };
 
 
@@ -426,6 +450,15 @@ void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
+  Teuchos::RCP<const CompositeVector> pressure =
+    S->GetFieldData("overland_pressure");
+  Teuchos::RCP<const CompositeVector> slope =
+    S->GetFieldData("slope_magnitude");
+  Teuchos::RCP<const CompositeVector> manning =
+    S->GetFieldData("manning_coef");
+
+  double eps = 1.e-14;
+
   upwind_conductivity->ViewComponent("face",true)->PutScalar(0.0);
   int c_owned = upwind_conductivity->size("cell");
   for (int c=0; c!=c_owned; ++c) {
@@ -433,14 +466,14 @@ void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
-      if ((flux("face",f) * dirs[n] >= 0.0) ||
-          (bc_markers_[f] != Operators::MFD_BC_NULL)) {
+      if ((flux("face",f) * dirs[n] >= 0.0)) {
         (*upwind_conductivity)("face",f) = conductivity("cell",c);
+      } else if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+        double scaling = (*manning)("cell",c) * std::sqrt((*slope)("cell",c) + eps);
+        (*upwind_conductivity)("face",f) = std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ;
       }
     }
   }
-
-  //print_vector(S, upwind_conductivity, "face conductivity");
 }
 
 
