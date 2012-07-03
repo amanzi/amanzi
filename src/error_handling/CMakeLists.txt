@@ -8,7 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
-include(InstallManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -19,24 +19,13 @@ include(InstallManager)
 # through these variables.
 project(DBC)
 
-#
-# Define a the list of include files
-#  will use this if/when we define an install make target
-file(GLOB dbc_inc_files "*.hh")
 
 #
-# Define source files
+# Library Target: error_handling
+#
 file(GLOB dbc_lib_files "*.cc")
-
-# Define the library 
-# add_library(<libaname> file1 file2 ... )
-add_library(error_handling ${dbc_lib_files})
-add_install_library(error_handling)
-
-#
-# Install Targets
-#
-add_install_include_file(${dbc_inc_files})
+file(GLOB dbc_inc_files "*.hh")
+add_amanzi_library(error_handling SOURCE ${dbc_lib_files} HEADERS ${dbc_inc_files})
 
 if (BUILD_TESTS)
    

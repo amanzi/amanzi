@@ -29,17 +29,12 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # Library: mesh
 #
-add_library(mesh Mesh.cc GenerationSpec.cc)
-add_install_library(mesh)
-target_link_libraries(mesh geometry)
-
+add_amanzi_library(mesh SOURCE Mesh.cc GenerationSpec.cc LINK_LIBS geometry)
 
 #
 # Library: mesh_audit
 #
-add_library(mesh_audit MeshAudit.cc)
-add_install_library(mesh_audit)
-target_link_libraries(mesh_audit mesh error_handling ${Epetra_LIBRARIES})
+add_amanzi_library(mesh_audit SOURCE MeshAudit.cc LINK_LIBS error_handling ${Epetra_LIBRARIES})
 
 #
 # Install Header files
@@ -119,8 +114,8 @@ if (BUILD_TESTS)
 
     add_amanzi_test(mesh_geometry test_mesh_geometry
                     KIND unit
-		    SOURCE ${test_src_files}
-		    LINK_LIBS ${test_link_libs})
+		            SOURCE ${test_src_files}
+		            LINK_LIBS ${test_link_libs})
 
 
     # Test: mesh deformation

@@ -8,6 +8,8 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(BinaryManager)
+include(LibraryManager)
 
 
 #
@@ -34,33 +36,23 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 # Library: exodus_reader
 #
 file(GLOB exo_source_files "*.cc") 
-add_library(exodus_reader ${exo_source_files})
-add_install_library(exodus_reader)
-target_link_libraries(exodus_reader 
+file(GLOB exo_inc_files "*.hh")
+add_amanzi_library(exodus_reader
+                   SOURCE ${exo_source_files} HEADERS ${exo_inc_files}
+                   LINK_LIBS 
                       error_handling mesh_data
-                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
+                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES} )
 
 
 #
 # Binary: exec_reader
 #
-add_executable(exec_reader test/exec_Reader.cc)
-target_link_libraries(exec_reader exodus_reader)
+add_amanzi_executable(exec_reader SOURCE test/exec_Reader.cc LINK_LIBS exodus_reader NO_INSTALL)
 
 #
 # Binary: exodus_read_test
 #
-add_executable(exodus_read_test test/exodus_read_test.cc)
-target_link_libraries(exodus_read_test exodus_reader)
-
-#
-# Install Targets
-#
-file(GLOB exo_inc_files "*.hh")
-add_install_include_file(${exo_inc_files})
-#add_install_binary(exec_reader)
-#add_install_binary(exodus_read_test)
-
+add_amanzi_executable(exodus_read_test SOURCE test/exodus_read_test.cc LINK_LIBS exodus_reader NO_INSTALL)
 
 
 if (BUILD_TESTS)
@@ -86,56 +78,56 @@ if (BUILD_TESTS)
     # Test: exodus_reader
     add_amanzi_test(exodus_reader test_exodus
                     KIND unit
-		    SOURCE 
-		          test/Main.cc 
-			  test/test_Reader.cc
-			  test/test_file_path.cc
-	            LINK_LIBS 
-		          exodus_reader
-			  ${UnitTest_LIBRARIES}
-                          ${Boost_FILESYSTEM_LIBRARY}
-                          ${Boost_SYSTEM_LIBRARY})
+                    SOURCE 
+                         test/Main.cc 
+                         test/test_Reader.cc
+                         test/test_file_path.cc
+                    LINK_LIBS 
+                         exodus_reader
+                         ${UnitTest_LIBRARIES}
+                         ${Boost_FILESYSTEM_LIBRARY}
+                         ${Boost_SYSTEM_LIBRARY})
 
     # Test: test_pexodus_2
     add_amanzi_test(pexodus_2proc test_pexodus_2
                     KIND int
-		    NPROCS 2
-		    SOURCE 
-		          test/ParallelMain.cc 
-			  test/test_pread_checkit.cc
-			  test/test_file_path.cc
-	            LINK_LIBS 
-		          exodus_reader
-			  ${UnitTest_LIBRARIES}
+                    NPROCS 2
+                    SOURCE 
+                         test/ParallelMain.cc 
+                         test/test_pread_checkit.cc
+                         test/test_file_path.cc
+                    LINK_LIBS 
+                          exodus_reader
+                          ${UnitTest_LIBRARIES}
                           ${Boost_FILESYSTEM_LIBRARY}
                           ${Boost_SYSTEM_LIBRARY})
 
     # Test: test_pexodus_3
     add_amanzi_test(pexodus_3proc test_pexodus_3
                     KIND int
-		    NPROCS 3
-		    SOURCE 
-		          test/ParallelMain.cc 
-			  test/test_pread_checkit.cc
-			  test/test_file_path.cc
-	            LINK_LIBS 
-		          exodus_reader
-			  ${UnitTest_LIBRARIES}
-                          ${Boost_FILESYSTEM_LIBRARY}
-                          ${Boost_SYSTEM_LIBRARY})
+                    NPROCS 3
+                    SOURCE 
+                         test/ParallelMain.cc 
+                         test/test_pread_checkit.cc
+                         test/test_file_path.cc
+                    LINK_LIBS 
+                         exodus_reader
+                         ${UnitTest_LIBRARIES}
+                         ${Boost_FILESYSTEM_LIBRARY}
+                         ${Boost_SYSTEM_LIBRARY})
 
     # Test: test_pexodus_4       
     add_amanzi_test(pexodus_4proc test_pexodus_4
                     KIND int
-		    NPROCS 4
-		    SOURCE 
-		          test/ParallelMain.cc 
-			  test/test_pread_checkit.cc
-			  test/test_file_path.cc
-	            LINK_LIBS 
-		          exodus_reader
-			  ${UnitTest_LIBRARIES}
-                          ${Boost_FILESYSTEM_LIBRARY}
-                          ${Boost_SYSTEM_LIBRARY})
+                    NPROCS 4
+                    SOURCE 
+                           test/ParallelMain.cc 
+                           test/test_pread_checkit.cc
+                           test/test_file_path.cc
+                    LINK_LIBS 
+                           exodus_reader
+                           ${UnitTest_LIBRARIES}
+                           ${Boost_FILESYSTEM_LIBRARY}
+                           ${Boost_SYSTEM_LIBRARY})
 
 endif()

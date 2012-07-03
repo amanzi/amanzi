@@ -342,16 +342,19 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       }
 
       // Time Macro
-      // Iterate through the array
       if ( vis_list.isParameter("Time Macro") ) {
-        std::string time_macro = vis_list.get<std::string>("Time Macro");
-        // Create a local parameter list and store the time macro (3 doubles)
-        Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
-        if (time_macro_list.isParameter("Start_Period_Stop")) {
-          vis_list.sublist("time start period stop").sublist(time_macro).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
-        }
-        if (time_macro_list.isParameter("Values")) {
-          vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+        std::vector<std::string> time_macros;
+        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macro").toVector();
+
+        for (int i=0; i < time_macros.size(); i++) {
+          // Create a local parameter list and store the time macro (3 doubles)
+          Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macros[i], plist);
+          if (time_macro_list.isParameter("Start_Period_Stop")) {
+            vis_list.sublist("time start period stop").sublist(time_macros[i]).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+          }
+          if (time_macro_list.isParameter("Values")) {
+            vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+          }
         }
         vis_list.remove("Time Macro");
       }
@@ -758,11 +761,12 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
- * Collects preconditioners
+ * Collects default preconditioners
  ****************************************************************** */
 Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList prec_list;
   prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
+  prec_list.sublist("Hypre AMG") = create_HypreAMG_List(plist);
   return prec_list;
 }
 
@@ -1076,7 +1080,7 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 
 
 /* ******************************************************************
- * DPC sublist
+ * ML preconditioner sublist
  ****************************************************************** */
 Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
 {
@@ -1122,6 +1126,22 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("coarse: type", "Amesos-KLU");
   ml_list.set<int>("coarse: max size", 256);
+
+  return dpc_list;
+}
+
+
+/* ******************************************************************
+ * Hypre BoomerAMG preconditioner sublist
+ ****************************************************************** */
+Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
+{
+  Teuchos::ParameterList dpc_list;
+
+  dpc_list.set<std::string>("discretization method", "optimized mfd");
+
+  Teuchos::ParameterList& amg_list = dpc_list.sublist("BoomerAMG Parameters");
+  amg_list.set<int>("to be populated", 0);
 
   return dpc_list;
 }

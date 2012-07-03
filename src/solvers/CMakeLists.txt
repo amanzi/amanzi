@@ -34,20 +34,14 @@ add_definitions("-DUSE_MPI")
 # Library: solvers
 #
 file(GLOB solvers_source_files "*.cpp")
-add_library(solvers ${solvers_source_files})
-add_install_library(solvers)
-
+file(GLOB solver_inc_files "*.H")
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
-target_link_libraries(solvers error_handling ${solvers_tpl_libs})
-
-#
-# Install Targets
-#
-file(GLOB solver_inc_files "*.H")
-add_install_include_file(${solver_inc_files})
+add_amanzi_library(solvers
+                   SOURCE ${solvers_source_files} HEADERS ${solvers_inc_files}
+                   LINK_LIBS error_handling ${solvers_tpl_libs})
 
 if (BUILD_TESTS)
 

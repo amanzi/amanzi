@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build with the correct compiler
+export CC=@CMAKE_C_COMPILER@
+export CFLAGS='@hypre_cflags@'
+export CXX=@CMAKE_CXX_COMPILER@
+export CXXFLAGS='@hypre_cxxflags@'
+export F77=@CMAKE_Fortran_COMPILER@
+
+# HYPRE recommends running with the make configure target
+cd @HYPRE_source_dir@/src
+make all 
+echo "make all returned $?"
+
+exit $?

@@ -23,8 +23,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "tabular-function.hh"
 #include "gmv_mesh.hh"
 
-#include "tensor.hpp"
-#include "mfd3d.hpp"
 #include "Explicit_TI_RK.hpp"
 
 #include "Transport_PK.hpp"
@@ -307,7 +305,9 @@ void Transport_PK::Advance(double dT_MPC)
 
     if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
       AdvanceDonorUpwind(dT_cycle);
-    } else if (spatial_disc_order == 2) {
+    } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
+      AdvanceSecondOrderUpwindEulerTI(dT_cycle);
+    } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
       AdvanceSecondOrderUpwind(dT_cycle);
     }
 
@@ -342,71 +342,6 @@ void Transport_PK::Advance(double dT_MPC)
   // DEBUG
   // writeGMVfile(TS_nextMPC);
 }
-
-
-/* ******************************************************************* 
- * We have to advance each component independently due to different
- * discretizations. We use tcc when only owned data are needed and 
- * tcc_next when owned and ghost data.
- *
- * Data flow: loop over components C and for each C apply the 
- * second-order RK method. 
- ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwind(double dT_MPC)
-{
-  status = TRANSPORT_STATE_BEGIN;
-  dT = dT_MPC;  // overwrite the transport step
-
-  int i, f, v, c, c1, c2;
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
-  const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
-
-  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
-
-  // define time integration method
-  Explicit_TI::RK::method_t ti_method = Explicit_TI::RK::forward_euler;
-  if (temporal_disc_order == 2) {
-    ti_method = Explicit_TI::RK::heun_euler;
-  }
-  Explicit_TI::RK TVD_RK(*this, ti_method, *component_);
-
-  int num_components = tcc->NumVectors();
-  for (i = 0; i < num_components; i++) {
-    current_component_ = i;  // it is needed in BJ called inside RK:fun
-
-    Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
-
-    const double t = 0.0;  // provide simulation time (lipnikov@lanl.gov)
-    TVD_RK.step(t, dT, *component_, *component_next_);
-
-    for (c = 0; c <= cmax_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
-
-    /*
-    // DISPERSION FLUXES
-    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
-      calculate_dispersion_tensor();
-
-      std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated once (lipnikov@lanl.gov)
-      std::vector<double> bc_face_values(number_wghost_faces);
-
-      extract_boundary_conditions(i, bc_face_id, bc_face_values);
-      populate_harmonic_points_values(i, tcc, bc_face_id, bc_face_values);
-      add_dispersive_fluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
-    }
-    */
-  }
-
-  if (internal_tests) {
-    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
-    CheckGEDproperty(*tcc_nextMPC);
-  }
-
-  status = TRANSPORT_STATE_COMPLETE;
-}
-
 
 
 /* ******************************************************************* 
@@ -495,63 +430,106 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
 }
 
 
-/* *******************************************************************
- * Calculate a dispersive tensor the from Darcy fluxes. The flux is
- * assumed to be scaled by face area.
+/* ******************************************************************* 
+ * We have to advance each component independently due to different
+ * discretizations. We use tcc when only owned data are needed and 
+ * tcc_next when owned and ghost data. This special routine for 
+ * transient flow and uses first-order time integrator. 
  ****************************************************************** */
-void Transport_PK::CalculateDispersionTensor()
+void Transport_PK::AdvanceSecondOrderUpwindEulerTI(double dT_MPC)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
-  const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
+  status = TRANSPORT_STATE_BEGIN;
+  dT = dT_MPC;  // overwrite the transport step
 
-  AmanziMesh::Entity_ID_List nodes, faces;
-  AmanziGeometry::Point velocity(dim), flux(dim);
-  WhetStone::Tensor T(dim, 2);
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
+  Epetra_Vector f_component(*component_);
 
-  for (int c = 0; c <= cmax_owned; c++) {
-    if (dispersivity_model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-      for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) = dispersivity_longitudinal;
-    } else {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
+  int num_components = tcc->NumVectors();
+  for (int i = 0; i < num_components; i++) {
+    current_component_ = i;  // needed by BJ 
 
-      int num_good_corners = 0;
-      for (int n = 0; n < nnodes; n++) {
-        int v = nodes[n];
-        mesh_->node_get_cell_faces(v, c, AmanziMesh::USED, &faces);
-        int nfaces = faces.size();
+    Epetra_Vector*& tcc_component = (*tcc)(i);
+    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
 
-        for (int i = 0; i < dim; i++) {
-          int f = faces[i];
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-          T.add_row(i, normal);
-          flux[i] = darcy_flux[f];
-        }
+    double T = 0.0;
+    fun(T, *component_, f_component);
 
-        T.inverse();
-        velocity += T * flux;
-        num_good_corners++;  // each corners is good temporary (lipnikov@lanl.gov)
-      }
-      velocity /= num_good_corners;
-
-      double velocity_value = norm(velocity);
-      double anisotropy = dispersivity_longitudinal - dispersivity_transverse;
-
-      for (int i = 0; i < dim; i++) {
-        dispersion_tensor[c](i, i) = dispersivity_transverse * velocity_value;
-        for (int j = i; j < dim; j++) {
-          double s = anisotropy * velocity[i] * velocity[j];
-          if (velocity_value) s /= velocity_value;
-          dispersion_tensor[c](j, i) = dispersion_tensor[c](i, j) += s;
-        }
-      }
+    double ws_ratio;
+    for (int c = 0; c <= cmax_owned; c++) {
+      ws_ratio = (*water_saturation_start)[c] / (*water_saturation_end)[c];
+      (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio;
     }
-
-    double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
-    for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) *= vol_phi_ws;
   }
+
+  if (internal_tests) {
+    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
+    CheckGEDproperty(*tcc_nextMPC);
+  }
+
+  status = TRANSPORT_STATE_COMPLETE;
 }
+
+
+
+/* ******************************************************************* 
+ * We have to advance each component independently due to different
+ * discretizations. We use tcc when only owned data are needed and 
+ * tcc_next when owned and ghost data.
+ *
+ * Data flow: loop over components C and for each C apply the 
+ * second-order RK method. 
+ ****************************************************************** */
+void Transport_PK::AdvanceSecondOrderUpwind(double dT_MPC)
+{
+  status = TRANSPORT_STATE_BEGIN;
+  dT = dT_MPC;  // overwrite the transport step
+
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
+
+  // define time integration method
+  Explicit_TI::RK::method_t ti_method = Explicit_TI::RK::forward_euler;
+  if (temporal_disc_order == 2) {
+    ti_method = Explicit_TI::RK::heun_euler;
+  }
+  Explicit_TI::RK TVD_RK(*this, ti_method, *component_);
+
+  int num_components = tcc->NumVectors();
+  for (int i = 0; i < num_components; i++) {
+    current_component_ = i;  // it is needed in BJ called inside RK:fun
+
+    Epetra_Vector*& tcc_component = (*tcc)(i);
+    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+
+    const double t = 0.0;  // provide simulation time (lipnikov@lanl.gov)
+    TVD_RK.step(t, dT, *component_, *component_next_);
+
+    for (int c = 0; c <= cmax_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
+
+    /*
+    // DISPERSION FLUXES
+    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+      calculate_dispersion_tensor();
+
+      std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated once (lipnikov@lanl.gov)
+      std::vector<double> bc_face_values(number_wghost_faces);
+
+      extract_boundary_conditions(i, bc_face_id, bc_face_values);
+      populate_harmonic_points_values(i, tcc, bc_face_id, bc_face_values);
+      add_dispersive_fluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
+    }
+    */
+  }
+
+  if (internal_tests) {
+    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
+    CheckGEDproperty(*tcc_nextMPC);
+  }
+
+  status = TRANSPORT_STATE_COMPLETE;
+}
+
 
 
 /* *******************************************************************
@@ -569,88 +547,6 @@ void Transport_PK::ExtractBoundaryConditions(const int component,
         int f = bc->first;
         bc_face_id[f] = TRANSPORT_BC_CONSTANT_TCC;
         bc_face_value[f] = bc->second;
-      }
-    }
-  }
-}
-
-
-/* *******************************************************************
- * Calculate field values at harmonic points. For harmonic points on
- * domain boundary, we use Dirichlet boundary values.
- ****************************************************************** */
-void Transport_PK::PopulateHarmonicPointsValues(int component,
-                                                Teuchos::RCP<Epetra_MultiVector> tcc,
-                                                std::vector<int>& bc_face_id,
-                                                std::vector<double>& bc_face_values)
-{
-  WhetStone::MFD3D mfd(mesh_);
-  AmanziMesh::Entity_ID_List cells;
-
-  for (int f = 0; f < fmax_owned; f++) {
-    double weight;
-    mfd.calculate_harmonic_points(f, dispersion_tensor, harmonic_points[f], weight);
-    harmonic_points_weight[f] = weight;
-
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    if (ncells == 2) {
-      harmonic_points_value[f] = weight * (*tcc)[component][cells[0]]
-                               + (1 - weight) * (*tcc)[component][cells[1]];
-    } else if (bc_face_id[f] == TRANSPORT_BC_CONSTANT_TCC) {
-      harmonic_points_value[f] = bc_face_values[f];
-    } else {
-      harmonic_points_value[f] = (*tcc)[component][cells[0]];  // ad-hoc solution (lipnikov@lanl.gov)
-    }
-  }
-}
-
-
-/* *******************************************************************
- * Calculate and add dispersive fluxes of the conservative quantatity.
- ****************************************************************** */
-void Transport_PK::AddDispersiveFluxes(int component,
-                                       Teuchos::RCP<Epetra_MultiVector> tcc,
-                                       std::vector<int>& bc_face_id,
-                                       std::vector<double>& bc_face_values,
-                                       Teuchos::RCP<Epetra_MultiVector> tcc_next)
-{
-  WhetStone::MFD3D mfd(mesh_);
-  AmanziMesh::Entity_ID_List nodes, faces;
-  std::vector<AmanziGeometry::Point> corner_points;
-  std::vector<double> corner_values, corner_fluxes;
-
-  for (int c = 0; c < cmax_owned; c++) {
-    mesh_->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    double value = (*tcc)[component][c];
-
-    for (int n = 0; n < nnodes; n++) {
-      int v = nodes[n];
-      mesh_->node_get_cell_faces(v, c, AmanziMesh::USED, &faces);
-      int nfaces = faces.size();
-
-      corner_points.clear();
-      corner_values.clear();
-      for (int i = 0; i < nfaces; i++) {
-        int f = faces[i];
-        corner_points.push_back(harmonic_points[f]);
-        corner_values.push_back(harmonic_points_value[f]);
-      }
-
-      mfd.dispersion_corner_fluxes(
-          v, c, dispersion_tensor[c], corner_points, value, corner_values, corner_fluxes);
-
-      for (int i = 0; i < nfaces; i++) {
-        int f = faces[i];
-        if (bc_face_id[f] == TRANSPORT_BC_DISPERSION_FLUX) {
-          corner_fluxes[i] = bc_face_values[i];
-        }
-
-        (*tcc_next)[component][c] += corner_fluxes[i];
-        int c2 = mfd.cell_get_face_adj_cell(c, f);
-        if (c2 >= 0) (*tcc_next)[component][c2] -= corner_fluxes[i];
       }
     }
   }

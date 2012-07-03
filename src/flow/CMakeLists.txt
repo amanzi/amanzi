@@ -49,27 +49,25 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: flow
 #
-add_library(flow Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
-                 Flow_BC_Factory.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
-                 Darcy_PK.cpp Darcy_IO.cpp 
-                 Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp
-                 Richards_SteadyState.cpp Richards_Picard.cpp Richards_AztecOO.cpp
-                 Richards_Bundles.cpp Richards_Devel.cpp Richards_AndersonAcceleration.cpp
-                 Matrix_MFD.cpp Matrix_VAG.cpp 
-                 WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
-add_install_library(flow)
+set(flow_src_files Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
+                   Flow_BC_Factory.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
+                   Darcy_PK.cpp Darcy_IO.cpp 
+                   Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp
+                   Richards_SteadyState.cpp Richards_Picard.cpp Richards_AztecOO.cpp
+                   Richards_Bundles.cpp Richards_Devel.cpp Richards_AndersonAcceleration.cpp
+                   Matrix_MFD.cpp Matrix_VAG.cpp 
+                  WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
-target_link_libraries(flow functions mesh_functions ${flow_tpl_libs} time_integration)
+add_amanzi_library(flow SOURCE ${flow_src_files}
+                   LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration)
 
 #
 # Library: matrix audit
 #
-add_library(matrix_audit Matrix_Audit.cpp)
-add_install_library(matrix_audit)
-target_link_libraries(matrix_audit ${flow_tpl_libs})
+add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cpp LINK_LIBS ${flow_tpl_libs})
 
 #
 # Install Targets
@@ -113,6 +111,12 @@ if (BUILD_TESTS)
         add_amanzi_test(flow_darcy_2D flow_darcy_2D
 	                KIND int
                         SOURCE test/Main.cc test/flow_darcy_2D.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+ 
+        # Test: transient Darcy flow 
+        add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
+	                KIND int
+                        SOURCE test/Main.cc test/flow_darcy_dual2D.cpp
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow with a source

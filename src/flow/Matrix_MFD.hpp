@@ -28,6 +28,9 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Flow_State.hpp"
 
+#include "Ifpack.h"
+#include "Ifpack_Hypre.h"
+
 namespace Amanzi {
 namespace AmanziFlow {
 
@@ -55,8 +58,8 @@ class Matrix_MFD : public Epetra_Operator {
                            const Epetra_Import& face_importer, 
                            Epetra_Vector& darcy_mass_flux);
 
-  void InitML_Preconditioner(Teuchos::ParameterList& ML_list);
-  void UpdateML_Preconditioner();
+  void InitPreconditioner(int method, Teuchos::ParameterList& prec_list);
+  void UpdatePreconditioner();
 
   // required methods
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -113,8 +116,13 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_Vector> rhs_cells_;
   Teuchos::RCP<Epetra_Vector> rhs_faces_;
 
+  int method_;  // Preconditioners
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
+
+#ifdef HAVE_HYPRE_API
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
+#endif
 
   int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 

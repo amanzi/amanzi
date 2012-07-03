@@ -314,21 +314,18 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-# MSTK
-if ( ENABLE_MSTK_Mesh )
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
-  append_set(Amanzi_TPL_CMAKE_ARGS
-            -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
-            -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
-            -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
-endif()
-
 # MOAB
 if ( ENABLE_MOAB_Mesh )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
   append_set(Amanzi_TPL_CMAKE_ARGS
              -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
 	     -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
+endif()
+
+# HYPRE
+option(ENABLE_HYPRE "Build the HYPRE solver package" FALSE)
+if ( ENABLE_HYPRE )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
 endif()
 
 # Trilinos  
@@ -340,6 +337,14 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
+# MSTK
+if ( ENABLE_MSTK_Mesh )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
+  append_set(Amanzi_TPL_CMAKE_ARGS
+            -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
+            -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
+            -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+endif()
 
 # ############################################################################ #
 #  Final steps

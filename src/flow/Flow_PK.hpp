@@ -23,79 +23,14 @@ Usage:
 #include "BDF2_fnBase.hpp"
 
 #include "Flow_State.hpp"
+#include "Flow_constants.hpp"
 #include "Matrix_MFD.hpp"
 #include "TI_Specs.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
 
-const int FLOW_STATUS_NULL = 0;  // used for internal debuging
-const int FLOW_STATUS_INIT = 2;
-const int FLOW_STATUS_STEADY_STATE_INIT = 4;
-const int FLOW_STATUS_STEADY_STATE_COMPLETE = 6;
-const int FLOW_STATUS_TRANSIENT_STATE_INIT = 8;
-const int FLOW_STATUS_TRANSIENT_STATE_COMPLETE = 10;
-
-const int FLOW_BC_FACE_NULL = 0; 
-const int FLOW_BC_FACE_PRESSURE = 1; 
-const int FLOW_BC_FACE_HEAD = 2; 
-const int FLOW_BC_FACE_FLUX = 4; 
-
-const int FLOW_TIME_INTEGRATION_PICARD = 1;
-const int FLOW_TIME_INTEGRATION_BACKWARD_EULER = 2;  // Only for testing.
-const int FLOW_TIME_INTEGRATION_BDF1 = 3;
-const int FLOW_TIME_INTEGRATION_BDF2 = 4;
-const double FLOW_INITIAL_DT = 1e-8;
-const double FLOW_MAXIMUM_DT = 3.15e+10;  // 1000 years
-
-const int FLOW_RELATIVE_PERM_CENTERED = 1; 
-const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 2; 
-const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
-const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4;
-const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-10;
-
-const int FLOW_MFD3D_POLYHEDRA = 1;
-const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
-const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
-const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
-const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;  // rc1 compatibility
-const int FLOW_MFD3D_OPTIMIZED = 6;
-
-const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
-const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
-const int FLOW_TI_ERROR_CONTROL_RESIDUAL = 4;
-
-const double FLOW_TI_ABSOLUTE_TOLERANCE = 1.0;  // defaults for time integrations
-const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
-const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
-const int FLOW_TI_MAX_ITERATIONS = 400;
-
-const int FLOW_SOURCE_DISTRIBUTION_NONE = 0;
-const int FLOW_SOURCE_DISTRIBUTION_VOLUME = 1;
-const int FLOW_SOURCE_DISTRIBUTION_PERMEABILITY = 2;
-
-const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
-const int FLOW_HEX_NODES = 8;
-const int FLOW_HEX_EDGES = 12;
-
-const int FLOW_QUAD_FACES = 4;  // Quadrilateral is the common element
-const int FLOW_QUAD_NODES = 4;
-const int FLOW_QUAD_EDGES = 4;
-
-const int FLOW_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
-const int FLOW_MAX_NODES = 47;  // These polyhedron parameters must
-const int FLOW_MAX_EDGES = 60;  // be calculated in Init().
-
-const int FLOW_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
-
-const int FLOW_VERBOSITY_NONE = 0;
-const int FLOW_VERBOSITY_LOW = 1;
-const int FLOW_VERBOSITY_MEDIUM = 2;
-const int FLOW_VERBOSITY_HIGH = 3;
-const int FLOW_VERBOSITY_EXTREME = 4;
-
-const int FLOW_AMANZI_VERSION = 2;  
-
+double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
 class Flow_PK : public BDF2::fnBase {
  public:
@@ -163,6 +98,7 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
   void ProcessStringMFD3D(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
+  void ProcessStringPreconditioner(const std::string name, int* preconditioner);
 
  public:
   int ncells_owned, ncells_wghost;

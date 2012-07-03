@@ -9,6 +9,7 @@
 include(PrintVariable)
 include(TestManager)
 include(InstallManager)
+include(LibraryManager)
 
 #
 # Define a project name

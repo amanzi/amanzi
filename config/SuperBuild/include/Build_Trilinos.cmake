@@ -4,9 +4,13 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
+set(trilinos_depend_projects NetCDF ExodusII Boost)
+if(ENABLE_HYPRE)
+  list(APPEND trilinos_depend_projects HYPRE)
+endif()
 define_external_project_args(Trilinos
                              TARGET trilinos
-                             DEPENDS NetCDF ExodusII Boost)
+                             DEPENDS ${trilinos_depend_projects})
 
 # --- Define the configuration parameters   
 
@@ -120,6 +124,14 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_ExodusII:BOOL=ON" 
             "-DExodusII_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
             "-DExodusII_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+
+# HYPRE
+if( ENABLE_HYPRE )
+  list(APPEND Trilinos_CMAKE_TPL_ARGS
+              "-DTPL_ENABLE_HYPRE:BOOL=ON"
+              "-DHYPRE_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+              "-DHYPRE_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+endif()
 
 #  - Addtional Trilinos CMake Arguments
 set(Trilinos_CMAKE_EXTRA_ARGS

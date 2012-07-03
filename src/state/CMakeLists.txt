@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -47,17 +48,17 @@ add_definitions("-DUSE_MPI")
 #
 # Library: state
 #
-add_library(state State.cpp Restart.cpp Vis.cpp)
-add_install_library(state)
+file(GLOB state_inc_files "*.hpp")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-target_link_libraries(state atk functions output simple_mesh mesh_data ${state_tpl_libs})
+add_amanzi_library(state 
+                   SOURCE State.cpp Restart.cpp Vis.cpp HEADERS ${state_inc_files}
+                   LINK_LIBS atk functions output simple_mesh mesh_data ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 
 #
 # Install Target
 #
-file(GLOB state_inc_files "*.hpp")
 add_install_include_file(${state_inc_files})
 
 

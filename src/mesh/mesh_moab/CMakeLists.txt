@@ -39,15 +39,10 @@ add_definitions("-DUSE_MPI")
 # The MOAB_LIBRARIES variable does not have HDF5
 # libraries listed. Ticket #335
 file(GLOB moab_mesh_files "*.cc") 
-add_library(moab_mesh ${moab_mesh_files})
-add_install_library(moab_mesh)
-target_link_libraries(moab_mesh mesh error_handling geometry ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-
-#
-# Install Targets 
-#
 file(GLOB moab_inc_files "*.hh")
-add_install_include_file(${moab_inc_files})
+add_amanzi_library(moab_mesh
+                   SOURCE ${moab_mesh_files} HEADERS ${moab_inc_files}
+                   LINK_LIBS ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
 
 if (BUILD_TESTS)
     

@@ -488,13 +488,14 @@ Preconditioners
 ===============
 
 Version 2 of the native input spec introduces this list. It contains sublists for various
-preconditioners required by a simulation. At the moment, we support only Trilinos multilevel 
-preconditioner. Here is an example:
+preconditioners required by a simulation. At the moment, we support Trilinos multilevel 
+preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
 
 .. code-block:: xml
 
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
+          <Parameter name="deiscretization method" type="string" value="optimized mfd"/>
           <ParameterList name="ML Parameters">
             <Parameter name="ML output" type="int" value="0"/>
             <Parameter name="aggregation: damping factor" type="double" value="1.33333"/>
@@ -502,16 +503,13 @@ preconditioner. Here is an example:
          </ParameterList>
        </ParameterList>
 
-       <ParameterList name="Trilinos ML 2">
-       ...
-       </ParameterList>
-
-       <ParameterList name="External AMG">
-       ...
+       <ParameterList name="Hypre AMG">
+          <Parameter name="deiscretization method" type="string" value="optimized mfd"/>
+          ...
        </ParameterList>
      </ParameterList>
 
-Names `"Trilinos ML`", `"Trilinos ML 2`", and `"External AMG`" are selected by the user.
+Names `"Trilinos ML`" and `"Hypre AMG`" are selected by the user.
 They can be used by a process kernel lists to define a preconditioner.
 
 

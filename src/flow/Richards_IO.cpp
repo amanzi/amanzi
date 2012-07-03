@@ -136,6 +136,7 @@ void Richards_PK::ProcessParameterList()
   }
 
   // Time integrator for period I, temporary called initial guess initialization
+  int method;
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {
     Teuchos::ParameterList& igs_list = rp_list_.sublist("initial guess pseudo time integrator");
 
@@ -147,6 +148,9 @@ void Richards_PK::ProcessParameterList()
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
 
     preconditioner_name_igs_ = FindStringPreconditioner(igs_list);
+    ProcessStringPreconditioner(preconditioner_name_igs_, &method);
+    ti_specs_igs_.preconditioner_method = method;
+
     std::string linear_solver_name = FindStringLinearSolver(igs_list);
     ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
 
@@ -165,6 +169,9 @@ void Richards_PK::ProcessParameterList()
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
 
     preconditioner_name_sss_ = FindStringPreconditioner(sss_list);
+    ProcessStringPreconditioner(preconditioner_name_sss_, &method);
+    ti_specs_sss_.preconditioner_method = method;
+
     std::string linear_solver_name = FindStringLinearSolver(sss_list);
     ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
 
@@ -183,6 +190,9 @@ void Richards_PK::ProcessParameterList()
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
 
     preconditioner_name_trs_ = FindStringPreconditioner(trs_list);
+    ProcessStringPreconditioner(preconditioner_name_trs_, &method);
+    ti_specs_trs_.preconditioner_method = method;
+
     std::string linear_solver_name = FindStringLinearSolver(trs_list);
     ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
 

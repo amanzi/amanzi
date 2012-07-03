@@ -29,21 +29,15 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # geometry library
 #
 file (GLOB geometry_source_files "*.cc")
-add_library(geometry ${geometry_source_files})
-target_link_libraries(geometry error_handling functions ${Teuchos_LIBRARIES})
-
-#
-# Install Targets
-#
-add_install_library(geometry)
-file(GLOB _inc_files "*.h*")
-add_install_include_file(${_inc_files})
+file(GLOB  geometry_inc_files "*.h*")
+add_amanzi_library(geometry 
+                   SOURCE ${geometry_source_files} HEADERS ${geometry_inc_files}
+                   LINK_LIBS error_handling functions ${Teuchos_LIBRARIES} )
 
 
 #
 # Unit tests
 #
-
 if (BUILD_TESTS)
     
    # Add UnitTest ExodusII include directories

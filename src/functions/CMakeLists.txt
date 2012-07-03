@@ -8,6 +8,8 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(LibraryManager)
+
 
 #
 # Define a project name
@@ -26,6 +28,7 @@ include_directories(${DBC_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
@@ -34,15 +37,11 @@ add_definitions("-DUSE_MPI")
 # Library: functions
 #
 file(GLOB src_files "*.cc")
-add_library(functions ${src_files})
-add_install_library(functions)
-target_link_libraries(functions error_handling ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-
-#
-# Install Targets
-#
 file(GLOB inc_files "*.hh")
-add_install_include_file(${inc_files})
+add_amanzi_library(functions 
+                   SOURCE ${src_files}
+                   HEADERS ${inc_files}
+                   LINK_LIBS error_handling ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)

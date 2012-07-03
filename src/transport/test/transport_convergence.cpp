@@ -159,9 +159,9 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
     TPK.InitPK();
+    TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (nx == 10) TPK.PrintStatistics();
     TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
-    TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
 
     // advance the state
     int i, k, iter = 0;

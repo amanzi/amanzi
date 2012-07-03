@@ -42,7 +42,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   // calculate and assemble elemental stiffness matrices
   AssembleSteadyStateProblem_MFD(matrix_, false);
   AssembleSteadyStateProblem_MFD(preconditioner_, true);
-  preconditioner_->UpdateML_Preconditioner();
+  preconditioner_->UpdatePreconditioner();
 
   // solve symmetric problem
   AztecOO* solver_tmp = new AztecOO;
@@ -91,7 +91,7 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
   // calculate and assemble elemental stiffness matrices
   AssembleTransientProblem_MFD(matrix_, dTp, u, false);
   AssembleTransientProblem_MFD(preconditioner_, dTp, u, true);
-  preconditioner_->UpdateML_Preconditioner();
+  preconditioner_->UpdatePreconditioner();
 
   // solve symmetric problem
   AztecOO* solver_tmp = new AztecOO;

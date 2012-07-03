@@ -183,7 +183,7 @@ class Richards_PK : public Flow_PK {
   std::string preconditioner_name_trs_;
 
   double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
-  int ti_method, num_itrs, max_itrs;
+  int ti_method, num_itrs, max_itrs, preconditioner_method;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
