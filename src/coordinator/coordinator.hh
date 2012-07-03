@@ -72,7 +72,7 @@ private:
   //  Teuchos::RCP<UnstructuredObservations> observations_;
 
   // vis and checkpointing
-  Teuchos::RCP<Visualization> visualization_;
+  std::vector<Teuchos::RCP<Visualization> > visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
 };
 
