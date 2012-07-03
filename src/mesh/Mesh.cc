@@ -546,12 +546,12 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
       // of the same topological dimension as the cells or it
       // has to be a point region
       
-      if (kind == CELL && (rdim == celldim || rdim == 0)) return true;
+      if (kind == CELL && (rdim >= celldim || rdim == 0)) return true;
       
       // If we are looking for a side set, the region has to be 
       // one topological dimension less than the cells
       
-      if (kind == FACE && rdim == celldim-1) return true;
+      if (kind == FACE && rdim >= celldim-1) return true;
       
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain
