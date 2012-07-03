@@ -37,11 +37,6 @@ void Coordinator::coordinator_init() {
   S_ = Teuchos::rcp(new State(state_plist));
   S_->RegisterDomainMesh(mesh_);
 
-  // vis for the state
-  Teuchos::ParameterList vis_plist = parameter_list_.sublist("Visualization");
-  visualization_ = Teuchos::rcp(new Visualization(vis_plist, comm_));
-  visualization_->CreateFiles(*mesh_);
-
   // checkpointing for the state
   Teuchos::ParameterList chkp_plist = parameter_list_.sublist("Checkpoint");
   checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
@@ -82,6 +77,42 @@ void Coordinator::initialize() {
 
   // Check that all fields have now been initialized or die.
   S_->CheckAllInitialized();
+
+  // vis for the state
+  // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
+  bool surface_done = false;
+  if (S_->has_mesh("surface") && S_->has_mesh("surface_3d")) {
+    Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->Mesh("surface_3d");
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->Mesh("surface");
+
+    std::string plist_name = "Visualization surface";
+    Teuchos::ParameterList vis_plist = parameter_list_.sublist(plist_name);
+    Teuchos::RCP<Visualization> vis =
+      Teuchos::rcp(new Visualization(vis_plist, comm_));
+    vis->set_mesh(surface_3d);
+    vis->CreateFiles();
+    vis->set_mesh(surface);
+    visualization_.push_back(vis);
+    S_->RemoveMesh("surface_3d");
+    surface_done = true;
+  }
+
+  for (State::mesh_iterator mesh=S_->mesh_begin();
+       mesh!=S_->mesh_end(); ++mesh) {
+    if (mesh->first == "surface_3d") {
+      // pass
+    } else if ((mesh->first == "surface") && surface_done) {
+      // pass
+    } else {
+      std::string plist_name = "Visualization "+mesh->first;
+      Teuchos::ParameterList vis_plist = parameter_list_.sublist(plist_name);
+      Teuchos::RCP<Visualization> vis =
+        Teuchos::rcp(new Visualization(vis_plist, comm_));
+      vis->set_mesh(mesh->second);
+      vis->CreateFiles();
+      visualization_.push_back(vis);
+    }
+  }
 }
 
 void Coordinator::read_parameter_list() {
@@ -126,7 +157,11 @@ void Coordinator::cycle_driver() {
   TimeStepManager tsm;
   // register times with the tsm
   // -- register visualization times
-  visualization_->RegisterWithTimeStepManager(tsm);
+  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+       vis!=visualization_.end(); ++vis) {
+    (*vis)->RegisterWithTimeStepManager(tsm);
+  }
+
   // -- register observation times
   //if (observations_) observations_->register_with_time_step_manager(TSM);
   // -- register the final time
@@ -145,7 +180,10 @@ void Coordinator::cycle_driver() {
   //  observations_->MakeObservations(*S_);
 
   // write visualization if requested at IC
-  S_->WriteVis(visualization_.ptr());
+  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+       vis!=visualization_.end(); ++vis) {
+    S_->WriteVis((*vis).ptr());
+  }
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -198,9 +236,22 @@ void Coordinator::cycle_driver() {
 
       // write visualization if requested
       // this needs to be fixed...
-      if (visualization_->DumpRequested(S_next_->cycle(), S_next_->time())) {
+      bool dump = false;
+      for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+           vis!=visualization_.end(); ++vis) {
+        if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
+          dump = true;
+        }
+      }
+      if (dump) {
         pk_->calculate_diagnostics(S_next_);
-        S_next_->WriteVis(visualization_.ptr());
+      }
+
+      for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+           vis!=visualization_.end(); ++vis) {
+        if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
+          S_next_->WriteVis((*vis).ptr());
+        }
       }
 
       S_next_->WriteCheckpoint(checkpoint_);
@@ -221,7 +272,12 @@ void Coordinator::cycle_driver() {
   // this needs to be fixed -- should not force, but ask if we want to checkpoint/vis at end
   S_next_->advance_cycle(); // hackery to make the vis stop whining
   pk_->calculate_diagnostics(S_next_);
-  S_next_->WriteVis(visualization_.ptr());
+
+  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+       vis!=visualization_.end(); ++vis) {
+    S_next_->WriteVis((*vis).ptr());
+  }
+
   S_next_->WriteCheckpoint(checkpoint_, true);
 
   // dump observations
