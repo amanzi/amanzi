@@ -113,6 +113,12 @@ if (BUILD_TESTS)
                         SOURCE test/Main.cc test/flow_darcy_2D.cpp
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
+        # Test: transient Darcy flow 
+        add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
+	                KIND int
+                        SOURCE test/Main.cc test/flow_darcy_dual2D.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+ 
         # Test: transient Darcy flow with a source
         add_amanzi_test(flow_darcy_well flow_darcy_well
 	                KIND int
