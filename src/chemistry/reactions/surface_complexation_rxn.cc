@@ -22,7 +22,7 @@ SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
   surface_site_.clear();
   surface_complexes_.clear();
-  dSx_dmi_.clear();
+  //dSx_dmi_.clear();
 }
 
 SurfaceComplexationRxn::SurfaceComplexationRxn(
@@ -68,9 +68,11 @@ void SurfaceComplexationRxn::UpdateSiteDensity(const double site_density) {
 }  // end UpdateSiteDensity()
 
 void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) {
+  // see pflotran source: surface_complexation.F90:694, subroutine RTotalSorbEqSurfCplx1
   const double site_density = (surface_site_[0]).SiteDensity();
 
   bool one_more = false;
+  double damping_factor = 1.0;
   int max_iterations = 5000;
   int iterations = 0;
   while (iterations < max_iterations) {
@@ -103,9 +105,14 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
             free_site_concentration;
       }
       double dfree_site_conc = residual / dresidual_dfree_site_conc;
-      free_site_concentration += dfree_site_conc;
+      if (iterations > 1000) {
+        // excessive iterations, try damping the update
+        damping_factor = 0.5;
+      }
+      free_site_concentration += damping_factor * dfree_site_conc;
       double tolerance = 1.e-12;
-      if (fabs(dfree_site_conc / free_site_concentration) < tolerance) {
+      double rel_change_in_free_site_conc = fabs(dfree_site_conc / free_site_concentration);
+      if (rel_change_in_free_site_conc < tolerance) {
         one_more = true;
       }
     } else {
@@ -126,6 +133,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
 }  // end Update()
 
 void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) {
+  // see pflotran source: surface_complexation.F90:825, subroutine RTotalSorbEqSurfCplx1
   for (std::vector<SurfaceComplex>::iterator srfcplx =
            surface_complexes_.begin();
        srfcplx != surface_complexes_.end(); srfcplx++) {
@@ -136,6 +144,8 @@ void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) 
 void SurfaceComplexationRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
     MatrixBlock* dtotal) {
+  // see pflotran source: surface_complexation.F90:773, subroutine RTotalSorbEqSurfCplx1
+
   // All referenced equations #s are from the pflotran chemistry implementation
   // document by Peter Lichtner
 
@@ -162,8 +172,8 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
   sum_nu_i_sq_Si /= surface_site_.at(0).free_site_concentration();
   double Sx_plus_sum_nu_i_sq_Si = 1. + sum_nu_i_sq_Si;
   for (unsigned int i = 0; i < num_primary_species; ++i) {
-    nu_li_nu_i_Si.at(i) /= Sx_plus_sum_nu_i_sq_Si;
     nu_li_nu_i_Si.at(i) *= -1.0;
+    nu_li_nu_i_Si.at(i) /= Sx_plus_sum_nu_i_sq_Si;
     // convert from dlogm to dm
     nu_li_nu_i_Si.at(i) /= primarySpecies.at(i).molality();
   }
@@ -177,12 +187,13 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
     for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
       int primary_species_id_i = srfcplx->species_id(icomp);
       // 2.3-47c converted to non-log form
-      double dSi_mi = dSi_mi = (srfcplx->stoichiometry(icomp) * surface_concentration /
+      double dSi_mi = (srfcplx->stoichiometry(icomp) * surface_concentration /
                                 primarySpecies.at(primary_species_id_i).molality()) +
           nu_li_nu_i_Si.at(icomp) * nui_Si_over_Sx;
       for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
         double dPsij_dmi = dSi_mi * srfcplx->stoichiometry(jcomp);
+        // NOTE: is this the correct i,j indexing...?
         dtotal->AddValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
       }
     }

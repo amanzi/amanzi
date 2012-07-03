@@ -1059,7 +1059,7 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
         surfaceComplexationRxns_.size()) {
       // we have a value from a previous solve, restore it.
       for (int r = 0; r < surfaceComplexationRxns_.size(); ++r) {
-        double value = components.surface_complex_free_site_conc.size();
+        double value = components.surface_complex_free_site_conc.at(r);
         surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
       }
     } else {
