@@ -126,19 +126,19 @@
           <ParameterList name="Water">
             <ParameterList name="H+">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.0028477959804128E-08"/>
+                <Parameter name="Value" type="double" value="1.6290737950863135E-05"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="HCO3-">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.6814172731518620E-03"/>
+                <Parameter name="Value" type="double" value="1.7348824177512681E-03"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Ca++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="5.0966768556202154E-04"/>
+                <Parameter name="Value" type="double" value="5.2312130065730166E-04"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
@@ -163,7 +163,7 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0089944593763638E-05, 1.0089944593763638E-05}"/>
+                <Parameter name="Values" type="Array double" value="{9.6641473107457617E-04, 9.6641473107457617E-04}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -171,7 +171,7 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{4.3761488391157231E-05, 4.3761488391157231E-05}"/>
+                <Parameter name="Values" type="Array double" value="{9.9999999902971649E-04, 9.9999999902971649E-04}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -179,7 +179,7 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.6832537203195516E-05, 1.6832537203195516E-05}"/>
+                <Parameter name="Values" type="Array double" value="{1.6792633971909330E-05, 1.6792633971909330E-05}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -238,7 +238,7 @@
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="calcite"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macro" type="string" value="Every_year"/>
+      <Parameter name="Time Macro" type="Array string" value="{Every_year}"/>
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_0.05_year"/> -->
     </ParameterList>
   </ParameterList>

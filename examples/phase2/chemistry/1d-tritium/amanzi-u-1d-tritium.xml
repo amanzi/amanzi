@@ -185,7 +185,7 @@
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="tritium"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macro" type="string" value="Every_year"/>
+      <Parameter name="Time Macro" type="Array string" value="{Every_year}"/>
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_0.05_year"/> -->
     </ParameterList>
   </ParameterList>
@@ -194,6 +194,7 @@
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="tritium.bgd" />
     <Parameter name="Verbosity" type="Array string" value="{verbose}" />
+<!--    <Parameter name="Verbosity" type="Array string" value="{verbose, warning, error, debug beaker}" /> -->
     <Parameter name="Activity Model" type="string" value="unit" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
