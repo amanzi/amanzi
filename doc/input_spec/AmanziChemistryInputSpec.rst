@@ -80,7 +80,7 @@ Minerals and other complexes follow the same convention as aqueous equilibrium c
 Example::
 
   <Minerals
-  # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
+  # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [cm^2 mineral / cm^3 bulk]
 
 
 Mineral Kinetics
