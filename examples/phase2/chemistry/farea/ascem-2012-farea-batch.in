@@ -169,7 +169,7 @@ noskip
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
 :      MINERAL Kaolinite
-      SITE >dong_kOH 205.25   : [mol/m^3]
+      SITE >dong_kOH 22.58   : [mol/m^3 bulk]
       COMPLEXES
         (>dong_kOH)2UO2+
         (>dong_kOH)2UO2CO3-
@@ -181,7 +181,7 @@ noskip
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
 :      MINERAL Goethite
-      SITE >dong_FeOH 344.98   : [mol/m^3]
+      SITE >dong_FeOH 5.52   : [mol/m^3 bulk]
       COMPLEXES
         (>dong_FeOH)2UO2+
         (>dong_FeOH)2UO2CO3-
@@ -193,7 +193,7 @@ noskip
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
 :      MINERAL Quartz
-      SITE >SiOH 6.158   : [mol/m^3]
+      SITE >SiOH 5.419   : [mol/m^3 bulk]
       COMPLEXES
         >SiOH2+
         >SiO-
@@ -202,7 +202,7 @@ noskip
     /
     ION_EXCHANGE_RXN
 :      MINERAL Kaolinite
-      CEC 24.986855814  : [mol/m^3]
+      CEC 2.75  : [mol/m^3 bulk]
       CATIONS
         Na+   1.0
         UO2++ 0.223872113857
@@ -283,7 +283,7 @@ TIME
 OUTPUT
   :times y 1.0 2.0 10.0 20.0 40.0 60.0
   PERIODIC TIME 1 y
-  FORMAT TECPLOT POINT
+  :FORMAT TECPLOT POINT
   FORMAT HDF5
   VELOCITIES
   MASS_BALANCE
@@ -326,9 +326,9 @@ CONSTRAINT background
     UO2++    1.25e-10   T
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
-    Quartz        0.88     5.258e3
-    Kaolinite     0.11     6.032e4
-    Goethite      0.016    6.732e3
+    Quartz        0.88      3262.3
+    Kaolinite     0.11     59093.9
+    Goethite      0.016    11076.3
     Schoepite     0.0      0.1
     Gibbsite      0.0      0.1
     Basaluminite  0.0      0.1
@@ -356,9 +356,9 @@ CONSTRAINT seepage
     UO2++    3.01e-5    T
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
-    Quartz        0.88     5.258e3
-    Kaolinite     0.11     6.032e4
-    Goethite      0.016    6.732e3
+    Quartz        0.88      3262.3
+    Kaolinite     0.11     59093.9
+    Goethite      0.016    11076.3
     Schoepite     0.0      0.1
     Gibbsite      0.0      0.1
     Basaluminite  0.0      0.1
