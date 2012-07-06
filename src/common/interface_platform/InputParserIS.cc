@@ -1546,8 +1546,8 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         if ( ic_for_region->isSublist("IC: Uniform Velocity") ) {
 	  Teuchos::Array<double> vel = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
 	  stt_mat.set<double>("Constant velocity x",vel[0]);
-	  if (spatial_dimension_>1) stt_mat.set<double>("Constant velocity y",vel[1]);
-	  if (spatial_dimension_>2) stt_mat.set<double>("Constant velocity z",vel[2]);
+	  if (spatial_dimension_>1) stt_mat.set<double>("Constant velocity y", vel[1]);
+	  if (spatial_dimension_>2) stt_mat.set<double>("Constant velocity z", vel[2]);
 	  
 	}
 
