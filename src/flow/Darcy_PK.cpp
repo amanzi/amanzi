@@ -474,7 +474,7 @@ void Darcy_PK::UpdateSpecificYield()
         int c2 = mfd3d.cell_get_face_adj_cell(c, f);
 
         if (specific_yield_wghost[c2] <= 0.0) {  // cell in the fully saturated layer
-          FS->ref_specific_yield()[c2] *= mesh_->face_area(f);
+          FS->ref_specific_yield()[c] *= mesh_->face_area(f);
           break;
         }
       }
