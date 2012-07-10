@@ -1,6 +1,6 @@
 # pflotran database preprocessing :
-#        date : 20120705  13   145144.530
-#       input : ascem-2012-farea-batch.in
+#        date : 20120710  13   144013.378
+#       input : ascem-2012-1d-farea-full.in
 
 <Primary Species
 H+  ;   9.00 ;   1.00 ;   1.01
@@ -14,7 +14,7 @@ Mg++  ;   8.00 ;   2.00 ;  24.30
 Na+  ;   4.00 ;   1.00 ;  22.99
 SiO2(aq)  ;   3.00 ;   0.00 ;  60.08
 SO4--  ;   4.00 ;  -2.00 ;  96.06
-tritium  ;   9.00 ;   0.00 ;   1.01
+Tritium  ;   9.00 ;   0.00 ;   1.01
 NO3-  ;   3.00 ;  -1.00 ;  62.00
 UO2++  ;   4.50 ;   2.00 ; 270.03
 
@@ -58,7 +58,7 @@ MgUO2(CO3)3-- =   3.00 H2O  -6.00 H+   3.00 CO2(aq)   1.00 Mg++   1.00 UO2++  ; 
 UO2OSi(OH)3+ =   2.00 H2O  -1.00 H+   1.00 SiO2(aq)   1.00 UO2++  ;    2.48100 ;    9.00000 ;    1.00000 ;  365.13500
 
 <General Kinetics
-  1.00 tritium <->  ;   1.00 tritium ;   1.78577E-09 ;  ;   0.00000E+00
+  1.00 Tritium <->  ;   1.00 Tritium ;   1.78577E-09 ;  ;   0.00000E+00
 
 <Minerals
 Schoepite =   3.00 H2O  -2.00 H+   1.00 UO2++  ;   4.84430E+00 ;   3.22058E+02 ;   6.60800E+01 ;   1.00000E+00
@@ -72,8 +72,8 @@ Goethite =   2.00 H2O  -3.00 H+   1.00 Fe+++  ;   1.75800E-01 ;   8.88537E+01 ; 
 
 <Mineral Kinetics
 Schoepite ; TST ; log10_rate_constant   3.01030E-01 moles/cm^2/sec 
-Kaolinite ; TST ; log10_rate_constant -12.967 moles/cm^2/sec  ; H+   7.77000E-01
-Gibbsite ; TST ; log10_rate_constant   -1.15000E+01 moles/cm^2/sec 
+Kaolinite ; TST ; log10_rate_constant     -12.967 moles/cm^2/sec  ; H+   7.77000E-01 
+Gibbsite ; TST ; log10_rate_constant  -1.15000E+01 moles/cm^2/sec 
 Jurbanite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
 Basaluminite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
 Opal ; TST ; log10_rate_constant  -1.21350E+01 moles/cm^2/sec 

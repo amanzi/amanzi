@@ -131,9 +131,11 @@ void Chemistry_PK::InitializeChemistry(void) {
   // finish setting up & testing the chemistry object
   try {
     chem_->set_debug(false);
+    chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in cell 0...\n");
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
     // solve for initial free-ion concentrations
+    chem_out->Write(kVerbose, "ChemistryPK: Initial speciation calculations in cell 0...\n");
     chem_->Speciate(&beaker_components_, beaker_parameters_);
     if (debug()) {
       chem_out->Write(kVerbose, "\nTest solution of initial conditions in cell 0:\n");
@@ -152,6 +154,7 @@ void Chemistry_PK::InitializeChemistry(void) {
   SetupAuxiliaryOutput();
 
   // now loop through all the cells and initialize
+  chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
   int num_cells = chemistry_state_->porosity()->MyLength();
   for (cell = 0; cell < num_cells; ++cell) {
     if (debug()) {
