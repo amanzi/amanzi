@@ -436,6 +436,7 @@ PorousMedia::setup_list()
   model_list["two-phase"] = 2;
   model_list["polymer"] = 3;
   model_list["richard"] = 4;
+  model_list["steady-saturated"] = 5;
 
 #if 0
   // bc_list
@@ -1834,10 +1835,16 @@ void  PorousMedia::read_comp()
 #else
                   ParmParse pps(prefix + "." + pNames[j]);
 #endif
-                  ppr.get(val_name.c_str(),vals[0]);          
+                  ppr.get(val_name.c_str(),vals[0]);    
+
                   phases_set[pNames[j]] = true;
               }
-
+	      
+	      // convert to atm with datum at atmospheric pressure
+	      for (int j=0; j<vals.size(); ++j) {
+		vals[j] = vals[j] / 1.01325e5 - 1.e0;
+	      }
+      
               int num_phases = phases_set.size();
               if (num_phases != num_phases_reqd) {
                   std::cerr << icname << ": Insufficient number of phases specified" << std::endl;

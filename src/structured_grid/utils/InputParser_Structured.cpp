@@ -230,6 +230,11 @@ namespace Amanzi {
                 prob_out_list.set("have_capillary",1);
                 prob_out_list.set("cfl",-1);
             }
+            else if (flow_mode == "Steady State Saturated") {
+                model_name = "steady-saturated";
+                prob_out_list.set("have_capillary",0);
+                prob_out_list.set("cfl",-1);
+            }
             else if (flow_mode == "Single-phase") {
                 model_name = "single-phase";
                 prob_out_list.set("do_simple",1);
@@ -379,20 +384,26 @@ namespace Amanzi {
             }
             else if (t_list.isSublist(init_to_steady_str))
             {
-                MyAbort("Initalize To Steady not yet completely implemented");
-
                 const ParameterList& tran_list = t_list.sublist(init_to_steady_str);
 
                 reqP.clear(); reqL.clear();
                 std::map<std::string,double> optP;
-                std::string Start_str =                 "Start";                    reqP.push_back(Start_str);
-                std::string Switch_str =                "Switch";                   reqP.push_back(Switch_str);
-                std::string End_str =                   "End";                      reqP.push_back(End_str);
-                std::string Steady_Init_Time_Step_str = "Steady Initial Time Step"; reqP.push_back(Steady_Init_Time_Step_str);
+                std::string Start_str = "Start"; reqP.push_back(Start_str);
+                std::string Switch_str = "Switch"; reqP.push_back(Switch_str);
+                std::string End_str = "End"; reqP.push_back(End_str);
+                std::string Steady_Init_Time_Step_str = "Steady Initial Time Step"; 
+		reqP.push_back(Steady_Init_Time_Step_str);
+                std::string Transient_Init_Time_Step_str = "Transient Initial Time Step"; 
+		reqP.push_back(Transient_Init_Time_Step_str);
 
                 // Set defaults for optional parameters
-                std::string Transient_Init_Time_Step_str = "Transient Initial Time Step";  optP[Transient_Init_Time_Step_str] = -1;
-                std::string Init_Time_Step_Mult_str =      "Initial Time Step Multiplier"; optP[Init_Time_Step_Mult_str]      = -1;
+                std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier"; optP[Init_Time_Step_Mult_str] = -1;
+
+                struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
+                struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
+		prob_out_list.set<double>(underscore("steady_max_pseudo_time"),tran_list.get<double>(Switch_str));
+		prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
+		prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
 
                 // Extract/set required parameters
                 PLoptions Topt(tran_list,reqL,reqP,true,false); 
@@ -1085,10 +1096,17 @@ namespace Amanzi {
                                 rsublist.set("porosity_dist","uniform");
                                 mtest["Porosity"] = true;
                             }
-                            else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform") {
+                            else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
+				     rlabel=="Intrinsic Permeability: Uniform") {
                                 Array<double> array_p(2);
-                                array_p[0] = rsslist.get<double>("Horizontal");
-                                array_p[1] = rsslist.get<double>("Vertical");
+				if (rlabel=="Intrinsic Permeability: Anisotropic Uniform") {
+				  array_p[1] = rsslist.get<double>("Vertical");
+				  array_p[0] = rsslist.get<double>("Horizontal");
+				}
+				else {
+				  array_p[0] = rsslist.get<double>("Value");
+				  array_p[1] = array_p[0];
+				}
                                 // convert from m^2 to mDa
                                 for (int k=0; k<2; k++) {
                                     array_p[k] /= 9.869233e-16;
@@ -1292,7 +1310,6 @@ namespace Amanzi {
                         }
                         else if (rlabel=="Density") {
                             rsublist.set<double>("density",rslist.get<double>("Density"));
-                            //rsublist.set("density",1e3);
                             mtest["Density"] = true;
                         }
                         else if (rlabel=="Cation Exchange Capacity") {
@@ -1312,15 +1329,27 @@ namespace Amanzi {
                     // check for complete
                     std::vector<std::string> region_check = remaining_false(mtest); 
                     if (region_check.size()) {
+		      for (int i=0; i<region_check.size(); ++i) {
+			if (region_check[i]=="Capillary_Pressure") {
+			  mtest[region_check[i]] = true;
+			  rsublist.set("cpl_type",0);
+			}
+			else if (region_check[i]=="Relative_Permeability") {
+			  mtest[region_check[i]] = true;
+			  rsublist.set("kr_type",0);
+			}
+		      }
+		      region_check = remaining_false(mtest); 
+		      if (region_check.size()) {
                         std::cerr << "Material not completely defined: " << label << std::endl;
                         std::cerr << "   unfilled: ";
                         for (int i=0; i<region_check.size(); ++i)
-                            std::cerr << region_check[i] << " ";
+			  std::cerr << region_check[i] << " ";
                         std::cerr << '\n';
                         throw std::exception();
-                    }
-
-                }
+		      }
+		    }
+		}
                 else {
 
 		    std::string sat_str = "Saturation Threshold For vg Kr";
@@ -1678,49 +1707,43 @@ namespace Amanzi {
             const std::string val_name="Value"; reqP.push_back(val_name);
             PLoptions opt(fPLin,nullList,reqP,true,true); 
             // FIXME: Assumes Water exists, and that this is what was intended....
-            std::string _name = underscore("Wate r");
+            std::string _name = underscore("Water");
             fPLout.set<double>(_name,fPLin.get<double>(val_name));
             fPLout.set<std::string>("type","saturation");
         }
 
 
-        void convert_ICPressure(const ParameterList& fPLin,
-                                const std::string&   Amanzi_type,
-                                ParameterList&       fPLout)
+        void convert_IC_ConstPressure(const ParameterList& fPLin,
+				      const std::string&   Amanzi_type,
+				      ParameterList&       fPLout)
         {
-	    const std::string phase_name="Phase";
-            const std::string val_name="Reference Value";
-            const std::string grad_name="Gradient Value";
-            const std::string ref_name="Reference Coordinate";
-            //const std::string vel_name="Aqueous Volumetric Flux";
+            Array<std::string> nullList, reqP;
+	    const std::string phase_name="Phase";reqP.push_back(phase_name);
+            const std::string val_name="Value";reqP.push_back(val_name);
+            PLoptions opt(fPLin,nullList,reqP,true,true);      
+	    fPLout.set<std::string>("type","pressure");
+	    fPLout.set<double>("val",fPLin.get<double>(val_name));
+	    fPLout.set<std::string>("phase",fPLin.get<std::string>(phase_name));
+        }
 
+        void convert_IC_LinPressure(const ParameterList& fPLin,
+				    const std::string&   Amanzi_type,
+				    ParameterList&       fPLout)
+        {
             Array<std::string> reqP, nullList;
-            reqP.push_back(val_name);
-            if (Amanzi_type == "IC: Linear Pressure") {
-	        reqP.push_back(phase_name);
-                reqP.push_back(grad_name);
-                reqP.push_back(ref_name);
-            }
-            //PLoptions opt(fPLin,nullList,reqP,true,false);  
+	    const std::string phase_name="Phase";reqP.push_back(phase_name);
+            const std::string rval_name="Reference Value";reqP.push_back(rval_name);
+            const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
+            const std::string ref_name="Reference Coordinate";reqP.push_back(ref_name);
             PLoptions opt(fPLin,nullList,reqP,true,true);  
     
-            fPLout.set<std::string>("type","hydrostatic");
-            //fPLout.set<std::string>("type","zero_total_velocity");
-            fPLout.set<double>("val",fPLin.get<double>(val_name));
-            if (Amanzi_type == "IC: Linear Pressure") {
-                const Array<double>& grad = fPLin.get<Array<double> >(grad_name);
-                const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
-                int coord = water_table.size()-1;
-                fPLout.set<double>("water_table_height",water_table[coord]); 
-                fPLout.set<double>("grad",grad[coord]);
-#if 0
-                double AqVolFlux = 0; 
-                if (fPLin.isParameter(vel_name)) {
-                    AqVolFlux = fPLin.get<double>(vel_name);
-                }
-                fPLout.set<double>("aqueous_vol_flux",AqVolFlux); 
-#endif
-            }
+	    fPLout.set<std::string>("type","hydrostatic");
+	    fPLout.set<double>("val",fPLin.get<double>(rval_name));
+	    const Array<double>& grad = fPLin.get<Array<double> >(grad_name);
+	    const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
+	    int coord = water_table.size()-1;
+	    fPLout.set<double>("water_table_height",water_table[coord]); 
+	    fPLout.set<double>("grad",grad[coord]);
         }
 
         void convert_ICFlow(const ParameterList& fPLin,
@@ -1847,10 +1870,13 @@ namespace Amanzi {
                 {
                     convert_ICSaturation(fPLin,Amanzi_type,fPLout);
                 }
-                else if ( (Amanzi_type == "IC: Uniform Pressure"
-                           || Amanzi_type == "IC: Linear Pressure") )
+                else if (Amanzi_type == "IC: Uniform Pressure")
                 {
-                    convert_ICPressure(fPLin,Amanzi_type,fPLout);
+                    convert_IC_ConstPressure(fPLin,Amanzi_type,fPLout);
+                }
+                else if ( Amanzi_type == "IC: Linear Pressure" )
+                {
+                    convert_IC_LinPressure(fPLin,Amanzi_type,fPLout);
                 }
                 else if ( Amanzi_type == "IC: Hydrostatic" )
                 {
@@ -1941,7 +1967,8 @@ namespace Amanzi {
 
         void convert_BCFlux(const ParameterList& fPLin,
                             const std::string&   Amanzi_type,
-                            ParameterList&       fPLout)
+                            ParameterList&       fPLout,
+			    StateDef&            stateDef)
         {
             // FIXME: Assumes that the flux specified is that of the Aqueous phase
             bool is_in_vol = fPLin.isParameter("Inward Volumetric Flux");
@@ -1974,14 +2001,7 @@ namespace Amanzi {
             reqP.clear(); reqP.push_back(val_name);
             const std::string time_name="Times"; reqP.push_back(time_name);
             const std::string form_name="Time Functions"; reqP.push_back(form_name);
-            const std::string rock_name = "Material Type at Boundary";
-            bool require_rock = false;
-            if (require_rock) {                
-                reqP.push_back(rock_name);
-            }
-    
             PLoptions opt(fPLin,reqL,reqP,false,true);
-    
     
             Array<double> times, fluxvals = fPLin.get<Array<double> >(val_name);
             Array<std::string> forms;
@@ -1992,8 +2012,10 @@ namespace Amanzi {
     
             // Convert mass flux to volumetric flux
             if (is_mass) {
-	        std::cerr << "Mass fluxes not yet supported" << std::endl;
-                throw std::exception();
+  	        double density = stateDef.getPhases()["Aqueous"].Density();
+		for (int i=0; i<fluxvals.size(); ++i) {
+		  fluxvals[i] *= 1/density;
+		}
             }
 
             // Convert to inward flux
@@ -2003,34 +2025,22 @@ namespace Amanzi {
                 }
             }
 
-            std::string rock_label;
-            if (require_rock) {
-                rock_label = fPLin.get<std::string>(rock_name);
-            }
-            else{ 
-                const Array<std::string>& optional_lists = opt.OptLists();
-                if (optional_lists.size() > 0) {
-            
-                    if (optional_lists.size()!=1 || optional_lists[0] != rock_name) {
-                        std::cerr << "BC: Flux - invalid optional arg(s): ";
-                        for (int i=0; i<optional_lists.size(); ++i) {
-                            std::cerr << "\"" << optional_lists[i] << "\" ";
-                        }
-                        std::cerr << std::endl;
-                    }
-                    else {
-                        rock_label = fPLin.get<std::string>(rock_name);
-                    }
-                }
-            }
+	    const Array<std::string>& optional_lists = opt.OptLists();
+	    if (optional_lists.size() > 0) {
+	      
+	      if (optional_lists.size()!=1) {
+		std::cerr << "BC: Flux - invalid optional arg(s): ";
+		for (int i=0; i<optional_lists.size(); ++i) {
+		  std::cerr << "\"" << optional_lists[i] << "\" ";
+		}
+		std::cerr << std::endl;
+	      }
+	    }
     
             fPLout.set<Array<double> >("aqueous_vol_flux",fluxvals);
             if (fluxvals.size() > 1) {
                 fPLout.set<Array<double> >("inflowtimes",fPLin.get<Array<double> >(time_name));
                 fPLout.set<Array<std::string> >("inflowfncs",fPLin.get<Array<std::string> >(form_name));
-            }
-            if (require_rock) {
-                fPLout.set<std::string>("rock",rock_label);
             }
             fPLout.set<std::string>("type","zero_total_velocity");
         }
@@ -2140,7 +2150,7 @@ namespace Amanzi {
                 }
                 else if (Amanzi_type == "BC: Flux")
                 {
-                    convert_BCFlux(fPLin,Amanzi_type,fPLout);
+		  convert_BCFlux(fPLin,Amanzi_type,fPLout,stateDef);
                 }
                 else if (Amanzi_type == "BC: No Flow")
                 {
@@ -2661,62 +2671,62 @@ namespace Amanzi {
 
             // cycle macros
             std::set<std::string> cycle_macros;
-            const ParameterList& clist = rlist.sublist("Cycle Macros");
-            ParameterList cmPL;
-            for (ParameterList::ConstIterator i=clist.begin(); i!=clist.end(); ++i) {
+	    Array<std::string> cma;
+	    if (rlist.isSublist("Cycle Macros")) {
+	      const ParameterList& clist = rlist.sublist("Cycle Macros");
+	      ParameterList cmPL;
+	      for (ParameterList::ConstIterator i=clist.begin(); i!=clist.end(); ++i) {
                 std::string label = underscore(clist.name(i));
                 const ParameterList& rslist = clist.sublist(clist.name(i));
                 Array<int> cycles, vals;
                 
                 ParameterList cPL;
                 for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
-                    const std::string& name = rslist.name(ii);
-                    
-                    if (name == "Cycles") {
-                        cycles = rslist.get<Array<int> >(name);
-                    }
-                    else if (name == "Start_Period_Stop") {
-                        vals = rslist.get<Array<int> >(name);
-                    }
-                    else {
-                        std::cerr << "Invalid parameter in cycle macro  \"" << name
-                                  << "\""  << std::endl;
-                        throw std::exception();
-                    }
-                    
-                    if (cycles.size()) {
-                        if (vals.size()) {
-                            std::cerr << "Cannot specify both cycle values and periods for cycle macro  \"" << name
-                                      << "\""  << std::endl;
-                            throw std::exception();
-                        }
-                        cPL.set<std::string>("type","cycles");
-                        cPL.set<Array<int> >("cycles",cycles);
-                    }
-                    else {
-                        if (vals.size()!=3) {
-                            std::cerr << "Incorrect number of values in cycle macro:  \"" << name
-                                      << "\""  << std::endl;
-                            throw std::exception();
-                        }
-                        cPL.set<std::string>("type","period");
-                        cPL.set<int>("start",vals[0]);
-                        cPL.set<int>("period",vals[1]);
-                        cPL.set<int>("stop",vals[2]);
-                    }
+		  const std::string& name = rslist.name(ii);
+                  
+		  if (name == "Cycles") {
+		    cycles = rslist.get<Array<int> >(name);
+		  }
+		  else if (name == "Start_Period_Stop") {
+		    vals = rslist.get<Array<int> >(name);
+		  }
+		  else {
+		    std::cerr << "Invalid parameter in cycle macro  \"" << name
+			      << "\""  << std::endl;
+		    throw std::exception();
+		  }
+		  
+		  if (cycles.size()) {
+		    if (vals.size()) {
+		      std::cerr << "Cannot specify both cycle values and periods for cycle macro  \"" << name
+				<< "\""  << std::endl;
+		      throw std::exception();
+		    }
+		    cPL.set<std::string>("type","cycles");
+		    cPL.set<Array<int> >("cycles",cycles);
+		  }
+		  else {
+		    if (vals.size()!=3) {
+		      std::cerr << "Incorrect number of values in cycle macro:  \"" << name
+				<< "\""  << std::endl;
+		      throw std::exception();
+		    }
+		    cPL.set<std::string>("type","period");
+		    cPL.set<int>("start",vals[0]);
+		    cPL.set<int>("period",vals[1]);
+		    cPL.set<int>("stop",vals[2]);
+		  }
                 }
                 cmPL.set(label,cPL);
                 cycle_macros.insert(label);
+	      }
+	      amr_list.set("cycle_macro",cmPL);
+	      
+	      for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
+                cma.push_back(*it);
+	      }
             }
-            amr_list.set("cycle_macro",cmPL);
-
-            Array<std::string> cma(cycle_macros.size());
-            int ccnt = 0;
-            for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
-                cma[ccnt++] = *it;
-            }
-            amr_list.set<Array<std::string> >("cycle_macros",cma);
-            
+	    amr_list.set<Array<std::string> >("cycle_macros",cma);
 
 
             // vis data
@@ -2888,73 +2898,75 @@ namespace Amanzi {
             // observation
             Array<std::string> arrayobs;
             std::string obs_str = "Observation Data";
-            const ParameterList& olist = rlist.sublist(obs_str);
-            ParameterList sublist;
-            std::string obs_file_str = "Observation Output Filename";
-            std::string obs_file="observation.out";
-            for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {                
+	    if (rlist.isSublist(obs_str)) {
+	      const ParameterList& olist = rlist.sublist(obs_str);
+	      ParameterList sublist;
+	      std::string obs_file_str = "Observation Output Filename";
+	      std::string obs_file="observation.out";
+	      for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {                
                 std::string label = olist.name(i);
                 const ParameterEntry& entry = olist.getEntry(label);
                 if (entry.isList()) {
-                    std::string _label = underscore(label);
-                    const ParameterList& rslist = olist.sublist(label);
-                    std::string functional = rslist.get<std::string>("Functional");
-                    std::string region_name = rslist.get<std::string>("Region");
-                    if (functional == "Observation Data: Integral") {
-                        sublist.set("obs_type","integral");
-                    }
-                    else if (functional == "Observation Data: Point")
+		  std::string _label = underscore(label);
+		  const ParameterList& rslist = olist.sublist(label);
+		  std::string functional = rslist.get<std::string>("Functional");
+		  std::string region_name = rslist.get<std::string>("Region");
+		  if (functional == "Observation Data: Integral") {
+		    sublist.set("obs_type","integral");
+		  }
+		  else if (functional == "Observation Data: Point")
                     {
-                        sublist.set("obs_type","point_sample");
-                        const ParameterList& lregion = 
-                            parameter_list.sublist("Regions").sublist(region_name);
-                        if (!lregion.isSublist("Region: Point"))
+		      sublist.set("obs_type","point_sample");
+		      const ParameterList& lregion = 
+			parameter_list.sublist("Regions").sublist(region_name);
+		      if (!lregion.isSublist("Region: Point"))
                         {
-                            std::cerr << label << " is a point observation and "
-                                      << region_name << " is not a point region.\n";
-                            throw std::exception();
+			  std::cerr << label << " is a point observation and "
+				    << region_name << " is not a point region.\n";
+			  throw std::exception();
                         }
                     }
-                    sublist.set("region",region_name);
+		  sublist.set("region",region_name);
 
-                    const std::string& timeMacro = rslist.get<std::string>("Time Macro");
-                    if (time_macros.find(timeMacro) == time_macros.end()) {
-                        std::cerr << "Unrecognized time macro: \"" << timeMacro
-                                  << "\" for observation data: \"" << label << "\"" << std::endl;
-                        throw std::exception();                        
-                    }
-                    else {
-                        sublist.set("time_macro",timeMacro);
-                    }
+		  const std::string& timeMacro = rslist.get<std::string>("Time Macro");
+		  if (time_macros.find(timeMacro) == time_macros.end()) {
+		    std::cerr << "Unrecognized time macro: \"" << timeMacro
+			      << "\" for observation data: \"" << label << "\"" << std::endl;
+		    throw std::exception();                        
+		  }
+		  else {
+		    sublist.set("time_macro",timeMacro);
+		  }
 	  
-                    const std::string& variable = rslist.get<std::string>("Variable");
-                    std::string _variable = underscore(variable);
-                    bool found = false;
-                    for (int k=0; k<user_derive_list.size() && !found; ++k) {
-                        if (_variable == user_derive_list[k]) {
-                            found = true;
-                        }
-                    }
-                    if (!found) {
-                        MyAbort(variable + " is not a valid derive variable name");
-                    }
+		  const std::string& variable = rslist.get<std::string>("Variable");
+		  std::string _variable = underscore(variable);
+		  bool found = false;
+		  for (int k=0; k<user_derive_list.size() && !found; ++k) {
+		    if (_variable == user_derive_list[k]) {
+		      found = true;
+		    }
+		  }
+		  if (!found) {
+		    MyAbort(variable + " is not a valid derive variable name");
+		  }
 
-                    sublist.set<std::string>("field",_variable);
+		  sublist.set<std::string>("field",_variable);
 
-                    obs_list.set(_label,sublist);
-                    arrayobs.push_back(_label);
+		  obs_list.set(_label,sublist);
+		  arrayobs.push_back(_label);
                 }
                 else {
-                    if (label == obs_file_str) {
-                        obs_file = underscore(olist.get<std::string>(obs_file_str));
-                    }
-                    else {
-                        MyAbort("Unrecognized option under \""+obs_str+"\": \""+label+"\"" );
-                    }
+		  if (label == obs_file_str) {
+		    obs_file = underscore(olist.get<std::string>(obs_file_str));
+		  }
+		  else {
+		    MyAbort("Unrecognized option under \""+obs_str+"\": \""+label+"\"" );
+		  }
                 }
-            }
-            obs_list.set("observation",arrayobs);
-        }
+	      }
+	      obs_list.set("observation",arrayobs);
+	    }
+	}
 
         //
         // convert parameterlist to format for structured code

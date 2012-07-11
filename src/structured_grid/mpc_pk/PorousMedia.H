@@ -387,6 +387,8 @@ public:
   void advance_multilevel_richard  (Real time,
 				    Real dt);
 #endif
+  void advance_multilevel_saturated (Real time,
+				     Real dt);
 
   void advance_tracer  (Real time,
 			Real dt);
@@ -1005,6 +1007,9 @@ public:
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
   MultiFab* Porosity() {return rock_phi;}
   MultiFab* KappaEC() {return kpedge;}
+
+  void set_vel_from_bcs(Real      time,
+			MultiFab* vel);
 
 protected:
 
