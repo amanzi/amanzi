@@ -2953,7 +2953,6 @@ PorousMedia::advance_multilevel_richard (Real time,
       {
 	// Solve the richard equation for the given time step.  
 	// Try with increasing smaller timestep if it fails.
-
 	// Save the initial state 
 	for (int lev=0;lev<nlevs;lev++)
 	  {
@@ -2981,24 +2980,8 @@ PorousMedia::advance_multilevel_richard (Real time,
 	    bool cont = nld.AdjustDt(dt_iter,ret,dt_new); 
 	    if (ret == RichardNLSdata::RICHARD_SUCCESS || dt_new <= t_eps || iter > max_iter)
 	      continue_iterations = false;
-	    else	
-	      {
-		for (int lev=0;lev<nlevs;lev++)
-		  {
-		    PorousMedia&    fine_lev   = getLevel(lev);
-		    if (do_richard_sat_solve)
-		      {
-			MultiFab& S_lev = fine_lev.get_new_data(State_Type);
-			MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
-		      }
-		    else
-		      {
-			MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
-			MultiFab::Copy(P_lev,nld.initialState[lev],0,0,1,1);
-		      }
-		  }
-		dt_iter = dt_new;
-	      }
+	    else
+	      dt_iter = dt_new;
 
 	    if (verbose > 0 && ParallelDescriptor::IOProcessor())
 	      std::cout << "MULTILEVEL ADVANCE INNER STEP: Iter " << iter++ 
@@ -3023,17 +3006,48 @@ PorousMedia::advance_multilevel_richard (Real time,
 		    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
 					 fine_lev.u_macG_trac); 
 		  }
-	  
 		fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
+
+		
 		if (do_tracer_transport && ntracers > 0)
 		  {
 		    int ltracer = ncomps+ntracers-1;
-		    fine_lev.tracer_advection(fine_lev.u_macG_trac,dt,ncomps,ltracer,true);
-		  }
 
-		// predict the next time step based on cfl on transport
-		fine_lev.predictDT(fine_lev.u_macG_trac);
-		dt_new = std::min(dt_eig,dt_new);
+		    bool cont_tracer_advection = true;
+		    Real t_tracer = 0.;
+
+		    fine_lev.predictDT(fine_lev.u_macG_trac);
+		    dt_eig = std::min(dt_eig,dt_iter);
+
+
+		    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+		    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+		    MultiFab Stmp(grids,1,1); 
+		    for (int i=ncomps;i<=ltracer;i++)
+		      {
+			MultiFab::Copy(Stmp,S_old,i,0,1,1);
+			MultiFab::Multiply(Stmp,S_old,0,0,1,1);
+			Stmp.divide(S_new,0,1,1);
+			MultiFab::Copy(S_old,Stmp,0,i,1,1);
+		      }
+		    MultiFab::Copy(S_old,S_new,0,0,1,1);
+
+		    while (cont_tracer_advection)
+		      {
+			t_tracer += dt_eig;
+			fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_eig,ncomps,ltracer,true);
+			
+			if (t_tracer < dt_iter)
+			  {
+			    dt_eig = std::min(dt_eig,dt_iter-t_tracer);	
+			    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+			    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+			    MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
+			  }
+			else
+			  cont_tracer_advection = false;
+		      }
+		  }
 	      }
 	  }
 
@@ -3059,18 +3073,12 @@ PorousMedia::advance_multilevel_saturated (Real time,
 					   Real dt)
 {
   // 
-  // Time stepping for saturated flow 
-  // We will do subcycling if the time step is too big and 
-  // and reset the subsequent time step to the smller one.
+  // Time stepping for saturated flow with subcycling
   //
 
   if (level == 0) {
     int finest_level = parent->finestLevel();
     int nlevs = finest_level + 1;
-    PMAmr* pm_amr = dynamic_cast<PMAmr*>(parent);
-    if (!pm_amr) 
-      BoxLib::Abort("Bad cast in PorousMedia::advance_multilevel_richard");
-    RichardNLSdata nld(0,nlevs,pm_amr);
     
     Real cur_time = time;
     Array<Real> dt_save(nlevs);
@@ -3084,66 +3092,67 @@ PorousMedia::advance_multilevel_saturated (Real time,
 	dt_save[k] = parent->getLevel(k).get_state_data(0).curTime()
 	  - getLevel(k).get_state_data(0).prevTime();
       }
-    
-    Real dt_iter = dt;
-    Real t_max = time+dt;
-    int  k_max = 10;
-    Real t_eps = 1.e-8*dt_iter;
 
-    // Set velocity from bc at tmax
-    for (int lev = 0; lev <= parent->finestLevel(); lev++)
+    // Subcycle each level independently
+    for (int lev=0; lev<nlevs; lev++)
       {
-	PorousMedia& pm_lev = getLevel(lev);
-	pm_lev.set_vel_from_bcs(t_max,pm_lev.UMac_Curr());
-      }
+	PorousMedia& fine_lev = getLevel(lev);	
 
-    Real t = time;
-    int  k = 0;
-    bool continue_subtimestep = (k < k_max) && (t < t_max);
-    bool continue_iterations  = (dt_iter > t_eps);
+	// Set velocity (u_mac_curr) from bc at t+dt
+	fine_lev.set_vel_from_bcs(time+dt,fine_lev.u_mac_curr);
 
-    Real dt_new = dt_iter;
-    while(continue_subtimestep) 
-      {
-	for (int lev=0; lev<nlevs; lev++)
+	if (lev == 0) 
+	  fine_lev.create_umac_grown(fine_lev.u_mac_curr,
+				     fine_lev.u_macG_trac);
+	else 
 	  {
-	    PorousMedia& fine_lev = getLevel(lev);  		
-	    
-	    if (lev == 0) 
-	      fine_lev.create_umac_grown(fine_lev.u_mac_curr,
-					 fine_lev.u_macG_trac);
-	    else 
-	      {
-		PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-		fine_lev.GetCrseUmac(u_macG_crse,time);
-		fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
-					   fine_lev.u_macG_trac); 
-	      }
-	    
-	    fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
-	    if (do_tracer_transport && ntracers > 0)
-	      {
-		int ltracer = ncomps+ntracers-1;
-		fine_lev.tracer_advection(fine_lev.u_macG_trac,dt,ncomps,ltracer,true);
-	      }
-	    
-	    // predict the next time step based on cfl on transport
-	    fine_lev.predictDT(fine_lev.u_macG_trac);
-	    dt_new = std::min(dt_eig,dt_new);
+	    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+	    fine_lev.GetCrseUmac(u_macG_crse,time);
+	    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
+				       fine_lev.u_macG_trac); 
 	  }
 	
-	k++;
-	t = t + dt_iter;
-	if (verbose > 0 &&  ParallelDescriptor::IOProcessor())
-	  std::cout << "MULTILEVEL ADVANCE SUBCYCLE: Iter: " << k 
-		    << " Current time: " << t 
-		    << " Current time step: " << dt_iter 
-		    << " Next time step " <<  dt_new << std::endl;
-	
-	dt_iter = std::min(dt_new, t_max - t);
-	continue_subtimestep =  (dt_iter > t_eps) && (k < k_max) && (t < t_max);
+	fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
+
+	if (do_tracer_transport && ntracers > 0)
+	  {
+	    int ltracer = ncomps+ntracers-1;
+	    
+	    bool cont_tracer_advection = true;
+	    Real t_tracer = 0.;
+	    
+	    fine_lev.predictDT(fine_lev.u_macG_trac);
+	    dt_eig = std::min(dt_eig,dt);
+	    	    
+	    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+	    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+	    MultiFab Stmp(grids,1,1); 
+	    for (int i=ncomps;i<=ltracer;i++)
+	      {
+		MultiFab::Copy(Stmp,S_old,i,0,1,1);
+		MultiFab::Multiply(Stmp,S_old,0,0,1,1);
+		Stmp.divide(S_new,0,1,1);
+		MultiFab::Copy(S_old,Stmp,0,i,1,1);
+	      }
+	    MultiFab::Copy(S_old,S_new,0,0,1,1);
+	    
+	    while (cont_tracer_advection)
+	      {
+		t_tracer += dt_eig;
+		fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_eig,ncomps,ltracer,true);
+		
+		if (t_tracer < dt)
+		  {
+		    dt_eig = std::min(dt_eig,dt-t_tracer);	
+		    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+		    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+		    MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
+		  }
+		else
+		  cont_tracer_advection = false;
+	      }
+	  }
       }
-    dt_eig = dt_new;
   }
 }
 
