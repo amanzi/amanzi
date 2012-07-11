@@ -1,5 +1,7 @@
 #include <MFTower.H>
 #include <Layout.H>
+#include <Utility.H>
+#include <VisMF.H>
 #include <MFTOWER_F.H>
 
 MFTower::MFTower(const Layout&    _layout,
@@ -837,3 +839,67 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
     }
 }
 
+void 
+MFTower::SetVal(Real     val,
+		int      sComp,
+		int      nComp)
+{
+    const Layout& layout = GetLayout();
+    for (int lev=0; lev<nLevs; ++lev)
+    {
+        mft[lev].setVal(val,sComp,nComp);
+    }
+}
+
+
+void
+MFTower::Write(const std::string& fileName) const
+{
+    std::string FullPath = fileName;
+    if (!FullPath.empty() && FullPath[FullPath.length()-1] != '/')
+        FullPath += '/';
+    
+    if (ParallelDescriptor::IOProcessor())
+        if (!BoxLib::UtilCreateDirectory(FullPath, 0755))
+            BoxLib::CreateDirectoryFailed(FullPath);
+    //
+    // Force other processors to wait till directory is built.
+    //
+    ParallelDescriptor::Barrier();
+    for (int lev=0; lev<nLevs; ++lev) {
+        std::string FullPath = fileName;
+        if (!FullPath.empty() && FullPath[FullPath.length()-1] != '/')
+        {
+            FullPath += '/';
+        }
+        std::string LevelPath = FullPath + "MFTower_Level_";
+        LevelPath = BoxLib::Concatenate(LevelPath,lev,1);
+        
+        if (ParallelDescriptor::IOProcessor()) {
+            if (!BoxLib::UtilCreateDirectory(LevelPath, 0755)) {
+                BoxLib::CreateDirectoryFailed(LevelPath);
+            }
+        }
+        ParallelDescriptor::Barrier();
+
+        LevelPath += '/';
+	std::string LevelPathData = LevelPath + "data";
+	VisMF::Write((*this)[lev],LevelPathData);
+    }
+
+    if (ParallelDescriptor::IOProcessor()) {
+        std::string MiscPath = FullPath + "miscData.dat";
+        std::ofstream os; os.open(MiscPath.c_str());
+        os << "Number of Levels: " << nLevs << '\n';
+        os << "Refinement Ratios: ";
+        for (int lev=1; lev<nLevs; ++lev) {
+            os << layout.RefRatio()[lev-1] << " ";
+        }
+        os << '\n';
+        os << "Grid Arrays: " << '\n';
+        for (int lev=0; lev<nLevs; ++lev) {
+            os << layout.GridArray()[lev] << '\n';
+        }
+        os.close();
+    }
+}

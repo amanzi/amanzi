@@ -31,6 +31,8 @@ struct MFTower
     Real norm() const;
     const Layout& GetLayout() const;
     const IndexType& ixType() const;
+
+    void Write(const std::string& fileName) const;
  
     static void CCtoECgrad(PArray<MFTower>& mft_ec,
                            const MFTower&   mft_cc,
@@ -50,6 +52,10 @@ struct MFTower
                             int      sComp=0,
                             int      nComp=1);
     
+    void SetVal(Real     val,
+		int      sComp=0,
+		int      nComp=1);
+  
     static IndexType EC[BL_SPACEDIM], CC, NC;
 
 protected:

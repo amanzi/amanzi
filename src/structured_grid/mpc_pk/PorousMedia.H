@@ -27,6 +27,8 @@
 #include <RegionData.H>
 
 #include <PMAmr.H>
+class RichardSolver;
+#include <RichardSolver.H>
 
 #ifdef AMANZI
 #include "simple_thermo_database.hh"
@@ -115,6 +117,94 @@ protected:
     PArray<Region> regions;
 };
 
+struct RichardNLSdata {
+  enum Reason
+  {
+      RICHARD_SUCCESS, 
+      RICHARD_NONLINEAR_FAIL,
+      RICHARD_LINEAR_FAIL
+  };
+
+  RichardNLSdata(int slev, int nlevs, PMAmr* amrp);
+  void SetMaxNewtonIterations(int max_iter);
+  void SetMaxJacobianReuse(int max_num_reuse);
+  void SetMaxConsecutiveFails(int max_num);
+  void SetDtRetryFactor(Real factor);
+  void SetMaxConsecutiveFails2(int max_num);
+  void SetDtRetryFactor2(Real factor);
+  void SetDtRetryFactorF(Real factor);
+  void SetMaxConsecutiveErrIncrease(int max_num);
+  void SetConsecutiveErrIncreaseDtReduction(Real factor);
+
+  void SetMaxNewtonIterationsForDt(int max_iter);
+  void SetMaxConsecutiveSuccess(int max_num);
+  void SetDtIncreaseFactor(Real factor);
+  void SetMinNewtonIterationsForDt(int max_iter);
+  void SetDtIncreaseFactor2(Real factor);
+  void SetMinNewtonIterationsForDt2(int max_iter);
+  void SetDtReductionFactor(Real factor);
+
+  bool UpdateJacobian(int lev);
+  void ResetJacobianCounter(int lev);
+  void ResetJacobianCounter();
+  int NLIterationsTaken() {return nl_iterations_taken;}
+  int MaxNLIterations() {return max_nl_iterations;}
+  void operator++() {nl_iterations_taken++;}
+  void operator++(int) {nl_iterations_taken++;}
+  void SetNLIterationsTaken(int iters);
+  void ResetCounters();
+
+  bool AdjustDt(Real                dt, 
+		Reason              nl_solver_status, 
+		Real                abs_err, 
+		Real                rel_err, 
+		Real&               new_dt); // Note: return bool for whether run should stop
+      
+  bool AdjustDt(Real                dt, 
+		Reason              nl_solver_status, 
+		Real&               new_dt); // Note: return bool for whether run should stop
+
+  Array < PArray <MultiFab> > Hcoeffs;
+  Array < PArray <MultiFab> > Jacobian;
+  PArray <MultiFab>  DAlpha;
+  Array <MultiFab*> velPhase;
+  PArray <MultiFab>  initialState;
+
+private:
+  void Build();
+  int start_level, end_level;
+  int max_num_Jacobian_reuse;
+  Array<int> num_Jacobian_reuses_remaining;
+  int max_nl_iterations, nl_iterations_taken;
+  Real max_nl_residual_norm, nl_residual_norm; 
+
+  int max_num_consecutive_success, num_consecutive_success;
+  int max_num_consecutive_failures_1, num_consecutive_failures_1;
+  int max_num_consecutive_failures_2, num_consecutive_failures_2;
+  int max_num_consecutive_increases, num_consecutive_increases;
+  Real consecutive_increase_reduction_factor;
+  int min_nl_iterations_for_dt, min_nl_iterations_for_dt_2, max_nl_iterations_for_dt;
+  Real time_step_increase_factor, time_step_increase_factor_2, time_step_reduction_factor;
+  Real time_step_retry_factor, time_step_retry_factor_2, time_step_retry_factor_f;
+  bool last_chance;
+  Real prev_abs_err;
+  bool first;
+
+  Array<PArray<MultiFab> > ktmp; // Currently maintains its own copy of this, should be fixed
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew;
+  PArray<MFTower> Kappa, DarcyVelocity;
+  Vec RhsV, SolnV;
+  PMAmr* pm_amr;
+
+  SNES           snes;
+  ISColoring     iscoloring;
+  MatFDColoring  matfdcoloring;
+
+  Array<Real> gravity;
+  Array<Real> density;
+  MFTFillPatch* mftfp;
+
+};
 
 class PorousMedia
   :
@@ -124,79 +214,6 @@ public:
   friend class MacProj;
   friend class Diffusion;
   friend class Observation;
-
-  enum Reason
-  {
-      RICHARD_SUCCESS, 
-      RICHARD_NEWTON_FAIL,
-      RICHARD_LINEAR_FAIL
-  };
-
-    struct RichardNLSdata {
-        RichardNLSdata(int slev, int nlevs, Amr* amrp);
-        void SetMaxNewtonIterations(int max_iter);
-        void SetMaxJacobianReuse(int max_num_reuse);
-        void SetMaxConsecutiveFails(int max_num);
-        void SetDtRetryFactor(Real factor);
-        void SetMaxConsecutiveFails2(int max_num);
-        void SetDtRetryFactor2(Real factor);
-        void SetDtRetryFactorF(Real factor);
-        void SetMaxConsecutiveErrIncrease(int max_num);
-        void SetConsecutiveErrIncreaseDtReduction(Real factor);
-
-        void SetMaxNewtonIterationsForDt(int max_iter);
-        void SetMaxConsecutiveSuccess(int max_num);
-        void SetDtIncreaseFactor(Real factor);
-        void SetMinNewtonIterationsForDt(int max_iter);
-        void SetDtIncreaseFactor2(Real factor);
-        void SetMinNewtonIterationsForDt2(int max_iter);
-        void SetDtReductionFactor(Real factor);
-
-        bool UpdateJacobian(int lev);
-        void ResetJacobianCounter(int lev);
-        void ResetJacobianCounter();
-        int NLIterationsTaken() {return nl_iterations_taken;}
-        int MaxNLIterations() {return max_nl_iterations;}
-        void operator++() {nl_iterations_taken++;}
-        void operator++(int) {nl_iterations_taken++;}
-        void ResetCounters();
-
-        bool AdjustDt(Real                dt, 
-                      PorousMedia::Reason nl_solver_status, 
-                      Real                abs_err, 
-                      Real                rel_err, 
-                      Real&               new_dt); // Note: return bool for whether run should stop
-      
-        bool AdjustDt(Real                dt, 
-                      PorousMedia::Reason nl_solver_status, 
-                      Real&               new_dt); // Note: return bool for whether run should stop
-        
-        Array < PArray <MultiFab> > Hcoeffs;
-        Array < PArray <MultiFab> > Jacobian;
-        PArray <MultiFab>  DAlpha;
-        Array <MultiFab*> velPhase;
-        PArray <MultiFab>  initialState;
-
-    private:
-        void Build(Amr* amrp);
-        int start_level, end_level;
-        int max_num_Jacobian_reuse;
-        Array<int> num_Jacobian_reuses_remaining;
-        int max_nl_iterations, nl_iterations_taken;
-        Real max_nl_residual_norm, nl_residual_norm; 
-
-        int max_num_consecutive_success, num_consecutive_success;
-        int max_num_consecutive_failures_1, num_consecutive_failures_1;
-        int max_num_consecutive_failures_2, num_consecutive_failures_2;
-        int max_num_consecutive_increases, num_consecutive_increases;
-        Real consecutive_increase_reduction_factor;
-        int min_nl_iterations_for_dt, min_nl_iterations_for_dt_2, max_nl_iterations_for_dt;
-        Real time_step_increase_factor, time_step_increase_factor_2, time_step_reduction_factor;
-        Real time_step_retry_factor, time_step_retry_factor_2, time_step_retry_factor_f;
-        bool last_chance;
-        Real prev_abs_err;
-        bool first;
-    };
 
     RichardNLSdata BuildInitNLS();
 
@@ -568,16 +585,19 @@ public:
   void diff_capillary_update   (Real dt,
 				int  corrector,
 				MultiFab* u_mac = 0);
+#ifdef BL_USE_PETSC
+  RichardNLSdata::Reason richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNLSdata& nl_data);
+#endif
 
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
-  PorousMedia::Reason richard_scalar_update (Real dt, 
-                                  int& total_nwt_iter,
-                                  MultiFab* u_mac = 0);
+  RichardNLSdata::Reason richard_scalar_update (Real dt, 
+						int& total_nwt_iter,
+						MultiFab* u_mac = 0);
 
-  PorousMedia::Reason richard_composite_update (Real dt, 
-                                                RichardNLSdata& nl_data);
+  RichardNLSdata::Reason richard_composite_update (Real dt, 
+						   RichardNLSdata& nl_data);
 
   void richard_init_to_steady();
 
@@ -820,6 +840,9 @@ public:
   //
   void calc_richard_alpha (MultiFab*     alpha,
 			   const Real    time);
+
+  void calc_richard_alpha (MultiFab*       alpha,
+			   const MultiFab& S) const;
   //
   // Calculate divergence of velocity boundary condition 
   //
@@ -976,6 +999,12 @@ public:
   static int model;
 
   PMAmr* PMParent();
+
+  MultiFab* UMac_Prev() {return u_mac_prev;}
+  MultiFab* UMac_Curr() {return u_mac_curr;}
+  MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
+  MultiFab* Porosity() {return rock_phi;}
+  MultiFab* KappaEC() {return kpedge;}
 
 protected:
 

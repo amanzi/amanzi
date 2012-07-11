@@ -27,7 +27,6 @@
 #endif
 
 #include <MFTower.H>
-#include <Richard.H>
 
 #if defined(BL_OSF1)
 #if defined(BL_USE_DOUBLE)
@@ -1908,6 +1907,31 @@ Diffusion::richard_iter_p (Real                   dt,
   }
 }
 
+#if 0
+PetscErrorCode FormFunction(SNES snes,Vec x,Vec f,void *dummy)
+{
+    PetscErrorCode ierr; 
+    RichardNLSdata* nl_data = static_cast<RichardNLSdata*>(dummy);
+    if (!nl_data) {
+        BoxLib::Abort("Bad cast in FormFunction");
+    }
+    Layout& layout = nl_data->GetLayout();
+    MFTower& xMFT = nl_data->GetPressure();
+    MFTower& fMFT = nl_data->GetResidual();
+
+    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+    ierr = layout.VecToMFTower(fMFT,f,0); CHKPETSC(ierr);
+
+    Real time = nl_data->Time();
+    Real dt = nl_data->Dt();
+    nl_data->GetRichardOp().DpDtResidual(fMFT,xMFT,time,dt);
+
+    ierr = layout.MFTowerToVec(x,xMFT,0); CHKPETSC(ierr);
+    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+
+    return 0;
+}
+#endif
 void
 Diffusion::richard_composite_iter_p (Real                      dt,
 				     int                       nlevs,
@@ -1920,7 +1944,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 				     Array<PArray<MultiFab> >& beta,
 				     Array<PArray<MultiFab> >& beta_dp,
                                      Array<MultiFab*>&         umac,
-				     const bool               update_jac,
+				     const bool                update_jac,
 				     const bool                do_upwind,
                                      Diffusion::NewtonStepInfo& status)
 {
@@ -1956,6 +1980,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
   // Build some handy pointer arrays, and allocate work space for Soln, Rhs
   PArray<MultiFab> Snew(nlevs,PArrayNoManage);
+  PArray<MultiFab> Sold(nlevs,PArrayNoManage);
+  PArray<MultiFab> Porosity(nlevs,PArrayNoManage);
   PArray<MultiFab> Pnew_p(nlevs,PArrayNoManage);
   PArray<MultiFab> lambda(nlevs,PArrayNoManage);
   Array<MultiFab*> Rhs_p(Rhs.size());
@@ -1975,7 +2001,9 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       MultiFab& P = pm[lev].get_new_data(Press_Type);
       Pnew_p.set(lev,&P);
       Snew.set(lev,&S); 
+      Sold.set(lev,&(pm[lev].get_old_data(State_Type))); 
       lambda.set(lev,pm[lev].lambdap1_cc);
+      Porosity.set(lev,pm[lev].rock_phi);
       Snew_p[lev] = &(Snew[lev]);
 
       bav[lev] = S.boxArray();
@@ -1996,8 +2024,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
       Soln.set(lev, new MultiFab(bav[lev],1,1));
       Soln_p[lev] = &(Soln[lev]);
-
-     
     }
 
   // FIXME: Should rather do this with a modified getBndryData
@@ -2031,7 +2057,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 	pm[lev].calc_richard_jac(beta_ldp[lev].dataPtr(),&(dalpha[lev]),&(lambda[lev]),umac[lev],
 				 cur_time,dt,0,do_upwind,false);
     }
- 
+
   MGT_Solver mgt_solver = getOp(0,nlevs,geom,bav,dmv, xa, xb,cur_time,
 				visc_bndry,bc,true);
   mgt_solver.set_maxorder(2);
@@ -2059,8 +2085,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       Real final_resnorm;
 
       bool use_petsc_result = true;
-
-      //bool use_petsc_result = false;
       BL_ASSERT(pm_parent);
 
       Layout& layout = pm_parent->GetLayout();
@@ -2071,35 +2095,38 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       MFTower RhsMFT(layout,Rhs);
       MFTower SolnMFT(layout,Soln);
 
-#if 0
       IndexType ccType = IndexType(IntVect::TheZeroVector());
       MFTower PnewMFT(layout,Pnew_p);
-      MFTower PoldMFT(layout,ccType,1,0);
-      MFTower SatMFT(layout,ccType,1,1);
+      MFTower RhoSatOldMFT(layout,Sold);
+      MFTower RhoSatNewMFT(layout,Snew);
+      MFTower PorosityMFT(layout,Porosity);
       MFTower LambdaMFT(layout,ccType,1,1);
-      PArray<MFTower> DarcyVelocity(BL_SPACEDIM,PArrayManage);
+      PArray<MFTower> DarcyVelocity(BL_SPACEDIM,PArrayNoManage);
+      PArray<MFTower> KappaMFT(BL_SPACEDIM,PArrayNoManage);
+      Array<PArray<MultiFab> > ktmp(BL_SPACEDIM); // TODO: figure out why the ba on this is weird
+      PArray<MultiFab> utmp(BL_SPACEDIM,PArrayNoManage);
       for (int d=0; d<BL_SPACEDIM; ++d) {
-          DarcyVelocity.set(d, new MFTower(layout,IndexType(BoxLib::BASISV(d)),1,0));
+	ktmp[d].resize(nlevs,PArrayManage);
+	for (int lev=0; lev<nlevs; ++lev) {
+	  BoxArray ba = BoxArray(LambdaMFT[lev].boxArray()).surroundingNodes(d);
+	  ktmp[d].set(lev, new MultiFab(ba,1,0)); ktmp[d][lev].copy(pm[lev].kpedge[d]);
+	  //ktmp.set(lev,&(pm[lev].kpedge[d]));
+	  utmp.set(lev,&(umac[lev][d]));
+	}
+	KappaMFT.set(d,new MFTower(layout,ktmp[d]));
+	DarcyVelocity.set(d, new MFTower(layout,utmp));
+	//ktmp.clear();
+	utmp.clear();
       }
-      
+
       if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
           BoxLib::Abort("MFT incompatible with layout");
       }
 
-      int pressure_maxorder = 4;
-      MFTFillPatch mftfp(layout);
-      RichardContext richardContext(*pm_parent,mftfp,PoldMFT,SatMFT,LambdaMFT,
-                                    DarcyVelocity,bc,pressure_maxorder);
-      RichardOp richardOp(richardContext);
-      richardOp.BuildOpSkel();
-      richardOp.Residual(RhsMFT,PnewMFT,dt);
-      ParallelDescriptor::Barrier();
-      BoxLib::Abort();
-#endif
-
 #ifdef BL_USE_PETSC
       Vec RhsV, SolnV;
       PetscErrorCode ierr; 
+
       int num_local = layout.NumberOfLocalNodeIds();
       int num_global = layout.NumberOfGlobalNodeIds();
 
@@ -2108,8 +2135,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
       ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
       ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
-
-
       // Apply column scaling of J to Rhs
       Real* RhsV_array, *JRowScale_array;
       ierr = VecGetArray(RhsV,&RhsV_array); CHKPETSC(ierr);
@@ -2124,7 +2149,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       ierr = KSPCreate(comm,&ksp); CHKPETSC(ierr);
 
       Mat& J = layout.Jacobian();
-      ierr = KSPSetOperators(ksp,J,J,DIFFERENT_NONZERO_PATTERN); CHKPETSC(ierr);
+      ierr = KSPSetOperators(ksp,J,J,SAME_NONZERO_PATTERN); CHKPETSC(ierr);
       ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
       ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
       ierr = KSPDestroy(&ksp); CHKPETSC(ierr);
@@ -2135,12 +2160,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       }
       else {
            ierr = layout.VecToMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
-#if 0
-          VisMF::Write(ResultMFT[0],"JUNK");
-          if (ioproc) {
-              std::cout << "PETSc write solution to JUNK" << std::endl;
-          }
-#endif
       }
 
       ierr = VecDestroy(&SolnV); CHKPETSC(ierr);
