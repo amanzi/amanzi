@@ -564,6 +564,7 @@ if __name__ == "__main__":
     ic_cfg_file = "ascem-2012-farea-background.cfg"
     bc_cfg_file = "ascem-2012-farea-seepage.cfg"
     output_file = "amanzi-u-1d-farea-full.xml"
+    output_background_bc = 'farea-full-background-bc.xml'
 
     print "Convert batch_chem files into a 1-D amanzi-u problem"
     print "  Input files :"
@@ -638,10 +639,21 @@ if __name__ == "__main__":
 
     #print complete_xml
 
-    print '  Writing xml to "{0}"'.format(output_file)
+    print '  Writing full xml to "{0}"'.format(output_file)
 
     with open(output_file, 'w') as output:
         output.write(complete_xml)
+    print '  Finished.'
+    # Now we need to dump an additional file with the background
+    # chemistry used as BC instead of IC.
+    print '  Creating secondary xml with the background constraint as BC...'
+    secondary_xml = ''
+    secondary_xml += boundary_condition_uniform_conc_cfg2xml(ic_cfg_file, species_names_dict)
+
+    print '  Writing secondary xml to {0}'.format(output_background_bc)
+    with open(output_background_bc, 'w') as output:
+        output.write(secondary_xml)
+    print '  Finished.'
     print 'Done!'
     exit()
 
