@@ -39,7 +39,7 @@
         <Parameter name="pseudo time integrator preconditioner" type="string" value="Trilinos ML"/> 
         <Parameter name="pseudo time integrator linear solver" type="string" value="AztecOO"/> 
         <Parameter name="pseudo time integrator error control options" type="Array string" value="{pressure}"/>
-        <Parameter name="pseudo time integrator picard convergence tolerance" type="double" value="1e-9"/>
+        <Parameter name="pseudo time integrator picard convergence tolerance" type="double" value="1e-7"/>
         <Parameter name="pseudo time integrator picard maximum number of iterations" type="int" value="1200"/> 
         <Parameter name="steady max time step" type="double" value="6.0e+10"/>
         <Parameter name="steady max iterations" type="int" value="50"/>
@@ -1355,9 +1355,10 @@
     <Parameter name="Thermodynamic Database File" type="string" value="ascem-2012-farea.bgd"/>
     <Parameter name="Verbosity" type="Array string" value="{verbose}" />
     <Parameter name="Activity Model" type="string" value="unit"/>
-    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
-    <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
-    <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
+    <Parameter name="Tolerance" type="double" value="1.0e-10"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
+    <Parameter name="Max Time Step (s)" type="double" value="864000.0"/>
+    <Parameter name="Auxiliary Data" type="Array string" value="{pH}"/>
   </ParameterList>
        
   <ParameterList name="Output">
