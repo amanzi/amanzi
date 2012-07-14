@@ -36,7 +36,7 @@ void Transport_PK::CalculateDispersionTensor()
   AmanziGeometry::Point velocity(dim), flux(dim);
   WhetStone::Tensor T(dim, 2);
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     if (dispersivity_model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
       for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) = dispersivity_longitudinal;
     } else {
@@ -127,7 +127,7 @@ void Transport_PK::AddDispersiveFluxes(int component,
   std::vector<AmanziGeometry::Point> corner_points;
   std::vector<double> corner_values, corner_fluxes;
 
-  for (int c = 0; c < cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
     double value = (*tcc)[component][c];

@@ -68,7 +68,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     u = fabs(darcy_flux[f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-    if (c1 >= 0 && c1 <= cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
@@ -76,14 +76,14 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
-    } else if (c1 >= 0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0)) {
+    } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
-    } else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
@@ -93,7 +93,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     }
   }
 
-  for (int c = 0; c <= cmax_owned; c++) {  // calculate conservative quantatity
+  for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
     double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
     f_component[c] /= vol_phi_ws;
   }

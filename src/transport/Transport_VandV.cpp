@@ -39,7 +39,7 @@ void Transport_PK::CheckDivergenceProperty()
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
@@ -80,7 +80,7 @@ void Transport_PK::CheckDivergenceProperty()
       Exceptions::amanzi_throw(msg);
     }
   }
-  error_avg /= (cmax_owned + 1);
+  error_avg /= ncells_owned;
 
   if (verbosity > TRANSPORT_VERBOSITY_HIGH) {
 #ifdef HAVE_MPI
@@ -180,7 +180,7 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
 {
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
 
-  for (int c = 0; c < cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     double value = tracer[component][c];
     if (value < lower_bound - tol || value > upper_bound + tol) {
       cout << "Transport_PK: tracer violates bounds" << endl;

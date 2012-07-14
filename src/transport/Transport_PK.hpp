@@ -231,7 +231,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 
-  int cmax_owned, cmax, ncells_owned, ncells_wghost;
+  int cmax, ncells_owned, ncells_wghost;
   int fmax_owned, fmax, nfaces_owned, nfaces_wghost;
   int vmax;
  

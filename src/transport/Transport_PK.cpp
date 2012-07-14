@@ -76,7 +76,7 @@ int Transport_PK::InitPK()
   cmax = cmap.MaxLID();
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  cmax_owned = ncells_owned - 1;
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
   const Epetra_Map& fmap = mesh_->face_map(true);
   fmax = fmap.MaxLID();
@@ -91,7 +91,7 @@ int Transport_PK::InitPK()
   nfaces_wghost = fmax + 1;
 
 #ifdef HAVE_MPI
-  const  Epetra_Comm & comm = cmap.Comm();
+  const Epetra_Comm & comm = cmap.Comm();
   MyPID = comm.MyPID();
 
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
@@ -115,8 +115,8 @@ int Transport_PK::InitPK()
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
   component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
-  component_local_min_.resize(cmax_owned + 1);
-  component_local_max_.resize(cmax_owned + 1);
+  component_local_min_.resize(ncells_owned);
+  component_local_max_.resize(ncells_owned);
 
   const Epetra_Map& cmap_false = mesh_->cell_map(false);
   ws_subcycle_start = Teuchos::rcp(new Epetra_Vector(cmap_false));
@@ -200,7 +200,7 @@ double Transport_PK::CalculateTransportDt()
   const Epetra_Vector& phi = TS->ref_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
-  for (c = 0; c <= cmax_owned; c++) {
+  for (c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
     if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * ws_prev[c] / outflux;
     dT = std::min(dT, dT_cell);
@@ -364,7 +364,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   double vol_phi_ws, tcc_flux;
   int num_components = tcc->NumVectors();
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * phi[c] * (*water_saturation_start)[c];
 
     for (int i = 0; i < num_components; i++)
@@ -379,20 +379,20 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
 
     u = fabs(darcy_flux[f]);
 
-    if (c1 >=0 && c1 <= cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_components; i++) {
         tcc_flux = dT * u * (*tcc)[i][c1];
         (*tcc_next)[i][c1] -= tcc_flux;
         (*tcc_next)[i][c2] += tcc_flux;
       }
 
-    } else if (c1 >=0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0)) {
+    } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < num_components; i++) {
         tcc_flux = dT * u * (*tcc)[i][c1];
         (*tcc_next)[i][c1] -= tcc_flux;
       }
 
-    } else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_components; i++) {
         tcc_flux = dT * u * (*tcc_next)[i][c1];
         (*tcc_next)[i][c2] += tcc_flux;
@@ -416,7 +416,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   }
 
   // recover concentration from new conservative state
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * phi[c] * (*water_saturation_end)[c];
     for (int i = 0; i < num_components; i++) (*tcc_next)[i][c] /= vol_phi_ws;
   }
@@ -456,7 +456,7 @@ void Transport_PK::AdvanceSecondOrderUpwindEulerTI(double dT_MPC)
     fun(T, *component_, f_component);
 
     double ws_ratio;
-    for (int c = 0; c <= cmax_owned; c++) {
+    for (int c = 0; c < ncells_owned; c++) {
       ws_ratio = (*water_saturation_start)[c] / (*water_saturation_end)[c];
       (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio;
     }
@@ -505,7 +505,7 @@ void Transport_PK::AdvanceSecondOrderUpwind(double dT_MPC)
     const double t = 0.0;  // provide simulation time (lipnikov@lanl.gov)
     TVD_RK.step(t, dT, *component_, *component_next_);
 
-    for (int c = 0; c <= cmax_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
+    for (int c = 0; c < ncells_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
 
     /*
     // DISPERSION FLUXES
