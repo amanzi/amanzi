@@ -307,10 +307,7 @@ double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers,
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   double volume = 0.0;
   for (int f = 0; f < nfaces; f++) {
-    if (bc_markers[f] != FLOW_BC_FACE_NULL) {
-      double area = mesh_->face_area(f);
-      volume -= darcy_flux[f] * area;
-    }
+    if (bc_markers[f] != FLOW_BC_FACE_NULL) volume -= darcy_flux[f];
   }
   return volume;
 }
