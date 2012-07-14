@@ -78,8 +78,7 @@ int Transport_PK::InitPK()
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  const Epetra_Map& vmap = mesh_->node_map(true);
-  vmax = vmap.MaxLID();
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
 #ifdef HAVE_MPI
   const Epetra_Map& source_cmap = mesh_->cell_map(false);

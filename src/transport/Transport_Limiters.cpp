@@ -343,13 +343,13 @@ void Transport_PK::LimiterKuzmin(const int component,
                                  Teuchos::RCP<Epetra_MultiVector> gradient)
 {
   // Step 1: local extrema are calculated here at nodes and updated later
-  std::vector<double> component_node_min(vmax + 1);
-  std::vector<double> component_node_max(vmax + 1);
+  std::vector<double> component_node_min(nnodes_wghost);
+  std::vector<double> component_node_max(nnodes_wghost);
 
   AmanziMesh::Entity_ID_List nodes;
 
-  component_node_min.assign(vmax + 1,  TRANSPORT_CONCENTRATION_INFINITY);
-  component_node_max.assign(vmax + 1, -TRANSPORT_CONCENTRATION_INFINITY);
+  component_node_min.assign(nnodes_wghost,  TRANSPORT_CONCENTRATION_INFINITY);
+  component_node_max.assign(nnodes_wghost, -TRANSPORT_CONCENTRATION_INFINITY);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
