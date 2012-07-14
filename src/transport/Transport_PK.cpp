@@ -32,8 +32,8 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 /* ******************************************************************
-* We set up only default values and call Init() routine to complete
-* each variable initialization
+* We set up minimum default values and call Init() routine to 
+* complete initialization.
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 			   Teuchos::RCP<Transport_State> TS_MPC)
@@ -298,13 +298,13 @@ void Transport_PK::Advance(double dT_MPC)
     if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
       AdvanceDonorUpwind(dT_cycle);
     } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
-      AdvanceSecondOrderUpwindEulerTI(dT_cycle);
+      AdvanceSecondOrderUpwindRK1(dT_cycle);
     } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
-      AdvanceSecondOrderUpwind(dT_cycle);
+      AdvanceSecondOrderUpwindRK2(dT_cycle);
+      // AdvanceSecondOrderUpwindGeneric(dT_cycle);
     }
 
-    if (! final_cycle)  // rotate the concentrations
-        TS->copymemory_multivector(tcc_next, tcc, 0);
+    if (! final_cycle) TS->copymemory_multivector(tcc_next, tcc, 0);  // rotate concentrations
 
     ncycles++;
   }
@@ -424,11 +424,11 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
 
 /* ******************************************************************* 
  * We have to advance each component independently due to different
- * discretizations. We use tcc when only owned data are needed and 
- * tcc_next when owned and ghost data. This special routine for 
+ * reconstructions. We use tcc when only owned data are needed and 
+ * tcc_next when owned and ghost data. This is a special routine for 
  * transient flow and uses first-order time integrator. 
  ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwindEulerTI(double dT_MPC)
+void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_MPC)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_MPC;  // overwrite the transport step
@@ -463,16 +463,67 @@ void Transport_PK::AdvanceSecondOrderUpwindEulerTI(double dT_MPC)
 }
 
 
+/* ******************************************************************* 
+ * We have to advance each component independently due to different
+ * reconstructions. This is a special routine for transient flow and 
+ * uses second-order predictor-corrector time integrator. 
+ ****************************************************************** */
+void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_MPC)
+{
+  status = TRANSPORT_STATE_BEGIN;
+  dT = dT_MPC;  // overwrite the transport step
+
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
+  Epetra_Vector f_component(*component_);
+
+  Epetra_Vector ws_ratio(*water_saturation_start);
+  for (int c = 0; c < ncells_owned; c++) ws_ratio[c] /= (*water_saturation_end)[c];
+
+  for (int i = 0; i < tcc->NumVectors(); i++) {
+    current_component_ = i;  // needed by BJ 
+
+    // predictor step
+    Epetra_Vector*& tcc_component = (*tcc)(i);
+    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+
+    double T = 0.0;
+    fun(T, *component_, f_component);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      double tcc_value = (*tcc)[i][c];
+      double tcc_predicted = (tcc_value + dT * f_component[c]) * ws_ratio[c];
+      f_component[c] = (tcc_value + tcc_predicted) / 2;
+    }
+
+    // corrector step
+    TS_nextBIG->copymemory_vector(f_component, *component_);
+
+    fun(T, *component_, f_component);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio[c];
+    }
+  }
+
+  if (internal_tests) {
+    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
+    CheckGEDproperty(*tcc_nextMPC);
+  }
+
+  status = TRANSPORT_STATE_COMPLETE;
+}
+
 
 /* ******************************************************************* 
  * We have to advance each component independently due to different
- * discretizations. We use tcc when only owned data are needed and 
+ * reconstructions. We use tcc when only owned data are needed and 
  * tcc_next when owned and ghost data.
  *
- * Data flow: loop over components C and for each C apply the 
- * second-order RK method. 
+ * Data flow: loop over components and apply the generic RK2 method.
+ * The generic means that saturation is constant during time step. 
  ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwind(double dT_MPC)
+void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_MPC)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_MPC;  // overwrite the transport step
@@ -494,22 +545,22 @@ void Transport_PK::AdvanceSecondOrderUpwind(double dT_MPC)
     Epetra_Vector*& tcc_component = (*tcc)(i);
     TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
 
-    const double t = 0.0;  // provide simulation time (lipnikov@lanl.gov)
-    TVD_RK.step(t, dT, *component_, *component_next_);
+    double T = 0.0;  // requires fixes (lipnikov@lanl.gov)
+    TVD_RK.step(T, dT, *component_, *component_next_);
 
     for (int c = 0; c < ncells_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
 
     /*
-    // DISPERSION FLUXES
+    // DISPERSIVE FLUXES
     if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
       calculate_dispersion_tensor();
 
       std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated once (lipnikov@lanl.gov)
       std::vector<double> bc_face_values(number_wghost_faces);
 
-      extract_boundary_conditions(i, bc_face_id, bc_face_values);
-      populate_harmonic_points_values(i, tcc, bc_face_id, bc_face_values);
-      add_dispersive_fluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
+      ExtractBoundaryConditions(i, bc_face_id, bc_face_values);
+      PopulateHarmonicPointsValues(i, tcc, bc_face_id, bc_face_values);
+      AddDispersiveFluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
     }
     */
   }
@@ -523,28 +574,6 @@ void Transport_PK::AdvanceSecondOrderUpwind(double dT_MPC)
 }
 
 
-
-/* *******************************************************************
- * Collect time-dependent boundary data in face-based arrays.                               
- ****************************************************************** */
-void Transport_PK::ExtractBoundaryConditions(const int component,
-                                             std::vector<int>& bc_face_id,
-                                             std::vector<double>& bc_face_value)
-{
-  bc_face_id.assign(nfaces_wghost, 0);
-
-  for (int n = 0; n < bcs.size(); n++) {
-    if (component == bcs_tcc_index[n]) {
-      for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-        int f = bc->first;
-        bc_face_id[f] = TRANSPORT_BC_CONSTANT_TCC;
-        bc_face_value[f] = bc->second;
-      }
-    }
-  }
-}
-
-
 /* *******************************************************************
  * Identify flux direction based on orientation of the face normal 
  * and sign of the  Darcy velocity.                               
@@ -554,7 +583,7 @@ void Transport_PK::IdentifyUpwindCells()
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    (*upwind_cell_)[f] = -1;  // negative value is indicator of a boundary
+    (*upwind_cell_)[f] = -1;  // negative value indicates boundary
     (*downwind_cell_)[f] = -1;
   }
 

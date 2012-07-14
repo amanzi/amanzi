@@ -82,6 +82,27 @@ void Transport_PK::CalculateDispersionTensor()
 
 
 /* *******************************************************************
+ * Collect time-dependent boundary data in face-based arrays.                               
+ ****************************************************************** */
+void Transport_PK::ExtractBoundaryConditions(const int component,
+                                             std::vector<int>& bc_face_id,
+                                             std::vector<double>& bc_face_value)
+{
+  bc_face_id.assign(nfaces_wghost, 0);
+
+  for (int n = 0; n < bcs.size(); n++) {
+    if (component == bcs_tcc_index[n]) {
+      for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        bc_face_id[f] = TRANSPORT_BC_CONSTANT_TCC;
+        bc_face_value[f] = bc->second;
+      }
+    }
+  }
+}
+
+
+/* *******************************************************************
  * Calculate field values at harmonic points. For harmonic points on
  * domain boundary, we use Dirichlet boundary values.
  ****************************************************************** */

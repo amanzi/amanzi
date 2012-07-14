@@ -104,11 +104,8 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   void CheckDivergenceProperty();
   void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
-  void CheckTracerBounds(Epetra_MultiVector& tracer, 
-                         int component,
-                         double lower_bound,
-                         double upper_bound,
-                         double tol = 0.0) const;
+  void CheckTracerBounds(Epetra_MultiVector& tracer, int component,
+                         double lower_bound, double upper_bound, double tol = 0.0) const;
   void CheckInfluxBC() const;
 
   // access members  
@@ -126,9 +123,9 @@ class Transport_PK : public Explicit_TI::fnBase {
  private:
   // advection members
   void AdvanceDonorUpwind(double dT);
-  void AdvanceSecondOrderUpwind(double dT);
-  void AdvanceSecondOrderUpwindEulerTI(double dT);
-  void AdvanceArbitraryOrderUpwind(double dT);
+  void AdvanceSecondOrderUpwindGeneric(double dT);
+  void AdvanceSecondOrderUpwindRK1(double dT);
+  void AdvanceSecondOrderUpwindRK2(double dT);
 
   // time integration members
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
