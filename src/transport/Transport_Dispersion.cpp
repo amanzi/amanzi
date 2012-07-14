@@ -93,7 +93,7 @@ void Transport_PK::PopulateHarmonicPointsValues(int component,
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List cells;
 
-  for (int f = 0; f < fmax_owned; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     double weight;
     mfd.calculate_harmonic_points(f, dispersion_tensor, harmonic_points[f], weight);
     harmonic_points_weight[f] = weight;

@@ -50,7 +50,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
-  for (int f = 0; f <= fmax; f++) {  // loop over master and slave faces
+  for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
 
@@ -105,7 +105,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
         f = bc->first;
         c2 = (*downwind_cell_)[f];
 
-        if (c2 >= 0 && f <= fmax_owned) {
+        if (c2 >= 0 && f < nfaces_owned) {
           u = fabs(darcy_flux[f]);
           double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2];
           tcc_flux = u * bc->second;

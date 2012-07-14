@@ -75,16 +75,11 @@ int Transport_PK::InitPK()
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
-  const Epetra_Map& fmap = mesh_->face_map(true);
-  fmax = fmap.MaxLID();
-
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  fmax_owned = nfaces_owned - 1;
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   const Epetra_Map& vmap = mesh_->node_map(true);
   vmax = vmap.MaxLID();
-
-  nfaces_wghost = fmax + 1;
 
 #ifdef HAVE_MPI
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
@@ -103,6 +98,7 @@ int Transport_PK::InitPK()
 
   ProcessParameterList();
 
+  const Epetra_Map& fmap = mesh_->face_map(true);
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));  // The maps include both owned and ghosts
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
 
@@ -128,7 +124,7 @@ int Transport_PK::InitPK()
   // dispersivity block initialization
   if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
     harmonic_points.resize(nfaces_wghost);
-    for (int f = 0; f <= fmax; f++) harmonic_points[f].init(dim);
+    for (int f = 0; f < nfaces_wghost; f++) harmonic_points[f].init(dim);
 
     harmonic_points_weight.resize(nfaces_wghost);
     harmonic_points_value.resize(nfaces_wghost);
@@ -186,7 +182,7 @@ double Transport_PK::CalculateTransportDt()
 
   std::vector<double> total_outflux(ncells_wghost, 0.0);
 
-  for (f = 0; f <= fmax; f++) {
+  for (f = 0; f < nfaces_wghost; f++) {
     c = (*upwind_cell_)[f];
     if (c >= 0) total_outflux[c] += fabs(darcy_flux[f]);
   }
@@ -370,7 +366,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
 
   // advance all components at once
   double u;
-  for (int f = 0; f <= fmax; f++) {  // loop over master and slave faces
+  for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
@@ -558,7 +554,7 @@ void Transport_PK::IdentifyUpwindCells()
 {
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
 
-  for (int f = 0; f <= fmax; f++) {
+  for (int f = 0; f < nfaces_wghost; f++) {
     (*upwind_cell_)[f] = -1;  // negative value is indicator of a boundary
     (*downwind_cell_)[f] = -1;
   }

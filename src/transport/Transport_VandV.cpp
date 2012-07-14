@@ -105,10 +105,10 @@ void Transport_PK::CheckDivergenceProperty()
 void Transport_PK::CheckInfluxBC() const
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  std::vector<int> influx_face(fmax + 1);
+  std::vector<int> influx_face(nfaces_wghost);
 
   for (int i = 0; i < number_components; i++) {
-    influx_face.assign(fmax + 1, 0);
+    influx_face.assign(nfaces_wghost, 0);
 
     for (int n = 0; n < bcs.size(); n++) {
       if (i == bcs_tcc_index[n]) {

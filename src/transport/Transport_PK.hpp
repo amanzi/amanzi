@@ -232,7 +232,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   double bc_scaling;
 
   int ncells_owned, ncells_wghost;
-  int fmax_owned, fmax, nfaces_owned, nfaces_wghost;
+  int nfaces_owned, nfaces_wghost;
   int vmax;
  
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

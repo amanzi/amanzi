@@ -204,7 +204,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
 
   // Step 1: limiting gradient inside domain
-  for (int f = 0; f <= fmax_owned; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     int c1, c2;
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
