@@ -72,9 +72,6 @@ int Transport_PK::InitPK()
   TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory));
   TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, ViewMemory));
 
-  const Epetra_Map& cmap = mesh_->cell_map(true);
-  cmax = cmap.MaxLID();
-
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
@@ -87,13 +84,9 @@ int Transport_PK::InitPK()
   const Epetra_Map& vmap = mesh_->node_map(true);
   vmax = vmap.MaxLID();
 
-  ncells_wghost = cmax + 1;  // assume that enumartion starts with 0
   nfaces_wghost = fmax + 1;
 
 #ifdef HAVE_MPI
-  const Epetra_Comm & comm = cmap.Comm();
-  MyPID = comm.MyPID();
-
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
   const Epetra_Map& target_cmap = mesh_->cell_map(true);
 
@@ -103,6 +96,9 @@ int Transport_PK::InitPK()
   const Epetra_Map& target_fmap = mesh_->face_map(true);
 
   face_importer = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
+
+  const Epetra_Comm& comm = source_cmap.Comm();
+  MyPID = comm.MyPID();
 #endif
 
   ProcessParameterList();
@@ -112,6 +108,7 @@ int Transport_PK::InitPK()
 
   // advection block initialization
   current_component_ = -1;  // default value may be useful in the future
+  const Epetra_Map& cmap = mesh_->cell_map(true);
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
   component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
@@ -137,7 +134,7 @@ int Transport_PK::InitPK()
     harmonic_points_value.resize(nfaces_wghost);
 
     dispersion_tensor.resize(ncells_wghost);
-    for (int c = 0; c <= cmax; c++) dispersion_tensor[c].init(dim, 2);
+    for (int c = 0; c < ncells_wghost; c++) dispersion_tensor[c].init(dim, 2);
   }
 
   // boundary conditions installation at initial time
@@ -570,7 +567,7 @@ void Transport_PK::IdentifyUpwindCells()
   std::vector<int> fdirs;
   Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  for (int c = 0; c <= cmax; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
     for (int i = 0; i < faces.size(); i++) {

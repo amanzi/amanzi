@@ -198,7 +198,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  for (int c = 0; c <= cmax; c++) (*limiter)[c] = 1.0;
+  limiter->PutScalar(1.0);
 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
