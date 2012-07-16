@@ -36,7 +36,7 @@ void Transport_PK::CalculateDispersionTensor()
   AmanziGeometry::Point velocity(dim), flux(dim);
   WhetStone::Tensor T(dim, 2);
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     if (dispersivity_model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
       for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) = dispersivity_longitudinal;
     } else {
@@ -82,6 +82,27 @@ void Transport_PK::CalculateDispersionTensor()
 
 
 /* *******************************************************************
+ * Collect time-dependent boundary data in face-based arrays.                               
+ ****************************************************************** */
+void Transport_PK::ExtractBoundaryConditions(const int component,
+                                             std::vector<int>& bc_face_id,
+                                             std::vector<double>& bc_face_value)
+{
+  bc_face_id.assign(nfaces_wghost, 0);
+
+  for (int n = 0; n < bcs.size(); n++) {
+    if (component == bcs_tcc_index[n]) {
+      for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        bc_face_id[f] = TRANSPORT_BC_CONSTANT_TCC;
+        bc_face_value[f] = bc->second;
+      }
+    }
+  }
+}
+
+
+/* *******************************************************************
  * Calculate field values at harmonic points. For harmonic points on
  * domain boundary, we use Dirichlet boundary values.
  ****************************************************************** */
@@ -93,7 +114,7 @@ void Transport_PK::PopulateHarmonicPointsValues(int component,
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List cells;
 
-  for (int f = 0; f < fmax_owned; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     double weight;
     mfd.calculate_harmonic_points(f, dispersion_tensor, harmonic_points[f], weight);
     harmonic_points_weight[f] = weight;
@@ -127,7 +148,7 @@ void Transport_PK::AddDispersiveFluxes(int component,
   std::vector<AmanziGeometry::Point> corner_points;
   std::vector<double> corner_values, corner_fluxes;
 
-  for (int c = 0; c < cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
     double value = (*tcc)[component][c];

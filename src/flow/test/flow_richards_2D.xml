@@ -72,8 +72,6 @@
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
         <ParameterList name="BDF2">
-          <Parameter name="absolute error tolerance" type="double" value="0.1"/>
-          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
           <Parameter name="initial time step" type="double" value="0.1"/>

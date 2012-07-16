@@ -91,6 +91,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   // check the pressure profile
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  //for (int c = 0; c < ncells; c++) cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
   for (int c = 0; c < ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
 
   delete RPK;
