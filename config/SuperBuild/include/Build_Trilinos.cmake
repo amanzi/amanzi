@@ -172,6 +172,7 @@ set(Trilinos_CMAKE_ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
                    ${Amanzi_CMAKE_CXX_COMPILER_ARGS})
+print_variable(Trilinos_CMAKE_LANG_ARGS)
 
 #  --- Define the Trilinos patch step
 
