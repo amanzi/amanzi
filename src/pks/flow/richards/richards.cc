@@ -13,6 +13,11 @@ Authors: Neil Carlson (version 1)
 #include "eos_factory.hh"
 #include "wrm_factory.hh"
 
+#include "upwind_cell_centered.hh"
+#include "upwind_arithmetic_mean.hh"
+#include "upwind_total_flux.hh"
+#include "upwind_gravity_flux.hh"
+
 #include "richards.hh"
 
 namespace Amanzi {
@@ -55,9 +60,9 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   one_cell_owned_factory.SetComponent("cell", AmanziMesh::CELL, 1);
 
   CompositeVectorFactory one_cell_factory;
-  one_cell_owned_factory.SetMesh(S->Mesh());
-  one_cell_owned_factory.SetGhosted();
-  one_cell_owned_factory.AddComponent("cell", AmanziMesh::CELL, 1);
+  one_cell_factory.SetMesh(S->Mesh());
+  one_cell_factory.SetGhosted();
+  one_cell_factory.AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireField("darcy_flux", "flow")->SetMesh(S->Mesh())->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -76,7 +81,6 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
 
   // -- For now, we assume scalar permeability.  This will change.
   S->RequireField("permeability", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("relative_permeability", "flow")->Update(one_cell_owned_factory);
   S->RequireScalar("atmospheric_pressure", "flow");
 
   // -- independent variables not owned by this PK
@@ -86,6 +90,8 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   S->RequireGravity();
 
   // -- work vectors
+  S->RequireField("relative_permeability", "flow")->SetMesh(S->Mesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
   S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
@@ -93,9 +99,9 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   // abs perm tensor
   variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
   int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  K_.resize(c_owned);
+  K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (int c=0; c!=c_owned; ++c) {
-    K_[c].init(S->Mesh()->space_dimension(),1);
+    (*K_)[c].init(S->Mesh()->space_dimension(),1);
   }
 
   // constitutive relations
@@ -145,13 +151,21 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
   bool symmetric = false;
   if (method_name == "Upwind with gravity") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux("flow",
+            "relative_permeability", "numerical_rel_perm", K_));
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (method_name == "Cell centered") {
-    Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
+    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered("flow",
+            "relative_permeability", "numerical_rel_perm"));
     symmetric = true;
+    Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
   } else if (method_name == "Upwind with Darcy flux") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux("flow",
+            "relative_permeability", "numerical_rel_perm", "darcy_flux"));
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (method_name == "Arithmetic mean") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean("flow",
+            "relative_permeability", "numerical_rel_perm"));
     Krel_method_ = FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
   }
 
@@ -212,8 +226,8 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   SetAbsolutePermeabilityTensor_(S);
 
   // operators
-  matrix_->CreateMFDmassMatrices(K_);
-  preconditioner_->CreateMFDmassMatrices(K_);
+  matrix_->CreateMFDmassMatrices(K_.ptr());
+  preconditioner_->CreateMFDmassMatrices(K_.ptr());
 
   // initialize the timesteppper
   solution_->set_data(pres);
@@ -328,122 +342,26 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
-  rel_perm->ScatterMasterToGhosted();
+  // get the upwinding done
+  upwinding_->Update(S.ptr());
 
+  // patch up the BCs
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
+  Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
+  for (int f=0; f!=num_rel_perm->size("face"); ++f) {
+    if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+      (*num_rel_perm)("face",f) = (*rel_perm)("face",f);
+    }
+  }
+
+  // scale cells by n/visc
   Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
   Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
-  Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
-
-  num_rel_perm->PutScalar(1.0);
   int ncells = num_rel_perm->size("cell");
-  if (Krel_method_ == FLOW_RELATIVE_PERM_CENTERED) {
-    // symmetric method, no faces needed
-    for (int c=0; c!=ncells; ++c) {
-      (*num_rel_perm)("cell",c) = (*rel_perm)("cell",c) * (*n_liq)("cell",c) /
-                                           (*visc)("cell",c);
-    }
-  } else {
-    // faces needed
-    if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
-      CalculateRelativePermeabilityUpwindGravity_(S, *rel_perm, num_rel_perm);
-    } else if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-      Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
-      CalculateRelativePermeabilityUpwindFlux_(S, *flux, *rel_perm,
-              num_rel_perm);
-    } else if (Krel_method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-      CalculateRelativePermeabilityArithmeticMean_(S, *rel_perm, num_rel_perm);
-    }
-    // update Krel on cells with rho/mu
-    for (int c=0; c!=ncells; ++c) {
-      (*num_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
-    }
+  for (int c=0; c!=ncells; ++c) {
+    (*num_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
   }
 };
-
-
-// -----------------------------------------------------------------------------
-// Defines upwinded relative permeabilities for faces using gravity.
-// -----------------------------------------------------------------------------
-void Richards::CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<State>& S,
-        const CompositeVector& rel_perm_cells,
-        const Teuchos::RCP<CompositeVector>& rel_perm) {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  AmanziGeometry::Point gravity(g_vec->MyLength());
-  for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
-
-  rel_perm->ViewComponent("face",true)->PutScalar(0.0);
-  int c_owned = rel_perm_cells.size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-    AmanziGeometry::Point Kgravity = K_[c] * gravity;
-
-    for (int n=0; n!=faces.size(); ++n) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
-
-      // TODO: FIX ME.  This should be picked up from boundary value of
-      //       pressure if on the boundary, not the down-wind cell as is
-      //       currently done.
-      if ((normal * Kgravity) * dirs[n] >= 0.0 ||
-          (bc_markers_[f] != Operators::MFD_BC_NULL)) {
-        (*rel_perm)("face",f) = rel_perm_cells("cell",c);
-      }
-    }
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Defines upwinded relative permeabilities for faces using a given flux.
-// -----------------------------------------------------------------------------
-void Richards::CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State>& S,
-        const CompositeVector& flux, const CompositeVector& rel_perm_cells,
-        const Teuchos::RCP<CompositeVector>& rel_perm) {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  rel_perm->ViewComponent("face",true)->PutScalar(0.0);
-  int c_owned = rel_perm_cells.size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-    for (int n=0; n!=faces.size(); ++n) {
-      int f = faces[n];
-
-      // TODO: FIX ME.  This should be picked up from boundary value of
-      //       pressure if on the boundary, not the down-wind cell as is
-      //       currently done.
-      if ((flux("face",f) * dirs[n] >= 0.0) ||
-          (bc_markers_[f] != Operators::MFD_BC_NULL)) {
-        (*rel_perm)("face",f) = rel_perm_cells("cell",c);
-      }
-    }
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Defines relative permeabilities for faces via arithmetic averaging.
-// -----------------------------------------------------------------------------
-void Richards::CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP<State>& S,
-        const CompositeVector& rel_perm_cells,
-        const Teuchos::RCP<CompositeVector>& rel_perm) {
-  AmanziMesh::Entity_ID_List cells;
-
-  rel_perm->ViewComponent("face",true)->PutScalar(0.0);
-  int f_owned = rel_perm->size("face");
-  for (int f=0; f!=f_owned; ++f) {
-    S->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    for (int n=0; n!=cells.size(); ++n) {
-      (*rel_perm)("face",f) += rel_perm_cells("cell",cells[n]);
-    }
-    (*rel_perm)("face",f) /= cells.size();
-  }
-}
 
 
 // -----------------------------------------------------------------------------
@@ -452,6 +370,7 @@ void Richards::CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP<S
 void Richards::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
   AmanziMesh::Entity_ID_List cells;
+  pres->ScatterMasterToGhosted("cell");
 
   int f_owned = pres->size("face");
   for (int f=0; f!=f_owned; ++f) {

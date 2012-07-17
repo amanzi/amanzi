@@ -16,6 +16,8 @@ Authors: Gianmarco Manzini
 #include "Mesh_MSTK.hh"
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
+#include "upwind_total_flux.hh"
+#include "Point.hh"
 
 #include "overland.hh"
 
@@ -55,8 +57,6 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
     // Check that the surface mesh has a subset
     std::string surface_sideset_name =
       flow_plist_.get<std::string>("Surface sideset name");
-    std::cout << "Region Surface mesh size: " << mesh->get_set_size(surface_sideset_name,
-            AmanziMesh::FACE, AmanziMesh::OWNED) << std::endl;
 
     // -- Call the MSTK constructor to rip off the surface of the MSTK domain
     // -- mesh.
@@ -129,21 +129,17 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
                 ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity","overland_flow")->set_io_vis(false);
 
-  // abs perm tensor
-  variable_abs_perm_ = false;
-  int c_owned = S->Mesh("surface")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  K_.resize(c_owned);
-  for (int c=0; c!=c_owned; ++c) {
-    K_[c].init(S->Mesh("surface")->space_dimension(), 1);
-    K_[c](0,0) = 1.0;
-  }
-
   // boundary conditions
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
   FlowBCFactory bc_factory(S->Mesh("surface"), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
+
+  // rel perm upwinding
+  upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux("overland_flow",
+          "overland_conductivity", "upwind_overland_conductivity",
+          "overland_flux"));
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = flow_plist_.sublist("Diffusion");
@@ -233,7 +229,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   names[0][2] = "Z-Component";
   velocity->set_subfield_names(names);
   velocity->set_initialized();
-  S->GetFieldData("overland_velocity","overland_flow")->PutScalar(0.0);
+  S->GetFieldData("overland_velocity","overland_flow")->PutScalar(1.0);
 
   // Rel perm is special -- if the mode is symmetric, it needs to be
   // initialized to 1.
@@ -244,10 +240,11 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   bc_pressure_->Compute(S->time());
   bc_zero_gradient_->Compute(S->time());
   bc_flux_->Compute(S->time());
+  UpdateBoundaryConditions_(S);
 
   // Initialize operators.
-  matrix_->CreateMFDmassMatrices(K_);
-  preconditioner_->CreateMFDmassMatrices(K_);
+  matrix_->CreateMFDmassMatrices(Teuchos::null);
+  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
 
   // Initialize the timestepper.
   solution_->set_data(pres);
@@ -295,7 +292,6 @@ void OverlandFlow::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
 bool OverlandFlow::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
-
   // save flow_rate
   // 2D test case
   if ( niter_%6==0 || true ) {
@@ -303,36 +299,27 @@ bool OverlandFlow::advance(double dt) {
   }
   ++niter_ ;
 
-
   // take a bdf timestep
   double h = dt;
 
-  //  try {
-    //    dt_ = time_stepper_->time_step(h, solution_);
-    time_stepper_->time_step(h, solution_);
+  try {
+    dt_ = time_stepper_->time_step(h, solution_);
     flow_time_ += h;
-  // } catch (Exceptions::Amanzi_exception &error) {
-  //   std::cout << "Timestepper called error: " << error.what() << std::endl;
-  //   if (error.what() == std::string("BDF time step failed")) {
-  //     // try cutting the timestep
-  //     dt_ = dt_*time_step_reduction_factor_;
-  //     return true;
-  //   } else {
-  //     throw error;
-  //   }
-  // }
+  } catch (Exceptions::Amanzi_exception &error) {
+    std::cout << "Timestepper called error: " << error.what() << std::endl;
+    if (error.what() == std::string("BDF time step failed")) {
+      // try cutting the timestep
+      dt_ = dt_*time_step_reduction_factor_;
+      return true;
+    } else {
+      throw error;
+    }
+  }
 
   // commit the step as successful
   time_stepper_->commit_solution(h, solution_);
   solution_to_state(solution_, S_next_);
   commit_state(h, S_next_);
-
-  if (false) {
-    string str_label = string("advance, after time_step----") ;
-    PRT(flow_time_) ;
-    print_pressure(S_next_,str_label);
-    LINE(---) ;
-  }
 
   return false;
 };
@@ -366,32 +353,12 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
   matrix_->CreateMFDstiffnessMatrices(*upwind_conductivity);
   matrix_->DeriveFlux(*pres_elev, darcy_flux);
-
-#if 0
-  print_pressure(S,"commit_state: pressure") ;
-  LINE(--) ;
-
-  print_vector2 (S,pressure,elevation,"commit_state: pres & elev") ;
-  LINE(--) ;
-
-  print_vector (S,pres_elev,"commit_state: pres_elev") ;
-  LINE(--) ;
-  print_faceval(S,darcy_flux,"commit_state: darcy_flux") ;
-#endif
-
-#if 0
-  // cruft to dump overland flow solution
-  std::stringstream filename;
-  filename << "overland_pressure_" << S->time();
-  std::string fname = filename.str();
-
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("overland_pressure");
-  Teuchos::RCP<const Epetra_MultiVector> pres_mv = pres->ViewComponent("cell", false);
-  EpetraExt::MultiVectorToMatrixMarketFile(fname.c_str(), *pres_mv,"abc","abc",false);
-#endif
 };
 
-// -- update diagnostics -- used prior to vis
+
+// -----------------------------------------------------------------------------
+// Update diagnostics -- used prior to vis.
+// -----------------------------------------------------------------------------
 void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", "overland_flow");
@@ -413,60 +380,28 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  // get reference to relative permeability
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("overland_conductivity");
+  upwinding_->Update(S.ptr());
 
-  Teuchos::RCP<CompositeVector> upwind_conductivity =
-    S->GetFieldData("upwind_overland_conductivity", "overland_flow");
-
-  rel_perm->ScatterMasterToGhosted();
-
-  Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
-  CalculateRelativePermeabilityUpwindFlux_(S, *flux, *rel_perm,
-          upwind_conductivity);
-};
-
-
-// -----------------------------------------------------------------------------
-// Defines upwinded relative permeabilities for faces using a given flux.
-// -----------------------------------------------------------------------------
-void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
-        const Teuchos::RCP<State>& S,
-        const CompositeVector& flux,
-        const CompositeVector& conductivity,
-        const Teuchos::RCP<CompositeVector>& upwind_conductivity ) {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
+  // patch up at the boundary condition
   Teuchos::RCP<const CompositeVector> pressure =
     S->GetFieldData("overland_pressure");
   Teuchos::RCP<const CompositeVector> slope =
     S->GetFieldData("slope_magnitude");
   Teuchos::RCP<const CompositeVector> manning =
     S->GetFieldData("manning_coef");
+  Teuchos::RCP<CompositeVector> upwind_conductivity =
+    S->GetFieldData("upwind_overland_conductivity", "overland_flow");
 
+  AmanziMesh::Entity_ID_List cells;
   double eps = 1.e-14;
 
-  double max_flux;
-  double eps_flux = 1.e-12;
-
-  upwind_conductivity->ViewComponent("face",true)->PutScalar(0.0);
-  int c_owned = upwind_conductivity->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh("surface")->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-    for (int n=0; n!=faces.size(); ++n) {
-      int f = faces[n];
-      if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-        double scaling = (*manning)("cell",c) * std::sqrt((*slope)("cell",c) + eps);
-        (*upwind_conductivity)("face",f) =
-          std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ; // boundary
-      } else if ((flux("face",f) * dirs[n] > eps_flux)) {
-        (*upwind_conductivity)("face",f) = conductivity("cell",c); // upwind face
-      } else if (std::abs(flux("face",f)) <= eps_flux) {
-        (*upwind_conductivity)("face",f) += conductivity("cell",c)/2.; // Almost vertical face
-      }
+  int nfaces = upwind_conductivity->size("face", true);
+  for (int f=0; f!=nfaces; ++f) {
+    if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+      upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      double scaling = (*manning)("cell",c) * std::sqrt((*slope)("cell",c) + eps);
+      (*upwind_conductivity)("face",f) = std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ;
     }
   }
 }
@@ -476,20 +411,21 @@ void OverlandFlow::CalculateRelativePermeabilityUpwindFlux_(
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
 void OverlandFlow::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-                                                   const Teuchos::RCP<CompositeVector> & pres) {
+        const Teuchos::RCP<CompositeVector> & pres) {
   AmanziMesh::Entity_ID_List cells;
+  pres->ScatterMasterToGhosted("cell");
 
   int f_owned = pres->size("face");
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
     S->Mesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+
     int ncells = cells.size();
-    // ---
     double face_value = 0.0;
     for (int n=0; n!=ncells; ++n) {
       face_value += (*pres)("cell",0,cells[n]);
     }
-    (*pres)("face",0,f) = face_value / ncells;
+    (*pres)("face",f) = face_value / ncells;
   }
 };
 
@@ -525,6 +461,10 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::RCP<State>& S) {
 
     bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
     bc_values_[f] = (*pres)("cell",cells[0]) + (*elevation)("face",f);
+
+    if (f == 0) {
+      std::cout << "update bcs: (pres, elev) " << (*pres)("cell",cells[0]) << " " << (*elevation)("face",f) << std::endl;
+    }
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
@@ -539,7 +479,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::RCP<State>& S) {
  ****************************************************************** */
 void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
-  int nfaces = pres->size("face");
+  int nfaces = pres->size("face",true);
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
       (*pres)("face",f) = bc_values_[f];
@@ -636,16 +576,6 @@ void OverlandFlow::print_pressure( const Teuchos::RCP<State>& S, string prt_str 
 
   const Teuchos::RCP<CompositeVector> pressure = 
     S->GetFieldData("overland_pressure", "overland_flow");
-
-#if 1
-  for (int c=0; c!=c_owned; ++c) {
-    printf("cell pressure(%5i)=%14.7e\n",c,(*pressure)("cell",0,c));
-  }
-  LINE(--) ;
-  for (int f=0; f!=f_owned; ++f) {
-    printf("face pressure(%5i)=%14.7e\n",f,(*pressure)("face",0,f));
-  }
-#endif
 
 #if 0
   Teuchos::RCP<CompositeVector> elevation = 
@@ -759,14 +689,16 @@ void OverlandFlow::output_flow_rate() {
   // with zero gradient conditions
   Functions::BoundaryFunction::Iterator bc;
   double total_flow_rate = 0.;
+  int nfaces_owned = flux->size("face",false);
   std::cout << "DATA ON DOWNGRADIENT EDGE" << std::endl;
   for (bc=bc_zero_gradient_->begin(); bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
-    //PRT(f) ;
-    double face_area = S_next_->Mesh("surface")->face_area(f) ;
-    total_flow_rate += (*flux)("face",0,f);
-    printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e\n",
-           f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f)) ;
+    if (f < nfaces_owned) {
+      double face_area = S_next_->Mesh("surface")->face_area(f) ;
+      total_flow_rate += (*flux)("face",0,f);
+      printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e\n",
+             f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f)) ;
+    }
   }
 
   LINE(--);
@@ -774,36 +706,43 @@ void OverlandFlow::output_flow_rate() {
   std::cout << "DATA ON OUTER EDGE" << std::endl;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    //PRT(f) ;
-    double face_area = S_next_->Mesh("surface")->face_area(f) ;
-    //    total_flow_rate += (*flux)("face",0,f);
-    printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e\n",
-           f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f)) ;
+    if (f < nfaces_owned) {
+      double face_area = S_next_->Mesh("surface")->face_area(f) ;
+      printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e\n",
+             f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f)) ;
+    }
   }
 
 
-  PRT(total_flow_rate) ;
+#ifdef HAVE_MPI
+  double buf = total_flow_rate;
+  MPI_Allreduce(&buf, &total_flow_rate, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
 
-  // output file
-  string fname("flow_rate.dat");
+  if (S_next_->Mesh("surface")->get_comm()->MyPID() == 0) {
+    PRT(total_flow_rate) ;
 
-  // check if the dataset file exists
-  bool ok_file(false);
-  std::ifstream inpf( fname.c_str() );
-  if ( inpf.good() ) { ok_file = bool(true); }
-  inpf.close();
+    // output file
+    string fname("flow_rate.dat");
 
-  // open the file 
-  std::ofstream outf;
-  if ( !ok_file ) { // if false, open it for output
-    outf.open( fname.c_str(), std::ios_base::out );
-    outf << "## flow_rate " << endl;
-  } else {          // if true,  open it output and append a blank line 
-    outf.open( fname.c_str(), std::ios_base::app );
+    // check if the dataset file exists
+    bool ok_file(false);
+    std::ifstream inpf( fname.c_str() );
+    if ( inpf.good() ) { ok_file = bool(true); }
+    inpf.close();
+
+    // open the file
+    std::ofstream outf;
+    if ( !ok_file ) { // if false, open it for output
+      outf.open( fname.c_str(), std::ios_base::out );
+      outf << "## flow_rate " << endl;
+    } else {          // if true,  open it output and append a blank line
+      outf.open( fname.c_str(), std::ios_base::app );
+    }
+
+    outf << flow_time_/60. << "  " << total_flow_rate << endl;
+    outf.close();
   }
-  
-  outf << flow_time_/60. << "  " << total_flow_rate << endl;
-  outf.close();
 }
 
 

@@ -307,6 +307,8 @@ void Richards::RelativePermeability_(const Teuchos::RCP<State>& S,
         const CompositeVector& pres, const double& p_atm,
         const Teuchos::RCP<CompositeVector>& rel_perm) {
 
+  AmanziMesh::Entity_ID_List faces;
+
   // loop over region/wrm pairs
   for (std::vector< Teuchos::RCP<WRMRegionPair> >::iterator wrm=wrm_.begin();
        wrm!=wrm_.end(); ++wrm) {
@@ -316,9 +318,19 @@ void Richards::RelativePermeability_(const Teuchos::RCP<State>& S,
     std::vector<int> cells(ncells);
     S->Mesh()->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
-    // use the wrm to evaluate saturation on each cell in the region
     for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      // use the wrm to evaluate saturation on each cell in the region
       (*rel_perm)("cell",*c) = (*wrm)->second->k_relative(p_atm - pres("cell",*c));
+
+      // and also on the BC faces
+      rel_perm->mesh()->cell_get_faces(*c, &faces);
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+          (*rel_perm)("face",f) =
+            (*wrm)->second->k_relative(p_atm - pres("face", f));
+        }
+      }
     }
   }
 };
@@ -335,20 +347,20 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
 
   if (ndofs == 1) { // isotropic
     for (int c=0; c!=ncells; ++c) {
-      K_[c](0, 0) = (*perm)("cell",c);
+      (*K_)[c](0, 0) = (*perm)("cell",c);
     }
   } else if (ndofs == 2 && S->Mesh()->space_dimension() == 3) {
     // horizontal and vertical perms
     for (int c=0; c!=ncells; ++c) {
-      K_[c](0, 0) = (*perm)("cell",0,c);
-      K_[c](1, 1) = (*perm)("cell",0,c);
-      K_[c](2, 2) = (*perm)("cell",1,c);
+      (*K_)[c](0, 0) = (*perm)("cell",0,c);
+      (*K_)[c](1, 1) = (*perm)("cell",0,c);
+      (*K_)[c](2, 2) = (*perm)("cell",1,c);
     }
   } else if (ndofs == S->Mesh()->space_dimension()) {
     // diagonal tensor
     for (int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
       for (int c=0; c!=ncells; ++c) {
-        K_[c](lcv_dof, lcv_dof) = (*perm)("cell",lcv_dof,c);
+        (*K_)[c](lcv_dof, lcv_dof) = (*perm)("cell",lcv_dof,c);
       }
     }
   } else {
@@ -368,7 +380,7 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("rel_perm_faces");
+  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -388,7 +400,7 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
       int f = faces[n];
       const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
 
-      double outward_flux = ( (K_[c] * gravity) * normal) * dirs[n]
+      double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
               * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c);
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
@@ -405,7 +417,7 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
 
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("density_liquid");
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_perm_faces");
+  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -427,7 +439,7 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
       const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
 
       if (f<f_owned && !done[f]) {
-        (*darcy_flux)("face",f) += ((K_[c] * gravity) * normal)
+        (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal)
           * (*Krel)("cell",c) * (*Krel)("face",f) * (*rho)("cell",c);
         done[f] = true;
       }
