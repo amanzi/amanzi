@@ -34,7 +34,7 @@
   </ParameterList>
 
   <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="0.25"/>   
+    <Parameter name="CFL" type="double" value="0.5"/>   
     <Parameter name="spatial discretization order" type="int" value="2"/>   
     <Parameter name="temporal discretization order" type="int" value="2"/>   
     <Parameter name="advection limiter" type="string" value="Tensorial"/>
