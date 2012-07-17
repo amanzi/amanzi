@@ -44,7 +44,7 @@ if (ENABLE_CGNS)
 endif()
 
 # Need to move this to roo level -- lpritch
-add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
+add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI" "-DHAVE_HYPRE_API")
 
 #
 # Library: flow
