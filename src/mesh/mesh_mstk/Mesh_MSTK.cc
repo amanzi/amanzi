@@ -633,10 +633,10 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
   // Extrusion applicable only in the case of entdim = MFACE/MEDGE
 
   MAttrib_ptr copyatt = MAttrib_New(inmesh_mstk,"copyatt",POINTER,MALLTYPE);
-  vparentatt = MAttrib_New(mesh,"vparentatt",INT,MVERTEX);
-  eparentatt = MAttrib_New(mesh,"eparentatt",INT,MEDGE);
-  fparentatt = MAttrib_New(mesh,"fparentatt",INT,MFACE);
-  rparentatt = MAttrib_New(mesh,"rparentatt",INT,MREGION);
+  vparentatt = MAttrib_New(mesh,"vparentatt",POINTER,MVERTEX);
+  eparentatt = MAttrib_New(mesh,"eparentatt",POINTER,MEDGE);
+  fparentatt = MAttrib_New(mesh,"fparentatt",POINTER,MFACE);
+  rparentatt = MAttrib_New(mesh,"rparentatt",POINTER,MREGION);
 
   switch (entdim) {
   case MREGION:
@@ -674,7 +674,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
               MV_Set_GEntDim(fverts_new[j],MV_GEntDim(mv));
               MV_Set_GEntID(fverts_new[j],MV_GEntID(mv));
               MEnt_Set_AttVal(mv,copyatt,ival,rval,fverts_new[j]);
-              MEnt_Set_AttVal(fverts_new[j],vparentatt,MV_ID(mv),0.0,NULL);
+              MEnt_Set_AttVal(fverts_new[j],vparentatt,0,0.0,mv);
             }
           }
           List_Delete(fverts);
@@ -686,7 +686,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
           rfdirs_new[i] = MR_FaceDir_i(mr,i);
 
           MEnt_Set_AttVal(mf,copyatt,ival,rval,rfaces_new[i]);
-          MEnt_Set_AttVal(rfaces_new[i],fparentatt,MF_ID(mf),0.0,NULL);
+          MEnt_Set_AttVal(rfaces_new[i],fparentatt,0,0.0,mf);
         }
       }
       List_Delete(rfaces);
@@ -696,7 +696,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
       MR_Set_GEntID(mr_new,MR_GEntID(mr));
 
       MEnt_Set_AttVal(mr,copyatt,ival,rval,mr_new);
-      MEnt_Set_AttVal(mr_new,rparentatt,MR_ID(mr),0.0,NULL);
+      MEnt_Set_AttVal(mr_new,rparentatt,0,0.0,mr);
     }
 
 
@@ -760,14 +760,14 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
               MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
               MV_Set_GEntID(mv_new,MV_GEntID(mv));
               MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
-              MEnt_Set_AttVal(mv_new,vparentatt,MV_ID(mv),0.0,NULL);
+              MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
             }
 
             ME_Set_Vertex(fedges_new[j],k,mv_new);
             ME_Set_GEntDim(fedges_new[j],ME_GEntDim(me));
             ME_Set_GEntID(fedges_new[j],ME_GEntID(me));
             MEnt_Set_AttVal(me,copyatt,ival,rval,fedges_new[j]);
-            MEnt_Set_AttVal(fedges_new[j],eparentatt,ME_ID(me),0.0,NULL);
+            MEnt_Set_AttVal(fedges_new[j],eparentatt,0,0.0,me);
           }
         }
         fedirs[j] = MF_EdgeDir_i(mf,j);
@@ -780,7 +780,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
       MF_Set_GEntID(mf_new,MF_GEntID(mf));
 
       MEnt_Set_AttVal(mf,copyatt,ival,rval,mf_new);
-      MEnt_Set_AttVal(mf_new,fparentatt,MF_ID(mf),0.0,NULL);
+      MEnt_Set_AttVal(mf_new,fparentatt,0,0.0,mf);
     }
 
     idx = 0; 
@@ -829,14 +829,14 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
           MV_Set_GEntID(mv_new,MV_GEntID(mv));
 
           MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
-          MEnt_Set_AttVal(mv_new,vparentatt,MV_ID(mv),0.0,NULL);
+          MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
         }
 
         ME_Set_Vertex(me_new,j,mv_new);
       }
 
       MEnt_Set_AttVal(me,copyatt,ival,rval,me_new);
-      MEnt_Set_AttVal(me,eparentatt,ME_ID(me),0.0,NULL);
+      MEnt_Set_AttVal(me,eparentatt,0,0.0,me);
     }
 
     idx = 0;
@@ -863,7 +863,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
       MV_Set_GEntID(mv_new,MV_GEntID(mv));
         
       MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
-      MEnt_Set_AttVal(mv_new,vparentatt,MV_ID(mv),0.0,NULL);
+      MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
     }
 
     idx = 0;
@@ -882,7 +882,6 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
 
 
   if (!serial_run) {
-
     // Have to assign global IDs and build ghost entities 
 
 #ifdef WITH_MSTK_1_86
@@ -2841,7 +2840,10 @@ Entity_ID Mesh_MSTK::entity_get_parent (const Entity_kind kind, const Entity_ID 
   if (!att) return 0;
 
   MEnt_Get_AttVal(ment,att,&ival,&rval,&pval);
-  return (ival-1);
+  if (pval) 
+    return MEnt_ID((MEntity_ptr)pval)-1;
+  else
+    return 0;
 }
 
 
