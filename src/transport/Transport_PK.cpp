@@ -491,18 +491,18 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_MPC)
     fun(T, *component_, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
-      double tcc_value = (*tcc)[i][c];
-      double tcc_predicted = (tcc_value + dT * f_component[c]) * ws_ratio[c];
-      f_component[c] = (tcc_value + tcc_predicted) / 2;
+      (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio[c];
     }
 
     // corrector step
-    TS_nextBIG->copymemory_vector(f_component, *component_);
+    Epetra_Vector*& tcc_next_component = (*tcc_next)(i);
+    TS_nextBIG->copymemory_vector(*tcc_next_component, *component_);
 
     fun(T, *component_, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
-      (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio[c];
+      double value = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio[c];
+      (*tcc_next)[i][c] = ((*tcc_next)[i][c] + value) / 2;
     }
   }
 
