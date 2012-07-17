@@ -253,7 +253,12 @@ void Richards_PK::InitPicard(double T0)
   // set up new preconditioner
   preconditioner_method = ti_specs_igs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_igs_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters"); 
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_igs_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters"); 
+  } else if ( preconditioner_name_igs_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+  }
 
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
@@ -339,8 +344,12 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   // set up new preconditioner
   preconditioner_method = ti_specs_sss_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_sss_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
-
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_sss_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters");
+  } else if (preconditioner_name_sss_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters");
+  }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
@@ -438,8 +447,12 @@ void Richards_PK::InitTransient(double T0, double dT0)
   // set up new preconditioner
   preconditioner_method = ti_specs_trs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
-
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_trs_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters");
+  } else if (preconditioner_name_trs_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters");
+  }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
