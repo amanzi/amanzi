@@ -46,7 +46,7 @@ TEST(Extract_Surface_MSTK1_4P)
   right_surface_def.set< Teuchos::Array<double> >("Direction",dir2);
 
 
-  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
+//  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
 
 
   Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
@@ -135,7 +135,7 @@ TEST(Extract_Surface_MSTK2_4P)
 
   
 
-  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
+//  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
 
 
   Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
@@ -242,7 +242,7 @@ TEST(Extract_Surface_MSTK3_4P)
   top_surface_def.set<std::string>("Entity","Face");
   
 
-  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
+//  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
 
 
   Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
