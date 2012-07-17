@@ -12,6 +12,11 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "eos_factory.hh"
 #include "wrm_factory.hh"
 
+#include "upwind_cell_centered.hh"
+#include "upwind_arithmetic_mean.hh"
+#include "upwind_total_flux.hh"
+#include "upwind_gravity_flux.hh"
+
 #include "permafrost.hh"
 
 namespace Amanzi {
@@ -25,9 +30,8 @@ RegisteredPKFactory<Permafrost> Permafrost::reg_("permafrost flow");
 // -------------------------------------------------------------
 Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
                        const Teuchos::RCP<State>& S,
-                       const Teuchos::RCP<TreeVector>& solution) :
-    flow_plist_(flow_plist) {
-
+                       const Teuchos::RCP<TreeVector>& solution) {
+  flow_plist_ = flow_plist;
   solution_ = solution;
 
   // require fields
@@ -51,9 +55,9 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
   one_cell_owned_factory.SetComponent("cell", AmanziMesh::CELL, 1);
 
   CompositeVectorFactory one_cell_factory;
-  one_cell_owned_factory.SetMesh(S->Mesh());
-  one_cell_owned_factory.SetGhosted();
-  one_cell_owned_factory.AddComponent("cell", AmanziMesh::CELL, 1);
+  one_cell_factory.SetMesh(S->Mesh());
+  one_cell_factory.SetGhosted();
+  one_cell_factory.AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireField("darcy_flux", "flow")->SetMesh(S->Mesh())->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -76,7 +80,6 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
 
   // -- For now, we assume scalar permeability.  This will change.
   S->RequireField("permeability", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("relative_permeability", "flow")->Update(one_cell_owned_factory);
   S->RequireScalar("atmospheric_pressure", "flow");
 
   // -- independent variables not owned by this PK
@@ -86,6 +89,8 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
   S->RequireGravity();
 
   // -- work vectors
+  S->RequireField("relative_permeability", "flow")->SetMesh(S->Mesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
   S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
@@ -93,9 +98,9 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
   // abs perm tensor
   variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
   int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  K_.resize(c_owned);
+  K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (int c=0; c!=c_owned; ++c) {
-    K_[c].init(S->Mesh()->space_dimension(),1);
+    (*K_)[c].init(S->Mesh()->space_dimension(),1);
   }
 
   // constitutive relations
@@ -225,8 +230,8 @@ void Permafrost::initialize(const Teuchos::RCP<State>& S) {
   SetAbsolutePermeabilityTensor_(S);
 
   // operators
-  matrix_->CreateMFDmassMatrices(K_);
-  preconditioner_->CreateMFDmassMatrices(K_);
+  matrix_->CreateMFDmassMatrices(K_.ptr());
+  preconditioner_->CreateMFDmassMatrices(K_.ptr());
 
   // initialize the timesteppper
   solution_->set_data(pres);
@@ -246,275 +251,6 @@ void Permafrost::initialize(const Teuchos::RCP<State>& S) {
 
     // -- set initial state
     time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
-  }
-};
-
-
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
-void Permafrost::state_to_solution(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<TreeVector>& solution) {
-  solution->set_data(S->GetFieldData("pressure", "flow"));
-};
-
-
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
-void Permafrost::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
-        const Teuchos::RCP<State>& S) {
-  S->SetData("pressure", "flow", solution->data());
-};
-
-
-// -----------------------------------------------------------------------------
-// Advance from state S to state S_next at time S.time + dt.
-// -----------------------------------------------------------------------------
-bool Permafrost::advance(double dt) {
-  state_to_solution(S_next_, solution_);
-
-  // take a bdf timestep
-  double h = dt;
-  try {
-    dt_ = time_stepper_->time_step(h, solution_);
-  } catch (Exceptions::Amanzi_exception &error) {
-    std::cout << "Timestepper called error: " << error.what() << std::endl;
-    if (error.what() == std::string("BDF time step failed")) {
-      // try cutting the timestep
-      dt_ = dt_*time_step_reduction_factor_;
-      return true;
-    } else {
-      throw error;
-    }
-  }
-
-  // commit the step as successful
-  time_stepper_->commit_solution(h, solution_);
-  solution_to_state(solution_, S_next_);
-  commit_state(h,S_next_);
-
-  return false;
-};
-
-
-// -----------------------------------------------------------------------------
-// Update any secondary (dependent) variables given a solution.
-//
-//   After a timestep is evaluated (or at ICs), there is no way of knowing if
-//   secondary variables have been updated to be consistent with the new
-//   solution.
-// -----------------------------------------------------------------------------
-void Permafrost::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  // update secondary variables for IC
-  UpdateSecondaryVariables_(S);
-
-  // update the flux
-  UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("numerical_rel_perm");
-  Teuchos::RCP<const CompositeVector> pres =
-    S->GetFieldData("pressure");
-  Teuchos::RCP<CompositeVector> darcy_flux =
-    S->GetFieldData("darcy_flux", "flow");
-
-  matrix_->CreateMFDstiffnessMatrices(*rel_perm);
-  matrix_->DeriveFlux(*pres, darcy_flux);
-  AddGravityFluxesToVector_(S, darcy_flux);
-};
-
-
-// -----------------------------------------------------------------------------
-// Update any diagnostic variables prior to vis (in this case velocity field).
-// -----------------------------------------------------------------------------
-void Permafrost::calculate_diagnostics(const Teuchos::RCP<State>& S) {
-  // update the cell velocities
-  Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("darcy_velocity", "flow");
-  Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("darcy_flux");
-  matrix_->DeriveCellVelocity(*flux, velocity);
-};
-
-
-// -----------------------------------------------------------------------------
-// Use the physical rel perm (on cells) to update a work vector for rel perm.
-//
-//   This deals with upwinding, etc.
-// -----------------------------------------------------------------------------
-void Permafrost::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
-  rel_perm->ScatterMasterToGhosted();
-
-  Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
-  Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
-
-  num_rel_perm->PutScalar(1.0);
-  int ncells = num_rel_perm->size("cell");
-  if (Krel_method_ == FLOW_RELATIVE_PERM_CENTERED) {
-    // symmetric method, no faces needed
-    for (int c=0; c!=ncells; ++c) {
-      (*num_rel_perm)("cell",c) = (*rel_perm)("cell",c) * (*n_liq)("cell",c)
-                                                        / (*visc)("cell",c);
-    }
-  } else {
-    // faces needed
-    if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
-      CalculateRelativePermeabilityUpwindGravity_(S, *rel_perm, num_rel_perm);
-    } else if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-      Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData("darcy_flux");
-      CalculateRelativePermeabilityUpwindFlux_(S, *flux, *rel_perm,
-              num_rel_perm);
-    } else if (Krel_method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-      CalculateRelativePermeabilityArithmeticMean_(S, *rel_perm, num_rel_perm);
-    }
-    // update K with just rho/mu
-    for (int c=0; c!=ncells; ++c) {
-      (*num_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
-    }
-  }
-};
-
-
-// -----------------------------------------------------------------------------
-// Defines upwinded relative permeabilities for faces using gravity.
-// -----------------------------------------------------------------------------
-void Permafrost::CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<State>& S,
-        const CompositeVector& rel_perm_cells,
-        const Teuchos::RCP<CompositeVector>& rel_perm) {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-  AmanziGeometry::Point gravity(g_vec->MyLength());
-  for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
-
-  rel_perm->ViewComponent("face",true)->PutScalar(0.0);
-  int c_owned = rel_perm_cells.size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-    AmanziGeometry::Point Kgravity = K_[c] * gravity;
-
-    for (int n=0; n!=faces.size(); ++n) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
-
-      // TODO: FIX ME.  This should be picked up from boundary value of
-      //       pressure if on the boundary, not the down-wind cell as is
-      //       currently done.
-      if ((normal * Kgravity) * dirs[n] >= 0.0 ||
-          (bc_markers_[f] != Operators::MFD_BC_NULL)) {
-        (*rel_perm)("face",f) = rel_perm_cells("cell",c);
-      }
-    }
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Defines upwinded relative permeabilities for faces using a given flux.
-// -----------------------------------------------------------------------------
-void Permafrost::CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State>& S,
-        const CompositeVector& flux, const CompositeVector& rel_perm_cells,
-        const Teuchos::RCP<CompositeVector>& rel_perm) {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  rel_perm->ViewComponent("face",true)->PutScalar(0.0);
-  int c_owned = rel_perm_cells.size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-    for (int n=0; n!=faces.size(); ++n) {
-      int f = faces[n];
-
-      // TODO: FIX ME.  This should be picked up from boundary value of
-      //       pressure if on the boundary, not the down-wind cell as is
-      //       currently done.
-      if ((flux("face",f) * dirs[n] >= 0.0) ||
-          (bc_markers_[f] != Operators::MFD_BC_NULL)) {
-        (*rel_perm)("face",f) = rel_perm_cells("cell",c);
-      }
-    }
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Defines relative permeabilities for faces via arithmetic averaging.
-// -----------------------------------------------------------------------------
-void Permafrost::CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP<State>& S,
-        const CompositeVector& rel_perm_cells,
-        const Teuchos::RCP<CompositeVector>& rel_perm) {
-  AmanziMesh::Entity_ID_List cells;
-
-  rel_perm->ViewComponent("face",true)->PutScalar(0.0);
-  int f_owned = rel_perm->size("face");
-  for (int f=0; f!=f_owned; ++f) {
-    S->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    for (int n=0; n!=cells.size(); ++n) {
-      (*rel_perm)("face",f) += rel_perm_cells("cell",cells[n]);
-    }
-    (*rel_perm)("face",f) /= cells.size();
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// Interpolate pressure ICs on cells to ICs for lambda (faces).
-// -----------------------------------------------------------------------------
-void Permafrost::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& pres) {
-  AmanziMesh::Entity_ID_List cells;
-
-  int f_owned = pres->size("face");
-  for (int f=0; f!=f_owned; ++f) {
-    cells.clear();
-    S->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    double face_value = 0.0;
-    for (int n=0; n!=ncells; ++n) {
-      face_value += (*pres)("cell",cells[n]);
-    }
-    (*pres)("face",f) = face_value / ncells;
-  }
-};
-
-
-// -----------------------------------------------------------------------------
-// Evaluate boundary conditions at the current time.
-// -----------------------------------------------------------------------------
-void Permafrost::UpdateBoundaryConditions_() {
-  for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MFD_BC_NULL;
-    bc_values_[n] = 0.0;
-  }
-
-  Functions::BoundaryFunction::Iterator bc;
-  for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
-    int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
-    bc_values_[f] = bc->second;
-  }
-
-  for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
-    int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_FLUX;
-    bc_values_[f] = bc->second;
-  }
-};
-
-
-// -----------------------------------------------------------------------------
-// Add a boundary marker to owned faces.
-// -----------------------------------------------------------------------------
-void Permafrost::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& pres) {
-  int nfaces = pres->size("face");
-  for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
-      (*pres)("face",f) = bc_values_[f];
-    }
   }
 };
 

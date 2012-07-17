@@ -18,6 +18,7 @@
 #include "state.hh"
 #include "boundary_function.hh"
 #include "matrix_mfd.hh"
+#include "upwinding.hh"
 
 #include "PK.hh"
 #include "pk_factory.hh"
@@ -38,6 +39,8 @@ const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4;
 class Richards : public PK {
 
 public:
+  Richards() {};
+
   Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
 
@@ -67,8 +70,8 @@ public:
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
-  void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
+  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
@@ -79,90 +82,80 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-private:
+protected:
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& temperature);
 
   // bdf needs help
-  void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-                                       const Teuchos::RCP<CompositeVector>& pres);
+  virtual void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<CompositeVector>& pres);
 
   // computational concerns in managing abs, rel perm
   // -- is abs perm changing?
-  bool variable_abs_perm() { return variable_abs_perm_; }
+  virtual bool variable_abs_perm() { return variable_abs_perm_; }
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
-  void SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S);
-  void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
-
-  // -- rel perm calculation for fluxes
-  void CalculateRelativePermeabilityUpwindGravity_(const Teuchos::RCP<State>& S,
-          const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
-  void CalculateRelativePermeabilityUpwindFlux_(const Teuchos::RCP<State>& S,
-          const CompositeVector& flux, const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
-  void CalculateRelativePermeabilityArithmeticMean_(const Teuchos::RCP<State>& S,
-          const CompositeVector& rel_perm_cells,
-          const Teuchos::RCP<CompositeVector>& rel_perm_faces);
+  virtual void SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S);
+  virtual void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
 
   // physical methods
   // -- diffusion term
-  void ApplyDiffusion_(const Teuchos::RCP<State>& S,const Teuchos::RCP<CompositeVector>& g);
+  virtual void ApplyDiffusion_(const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<CompositeVector>& g);
 
   // -- accumulation term
-  void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
+  virtual void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
 
   // -- gravity contributions
-  void AddGravityFluxes_(const Teuchos::RCP<State>& S,
+  virtual void AddGravityFluxes_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<Operators::MatrixMFD>& matrix);
-  void AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
+  virtual void AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& darcy_mass_flux);
 
   // -- update secondary variables from primary variables T,p
-  void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
+  virtual void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
 
-  void UpdateDensityLiquid_(const Teuchos::RCP<State>& S);
-  void DensityLiquid_(const Teuchos::RCP<State>& S,
-                      const CompositeVector& temp,
-                      const CompositeVector& pres,
-                      const Teuchos::RCP<CompositeVector>& dens_liq,
-                      const Teuchos::RCP<CompositeVector>& mol_dens_liq);
+  virtual void UpdateDensityLiquid_(const Teuchos::RCP<State>& S);
+  virtual void DensityLiquid_(const Teuchos::RCP<State>& S,
+          const CompositeVector& temp,
+          const CompositeVector& pres,
+          const Teuchos::RCP<CompositeVector>& dens_liq,
+          const Teuchos::RCP<CompositeVector>& mol_dens_liq);
 
-  void UpdateViscosityLiquid_(const Teuchos::RCP<State>& S);
-  void ViscosityLiquid_(const Teuchos::RCP<State>& S,
-                        const CompositeVector& temp,
-                        const Teuchos::RCP<CompositeVector>& visc_liq);
+  virtual void UpdateViscosityLiquid_(const Teuchos::RCP<State>& S);
+  virtual void ViscosityLiquid_(const Teuchos::RCP<State>& S,
+          const CompositeVector& temp,
+          const Teuchos::RCP<CompositeVector>& visc_liq);
 
-  void UpdateDensityGas_(const Teuchos::RCP<State>& S);
-  void DensityGas_(const Teuchos::RCP<State>& S,
-                   const CompositeVector& temp,
-                   const CompositeVector& pres,
-                   const double& p_atm,
-                   const Teuchos::RCP<CompositeVector>& mol_frac_gas,
-                   const Teuchos::RCP<CompositeVector>& dens_gas,
-                   const Teuchos::RCP<CompositeVector>& mol_dens_gas);
+  virtual void UpdateDensityGas_(const Teuchos::RCP<State>& S);
+  virtual void DensityGas_(const Teuchos::RCP<State>& S,
+                           const CompositeVector& temp,
+                           const CompositeVector& pres,
+                           const double& p_atm,
+                           const Teuchos::RCP<CompositeVector>& mol_frac_gas,
+                           const Teuchos::RCP<CompositeVector>& dens_gas,
+                           const Teuchos::RCP<CompositeVector>& mol_dens_gas);
 
-  void UpdateSaturation_(const Teuchos::RCP<State>& S);
-  void Saturation_(const Teuchos::RCP<State>& S,
-                   const CompositeVector& pres,
-                   const double& p_atm,
-                   const Teuchos::RCP<CompositeVector>& sat_liq);
+  virtual void UpdateSaturation_(const Teuchos::RCP<State>& S);
+  virtual void Saturation_(const Teuchos::RCP<State>& S,
+                           const CompositeVector& pres,
+                           const double& p_atm,
+                           const Teuchos::RCP<CompositeVector>& sat_liq);
 
-  void DSaturationDp_(const Teuchos::RCP<State>& S,
-                      const CompositeVector& pres,
-                      const double& p_atm,
-                      const Teuchos::RCP<CompositeVector>& dsat_liq);
+  virtual void DSaturationDp_(const Teuchos::RCP<State>& S,
+          const CompositeVector& pres,
+          const double& p_atm,
+          const Teuchos::RCP<CompositeVector>& dsat_liq);
 
-  void UpdateRelativePermeability_(const Teuchos::RCP<State>& S);
-  void RelativePermeability_(const Teuchos::RCP<State>& S,
-                             const CompositeVector& pres,
-                             const double& p_atm,
-                             const Teuchos::RCP<CompositeVector>& rel_perm);
+  virtual void UpdateRelativePermeability_(const Teuchos::RCP<State>& S);
+  virtual void RelativePermeability_(const Teuchos::RCP<State>& S,
+          const CompositeVector& pres,
+          const double& p_atm,
+          const Teuchos::RCP<CompositeVector>& rel_perm);
 
-private:
+protected:
   // control switches
   int internal_tests_;  // output information
   bool variable_abs_perm_;
@@ -174,8 +167,9 @@ private:
   // input parameter data
   Teuchos::ParameterList flow_plist_;
 
-  // work data space
-  std::vector<WhetStone::Tensor> K_;  // tensor of absolute permeability
+  // permeability
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability
+  Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // constitutive relations
   Teuchos::RCP<FlowRelations::EOS> eos_liquid_;

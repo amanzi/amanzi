@@ -139,7 +139,6 @@ private:
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
-  std::vector<WhetStone::Tensor> Ke_; // thermal conductivity, needed as tensor for MFD
 
   // time integration
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
