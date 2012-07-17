@@ -1,0 +1,53 @@
+=============================================================================
+ATS: The Arctic Terrestrial Simulator
+=============================================================================
+-----------------------------------------------
+BACKGROUND
+-----------------------------------------------
+
+-----------------------------------------------
+COPYRIGHT AND LICENSE (getting write access):
+-----------------------------------------------
+
+The copyright and license are contained in the top-level file
+COPYRIGHT.  The copyright is held by LANL for the ATS.  However, it is
+important to note that the copyright for Amanzi, the ASCEM simulator
+that we derive from (and will contribute to), is held jointly between
+the DOE labs participating in ASCEM.  If you are a developer that
+would like write permission on the ATS repository you must send an
+e-mail to David Moulton (moulton@lanl.gov), containing the following
+statement:
+
+>>>>>>>>>>>>>>>
+
+I <insert name>, am currently employed by <insert lab>.  I have read
+and accept the terms and conditions presented in the COPYRIGHT file of
+the Amanzi repository.  In particular, I understand that
+
+ 1. as a developer contributing new code to the Amanzi repository I
+    must have the right to do so, implicitly asserting copyright on
+    behalf of their laboratory on that contribution;
+
+ 2. all new code that is contributed will be under the standard
+    three-clause BSD license contained in the copyright file, and so
+    by contributing code I assert that I have the right to chose this
+    BSD license for my contribution;
+
+ 3. if an existing package is contributed by a developer, the
+    original copyright must be maintained, and the license must
+    be compatible with the three-clause BSD license.
+
+If I change employers I will either terminate my write (push) permission
+or submit a new e-mail confirmation with my updated information 
+in advance of the transition to my new job.
+
+Sincerely, <insert name>
+
+>>>>>>>>>>>>>>>
+
+=============================================================================
+
+
+
+
+
