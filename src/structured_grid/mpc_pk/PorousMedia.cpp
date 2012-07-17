@@ -4810,10 +4810,10 @@ PorousMedia::strang_chem (MultiFab&  state,
 
     for (int ithread = 0; ithread < tnum; ithread++)
     {
-        BL_ASSERT(components[ithread].mineral_volume_fraction.size() == n_minerals);
-        BL_ASSERT(components[ithread].total.size() == n_total);
-        BL_ASSERT(components[ithread].free_ion.size() == n_total);
-        BL_ASSERT(components[ithread].total_sorbed.size() == n_sorbed);
+        BL_ASSERT(components[ithread].mineral_volume_fraction.size() == nminerals);
+        BL_ASSERT(components[ithread].total.size() == ntracers);
+        BL_ASSERT(components[ithread].free_ion.size() == ntracers);
+        //BL_ASSERT(components[ithread].total_sorbed.size() == ntracers);
         BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
     }
     //

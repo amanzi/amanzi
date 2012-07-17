@@ -277,7 +277,7 @@ namespace Amanzi {
                         chem_out_list.set(_name,chem_list.get<std::string>(name));
                     }
                     else if (name=="Thermodynamic Database File") {
-                        chem_out_list.set("file",chem_list.get<std::string>(name));
+                        chem_out_list.set("chem_database_file",chem_list.get<std::string>(name));
                     }
                     else if (name=="Verbosity") {
                         chem_out_list.set("verbose_chemistry_init",chem_list.get<std::string>(name));
@@ -1043,6 +1043,7 @@ namespace Amanzi {
             std::string mineralogy_str = "Mineralogy";
             std::string complexation_str = "Surface Complexation Sites";
             std::string isotherm_str = "Sorption Isotherms";
+            std::string cation_exchange_str = "Cation Exchange Capacity";
 
             Array<std::string> arrayrock;
 
@@ -1312,7 +1313,7 @@ namespace Amanzi {
                             rsublist.set<double>("density",rslist.get<double>("Density"));
                             mtest["Density"] = true;
                         }
-                        else if (rlabel=="Cation Exchange Capacity") {
+                        else if (rlabel==cation_exchange_str) {
                             
                             add_chemistry_properties = true;
                                 
@@ -1411,7 +1412,7 @@ namespace Amanzi {
                         rsublist.set(underscore(complexation_str),sPL);
                     }
                         
-                    rsublist.set("cation_exchange_capacity",cation_exchange_capacity[label]);
+                    rsublist.set(underscore(cation_exchange_str),cation_exchange_capacity[label]);
 
                     // if ntracers>0...
                     //

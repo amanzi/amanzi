@@ -1066,7 +1066,9 @@ protected:
   static int nsorption_sites; 
   static Array<std::string> sorption_sites;
   static int ncation_exchange; 
+  static int nsorption_isotherms;
   static Array<std::string> aux_chem_variables;
+  static bool using_sorption;
 
   typedef std::map<std::string,Real> ICParmPair;
   typedef std::map<std::string, ICParmPair > ICLabelParmPair;
@@ -1116,13 +1118,10 @@ protected:
 
 #ifdef AMANZI
   static PArray<amanzi::chemistry::SimpleThermoDatabase> chemSolve;
-  static std::string amanzi_input_file;
+  static std::string amanzi_database_file;
   static std::string amanzi_activity_model; 
   static Array<amanzi::chemistry::Beaker::BeakerComponents> components;
   static Array<amanzi::chemistry::Beaker::BeakerParameters> parameters;
-  static int n_total;
-  static int n_minerals;
-  static int n_sorbed;
 #endif
   static int  max_grid_size_chem;
   static bool no_initial_values;
