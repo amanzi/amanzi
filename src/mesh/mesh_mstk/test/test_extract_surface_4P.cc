@@ -81,13 +81,17 @@ TEST(Extract_Surface_MSTK1_4P)
 
   // Number of nodes in surface mesh
 
-  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
-
+  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+  int nnodes_surf_owned = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
 
   // Check if coordinates of surface mesh node is the same as its
   // parent node in the volume mesh
 
   for (int k = 0; k < nnodes_surf; k++) {
+    Amanzi::AmanziMesh::Entity_ID_List nodecells;
+    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
+    if (nodecells.size() == 0) continue;
+
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE,k);
     Amanzi::AmanziGeometry::Point coord1;
     mesh.node_get_coordinates(parent,&coord1);
@@ -187,12 +191,16 @@ TEST(Extract_Surface_MSTK2_4P)
 
   // Number of nodes in surface mesh
 
-  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
 
   // Check if coordinate of a node in a surface mesh cell is the same
   // as its parent in the volume mesh
 
   for (int k = 0; k < nnodes_surf; k++) {
+    Amanzi::AmanziMesh::Entity_ID_List nodecells;
+    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
+    if (nodecells.size() == 0) continue;
+
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE,k);
     Amanzi::AmanziGeometry::Point coord1;
     mesh.node_get_coordinates(parent,&coord1);
@@ -275,12 +283,16 @@ TEST(Extract_Surface_MSTK3_4P)
   
   // Number of nodes in surface mesh
 
-  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
 
   // Check if coordinate of a node in a surface mesh cell is the same
   // as its parent in the volume mesh
 
   for (int k = 0; k < nnodes_surf; k++) {
+    Amanzi::AmanziMesh::Entity_ID_List nodecells;
+    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
+    if (nodecells.size() == 0) continue;
+
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE,k);
     Amanzi::AmanziGeometry::Point coord1;
     mesh.node_get_coordinates(parent,&coord1);
