@@ -402,8 +402,6 @@ void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
       int c = cells[0];
       double scaling = (*manning)("cell",c) * std::sqrt((*slope)("cell",c) + eps);
       (*upwind_conductivity)("face",f) = std::pow( (*pressure)("face",f), manning_exp_ + 1.0) / scaling ;
-
-      AmanziGeometry::Point cent = upwind_conductivity->mesh()->face_centroid(f);
     }
   }
 }
