@@ -1,5 +1,5 @@
 # pflotran database preprocessing :
-#        date : 20120710  13   144013.378
+#        date : 20120717  13   184706.894
 #       input : ascem-2012-1d-farea-full.in
 
 <Primary Species
@@ -102,7 +102,7 @@ H+X = 1.0 H+  1.00 X-  ;   2.51189E-02
 >dong_kOH2NO3-0.5 =   1.00 >dong_kOH  1.00 H+  1.00 NO3- ;  -4.90000E+00 ;  -0.50
 >dong_kOHNa+0.5 =   1.00 >dong_kOH  1.00 Na+ ;   2.10000E+00 ;   0.50
 (>dong_FeOH)2UO2+ =   2.00 >dong_FeOH  1.00 UO2++ ;  -1.41100E+01 ;   1.00
-(>dong_FeOH)2UO2CO3- =   2.00 >dong_FeOH  1.00 H2O  -2.00 H+  1.00 CO2(aq)  1.00 UO2++ ;   1.99470E+00 ;  -1.00
+(>dong_FeOH)2UO2CO3- =   2.00 >dong_FeOH  1.00 H2O  -2.00 H+  1.00 CO2(aq)  1.00 UO2++ ;  -4.35530E+00 ;  -1.00
 >dong_FeOH2+0.5 =   1.00 >dong_FeOH  1.00 H+ ;  -9.18000E+00 ;   0.50
 (>dong_FeOH)2CO2- =   2.00 >dong_FeOH -1.00 H2O   1.00 CO2(aq) ;  -5.88530E+00 ;  -1.00
 >dong_FeOCO2Na-0.5 =   1.00 >dong_FeOH -1.00 H+  1.00 CO2(aq)  1.00 Na+ ;   3.06470E+00 ;  -0.50
