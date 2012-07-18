@@ -60,7 +60,6 @@ if (ENABLE_MSTK_Mesh)
     add_definitions("-DHAVE_MSTK_MESH -DMSTK_HAVE_MPI")
 endif()
 
-print_variable(mesh_factory_frameworks)
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
                    LINK_LIBS ${mesh_factory_frameworks} simple_mesh)
