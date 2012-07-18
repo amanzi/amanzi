@@ -120,7 +120,11 @@ class Matrix_MFD : public Epetra_Operator {
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
 
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;  
+#ifdef HAVE_HYPRE_API
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
+  double hypre_tol, hypre_strong_threshold;
+  int hypre_nsmooth, hypre_ncycles;
+#endif
 
   int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 

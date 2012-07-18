@@ -114,7 +114,7 @@
            NO3-    1.00570e-01    1.00285e-01
            Zn++    1.00565e-07    1.00279e-07
 ---- Change Balance 
-                                  2.00001e-13
+                                  2.00015e-13
 ---- Species 
            Name       Molality Activity Coeff       Activity
              H+    1.20441e-05    8.32643e-01    1.00284e-05

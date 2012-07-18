@@ -253,7 +253,12 @@ void Richards_PK::InitPicard(double T0)
   // set up new preconditioner
   preconditioner_method = ti_specs_igs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_igs_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters"); 
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_igs_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters"); 
+  } else if ( preconditioner_name_igs_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+  }
 
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
@@ -339,8 +344,12 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   // set up new preconditioner
   preconditioner_method = ti_specs_sss_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_sss_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
-
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_sss_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters");
+  } else if (preconditioner_name_sss_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters");
+  }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
@@ -403,9 +412,6 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
-  absolute_tol = ti_specs_sss_.atol;
-  relative_tol = ti_specs_sss_.rtol;
-
   set_time(T0, dT0);  // overrides data provided in the input file
   ti_method = ti_method_sss;
   num_itrs = 0;
@@ -441,8 +447,12 @@ void Richards_PK::InitTransient(double T0, double dT0)
   // set up new preconditioner
   preconditioner_method = ti_specs_trs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
-
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_trs_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters");
+  } else if (preconditioner_name_trs_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters");
+  }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
@@ -496,14 +506,13 @@ void Richards_PK::InitTransient(double T0, double dT0)
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // calculate total water mass
+  Epetra_Vector& phi = FS->ref_porosity();
   mass_bc = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    mass_bc += water_saturation[c] * rho * mesh_->cell_volume(c); 
+    mass_bc += water_saturation[c] * rho * phi[c] * mesh_->cell_volume(c); 
   }
 
   // control options
-  absolute_tol = ti_specs_trs_.atol;
-  relative_tol = ti_specs_trs_.rtol;
   ti_method = ti_method_trs;
   num_itrs = 0;
   block_picard = 0;
@@ -619,14 +628,15 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   // ImproveAlgebraicConsistency(flux, ws_prev, ws);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    Epetra_Vector& phi = FS_MPC->ref_porosity();
     mass_bc += WaterVolumeChangePerSecond(bc_markers, flux) * rho * dT;
 
     mass_amanzi = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
-      mass_amanzi += ws[c] * rho * mesh_->cell_volume(c);
+      mass_amanzi += ws[c] * rho * phi[c] * mesh_->cell_volume(c);
     }
     double mass_loss = mass_bc - mass_amanzi; 
-    std::printf("Richards PK: water mass %9.4e %9.4e\n", mass_amanzi, mass_loss);
+    std::printf("Richards PK: water mass = %9.4e, lost = %9.4e\n", mass_amanzi, mass_loss);
   }
 
   dT = dTnext;

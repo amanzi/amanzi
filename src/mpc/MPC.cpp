@@ -511,12 +511,11 @@ void MPC::cycle_driver() {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-	*out << std::setprecision(6);
+	*out << setprecision(5);
         *out << "Cycle = " << iter;
-        *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
-        *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);
+        *out << ",  Time(y) = "<< fixed << S->get_time() / (365.25*60*60*24);
+        *out << ",  dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
 	*out << " " << limitstring;
-	//*out << " " << S->get_time() << " " << mpc_dT;
         *out << std::endl;
       }
       // ==============================================================

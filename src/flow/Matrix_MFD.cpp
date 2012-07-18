@@ -421,7 +421,15 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     ML_list = prec_list;
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else {
+#ifdef HAVE_HYPRE_API
+    // read some boomer amg parameters
+    hypre_ncycles = prec_list.get<int>("cycle applications",5);
+    hypre_nsmooth = prec_list.get<int>("smoother sweeps",3);
+    hypre_tol = prec_list.get<double>("tolerance",0.0);
+    hypre_strong_threshold = prec_list.get<double>("strong threshold",0.0);
+    // create the preconditioner
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
+#endif
   }
 }
 
@@ -436,14 +444,15 @@ void Matrix_MFD::UpdatePreconditioner()
     MLprec->SetParameterList(ML_list);
     MLprec->ComputePreconditioner();
   } else {
+#ifdef HAVE_HYPRE_API
     Teuchos::RCP<FunctionParameter> functs[10];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
-    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, 3));
-    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, 5));
+    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
+    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
     functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, 0.25)); 
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, 0.0)); 
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold)); 
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol)); 
     functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
 
     Teuchos::ParameterList hypre_list;
@@ -457,6 +466,7 @@ void Matrix_MFD::UpdatePreconditioner()
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
     IfpHypre_Sff_->Compute();
+#endif
   }
 }
 
@@ -549,10 +559,13 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   Tf.Update(1.0, Xf, -1.0);
 
   // Solve the Schur complement system Sff * Yf = Tf.
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML)
+  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Tf, Yf);
-  else 
+  } else { 
+#ifdef HAVE_HYPRE_API
     IfpHypre_Sff_->ApplyInverse(Tf, Yf);
+#endif
+  }
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
   ierr |= (*Acf_).Multiply(false, Yf, Tc);  // It performs the required parallel communications.

@@ -1,10 +1,4 @@
-:Description: Savanna River F-Basin, 2012 ASCEM demo; based on description and toughreact input file from Sergio Bea
-
-:=========================== flow mode ========================================
-: Uniform velocity (see below). No flow mode specified.
-
-:=========================== useful tranport parameters ==================
-UNIFORM_VELOCITY 6.02486e-7 0.d0 0.d0 !m/s (19 m/y)
+:Description: ASCEM 2012 F-Area benchmark problem, 1-d fixed velocity flow w/ full chemistry
 
 :=========================== chemistry ========================================
 CHEMISTRY
@@ -20,7 +14,7 @@ CHEMISTRY
     Na+
     SiO2(aq)
     SO4--
-    tritium  : tracer w/ radioactive decay for calibrating flow
+    Tritium  : tracer w/ radioactive decay for calibrating flow
     NO3-
     UO2++
   /
@@ -85,8 +79,8 @@ CHEMISTRY
   /
 
   GENERAL_REACTION
-    REACTION tritium <-> 
-    FORWARD_RATE -1.78577e-09 : [s^-1] half life of 12.3 y
+    REACTION Tritium <-> 
+    FORWARD_RATE 1.78577e-09 : [s^-1] half life of 12.3 y
     BACKWARD_RATE 0.d0
   /
 
@@ -96,51 +90,15 @@ CHEMISTRY
       RATE_CONSTANT -13.345
     /
     Kaolinite
-      : dissolution
-      :AFFINITY_POWER 0.5
+      RATE_CONSTANT -12.967
       PREFACTOR
-        : neutral
+      : acid
         RATE_CONSTANT -12.967
-      /
-      PREFACTOR
-      : acid
-        RATE_CONSTANT -11.098
         PREFACTOR_SPECIES H+
           ALPHA 0.777
         /
       /
-      PREFACTOR
-        : base
-        RATE_CONSTANT -16.839
-        PREFACTOR_SPECIES H+
-          ALPHA -0.472
-        /
-      /
     /
-skip
-    Kaolinite
-      : precipitation
-      :AFFINITY_POWER 0.5
-      PREFACTOR
-        : neutral
-        RATE_CONSTANT -14.126
-      /
-      PREFACTOR
-      : acid
-        RATE_CONSTANT -12.256
-        PREFACTOR_SPECIES H+
-          ALPHA 0.777
-        /
-      /
-      PREFACTOR
-        : base
-        RATE_CONSTANT -17.996
-        PREFACTOR_SPECIES H+
-          ALPHA -0.472
-        /
-      /
-    /
-noskip
     Goethite
       RATE_CONSTANT -7.94
     /
@@ -161,19 +119,13 @@ noskip
       : dissolution
       RATE_CONSTANT -12.135
     /
-skip
-    Opal
-      : precipitation
-      RATE_CONSTANT -9.135
-    /
-noskip
   /
 
   SORPTION
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      MINERAL Kaolinite
-      SITE >dong_kOH 3.8193e-6   : [mol/m^3]
+      :MINERAL Kaolinite
+      SITE >dong_kOH 22.58   : [mol/m^3 bulk]
       COMPLEXES
         (>dong_kOH)2UO2+
         (>dong_kOH)2UO2CO3-
@@ -184,8 +136,8 @@ noskip
     /
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      MINERAL Goethite 
-      SITE >dong_FeOH 4.9817e-6   : [mol/m^3]
+      :MINERAL Goethite
+      SITE >dong_FeOH 5.52   : [mol/m^3 bulk]
       COMPLEXES
         (>dong_FeOH)2UO2+
         (>dong_FeOH)2UO2CO3-
@@ -196,8 +148,8 @@ noskip
     /
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      MINERAL Quartz
-      SITE >SiOH 16.6e-06   : [mol/m^3]
+      :MINERAL Quartz
+      SITE >SiOH 5.419   : [mol/m^3 bulk]
       COMPLEXES
         >SiOH2+
         >SiO-
@@ -205,8 +157,8 @@ noskip
       /
     /
     ION_EXCHANGE_RXN
-      MINERAL Kaolinite
-      CEC 24.986855814  : [mol/m^3]
+      :MINERAL Kaolinite
+      CEC 2.75  : [mol/m^3 bulk]
       CATIONS
         Na+   1.0
         UO2++ 0.223872113857
@@ -215,12 +167,11 @@ noskip
         H+    0.0251188643151
       /
     /
-  / :sorption
+  END :sorption
 
 
-  DATABASE ./ascem-2012-farea.dat
+  DATABASE ascem-2012-farea.dat
   LOG_FORMULATION
-  OPERATOR_SPLITTING
   ACTIVITY_COEFFICIENTS TIMESTEP
 
   OUTPUT
@@ -235,18 +186,18 @@ noskip
     Quartz
     Goethite
   /
-END
 
+END
 
 :=========================== solver options ===================================
-LINEAR_SOLVER TRANSPORT
-  SOLVER DIRECT
-END
-
+TIMESTEPPER
+  TS_ACCELERATION 8
+/
 
 :=========================== discretization ===================================
 GRID
   TYPE structured
+  ORIGIN 0.d0 0.d0 0.d0
   NXYZ 100 1 1
   BOUNDS
     0.d0 100.d0
@@ -255,47 +206,38 @@ GRID
   /
 END
 
+:=========================== flow =============================================
+UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0
 
 :=========================== fluid properties =================================
 FLUID_PROPERTY 
-  DIFFUSION_COEFFICIENT 1.0d-32
-END
-
+  DIFFUSION_COEFFICIENT 1.d-9
+/
 
 :=========================== material properties ==============================
-MATERIAL_PROPERTY bulk
+MATERIAL_PROPERTY soil1
   ID 1
-  POROSITY 1.0
-  TORTUOSITY 1.0
-  LONGITUDINAL_DISPERSIVITY 0.d0
-END
-
+  POROSITY 0.25d0
+/
 
 :=========================== observation points ===============================
 OBSERVATION
   REGION all
   AT_CELL_CENTER
-END
-
+/
 
 :=========================== output options ===================================
 OUTPUT
-  times y 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 10.0 20.0 30.0 40.0 50.0
-
-:  FORMAT TECPLOT POINT
   FORMAT HDF5
-  VELOCITIES
-  MASS_BALANCE
-END
-
+  PERIODIC TIME 1 y
+/
 
 :=========================== times ============================================
 TIME
-  FINAL_TIME 60.d0 y
-  INITIAL_TIMESTEP_SIZE 0.001d0 y
-  MAXIMUM_TIMESTEP_SIZE 0.001d0 y
-END
-
+  FINAL_TIME 50.d0 y
+  INITIAL_TIMESTEP_SIZE 1.d-6 y
+  MAXIMUM_TIMESTEP_SIZE 1.d-1 y
+/
 
 :=========================== regions ==========================================
 REGION all
@@ -305,7 +247,7 @@ REGION all
   /
 END
 
-REGION inlet
+REGION west
   FACE WEST
   COORDINATES
     0.d0 0.d0 0.d0
@@ -313,14 +255,13 @@ REGION inlet
   /
 END
 
-REGION outlet
+REGION east
   FACE EAST
   COORDINATES
     100.d0 0.d0 0.d0
     100.d0 1.d0 1.d0
   /
 END
-
 
 :=========================== transport conditions =============================
 TRANSPORT_CONDITION initial
@@ -330,23 +271,23 @@ TRANSPORT_CONDITION initial
   /
 END
 
-TRANSPORT_CONDITION source
+TRANSPORT_CONDITION west
   TYPE dirichlet
   CONSTRAINT_LIST
     0.d0 seepage
   /
 END
 
-TRANSPORT_CONDITION outlet
-  TYPE zero_gradient
+TRANSPORT_CONDITION east
+  TYPE dirichlet_zero_gradient
   CONSTRAINT_LIST
     0.d0 background
   /
 END
 
-
 :=========================== constraints ======================================
 CONSTRAINT background
+  : initial condition
   CONCENTRATIONS  : total aqueous [moles/kg_h2o]
     H+       5.4        P
     Al+++    3.09d-8    M Kaolinite
@@ -359,23 +300,25 @@ CONSTRAINT background
     Na+      2.78e-4    T
     SiO2(aq) 1.77e-4    M Quartz
     SO4--    2.25e-5    T
-    tritium  1.0e-15    T
+    Tritium  1.0e-15    T
     NO3-     1.0e-3     T
     UO2++    1.25e-10   T
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
-    Quartz        0.88     5.258e3
-    Kaolinite     0.11     6.032e4
-    Goethite      0.016    6.732e3
+    Quartz        0.88      3262.3
+    Kaolinite     0.11     59093.9
+    Goethite      0.016    11076.3
     Schoepite     0.0      0.1
     Gibbsite      0.0      0.1
     Basaluminite  0.0      0.1
     Opal          0.0      0.1
     Jurbanite     0.0      0.1
   /
+
 END
 
 CONSTRAINT seepage
+  : west BC
   CONCENTRATIONS  : total aqueous [moles/kg_h2o]
     H+       2.05       P
     Al+++    1.00d-8    T
@@ -388,43 +331,46 @@ CONSTRAINT seepage
     Na+      6.82e-5    Z
     SiO2(aq) 1.18e-4    T
     SO4--    4.80e-5    T
-    tritium  2.17e-9    T
+    Tritium  2.17e-9    T
     NO3-     1.00e-2    T
     UO2++    3.01e-5    T
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
-    Quartz        0.88     5.258e3
-    Kaolinite     0.11     6.032e4
-    Goethite      0.016    6.732e3
+    Quartz        0.88      3262.3
+    Kaolinite     0.11     59093.9
+    Goethite      0.016    11076.3
     Schoepite     0.0      0.1
     Gibbsite      0.0      0.1
     Basaluminite  0.0      0.1
     Opal          0.0      0.1
     Jurbanite     0.0      0.1
   /
+
 END
 
-
 :=========================== condition couplers ===============================
+: initial condition
 INITIAL_CONDITION
   TRANSPORT_CONDITION initial
   REGION all
 END
 
+: west boundary condition
 BOUNDARY_CONDITION
-  TRANSPORT_CONDITION source
-  REGION inlet
+  TRANSPORT_CONDITION west
+  REGION west
 END
 
+: east boundary condition
 BOUNDARY_CONDITION
-  TRANSPORT_CONDITION outlet
-  REGION outlet
+  TRANSPORT_CONDITION east
+  REGION east
 END
-
 
 :=========================== stratigraphy couplers ============================
 STRATA
   REGION all
-  MATERIAL bulk
+  MATERIAL soil1
 END
+
 

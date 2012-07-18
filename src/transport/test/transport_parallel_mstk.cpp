@@ -54,7 +54,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   TS->AnalyticDarcyFlux(u);
   TS->AnalyticWaterSaturation();
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();

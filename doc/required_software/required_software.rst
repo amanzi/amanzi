@@ -60,9 +60,9 @@ Boost:
           file system activities.
         - ``graph``: Used in the mesh audit tool.
         - ``mpl``: Meta-programming library used in the mesh factory.  
-        - ``system`` :   ???
+        - ``system`` :  ???
         - ``program_options`` : Used in the MPC to define options in the main driver.
-        - ``regex`` : ??  
+        - ``regex`` : Used in the mesh factory
 
         :Dependencies: A modern C++ compiler. See the Boost website for specifics.
         :Information: http://www.boost.org/
@@ -92,7 +92,7 @@ HDF5:
         :Information: http://www.hdfgroup.org/HDF5/
 
 ASCEM-IO:
-        :Versions: 2.0 
+        :Versions: 2.1 
         :Description: Parallel IO load balance libary
         :Role: Used by Amanzi output of problem data and restarts.
         :Dependencies: HDF5, MPI
@@ -108,7 +108,7 @@ netCDF:
 
 
 ExodusII:
-        :Versions: 5.14
+        :Versions: 4.98
         :Description: Mesh data base libary
         :Role: Used by Amanzi to describe mesh geometry for import.
         :Dependencies: netCDF
@@ -129,13 +129,14 @@ Trilinos:
         - ``Epetra``: a parallel-aware array libarary
         - ``STKmesh``: a mesh database libary (optional)
         - ``NOX``: Nonlinear Object-Oriented Solutions package  
-        - TODO: Complete?
+        - ``Zoltan``: Load balance library (required if MSTK is enabled)
 
-        :Dependencies: ExodusII, (if STKmesh used) CMake, MPI
+        :Dependencies: ExodusII, (if STKmesh used), Hypre (optional), CMake, MPI
+                       LAPACK and BLAS
         :Information: http://trilinos.sandia.gov/
 
 CCSE:
-        :Version: 0.1.9
+        :Version: 1.0.1
         :Description: Base library for structured-mesh objects
         :Role: Used by Amanzi to implement structured-grid adaptive integrator
         :Dependencies: MPI, OpenMPI (if enabled)
@@ -186,12 +187,18 @@ MOAB:
         :Information: 
 
 MSTK:
-        :Versions: 1.85.rc2
+        :Versions: 1.85.rc4
         :Description: A meshing database library
         :Role: An optional backend for Amanzi meshing
-        :Dependencies: ExodusII
+        :Dependencies: ExodusII, Zoltan (Trilinos)
         :Information:  https://software.lanl.gov/MeshTools/trac
 
+Hypre:
+        :Versions: 2.8.0b
+        :Description: A library that provides several preconditioner options
+        :Role: Used in the Flow computational kernel
+        :Dependencies: 
+        :Information: https://computation.llnl.gov/casc/linear_solvers/sls_hypre.html
 
 Optional Software Tools
 -----------------------

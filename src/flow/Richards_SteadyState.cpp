@@ -219,7 +219,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Richards PK: Picard:%4d  residual=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
+      std::printf("Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
           itrs, L2error, relaxation, linear_residual, num_itrs);
     }
 

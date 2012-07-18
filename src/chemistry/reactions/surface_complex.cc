@@ -121,12 +121,13 @@ void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
 
   // Need to consider activity of water
 
+  lnQK_temp += free_site_stoichiometry() *
+      surface_site.ln_free_site_concentration();
+
   for (int i = 0; i < ncomp_; i++) {
     lnQK_temp += stoichiometry_[i] *
         primarySpecies[species_ids_[i]].ln_activity();
   }
-  lnQK_temp += free_site_stoichiometry() *
-      surface_site.ln_free_site_concentration();
   set_lnQK(lnQK_temp);
   set_surface_concentration(std::exp(lnQK()));
 }  // end Update()

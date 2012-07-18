@@ -32,8 +32,6 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
   if (list.isSublist(name)) {
     Teuchos::ParameterList& tmp_list = list.sublist(name);
-    ti_specs.atol = tmp_list.get<double>("absolute error tolerance", FLOW_TI_ABSOLUTE_TOLERANCE);
-    ti_specs.rtol = tmp_list.get<double>("relative error tolerance", FLOW_TI_RELATIVE_TOLERANCE);
     ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
     ti_specs.max_itrs = tmp_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
 
@@ -99,6 +97,11 @@ void Flow_PK::ProcessStringPreconditioner(const std::string name, int* precondit
     *preconditioner = FLOW_PRECONDITIONER_TRILINOS_ML;
   } else if (name == "Hypre AMG") {
     *preconditioner = FLOW_PRECONDITIONER_HYPRE_AMG;
+#ifndef HAVE_HYPRE_API
+    Errors::Message msg;
+    msg << "\nFlow PK: Hypre TPL has not been activated.";
+    Exceptions::amanzi_throw(msg);   
+#endif
   }
 }
 

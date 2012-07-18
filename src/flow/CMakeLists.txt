@@ -45,7 +45,9 @@ endif()
 
 # Need to move this to roo level -- lpritch
 add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
-
+if (HAVE_HYPRE)
+  add_definitions("-DHAVE_HYPRE_API")
+endif()
 #
 # Library: flow
 #
@@ -111,6 +113,12 @@ if (BUILD_TESTS)
         add_amanzi_test(flow_darcy_2D flow_darcy_2D
 	                KIND int
                         SOURCE test/Main.cc test/flow_darcy_2D.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+ 
+        # Test: transient Darcy flow 
+        add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
+	                KIND int
+                        SOURCE test/Main.cc test/flow_darcy_dual2D.cpp
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow with a source

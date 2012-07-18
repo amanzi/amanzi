@@ -316,11 +316,22 @@ Usage:
 
    * [U] `"ML cycle applications`" [int] This is the number of V-cycles that are performed in each preconditioner invocation. (The default is 2).
 
+   * [U] `"use Hypre AMG`" [bool] use Hypre BoomerAMG as a preconditioner instead of the default ML.
+
+   * [U] `"Hypre AMG tolerance`" [double] set a tolerance stopping criterion for the Hypre BoomerAMG preconditioner. If this is greater zero, then the preconditioner will run as many V-cycles as necessary to reach this prescribed accuracy, up to the maximum number of cycles that can also be specified as a parameter (see `"Hypre AMG cycle applications`").
+
+   * [U] `"Hypre AMG cycle applications`" [int] the maximum number of V-cycles that are performed per preconditioner invocation. Note that if  `"Hypre AMG tolerance`" is zero, then this is the exact number of V-cycles that are performed per preconditioner invocation.
+
+   * [U] `"Hypre AMG smoother sweeps`" [int] the number of both pre and post smoothing sweeps.
+
+   * [U] `"Hypre AMG strong threshold`" [double] set this to 0.25 for a 2D problem, and to 0.5 for a 3D problem. 
+
    * [U] `"linear solver tolerance`" [double] Set the tolerance for the AztecOO linear solver that may be used in a saturated steady state computation.
 
    * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation.
  
    * [U] `"linear solver method`" [string] Select the AztecOO linear solver that may be used in a saturated steady state computation. For example, GMRES.
+
 
    * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution.
 

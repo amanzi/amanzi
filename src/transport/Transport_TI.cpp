@@ -23,7 +23,7 @@ namespace AmanziTransport {
 void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
+  const Epetra_Vector& ws  = *water_saturation_start;
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
 
   // transport routines need an RCP pointer
@@ -50,7 +50,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
-  for (int f = 0; f <= fmax; f++) {  // loop over master and slave faces
+  for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
 
@@ -68,7 +68,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     u = fabs(darcy_flux[f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-    if (c1 >= 0 && c1 <= cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
@@ -76,14 +76,14 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
-    } else if (c1 >= 0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0)) {
+    } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
-    } else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
@@ -93,7 +93,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     }
   }
 
-  for (int c = 0; c <= cmax_owned; c++) {  // calculate conservative quantatity
+  for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
     double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
     f_component[c] /= vol_phi_ws;
   }
@@ -105,7 +105,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
         f = bc->first;
         c2 = (*downwind_cell_)[f];
 
-        if (c2 >= 0 && f <= fmax_owned) {
+        if (c2 >= 0 && f < nfaces_owned) {
           u = fabs(darcy_flux[f]);
           double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2];
           tcc_flux = u * bc->second;

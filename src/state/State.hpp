@@ -8,7 +8,9 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Export.h"
+
 #include "Mesh.hh"
+#include "Point.hh"
 #include "Vis.hpp"
 #include "function.hh"
 
@@ -76,14 +78,14 @@ class State : public Teuchos::VerboseObject<State> {
 
 
   // debug helpers
-  void set_darcy_flux( const double* u, const int mesh_block_id );
-  void set_darcy_flux( const double* u, const std::string region );
-  void set_water_saturation(const double ws );
-  void set_water_density(const double wd );
+  void set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const int mesh_block_id);
+  void set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const std::string region);
+  void set_water_saturation(const double ws);
+  void set_water_density(const double wd);
   void set_zero_total_component_concentration();
   void set_total_component_concentration(const double* conc, const int mesh_block_id); 
-  void set_total_component_concentration(const double* conc, const std::string region ); 
-  void set_free_ion_concentrations(const double* conc, const std::string region ); 
+  void set_total_component_concentration(const double* conc, const std::string region); 
+  void set_free_ion_concentrations(const double* conc, const std::string region); 
   void set_porosity( const double phi );
   void set_porosity( const double phi, const int mesh_block_id );
   void set_porosity( const double phi, const std::string region );
