@@ -90,7 +90,7 @@ private:
   // Parent entity attribute - populated if the mesh is derived from
   // another mesh
 
-  MAttrib_ptr parentatt;
+  MAttrib_ptr rparentatt, fparentatt, eparentatt, vparentatt;
   
   // Private methods
   // ----------------------------

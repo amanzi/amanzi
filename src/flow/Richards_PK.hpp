@@ -72,7 +72,6 @@ class Richards_PK : public Flow_PK {
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_norm(double rtol, double atol) {};
   void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
-  // void compute_precon(double T, double dT, const Epetra_Vector& u, Teuchos::ParameterList* prec_list);
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
@@ -182,7 +181,7 @@ class Richards_PK : public Flow_PK {
   int ti_method_trs, error_control_trs_; 
   std::string preconditioner_name_trs_;
 
-  double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
+  //double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
   int ti_method, num_itrs, max_itrs, preconditioner_method;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution

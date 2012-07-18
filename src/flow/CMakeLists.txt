@@ -45,7 +45,9 @@ endif()
 
 # Need to move this to roo level -- lpritch
 add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
-
+if (HAVE_HYPRE)
+  add_definitions("-DHAVE_HYPRE_API")
+endif()
 #
 # Library: flow
 #

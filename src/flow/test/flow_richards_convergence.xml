@@ -81,8 +81,6 @@
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
         <ParameterList name="backward Euler">
-          <Parameter name="absolute error tolerance" type="double" value="1.0"/>
-          <Parameter name="relative error tolerance" type="double" value="1e-4"/>
           <Parameter name="convergence tolerance" type="double" value="1e-9"/>
           <Parameter name="maximum number of iterations" type="int" value="3000"/>
           <Parameter name="start time" type="double" value="0.0"/>
