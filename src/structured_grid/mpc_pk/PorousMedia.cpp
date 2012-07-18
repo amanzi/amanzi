@@ -2488,7 +2488,7 @@ PorousMedia::multilevel_advance (Real time,
 		BL_ASSERT(pm_lev.aux_boundary_data_old.nComp() == ncomps+ntracers);
 		
 		tmpFABs.define(pm_lev.aux_boundary_data_old.equivBoxArray(),
-			       ncomps,0,
+			       ncomps+ntracers,0,
 			       pm_lev.aux_boundary_data_old.DistributionMap(),
 			       Fab_allocate);
 		
@@ -2501,14 +2501,14 @@ PorousMedia::multilevel_advance (Real time,
 		ba.grow(ngrow);
       
 		// This MF is guaranteed to cover tmpFABs & valid region of S_old.
-		MultiFab tmpS_old(ba,ntracers,0);
+		MultiFab tmpS_old(ba,ncomps+ntracers,0);
       
 		// Note that S_old & tmpS_old have the same distribution.
-		for (FillPatchIterator fpi(pm_lev,S_old,ngrow,time,State_Type,ncomps,ntracers);
+		for (FillPatchIterator fpi(pm_lev,S_old,ngrow,time,State_Type,0,ncomps+ntracers);
 		     fpi.isValid();++fpi) 
 		  tmpS_old[fpi.index()].copy(fpi());
       
-		tmpFABs.copy(tmpS_old,0,ncomps,ntracers);
+		tmpFABs.copy(tmpS_old,0,0,ncomps+ntracers);
 		
 		tmpS_old.clear();
 		
@@ -4788,10 +4788,12 @@ PorousMedia::strang_chem (MultiFab&  state,
     BL_PROFILE(BL_PROFILE_THIS_NAME() + "::strang_chem()");
 
     // HACK!
+#if 0
     if (ParallelDescriptor::IOProcessor()) {
         BoxLib::Warning("******************** Skipping of chemistry advance for now...");
     }
     return;
+#endif
 
     const Real strt_time = ParallelDescriptor::second();
 
