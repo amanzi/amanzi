@@ -19,7 +19,7 @@ namespace Flow {
 }}
 #endif
 
-#define debug_flag 1
+#define debug_flag 0
 
 
 // Overland is a BDFFnBase

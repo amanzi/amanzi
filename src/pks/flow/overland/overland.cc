@@ -167,6 +167,33 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize boundary conditions
   int nfaces = S->Mesh("surface")->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_owned = S->Mesh("surface")->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  int ncells = S->Mesh("surface")->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells_owned = S->Mesh("surface")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  int nnodes = S->Mesh("surface")->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nnodes_owned = S->Mesh("surface")->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  std::cout << "Overland Initialize: " << S->Mesh("surface")->get_comm()->MyPID() << std::endl;
+  std::cout << "  nnodes (owned, used):" << nnodes_owned << " " << nnodes << std::endl;
+  std::cout << "  nfaces (owned, used):" << nfaces_owned << " " << nfaces << std::endl;
+  std::cout << "  ncells (owned, used):" << ncells_owned << " " << ncells << std::endl;
+
+  int dnfaces = S->Mesh("domain")->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int dnfaces_owned = S->Mesh("domain")->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  int dncells = S->Mesh("domain")->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int dncells_owned = S->Mesh("domain")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  int dnnodes = S->Mesh("domain")->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int dnnodes_owned = S->Mesh("domain")->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  std::cout << "Domain Initialize: " << S->Mesh("domain")->get_comm()->MyPID() << std::endl;
+  std::cout << "  nnodes (owned, used):" << dnnodes_owned << " " << dnnodes << std::endl;
+  std::cout << "  nfaces (owned, used):" << dnfaces_owned << " " << dnfaces << std::endl;
+  std::cout << "  ncells (owned, used):" << dncells_owned << " " << dncells << std::endl;
+
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -302,19 +329,20 @@ bool OverlandFlow::advance(double dt) {
   // take a bdf timestep
   double h = dt;
 
-  try {
-    dt_ = time_stepper_->time_step(h, solution_);
+  //  try {
+    time_stepper_->time_step(h, solution_);
+    //dt_ = time_stepper_->time_step(h, solution_);
     flow_time_ += h;
-  } catch (Exceptions::Amanzi_exception &error) {
-    std::cout << "Timestepper called error: " << error.what() << std::endl;
-    if (error.what() == std::string("BDF time step failed")) {
-      // try cutting the timestep
-      dt_ = dt_*time_step_reduction_factor_;
-      return true;
-    } else {
-      throw error;
-    }
-  }
+  // } catch (Exceptions::Amanzi_exception &error) {
+  //   std::cout << "Timestepper called error: " << error.what() << std::endl;
+  //   if (error.what() == std::string("BDF time step failed")) {
+  //     // try cutting the timestep
+  //     dt_ = dt_*time_step_reduction_factor_;
+  //     return true;
+  //   } else {
+  //     throw error;
+  //   }
+  // }
 
   // commit the step as successful
   time_stepper_->commit_solution(h, solution_);
@@ -461,10 +489,6 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::RCP<State>& S) {
 
     bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
     bc_values_[f] = (*pres)("cell",cells[0]) + (*elevation)("face",f);
-
-    if (f == 0) {
-      std::cout << "update bcs: (pres, elev) " << (*pres)("cell",cells[0]) << " " << (*elevation)("face",f) << std::endl;
-    }
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
@@ -682,36 +706,76 @@ void OverlandFlow::output_flow_rate() {
   Teuchos::RCP<CompositeVector> krel = 
     S_next_->GetFieldData("upwind_overland_conductivity", "overland_flow");
 
+  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List nodes;
+  AmanziGeometry::Point coord0_surf(2), coord1_surf(2);
+  AmanziGeometry::Point coord0(3), coord1(3);
+  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface_mesh =
+    Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S_next_->Mesh("surface"));
 
   //print_vector(S_next_,pres,"output_flow_rate: pressure") ;
+  if (S_next_->Mesh("surface")->get_comm()->MyPID() > 0) MPI_Barrier(MPI_COMM_WORLD);
+
 
   // compute total flow_rate by integrating the face 
   // with zero gradient conditions
   Functions::BoundaryFunction::Iterator bc;
   double total_flow_rate = 0.;
   int nfaces_owned = flux->size("face",false);
-  std::cout << "DATA ON DOWNGRADIENT EDGE" << std::endl;
+  std::cout << "DATA ON DOWNGRADIENT EDGE " << S_next_->Mesh("surface")->get_comm()->MyPID() << std::endl;
   for (bc=bc_zero_gradient_->begin(); bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
     if (f < nfaces_owned) {
       double face_area = S_next_->Mesh("surface")->face_area(f) ;
+      AmanziGeometry::Point cent = S_next_->Mesh("surface")->face_centroid(f);
       total_flow_rate += (*flux)("face",0,f);
-      printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e\n",
-             f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f)) ;
+      printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e x=(%14.7e,%14.7e)\n",
+             f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f),cent[0],cent[1]) ;
+
+
+#if 0
+      cells.clear();
+      S_next_->Mesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      cent = S_next_->Mesh("surface")->cell_centroid(cells[0]);
+      printf("  c=%5i x=(%14.7e,%14.7e) elev=%14.7e\n",cells[0],cent[0],cent[1],(*elev)("cell",0,cells[0]));
+
+      nodes.clear();
+      S_next_->Mesh("surface")->face_get_nodes(f, &nodes);
+      ASSERT(nodes.size() == 2);
+      S_next_->Mesh("surface")->node_get_coordinates(nodes[0], &coord0_surf);
+      S_next_->Mesh("surface")->node_get_coordinates(nodes[1], &coord1_surf);
+
+      AmanziMesh::Entity_ID node0 = surface_mesh->entity_get_parent(AmanziMesh::NODE, nodes[0]);
+      AmanziMesh::Entity_ID node1 = surface_mesh->entity_get_parent(AmanziMesh::NODE, nodes[1]);
+      S_next_->Mesh("domain")->node_get_coordinates(node0, &coord0);
+      S_next_->Mesh("domain")->node_get_coordinates(node1, &coord1);
+
+      printf("  nodes: surface: (%5i) (%14.7e, %14.7e),                 (%5i) (%14.7e, %14.7e)\n         domain:  (%5i) (%14.7e, %14.7e, %14.7e), (%5i) (%14.7e, %14.7e, %14.7e)\n",
+             nodes[0],coord0_surf[0],coord0_surf[1],
+             nodes[1],coord1_surf[0],coord1_surf[1],
+             node0,coord0[0],coord0[1],coord0[2],
+             node1,coord1[0],coord1[1],coord1[2]);
+#endif
+
     }
   }
+
+  fflush(stdout);
+  if (S_next_->Mesh("surface")->get_comm()->MyPID() == 0) MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   LINE(--);
 
-  std::cout << "DATA ON OUTER EDGE" << std::endl;
-  for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
-    int f = bc->first;
-    if (f < nfaces_owned) {
-      double face_area = S_next_->Mesh("surface")->face_area(f) ;
-      printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e\n",
-             f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f)) ;
-    }
-  }
+  // std::cout << "DATA ON OUTER EDGE" << std::endl;
+  // for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
+  //   int f = bc->first;
+  //   if (f < nfaces_owned) {
+  //     double face_area = S_next_->Mesh("surface")->face_area(f) ;
+  //     printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e\n",
+  //            f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f)) ;
+  //   }
+  // }
 
 
 #ifdef HAVE_MPI

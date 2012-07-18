@@ -135,17 +135,8 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n) * Krel("cell",0,c) * Krel("face",0,faces[m]);
-          if (c == 0) {
-            std::cout << "krel face: " << Krel("face",0,faces[m]) << std::endl;
-          }
         }
       }
-    }
-
-    if (c == 0) {
-      std::cout << "krel cell: " << Krel("cell",0,c) << std::endl;
-      std::cout << "Mff: " << Mff << std::endl;
-      std::cout << "Bff: " << Bff << std::endl;
     }
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -165,11 +156,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
     Acf_cells_.push_back(Bcf);
     Acc_cells_.push_back(matsum);
   }
-
-  std::cout << "Aff_cells: " << Aff_cells_[0] << std::endl;
-  std::cout << "Acf_cells: " << Acf_cells_[0] << std::endl;
-  std::cout << "Afc_cells: " << Afc_cells_[0] << std::endl;
-  std::cout << "Acc_cells: " << Acc_cells_[0] << std::endl;
 }
 
 
@@ -253,9 +239,6 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
 
     for (int n=0; n!=nfaces; ++n) {
       int f=faces[n];
-
-      AmanziGeometry::Point cent = mesh_->face_centroid(f);
-
       if (bc_markers[f] == MFD_BC_DIRICHLET) {
         for (int m=0; m!=nfaces; ++m) {
           Ff[m] -= Bff(m, n) * bc_values[f];
@@ -269,13 +252,6 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
       } else if (bc_markers[f] == MFD_BC_FLUX) {
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
-
-      if ((cent[0] == 790.) && (cent[1] == 0.)) {
-        std::cout << "BC Marker: " << bc_markers[f] << std::endl;
-        std::cout << "bc contribution to rhs: " << Ff << std::endl;
-        std::cout << "BC value: " << bc_values[f] << std::endl;
-      }
-
     }
   }
 }
@@ -347,8 +323,6 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
  * We need an auxiliary GHOST-based vector to assemble the RHS.
  ****************************************************************** */
 void MatrixMFD::AssembleGlobalMatrices() {
-  int special_f = -1;
-
   Aff_->PutScalar(0.0);
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -386,20 +360,9 @@ void MatrixMFD::AssembleGlobalMatrices() {
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
       (*rhs_)("face",f) += Ff_cells_[c][n];
-
-      AmanziGeometry::Point cent = mesh_->face_centroid(f);
-      if ((cent[0] == 790.) && (cent[1] == 0.)) {
-        std::cout << "rhs assembly pre-gather (" << f << ": " << (*rhs_)("face",f) << std::endl;
-        special_f = f;
-      }
-
     }
   }
   rhs_->GatherGhostedToMaster("face");
-
-  if (special_f != -1) {
-    std::cout << "rhs assembly post-gather (" << special_f << ": " << (*rhs_)("face",special_f) << std::endl;
-  }
 }
 
 
@@ -482,13 +445,6 @@ void MatrixMFD::Apply(const CompositeVector& X,
     Errors::Message msg("MatrixMFD::Apply has failed to calculate Y = inv(A) * X.");
     Exceptions::amanzi_throw(msg);
   }
-
-  for (int f=0; f!=X.size("face",false); ++f) {
-    AmanziGeometry::Point cent = mesh_->face_centroid(f);
-    if ((cent[0] == 790.) && (cent[1] == 0.)) {
-      std::cout << "applying op (X,Y): " << X("face",f) << " " << (*Y)("face",f) << std::endl;
-    }
-  }
 }
 
 
@@ -549,12 +505,6 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
         const Teuchos::RCP<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(-1.0, *rhs_, 1.0);
-  for (int f=0; f!=rhs_->size("face",false); ++f) {
-    AmanziGeometry::Point cent = mesh_->face_centroid(f);
-    if ((cent[0] == 790.) && (cent[1] == 0.)) {
-      std::cout << "applying op (rhs): " << (*rhs_)("face",f) << std::endl;
-    }
-  }
 }
 
 

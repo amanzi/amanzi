@@ -30,14 +30,10 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const CompositeVector> upwind_conductivity =
     S->GetFieldData("upwind_overland_conductivity", "overland_flow");
 
-  std::cout << "rel p: " << (*upwind_conductivity)("cell",0) << " "
-            << (*upwind_conductivity)("cell",0) << std::endl;
-
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(*upwind_conductivity);
   matrix_->CreateMFDrhsVectors();
 
-  //  std::cout << "BC in res: " << bc_values_[3] << ", " << bc_values_[5] << std::endl;
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
