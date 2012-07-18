@@ -748,10 +748,7 @@ PorousMedia::variableSetUp ()
       is_diffusive[i] = false;
     }
 
-  bool needs_aux_chem_data = aux_chem_variables.size() || 
-      ( (nminerals>0)  ||  (nsorption_sites>0)  ||   (ncation_exchange>0) || (nsorption_isotherms > 0));
-
-  if (needs_aux_chem_data)
+  if (do_chem && ntracers > 0)
   {
       if (ntracers>0)
       {
@@ -2539,6 +2536,9 @@ void  PorousMedia::read_chem()
             aux_chem_variables.resize(num_aux);
             pp.getarr("Auxiliary_Data",aux_chem_variables,0,num_aux);
         }
+
+        // TODO: here down goes into seperate function init_chem()
+
         //
 	// In order to thread the AMANZI chemistry, we had to give each thread 
 	// its own chemSolve and components object.
