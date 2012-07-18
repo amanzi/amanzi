@@ -427,8 +427,6 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     hypre_nsmooth = prec_list.get<int>("smoother sweeps",3);
     hypre_tol = prec_list.get<double>("tolerance",0.0);
     hypre_strong_threshold = prec_list.get<double>("strong threshold",0.0);
-    // create the preconditioner
-    // IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
 #endif
   }
 }
