@@ -428,7 +428,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     hypre_tol = prec_list.get<double>("tolerance",0.0);
     hypre_strong_threshold = prec_list.get<double>("strong threshold",0.0);
     // create the preconditioner
-    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
+    // IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
 #endif
   }
 }
@@ -445,6 +445,7 @@ void Matrix_MFD::UpdatePreconditioner()
     MLprec->ComputePreconditioner();
   } else {
 #ifdef HAVE_HYPRE_API
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[10];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
