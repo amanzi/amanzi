@@ -491,6 +491,7 @@ void MPC::cycle_driver() {
 	    }
 	  } while (redo);
 	  FPK->CommitState(FS);
+	  S->set_final_time(S->initial_time() + mpc_dT);
 	}
       }
 
