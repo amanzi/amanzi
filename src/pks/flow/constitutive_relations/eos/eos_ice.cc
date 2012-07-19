@@ -18,10 +18,10 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactory<EOS,EOSIce> EOSIce::factory_("ice");
+Utils::RegisteredFactoryWithState<EOS,EOSIce> EOSIce::factory_("ice");
 
-EOSIce::EOSIce(Teuchos::ParameterList& eos_plist) :
-    eos_plist_(eos_plist),
+EOSIce::EOSIce(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
+    EOS(eos_plist, S),
 
     ka_(916.724),
     kb_(-0.147143),
@@ -35,35 +35,42 @@ EOSIce::EOSIce(Teuchos::ParameterList& eos_plist) :
   InitializeFromPlist_();
 };
 
-double EOSIce::MassDensity(double T, double p) {
+
+EOSIce::EOSIce(const EOSIce& other) :
+    EOS(other),
+    ka_(916.724),
+    kb_(-0.147143),
+    kc_(-0.000238095),
+    kT0_(273.15),
+    kalpha_(1.0e-10),
+    kp0_(1.0e5),
+    M_(other.M_) {}
+
+// ---------------------------------------------------------------------------
+// Virtual copy constructor.
+// ---------------------------------------------------------------------------
+Teuchos::RCP<FieldModel> EOSIce::Clone() const {
+  return Teuchos::rcp(new EOSIce(*this));
+}
+
+double EOSIce::Density(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + kc_*dT)*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
 };
 
-double EOSIce::DMassDensityDT(double T, double p) {
+double EOSIce::DDensityDT(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = kb_ + 2.0*kc_*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
 };
 
-double EOSIce::DMassDensityDp(double T, double p) {
+double EOSIce::DDensityDp(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + kc_*dT)*dT;
   return rho1bar * kalpha_;
 };
 
-double EOSIce::MolarDensity(double T, double p) {
-  return MassDensity(T,p) / M_;
-};
-
-double EOSIce::DMolarDensityDT(double T, double p) {
-  return DMassDensityDT(T,p) / M_;
-};
-
-double EOSIce::DMolarDensityDp(double T, double p) {
-  return DMassDensityDp(T,p) / M_;
-};
 
 void EOSIce::InitializeFromPlist_() {
   if (eos_plist_.isParameter("Molar mass of ice [kg/mol]")) {

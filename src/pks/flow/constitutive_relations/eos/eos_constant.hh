@@ -11,12 +11,12 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_EOS_CONSTANT_HH_
-#define _FLOWRELATIONS_EOS_CONSTANT_HH_
+#ifndef FLOWRELATIONS_EOS_CONSTANT_HH_
+#define FLOWRELATIONS_EOS_CONSTANT_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "factory_with_state.hh"
 #include "eos.hh"
 
 namespace Amanzi {
@@ -27,31 +27,25 @@ namespace FlowRelations {
 class EOSConstant : public EOS {
 
 public:
-  explicit EOSConstant(Teuchos::ParameterList& eos_plist);
+  EOSConstant(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  EOSConstant(const EOSConstant& other);
 
-  virtual double MassDensity(double T, double p) { return rho_; }
-  virtual double DMassDensityDT(double T, double p) { return 0.0; }
-  virtual double DMassDensityDp(double T, double p) { return 0.0; }
+  virtual Teuchos::RCP<FieldModel> Clone() const;
 
-  virtual double MolarDensity(double T, double p) { return rho_/M_; }
-  virtual double DMolarDensityDT(double T, double p) { return 0.0; }
-  virtual double DMolarDensityDp(double T, double p) { return 0.0; }
-
-  virtual double Viscosity(double T) { return visc_; }
+  virtual double Density(double T, double p) { return rho_/M_; }
+  virtual double DDensityDT(double T, double p) { return 0.0; }
+  virtual double DDensityDp(double T, double p) { return 0.0; }
 
   double molar_mass() { return M_; }
-
-  double DViscosityDT(double T) { return 0.0; } // not implemented
+  virtual bool is_molar_basis() { return true; }
 
 private:
   virtual void InitializeFromPlist_();
 
-  Teuchos::ParameterList eos_plist_;
   double M_;
   double rho_;
-  double visc_;
 
-  static Utils::RegisteredFactory<EOS,EOSConstant> factory_;
+  static Utils::RegisteredFactoryWithState<EOS,EOSConstant> factory_;
 
 };
 

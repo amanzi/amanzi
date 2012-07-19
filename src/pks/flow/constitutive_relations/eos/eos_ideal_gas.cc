@@ -3,7 +3,7 @@
 /*
   ATS
 
-  EOS for an ideal gas (does not implement viscosity at this point!)
+  EOS for an ideal gas
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
@@ -15,36 +15,38 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactory<EOS,EOSIdealGas> EOSIdealGas::factory_("ideal gas");
+Utils::RegisteredFactoryWithState<EOS,EOSIdealGas> EOSIdealGas::factory_("ideal gas");
 
-EOSIdealGas::EOSIdealGas(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {
+EOSIdealGas::EOSIdealGas(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
+    EOS(eos_plist, S) {
   InitializeFromPlist_();
 };
 
-double EOSIdealGas::MassDensity(double T, double p) {
-  return p / (R_*T) * M_;
-};
+EOSIdealGas::EOSIdealGas(const EOSIdealGas& other) :
+    EOS(other),
+    R_(other.R_),
+    M_(other.M_) {}
 
-double EOSIdealGas::DMassDensityDT(double T, double p) {
-  return -p / (R_*T*T) * M_;
-};
 
-double EOSIdealGas::DMassDensityDp(double T, double p) {
-  return 1.0 / (R_*T) * M_;
-};
+// ---------------------------------------------------------------------------
+// Virtual copy constructor.
+// ---------------------------------------------------------------------------
+Teuchos::RCP<FieldModel> EOSIdealGas::Clone() const {
+  return Teuchos::rcp(new EOSIdealGas(*this));
+}
 
-double EOSIdealGas::MolarDensity(double T, double p) {
+
+double EOSIdealGas::Density(double T, double p) {
   return p / (R_*T);
 };
 
-double EOSIdealGas::DMolarDensityDT(double T, double p) {
+double EOSIdealGas::DDensityDT(double T, double p) {
   return -p / (R_*T*T);
 };
 
-double EOSIdealGas::DMolarDensityDp(double T, double p) {
+double EOSIdealGas::DDensityDp(double T, double p) {
   return 1.0 / (R_*T);
 };
-
 
 void EOSIdealGas::InitializeFromPlist_() {
   R_ = eos_plist_.get<double>("Ideal gas constant [J/mol-K]", 8.3144621);

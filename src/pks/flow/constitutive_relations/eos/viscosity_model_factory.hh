@@ -4,26 +4,26 @@
    ATS
    Author: Ethan Coon
 
-   Self-registering factory for EOS implementations.
+   Self-registering factory for ViscosityModel implementations.
    ------------------------------------------------------------------------- */
 
-#ifndef _PK_FLOW_EOS_FACTORY_HH_
-#define _PK_FLOW_EOS_FACTORY_HH_
+#ifndef PK_FLOW_VISCOSITY_MODEL_FACTORY_HH_
+#define PK_FLOW_VISCOSITY_MODEL_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "eos.hh"
+#include "viscosity_model.hh"
 #include "factory_with_state.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class EOSFactory : public Utils::FactoryWithState<EOS> {
+class ViscosityModelFactory : public Utils::FactoryWithState<ViscosityModel> {
 
 public:
-  Teuchos::RCP<EOS> createEOS(Teuchos::ParameterList& plist, const Teuchos::Ptr<State>& S);
+  Teuchos::RCP<ViscosityModel> createViscosityModel(Teuchos::ParameterList& plist, const Teuchos::Ptr<State>& S);
 };
 
 } // namespace

@@ -15,13 +15,13 @@ namespace Flow {
 namespace FlowRelations {
 
 // explicity instantitate the static data of Factory<EOS>
-//template<> Factory<EOS>::map_type* Factory<EOS>::map_;
-template<> Utils::Factory<EOS>::map_type* Utils::Factory<EOS>::map_;
+template<> Utils::FactoryWithState<EOS>::map_type* Utils::FactoryWithState<EOS>::map_;
 
 // method for instantiating EOS implementations
-Teuchos::RCP<EOS> EOSFactory::createEOS(Teuchos::ParameterList& plist) {
+Teuchos::RCP<EOS> EOSFactory::createEOS(Teuchos::ParameterList& plist,
+        const Teuchos::Ptr<State>& S) {
   std::string eos_typename = plist.get<std::string>("EOS Type");
-  return Teuchos::rcp(CreateInstance(eos_typename, plist));
+  return Teuchos::rcp(CreateInstance(eos_typename, plist, S));
 };
 
 } // namespace

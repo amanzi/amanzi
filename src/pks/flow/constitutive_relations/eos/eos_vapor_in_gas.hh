@@ -8,27 +8,31 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_EOS_VAPOR_IN_GAS_HH_
-#define _FLOWRELATIONS_EOS_VAPOR_IN_GAS_HH_
+#ifndef FLOWRELATIONS_EOS_VAPOR_IN_GAS_HH_
+#define FLOWRELATIONS_EOS_VAPOR_IN_GAS_HH_
 
 #include "Teuchos_ParameterList.hpp"
 #include "eos.hh"
 #include "vapor_pressure_model.hh"
+#include "secondary_variable_field_model.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
 // Equation of State model
-class EOSVaporInGas {
+class EOSVaporInGas : public SecondaryVariableFieldModel {
 
 public:
-  explicit EOSVaporInGas(Teuchos::ParameterList& eos_plist);
+  EOSVaporInGas(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  EOSVaporInGas(const EOSVaporInGas& other);
 
-  virtual double MassDensity(double T, double p, double mol_frac_vapor);
-  virtual double DMassDensityDT(double T, double p, double mol_frac_vapor);
-  virtual double DMassDensityDp(double T, double p, double mol_frac_vapor);
-  virtual double DMassDensityDmol_frac(double T, double p, double mol_frac_vapor);
+  virtual Teuchos::RCP<FieldModel> Clone() const;
+
+  virtual double Density(double T, double p, double mol_frac_vapor);
+  virtual double DDensityDT(double T, double p, double mol_frac_vapor);
+  virtual double DDensityDp(double T, double p, double mol_frac_vapor);
+  virtual double DDensityDmol_frac(double T, double p, double mol_frac_vapor);
 
   virtual double molar_mass(double mol_frac_vapor) {
     return mol_frac_vapor*Mv_ + (1.0-mol_frac_vapor)*gas_eos_->molar_mass(); }

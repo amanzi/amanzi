@@ -11,7 +11,15 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 
-add_library(flow_relations_eos eos_factory.cc vapor_pressure_model_factory.cc eos_ideal_gas.cc eos_constant.cc eos_water.cc eos_ice.cc water_vapor_pressure_model.cc eos_vapor_in_gas.cc )
+add_library(flow_relations_eos
+  eos.cc eos_factory.cc
+  eos_ideal_gas.cc
+  eos_constant.cc
+  eos_water.cc
+  eos_ice.cc
+  viscosity_model.cc viscosity_model_factory.cc
+  viscosity_water.cc )
+
 
 
 #add_library(flow_relations_eos_factory eos_factory.cc)
@@ -27,12 +35,12 @@ add_library(flow_relations_eos eos_factory.cc vapor_pressure_model_factory.cc eo
 #WHOLE_ARCHIVE(flow_relations_eos_factory)
 WHOLE_ARCHIVE(flow_relations_eos)
 
-if ( BUILD_TESTS )
-    include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/eos)
+# if ( BUILD_TESTS )
+#     include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/eos)
 
-    # Test: miscaleneous transport routines
-    add_executable(eos_test test/main.cc)
-    target_link_libraries(eos_test ${flow_relations_eos} ${Amanzi_TPL_Trilinos_LIBRARIES})
-    #target_link_libraries(eos_test ${flow_relations_eos_factory} ${flow_relations_eos} ${Amanzi_TPL_Trilinos_LIBRARIES})
+#     # Test: miscaleneous transport routines
+#     add_executable(eos_test test/main.cc)
+#     target_link_libraries(eos_test ${flow_relations_eos} ${Amanzi_TPL_Trilinos_LIBRARIES})
+#     #target_link_libraries(eos_test ${flow_relations_eos_factory} ${flow_relations_eos} ${Amanzi_TPL_Trilinos_LIBRARIES})
 
-endif()
+# endif()

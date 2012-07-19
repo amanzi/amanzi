@@ -11,12 +11,12 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_EOS_ICE_HH_
-#define _FLOWRELATIONS_EOS_ICE_HH_
+#ifndef FLOWRELATIONS_EOS_ICE_HH_
+#define FLOWRELATIONS_EOS_ICE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "factory_with_state.hh"
 #include "eos.hh"
 
 namespace Amanzi {
@@ -27,21 +27,17 @@ namespace FlowRelations {
 class EOSIce : public EOS {
 
 public:
-  explicit EOSIce(Teuchos::ParameterList& eos_plist);
+  EOSIce(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  EOSIce(const EOSIce& other);
 
-  virtual double MassDensity(double T, double p);
-  virtual double DMassDensityDT(double T, double p);
-  virtual double DMassDensityDp(double T, double p);
+  virtual Teuchos::RCP<FieldModel> Clone() const;
 
-  virtual double MolarDensity(double T, double p);
-  virtual double DMolarDensityDT(double T, double p);
-  virtual double DMolarDensityDp(double T, double p);
-
-  double Viscosity(double T) {}
+  virtual double Density(double T, double p);
+  virtual double DDensityDT(double T, double p);
+  virtual double DDensityDp(double T, double p);
 
   double molar_mass() { return M_; }
-
-  double DViscosityDT(double T) {} // not implemented
+  virtual bool is_molar_basis() { return false; }
 
 private:
   virtual void InitializeFromPlist_();
@@ -58,7 +54,7 @@ private:
   // -- pressure dependence of density
   const double kalpha_, kp0_;
 
-  static Utils::RegisteredFactory<EOS,EOSIce> factory_;
+  static Utils::RegisteredFactoryWithState<EOS,EOSIce> factory_;
 
 };
 

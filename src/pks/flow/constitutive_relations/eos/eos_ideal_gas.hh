@@ -3,17 +3,17 @@
 /*
   ATS
 
-  EOS for an ideal gas (does not implement viscosity at this point!)
+  EOS for an ideal gas
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_EOS_IDEAL_GAS_HH_
-#define _FLOWRELATIONS_EOS_IDEAL_GAS_HH_
+#ifndef FLOWRELATIONS_EOS_IDEAL_GAS_HH_
+#define FLOWRELATIONS_EOS_IDEAL_GAS_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "factory_with_state.hh"
 #include "eos.hh"
 
 namespace Amanzi {
@@ -24,30 +24,26 @@ namespace FlowRelations {
 class EOSIdealGas : public EOS {
 
 public:
-  explicit EOSIdealGas(Teuchos::ParameterList& eos_plist);
+  EOSIdealGas(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  EOSIdealGas(const EOSIdealGas& other);
 
-  virtual double MassDensity(double T, double p);
-  virtual double DMassDensityDT(double T, double p);
-  virtual double DMassDensityDp(double T, double p);
+  virtual Teuchos::RCP<FieldModel> Clone() const;
 
-  virtual double MolarDensity(double T, double p);
-  virtual double DMolarDensityDT(double T, double p);
-  virtual double DMolarDensityDp(double T, double p);
+  virtual double Density(double T, double p);
+  virtual double DDensityDT(double T, double p);
+  virtual double DDensityDp(double T, double p);
 
   virtual double molar_mass() { return M_; }
-
-  virtual double Viscosity(double T) {}
-  virtual double DViscosityDT(double T) {}
+  virtual bool is_molar_basis() { return true; }
 
 protected:
   virtual void InitializeFromPlist_();
 
-  Teuchos::ParameterList eos_plist_;
   double R_;
   double M_;
 
 private:
-  static Utils::RegisteredFactory<EOS,EOSIdealGas> factory_;
+  static Utils::RegisteredFactoryWithState<EOS,EOSIdealGas> factory_;
 };
 
 } // namespace

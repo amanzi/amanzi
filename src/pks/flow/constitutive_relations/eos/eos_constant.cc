@@ -17,13 +17,25 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactory<EOS,EOSConstant> EOSConstant::factory_("constant");
+Utils::RegisteredFactoryWithState<EOS,EOSConstant> EOSConstant::factory_("constant");
 
-EOSConstant::EOSConstant(Teuchos::ParameterList& eos_plist) :
-    eos_plist_(eos_plist) {
-
+EOSConstant::EOSConstant(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
+    EOS(eos_plist, S) {
   InitializeFromPlist_();
 };
+
+EOSConstant::EOSConstant(const EOSConstant& other) :
+    EOS(other),
+    rho_(other.rho_),
+    M_(other.M_) {}
+
+// ---------------------------------------------------------------------------
+// Virtual copy constructor.
+// ---------------------------------------------------------------------------
+Teuchos::RCP<FieldModel> EOSConstant::Clone() const {
+  return Teuchos::rcp(new EOSConstant(*this));
+}
+
 
 void EOSConstant::InitializeFromPlist_() {
   // defaults to water
@@ -34,8 +46,6 @@ void EOSConstant::InitializeFromPlist_() {
   }
 
   rho_ = eos_plist_.get<double>("Density [kg/m^3]", 1000.0);
-  visc_ = eos_plist_.get<double>("Viscosity [Pa-s]", 8.9e-4);
-
 };
 
 } // namespace
