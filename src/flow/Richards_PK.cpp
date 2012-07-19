@@ -251,15 +251,21 @@ void Richards_PK::InitPicard(double T0)
   }
 
   // set up new preconditioner
+  preconditioner_method = ti_specs_igs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_igs_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_igs_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters"); 
+  } else if ( preconditioner_name_igs_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+  }
 
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   // set up new time integration or solver
   solver = new AztecOO;
@@ -336,15 +342,20 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   }
 
   // set up new preconditioner
+  preconditioner_method = ti_specs_sss_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_sss_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
-
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_sss_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters");
+  } else if (preconditioner_name_sss_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters");
+  }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   // set up new time integration or solver
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
@@ -401,9 +412,6 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   DeriveSaturationFromPressure(pressure, water_saturation);
 
   // control options
-  absolute_tol = ti_specs_sss_.atol;
-  relative_tol = ti_specs_sss_.rtol;
-
   set_time(T0, dT0);  // overrides data provided in the input file
   ti_method = ti_method_sss;
   num_itrs = 0;
@@ -437,15 +445,20 @@ void Richards_PK::InitTransient(double T0, double dT0)
   set_time(T0, dT0);
 
   // set up new preconditioner
+  preconditioner_method = ti_specs_trs_.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
-  Teuchos::ParameterList ML_list = tmp_list.sublist("ML Parameters");
-
+  Teuchos::ParameterList ML_list;
+  if (preconditioner_name_trs_ == "Trilinos ML") {
+    ML_list = tmp_list.sublist("ML Parameters");
+  } else if (preconditioner_name_trs_ == "Hypre AMG") {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters");
+  }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
     if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset BDF2 is to delete it.
@@ -492,10 +505,14 @@ void Richards_PK::InitTransient(double T0, double dT0)
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
   DeriveSaturationFromPressure(pressure, water_saturation);
 
-  // control options
-  absolute_tol = ti_specs_trs_.atol;
-  relative_tol = ti_specs_trs_.rtol;
+  // calculate total water mass
+  Epetra_Vector& phi = FS->ref_porosity();
+  mass_bc = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    mass_bc += water_saturation[c] * rho * phi[c] * mesh_->cell_volume(c); 
+  }
 
+  // control options
   ti_method = ti_method_trs;
   num_itrs = 0;
   block_picard = 0;
@@ -528,6 +545,7 @@ int Richards_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
+  // predict water mass change during time step
   time = T_physics;
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
@@ -606,8 +624,20 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
-  // improve algebraic consistency 
-  // ImproveAlgebraicConsistentcy(flux, ws_prev, ws);
+  // update mass balance
+  // ImproveAlgebraicConsistency(flux, ws_prev, ws);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    Epetra_Vector& phi = FS_MPC->ref_porosity();
+    mass_bc += WaterVolumeChangePerSecond(bc_markers, flux) * rho * dT;
+
+    mass_amanzi = 0.0;
+    for (int c = 0; c < ncells_owned; c++) {
+      mass_amanzi += ws[c] * rho * phi[c] * mesh_->cell_volume(c);
+    }
+    double mass_loss = mass_bc - mass_amanzi; 
+    std::printf("Richards PK: water mass = %9.4e, lost = %9.4e\n", mass_amanzi, mass_loss);
+  }
 
   dT = dTnext;
 
@@ -655,7 +685,7 @@ void Richards_PK::ComputePreconditionerMFD(
   matrix_operator->AssembleGlobalMatrices();
   if (flag_update_ML) {
     matrix_operator->ComputeSchurComplement(bc_markers, bc_values);
-    matrix_operator->UpdateML_Preconditioner();
+    matrix_operator->UpdatePreconditioner();
   }
 
   // DEBUG
@@ -748,8 +778,14 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
   // create a disctributed flux vector
   Epetra_Vector flux_d(mesh_->face_map(true));
   for (int f = 0; f < nfaces_owned; f++) flux_d[f] = flux[f];
-  FS->CombineGhostFace2MasterFace(flux_d);
+  FS->CopyMasterFace2GhostFace(flux_d);
 
+  // create a distributed saturation vector
+  Epetra_Vector ws_d(mesh_->cell_map(true));
+  for (int c = 0; c < ncells_owned; c++) ws_d[c] = ws[c];
+  FS->CopyMasterCell2GhostCell(ws_d);
+
+  WhetStone::MFD3D mfd(mesh_);
   const Epetra_Vector& phi = FS->ref_porosity();
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -758,12 +794,27 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    // calculate min/max values
+    double wsmin, wsmax;
+    wsmin = wsmax = ws[c];
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      int c2 = mfd.cell_get_face_adj_cell(c, f);
+      wsmin = std::min<double>(wsmin, ws[c2]);
+      wsmax = std::max<double>(wsmax, ws[c2]);
+    }
+
+    // predict new saturation
     ws[c] = ws_prev[c];
     double factor = dT / (phi[c] * mesh_->cell_volume(c));
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       ws[c] -= factor * flux_d[f] * dirs[n]; 
     }
+
+    // limit new saturation
+    ws[c] = std::max<double>(ws[c], wsmin);
+    ws[c] = std::min<double>(ws[c], wsmax);
   }
 }
 

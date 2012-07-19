@@ -40,33 +40,29 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 set(mesh_factory_files 
     MeshFileType.cc MeshFramework.cc 
     MeshFactory.cc FrameworkTraits.cc) 
-add_library(mesh_factory ${mesh_factory_files})
-add_install_library(mesh_factory)
-target_link_libraries(mesh_factory simple_mesh)
-
-#
-# Install Targets
-#
 file(GLOB mesh_factory_inc_files "*.hh")
-add_install_include_file(${mesh_factory_inc_files})
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
-    target_link_libraries(mesh_factory stk_mesh exodus_reader mesh_data)
+    list(APPEND mesh_factory_frameworks stk_mesh exodus_reader mesh_data)
     add_definitions("-DHAVE_STK_MESH")
 endif()
 
 if (ENABLE_MOAB_Mesh)
     include_directories(${MOAB_INCLUDE_DIR} ${MOAB_SOURCE_DIR})
-    target_link_libraries(mesh_factory moab_mesh)
+    list(APPEND mesh_factory_frameworks moab_mesh)
     add_definitions("-DHAVE_MOAB_MESH")
 endif()
 
 if (ENABLE_MSTK_Mesh)
     include_directories(${MSTK_INCLUDE_DIR} ${MSTK_SOURCE_DIR})
-    target_link_libraries(mesh_factory mstk_mesh)
+    list(APPEND mesh_factory_frameworks mstk_mesh)
     add_definitions("-DHAVE_MSTK_MESH -DMSTK_HAVE_MPI")
 endif()
+
+add_amanzi_library(mesh_factory
+                   SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
+                   LINK_LIBS ${mesh_factory_frameworks} simple_mesh)
 
 if (BUILD_TESTS)
 

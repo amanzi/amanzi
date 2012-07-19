@@ -32,8 +32,6 @@
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 
         <ParameterList name="Picard">
-          <Parameter name="absolute error tolerance" type="double" value="100"/>
-          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="convergence tolerance" type="double" value="1e-12"/>
           <Parameter name="maximum number of iterations" type="int" value="600"/>
           <Parameter name="start time" type="double" value="0.0"/>

@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-#include(AddParallelTest)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -37,15 +37,10 @@ add_definitions("-DUSE_MPI")
 # Library: mesh_functions
 #
 file(GLOB src_files "*.cc")
-add_library(mesh_functions ${src_files})
-add_install_library(mesh_functions)
-target_link_libraries(mesh_functions error_handling functions mesh ${Teuchos_LIBRARIES})
-
-#
-# Install Targets
-#
 file(GLOB inc_files "*.hh")
-add_install_include_file(${inc_files})
+add_amanzi_library(mesh_functions
+                   SOURCE ${src_files} HEADERS ${inc_files}
+                   LINK_LIBS error_handling functions mesh ${Teuchos_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)

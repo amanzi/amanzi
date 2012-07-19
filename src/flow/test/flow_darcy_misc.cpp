@@ -23,6 +23,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Mesh_MSTK.hh"
+#include "MeshAudit.hh"
 #include "Darcy_PK.hpp"
 
 
@@ -54,6 +55,10 @@ class DarcyProblem {
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
     // mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, -0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm, gm));
     mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", comm, gm));
+    // mesh = Teuchos::rcp(new Mesh_MSTK("test/tetrahedra.exo", comm, gm));
+
+    // MeshAudit audit(mesh);
+    // audit.Verify();
 
     // create Darcy process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -169,7 +174,6 @@ class DarcyProblem {
     }
     return sqrt(error_L2);
   }
-
 };
 
 

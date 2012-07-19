@@ -2,7 +2,16 @@
 #ifndef AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
 #define AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
 
-// Class for aqueous equilibrium complexation reaction
+/*
+** Class for surface complexation reaction
+**
+** Notes:
+**
+** - Each instance of this class should contain a single unique
+**   surface site (e.g. >FeOH) and ALL surface complexes associated with
+**   that site!
+**
+*/
 
 #include <vector>
 
@@ -76,7 +85,7 @@ class SurfaceComplexationRxn {
   std::vector<SurfaceSite> surface_site_;
   bool use_newton_solve_;
 
-  std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
+  //std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
 };
 
 }  // namespace chemistry

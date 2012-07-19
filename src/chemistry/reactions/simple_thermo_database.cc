@@ -1000,6 +1000,10 @@ void SimpleThermoDatabase::FinishSurfaceComplexation(void) {
        rxn != surface_complexation_reactions_.end(); rxn++) {
     this->AddSurfaceComplexationRxn(*rxn);
   }
+  // just to maintain our sanity, clear our temporary working copies
+  // to make sure they aren't used anywhere else!
+  surface_sites_.clear();
+  surface_complexation_reactions_.clear();
 }  // end FinishSurfaceComplexation()
 
 /*******************************************************************************

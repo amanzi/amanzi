@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -25,6 +26,7 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -36,16 +38,11 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: whetstone
 #
-add_library(whetstone mfd3d.cpp mfd3d_vag.cpp tensor.cpp)
-include_directories(${WHETSTONE_SOURCE_DIR})
-#target_link_libraries(whetstone geometry mesh mesh_data error_handling ${Epetra_LIBRARIES})
-
-#
-# Install Targets
-#
 file(GLOB whetstone_inc_files "*.hpp")
-add_install_include_file(${whetstone_inc_files})
-add_install_library(whetstone)
+add_amanzi_library(whetstone
+                   SOURCE mfd3d.cpp mfd3d_vag.cpp tensor.cpp HEADERS ${whetstone_inc_files}
+                   LINK_LIBS geometry mesh mesh_data error_handling ${Epetra_LIBRARIES})
+
 
 if ( BUILD_TESTS )
     # Add UnitTest includes

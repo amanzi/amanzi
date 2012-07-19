@@ -1,5 +1,5 @@
 #include "InputParserIS.hh"
-
+#include "InputParserIS-defaults.hh"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <string>
@@ -342,16 +342,19 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       }
 
       // Time Macro
-      // Iterate through the array
       if ( vis_list.isParameter("Time Macro") ) {
-        std::string time_macro = vis_list.get<std::string>("Time Macro");
-        // Create a local parameter list and store the time macro (3 doubles)
-        Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
-        if (time_macro_list.isParameter("Start_Period_Stop")) {
-          vis_list.sublist("time start period stop").sublist(time_macro).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
-        }
-        if (time_macro_list.isParameter("Values")) {
-          vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+        std::vector<std::string> time_macros;
+        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macro").toVector();
+
+        for (int i=0; i < time_macros.size(); i++) {
+          // Create a local parameter list and store the time macro (3 doubles)
+          Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macros[i], plist);
+          if (time_macro_list.isParameter("Start_Period_Stop")) {
+            vis_list.sublist("time start period stop").sublist(time_macros[i]).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+          }
+          if (time_macro_list.isParameter("Values")) {
+            vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+          }
         }
         vis_list.remove("Time Macro");
       }
@@ -758,11 +761,12 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
- * Collects preconditioners
+ * Collects default preconditioners
  ****************************************************************** */
 Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList prec_list;
   prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
+  prec_list.sublist("Hypre AMG") = create_HypreAMG_List(plist);
   return prec_list;
 }
 
@@ -805,16 +809,28 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
 Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList flw_list;
 
+  bool use_hypre(false);
+  if ( plist->isSublist("Execution Control") ) 
+    if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) 
+      if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {    
+	Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	use_hypre =  num_list.get<bool>("use Hypre AMG", false);
+      }
+  
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       std::string flow_model = plist->sublist("Execution Control").get<std::string>("Flow Model");
       if (flow_model == "Steady State Saturated") {
 	Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem"); 
 	darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level); 
-	darcy_problem.set<double>("atmospheric pressure", 101325.0); 
+	darcy_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE); 
 	Teuchos::ParameterList& steady_time_integrator = darcy_problem.sublist("steady state time integrator"); 
-	steady_time_integrator.set<std::string>("linear solver","AztecOO"); 
-	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML"); 
+	steady_time_integrator.set<std::string>("linear solver","AztecOO");
+	if (!use_hypre) {
+	  steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
+	} else {
+	  steady_time_integrator.set<std::string>("preconditioner", "Hypre AMG");
+	}
 	// insert the flow BC sublist 
 	Teuchos::ParameterList& flow_bc = darcy_problem.sublist("boundary conditions"); 
 	flow_bc = create_SS_FlowBC_List(plist); 
@@ -823,7 +839,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
         // this one should come from the input file...
         richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-        richards_problem.set<double>("atmospheric pressure", 101325.0);
+        richards_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
 	// see if we need to generate a Picard list
 	bool use_picard(false);
 	Teuchos::ParameterList& ti_mode_list = plist->sublist("Execution Control").sublist("Time Integration Mode");
@@ -847,23 +863,31 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    picard_list.set<bool>("initialize with darcy",num_params_list.get<bool>("pseudo time integrator initialize with darcy",true));
 	    picard_list.set<double>("clipping saturation value",num_params_list.get<double>("pseudo time integrator clipping saturation value",0.9));
 	    picard_list.set<std::string>("time integration method",num_params_list.get<std::string>("pseudo time integrator time integration method","Picard"));
-	    picard_list.set<std::string>("preconditioner",num_params_list.get<std::string>("pseudo time integrator preconditioner","Trilinos ML"));
+	    if (!use_hypre) {
+	      picard_list.set<std::string>("preconditioner",num_params_list.get<std::string>("pseudo time integrator preconditioner","Trilinos ML"));
+	    } else {
+	      picard_list.set<std::string>("preconditioner",num_params_list.get<std::string>("pseudo time integrator preconditioner","Hypre AMG"));
+	    }
 	    picard_list.set<std::string>("linear solver",num_params_list.get<std::string>("pseudo time integrator linear solver","AztecOO"));
 	    Teuchos::Array<std::string> error_ctrl(1);
 	    error_ctrl[0] = std::string("pressure");
 	    picard_list.set<Teuchos::Array<std::string> >("error control options",num_params_list.get<Teuchos::Array<std::string> >("pseudo time integrator error control options",error_ctrl));
-	    picard_list.sublist("Picard").set<double>("convergence tolerance",num_params_list.get<double>("pseudo time integrator picard convergence tolerance",1e-7));
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",num_params_list.get<double>("pseudo time integrator picard convergence tolerance",PICARD_TOLERANCE));
 	    picard_list.sublist("Picard").set<int>("maximum number of iterations",num_params_list.get<int>("pseudo time integrator picard maximum number of iterations",400));
 	  } else {
 	    picard_list.set<bool>("initialize with darcy",true);
 	    picard_list.set<double>("clipping saturation value",0.9);
 	    picard_list.set<std::string>("time integration method","Picard");
-	    picard_list.set<std::string>("preconditioner","Trilinos ML");
+	    if (!use_hypre) {
+	      picard_list.set<std::string>("preconditioner","Trilinos ML");
+	    } else {
+	      picard_list.set<std::string>("preconditioner","Hypre AMG");
+	    }
 	    picard_list.set<std::string>("linear solver","AztecOO");
 	    Teuchos::Array<std::string> error_ctrl(1);
 	    error_ctrl[0] = std::string("pressure");
 	    picard_list.set<Teuchos::Array<std::string> >("error control options",error_ctrl);
-	    picard_list.sublist("Picard").set<double>("convergence tolerance",1e-7);
+	    picard_list.sublist("Picard").set<double>("convergence tolerance",PICARD_TOLERANCE);
 	    picard_list.sublist("Picard").set<int>("maximum number of iterations",400);
 	  }
 	}
@@ -877,7 +901,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	Teuchos::ParameterList& sti_bdf1_param = sti_bdf1.sublist("BDF1 parameters");
 	
 	// link to preconditioner and linear solver for the steady state time integration
-	steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
+	if (!use_hypre) {
+	  steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
+	} else {
+	  steady_time_integrator.set<std::string>("preconditioner", "Hypre AMG");
+	}
 	steady_time_integrator.set<std::string>("linear solver", "AztecOO");
 	
 	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
@@ -887,7 +915,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    sti_bdf1_param.set<int>("max iterations", num_list.get<int>("steady max iterations",10));
 	    sti_bdf1_param.set<int>("min iterations", num_list.get<int>("steady min iterations",5));
 	    sti_bdf1_param.set<int>("limit iterations", num_list.get<int>("steady limit iterations",20));
-	    sti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
+	    sti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE));
 	    sti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
 	    sti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
 	    sti_bdf1_param.set<double>("max time step", num_list.get<double>("steady max time step",1.0e+8));
@@ -901,7 +929,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  sti_bdf1_param.set<int>("max iterations",10);
 	  sti_bdf1_param.set<int>("min iterations",5);
 	  sti_bdf1_param.set<int>("limit iterations",20);
-	  sti_bdf1_param.set<double>("nonlinear tolerance",1.0);
+	  sti_bdf1_param.set<double>("nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE);
 	  sti_bdf1_param.set<double>("time step reduction factor",0.8);
 	  sti_bdf1_param.set<double>("time step increase factor",1.2);
 	  sti_bdf1_param.set<double>("max time step", 1.0e+8);
@@ -916,7 +944,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         Teuchos::ParameterList& tti_bdf1_param = tti_bdf1.sublist("BDF1 parameters");
 
         // link to preconditioner and linear solver for the transient time integrator
-        transient_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
+	if (!use_hypre) {
+	  transient_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
+	} else {
+	  transient_time_integrator.set<std::string>("preconditioner", "Hypre AMG");
+	}
         transient_time_integrator.set<std::string>("linear solver", "AztecOO");
 
         have_unstructured_algorithm_sublist = false;
@@ -927,7 +959,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
             tti_bdf1_param.set<int>("max iterations", num_list.get<int>("transient max iterations",10));
             tti_bdf1_param.set<int>("min iterations", num_list.get<int>("transient min iterations",5));
             tti_bdf1_param.set<int>("limit iterations", num_list.get<int>("transient limit iterations",20));
-            tti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",1.0));
+            tti_bdf1_param.set<double>("nonlinear tolerance", num_list.get<double>("transient nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE));
             tti_bdf1_param.set<double>("time step reduction factor", num_list.get<double>("transient time step reduction factor",0.8));
             tti_bdf1_param.set<double>("time step increase factor", num_list.get<double>("transient time step increase factor",1.2));
             tti_bdf1_param.set<double>("max time step", num_list.get<double>("transient max time step",1.0e+8));
@@ -941,7 +973,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           tti_bdf1_param.set<int>("max iterations",10);
           tti_bdf1_param.set<int>("min iterations",5);
           tti_bdf1_param.set<int>("limit iterations",20);
-          tti_bdf1_param.set<double>("nonlinear tolerance",1.0);
+          tti_bdf1_param.set<double>("nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE);
           tti_bdf1_param.set<double>("time step reduction factor",0.8);
           tti_bdf1_param.set<double>("time step increase factor",1.2);
           tti_bdf1_param.set<double>("max time step", 1.0e+8);
@@ -1076,7 +1108,7 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 
 
 /* ******************************************************************
- * DPC sublist
+ * ML preconditioner sublist
  ****************************************************************** */
 Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
 {
@@ -1122,6 +1154,48 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("coarse: type", "Amesos-KLU");
   ml_list.set<int>("coarse: max size", 256);
+
+  return dpc_list;
+}
+
+
+/* ******************************************************************
+ * Hypre BoomerAMG preconditioner sublist
+ ****************************************************************** */
+Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
+{
+  Teuchos::ParameterList dpc_list;
+
+  dpc_list.set<std::string>("discretization method", "optimized mfd");
+
+  double tol(0.0);
+  int ncycles(5);
+  int nsmooth(3);
+  double strong_threshold(0.5); 
+
+  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+      Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+      if (ncp_list.isParameter("Hypre AMG cycle applications")) {
+        ncycles = ncp_list.get<int>("Hypre AMG cycle applications");
+      }
+      if (ncp_list.isParameter("Hypre AMG smoother sweeps")) {
+        nsmooth = ncp_list.get<int>("Hypre AMG smoother sweeps");
+      }
+      if (ncp_list.isParameter("Hypre AMG tolerance")) {
+	tol = ncp_list.get<double>("Hypre AMG tolerance");
+      }
+      if (ncp_list.isParameter("Hypre AMG strong threshold")) {
+	strong_threshold = ncp_list.get<double>("Hypre AMG strong threshold");
+      }
+    }
+  }      
+
+  Teuchos::ParameterList& amg_list = dpc_list.sublist("BoomerAMG Parameters");
+  amg_list.set<double>("tolerance", tol);
+  amg_list.set<int>("smoother sweeps", nsmooth);
+  amg_list.set<int>("cycle applications", ncycles);
+  amg_list.set<double>("strong threshold", strong_threshold);
 
   return dpc_list;
 }
@@ -1342,10 +1416,10 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 
   stt_list.set<double>("Gravity x", 0.0);
   if (spatial_dimension_ == 2) {
-    stt_list.set<double>("Gravity y", -9.81);
+    stt_list.set<double>("Gravity y", - GRAVITY_MAGNITUDE);
   } else {
     stt_list.set<double>("Gravity y", 0.0);
-    stt_list.set<double>("Gravity z", -9.81);
+    stt_list.set<double>("Gravity z", - GRAVITY_MAGNITUDE);
   }
 
   // find the viscosity
@@ -1412,7 +1486,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       }
       
       // particle density, for now we make the default 1.0 since we do not want to require this input parameter in the input spec, yet
-      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",1.0);
+      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",PARTICLE_DENSITY);
 
       // extract the mineralogy for this material
       Teuchos::ParameterList mineralogy;
@@ -1526,8 +1600,8 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         if ( ic_for_region->isSublist("IC: Uniform Velocity") ) {
 	  Teuchos::Array<double> vel = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
 	  stt_mat.set<double>("Constant velocity x",vel[0]);
-	  if (spatial_dimension_>1) stt_mat.set<double>("Constant velocity y",vel[1]);
-	  if (spatial_dimension_>2) stt_mat.set<double>("Constant velocity z",vel[2]);
+	  if (spatial_dimension_>1) stt_mat.set<double>("Constant velocity y", vel[1]);
+	  if (spatial_dimension_>2) stt_mat.set<double>("Constant velocity z", vel[2]);
 	  
 	}
 

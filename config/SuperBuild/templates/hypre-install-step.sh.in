@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# HYPRE recommends running with the make configure target
+cd @HYPRE_source_dir@/src
+make install
+echo "make install returned $?"
+
+exit $?

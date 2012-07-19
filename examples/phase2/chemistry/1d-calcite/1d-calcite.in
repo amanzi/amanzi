@@ -1,0 +1,178 @@
+:Description: 1-d fixed velocity flow w/ tracer advection
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    H+
+    HCO3-
+    Ca++
+  /
+  SECONDARY_SPECIES
+    OH-
+    CO3--
+    CO2(aq)
+    CaOH+
+    CaHCO3+
+    CaCO3(aq)
+  /
+  MINERALS
+    Calcite
+  /
+  GAS_SPECIES
+    CO2(g)
+  /
+  MINERAL_KINETICS
+    Calcite
+      RATE_CONSTANT 1.d-13
+    /
+  /
+  DATABASE ./calcite.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS TIMESTEP
+  OUTPUT
+    All
+  /
+END
+
+:=========================== solver options ===================================
+TIMESTEPPER
+  TS_ACCELERATION 8
+/
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  ORIGIN 0.d0 0.d0 0.d0
+  NXYZ 100 1 1
+  BOUNDS
+    0.d0 100.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+END
+
+:=========================== flow =============================================
+UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.25d0
+/
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION all
+  AT_CELL_CENTER
+/
+
+:=========================== output options ===================================
+OUTPUT
+  FORMAT HDF5
+  PERIODIC TIME 1 y
+/
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 50.d0 y
+  INITIAL_TIMESTEP_SIZE 1.d-6 y
+  MAXIMUM_TIMESTEP_SIZE 1.d-1 y
+/
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION west
+  FACE WEST
+  COORDINATES
+    0.d0 0.d0 0.d0
+    0.d0 1.d0 1.d0
+  /
+END
+
+REGION east
+  FACE EAST
+  COORDINATES
+    100.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 initial
+  /
+END
+
+TRANSPORT_CONDITION west
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 west
+  /
+END
+
+TRANSPORT_CONDITION east
+  TYPE dirichlet_zero_gradient
+  CONSTRAINT_LIST
+    0.d0 west
+  /
+END
+
+:=========================== constraints ======================================
+CONSTRAINT initial
+  CONCENTRATIONS
+    H+     1.d-8      F
+    HCO3-  1.d-3      G  CO2(g)
+    Ca++   5.d-4      M  Calcite
+  /
+  MINERALS
+    Calcite 1.d-5 1.d0
+  /
+END
+
+CONSTRAINT west
+  CONCENTRATIONS
+    H+     5.         P
+    HCO3-  1.d-3      T 
+    Ca++   1.d-6      Z 
+  /
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+: west boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION west
+  REGION west
+END
+
+: east boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION east
+  REGION east
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+

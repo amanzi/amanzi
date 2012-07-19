@@ -7,6 +7,7 @@
 #include <unistd.h>
 #endif
 
+//#define ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #ifdef __APPLE__
   #include <xmmintrin.h>
 #endif
@@ -50,6 +51,7 @@ const std::string kPflotran("pflotran");
    from the beaker.  */
 
 int main(int argc, char** argv) {
+#ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #ifdef __APPLE__
   // Make floating point exceptions abort the program. runtime error
   // message isn't helpful, but running in gdb will stop at the
@@ -59,6 +61,7 @@ int main(int argc, char** argv) {
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_UNDERFLOW);
+#endif
 #endif
 
   ac::SetupDefaultChemistryOutput();

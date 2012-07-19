@@ -197,7 +197,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
-    preconditioner_->UpdateML_Preconditioner();
+    preconditioner_->UpdatePreconditioner();
 
     // check convergence of non-linear residual
     L2error = matrix_->ComputeResidual(solution_new, residual);
@@ -212,15 +212,15 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     solver->Iterate(max_itrs, convergence_tol);
     int num_itrs = solver->NumIters();
-    double linear_residual = solver->TrueResidual();
+    double linear_residual = solver->TrueResidual() / L2norm;
 
     // update relaxation
     double relaxation;
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Richards PK: Picard:%4d  residual=%9.4e rhs=%9.4e relax=%8.3e  solver(%8.3e,%4d)\n",
-          itrs, L2error, L2norm, relaxation, linear_residual, num_itrs);
+      std::printf("Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
+          itrs, L2error, relaxation, linear_residual, num_itrs);
     }
 
     int ndof = ncells_owned + nfaces_owned;

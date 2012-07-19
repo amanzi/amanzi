@@ -27,6 +27,7 @@ Authors: Neil Carlson (version 1)
 #include "Flow_PK.hpp"
 #include "Flow_State.hpp"
 #include "Matrix_MFD.hpp"
+#include "TI_Specs.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -106,7 +107,8 @@ class Darcy_PK : public Flow_PK {
   Matrix_MFD* matrix_;
   Matrix_MFD* preconditioner_;
 
-  int num_itrs_sss, max_itrs_sss;  // Parameters for steady state solution
+  TI_Specs ti_specs_sss;  // Parameters for steady-state solution
+  int num_itrs_sss, max_itrs_sss;
   std::string preconditioner_name_sss_;
   double convergence_tol_sss, residual_sss;
 
@@ -133,7 +135,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  int mfd3d_method;
+  int mfd3d_method, preconditioner_method;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 

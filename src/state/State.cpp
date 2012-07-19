@@ -154,11 +154,11 @@ void State::initialize_from_parameter_list()
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
 
-
   double u[3];
+  int dim = mesh_maps->space_dimension();
   u[0] = parameter_list.get<double>("Gravity x");
   u[1] = parameter_list.get<double>("Gravity y");
-  if (mesh_maps->space_dimension() == 3)
+  if (dim == 3)
     u[2] = parameter_list.get<double>("Gravity z");
   else
     u[2] = 0.0;
@@ -218,10 +218,11 @@ void State::initialize_from_parameter_list()
         set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"), region);
       }
 
-      u[0] = sublist.get<double>("Constant velocity x", 0.0);
-      u[1] = sublist.get<double>("Constant velocity y", 0.0);
-      u[2] = sublist.get<double>("Constant velocity z", 0.0);
-      set_darcy_flux(u, region);
+      Amanzi::AmanziGeometry::Point velocity(dim);
+      velocity[0] = sublist.get<double>("Constant velocity x", 0.0);
+      velocity[1] = sublist.get<double>("Constant velocity y", 0.0);
+      if (dim == 3) velocity[2] = sublist.get<double>("Constant velocity z", 0.0);
+      set_darcy_flux(velocity, region);
 
       // set the pressure
       if (sublist.isSublist("uniform pressure")) {
@@ -559,7 +560,7 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 
 
 /* *******************************************************************/
-void State::set_darcy_flux(const double* u, const int mesh_block_id)
+void State::set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const int mesh_block_id)
 {
   // Epetra_Map face_map = mesh_maps->face_map(false);
   if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
@@ -570,7 +571,6 @@ void State::set_darcy_flux(const double* u, const int mesh_block_id)
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
-  int dim = mesh_maps->space_dimension();
   Amanzi::AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
@@ -587,8 +587,7 @@ void State::set_darcy_flux(const double* u, const int mesh_block_id)
 
       if (mesh_maps->face_map(false).MyLID(f)) {
         const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
-        (*darcy_flux)[f] = 0.0;
-        for (int i = 0; i < dim; i++) (*darcy_flux)[f] += u[i] * normal[i];
+        (*darcy_flux)[f] = u * normal;
       }
     }
   }
@@ -596,7 +595,7 @@ void State::set_darcy_flux(const double* u, const int mesh_block_id)
 
 
 /* *******************************************************************/
-void State::set_darcy_flux(const double* u, const std::string region)
+void State::set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const std::string region)
 {
   if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
     throw std::exception();
@@ -606,7 +605,6 @@ void State::set_darcy_flux(const double* u, const std::string region)
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
 
-  int dim = mesh_maps->space_dimension();
   Amanzi::AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
@@ -623,8 +621,7 @@ void State::set_darcy_flux(const double* u, const std::string region)
 
       if (mesh_maps->face_map(false).MyLID(f)) {
         const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
-        (*darcy_flux)[f] = 0.0;
-        for (int i = 0; i < dim; i++) (*darcy_flux)[f] += u[i] * normal[i];
+        (*darcy_flux)[f] = u * normal;
       }
     }
   }

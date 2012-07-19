@@ -133,7 +133,7 @@ int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTn
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
-    preconditioner_->UpdateML_Preconditioner();
+    preconditioner_->UpdatePreconditioner();
 
     // call AztecOO solver
     solver->SetRHS(&*rhs);

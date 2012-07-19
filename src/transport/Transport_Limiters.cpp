@@ -36,7 +36,7 @@ void Transport_PK::LimiterTensorial(const int component,
   std::vector<int> fdirs;
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
@@ -91,7 +91,7 @@ void Transport_PK::LimiterTensorial(const int component,
   // Local extrema are calculated here and updated in Step 2.
   AmanziMesh::Entity_ID_List cells;
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
     component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
 
@@ -110,7 +110,7 @@ void Transport_PK::LimiterTensorial(const int component,
         int c1 = (*upwind_cell_)[f];
         int c2 = (*downwind_cell_)[f];
 
-        if (c2 >= 0 && c2 <= cmax_owned) {
+        if (c2 >= 0 && c2 < ncells_owned) {
           u2 = (*scalar_field)[c2];
           u1 = bc->second;
           umin = std::min(u1, u2);
@@ -142,7 +142,7 @@ void Transport_PK::LimiterTensorial(const int component,
   }
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
@@ -180,7 +180,7 @@ void Transport_PK::LimiterTensorial(const int component,
     }
   }
 
-  TS_nextBIG->distribute_cell_multivector(*gradient);
+  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*gradient);
 }
 
 
@@ -198,13 +198,13 @@ void Transport_PK::LimiterBarthJespersen(const int component,
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  for (int c = 0; c <= cmax; c++) (*limiter)[c] = 1.0;
+  limiter->PutScalar(1.0);
 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
 
   // Step 1: limiting gradient inside domain
-  for (int f = 0; f <= fmax_owned; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     int c1, c2;
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
@@ -244,7 +244,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
   // Local extrema are calculated here and updated in Step 2.
   AmanziMesh::Entity_ID_List cells;
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
     component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
 
@@ -293,7 +293,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
@@ -331,7 +331,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
     }
   }
 
-  TS_nextBIG->distribute_cell_vector(*limiter);
+  TS_nextBIG->CopyMasterCell2GhostCell(*limiter);
 }
 
 
@@ -343,15 +343,15 @@ void Transport_PK::LimiterKuzmin(const int component,
                                  Teuchos::RCP<Epetra_MultiVector> gradient)
 {
   // Step 1: local extrema are calculated here at nodes and updated later
-  std::vector<double> component_node_min(vmax + 1);
-  std::vector<double> component_node_max(vmax + 1);
+  std::vector<double> component_node_min(nnodes_wghost);
+  std::vector<double> component_node_max(nnodes_wghost);
 
   AmanziMesh::Entity_ID_List nodes;
 
-  component_node_min.assign(vmax + 1,  TRANSPORT_CONCENTRATION_INFINITY);
-  component_node_max.assign(vmax + 1, -TRANSPORT_CONCENTRATION_INFINITY);
+  component_node_min.assign(nnodes_wghost,  TRANSPORT_CONCENTRATION_INFINITY);
+  component_node_max.assign(nnodes_wghost, -TRANSPORT_CONCENTRATION_INFINITY);
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
 
     double value = (*scalar_field)[c];
@@ -392,7 +392,7 @@ void Transport_PK::LimiterKuzmin(const int component,
 
   std::vector<AmanziGeometry::Point> normals;
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
@@ -437,7 +437,7 @@ void Transport_PK::LimiterKuzmin(const int component,
   // Step 3: extrema are calculated for cells.
   AmanziMesh::Entity_ID_List cells;
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
 
@@ -454,7 +454,7 @@ void Transport_PK::LimiterKuzmin(const int component,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
-  for (int c = 0; c <= cmax_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
@@ -499,7 +499,7 @@ void Transport_PK::LimiterKuzmin(const int component,
     }
   }
 
-  TS_nextBIG->distribute_cell_multivector(*gradient);
+  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*gradient);
 }
 
 

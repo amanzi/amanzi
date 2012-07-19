@@ -46,16 +46,14 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: transport
 #
-add_library(transport Transport_PK.cpp Transport_State.cpp Transport_TI.cpp 
-                      Transport_Limiters.cpp Transport_VandV.cpp Transport_IO.cpp
-                      Reconstruction.cpp)
-target_link_libraries(transport geometry mesh mesh_data error_handling state time_integration ${Epetra_LIBRARIES})
-add_install_library(transport)
-#
-# Install Targets
-#
 file(GLOB transport_inc_files "*.hpp")
-add_install_include_file(${transport_inc_files})
+set(transport_src_files Transport_PK.cpp Transport_State.cpp Transport_TI.cpp 
+                        Transport_Limiters.cpp Transport_Dispersion.cpp 
+                        Transport_VandV.cpp Transport_IO.cpp
+                        Reconstruction.cpp)
+add_amanzi_library(transport 
+                   SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
+                   LINK_LIBS geometry mesh mesh_data error_handling state time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes

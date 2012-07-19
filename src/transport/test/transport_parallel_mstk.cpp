@@ -49,12 +49,12 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);
-  TS->analytic_total_component_concentration(f_step);
-  TS->analytic_porosity();
-  TS->analytic_darcy_flux(u);
-  TS->analytic_water_saturation();
+  TS->AnalyticTotalComponentConcentration(f_step);
+  TS->AnalyticPorosity();
+  TS->AnalyticDarcyFlux(u);
+  TS->AnalyticWaterSaturation();
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();

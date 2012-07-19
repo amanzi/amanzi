@@ -147,18 +147,18 @@ set(ExodusII_VERSION_MINOR 98)
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
 set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
-set(ExodusII_MD5_SUM     4480e641d6ada58f5d8ecb7172e76791) 
+set(ExodusII_MD5_SUM        4480e641d6ada58f5d8ecb7172e76791) 
 
 #
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 1)
 set(MSTK_VERSION_MINOR 85)
-set(MSTK_VERSION_PATCH rc2)
+set(MSTK_VERSION_PATCH rc4)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        d2acd6da234e580b8d389224f3b2b9b1) 
+set(MSTK_MD5_SUM        96da647aea4208fdb40f89ac5a673628)
 
 #
 # TPL: MOAB
@@ -167,6 +167,17 @@ set(MOAB_VERSION        r4276)
 set(MOAB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MOAB_ARCHIVE_FILE   MOAB-${MOAB_VERSION}.tar.gz)
 set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e) 
+
+#
+# TPL: HYPRE
+#
+set(HYPRE_VERSION_MAJOR  2)
+set(HYPRE_VERSION_MINOR  8)
+set(HYPRE_VERSION_PATCH  0b)
+set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
+set(HYPRE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(HYPRE_ARCHIVE_FILE   hypre-${HYPRE_VERSION}.tar.gz)
+set(HYPRE_MD5_SUM        6b4db576c68d2072e48efbc00ea58489) 
 
 #
 # TPL: Trilinos

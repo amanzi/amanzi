@@ -17,6 +17,7 @@ Authors: Neil Carlson (version 1)
 #include "tensor.hpp"
 
 #include "Flow_State.hpp"
+#include "Flow_constants.hpp"
 #include "Darcy_PK.hpp"
 #include "Matrix_MFD.hpp"
 
@@ -94,6 +95,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
+  preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
   verbosity = FLOW_VERBOSITY_HIGH;
 }
 
@@ -170,7 +172,7 @@ void Darcy_PK::InitPK()
 
   // Preconditioner
   Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
-  preconditioner_->InitML_Preconditioner(ML_list);
+  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   flow_status_ = FLOW_STATUS_INIT;
 };
@@ -217,7 +219,7 @@ void Darcy_PK::InitializeSteadySaturated()
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
-  dT_desirable_ = dT0;  // The desirable time step from now on.
+  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   num_itrs_sss = 0;
 
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -254,7 +256,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   *solution_cells = pressure;
 
   set_time(T0, dT0);
-  dT_desirable_ = dT0;  // The desirable time step from now on.
+  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   num_itrs_trs = 0;
 
   // initialize mass matrices
@@ -293,7 +295,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->ComputeSchurComplement(bc_markers, bc_values);
-  matrix_->UpdateML_Preconditioner();
+  matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
   Epetra_Vector b(*rhs);
@@ -356,7 +358,7 @@ int Darcy_PK::Advance(double dT_MPC)
   matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->ComputeSchurComplement(bc_markers, bc_values);
-  matrix_->UpdateML_Preconditioner();
+  matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
@@ -373,6 +375,8 @@ int Darcy_PK::Advance(double dT_MPC)
     double linear_residual = solver->TrueResidual();
     std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
+
+  dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }
@@ -470,7 +474,7 @@ void Darcy_PK::UpdateSpecificYield()
         int c2 = mfd3d.cell_get_face_adj_cell(c, f);
 
         if (specific_yield_wghost[c2] <= 0.0) {  // cell in the fully saturated layer
-          FS->ref_specific_yield()[c2] *= mesh_->face_area(f);
+          FS->ref_specific_yield()[c] *= mesh_->face_area(f);
           break;
         }
       }

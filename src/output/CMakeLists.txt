@@ -9,6 +9,7 @@
 include(PrintVariable)
 include(TestManager)
 include(BinaryManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -68,20 +69,11 @@ if(ENABLE_CGNS)
     list(APPEND output_tpl_list ${CGNS_LIBRARIES})
 endif()
 
-add_library(output ${output_source_files})
-target_link_libraries(output simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list} )
+file(GLOB output_inc_files "*.h*")
 
-#
-# Install Targets
-#
-file(GLOB output_inc_files "*.h*")
-add_install_include_file(${output_inc_files})
-add_install_library(output)
-#
-# Install Targets
-#
-file(GLOB output_inc_files "*.h*")
-add_install_include_file(${output_inc_files})
+add_amanzi_library(output 
+                   SOURCE ${output_source_files} HEADERS ${output_inc_files}
+                   LINK_LIBS simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list})
 
 #
 # Binaries

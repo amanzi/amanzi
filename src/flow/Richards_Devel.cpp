@@ -77,7 +77,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
-    preconditioner_->UpdateML_Preconditioner();
+    preconditioner_->UpdatePreconditioner();
 
     // call AztecOO solver
     rhs = matrix_->rhs();

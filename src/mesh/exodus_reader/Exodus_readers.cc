@@ -173,7 +173,7 @@ AmanziMesh::Data::Node_set* read_node_set (Exodus_file file, int set_id)
     }
 
     char name_data [MAX_STR_LENGTH];
-    ex_get_name (file.id, EX_SIDE_SET, set_id, name_data);
+    ex_get_name (file.id, EX_NODE_SET, set_id, name_data);
 
     std::string name (name_data);
 

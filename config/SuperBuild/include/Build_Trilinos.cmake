@@ -4,9 +4,13 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
+set(trilinos_depend_projects NetCDF ExodusII Boost)
+if(ENABLE_HYPRE)
+  list(APPEND trilinos_depend_projects HYPRE)
+endif()
 define_external_project_args(Trilinos
                              TARGET trilinos
-                             DEPENDS NetCDF ExodusII Boost)
+                             DEPENDS ${trilinos_depend_projects})
 
 # --- Define the configuration parameters   
 
@@ -21,7 +25,7 @@ if(Trilinos_Build_Config_File)
 endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX)
+set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX Zoltan)
 if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
@@ -121,6 +125,14 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DExodusII_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
             "-DExodusII_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
 
+# HYPRE
+if( ENABLE_HYPRE )
+  list(APPEND Trilinos_CMAKE_TPL_ARGS
+              "-DTPL_ENABLE_HYPRE:BOOL=ON"
+              "-DHYPRE_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+              "-DHYPRE_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+endif()
+
 #  - Addtional Trilinos CMake Arguments
 set(Trilinos_CMAKE_EXTRA_ARGS
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON"
@@ -160,6 +172,7 @@ set(Trilinos_CMAKE_ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
                    ${Amanzi_CMAKE_CXX_COMPILER_ARGS})
+print_variable(Trilinos_CMAKE_LANG_ARGS)
 
 #  --- Define the Trilinos patch step
 

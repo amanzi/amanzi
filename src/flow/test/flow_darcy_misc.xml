@@ -10,7 +10,7 @@
         <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
       <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="mstk::mesh"/>
+        <Parameter name="Framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>    
@@ -145,8 +145,7 @@
     </ParameterList>
   </ParameterList>
 
-  <!--  STATE: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
+  <!--  STATE  -->
   <ParameterList name="State">
     <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
     <Parameter name="Constant viscosity" type="double" value="0.3"/>

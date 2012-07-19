@@ -189,27 +189,6 @@ void Flow_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 
 
 /* *******************************************************************
-* Transfers face-based data from master to ghost positions and 
-* performs the operation 'mode' there. 
-* WARNING: Vector v must contain ghost faces.              
-******************************************************************* */
-void Flow_State::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  Epetra_Import importer(target_fmap, source_fmap);
-
-  double* vdata;
-  v.ExtractView(&vdata);
-  Epetra_Vector vv(View, source_fmap, vdata);
-
-  vv.Export(v, importer, mode);
-#endif
-}
-
-
-/* *******************************************************************
 * Copy cell-based data from master to ghost positions.              
 * WARNING: MultiVector v must contain ghost cells.              
 ******************************************************************* */
@@ -225,6 +204,47 @@ void Flow_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
   Epetra_MultiVector vv(View, source_cmap, vdata, v.NumVectors());
 
   v.Import(vv, importer, Insert);
+#endif
+}
+
+
+/* *******************************************************************
+* Copy face-based data from master to ghost positions.              
+* WARNING: vector v must contain ghost cells.              
+******************************************************************* */
+void Flow_State::CopyMasterFace2GhostFace(Epetra_Vector& v)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_cmap = mesh_->face_map(false);
+  const Epetra_BlockMap& target_cmap = mesh_->face_map(true);
+  Epetra_Import importer(target_cmap, source_cmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vv(View, source_cmap, vdata);
+
+  v.Import(vv, importer, Insert);
+#endif
+}
+
+
+/* *******************************************************************
+* Transfers face-based data from ghost to master positions and 
+* performs the operation 'mode' there. 
+* WARNING: Vector v must contain ghost faces.              
+******************************************************************* */
+void Flow_State::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
+  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  Epetra_Import importer(target_fmap, source_fmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vv(View, source_fmap, vdata);
+
+  vv.Export(v, importer, mode);
 #endif
 }
 

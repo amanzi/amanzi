@@ -147,10 +147,8 @@ void Flow_PK::ProcessBoundaryConditions(
   int flag = flag_essential_bc;
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
-  if (! flag_essential_bc) {
-    Errors::Message msg; 
-    msg << "Flow PK: No essential boundary conditions, the solver may fail.";
-    Exceptions::amanzi_throw(msg);
+  if (! flag_essential_bc && MyPID == 0 && verbosity >= FLOW_VERBOSITY_LOW) {
+    std::printf("Flow PK: WARNING: No essential boundary conditions, the solver may fail\n");
   }
 
   // verbose output
@@ -300,8 +298,19 @@ void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 }
 
 
-
-
+/* ******************************************************************
+* Calculate change of water volume per second due to boundary flux.                                          
+****************************************************************** */
+double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers,
+                                           Epetra_Vector& darcy_flux)
+{
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  double volume = 0.0;
+  for (int f = 0; f < nfaces; f++) {
+    if (bc_markers[f] != FLOW_BC_FACE_NULL) volume -= darcy_flux[f];
+  }
+  return volume;
+}
 
 
 /* ****************************************************************

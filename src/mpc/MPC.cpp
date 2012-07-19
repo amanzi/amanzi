@@ -285,6 +285,7 @@ void MPC::cycle_driver() {
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
+    S->set_intermediate_time(T0);
   }
 
   if (chemistry_enabled) {
@@ -490,6 +491,7 @@ void MPC::cycle_driver() {
 	    }
 	  } while (redo);
 	  FPK->CommitState(FS);
+	  S->set_final_time(S->initial_time() + mpc_dT);
 	}
       }
 
@@ -511,12 +513,11 @@ void MPC::cycle_driver() {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-	*out << std::setprecision(6);
+	*out << setprecision(5);
         *out << "Cycle = " << iter;
-        *out << ",  Time(years) = "<< S->get_time() / (365.25*60*60*24);
-        *out << ",  dT(years) = " << mpc_dT / (365.25*60*60*24);
+        *out << ",  Time(y) = "<< fixed << S->get_time() / (365.25*60*60*24);
+        *out << ",  dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
 	*out << " " << limitstring;
-	//*out << " " << S->get_time() << " " << mpc_dT;
         *out << std::endl;
       }
       // ==============================================================
@@ -553,7 +554,8 @@ void MPC::cycle_driver() {
         }
       }
       
-      // update the time in the state object
+      // update the times in the state object
+      S->set_intermediate_time(S->get_time());
       S->advance_time(mpc_dT);
       // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 

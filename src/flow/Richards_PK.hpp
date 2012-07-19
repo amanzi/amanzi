@@ -72,7 +72,6 @@ class Richards_PK : public Flow_PK {
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_norm(double rtol, double atol) {};
   void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
-  // void compute_precon(double T, double dT, const Epetra_Vector& u, Teuchos::ParameterList* prec_list);
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
@@ -114,8 +113,6 @@ class Richards_PK : public Flow_PK {
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
-  void ProcessSublistTimeIntegration(
-      Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
   void AnalysisTI_Specs();
 
   // water retention models
@@ -185,8 +182,8 @@ class Richards_PK : public Flow_PK {
   int ti_method_trs, error_control_trs_; 
   std::string preconditioner_name_trs_;
 
-  double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
-  int ti_method, num_itrs, max_itrs;
+  //double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
+  int ti_method, num_itrs, max_itrs, preconditioner_method;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
@@ -213,6 +210,8 @@ class Richards_PK : public Flow_PK {
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
+
+  double mass_bc, mass_amanzi;
 
  private:
   void operator=(const Richards_PK& RPK);
