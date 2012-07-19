@@ -70,6 +70,19 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
 
+  state.nonlinear_solver = BDFNKA;
+
+       std::string nstype = paramList_->get<std::string>("nonlinear solver","NKA");
+       if (nstype == "NKA") {
+         state.nonlinear_solver = BDFNKA;
+       } else if (nstype == "JFNK") {
+         state.nonlinear_solver = BDFJFNK;
+       } else {
+         Errors::Message m("(native spec) bdf1 nonlinear solver must either be NKA or JFNK");
+         Exceptions::amanzi_throw(m);
+       }
+
+
 
   // sanity check
   if ( ! ((state.minitr < state.maxitr) && (state.maxitr < state.mitr) )) {
@@ -277,9 +290,12 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
     
   try {
-
-//    solve_bce(tnew, h, u0, u);
-     solve_bce_jfnk(tnew, h, u0, u);
+      if (state.nonlinear_solver == BDFNKA) {
+            solve_bce(tnew, h, u0, u);
+      }
+      else if (state.nonlinear_solver == BDFNKA) {
+             solve_bce_jfnk(tnew, h, u0, u);
+      }
 //     exit(0);
   }
   catch (int itr) { 
@@ -429,7 +445,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // Check for convergence
     if (error < state.ntol)   {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-        *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
+        *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
 
       ttotal.stop();
 
@@ -578,18 +594,18 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 //
   // Create the convergence tests
   Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-2));
   Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-8));
+    Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-2));
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
-    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-2));
-  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
-    Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
+    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-0));
+//   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
+//     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
   Teuchos::RCP<NOX::StatusTest::Combo> converged =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
-  converged->addStatusTest(wrms);
+//   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(2000));
