@@ -55,6 +55,10 @@ class State : public Teuchos::VerboseObject<State> {
   double get_last_time () const { return last_time; }
   int get_cycle () const { return cycle; };
 
+  double initial_time() const { return last_time; } 
+  double final_time() const { return time; }
+  double intermediate_time() const { return inter_time; }
+  
   int get_number_of_components() const { return number_of_components; };
 
   const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
@@ -64,6 +68,7 @@ class State : public Teuchos::VerboseObject<State> {
 
   // modify methods
   void set_time ( double new_time );
+  void set_intermediate_time ( double new_time ) { inter_time = new_time; } 
   void set_cycle ( int new_cycle );
   void advance_time(double dT);
   void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
@@ -365,7 +370,7 @@ class State : public Teuchos::VerboseObject<State> {
   int number_of_components;
   std::map<std::string,int> comp_no;
 
-  double time, last_time;
+  double time, last_time, inter_time;
   int cycle;
   status_type status;
 

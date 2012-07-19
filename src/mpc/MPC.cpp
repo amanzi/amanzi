@@ -285,6 +285,7 @@ void MPC::cycle_driver() {
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
+    S->set_intermediate_time(T0);
   }
 
   if (chemistry_enabled) {
@@ -552,7 +553,8 @@ void MPC::cycle_driver() {
         }
       }
       
-      // update the time in the state object
+      // update the times in the state object
+      S->set_intermediate_time(S->get_time());
       S->advance_time(mpc_dT);
       // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
