@@ -54,7 +54,9 @@ class Transport_State {
   // miscaleneous
   void InterpolateCellVector(
       const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int);
-  double get_time() { return (S_ == NULL) ? -1.0 : S_->get_time(); }
+  double intermediate_time() { return (S_ == NULL) ? -1.0 : S_->intermediate_time(); }
+  double initial_time() { return (S_ == NULL) ? -1.0 : S_->initial_time(); }
+  double final_time() { return (S_ == NULL) ? -1.0 : S_->final_time(); }
   
   // debug routines
   void AnalyticTotalComponentConcentration(double f_tcc(const AmanziGeometry::Point&, double), double t = 0.0);
