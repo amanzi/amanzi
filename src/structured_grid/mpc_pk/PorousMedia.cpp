@@ -4815,7 +4815,9 @@ PorousMedia::strang_chem (MultiFab&  state,
         BL_ASSERT(components[ithread].mineral_volume_fraction.size() == nminerals);
         BL_ASSERT(components[ithread].total.size() == ntracers);
         BL_ASSERT(components[ithread].free_ion.size() == ntracers);
-        //BL_ASSERT(components[ithread].total_sorbed.size() == ntracers);
+        if (using_sorption) {
+            BL_ASSERT(components[ithread].total_sorbed.size() == ntracers);
+        }
         BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
     }
     //
@@ -4924,22 +4926,25 @@ PorousMedia::strang_chem (MultiFab&  state,
                     for (int icmp = 0; icmp < ntracers; icmp++)
                     {
                         Real               val  = fab(iv,icmp+ncomps);
-                        const std::string& name = qNames[tType[icmp]];
+                        //const std::string& name = qNames[tType[icmp]];
+
+                        TheComponent.total[idx_total++]= val;
 
                         allzero = allzero && (val == 0);
 
-                        if (solid.compare(name) == 0)
-                        {
-                            TheComponent.mineral_volume_fraction[idx_minerals++] = val;
-                        }
-                        else if (absorbed.compare(name) == 0)
-                        {
-                            TheComponent.total_sorbed[idx_sorbed++] = val;
-                        }
-                        else
-                        {
-                            TheComponent.total[idx_total++]= val;
-                        }
+                        // TODO(bandre): temporary remove just to aqueous reactions working.
+                        // if (solid.compare(name) == 0)
+                        // {
+                        //     TheComponent.mineral_volume_fraction[idx_minerals++] = val;
+                        // }
+                        // else if (absorbed.compare(name) == 0)
+                        // {
+                        //     TheComponent.total_sorbed[idx_sorbed++] = val;
+                        // }
+                        // else
+                        // {
+                        //     TheComponent.total[idx_total++]= val;
+                        // }
                     }
 
                     Real sat_tmp = fab(iv,0) / density[0];
@@ -4950,6 +4955,7 @@ PorousMedia::strang_chem (MultiFab&  state,
                     TheParameter.porosity   = phi_fab(iv,0);
                     TheParameter.saturation = sat_tmp;
                     TheParameter.volume     = vol_fab(iv,0);
+                    TheParameter.water_density = density[0];
 
                     if (allzero) continue;
 
@@ -4957,6 +4963,7 @@ PorousMedia::strang_chem (MultiFab&  state,
 	  
                     try
                     {
+                      //TheComponent.Display("-- before rxn step: \n");
                         TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
 
                         stat = TheChemSolve.status();
@@ -4982,20 +4989,22 @@ PorousMedia::strang_chem (MultiFab&  state,
                     //
                     for (int icmp = ncomps; icmp < ncomps+ntracers; icmp++)
                     {
-                        const std::string& name = qNames[tType[icmp-ncomps]];
+                      fab(iv, icmp) = TheComponent.total[idx_total++];
+                      // TODO(bandre): temporarily remove just to get basic aqueous reactions working
+                        // const std::string& name = qNames[tType[icmp-ncomps]];
 
-                        if (solid.compare(name) == 0)
-                        {
-                            fab(iv,icmp) = TheComponent.mineral_volume_fraction[idx_minerals++];
-                        }
-                        else if (absorbed.compare(name) == 0)
-                        {
-                            fab(iv,icmp) = TheComponent.total_sorbed[idx_sorbed++];
-                        }
-                        else
-                        {
-                            fab(iv,icmp) = TheComponent.total[idx_total++];
-                        }
+                        // if (solid.compare(name) == 0)
+                        // {
+                        //     fab(iv,icmp) = TheComponent.mineral_volume_fraction[idx_minerals++];
+                        // }
+                        // else if (absorbed.compare(name) == 0)
+                        // {
+                        //     fab(iv,icmp) = TheComponent.total_sorbed[idx_sorbed++];
+                        // }
+                        // else
+                        // {
+                        //     fab(iv,icmp) = TheComponent.total[idx_total++];
+                        // }
                     }		
                 }
             }

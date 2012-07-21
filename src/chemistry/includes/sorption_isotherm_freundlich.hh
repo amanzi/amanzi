@@ -15,7 +15,6 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
   SorptionIsothermFreundlich(const double KD, const double n);
   ~SorptionIsothermFreundlich();
 
-  void Init(const double KD, const double n);
   // returns sorbed concentration
   double Evaluate(const Species& primarySpecies);
   double EvaluateDerivative(const Species& primarySpecies);
@@ -23,17 +22,15 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
 
   double KD(void) const { return KD_; }
   void set_KD(const double KD) { KD_ = KD; }
-  double n(void) const { return 1./one_over_n_; }
-  void set_n(const double n) { one_over_n_ = 1./n; }
-  double one_over_n(void) const { return one_over_n_; }
-  void set_one_over_n(const double one_over_n) { one_over_n_ = one_over_n; }
+  double n(void) const { return n_; }
+  void set_n(const double n) { n_ = n; }
 
   std::vector<double> GetParameters(void) const;
   void SetParameters(const std::vector<double>& params);
 
  private:
   double KD_; // distribution coefficient
-  double one_over_n_; // chemical-specific constant
+  double n_; // chemical-specific constant
 
 }; // SorptionIsothermFreundlich
 

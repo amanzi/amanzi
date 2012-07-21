@@ -11,33 +11,27 @@ namespace chemistry {
 SorptionIsothermFreundlich::SorptionIsothermFreundlich()
     : SorptionIsotherm("freundlich"),
       KD_(0.), 
-      one_over_n_(0.) {
+      n_(0.) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich(const double KD, 
-                                                       const double one_over_n)
+                                                       const double n)
     : SorptionIsotherm("freundlich"),
       KD_(KD), 
-      one_over_n_(one_over_n) {
+      n_(n) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermFreundlich::~SorptionIsothermFreundlich() {
 }  // end SorptionIsothermLangmuir() destructor
 
-void SorptionIsothermFreundlich::Init(const double KD, const double n) {
-  set_KD(KD);
-  set_n(n);
-}
-
 double SorptionIsothermFreundlich::Evaluate(const Species& primarySpecies) {
-  // Csorb = KD * activity^(1/n)
+  // Csorb = KD * activity^(n)
   // Units: The units don't make a whole lot of sense.
-  return KD() * std::pow(primarySpecies.activity(), one_over_n());
+  return KD() * std::pow(primarySpecies.activity(), n());
 }  // end Evaluate()
 
 std::vector<double> SorptionIsothermFreundlich::GetParameters(void) const {
-  std::vector<double> params;
-  params.resize(2, 0.0);
+  std::vector<double> params(2, 0.0);
   params.at(0) = KD();
   params.at(1) = n();
   return params;
@@ -50,21 +44,22 @@ void SorptionIsothermFreundlich::SetParameters(const std::vector<double>& params
 
 double SorptionIsothermFreundlich::EvaluateDerivative(
     const Species& primarySpecies) {
-  // Csorb = KD * activity^(1/n)
-  // dCsorb/dCaq = KD * 1/n * activity^(1/n-1) * activity_coef
+  // Csorb = KD * activity^(n)
+  // dCsorb/dCaq = KD * n * activity^(n-1) * activity_coef
+  //             = Csorb * n / molality
   // Units:
   //  KD [kg water/m^3 bulk]
-  double C_sorb = KD() * std::pow(primarySpecies.activity(), one_over_n());
-  return C_sorb / primarySpecies.molality() * one_over_n();
+  double C_sorb = KD() * std::pow(primarySpecies.activity(), n());
+  return C_sorb * n() / primarySpecies.molality();
 }  // end EvaluateDerivative()
 
 void SorptionIsothermFreundlich::Display(void) const {
   std::cout << std::setw(5) << "KD:"
             << std::scientific << std::setprecision(5)
             << std::setw(15) << KD() 
-            << std::setw(5) << "1/n:"
+            << std::setw(5) << "n:"
             << std::scientific << std::setprecision(5)
-            << std::setw(15) << one_over_n() 
+            << std::setw(15) << n() 
             << std::endl;
 }  // end Display()
 
