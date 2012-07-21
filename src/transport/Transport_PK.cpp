@@ -156,9 +156,9 @@ double Transport_PK::CalculateTransportDt()
 {
   // flow could not be available at initialization, copy it again
   if (status == TRANSPORT_NULL) {
-    TS->copymemory_multivector(TS->ref_total_component_concentration(),
-                               TS_nextBIG->ref_total_component_concentration());
-    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+    TS->CopyMasterMultiCell2GhostMultiCell(TS->ref_total_component_concentration(),
+                                           TS_nextBIG->ref_total_component_concentration());
+    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
     if (internal_tests) CheckDivergenceProperty();
     IdentifyUpwindCells();
@@ -166,7 +166,7 @@ double Transport_PK::CalculateTransportDt()
     status = TRANSPORT_FLOW_AVAILABLE;
 
   } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
-    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
     IdentifyUpwindCells();
 
@@ -243,7 +243,7 @@ void Transport_PK::Advance(double dT_MPC)
   const Epetra_Vector& ws = TS->ref_water_saturation();
 
   // calculate stable time step dT
-  double dT_shift = 0.0, dT_global = 0.0;
+  double dT_shift = 0.0, dT_global = dT_MPC;
   double time = TS->intermediate_time();
   if (time >= 0.0) { 
     T_physics = time;
@@ -258,7 +258,7 @@ void Transport_PK::Advance(double dT_MPC)
   // start subcycling
   double dT_sum = 0.0;
   if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
-    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
   }
 
   double dT_cycle;
@@ -316,7 +316,7 @@ void Transport_PK::Advance(double dT_MPC)
       // AdvanceSecondOrderUpwindGeneric(dT_cycle);
     }
 
-    if (! final_cycle) TS->copymemory_multivector(tcc_next, tcc, 0);  // rotate concentrations
+    if (! final_cycle) TS->CopyMasterMultiCell2GhostMultiCell(tcc_next, tcc, 0);  // rotate concentrations
 
     ncycles++;
   }
@@ -362,7 +362,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   // populating next state of concentrations
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
-  TS_nextBIG->copymemory_multivector(*tcc, *tcc_next);
+  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*tcc, *tcc_next);
 
   // prepare conservative state in master and slave cells
   double vol_phi_ws, tcc_flux;
@@ -454,7 +454,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
     current_component_ = i;  // needed by BJ 
 
     Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
     double T = 0.0;
     fun(T, *component_, f_component);
@@ -497,7 +497,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 
     // predictor step
     Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
     double T = 0.0;
     fun(T, *component_, f_component);
@@ -508,7 +508,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 
     // corrector step
     Epetra_Vector*& tcc_next_component = (*tcc_next)(i);
-    TS_nextBIG->copymemory_vector(*tcc_next_component, *component_);
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_next_component, *component_);
 
     fun(T, *component_, f_component);
 
@@ -555,7 +555,7 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
     current_component_ = i;  // it is needed in BJ called inside RK:fun
 
     Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
     double T = 0.0;  // requires fixes (lipnikov@lanl.gov)
     TVD_RK.step(T, dT, *component_, *component_next_);

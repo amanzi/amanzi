@@ -28,10 +28,12 @@ class Transport_State {
   ~Transport_State() {};
 
   // data management
-  void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target, int target_is_parallel = 1);
-  void copymemory_vector(Epetra_Vector& source, Epetra_Vector& target);
   void CopyMasterCell2GhostCell(Epetra_Vector& v);
+  void CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vv);
+  void CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vv);
   void CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
+  void CopyMasterMultiCell2GhostMultiCell(const Epetra_MultiVector& v, 
+                                          Epetra_MultiVector& vv, int parallel_comm = 1);
 
   // access methods for state variables
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration() { return total_component_concentration_; }
