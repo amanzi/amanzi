@@ -21,6 +21,7 @@
 #include "activity_model_factory.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "general_rxn.hh"
+#include "radioactive_decay.hh"
 #include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
 #include "mineral.hh"
@@ -83,6 +84,7 @@ Beaker::Beaker()
   minerals_.clear();
   aqComplexRxns_.clear();
   generalKineticRxns_.clear();
+  radioactive_decay_rxns_.clear();
   mineral_rates_.clear();
   ion_exchange_rxns_.clear();
   sorption_isotherm_rxns_.clear();
@@ -654,6 +656,8 @@ void Beaker::Display(void) const {
 
   DisplayGeneralKinetics();
 
+  DisplayRadioactiveDecayRxns();
+
   DisplayMinerals();
 
   DisplayMineralKinetics();
@@ -1155,6 +1159,10 @@ void Beaker::AddGeneralRxn(const GeneralRxn& r) {
   generalKineticRxns_.push_back(r);
 }  // end AddGeneralRxn()
 
+void Beaker::AddRadioactiveDecayRxn(const RadioactiveDecay& r) {
+  radioactive_decay_rxns_.push_back(r);
+}  // end AddRadioactiveDecayRxn()
+
 void Beaker::AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r) {
   surfaceComplexationRxns_.push_back(r);
 }  // end AddSurfaceComplexationRxn()
@@ -1373,6 +1381,12 @@ void Beaker::UpdateKineticChemistry(void) {
     i->update_rates(primary_species());
   }
 
+  // loop over radioactive decay reactions and update effective rates
+  for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
+       i != radioactive_decay_rxns_.end(); ++i) {
+    i->UpdateRate(total_, total_sorbed_, por_sat_den_vol(), volume());
+  }
+
   // add mineral saturation and rate calculations here
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
@@ -1389,6 +1403,12 @@ void Beaker::AddKineticChemistryToResidual(void) {
     i->addContributionToResidual(&residual_, por_sat_den_vol());
   }
 
+  // loop over radioactive decay reactions and add rates
+  for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
+       i != radioactive_decay_rxns_.end(); ++i) {
+    i->AddContributionToResidual(&residual_);
+  }
+
   // add mineral mineral contribution to residual here.  units = mol/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
@@ -1403,6 +1423,14 @@ void Beaker::AddKineticChemistryToJacobian(void) {
   for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
        i != generalKineticRxns_.end(); i++) {
     i->addContributionToJacobian(&jacobian_, primary_species(), por_sat_den_vol());
+  }
+
+  // loop over radioactive decay reactions and add rates
+  for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
+       i != radioactive_decay_rxns_.end(); ++i) {
+    i->AddContributionToJacobian(dtotal_, dtotal_sorbed_,
+                                 por_sat_den_vol(), volume(),
+                                 &jacobian_);
   }
 
   // add mineral mineral contribution to Jacobian here.  units = kg water/sec.
@@ -1658,7 +1686,22 @@ void Beaker::DisplayGeneralKinetics(void) const {
     }
     chem_out->Write(kVerbose, "\n");
   }
-}  // end DisplayAqueousEquilibriumComplexes()
+}  // end DisplayGeneralKinetics()
+
+void Beaker::DisplayRadioactiveDecayRxns(void) const {
+  if (radioactive_decay_rxns_.size() > 0) {
+    std::stringstream message;
+    message << "---- Radioactive Decay" << std::endl;
+    message << std::setw(12) << "Reaction" << std::endl;
+    chem_out->Write(kVerbose, message);
+    std::vector<RadioactiveDecay>::const_iterator rxn;
+    for (rxn = radioactive_decay_rxns_.begin();
+         rxn != radioactive_decay_rxns_.end(); ++rxn) {
+      rxn->Display();
+    }
+    chem_out->Write(kVerbose, "\n");
+  }
+}  // end DisplayRadioactiveDecayRxns()
 
 void Beaker::DisplayMinerals(void) const {
   if (minerals_.size() > 0) {

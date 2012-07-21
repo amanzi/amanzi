@@ -11,6 +11,7 @@
 #include "activity_model.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "general_rxn.hh"
+#include "radioactive_decay.hh"
 #include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
 #include "mineral.hh"
@@ -246,6 +247,7 @@ class Beaker {
   void AddMineral(const Mineral& m);
   void AddMineralKineticRate(KineticRate* rate);
   void AddGeneralRxn(const GeneralRxn& r);
+  void AddRadioactiveDecayRxn(const RadioactiveDecay& r);
   void AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
   void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
@@ -347,6 +349,7 @@ class Beaker {
   void DisplayPrimary(void) const;
   void DisplayAqueousEquilibriumComplexes(void) const;
   void DisplayGeneralKinetics(void) const;
+  void DisplayRadioactiveDecayRxns(void) const;
   void DisplayMinerals(void) const;
   void DisplayMineralKinetics(void) const;
   void DisplayIonExchangeRxns(void) const;
@@ -398,6 +401,7 @@ class Beaker {
 
   std::vector<AqueousEquilibriumComplex> aqComplexRxns_;  // list of aqueous equilibrium complexation reactions
   std::vector<GeneralRxn> generalKineticRxns_;  // list of general kinetic reactions
+  std::vector<RadioactiveDecay> radioactive_decay_rxns_;  // list of radioactive decay rxns
   std::vector<KineticRate*> mineral_rates_;
   //  vector<GasExchange*> gasRxns_;
   std::vector<IonExchangeRxn> ion_exchange_rxns_;

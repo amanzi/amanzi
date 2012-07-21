@@ -16,6 +16,7 @@ set(SRCS
 	./aqueous_equilibrium_complex.cc 
 	./beaker.cc 
 	./general_rxn.cc 
+	./radioactive_decay.cc 
 	./ion_exchange_complex.cc 
 	./ion_exchange_rxn.cc 
 	./kinetic_rate.cc 
