@@ -98,7 +98,7 @@
 	</ParameterList>
 	<ParameterList name="C">
 	  <Parameter name="Kd" type="double" value="1.5"/>
-	  <Parameter name="Freundlich N" type="double" value="0.8"/>
+	  <Parameter name="Freundlich N" type="double" value="1.25"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList>

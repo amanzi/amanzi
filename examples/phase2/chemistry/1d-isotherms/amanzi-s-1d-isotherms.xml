@@ -8,7 +8,7 @@
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
     <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Off"/>
+    <Parameter name="Chemistry Model" type="string" value="On"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -103,7 +103,7 @@
 	</ParameterList>
 	<ParameterList name="C">
 	  <Parameter name="Kd" type="double" value="1.5"/>
-	  <Parameter name="Freundlich N" type="double" value="0.8"/>
+	  <Parameter name="Freundlich N" type="double" value="1.25"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList>
@@ -254,7 +254,7 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="isotherms.bgd" />
-    <Parameter name="Verbosity" type="Array string" value="{verbose, debug}" />
+    <Parameter name="Verbosity" type="string" value="verbose" />
     <Parameter name="Activity Model" type="string" value="unit" />
     <Parameter name="Tolerance" type="double" value="1.0e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
