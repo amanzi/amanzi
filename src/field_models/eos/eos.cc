@@ -17,24 +17,27 @@ namespace FlowRelations {
 EOS::EOS(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
     eos_plist_(eos_plist) {
 
-  // Process the list for my dependencies.
-  // -- temperature
-  //      get the name of the temperature field and put it into my list of dependencies
-  temp_key_ = eos_plist_.get<string>("temperature key");
-  dependencies_.insert(temp_key_);
-  //      ensure there is a temperature field in state
-  S->RequireField(temp_key_);
-
-  // -- same for pressure
-  pres_key_ = eos_plist_.get<string>("pressure key");
-  dependencies_.insert(pres_key_);
-  S->RequireField(pres_key_);
-
   // Process the list for my provided field.
   my_key_ = eos_plist_.get<string>("density key");
 
-  // Ensure there are fields in state, and that this can own them.
-  Teuchos::RCP<CompositeVectorFactory> fac_dens = S->RequireField(my_key_, my_key_);
+
+  // Set up my dependencies.
+  std::string::size_t end = my_key_.find_first_of("_");
+  std::string domain_name = my_key_.substr(0,end);
+  if (domain_name == std::string("density")) {
+    domain_name = std::string("");
+  }
+
+  // -- temperature
+  temp_key_ = domain_name+std::string("_temperature");
+  dependencies_.insert(temp_key_);
+
+  // -- pressure
+  pres_key_ = domain_name+std::string("_pressure");
+  dependencies_.insert(pres_key_);
+
+  // Check the consistency.
+  CheckCompatibility_or_die_(S);
 };
 
 

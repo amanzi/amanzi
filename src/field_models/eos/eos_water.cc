@@ -56,20 +56,20 @@ Teuchos::RCP<FieldModel> EOSWater::Clone() const {
 double EOSWater::Density(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + (kc_ + kd_*dT)*dT)*dT;
-  return rho1bar * (1.0 + kalpha_*(p - kp0_));
+  return rho1bar * (1.0 + kalpha_*(p - kp0_)) / M_;
 };
 
 double EOSWater::DDensityDT(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = kb_ + (2.0*kc_ + 3.0*kd_*dT)*dT;
-  return rho1bar * (1.0 + kalpha_*(p - kp0_));
+  return rho1bar * (1.0 + kalpha_*(p - kp0_)) / M_;
 
 };
 
 double EOSWater::DDensityDp(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + (kc_ + kd_*dT)*dT)*dT;
-  return rho1bar * kalpha_;
+  return rho1bar * kalpha_ / M_;
 };
 
 void EOSWater::InitializeFromPlist_() {
