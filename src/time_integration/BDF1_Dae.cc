@@ -72,7 +72,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
 
   state.nonlinear_solver = BDFNKA;
 
-       std::string nstype = paramList_->get<std::string>("nonlinear solver","NKA");
+       std::string nstype = paramList_->get<std::string>("nonlinear solver", "NKA");
        if (nstype == "NKA") {
          state.nonlinear_solver = BDFNKA;
        } else if (nstype == "JFNK") {
@@ -293,7 +293,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
       if (state.nonlinear_solver == BDFNKA) {
             solve_bce(tnew, h, u0, u);
       }
-      else if (state.nonlinear_solver == BDFNKA) {
+      else if (state.nonlinear_solver == BDFJFNK) {
              solve_bce_jfnk(tnew, h, u0, u);
       }
 //     exit(0);
