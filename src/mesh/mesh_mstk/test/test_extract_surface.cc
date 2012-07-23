@@ -245,6 +245,14 @@ TEST(Extract_Surface_MSTK3)
   top_surface_def.set<std::string>("File",filename.c_str());
   top_surface_def.set<std::string>("Format","Exodus II");
   top_surface_def.set<std::string>("Entity","Face");
+
+  Teuchos::ParameterList& side_surface = reg_spec.sublist("Side Surface");
+  Teuchos::ParameterList& side_surface_def = side_surface.sublist("Region: Labeled Set");
+  side_surface_def.set<std::string>("Label","102");
+  side_surface_def.set<std::string>("File",filename.c_str());
+  side_surface_def.set<std::string>("Format","Exodus II");
+  side_surface_def.set<std::string>("Entity","Face");
+
   
 
   Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
@@ -298,6 +306,18 @@ TEST(Extract_Surface_MSTK3)
   
   for (int k = 0; k < ncells_surf; k++)
     CHECK_EQUAL(1,found[k]);
+
+
+  // Test if the labeled set was inherited correctly and if we get the
+  // right entities for this set
+
+  Amanzi::AmanziMesh::Entity_ID_List setents;
+  surfmesh.get_set_entities("Side Surface",Amanzi::AmanziMesh::FACE,
+                            Amanzi::AmanziMesh::OWNED,&setents);
+
+  CHECK(setents.size() != 0);
+
+  // What else can we check about the set entities ?
 
 
   // Once we can make RegionFactory work with reference counted pointers 
