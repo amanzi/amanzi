@@ -72,15 +72,15 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
 
   state.nonlinear_solver = BDFNKA;
 
-       std::string nstype = paramList_->get<std::string>("nonlinear solver", "NKA");
-       if (nstype == "NKA") {
-         state.nonlinear_solver = BDFNKA;
-       } else if (nstype == "JFNK") {
-         state.nonlinear_solver = BDFJFNK;
-       } else {
-         Errors::Message m("(native spec) bdf1 nonlinear solver must either be NKA or JFNK");
-         Exceptions::amanzi_throw(m);
-       }
+  std::string nstype = paramList_->get<std::string>("nonlinear solver", "NKA");
+  if (nstype == "NKA") {
+      state.nonlinear_solver = BDFNKA;
+  } else if (nstype == "JFNK") {
+      state.nonlinear_solver = BDFJFNK;
+  } else {
+       Errors::Message m("(native spec) bdf1 nonlinear solver must either be NKA or JFNK");
+       Exceptions::amanzi_throw(m);
+  }
 
 
 
