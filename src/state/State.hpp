@@ -55,7 +55,7 @@ class State : public Teuchos::VerboseObject<State> {
   double get_last_time () const { return last_time; }
   int get_cycle () const { return cycle; };
 
-  double initial_time() const { return last_time; } 
+  double initial_time() const { return time; } 
   double final_time() const { return fin_time_; }
   double intermediate_time() const { return inter_time_; }
   
