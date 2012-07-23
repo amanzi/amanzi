@@ -21,7 +21,7 @@ namespace Flow {
 namespace FlowRelations {
 
 // Equation of State model
-class EOSVaporInGas : public SecondaryVariableFieldModel {
+class EOSVaporInGas : public EOS {
 
 public:
   EOSVaporInGas(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
@@ -29,26 +29,16 @@ public:
 
   virtual Teuchos::RCP<FieldModel> Clone() const;
 
-  virtual double Density(double T, double p, double mol_frac_vapor);
-  virtual double DDensityDT(double T, double p, double mol_frac_vapor);
-  virtual double DDensityDp(double T, double p, double mol_frac_vapor);
-  virtual double DDensityDmol_frac(double T, double p, double mol_frac_vapor);
+  virtual double Density(double T, double p);
+  virtual double DDensityDT(double T, double p);
+  virtual double DDensityDp(double T, double p);
 
-  virtual double molar_mass(double mol_frac_vapor) {
-    return mol_frac_vapor*Mv_ + (1.0-mol_frac_vapor)*gas_eos_->molar_mass(); }
-
-  virtual double MolarDensity(double T, double p) { return gas_eos_->MolarDensity(T,p); }
-  virtual double DMolarDensityDT(double T, double p) { return gas_eos_->DMolarDensityDT(T,p); }
-  virtual double DMolarDensityDp(double T, double p) { return gas_eos_->DMolarDensityDp(T,p); }
-
-  virtual double SaturatedVaporPressure(double T);
+  virtual double molar_mass();
 
 protected:
   virtual void InitializeFromPlist_();
 
   Teuchos::ParameterList eos_plist_;
-
-  Teuchos::RCP<EOS> gas_eos_;
   Teuchos::RCP<VaporPressureModel> sat_vapor_model_;
   double Mv_;
 };

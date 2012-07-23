@@ -37,7 +37,7 @@ public:
   virtual double DDensityDp(double T, double p);
 
   double molar_mass() { return M_; }
-  virtual bool is_molar_basis() { return false; }
+  virtual bool is_molar_basis() { return true; }
 
 private:
   virtual void InitializeFromPlist_();

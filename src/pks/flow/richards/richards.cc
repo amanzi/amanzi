@@ -70,12 +70,10 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   S->RequireField("saturation_liquid", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("density_liquid", "flow")->Update(one_cell_owned_factory);
   S->RequireField("molar_density_liquid", "flow")->Update(one_cell_owned_factory);
   S->RequireField("viscosity_liquid", "flow")->Update(one_cell_owned_factory);
 
   S->RequireField("saturation_gas", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("density_gas", "flow")->Update(one_cell_owned_factory);
   S->RequireField("molar_density_gas", "flow")->Update(one_cell_owned_factory);
   S->RequireField("mol_frac_gas", "flow")->Update(one_cell_owned_factory);
 
@@ -107,12 +105,31 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   // constitutive relations
   // -- liquid eos
   Teuchos::ParameterList water_eos_plist = flow_plist_.sublist("Water EOS");
+  //    -- add the specs to let the EOS get the data
+  water_eos_plist.set<std::string>("temperature key", "temperature");
+  water_eos_plist.set<std::string>("pressure key", "pressure");
+  water_eos_plist.set<std::string>("density key", "molar_density_liquid");
+  //    -- instantiate the EOS
   FlowRelations::EOSFactory eos_factory;
-  eos_liquid_ = eos_factory.createEOS(water_eos_plist);
+  Teuchos::RCP<FieldModel> eos_liquid = eos_factory.createEOS(water_eos_plist, S);
+  ASSERT(eos_liquid->is_molar_basis());
+  //    -- push it into state
+  S->PushBackFieldModel("molar_density_liquid", eos_liquid);
 
   // -- gas eos
-  Teuchos::ParameterList eos_gas_plist = flow_plist_.sublist("Vapor and Gas EOS");
-  eos_gas_ = Teuchos::rcp(new FlowRelations::EOSVaporInGas(eos_gas_plist));
+  Teuchos::ParameterList gas_eos_plist = flow_plist_.sublist("Gas EOS");
+  gas_eos_plist.set<std::string>("temperature key", "temperature");
+  gas_eos_plist.set<std::string>("pressure key", "pressure");
+  gas_eos_plist.set<std::string>("density key", "molar_density_gas");
+  Teuchos::RCP<FieldModel> eos_gas = eos_factory.createEOS(gas_eos_plist, S);
+  ASSERT(eos_gas->is_molar_basis());
+  S->PushBackFieldModel("molar_density_gas", eos_gas);
+
+  // Water content model.  This simply measures the current water content, and
+  // is used for the accumulation term.
+  //  wc = phi * 
+  
+
 
   // -- water retention models
   Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Models");
@@ -204,12 +221,10 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   // declare secondary variables initialized, as they will be done by
   // the commit_state call
   S->GetField("saturation_liquid","flow")->set_initialized();
-  S->GetField("density_liquid","flow")->set_initialized();
   S->GetField("molar_density_liquid","flow")->set_initialized();
   S->GetField("viscosity_liquid","flow")->set_initialized();
 
   S->GetField("saturation_gas","flow")->set_initialized();
-  S->GetField("density_gas","flow")->set_initialized();
   S->GetField("molar_density_gas","flow")->set_initialized();
   S->GetField("mol_frac_gas","flow")->set_initialized();
 
