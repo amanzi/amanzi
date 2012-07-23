@@ -149,6 +149,7 @@ std::map<std::string,Array<int> > PorousMedia::group_map;
 //
 // Minerals and Sorption sites
 //
+double             PorousMedia::uninitialized_data;
 int                PorousMedia::nminerals;
 Array<std::string> PorousMedia::minerals;
 int                PorousMedia::nsorption_sites;
@@ -470,6 +471,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::idx_dominant = -1;
 
   PorousMedia::ntracers = 0; 
+  PorousMedia::uninitialized_data = 1.0e30;
   PorousMedia::nminerals = 0; 
   PorousMedia::minerals.clear();
   PorousMedia::nsorption_sites = 0; 
@@ -753,16 +755,16 @@ PorousMedia::variableSetUp ()
       if (ntracers>0)
       {
           Array<std::string> solute_data_names;
-          // TODO: if (using_sorption) { add Total Sorbed }
-          solute_data_names.push_back("Total_Sorbed");
-          // TODO: if (nsorption_isotherms) { add Kd, Freundlich_n, Langmuir_b }
-          solute_data_names.push_back("Kd");
-          solute_data_names.push_back("Freundlich_n");
-          solute_data_names.push_back("Langmuir_b");
-          if (do_chem>0) { // TODO: get rid of this if?
-              solute_data_names.push_back("Free_Ion_Guess");
-              // TODO: rename Primary_Species_Activity_Coefficient
-              solute_data_names.push_back("Activity_Coefficient");
+          solute_data_names.push_back("Free_Ion_Guess");
+          // TODO: rename Primary_Species_Activity_Coefficient
+          solute_data_names.push_back("Activity_Coefficient");
+          if (using_sorption) {
+            solute_data_names.push_back("Total_Sorbed");
+          }
+          if (nsorption_isotherms) {
+            solute_data_names.push_back("Kd");
+            solute_data_names.push_back("Freundlich_n");
+            solute_data_names.push_back("Langmuir_b");
           }
           for (int i=0; i<tNames.size(); ++i) {
               const std::string& name = tNames[i];
@@ -2495,10 +2497,9 @@ void  PorousMedia::read_chem()
           ncation_exchange = 1;
         }
 
-        // TODO: need for 2012 demo
-        ParmParse pp_sorption_isotherms("Sorption_Isotherms");
-        nsorption_isotherms = 0;
-        //nsorption_isotherms = pp_sorption_isotherms.countval();
+        if (sorption_isotherm_ics.size() > 0) {
+          nsorption_isotherms = ntracers;
+        }
 
         // did the user specify chemistry that requires storing sorption data?
         if (nsorption_sites > 0 ||
@@ -2550,14 +2551,18 @@ void  PorousMedia::read_chem()
 
 	for (int ithread = 0; ithread < tnum; ithread++)
         {
+            if (ParallelDescriptor::IOProcessor() && ithread == 0) {
+                BoxLib::Warning("PM_setup::read_chem: Translate ntracers, nminerals, nsorption_sites, etc into amanzi chem parlance");
+            }
+
             chemSolve.set(ithread, new amanzi::chemistry::SimpleThermoDatabase());
 	  
             parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
             parameters[ithread].thermo_database_file = amanzi_database_file;
             parameters[ithread].activity_model_name = activity_model;
-            if (ParallelDescriptor::IOProcessor() && ithread == 0) {
-                BoxLib::Warning("PM_setup::read_chem: Translate ntracers, nminerals, nsorption_sites, etc into amanzi chem parlance");
-            }
+            parameters[ithread].porosity   = 1.0; 
+            parameters[ithread].saturation = 1.0;
+            parameters[ithread].volume     = 1.0;
 
             // minimal initialization of the chemistry arrays to the
             // correct size based on the xml input. Remaining arrays
@@ -2571,22 +2576,35 @@ void  PorousMedia::read_chem()
               components[ithread].total_sorbed.resize(ntracers, 1.0e-40);
             }
 
-            parameters[ithread].porosity   = 1.0; 
-            parameters[ithread].saturation = 1.0;
-            parameters[ithread].volume     = 1.0;
-
             chemSolve[ithread].verbosity(amanzi::chemistry::kTerse);
 	  
             // initialize the chemistry objects
             chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
             // let chemistry finish resizing the arrays
             chemSolve[ithread].CopyBeakerToComponents(&(components[ithread]));
-
             if (ParallelDescriptor::IOProcessor() && ithread == 0) {
                 chemSolve[ithread].Display();
                 chemSolve[ithread].DisplayComponents(components[ithread]);
             }
 	}  // for(threads)
+
+        // Verify that amr and chemistry agree on the names and ordering of the tracers
+        std::vector<std::string> chem_names;
+        chemSolve[0].GetPrimaryNames(&chem_names);
+        BL_ASSERT(chem_names.size() == tNames.size());
+        for (int i = 0; i < chem_names.size(); ++i) {
+          if (chem_names.at(i) != tNames[i]) {
+            if (ParallelDescriptor::IOProcessor()) {
+              std::stringstream message;
+              message << "PM_setup::read_chem():\n"
+                      << "  chemistry and amr do not agree on the name of tracer " << i << ".\n"
+                      << "  chemistry : " << chem_names.at(i) << "\n"
+                      << "  amr : " << tNames[i] << "\n";
+              BoxLib::Warning(message.str().c_str());
+            }
+          }
+        }
+
         // TODO: not needed for 2012 demo... request additional
         // secondary storage data from chemistry object (secondary
         // species activity coefficients)
@@ -2625,6 +2643,13 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read components."<< std::endl;
   
+  // chem requires the number of tracers and rocks be setup before we
+  // can do anything, but read_tracer and read_rock depend on do_chem
+  // already being set. We'll query that now and do the remaining
+  // chemistry after everything else has been read
+  ParmParse pp("prob");
+  pp.query("do_chem",do_chem);
+
   // tracers
   read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 

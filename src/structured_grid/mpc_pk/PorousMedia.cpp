@@ -1112,7 +1112,12 @@ PorousMedia::initData ()
                         const std::string& parameter = it2->first;
                         int comp = sorption_isotherm_label_map[solute_name][parameter];
                         Real value = it2->second;
-
+                        if (false) {
+                          std::cout << material_name << "   "
+                                    << solute_name << "    "
+                                    << parameter << "    "
+                                    << value << std::endl;
+                        }
                         const PArray<Region>& rock_regions = rock.regions;
                         for (int j=0; j<rock_regions.size(); ++j) {
                             rock_regions[j].setVal(fab,value,comp,dx,0);
@@ -2481,7 +2486,7 @@ PorousMedia::multilevel_advance (Real time,
 	      {
 		PorousMedia& pm_lev = getLevel(lev);
 		MultiFab&    S_old  = pm_lev.get_old_data(State_Type);
-		
+                
 		//tmpFABs holds data from aux_boundary_data_old after reaction.
 		MultiFab tmpFABs;
 		
@@ -2492,7 +2497,7 @@ PorousMedia::multilevel_advance (Real time,
 			       pm_lev.aux_boundary_data_old.DistributionMap(),
 			       Fab_allocate);
 		
-		tmpFABs.setVal(1.e30);
+		tmpFABs.setVal(uninitialized_data);
 		
 		const int ngrow = pm_lev.aux_boundary_data_old.nGrow();
 		
@@ -4809,17 +4814,24 @@ PorousMedia::strang_chem (MultiFab&  state,
 #endif
 
     BL_ASSERT(state.nComp() >= ncomps+ntracers);
-
+    BL_ASSERT(components.size() == tnum);
     for (int ithread = 0; ithread < tnum; ithread++)
     {
         BL_ASSERT(components[ithread].mineral_volume_fraction.size() == nminerals);
+        BL_ASSERT(components[ithread].mineral_specific_surface_area.size() == nminerals);
         BL_ASSERT(components[ithread].total.size() == ntracers);
         BL_ASSERT(components[ithread].free_ion.size() == ntracers);
         if (using_sorption) {
             BL_ASSERT(components[ithread].total_sorbed.size() == ntracers);
         }
+        if (nsorption_isotherms > 0) {
+            BL_ASSERT(components[ithread].isotherm_kd.size() == ntracers);
+            BL_ASSERT(components[ithread].isotherm_langmuir_b.size() == ntracers);
+            BL_ASSERT(components[ithread].isotherm_freundlich_n.size() == ntracers);
+        }
         BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
     }
+
     //
     // Assume we are always doing funccount.
     //
@@ -4873,12 +4885,16 @@ PorousMedia::strang_chem (MultiFab&  state,
     for (MFIter mfi(volTemp); mfi.isValid(); ++mfi)
         geom.GetVolume(volTemp[mfi], volTemp.boxArray(), mfi.index(), 0);
   
+    // Grab the auxiliary chemistry data
+    MultiFab& chem_state_new = get_new_data(Aux_Chem_Type);
+
     for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
     {
         FArrayBox& fab     = stateTemp[mfi];
         FArrayBox& phi_fab = phiTemp[mfi];
         FArrayBox& vol_fab = volTemp[mfi];
         FArrayBox& fct_fab = fcnCntTemp[mfi];
+        FArrayBox& chem_fab = chem_state_new[mfi];
         const int* lo      = fab.loVect();
         const int* hi      = fab.hiVect();
 
@@ -4922,30 +4938,42 @@ PorousMedia::strang_chem (MultiFab&  state,
                     IntVect iv(D_DECL(ix,iy,iz));
 
                     bool allzero = true;
-
-                    for (int icmp = 0; icmp < ntracers; icmp++)
+                    bool skip_cell = false;
+                    for (int i = 0; i < ntracers; ++i)
                     {
-                        Real               val  = fab(iv,icmp+ncomps);
-                        //const std::string& name = qNames[tType[icmp]];
+                        // data from the primary state fab
+                        Real value = fab(iv, ncomps+i);
+                        allzero = allzero && (value == 0);
+                        if (std::fabs(value) > uninitialized_data) {
+                          skip_cell = true;
+                        }
+                        TheComponent.total.at(i) = value;
+                        // data from the auxiliary chem fab
+                        std::string name = tNames.at(i);
+                        int index = sorption_isotherm_label_map[name]["Free_Ion_Guess"];
+                        value = chem_fab(iv, index);
+                        TheComponent.free_ion.at(i) = value;
 
-                        TheComponent.total[idx_total++]= val;
+                        if (using_sorption) {
+                          index = sorption_isotherm_label_map[name]["Total_Sorbed"];
+                          value = chem_fab(iv, index);
+                          TheComponent.total_sorbed.at(i) = value;
+                        }
 
-                        allzero = allzero && (val == 0);
-
-                        // TODO(bandre): temporary remove just to aqueous reactions working.
-                        // if (solid.compare(name) == 0)
-                        // {
-                        //     TheComponent.mineral_volume_fraction[idx_minerals++] = val;
-                        // }
-                        // else if (absorbed.compare(name) == 0)
-                        // {
-                        //     TheComponent.total_sorbed[idx_sorbed++] = val;
-                        // }
-                        // else
-                        // {
-                        //     TheComponent.total[idx_total++]= val;
-                        // }
+                        if (nsorption_isotherms > 0) {
+                          index = sorption_isotherm_label_map[name]["Kd"];
+                          value = chem_fab(iv, index);
+                          TheComponent.isotherm_kd.at(i) = value;
+                          index = sorption_isotherm_label_map[name]["Langmuir_b"];
+                          value = chem_fab(iv, index);
+                          TheComponent.isotherm_freundlich_n.at(i) = value;
+                          index = sorption_isotherm_label_map[name]["Freundlich_n"];
+                          value = chem_fab(iv, index);
+                          TheComponent.isotherm_langmuir_b.at(i) = value;
+                        }
                     }
+                    // TODO: loop over minerals
+                    // TODO: loop over surface complexation sites
 
                     Real sat_tmp = fab(iv,0) / density[0];
 
@@ -4957,7 +4985,7 @@ PorousMedia::strang_chem (MultiFab&  state,
                     TheParameter.volume     = vol_fab(iv,0);
                     TheParameter.water_density = density[0];
 
-                    if (allzero) continue;
+                    if (allzero || skip_cell) continue;
 
                     amanzi::chemistry::Beaker::SolverStatus stat;
 	  
@@ -4976,36 +5004,44 @@ PorousMedia::strang_chem (MultiFab&  state,
                         for (int icmp = 0; icmp < ntracers; icmp++)
                             std::cout << fab(iv,icmp+ncomps) << ' ';
                         std::cout << std::endl;
-
+                        TheComponent.Display("components: ");
                         BoxLib::Abort(geochem_error.what());	    
                     }
                     //
                     // After calculating the change in the tracer species,
                     // update the state variables.
                     //
-                    idx_minerals = idx_sorbed = idx_total = 0;
-                    //
-                    //
-                    //
-                    for (int icmp = ncomps; icmp < ncomps+ntracers; icmp++)
-                    {
-                      fab(iv, icmp) = TheComponent.total[idx_total++];
-                      // TODO(bandre): temporarily remove just to get basic aqueous reactions working
-                        // const std::string& name = qNames[tType[icmp-ncomps]];
 
-                        // if (solid.compare(name) == 0)
-                        // {
-                        //     fab(iv,icmp) = TheComponent.mineral_volume_fraction[idx_minerals++];
-                        // }
-                        // else if (absorbed.compare(name) == 0)
-                        // {
-                        //     fab(iv,icmp) = TheComponent.total_sorbed[idx_sorbed++];
-                        // }
-                        // else
-                        // {
-                        //     fab(iv,icmp) = TheComponent.total[idx_total++];
-                        // }
-                    }		
+                    // loop over the solutes and store the calculated
+                    // values in the appropriate place in the fabs
+                    for (int i = 0; i < ntracers; ++i)
+                    {
+                        // primary state fab
+                        Real value = TheComponent.total.at(i);
+                        fab(iv, ncomps+i) = value;
+                        // auxiliary chem fab
+                        std::string name = tNames[i];
+                        int index = sorption_isotherm_label_map[name]["Free_Ion_Guess"];
+                        value = TheComponent.free_ion.at(i);
+                        chem_fab(iv, index) = value;
+                        if (using_sorption) {
+                            index = sorption_isotherm_label_map[name]["Total_Sorbed"];
+                            value = TheComponent.total_sorbed.at(i);
+                            chem_fab(iv, index) = value;
+                        }
+                        if (nsorption_isotherms) {
+                            index = sorption_isotherm_label_map[name]["Kd"];
+                            value = TheComponent.isotherm_kd.at(i);
+                            chem_fab(iv, index) = value;
+                            index = sorption_isotherm_label_map[name]["Freundlich_n"];
+                            value = TheComponent.isotherm_freundlich_n.at(i);
+                            chem_fab(iv, index) = value;
+                            index = sorption_isotherm_label_map[name]["Langmuir_b"];
+                            value = TheComponent.isotherm_langmuir_b.at(i);
+                            chem_fab(iv, index) = value;
+                        }
+                    }
+                    // TODO: loop over minerals, etc
                 }
             }
 #if (BL_SPACEDIM == 3)

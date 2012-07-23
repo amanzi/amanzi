@@ -1061,6 +1061,7 @@ protected:
   static std::map<std::string,Array<int> > group_map;
 
   // Minerals, Sorption sites
+  static double uninitialized_data;
   static int nminerals; 
   static Array<std::string> minerals;
   static int nsorption_sites; 

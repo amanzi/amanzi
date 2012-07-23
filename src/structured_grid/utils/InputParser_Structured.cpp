@@ -1270,7 +1270,7 @@ namespace Amanzi {
                                                 }
                                             }
                                             const Array<std::string>& siLabels1 = siP.OptParms();
-                                            if (siLabels1.size()!=1) {
+                                            if (siLabels1.size()>1) {
                                                 std::cerr << "Only one of \"" << Lb_str << "\" or \"" << Fn_str << "\" can be set for "
                                                           << sipcsLabel << " in component "
                                                           << sipcLabel << " in phase " << sipLabel << " for " <<

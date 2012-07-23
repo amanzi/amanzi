@@ -94,16 +94,20 @@
         <Parameter name="Value" type="double" value="1.E-12"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
- 	<ParameterList name="A">
-	  <Parameter name="Kd" type="double" value="10.0"/>
-	</ParameterList>
- 	<ParameterList name="B">
-	  <Parameter name="Kd" type="double" value="30.0"/>
-	  <Parameter name="Langmuir b" type="double" value="0.1"/>
-	</ParameterList>
-	<ParameterList name="C">
-	  <Parameter name="Kd" type="double" value="1.5"/>
-	  <Parameter name="Freundlich N" type="double" value="1.25"/>
+        <ParameterList name="Aqueous">
+          <ParameterList name="Water">
+	    <ParameterList name="A">
+	      <Parameter name="Kd" type="double" value="10.0"/>
+	    </ParameterList>
+	    <ParameterList name="B">
+	      <Parameter name="Kd" type="double" value="30.0"/>
+	      <Parameter name="Langmuir b" type="double" value="0.1"/>
+	    </ParameterList>
+	    <ParameterList name="C">
+	      <Parameter name="Kd" type="double" value="1.5"/>
+	      <Parameter name="Freundlich N" type="double" value="1.25"/>
+	    </ParameterList>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
     </ParameterList>
@@ -138,18 +142,21 @@
             <ParameterList name="A">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="B">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="C">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
