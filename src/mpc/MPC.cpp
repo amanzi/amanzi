@@ -432,9 +432,9 @@ void MPC::cycle_driver() {
       }
 
       // take the mpc time step as the min of all suggested time steps 
-      mpc_dT = std::min(std::min(flow_dT, transport_dT), chemistry_dT);
+      mpc_dT = std::min(flow_dT, transport_dT);
 
-      // take the mpc time step as the min of the last limiter and itself 
+       // take the mpc time step as the min of the last limiter and itself 
       mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
 
       // figure out who limits the time step
@@ -491,10 +491,9 @@ void MPC::cycle_driver() {
 	    }
 	  } while (redo);
 	  FPK->CommitState(FS);
-	  S->set_final_time(S->initial_time() + mpc_dT);
 	}
+	S->set_final_time(S->initial_time() + mpc_dT);
       }
-
       // write some info about the time step we are about to take
       // first determine what we will write about the time step limiter
       std::string limitstring("");
@@ -524,39 +523,54 @@ void MPC::cycle_driver() {
 
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
-        if (transport_enabled) {
-          TPK->Advance(mpc_dT);
-          if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
-            // get the transport state and commit it to the state
-            Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
-            *total_component_concentration_star = *TS_next->total_component_concentration();
-          } else {
-            Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
-            Exceptions::amanzi_throw(message);
-          }
-        } else { // if we're not advancing transport we still need to prepare for chemistry
-          *total_component_concentration_star = *S->get_total_component_concentration();
-        }
-      
-        if (chemistry_enabled) {
-          try {
-            CPK->advance(mpc_dT, total_component_concentration_star);
-            S->update_total_component_concentration(CPK->get_total_component_concentration());
-          } catch (const ChemistryException& chem_error) {
-            std::ostringstream error_message;
-            error_message << "MPC: error... Chemistry_PK.advance returned an error status";
-            error_message << chem_error.what();
-            Errors::Message message(error_message.str());
-            Exceptions::amanzi_throw(message);
-          }
-        } else {
-          S->update_total_component_concentration(*total_component_concentration_star);
-        }
+	double tc_dT(mpc_dT);
+	int ntc(1);
+	if (chemistry_enabled) {
+	  if (mpc_dT > chemistry_dT) {
+	    ntc = floor(mpc_dT/chemistry_dT)+1;
+	    tc_dT = mpc_dT/double(ntc);
+	  }
+	}
+	// subcycling loop
+	for (int iss = 0; iss<ntc; ++iss) {
+	  if (transport_enabled) {
+	    TPK->Advance(tc_dT);
+	    if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
+	      // get the transport state and commit it to the state
+	      Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
+	      *total_component_concentration_star = *TS_next->total_component_concentration();
+	    } else {
+	      Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
+	      Exceptions::amanzi_throw(message);
+	    }
+	  } else { // if we're not advancing transport we still need to prepare for chemistry
+	    *total_component_concentration_star = *S->get_total_component_concentration();
+	  }
+	  
+	  if (chemistry_enabled) {
+	    try {
+	      CPK->advance(tc_dT, total_component_concentration_star);
+	      S->update_total_component_concentration(CPK->get_total_component_concentration());
+	    } catch (const ChemistryException& chem_error) {
+	      std::ostringstream error_message;
+	      error_message << "MPC: error... Chemistry_PK.advance returned an error status";
+	      error_message << chem_error.what();
+	      Errors::Message message(error_message.str());
+	      Exceptions::amanzi_throw(message);
+	    }
+	  } else {
+	    S->update_total_component_concentration(*total_component_concentration_star);
+	  }
+	  S->set_intermediate_time(S->intermediate_time() + tc_dT);
+	  if (transport_enabled) TPK->CommitState(TS);
+	  if (chemistry_enabled) CPK->commit_state(CS, tc_dT);	  	
+	}
       }
       
       // update the times in the state object
-      S->set_intermediate_time(S->get_time());
       S->advance_time(mpc_dT);
+
+      //      ASSERT(S->intermediate_time() == S->final_time());
       // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
 
       // ===========================================================
