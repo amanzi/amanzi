@@ -51,8 +51,8 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   // values!
 
 
-  paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
-  paramList_ = paramList;
+  //paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
+  //paramList_ = paramList;
 
   // make sure that the parameter list is actually valid (this is probably redundant)
   //paramList_->validateParameters(*this->getValidParameters());
@@ -133,47 +133,47 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
   static RCP<const ParameterList> validParams;
   if (is_null(validParams)) {
     RCP<ParameterList>  pl = Teuchos::rcp(new ParameterList("time integrator"));
-    Teuchos::setIntParameter("max iterations",
+    setIntParameter("max iterations",
                              5,
                              "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced.",
                              &*pl);
-    Teuchos::setIntParameter("min iterations",
+    setIntParameter("min iterations",
                              2,
                              "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.",
                              &*pl);
-    Teuchos::setIntParameter("limit iterations",
+    setIntParameter("limit iterations",
                              12,
                              "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated.",
                              &*pl);
-    Teuchos::setDoubleParameter("nonlinear tolerance",
+    setDoubleParameter("nonlinear tolerance",
                                 0.1,
                                 "The tolerance for the nonlinear solver during the steady state computation.",
                                 &*pl);
-    Teuchos::setDoubleParameter("time step reduction factor",
+    setDoubleParameter("time step reduction factor",
                                 0.5,
                                 "When time step reduction is necessary during the steady calculation, use this factor.",
                                 &*pl);
-    Teuchos::setDoubleParameter("time step increase factor",
+    setDoubleParameter("time step increase factor",
                              1.2,
                              "When time step increase is possible during the steady calculation, use this factor.",
                              &*pl);
-    Teuchos::setDoubleParameter("max time step",
+    setDoubleParameter("max time step",
                               1.0,
                               "The maximum allowed time step.",
                               &*pl);
-    Teuchos::setIntParameter("max preconditioner lag iterations",
+    setIntParameter("max preconditioner lag iterations",
                               1,
                               "The maximum number of time steps that the preconditioner is allowed to be lagged.",
                               &*pl);
-    Teuchos::setDoubleParameter("error abs tol",
+    setDoubleParameter("error abs tol",
                               1.0,
                               "Absolute error prefactor.",
                               &*pl);
-    Teuchos::setDoubleParameter("error rel tol",
+    setDoubleParameter("error rel tol",
                               1.0,
                               "Relative error prefactor.",
                               &*pl);
-    Teuchos::setupVerboseObjectSublist(&*pl);
+    setupVerboseObjectSublist(&*pl);
     validParams = pl;
   }
   return validParams;
