@@ -52,12 +52,13 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
 
 
   //paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
-  //paramList_ = paramList;
+  paramList_ = paramList;
 
   // make sure that the parameter list is actually valid (this is probably redundant)
   //paramList_->validateParameters(*this->getValidParameters());
 
   // read the parameter list and initialize the class
+
   state.mitr = paramList_->get<int>("limit iterations");
   state.maxitr = paramList_->get<int>("max iterations"); 
   state.minitr = paramList_->get<int>("min iterations");
@@ -80,7 +81,6 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
     Errors::Message m("(native spec) bdf1 nonlinear solver must either be NKA or JFNK");
     Exceptions::amanzi_throw(m);
   }
-
 
   // sanity check
   if ( ! ((state.minitr < state.maxitr) && (state.maxitr < state.mitr) )) {
