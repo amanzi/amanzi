@@ -133,7 +133,7 @@ class Richards_PK : public Flow_PK {
   void PrintStatistics() const;
   
   // access methods
-  Teuchos::RCP<AmanziMesh::Mesh> mesh() { cout<<"Richards_PK\n";return mesh_; }
+  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
 

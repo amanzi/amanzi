@@ -100,8 +100,6 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStringVerbosity(const std::string name, int* verbosity);
   void ProcessStringPreconditioner(const std::string name, int* preconditioner);
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(){cout<<"FlowPK\n";};
-
  public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
