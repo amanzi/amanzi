@@ -22,9 +22,9 @@ generate-batch.sh!
 
 You can visualize the 1-D pflotran output, e.g.
 
-vis-pflotran-1d.py -i pflotran.h5 -s total -n pH -t "0 2 13 24 35 46"
+vis-pflotran-1d.py -i pflotran.h5 -s total -n pH -t "0 2 13 24 35 46" -o pflotran-ph.pdf
 vis-pflotran-1d.py -i pflotran.h5 -s total -n H+ -t "0 2 13 24 35 46" -o pflotran-h.pdf
-vis-pflotran-1d.py -i pflotran.h5 -s total -n Tritium -t "0 2 13 24 35 46"
+vis-pflotran-1d.py -i pflotran.h5 -s total -n Tritium -t "0 2 13 24 35 46" -o pflotran-tritium.pdf
 
 The script cfg2xml-farea-1d.py extracts data from the batch_chem files
 and writes the 1-d amanzi-u xml file:
@@ -44,6 +44,6 @@ processing tool from the output group to unscrable the hdf5 file
 
 visualize the 1d amanzi files, e.g.
 
-vis-amanzi-1d.py -i farea-1d -s total -n pH -t "0 10 20 30 40 50"
+vis-amanzi-1d.py -i farea-1d -s total -n pH -t "0 10 20 30 40 50" -o amanzi-ph.pdf
 vis-amanzi-1d.py -i farea-1d -s total -n H+ -t "0 10 20 30 40 50" -o amanzi-h.pdf
-vis-amanzi-1d.py -i farea-1d -s total -n Tritium -t "0 10 20 30 40 50"
+vis-amanzi-1d.py -i farea-1d -s total -n Tritium -t "0 10 20 30 40 50" -o amanzi-tritium.pdf

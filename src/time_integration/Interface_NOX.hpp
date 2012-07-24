@@ -16,6 +16,8 @@ Authors: Neil Carlson (version 1)
 #include "BDF2_Dae.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
+#include "Mesh.hh"
+
 
 
 namespace Amanzi {
@@ -25,8 +27,8 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
                       public NOX::Epetra::Interface::Jacobian,
                       public NOX::Epetra::Interface::Preconditioner {
  public:
-  Interface_NOX(BDF2::fnBase* FPK, const Epetra_Vector& uprev, double time_, double dt) : 
-		FPK_(FPK), u0(uprev), lag_prec_(1), lag_count_(0) {
+  Interface_NOX(BDF2::fnBase* FPK_, const Epetra_Vector& uprev, double time_, double dt) : 
+		FPK(FPK_), u0(uprev), lag_prec_(3), lag_count_(0) {
 			time = time_;
 			deltaT = dt;
 			fun_eval = 0;
@@ -46,7 +48,7 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
   inline int getPrecLagCounter() const { return lag_count_; }
 
  private:
-  BDF2::fnBase* FPK_;
+  BDF2::fnBase* FPK;
   const Epetra_Vector& u0;	// value at the previous time step
 
   double deltaT, time;		// time step
@@ -57,29 +59,34 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
 };
 
 
-class Preconditioner_Test : public Matrix_MFD{
+// class Preconditioner_Test : public Matrix_MFD{
+class Preconditioner_Test : public Epetra_Operator{
 	public:			    
-		Preconditioner_Test(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : Matrix_MFD(FS_, map_), FS(FS_), map(map_) { mesh_ = FS->mesh();}
+		Preconditioner_Test(BDF2::fnBase* FPK_
+                          //  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_,
+                            ):
+                           FPK(FPK_) {mesh = FPK->mesh();};
 		~Preconditioner_Test(){};
 		
 		// required methods
-// 	int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X; return 0;};
-// 	int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X;  return 0 ;};
-// 	bool UseTranspose() const { return false; }
-// 	int SetUseTranspose(bool) { return 1; }
+	int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X; return 0;};
+	int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return FPK->ApllyPrecInverse(X,Y); };
+	bool UseTranspose() const { return false; }
+	int SetUseTranspose(bool) { return 1; }
 	
-	const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-	const Epetra_Map& OperatorDomainMap() const { return map; }
-	const Epetra_Map& OperatorRangeMap() const { return map; }
+	const Epetra_Comm& Comm() const { return *(mesh->get_comm()); }
+	const Epetra_Map& OperatorDomainMap() const { return FPK->super_map(); }
+	const Epetra_Map& OperatorRangeMap() const { return FPK->super_map(); }
 
 	const char* Label() const { return strdup("Preconditioner Test"); }
 	double NormInf() const { return 0.0; }
 	bool HasNormInf() const { return false; }
 	
 	private:
-		Teuchos::RCP<Flow_State> FS;
-		Teuchos::RCP<AmanziMesh::Mesh> mesh_;
-		Epetra_Map map;
+// 		Teuchos::RCP<Flow_State> FS;
+                BDF2::fnBase* FPK;
+		Teuchos::RCP<AmanziMesh::Mesh> mesh;
+//		Epetra_Map map;
 };
 
 }  // namespace AmanziFlow

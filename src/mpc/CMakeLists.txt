@@ -70,6 +70,7 @@ add_amanzi_library(mpc
                    LINK_LIBS time_integration solvers output state simple_mesh mesh_data ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
+#if (0)
 
   include_directories(${MESH_SIMPLE_SOURCE_DIR})
 

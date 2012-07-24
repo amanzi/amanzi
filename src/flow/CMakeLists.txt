@@ -45,7 +45,8 @@ endif()
 
 # Need to move this to roo level -- lpritch
 add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
-if (HAVE_HYPRE)
+if (Ifpack_ENABLE_HYPRE)
+  include_directories(${Ifpack_INCLUDE_DIRS})
   add_definitions("-DHAVE_HYPRE_API")
 endif()
 #
@@ -60,6 +61,9 @@ set(flow_src_files Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
                    Matrix_MFD.cpp Matrix_VAG.cpp 
                   WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
+if ( Ifpack_ENABLE_HYPRE )
+  list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
+endif()
 list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
@@ -78,7 +82,7 @@ file(GLOB flow_inc_files "*.hpp")
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-
+#if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 

@@ -81,6 +81,15 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
 
 
 /* ******************************************************************
+* .                                   
+****************************************************************** */
+int Richards_PK::ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
+{
+  return preconditioner_->ApplyInverse(X, Y);
+}
+
+
+/* ******************************************************************
 * Check difference du between the predicted and converged solutions.
 * This is a wrapper for various error control methods. 
 ****************************************************************** */

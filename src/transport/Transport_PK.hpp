@@ -30,7 +30,7 @@ Usage:
 #include "Reconstruction.hpp"
 
 /*
-This is Amanzi Transport Process Kernel (PK), release Beta.
+This is Amanzi Transport Process Kernel (PK).
 
 The transport PK receives a reduced (optional) copy of 
 a physical state at time n and returns a different state 

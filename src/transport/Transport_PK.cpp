@@ -46,7 +46,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   TS = Teuchos::rcp(new Transport_State(*TS_MPC));
 
   dT = dT_debug = T_physics = 0.0;
-  double time = TS->get_time();
+  double time = TS->initial_time();
   if (time >= 0.0) T_physics = time;
 
   verbosity = TRANSPORT_VERBOSITY_HIGH;
@@ -156,9 +156,9 @@ double Transport_PK::CalculateTransportDt()
 {
   // flow could not be available at initialization, copy it again
   if (status == TRANSPORT_NULL) {
-    TS->copymemory_multivector(TS->ref_total_component_concentration(),
-                               TS_nextBIG->ref_total_component_concentration());
-    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+    TS->CopyMasterMultiCell2GhostMultiCell(TS->ref_total_component_concentration(),
+                                           TS_nextBIG->ref_total_component_concentration());
+    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
     if (internal_tests) CheckDivergenceProperty();
     IdentifyUpwindCells();
@@ -166,7 +166,7 @@ double Transport_PK::CalculateTransportDt()
     status = TRANSPORT_FLOW_AVAILABLE;
 
   } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
-    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
     IdentifyUpwindCells();
 
@@ -230,7 +230,9 @@ double Transport_PK::EstimateTransportDt()
 /* ******************************************************************* 
 * MPC will call this function to advance the transport state.
 * Efficient subcycling requires to calculate an intermediate state of
-* saturation only once, which leads to a leap-frog-type algorithm.     
+* saturation only once, which leads to a leap-frog-type algorithm.
+* 
+* WARNIN: We cannot assume that dT_MPC equals to the global time step.
 ******************************************************************* */
 void Transport_PK::Advance(double dT_MPC)
 {
@@ -241,22 +243,28 @@ void Transport_PK::Advance(double dT_MPC)
   const Epetra_Vector& ws = TS->ref_water_saturation();
 
   // calculate stable time step dT
-  double time = TS->get_time();
-  if (time >= 0.0) T_physics = time;
+  double dT_shift = 0.0, dT_global = dT_MPC;
+  double time = TS->intermediate_time();
+  if (time >= 0.0) { 
+    T_physics = time;
+    dT_shift = TS->initial_time() - time;
+    dT_global = TS->final_time() - TS->initial_time();
+  }
 
   CalculateTransportDt();
   double dT_original = dT;  // advance routines override dT
+  int interpolate_ws = (dT < dT_global) ? 1 : 0;
 
   // start subcycling
-  double dT_total = 0.0;
+  double dT_sum = 0.0;
   if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
-    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
   }
 
   double dT_cycle;
-  if (dT_original < dT_MPC) {
+  if (interpolate_ws) {
     dT_cycle = dT_original;
-    *ws_subcycle_start = ws_prev;
+    TS->InterpolateCellVector(ws_prev, ws, dT_shift, dT_global, *ws_subcycle_start);
   } else {
     dT_cycle = dT_MPC;
     water_saturation_start = TS->prev_water_saturation();
@@ -264,11 +272,11 @@ void Transport_PK::Advance(double dT_MPC)
   }
 
   int ncycles = 0, swap = 1;
-  while (dT_total < dT_MPC) {
+  while (dT_sum < dT_MPC) {
     time = T_physics;
     for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
 
-    double dT_try = dT_MPC - dT_total;
+    double dT_try = dT_MPC - dT_sum;
     bool final_cycle = false;
     if (dT_try >= 2 * dT_original) {
       dT_cycle = dT_original;
@@ -280,17 +288,21 @@ void Transport_PK::Advance(double dT_MPC)
     }
 
     T_physics += dT_cycle;
-    dT_total += dT_cycle;
+    dT_sum += dT_cycle;
 
-    if (dT_original < dT_MPC) {
+    if (interpolate_ws) {
       if (swap) {  // Initial water saturation is in 'start'.
         water_saturation_start = ws_subcycle_start;
         water_saturation_end = ws_subcycle_end;
-        TS->InterpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_end);
+
+        double dT_int = dT_sum + dT_shift;
+        TS->InterpolateCellVector(ws_prev, ws, dT_int, dT_global, *ws_subcycle_end);
       } else {  // Initial water saturation is in 'end'.
         water_saturation_start = ws_subcycle_end;
         water_saturation_end = ws_subcycle_start;
-        TS->InterpolateCellVector(ws_prev, ws, dT_total, dT_MPC, *ws_subcycle_start);
+
+        double dT_int = dT_sum + dT_shift;
+        TS->InterpolateCellVector(ws_prev, ws, dT_int, dT_global, *ws_subcycle_start);
       }
       swap = 1 - swap;
     }
@@ -304,7 +316,7 @@ void Transport_PK::Advance(double dT_MPC)
       // AdvanceSecondOrderUpwindGeneric(dT_cycle);
     }
 
-    if (! final_cycle) TS->copymemory_multivector(tcc_next, tcc, 0);  // rotate concentrations
+    if (! final_cycle) TS->CopyMasterMultiCell2GhostMultiCell(tcc_next, tcc, 0);  // rotate concentrations
 
     ncycles++;
   }
@@ -339,10 +351,10 @@ void Transport_PK::Advance(double dT_MPC)
 /* ******************************************************************* 
  * A simple first-order transport method 
  ****************************************************************** */
-void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
+void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
-  dT = dT_MPC;  // overwrite the transport step
+  dT = dT_cycle;  // overwrite the maximu stable transport step
 
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
@@ -350,7 +362,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
   // populating next state of concentrations
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
-  TS_nextBIG->copymemory_multivector(*tcc, *tcc_next);
+  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*tcc, *tcc_next);
 
   // prepare conservative state in master and slave cells
   double vol_phi_ws, tcc_flux;
@@ -428,10 +440,10 @@ void Transport_PK::AdvanceDonorUpwind(double dT_MPC)
  * tcc_next when owned and ghost data. This is a special routine for 
  * transient flow and uses first-order time integrator. 
  ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_MPC)
+void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
-  dT = dT_MPC;  // overwrite the transport step
+  dT = dT_cycle;  // overwrite the maximum stable transport step
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -442,7 +454,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_MPC)
     current_component_ = i;  // needed by BJ 
 
     Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
     double T = 0.0;
     fun(T, *component_, f_component);
@@ -468,10 +480,10 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_MPC)
  * reconstructions. This is a special routine for transient flow and 
  * uses second-order predictor-corrector time integrator. 
  ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_MPC)
+void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
-  dT = dT_MPC;  // overwrite the transport step
+  dT = dT_cycle;  // overwrite the maximum stable transport step
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -485,7 +497,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_MPC)
 
     // predictor step
     Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
     double T = 0.0;
     fun(T, *component_, f_component);
@@ -496,7 +508,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_MPC)
 
     // corrector step
     Epetra_Vector*& tcc_next_component = (*tcc_next)(i);
-    TS_nextBIG->copymemory_vector(*tcc_next_component, *component_);
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_next_component, *component_);
 
     fun(T, *component_, f_component);
 
@@ -523,10 +535,10 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_MPC)
  * Data flow: loop over components and apply the generic RK2 method.
  * The generic means that saturation is constant during time step. 
  ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_MPC)
+void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
-  dT = dT_MPC;  // overwrite the transport step
+  dT = dT_cycle;  // overwrite the maximum stable transport step
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -543,7 +555,7 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_MPC)
     current_component_ = i;  // it is needed in BJ called inside RK:fun
 
     Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
     double T = 0.0;  // requires fixes (lipnikov@lanl.gov)
     TVD_RK.step(T, dT, *component_, *component_next_);
