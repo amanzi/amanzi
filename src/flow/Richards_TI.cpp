@@ -72,7 +72,6 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
   ComputePreconditionerMFD(u, preconditioner_, Tp, dTp, true);
-  std::printf("Richards PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   ierr = 0;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
@@ -81,11 +80,14 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
 }
 
 
-int Richards_PK::ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y){
-
-   return preconditioner_->ApplyInverse(X,Y);
-
+/* ******************************************************************
+* .                                   
+****************************************************************** */
+int Richards_PK::ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
+{
+  return preconditioner_->ApplyInverse(X, Y);
 }
+
 
 /* ******************************************************************
 * Check difference du between the predicted and converged solutions.
