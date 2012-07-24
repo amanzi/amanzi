@@ -220,8 +220,6 @@ void BDF1Dae::select_step_size(const std::vector<double>& dt, const double perr,
 }
 
 
-
-
 void BDF1Dae::set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot) {
   // ASSERT(x.Map().PointSameAs( xdot.Map() ) );
 
@@ -491,18 +489,30 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-//   printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
-//   printParams.set("Linear Solver Details", true);
-  printParams.set("Output Information",
-        NOX::Utils::OuterIteration + 
-//        NOX::Utils::OuterIterationStatusTest + 
-//        NOX::Utils::InnerIteration +
-//        NOX::Utils::Parameters + 
-//        NOX::Utils::Details + 
-        NOX::Utils::Warning);
-
+  
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
+        //   printParams.set("MyPID", MyPID);
+        
+        printParams.set("Linear Solver Details", true);
+        printParams.set("Output Information",
+             NOX::Utils::OuterIteration + 
+             NOX::Utils::OuterIterationStatusTest + 
+             NOX::Utils::InnerIteration +
+             NOX::Utils::Parameters + 
+             NOX::Utils::Details + 
+             NOX::Utils::Warning);
+  }
+  else if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)){
+           printParams.set("Output Information",
+             NOX::Utils::OuterIterationStatusTest + 
+             NOX::Utils::Warning);    
+  }
+  else if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)){
+           printParams.set("Output Information",
+             NOX::Utils::Warning);    
+  }
   // Create printing utilities
   NOX::Utils utils(printParams);
 
@@ -648,11 +658,11 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 
 
   if (status == NOX::StatusTest::Converged) {
-    utils.out() << "Test Passed!" << endl;
+     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) utils.out() << "Test Passed!" << endl;
     throw solver->getNumIterations();
   }
   else {
-    utils.out() << "Nonlinear solver failed to converge!" << endl;
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) utils.out() << "Nonlinear solver failed to converge!" << endl;
     throw state.maxitr+1;
    }
 
