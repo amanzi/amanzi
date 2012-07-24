@@ -2254,7 +2254,7 @@ namespace Amanzi {
 			}
 		    }
 		    else {
-  		        sat_bc = 4;
+  		        sat_bc = 3;
 			pressure_bc = 4;
 			inflow_bc = 4;
 		    }

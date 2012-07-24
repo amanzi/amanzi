@@ -250,7 +250,7 @@ PorousMedia::setup_bound_desc()
         const Orientation& face = Faces[iface];
         if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
         {
-            Box ccBndBox  = BoxLib::adjCell(domain,face,1);
+            Box ccBndBox  = BoxLib::adjCell(domain,face,HYP_GROW);
             if (ccBndBox.ok()) {
 
                 // Find BCs for this face
@@ -326,7 +326,7 @@ PorousMedia::setup_bound_desc()
         const Orientation& face = Faces[iface];
         if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
         {
-            Box ccBndBox  = BoxLib::adjCell(domain,face,1);
+            Box ccBndBox  = BoxLib::adjCell(domain,face,HYP_GROW);
             if (ccBndBox.ok()) {
 
                 // Find BCs for this face
