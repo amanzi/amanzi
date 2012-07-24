@@ -360,7 +360,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       t1.start();
       fn.update_precon (t, u, h, errc);
       t1.stop();
-      // std::cout << "Preconditioner, if necessary: " << t1 << std::endl;
     }
  
 
@@ -467,10 +466,13 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vector& u) {
 
   Timer ttotal;
+  
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   ttotal.start();
-
-  int NumMyElements = u.MyLength();
 
   NOX::Epetra::Vector nox_u(u);
 
@@ -483,17 +485,17 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 
   // Set the nonlinear solver method
   nlParams.set("Nonlinear Solver", "Line Search Based");
-  //nlParams.set("Nonlinear Solver", "Trust Region Based");
+  // nlParams.set("Nonlinear Solver", "Trust Region Based");
 
   nlParams.set("Jacobian Operator", "Matrix-Free");
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-//   printParams.set("MyPID", MyPID); 
+//   printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
 //   printParams.set("Linear Solver Details", true);
-  printParams.set("Output Information", 
+  printParams.set("Output Information",
         NOX::Utils::OuterIteration + 
 //        NOX::Utils::OuterIterationStatusTest + 
 //        NOX::Utils::InnerIteration +
@@ -567,8 +569,8 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     
 ///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
 
-   Teuchos::RCP<AmanziFlow::Preconditioner_Test> Prec_Test = 
-     Teuchos::rcp(new AmanziFlow::Preconditioner_Test(&fn));
+   Teuchos::RCP<AmanziFlow::JFNK_Preconditioner> Prec_Test = 
+     Teuchos::rcp(new AmanziFlow::JFNK_Preconditioner(&fn));
 ///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
 //  exit(0);
@@ -593,22 +595,26 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
                             linSys)); 
 //
   // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-2));
-  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-2));
-  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
-    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-0));
+//   Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
+//     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-2));
+//   Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
+//     Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-2));
+//   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
+//     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-0));
 //   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
 //     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::Combo> converged =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
-  converged->addStatusTest(absresid);
-  converged->addStatusTest(relresid);
+//   Teuchos::RCP<NOX::StatusTest::Combo> converged =
+//     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+//   converged->addStatusTest(absresid);
+//   converged->addStatusTest(relresid);
 //   converged->addStatusTest(wrms);
-  converged->addStatusTest(update);
+//   converged->addStatusTest(update);
+    
+    Teuchos::RCP<AmanziFlow::PK_enorm> converged =
+        Teuchos::rcp(new AmanziFlow::PK_enorm(&fn, state.ntol));
+    
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(2000));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(state.maxitr));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 
@@ -628,25 +634,24 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     NOX::StatusTest::StatusType status;
 
 
-    try{
+    try {
         status = solver->solve();
     }
     catch (int ierr){
-        std::cerr <<"ooooopps "<<ierr<<std::endl;
-        std::cerr <<status<<std::endl;
- //       exit(0);
-    }
+        if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+                *out <<"Error in JFNK solver "<<ierr<<std::endl;
+                *out <<status<<std::endl;
+        }
+     }
 
 //   interface -> printTime();
 
 
-  if (status == NOX::StatusTest::Converged)
-  {
+  if (status == NOX::StatusTest::Converged) {
     utils.out() << "Test Passed!" << endl;
     throw solver->getNumIterations();
   }
-  else 
-  {
+  else {
     utils.out() << "Nonlinear solver failed to converge!" << endl;
     throw state.maxitr+1;
    }
@@ -658,30 +663,10 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 //
 //   // End Nonlinear Solver **************************************
 
-//      // Output the parameter list
-//   if (utils.isPrintType(NOX::Utils::Parameters)) {
-//     utils.out() << endl << "Final Parameters" << endl
-//  << "****************" << endl;
-//     solver->getList().print(utils.out());
-//     utils.out() << endl;
-//   }
-// // 
-
     ttotal.stop();
 
-    std::cout << "nonlinear solver takes: " << ttotal << std::endl;
+//     std::cout << "nonlinear solver takes: " << ttotal << std::endl;
 
-//    // Print solution
-//   char file_name[25];
-//   FILE *ifp;
-//   int MyPID = 0;
-//
-//   (void) sprintf(file_name, "output_jfnk.%d",MyPID);
-//   ifp = fopen(file_name, "w");
-//   for (int i=0; i<NumMyElements; i++)
-//     fprintf(ifp, "%d %E\n", i, u[i]);
-//   fclose(ifp);
-// 
 
 }
 

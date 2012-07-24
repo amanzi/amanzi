@@ -9,6 +9,11 @@ Authors: Neil Carlson (version 1)
 // #include "dbc.hh"
 
 // #include "Flow_PK.hpp"
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Common.H"
+#include "NOX.H"
+#include "NOX_Epetra.H"
+#include "NOX_Epetra_Vector.H"
 #include "Interface_NOX.hpp"
 #include "Timer.hh"
 
@@ -43,20 +48,15 @@ bool Interface_NOX::computeF(const Epetra_Vector& x,
 
 
 /* ******************************************************************
-* NOT USED
+* Update preconditioner for JFNK method
 ****************************************************************** */
 bool Interface_NOX::computePreconditioner(
   const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params) {
-
-
-
   lag_count_++;
   lag_count_ %= lag_prec_;
   int errc;
 
-//   std::cout << lag_count_ << " " << lag_prec_<<"\n";
-  if (lag_count_==0) {
-    std::cout << "computePreconditioner\n";
+  if (lag_count_ == 0) {
     FPK->update_precon(time, x, deltaT, errc);
   }
 
@@ -65,10 +65,70 @@ bool Interface_NOX::computePreconditioner(
 }
 
 void Interface_NOX::printTime() {
-
     std::cout << "Function evalution was called " << fun_eval << "times" << std::endl;
     std::cout << "Function evalution took " << fun_eval_time << "seconds" << std::endl;
+}
 
+NOX::StatusTest::StatusType PK_enorm::
+checkStatus(const NOX::Solver::Generic& problem,
+            NOX::StatusTest::CheckType checkType) {
+        
+        if (checkType == NOX::StatusTest::None) {
+                status = NOX::StatusTest::Unevaluated;
+                normF = -1.0;
+                return status;
+        }
+
+        // On the first iteration, the old and current solution are the same so
+        // we should return the test as unconverged until there is a valid 
+        // old solution (i.e. the number of iterations is greater than zero).
+        int niters = problem.getNumIterations();
+        if (niters == 0) {
+                status = NOX::StatusTest::Unconverged;
+                normF = -1.0;
+                return status;
+        } 
+
+        // Check that F exists!
+        if (!problem.getSolutionGroup().isF()) {
+                status = NOX::StatusTest::Unconverged;
+                normF = -1.0;
+                return status;
+        } 
+
+        const NOX::Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
+        const NOX::Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
+        
+        if (Teuchos::is_null(updateVectorPtr)) 
+                updateVectorPtr = curSoln.clone();
+
+        updateVectorPtr->update(1.0, curSoln, -1.0, oldSoln, 0.0); 
+        
+        const Epetra_Vector& u =(dynamic_cast<const NOX::Epetra::Vector&>(curSoln)).getEpetraVector();
+        
+        const Epetra_Vector& du = (dynamic_cast<const NOX::Epetra::Vector&>(*updateVectorPtr)).getEpetraVector();
+        
+        normF = FPK->enorm(u, du);
+  
+        status = ((normF != -1) && (normF < specifiedTolerance)) ? NOX::StatusTest::Converged : NOX::StatusTest::Unconverged;
+
+        return status;
+}
+
+NOX::StatusTest::StatusType PK_enorm::getStatus() const {
+  return status;
+}
+
+ostream& PK_enorm::print(ostream& stream, int indent) const {
+  for (int j = 0; j < indent; j ++)
+    stream << ' ';
+  stream << status;
+  stream << "PK_enorm = " << NOX::Utils::sciformat(normF,3);
+  stream << " < " << NOX::Utils::sciformat(specifiedTolerance, 3);
+  stream << "\n";
+  stream << endl;
+
+  return stream;
 }
 
 

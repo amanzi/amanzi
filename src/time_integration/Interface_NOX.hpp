@@ -3,6 +3,7 @@ This is the flow component of the Amanzi code.
 License: BSD
 Authors: Neil Carlson (version 1) 
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+         Daniil Svyatskiy (version 3) (dasvyat@lanl.gov)
 */
 
 #ifndef __INTERFACE_NOX_HPP__
@@ -13,6 +14,7 @@ Authors: Neil Carlson (version 1)
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
+#include "NOX_StatusTest_Generic.H"
 #include "BDF2_Dae.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
@@ -33,8 +35,8 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
 			deltaT = dt;
 			fun_eval = 0;
 			fun_eval_time = 0;
-		};
-  ~Interface_NOX() {};
+		}
+  ~Interface_NOX() {}
 
   // required interface members
   bool computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType flag);
@@ -58,21 +60,21 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
   double  fun_eval_time;
 };
 
-
-// class Preconditioner_Test : public Matrix_MFD{
-class Preconditioner_Test : public Epetra_Operator{
+/// class for precondtioning JFNK solver
+class JFNK_Preconditioner : public Epetra_Operator {
 	public:			    
-		Preconditioner_Test(BDF2::fnBase* FPK_
-                          //  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_,
+                /// constructor
+		JFNK_Preconditioner(BDF2::fnBase* FPK_
                             ):
-                           FPK(FPK_) {mesh = FPK->mesh();};
-		~Preconditioner_Test(){};
+                           FPK(FPK_) {mesh = FPK->mesh();}
+                 /// destructor
+		~JFNK_Preconditioner() {}
 		
-		// required methods
-	int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X; return 0;};
-	int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return FPK->ApllyPrecInverse(X,Y); };
+		 /// required methods
+	int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { Y = X; return 0;}
+	int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return FPK->ApllyPrecInverse(X,Y); }
 	bool UseTranspose() const { return false; }
-	int SetUseTranspose(bool) { return 1; }
+	int SetUseTranspose(bool trans) { return 1; }
 	
 	const Epetra_Comm& Comm() const { return *(mesh->get_comm()); }
 	const Epetra_Map& OperatorDomainMap() const { return FPK->super_map(); }
@@ -87,6 +89,48 @@ class Preconditioner_Test : public Epetra_Operator{
                 BDF2::fnBase* FPK;
 		Teuchos::RCP<AmanziMesh::Mesh> mesh;
 //		Epetra_Map map;
+};
+
+
+class PK_enorm : public NOX::StatusTest::Generic {
+        
+        public:
+         //! Constructor
+                PK_enorm(BDF2::fnBase* FPK_, double tolerance): FPK(FPK_) { specifiedTolerance = tolerance;}
+         //! Destructor.
+                ~PK_enorm() {}
+
+        // derived
+                NOX::StatusTest::StatusType 
+                        checkStatus(const NOX::Solver::Generic& problem,
+                                NOX::StatusTest::CheckType checkType);
+
+        // derived
+                NOX::StatusTest::StatusType getStatus() const;
+
+                ostream& print(ostream& stream, int indent = 0) const;
+        
+        private:
+                BDF2::fnBase* FPK;
+                
+                 //! Vector containing the update for the current outer iteration 
+                Teuchos::RCP<NOX::Abstract::Vector> updateVectorPtr;
+                
+                 //! %Status
+                NOX::StatusTest::StatusType status;
+
+                //! Tolerance required for convergence.
+                double specifiedTolerance;
+
+                //! Initial tolerance
+                double initialTolerance;
+                
+                //! Norm of Error
+                
+                double normF;
+
+                //! Ostream used to print errors
+                NOX::Utils utils;
 };
 
 }  // namespace AmanziFlow
