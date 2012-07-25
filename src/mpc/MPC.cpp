@@ -285,7 +285,7 @@ void MPC::cycle_driver() {
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
-    S->set_intermediate_time(T0);
+    S->set_intermediate_time(Tswitch);
   }
 
   if (chemistry_enabled) {
