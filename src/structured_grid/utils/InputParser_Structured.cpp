@@ -1243,7 +1243,7 @@ namespace Amanzi {
                                         PLoptions sipcsP(sipcSL,nullList,nullList,false,true); // each optional list is a solute
                                         const Array<std::string>& sipcsLabels = sipcsP.OptLists();
                                         for (int M=0; M<sipcsLabels.size(); ++M) {
-                                            const std::string& sipcsLabel = sipcsLabels[L];
+                                            const std::string& sipcsLabel = sipcsLabels[M];
                                             std::string _sipcsLabel = underscore(sipcsLabel);
                                             const ParameterList& sipcsSL = sipcSL.sublist(sipcsLabel);
                                             
@@ -1251,7 +1251,7 @@ namespace Amanzi {
                                                 std::cerr << "Unknown solute " << sipcsLabel << " in component "
                                                           << sipcLabel << " in phase " << sipLabel << " for " <<
                                                     rlabel << " in " << label << std::endl;
-                                                throw std::exception();                                                
+                                                throw std::exception();
                                             }
                                             
                                             SolidChem::SorptionIsothermData& iso
@@ -1288,7 +1288,9 @@ namespace Amanzi {
                                                     iso.Langmuir_b = 0;
                                                 }
                                                 else {
-                                                    std::cerr << rlabel << " Property: " << siLabels1[N]<< std::endl;
+                                                    std::cerr << "Unknown parameter for \"" << rlabel << "\": \"" << siLabels1[N] 
+                                                              << "\" in solute \"" << sipcsLabel << "\" of component \""
+                                                              << sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
                                                     throw std::exception();
                                                 }
                                             }

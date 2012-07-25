@@ -121,8 +121,8 @@ namespace Amanzi {
                   if (tracers[i]==name) {
                       return true;
                   }
-                  return false;
               }
+              return false;
           }
           std::string& operator [] (int i) {return tracers[i];}
           int size() const {return tracers.size();}
