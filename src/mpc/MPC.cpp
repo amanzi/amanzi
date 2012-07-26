@@ -124,6 +124,12 @@ void MPC::mpc_init() {
     TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
     TPK->InitPK();
   }
+  
+  // transport and chemistry...
+  chem_trans_dt_ratio = 1.0e99;
+  if (transport_enabled && chemistry_enabled) {
+    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",1.0e99);
+  }
 
   // flow...
   if (flow_enabled) {
@@ -524,12 +530,26 @@ void MPC::cycle_driver() {
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
 	double tc_dT(mpc_dT);
+	double c_dT(chemistry_dT);
 	int ntc(1);
 	if (chemistry_enabled) {
-	  if (mpc_dT > chemistry_dT) {
-	    ntc = floor(mpc_dT/chemistry_dT)+1;
+	  // reduce chemistry time step according to the 
+	  // ratio with transport time step that is specified
+	  // in the input file
+	  if (transport_enabled) {
+	    double t_dT = TPK->EstimateTransportDt();
+	    double ratio(c_dT/t_dT);
+	    if (ratio > chem_trans_dt_ratio) {
+	      c_dT = chem_trans_dt_ratio * t_dT;
+	    }
+	  }
+	  if (mpc_dT > c_dT) {
+	    ntc = floor(mpc_dT/c_dT)+1;
 	    tc_dT = mpc_dT/double(ntc);
 	  }
+	}
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+	  *out << "Subcycling info: MPC is taking " << ntc << " subcycling timesteps" << std::endl;
 	}
 	// subcycling loop
 	for (int iss = 0; iss<ntc; ++iss) {

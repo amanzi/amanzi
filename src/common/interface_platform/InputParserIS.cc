@@ -593,11 +593,18 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
         } else {
           mpc_list.set<bool>("transport subcycling", false);
         }
+	if (ncp_list.isParameter("max chemistry to transport timestep ratio")) {
+	  mpc_list.set<double>("max chemistry to transport timestep ratio",ncp_list.get<double>("max chemistry to transport timestep ratio"));
+	} else {
+	  mpc_list.set<double>("max chemistry to transport timestep ratio",1.0e99);
+	}
       } else {
         mpc_list.set<bool>("transport subcycling", false);
+	mpc_list.set<double>("max chemistry to transport timestep ratio",1.0e99);
       }
     } else {
       mpc_list.set<bool>("transport subcycling", false);
+      mpc_list.set<double>("max chemistry to transport timestep ratio",1.0e99);
     }
 
 
