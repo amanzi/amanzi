@@ -1250,11 +1250,11 @@ PorousMedia::read_rock()
 	  if (ntracers>0)
 	    {
 	      Array<std::pair<std::string,Real> > parameters;
-	      parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 0));
+	      parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 1.e-40));
 	      parameters.push_back(std::make_pair<std::string,Real>(                  "Kd", 0));
 	      parameters.push_back(std::make_pair<std::string,Real>(          "Langmuir_b", 0));
 	      parameters.push_back(std::make_pair<std::string,Real>(        "Freundlich_n", 1));
-	      parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 0));
+	      parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 1.e-9));
 	      parameters.push_back(std::make_pair<std::string,Real>("Activity_Coefficient", 0));
 	      
 	      for (int k=0; k<tNames.size(); ++k) {

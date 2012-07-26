@@ -248,6 +248,7 @@ namespace Amanzi {
           }
           Array<std::string> mineral_names;
           Array<std::string> sorption_site_names;
+          bool has_cation_exchange;
       };
 
 

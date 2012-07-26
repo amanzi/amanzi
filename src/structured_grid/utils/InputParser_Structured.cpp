@@ -1044,6 +1044,7 @@ namespace Amanzi {
             std::string complexation_str = "Surface Complexation Sites";
             std::string isotherm_str = "Sorption Isotherms";
             std::string cation_exchange_str = "Cation Exchange Capacity";
+            state.getSolid().has_cation_exchange = false; // until we encounter the keyword for a material
 
             Array<std::string> arrayrock;
 
@@ -1316,11 +1317,9 @@ namespace Amanzi {
                             mtest["Density"] = true;
                         }
                         else if (rlabel==cation_exchange_str) {
-                            
-                            add_chemistry_properties = true;
-                                
+                            add_chemistry_properties = true;                                
                             cation_exchange_capacity[label] = rslist.get<double>(rlabel);
-
+                            state.getSolid().has_cation_exchange = true;
                         }
                         else {
 
@@ -2591,7 +2590,9 @@ namespace Amanzi {
                     }
                 }
 
-		user_derive_list.push_back(underscore("Cation Exchange Capacity"));
+                if (state.getSolid().has_cation_exchange) {
+                    user_derive_list.push_back(underscore("Cation Exchange Capacity"));
+                }
 
                 const Array<std::string>& mineral_names = state.getSolid().mineral_names;
                 for (int i=0; i<mineral_names.size(); ++i) {
