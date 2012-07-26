@@ -1259,41 +1259,40 @@ namespace Amanzi {
                                                 = p_c_s_iso[label][sipLabel][sipcLabel][sipcsLabel];
 
                                             reqP.clear();
-                                            std::string Kd_str("Kd"); reqP.push_back(Kd_str);
+                                            std::string Kd_str("Kd");
                                             std::string Lb_str("Langmuir b");
                                             std::string Fn_str("Freundlich n");
                                             PLoptions siP(sipcsSL,nullList,reqP,true,false);
-                                            const Array<std::string>& siLabels = siP.ReqParms();
+                                            const Array<std::string>& siLabels = siP.OptParms();
+					    bool n_found = false;
+					    bool b_found = false;
                                             for (int N=0; N<siLabels.size(); ++N) {
-                                                const std::string& siLabel = siLabels[N];
-                                                if (siLabel == Kd_str) {
-                                                    iso.Kd = sipcsSL.get<double>(siLabel);
+                                                if (siLabels[N] == Kd_str) {
+                                                    iso.Kd = sipcsSL.get<double>(siLabels[N]);
                                                 }
-                                            }
-                                            const Array<std::string>& siLabels1 = siP.OptParms();
-                                            if (siLabels1.size()>1) {
-                                                std::cerr << "Only one of \"" << Lb_str << "\" or \"" << Fn_str << "\" can be set for "
-                                                          << sipcsLabel << " in component "
-                                                          << sipcLabel << " in phase " << sipLabel << " for " <<
-                                                    rlabel << " in " << label << std::endl;
-                                                throw std::exception();                                                
-                                                
-                                            }
-                                            for (int N=0; N<siLabels1.size(); ++N) {
-                                                if (siLabels1[N] == Lb_str) {
-                                                    iso.Langmuir_b = sipcsSL.get<double>(siLabels1[N]);
+                                                else if (siLabels[N] == Lb_str) {
+                                                    iso.Langmuir_b = sipcsSL.get<double>(siLabels[N]);
                                                     iso.Freundlich_n = 0;
+						    n_found = true;
                                                 }
-                                                else if (siLabels1[N] == Fn_str) {
-                                                    iso.Freundlich_n = sipcsSL.get<double>(siLabels1[N]);
+                                                else if (siLabels[N] == Fn_str) {
+                                                    iso.Freundlich_n = sipcsSL.get<double>(siLabels[N]);
                                                     iso.Langmuir_b = 0;
+						    b_found = true;
                                                 }
                                                 else {
-                                                    std::cerr << "Unknown parameter for \"" << rlabel << "\": \"" << siLabels1[N] 
+                                                    std::cerr << "Unknown parameter for \"" << rlabel << "\": \"" << siLabels[N] 
                                                               << "\" in solute \"" << sipcsLabel << "\" of component \""
                                                               << sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
                                                     throw std::exception();
                                                 }
+					    }
+					    if (b_found && n_found) {
+					      std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
+							<< "\" may be specified for each solute.  Both given for \"" 
+							<< sipcsLabel << "\" of component \""
+							<< sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
+					      throw std::exception();
                                             }
                                         }
                                     }
@@ -1374,8 +1373,6 @@ namespace Amanzi {
                 }
 
             }
-
-            state.SetHasSolidChem(add_chemistry_properties);
 
             if (add_chemistry_properties)
             {
@@ -1814,7 +1811,7 @@ namespace Amanzi {
             PLoptions opt(fPLin,nullList,reqP,true,true);  
             fPLout.set<double>("val",fPLin.get<double>(val_name));
             if (do_chem) {
-                fPLout.set<double>("free_ion_guess",fPLin.get<double>(ion_name));
+	        fPLout.set<double>(underscore(ion_name),fPLin.get<double>(ion_name));
             }
             // Adjust dimensions of data
             if (solute_ic_units=="Molar Concentration" 

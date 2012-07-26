@@ -458,10 +458,10 @@ public:
   static void setup_list ();
   static void read_params ();   // Read input file
   static void read_geometry ();
-  static void read_rock ();
+  static void read_rock (int do_chem);
   static void read_prob ();
   static void read_comp (); 
-  static void read_tracer (); 
+  static void read_tracer (int do_chem); 
   static void read_source (); 
   static void read_observation (); 
   static void read_chem (); 
@@ -1078,12 +1078,14 @@ protected:
   static ChemICMap mineralogy_ics;           // mineralogy[rockname][mineralsname][property] = val
   static ChemICMap surface_complexation_ics; // sc[rockname][sorptionsitename][property]) = val
   static ICParmPair cation_exchange_ics; // capacity[rockname] = val
+  static ChemICMap solute_chem_ics; // sc[rockname][solute][property] = val
   static Array<Real> tInflow;
 
   typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
   static LabelIdx mineralogy_label_map;
   static LabelIdx sorption_isotherm_label_map;
   static LabelIdx surface_complexation_label_map;
+  static LabelIdx solute_chem_label_map;
   static std::map<std::string,int> cation_exchange_label_map;
 
   // Pressure

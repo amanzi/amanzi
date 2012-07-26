@@ -210,17 +210,20 @@ namespace Amanzi {
 
       struct Solid
       {
-          bool IsAMineral(const std::string& name) {
+          bool IsAMineral(const std::string& name) const {
               for (int i=0; i<mineral_names.size(); ++i) {
                   if (name==mineral_names[i]) return true;
               }
               return false;
           }
-          bool IsASorptionSite(const std::string& name) {
+          bool IsASorptionSite(const std::string& name) const {
               for (int i=0; i<sorption_site_names.size(); ++i) {
                   if (name==sorption_site_names[i]) return true;
               }
               return false;
+          }
+          bool HasStuff() const {
+              return mineral_names.size() || sorption_site_names.size() || has_cation_exchange;
           }
           Array<std::string> mineral_names;
           Array<std::string> sorption_site_names;
@@ -240,14 +243,14 @@ namespace Amanzi {
 
           Phases& getPhases() {return phases;}
           Solid& getSolid() {return solid;}
+          const Solid& getSolid() const {return solid;}
           PhaseCompMap& getPhaseCompMap() {return phase_comp_map;}
           CompMap& operator [] (const std::string& phase) {return phase_comp_map[phase];}
           StateFuncMap& IC() {return state_ics;}
           StateFuncMap& BC() {return state_bcs;}
           const ParameterList& PL() const {return parameter_list;}
           void clear();
-          void SetHasSolidChem(bool has_it) {has_solid_chem = has_it;}
-          bool HasSolidChem() const {return has_solid_chem;}
+          bool HasSolidChem() const {return getSolid().HasStuff();}
 
       protected:
           void build_state_def();

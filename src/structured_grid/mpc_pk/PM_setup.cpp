@@ -162,10 +162,12 @@ PorousMedia::ChemICMap PorousMedia::sorption_isotherm_ics;
 PorousMedia::ChemICMap PorousMedia::mineralogy_ics;
 PorousMedia::ChemICMap PorousMedia::surface_complexation_ics;
 PorousMedia::ICParmPair PorousMedia::cation_exchange_ics;
+PorousMedia::ChemICMap PorousMedia::solute_chem_ics;
 PorousMedia::LabelIdx PorousMedia::mineralogy_label_map;
 PorousMedia::LabelIdx PorousMedia::sorption_isotherm_label_map;
 PorousMedia::LabelIdx PorousMedia::surface_complexation_label_map;
 std::map<std::string,int> PorousMedia::cation_exchange_label_map;
+PorousMedia::LabelIdx PorousMedia::solute_chem_label_map;
 
 // Pressure.
 //
@@ -752,72 +754,9 @@ PorousMedia::variableSetUp ()
 
   if (do_chem && ntracers > 0)
   {
-      if (ntracers>0)
-      {
-          Array<std::string> solute_data_names;
-          solute_data_names.push_back("Free_Ion_Guess");
-          // TODO: rename Primary_Species_Activity_Coefficient
-          solute_data_names.push_back("Activity_Coefficient");
-          if (using_sorption) {
-            solute_data_names.push_back("Total_Sorbed");
-          }
-          if (nsorption_isotherms) {
-            solute_data_names.push_back("Kd");
-            solute_data_names.push_back("Freundlich_n");
-            solute_data_names.push_back("Langmuir_b");
-          }
-          for (int i=0; i<tNames.size(); ++i) {
-              const std::string& name = tNames[i];
-              for (int j=0; j<solute_data_names.size(); ++j) {
-                  const std::string label = solute_data_names[j]+"_"+name;
-                  sorption_isotherm_label_map[name][solute_data_names[j]] = aux_chem_variables.size();
-                  aux_chem_variables.push_back(label);
-              }
-          }
-          // TODO: add secondary species activity coefficients
-      }      
-
-      if (nminerals>0)
-      {
-          Array<std::string> mineral_data_names;
-          mineral_data_names.push_back("Volume_Fraction");
-          mineral_data_names.push_back("Specific_Surface_Area");
-
-          for (int i=0; i<minerals.size(); ++i) {
-              const std::string& name = minerals[i];
-              for (int j=0; j<mineral_data_names.size(); ++j) {
-                  const std::string label = mineral_data_names[j]+"_"+name;
-                  mineralogy_label_map[name][mineral_data_names[j]] = aux_chem_variables.size();
-                  aux_chem_variables.push_back(label);
-              }
-          }
-      }      
-
-      if (nsorption_sites>0)
-      {
-          Array<std::string> sorption_site_data_names;
-          sorption_site_data_names.push_back("Site_Density");
-          // TODO: add surface complexation free site concentration, one per site
-          for (int i=0; i<sorption_sites.size(); ++i) {
-              const std::string& name = sorption_sites[i];
-              for (int j=0; j<sorption_site_data_names.size(); ++j) {
-                  const std::string label = sorption_site_data_names[j]+"_"+name;
-                  surface_complexation_label_map[name][sorption_site_data_names[j]] = aux_chem_variables.size();
-                  aux_chem_variables.push_back(label);
-              }
-          }
-      }
-
-      if (ncation_exchange>0)
-      {
-          Array<std::string> cation_exchange_data_names;
-          cation_exchange_data_names.push_back("Cation_Exchange_Capacity");
-          // TODO: add ion exchange reference cation conc, one per site
-          for (int j=0; j<cation_exchange_data_names.size(); ++j) {
-              cation_exchange_label_map[cation_exchange_data_names[j]] = aux_chem_variables.size();
-              aux_chem_variables.push_back(cation_exchange_data_names[j]);
-          }
-      }
+      // NOTE: aux_chem_variables is setup by read_rock and read_chem as data is
+      // parsed in.  By the time we get here, we have figured out all the variables
+      // for which we need to make space.
 
       int num_aux_chem_variables = aux_chem_variables.size();
       Array<BCRec> cbcs(num_aux_chem_variables);
@@ -1104,7 +1043,7 @@ bool check_if_layered(const Array<std::string>& material_region_names,
 }
 
 void
-PorousMedia::read_rock()
+PorousMedia::read_rock(int do_chem)
 {
     //
     // Get parameters related to rock
@@ -1180,6 +1119,9 @@ PorousMedia::read_rock()
     }
 
     // Read rock parameters associated with chemistry
+    using_sorption = false;
+    aux_chem_variables.clear();
+
     if (do_chem>0)
       {
         ParmParse ppm("mineral");
@@ -1196,110 +1138,133 @@ PorousMedia::read_rock()
 	  pps.getarr("sorption_sites",sorption_sites,0,nsorption_sites);
         }
 
-        // TODO: don't need for 2012 demo, but we only use if the user
-        // supplied CEC in input file.
-	// If any rock specifies Cation Exchange Capacity, they all will use it.
-	ncation_exchange = 0;
-	for (int i=0; i<nrock; ++i) {
-	  const std::string& rname = r_names[i];
-	  const std::string prefix("rock." + rname);
-	  ParmParse ppr(prefix.c_str());
-	  ncation_exchange = std::max(ncation_exchange,ppr.countval("Cation_Exchange_Capacity"));
-	}
-
-	// Now loop over all rocks and set the required data
-	for (int i=0; i<nrock; ++i) {
-	  const std::string& rname = r_names[i];
-	  const std::string prefix("rock." + rname);
-	  ParmParse ppr(prefix.c_str());
-
-	  if (nminerals>0) {
-            Array<std::pair<std::string,Real> > parameters;
-            parameters.push_back(std::make_pair<std::string,Real>(      "Volume_Fraction", 0));
-            parameters.push_back(std::make_pair<std::string,Real>("Specific_Surface_Area", 0));
-	    
-            for (int k=0; k<minerals.size(); ++k) {
-	      for (int j=0; j<parameters.size(); ++j) {
-		const std::string& str = parameters[j].first;
-		const std::string prefixM(prefix+".Mineralogy."+minerals[k]);
-		ParmParse pprm(prefixM.c_str());
-		mineralogy_ics[rname][minerals[k]][str] = parameters[j].second;
-		pprm.query(str.c_str(),mineralogy_ics[rname][minerals[k]][str]);
-	      }
-            }
-	  }
-        
-	  if (nsorption_sites>0) {
-            Array<std::pair<std::string,Real> > parameters;
-            parameters.push_back(std::make_pair<std::string,Real>("Site_Density", 0));
-	    
-            for (int k=0; k<sorption_sites.size(); ++k) {
-	      for (int j=0; j<parameters.size(); ++j) {
-		const std::string& str = parameters[j].first;
-		const std::string prefixM(prefix+".Surface_Complexation_Sites."+sorption_sites[k]);
-		ParmParse pprm(prefixM.c_str());
-		surface_complexation_ics[rname][sorption_sites[k]][str] = parameters[j].second;
-		pprm.query(str.c_str(),surface_complexation_ics[rname][sorption_sites[k]][str]);
-	      }
-            }
-	  }
-
-	  if (ncation_exchange>0) {
-	    std::string cap_str = "Cation_Exchange_Capacity";
-	    cation_exchange_ics[rname] = 0; ppr.query(cap_str.c_str(),cation_exchange_ics[rname]);
-	  }
-
-	  if (ntracers>0)
-	    {
-	      Array<std::pair<std::string,Real> > parameters;
-	      parameters.push_back(std::make_pair<std::string,Real>(                  "Kd", 0));
-	      parameters.push_back(std::make_pair<std::string,Real>(          "Langmuir_b", 0));
-	      parameters.push_back(std::make_pair<std::string,Real>(        "Freundlich_n", 1));
-
-	      for (int k=0; k<tNames.size(); ++k) {
-                for (int j=0; j<parameters.size(); ++j) {
-		  const std::string& str = parameters[j].first;
-		  const std::string prefixM(prefix+".Sorption_Isotherms."+tNames[k]);
-		  ParmParse pprm(prefixM.c_str());
-		  sorption_isotherm_ics[rname][tNames[k]][str] = parameters[j].second;
-		  pprm.query(str.c_str(),sorption_isotherm_ics[rname][tNames[k]][str]);
-                }
-	      }
-	      
-	      if (sorption_isotherm_ics.size()>0) {
-		nsorption_isotherms = ntracers;
+	ICParmPair sorption_isotherm_options;
+	sorption_isotherm_options[          "Kd"] = 0;
+	sorption_isotherm_options[  "Langmuir_b"] = 0;
+	sorption_isotherm_options["Freundlich_n"] = 1;
+	
+	for (int k=0; k<tNames.size(); ++k) {
+	  for (ICParmPair::const_iterator it=sorption_isotherm_options.begin(); it!=sorption_isotherm_options.end(); ++it) {
+	    const std::string& str = it->first;
+	    bool found = false;
+	    for (int i=0; i<nrock; ++i) {
+	      const std::string prefix("rock."+r_names[i]+".Sorption_Isotherms."+tNames[k]);
+	      ParmParse pprs(prefix.c_str());
+	      if (pprs.countval(str.c_str())) {
+		pprs.get(str.c_str(),sorption_isotherm_ics[r_names[i]][tNames[k]][str]);
+		found = true;
 	      }
 	    }
+	    
+	    if (found) {
+              using_sorption = true;
+              nsorption_isotherms = ntracers;
+	      for (int i=0; i<nrock; ++i) {
+		if (sorption_isotherm_ics[r_names[i]][tNames[k]].count(str) == 0) {
+		  sorption_isotherm_ics[r_names[i]][tNames[k]][str] = it->second; // set to default value
+		}
+
+                const std::string label = str+"_"+tNames[k];
+                sorption_isotherm_label_map[tNames[k]][str] = aux_chem_variables.size();
+                aux_chem_variables.push_back(label);
+		//std::cout << "****************** sorption_isotherm_ics[" << r_names[i] << "][" << tNames[k] 
+		//	  << "][" << str << "] = " << sorption_isotherm_ics[r_names[i]][tNames[k]][str] << std::endl;
+	      }
+	    }
+	  }
 	}
-      }
 
-    // Require sorption data container?
-    using_sorption = do_chem && (nsorption_sites || ncation_exchange || nsorption_isotherms);
-    
-    if (using_sorption) 
-    {
-        // If necessary, set these for all materials
-	for (int i=0; i<nrock; ++i) {
-            const std::string& rname = r_names[i];
-            const std::string prefix("rock." + rname);
-            ParmParse ppr(prefix.c_str());
+	ICParmPair cation_exchange_options;
+	cation_exchange_options["Cation_Exchange_Capacity"] = 0;
+	{
+	  for (ICParmPair::const_iterator it=cation_exchange_options.begin(); it!=cation_exchange_options.end(); ++it) {
+	    const std::string& str = it->first;
+	    bool found = false;
+	    for (int i=0; i<nrock; ++i) {
+	      const std::string prefix("rock."+r_names[i]);
+	      ParmParse pprs(prefix.c_str());
+	      if (pprs.countval(str.c_str())) {
+		pprs.get(str.c_str(),cation_exchange_ics[r_names[i]]);
+		found = true;
+	      }
+	    }
+	    
+	    if (found) {
+              using_sorption = true;
+              ncation_exchange = 1;
+	      for (int i=0; i<nrock; ++i) {
+		if (cation_exchange_ics.count(r_names[i]) == 0) {
+		  cation_exchange_ics[r_names[i]] = it->second; // set to default value
+		}
+
+                const std::string label = str;
+                cation_exchange_label_map[str] = aux_chem_variables.size();
+                aux_chem_variables.push_back(label);
+		//std::cout << "****************** cation_exchange_ics[" << r_names[i] << "] = " 
+		//	  << cation_exchange_ics[r_names[i]] << std::endl;
+	      }
+	    }
+	  }
+	}
+
+	ICParmPair mineralogy_options;
+	mineralogy_options[      "Volume_Fraction"] = 0;
+	mineralogy_options["Specific_Surface_Area"] = 0;
+	for (int k=0; k<minerals.size(); ++k) {
+          using_sorption = true;
+	  for (ICParmPair::const_iterator it=mineralogy_options.begin(); it!=mineralogy_options.end(); ++it) {
+	    const std::string& str = it->first;
+	    bool found = false;
+	    for (int i=0; i<nrock; ++i) {
+	      const std::string prefix("rock."+r_names[i]+".Mineralogy."+minerals[k]);
+	      ParmParse pprs(prefix.c_str());
+	      mineralogy_ics[r_names[i]][minerals[k]][str] = it->second; // set to default value
+	      pprs.query(str.c_str(),mineralogy_ics[r_names[i]][minerals[k]][str]);
+	      //std::cout << "****************** mineralogy_ics[" << r_names[i] << "][" << minerals[k] 
+              //		<< "][" << str << "] = " << mineralogy_ics[r_names[i]][minerals[k]][str] << std::endl;
+
+              const std::string label = str+"_"+minerals[k];
+              mineralogy_label_map[minerals[k]][str] = aux_chem_variables.size();
+              aux_chem_variables.push_back(label);
+
+	    }
+	  }
+	}
             
-            Array<std::pair<std::string,Real> > parameters;
-            parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 1.e-40));
-            parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 1.e-9));
-            parameters.push_back(std::make_pair<std::string,Real>("Activity_Coefficient", 1));
-            for (int k=0; k<tNames.size(); ++k) {
-                for (int j=0; j<parameters.size(); ++j) {
-                    const std::string& str = parameters[j].first;
-                    const std::string prefixM(prefix+".Sorption_Isotherms."+tNames[k]);
-                    ParmParse pprm(prefixM.c_str());
-                    sorption_isotherm_ics[rname][tNames[k]][str] = parameters[j].second;
-                    pprm.query(str.c_str(),sorption_isotherm_ics[rname][tNames[k]][str]);
-                }
-            }
-        }
-    }
+	ICParmPair complexation_options;
+	complexation_options["Site_Density"] = 0;
+	for (int k=0; k<sorption_sites.size(); ++k) {
+	  for (ICParmPair::const_iterator it=complexation_options.begin(); it!=complexation_options.end(); ++it) {
+	    const std::string& str = it->first;
+	    bool found = false;
+	    for (int i=0; i<nrock; ++i) {
+	      const std::string prefix("rock."+r_names[i]+".Surface_Complexation_Sites."+sorption_sites[k]);
+	      ParmParse pprs(prefix.c_str());
+	      if (pprs.countval(str.c_str())) {
+		pprs.get(str.c_str(),surface_complexation_ics[r_names[i]][sorption_sites[k]][str]);
+		found = true;
+	      }
+	    }
+	    
+	    if (found) {
+              using_sorption = true;
+	      for (int i=0; i<nrock; ++i) {
+		if (surface_complexation_ics[r_names[i]][sorption_sites[k]].count(str) == 0) {
+		  surface_complexation_ics[r_names[i]][sorption_sites[k]][str] = it->second; // set to default value
+		}
+		//std::cout << "****************** surface_complexation_ics[" << r_names[i] << "][" << sorption_sites[k] 
+		//	  << "][" << str << "] = " << sorption_isotherm_ics[r_names[i]][sorption_sites[k]][str] 
+		//	  << std::endl;
 
+                const std::string label = str+"_"+sorption_sites[k];
+                surface_complexation_label_map[sorption_sites[k]][str] = aux_chem_variables.size();
+                aux_chem_variables.push_back(label);
+	      }
+	    }
+	  }
+	}
+    }
+    
 
     bool read_full_pmap  = false;
     bool read_full_kmap  = false;
@@ -1368,22 +1333,22 @@ PorousMedia::read_rock()
     Array<int> n_cell, fratio;
     Array<Real> problo, probhi;
     if (build_full_kmap || build_full_pmap)
-    { 
+      { 
         ParmParse am("amr");
         am.query("max_level",max_level);
         am.getarr("n_cell",n_cell,0,BL_SPACEDIM);
         if (max_level>0) {
-            am.getarr("ref_ratio",fratio,0,max_level);
+	  am.getarr("ref_ratio",fratio,0,max_level);
         }
         
         ParmParse gm("geometry");
         gm.getarr("prob_lo",problo,0,BL_SPACEDIM);
         gm.getarr("prob_hi",probhi,0,BL_SPACEDIM);
-    }
+      }
     
     // construct permeability field based on the specified parameters
     if (build_full_kmap)
-    {
+      {
         
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
             std::cout << "Building kmap on finest level..." << std::endl;
@@ -1416,7 +1381,7 @@ PorousMedia::read_rock()
             if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
                 std::cout << "   Finished writing kmap..." << std::endl;
         }
-    }
+      }
     
     if (build_full_pmap)
     {
@@ -1457,11 +1422,11 @@ PorousMedia::read_rock()
         std::cout << "Rock name mapping in output: " << std::endl;
     }
     for (int i=0; i<rocks.size(); ++i) 
-    {
+      {
         if (ParallelDescriptor::IOProcessor()) {
-            std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
+	  std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
         }
-    }
+      }
 
     // Check if material is actually layered in the vertical coordinate
     material_is_layered = check_if_layered(material_regions,regions,problo,probhi);
@@ -1474,25 +1439,25 @@ PorousMedia::read_rock()
     rockTest.setVal(-1);
     Array<Real> dx0(BL_SPACEDIM);
     for (int i=0; i<BL_SPACEDIM; ++i) {
-        dx0[i] = (probhi[i] - problo[i])/n_cell[i];
+      dx0[i] = (probhi[i] - problo[i])/n_cell[i];
     }
     for (MFIter mfi(rockTest); mfi.isValid(); ++mfi)
-    {
+      {
         FArrayBox& fab = rockTest[mfi];
         for (int i=0; i<rocks.size(); ++i)
-        {
+	  {
             Real val = (Real)i;
             const PArray<Region>& rock_regions = rocks[i].regions;
             for (int j=0; j<rock_regions.size(); ++j) {
-                rock_regions[j].setVal(fab,val,0,dx0.dataPtr(),0);
+	      rock_regions[j].setVal(fab,val,0,dx0.dataPtr(),0);
             }
-        }
-    }
+	  }
+      }
     if (rockTest.min(0) < 0) {
-        BoxLib::Abort("Material has not been defined over the entire domain");
+      BoxLib::Abort("Material has not been defined over the entire domain");
     }
-}
-
+      }
+    
 void PorousMedia::read_prob()
 {
   ParmParse pp;
@@ -2150,7 +2115,7 @@ void  PorousMedia::read_comp()
 }
 
 
-void  PorousMedia::read_tracer()
+void  PorousMedia::read_tracer(int do_chem)
 {
   //
   // Read in parameters for tracers
@@ -2205,7 +2170,7 @@ void  PorousMedia::read_tracer()
                   BoxLib::Abort(m.c_str());
               }
           }
-              
+
           if (do_tracer_transport)
           {
               Array<std::string> tbc_names;
@@ -2563,7 +2528,36 @@ void  PorousMedia::read_chem()
 	aux_chem_variables.resize(num_aux);
 	pp.getarr("Auxiliary_Data",aux_chem_variables,0,num_aux);
       }
-      
+
+      if (do_chem)
+      {
+	  ICParmPair solute_chem_options;
+	  solute_chem_options["Total_Sorbed"] = 1.e-40;
+	  solute_chem_options["Free_Ion_Guess"] = 1.e-9;
+	  solute_chem_options["Activity_Coefficient"] = 1;
+	  for (int k=0; k<tNames.size(); ++k) {
+              for (ICParmPair::const_iterator it=solute_chem_options.begin(); it!=solute_chem_options.end(); ++it) {
+                  const std::string& str = it->first;
+                  bool found = false;
+                  for (int i=0; i<rocks.size(); ++i) {
+                      const std::string& rname = rocks[i].name;
+                      const std::string prefix("tracer."+tNames[i]+".Initial_Condition");
+                      ParmParse pprs(prefix.c_str());
+                      solute_chem_ics[rname][tNames[k]][str] = it->second; // set to default value
+                      pprs.query(str.c_str(),solute_chem_ics[rname][tNames[k]][str]);                      
+                      //std::cout << "****************** solute_chem_ics[" << rname << "][" << tNames[k] 
+                      //          << "][" << str << "] = " << solute_chem_ics[rname][tNames[k]][str] << std::endl;
+                      const std::string label = str+"_"+tNames[k];
+                      solute_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
+                      aux_chem_variables.push_back(label);
+                  }
+              }
+	  }
+      }
+
+      // TODO: add secondary species activity coefficients
+
+
       // TODO: here down goes into seperate function init_chem()
       
       //
@@ -2606,7 +2600,7 @@ void  PorousMedia::read_chem()
 	  if (using_sorption) { 
 	    components[ithread].total_sorbed.resize(ntracers, 1.0e-40);
 	  }
-	  
+
 	  chemSolve[ithread].verbosity(amanzi::chemistry::kTerse);
 	  
 	  // initialize the chemistry objects
@@ -2682,12 +2676,12 @@ void PorousMedia::read_params()
   pp.query("do_chem",do_chem);
 
   // tracers
-  read_tracer();
+  read_tracer(do_chem);
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
 
   // rock
-  read_rock();
+  read_rock(do_chem);
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read rock."<< std::endl;
 

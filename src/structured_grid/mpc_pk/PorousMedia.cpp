@@ -1091,127 +1091,164 @@ PorousMedia::initData ()
         }
     }
 
-    if (ntracers>0 && do_chem>0) {
-        const Real* dx = geom.CellSize();
-        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
-        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+    if (do_chem>0) 
+    {
+        if (ntracers>0)
         {
-            FArrayBox& fab = AuxChem_new[mfi];
-
-            for (ChemICMap::iterator it=sorption_isotherm_ics.begin(); it!=sorption_isotherm_ics.end(); ++it)
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
             {
-                const std::string& material_name = it->first;
-                const Rock& rock = find_rock(material_name);
-                ICLabelParmPair& solute_to_pp = it->second; 
-                for (ICLabelParmPair::iterator it1=solute_to_pp.begin(); it1!=solute_to_pp.end(); ++it1) 
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=sorption_isotherm_ics.begin(); it!=sorption_isotherm_ics.end(); ++it)
                 {
-                    const std::string& solute_name = it1->first;
-                    ICParmPair& parm_pairs = it1->second;
-                    for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                    const std::string& material_name = it->first;
+                    const PArray<Region>& rock_regions = find_rock(material_name).regions;
+
+                    ICLabelParmPair& solute_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=solute_to_pp.begin(); it1!=solute_to_pp.end(); ++it1) 
                     {
-                        const std::string& parameter = it2->first;
-                        int comp = sorption_isotherm_label_map[solute_name][parameter];
-                        Real value = it2->second;
-                        if (false) {
-                          std::cout << material_name << "   "
-                                    << solute_name << "    "
-                                    << parameter << "    "
-                                    << value << std::endl;
-                        }
-                        const PArray<Region>& rock_regions = rock.regions;
-                        for (int j=0; j<rock_regions.size(); ++j) {
-                            rock_regions[j].setVal(fab,value,comp,dx,0);
+                        const std::string& solute_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = sorption_isotherm_label_map[solute_name][parameter];
+                            Real value = it2->second;
+                            if (false) {
+                                std::cout << material_name << "   "
+                                          << solute_name << "    "
+                                          << parameter << "    "
+                                          << value << std::endl;
+                            }
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
-    if (nminerals>0 && do_chem>0) {
-        const Real* dx = geom.CellSize();
-        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
-        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
-        {
-            FArrayBox& fab = AuxChem_new[mfi];
-
-            for (ChemICMap::iterator it=mineralogy_ics.begin(); it!=mineralogy_ics.end(); ++it)
+        if (nminerals>0) {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
             {
-                const std::string& material_name = it->first;
-                const Rock& rock = find_rock(material_name);
-                ICLabelParmPair& mineral_to_pp = it->second; 
-                for (ICLabelParmPair::iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) 
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=mineralogy_ics.begin(); it!=mineralogy_ics.end(); ++it)
                 {
-                    const std::string& mineral_name = it1->first;
-                    ICParmPair& parm_pairs = it1->second;
-                    for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
-                    {
-                        const std::string& parameter = it2->first;
-                        int comp = mineralogy_label_map[mineral_name][parameter];
-                        Real value = it2->second;
-                        
-                        const PArray<Region>& rock_regions = rock.regions;
-                        for (int j=0; j<rock_regions.size(); ++j) {
-                            rock_regions[j].setVal(fab,value,comp,dx,0);
-                        }
-                    }
-                }
-            }
-        }
-    }
-        
-    if (nsorption_sites>0 && do_chem>0) {
-        const Real* dx = geom.CellSize();
-        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
-        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
-        {
-            FArrayBox& fab = AuxChem_new[mfi];
-            
-            for (ChemICMap::iterator it=surface_complexation_ics.begin(); it!=surface_complexation_ics.end(); ++it)
-            {
-                const std::string& material_name = it->first;
-                const Rock& rock = find_rock(material_name);
-                ICLabelParmPair& sorption_site_to_pp = it->second; 
-                for (ICLabelParmPair::iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) 
-                {
-                    const std::string& sorption_site_name = it1->first;
-                    ICParmPair& parm_pairs = it1->second;
-                    for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
-                    {
-                        const std::string& parameter = it2->first;
-                        int comp = surface_complexation_label_map[sorption_site_name][parameter];
-                        Real value = it2->second;
-                        
-                        const PArray<Region>& rock_regions = rock.regions;
-                        for (int j=0; j<rock_regions.size(); ++j) {
-                            rock_regions[j].setVal(fab,value,comp,dx,0);
-                        }
-                    }
-                }
-            }
-        }
-    }
-        
-    if (ncation_exchange>0 && do_chem>0) {
-        const Real* dx = geom.CellSize();
-        MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
-        for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
-        {
-            FArrayBox& fab = AuxChem_new[mfi];
-            
-            for (ICParmPair::iterator it=cation_exchange_ics.begin(); it!=cation_exchange_ics.end(); ++it)
-            {
-                const std::string& material_name = it->first;
-                const Rock& rock = find_rock(material_name);
-		Real value = it->second;
-		int comp = cation_exchange_label_map.begin()->second;
+                    const std::string& material_name = it->first;
+                    const PArray<Region>& rock_regions = find_rock(material_name).regions;
                     
-		const PArray<Region>& rock_regions = rock.regions;
-		for (int j=0; j<rock_regions.size(); ++j) {
-		  rock_regions[j].setVal(fab,value,comp,dx,0);
+                    ICLabelParmPair& mineral_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) 
+                    {
+                        const std::string& mineral_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = mineralogy_label_map[mineral_name][parameter];
+                            Real value = it2->second;
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
                 }
             }
         }
+        
+        if (nsorption_sites>0) {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=surface_complexation_ics.begin(); it!=surface_complexation_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const Rock& rock = find_rock(material_name);
+                    ICLabelParmPair& sorption_site_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) 
+                    {
+                        const std::string& sorption_site_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = surface_complexation_label_map[sorption_site_name][parameter];
+                            Real value = it2->second;
+                            
+                            const PArray<Region>& rock_regions = rock.regions;
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (ncation_exchange>0) {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ICParmPair::iterator it=cation_exchange_ics.begin(); it!=cation_exchange_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const Rock& rock = find_rock(material_name);
+                    Real value = it->second;
+                    int comp = cation_exchange_label_map.begin()->second;
+                    
+                    const PArray<Region>& rock_regions = rock.regions;
+                    for (int j=0; j<rock_regions.size(); ++j) {
+                        rock_regions[j].setVal(fab,value,comp,dx,0);
+                    }
+                }
+            }
+        }
+
+        // These always get set if do_chem>0
+        {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=solute_chem_ics.begin(); it!=solute_chem_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const Rock& rock = find_rock(material_name);
+                    ICLabelParmPair& sorption_site_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) 
+                    {
+                        const std::string& tracer_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = solute_chem_label_map[tracer_name][parameter];
+                            Real value = it2->second;
+                            
+                            const PArray<Region>& rock_regions = rock.regions;
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
         
     if (model == model_list["richard"]) {
@@ -4782,8 +4819,10 @@ PorousMedia::strang_chem (Real time,
   Array<int> activity_comp(ntracers,-1);
   Array<int> sorbed_comp(ntracers,-1);
   Array<int> kd_comp(ntracers,-1);
-  Array<int> freundlich_n_comp(ntracers,-1);
-  Array<int> langmuir_b_comp(ntracers,-1);
+  std::map<int,int> freundlich_n_comp;
+  std::map<int,int> langmuir_b_comp;
+  Array<int> volume_fraction_comp(nminerals,-1);
+  Array<int> specific_surface_area_comp(nminerals,-1);
   int cation_exchange_capacity_comp = -1;
 
   int nAux = Aux.nComp();
@@ -4791,29 +4830,54 @@ PorousMedia::strang_chem (Real time,
     const std::string& name = tNames[i];
 
     BL_ASSERT(sorption_isotherm_label_map.find(name)!=sorption_isotherm_label_map.end());
-    guess_comp[i] = sorption_isotherm_label_map[name]["Free_Ion_Guess"];
+    guess_comp[i] = solute_chem_label_map[name]["Free_Ion_Guess"];
     BL_ASSERT(guess_comp[i] >= 0  &&  guess_comp[i] < nAux);
-    activity_comp[i] = sorption_isotherm_label_map[name]["Activity_Coefficient"];
+    //std::cout << "Free Ion Guess for " << name << " in comp: " << guess_comp[i] << std::endl;
+
+    activity_comp[i] = solute_chem_label_map[name]["Activity_Coefficient"];
     BL_ASSERT(activity_comp[i] >= 0  &&  activity_comp[i] < nAux);
+    //std::cout << "Activity Coefficient for " << name << " in comp: " << activity_comp[i] << std::endl;
 
     if (using_sorption) {
-      sorbed_comp[i] = sorption_isotherm_label_map[name]["Total_Sorbed"];
+      sorbed_comp[i] = solute_chem_label_map[name]["Total_Sorbed"];
       BL_ASSERT(sorbed_comp[i] >= 0  &&  sorbed_comp[i] < nAux);
+      //std::cout << "Total Sorbed for " << name << " in comp: " << sorbed_comp[i] << std::endl;
     }
 
     if (nsorption_isotherms > 0) {
       kd_comp[i] = sorption_isotherm_label_map[name]["Kd"];
-      freundlich_n_comp[i] = sorption_isotherm_label_map[name]["Freundlich_n"];
-      langmuir_b_comp[i] = sorption_isotherm_label_map[name]["Langmuir_b"];
-
+      //std::cout << "Kd for " << name << " in comp: " << kd_comp[i] << std::endl;
       BL_ASSERT(kd_comp[i] >= 0  &&  kd_comp[i] < nAux);
-      BL_ASSERT(freundlich_n_comp[i] >= 0  &&  freundlich_n_comp[i] < nAux);
-      BL_ASSERT(langmuir_b_comp[i] >= 0  &&  langmuir_b_comp[i] < nAux);
+      if (sorption_isotherm_label_map[name].count("Freundlich_n")) {
+          freundlich_n_comp[i] = sorption_isotherm_label_map[name]["Freundlich_n"];
+          BL_ASSERT(freundlich_n_comp[i] >= 0  &&  freundlich_n_comp[i] < nAux);
+          //std::cout << "Freundlich n for " << name << " in comp: " << freundlich_n_comp[i] << std::endl;
+      }
+      else if (sorption_isotherm_label_map[name].count("Langmuir_b")) {
+          langmuir_b_comp[i] = sorption_isotherm_label_map[name]["Langmuir_b"];
+          BL_ASSERT(langmuir_b_comp[i] >= 0  &&  langmuir_b_comp[i] < nAux);
+          //std::cout << "Langmuir b for " << name << " in comp: " << langmuir_b_comp[i] << std::endl;
+      }
     }
   }
+
+  for (int i = 0; i < nminerals; ++i) {
+    const std::string& name = minerals[i];
+
+    BL_ASSERT(mineralogy_label_map.find(name)!=mineralogy_label_map.end());
+    volume_fraction_comp[i] = mineralogy_label_map[name]["Volume_Fraction"];
+    BL_ASSERT(volume_fraction_comp[i] >= 0  &&  volume_fraction_comp[i] < nAux);
+    //std::cout << "Volume Fraction for " << name << " in comp: " << volume_fraction_comp[i] << std::endl;
+
+    specific_surface_area_comp[i] = mineralogy_label_map[name]["Specific_Surface_Area"];
+    BL_ASSERT(specific_surface_area_comp[i] >= 0  &&  specific_surface_area_comp[i] < nAux);
+    //std::cout << "Specific Surface Area for " << name << " in comp: " << specific_surface_area_comp[i] << std::endl;
+  }
+
   if (ncation_exchange > 0) {
     cation_exchange_capacity_comp = cation_exchange_label_map["Cation_Exchange_Capacity"];
     BL_ASSERT(cation_exchange_capacity_comp >= 0  &&  cation_exchange_capacity_comp < nAux);      
+    //std::cout << "Cation Exchange Capacity in comp: " << cation_exchange_capacity_comp << std::endl;
   }
 
   // Grab the auxiliary chemistry data
@@ -4880,15 +4944,21 @@ PorousMedia::strang_chem (Real time,
 		    {
 		      for (int i = 0; i < ntracers; ++i)
 			{
-			  TheComponent.total[i] = fab(iv,ncomps+i);;
+			  TheComponent.total[i] = fab(iv,ncomps+i);
 			  TheComponent.free_ion[i] = aux_fab(iv,guess_comp[i]);
+
 			  if (using_sorption) {
 			    TheComponent.total_sorbed[i] = aux_fab(iv, sorbed_comp[i]);
 			  }
+
 			  if (nsorption_isotherms > 0) {
 			    TheComponent.isotherm_kd[i] = aux_fab(iv,kd_comp[i]);
-			    TheComponent.isotherm_freundlich_n[i] = aux_fab(iv,freundlich_n_comp[i]);
-			    TheComponent.isotherm_langmuir_b[i] = aux_fab(iv,langmuir_b_comp[i]);
+                            if (sorption_isotherm_label_map[tNames[i]].count("Freundlich_n")) {
+                                TheComponent.isotherm_freundlich_n[i] = aux_fab(iv,freundlich_n_comp[i]);
+                            }
+                            else {
+                                TheComponent.isotherm_langmuir_b[i] = aux_fab(iv,langmuir_b_comp[i]);
+                            }
 			  }
 			}
 		      
