@@ -1211,26 +1211,36 @@ PorousMedia::read_rock(int do_chem)
 	mineralogy_options[      "Volume_Fraction"] = 0;
 	mineralogy_options["Specific_Surface_Area"] = 0;
 	for (int k=0; k<minerals.size(); ++k) {
-          using_sorption = true;
 	  for (ICParmPair::const_iterator it=mineralogy_options.begin(); it!=mineralogy_options.end(); ++it) {
 	    const std::string& str = it->first;
 	    bool found = false;
 	    for (int i=0; i<nrock; ++i) {
-	      const std::string prefix("rock."+r_names[i]+".Mineralogy."+minerals[k]);
+              const std::string prefix("rock."+r_names[i]+".mineralogy."+minerals[k]);
 	      ParmParse pprs(prefix.c_str());
-	      mineralogy_ics[r_names[i]][minerals[k]][str] = it->second; // set to default value
-	      pprs.query(str.c_str(),mineralogy_ics[r_names[i]][minerals[k]][str]);
-	      //std::cout << "****************** mineralogy_ics[" << r_names[i] << "][" << minerals[k] 
-              //		<< "][" << str << "] = " << mineralogy_ics[r_names[i]][minerals[k]][str] << std::endl;
+	      if (pprs.countval(str.c_str())) {
+		pprs.get(str.c_str(),mineralogy_ics[r_names[i]][minerals[k]][str]);
+		found = true;
+	      }
+	    }
+	    
+	    if (found) {
+              using_sorption = true;
+	      for (int i=0; i<nrock; ++i) {
+		if (mineralogy_ics[r_names[i]][minerals[k]].count(str) == 0) {
+		  mineralogy_ics[r_names[i]][minerals[k]][str] = it->second; // set to default value
+		}
+		//std::cout << "****************** mineralogy_ics[" << r_names[i] << "][" << minerals[k] 
+		//	  << "][" << str << "] = " << mineralogy_ics[r_names[i]][minerals[k]][str] 
+		//	  << std::endl;
 
-              const std::string label = str+"_"+minerals[k];
-              mineralogy_label_map[minerals[k]][str] = aux_chem_variables.size();
-              aux_chem_variables.push_back(label);
-
+                const std::string label = str+"_"+minerals[k];
+                mineralogy_label_map[minerals[k]][str] = aux_chem_variables.size();
+                aux_chem_variables.push_back(label);
+	      }
 	    }
 	  }
 	}
-            
+
 	ICParmPair complexation_options;
 	complexation_options["Site_Density"] = 0;
 	for (int k=0; k<sorption_sites.size(); ++k) {

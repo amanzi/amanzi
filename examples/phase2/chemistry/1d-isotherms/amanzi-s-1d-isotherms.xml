@@ -13,7 +13,6 @@
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.5778463e9"/>
-        <Parameter name="End" type="double" value="3.e8"/>
         <Parameter name="Switch" type="double" value="0.0"/>
     	<Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
         <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
