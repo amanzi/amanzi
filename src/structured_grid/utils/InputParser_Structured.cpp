@@ -1149,7 +1149,7 @@ namespace Amanzi {
 
                                 add_chemistry_properties = true;
 
-                                PLoptions minP(rsslist,nullList,nullList,false,true); // each optional list is a mineral
+                                PLoptions minP(rsslist,nullList,nullList,false,false); // each optional list is a mineral
                                 const Array<std::string>& minLabels = minP.OptLists();
                                 for (int k=0; k<minLabels.size(); ++k) {
                                     const std::string& minLabel = minLabels[k];
@@ -1414,7 +1414,9 @@ namespace Amanzi {
                         rsublist.set(underscore(complexation_str),sPL);
                     }
                         
-                    rsublist.set(underscore(cation_exchange_str),cation_exchange_capacity[label]);
+		    if (cation_exchange_capacity.count(label)) {
+		      rsublist.set(underscore(cation_exchange_str),cation_exchange_capacity[label]);
+		    }
 
                     // if ntracers>0...
                     //
@@ -2589,6 +2591,8 @@ namespace Amanzi {
                     }
                 }
 
+		user_derive_list.push_back(underscore("Cation Exchange Capacity"));
+
                 const Array<std::string>& mineral_names = state.getSolid().mineral_names;
                 for (int i=0; i<mineral_names.size(); ++i) {
                     const std::string& name = mineral_names[i];
@@ -2601,9 +2605,6 @@ namespace Amanzi {
                     const std::string& name = sorption_site_names[i];
                     user_derive_list.push_back(underscore("Site Density "+name));
                 }
-
-                user_derive_list.push_back(underscore("Cation Exchange Capacity"));
-
             }
 
             amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);

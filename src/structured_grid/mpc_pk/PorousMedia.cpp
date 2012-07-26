@@ -1199,21 +1199,16 @@ PorousMedia::initData ()
         {
             FArrayBox& fab = AuxChem_new[mfi];
             
-            for (ICLabelParmPair::iterator it=cation_exchange_ics.begin(); it!=cation_exchange_ics.end(); ++it)
+            for (ICParmPair::iterator it=cation_exchange_ics.begin(); it!=cation_exchange_ics.end(); ++it)
             {
                 const std::string& material_name = it->first;
                 const Rock& rock = find_rock(material_name);
-                ICParmPair& parm_pairs = it->second;
-                for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
-                {
-                    const std::string& parameter = it2->first;
-                    int comp = cation_exchange_label_map[parameter];
-                    Real value = it2->second;
+		Real value = it->second;
+		int comp = cation_exchange_label_map.begin()->second;
                     
-                    const PArray<Region>& rock_regions = rock.regions;
-                    for (int j=0; j<rock_regions.size(); ++j) {
-                        rock_regions[j].setVal(fab,value,comp,dx,0);
-                    }
+		const PArray<Region>& rock_regions = rock.regions;
+		for (int j=0; j<rock_regions.size(); ++j) {
+		  rock_regions[j].setVal(fab,value,comp,dx,0);
                 }
             }
         }
@@ -1265,12 +1260,14 @@ PorousMedia::initData ()
     is_grid_changed_after_regrid = false;
         
 #ifdef AMANZI
+    // Call chemistry to relax initial data to equilibrium
     if (do_chem>0)
       {
-	get_new_data(FuncCount_Type).setVal(1);
-        
+	MultiFab& Fcnt = get_new_data(FuncCount_Type);
+	Fcnt.setVal(1);
 	Real dt_tmp = 1e3; // HACK
-	strang_chem(S_new,dt_tmp);
+	int nGrow = 0;
+	strang_chem(cur_time,dt_tmp,nGrow);
       }
 #endif
         
@@ -2283,76 +2280,20 @@ PorousMedia::advance (Real time,
     
     FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
     FillStateBndry (pcTime,Press_Type,0,1);
-    //
-    // If do_chem==0, then no reaction.
-    // Otherwise, type of reactions depends on magnitude of do_chem.
-    //
+
     if (do_chem>0)
       {
 	if (do_full_strang)
 	  {
 	    if (verbose && ParallelDescriptor::IOProcessor())
 	      std::cout << "... advancing 1/2 strang step for chemistry\n";
-	    //
-	    // tmpFABs holds data from aux_boundary_data_old after reaction.
-	    //
-	    // We force it to have same distribution as aux_boundary_data_old.
-	    //
-	    MultiFab tmpFABs;
 	    
-	    BL_ASSERT(aux_boundary_data_old.nComp() == ncomps+ntracers);
-	    
-	    tmpFABs.define(aux_boundary_data_old.equivBoxArray(),
-			   ncomps+ntracers,
-			   0,
-			   aux_boundary_data_old.DistributionMap(),
-			   Fab_allocate);
-	    
-	    tmpFABs.setVal(1.e30);
-	    
-	    const int ngrow = aux_boundary_data_old.nGrow();
-
-	    BoxArray ba(S_old.boxArray());
-
-	    ba.grow(ngrow);
-	    //
-	    // This MF is guaranteed to cover tmpFABs & valid region of S_old.
-	    //
-	    MultiFab tmpS_old(ba,ntracers,0);
-	    //
-	    // Note that S_old & tmpS_old have the same distribution.
-	    //
-	    for (FillPatchIterator fpi(*this,S_old,ngrow,time,State_Type,ncomps,ntracers);
-		 fpi.isValid();
-		 ++fpi)
-	      {
-		tmpS_old[fpi.index()].copy(fpi());
-	      }
-	    
-	    tmpFABs.copy(tmpS_old,0,ncomps,ntracers);
-	    
-	    tmpS_old.clear();
-	    //
-	    // strang_chem() expects ncomps+ntracers but only uses and/or modifies ntracers.
-	    //
-	    strang_chem(tmpFABs,dt/2,ngrow);
-	    //
-	    // Only copy the tracer stuff.
-	    //
-	    aux_boundary_data_old.copyFrom(tmpFABs,ncomps,ncomps,ntracers);
-	    
-	    tmpFABs.clear();
-	    
-	    strang_chem(S_old,dt/2);
-	    
+	    // Old state is chem-advanced in-place.  Hook set to get grow data
+	    //  from squirreled away data rather than via a vanilla fillpatch
+	    strang_chem(time,dt/2,HYP_GROW);
 	    FillPatchedOldState_ok = false;
 	  }
       }
-    // 
-    // do_simple: 2 ==> Only solve the tracer equations; assume steady state.
-    //            1 ==> Only solve the pressure equation at time 0.
-    //            0 ==> Solve the pressure equation at every timestep.
-    //
 
 #ifdef MG_USE_FBOXLIB
     if (model == model_list["richard"]) 
@@ -2362,6 +2303,12 @@ PorousMedia::advance (Real time,
     else
 #endif
       {
+	// 
+	// FIXME: Should we leave this 
+	// do_simple: 2 ==> Only solve the tracer equations; assume steady state.
+	//            1 ==> Only solve the pressure equation at time 0.
+	//            0 ==> Solve the pressure equation at every timestep.
+	//
 	if (do_simple == 2 && !is_grid_changed_after_regrid)
 	  advance_tracer(time,dt);
 	else if (do_simple == 1  && !is_grid_changed_after_regrid)
@@ -2380,8 +2327,8 @@ PorousMedia::advance (Real time,
 	    if (verbose && ParallelDescriptor::IOProcessor())
 	      std::cout << "Second 1/2 Strang step of chemistry\n";
 	    
-	    strang_chem(S_new,dt/2.0);
-	    
+	    // New state is chem-advanced in-place.  Fillpatch hook unset
+	    strang_chem(pcTime,dt/2.0,0);
 	    FillPatchedOldState_ok = true;
 	  }
 	else
@@ -2390,7 +2337,7 @@ PorousMedia::advance (Real time,
 	      {
 		if (verbose && ParallelDescriptor::IOProcessor())
 		  std::cout << "... advancing full strang step for chemistry\n";
-		strang_chem(S_new,dt);
+		strang_chem(pcTime,dt,0);
 	      }
 	    else
 	      {
@@ -2408,11 +2355,9 @@ PorousMedia::advance (Real time,
 		      std::cout << "... advancing full strang step for chemistry with dt ="
 				<< dt_chem << "\n";
 		    
-		    strang_chem(S_new,dt_chem);
-		    
+		    strang_chem(pcTime,dt_chem,0);
 		    it_chem = 0;
-		    dt_chem = 0;
-		    
+		    dt_chem = 0;		    
 		  }
 	      }
 	  }
@@ -2432,7 +2377,6 @@ PorousMedia::advance (Real time,
   // Dummy value : not used for determining time step.
   Real dt_test = 1.e20; 
   return dt_test; 
-
 }
 
 void
@@ -2485,43 +2429,7 @@ PorousMedia::multilevel_advance (Real time,
 	    for (int lev = 0; lev <= parent->finestLevel(); lev++)
 	      {
 		PorousMedia& pm_lev = getLevel(lev);
-		MultiFab&    S_old  = pm_lev.get_old_data(State_Type);
-                
-		//tmpFABs holds data from aux_boundary_data_old after reaction.
-		MultiFab tmpFABs;
-		
-		BL_ASSERT(pm_lev.aux_boundary_data_old.nComp() == ncomps+ntracers);
-		
-		tmpFABs.define(pm_lev.aux_boundary_data_old.equivBoxArray(),
-			       ncomps+ntracers,0,
-			       pm_lev.aux_boundary_data_old.DistributionMap(),
-			       Fab_allocate);
-		
-		tmpFABs.setVal(uninitialized_data);
-		
-		const int ngrow = pm_lev.aux_boundary_data_old.nGrow();
-		
-		BoxArray ba(S_old.boxArray());
-		
-		ba.grow(ngrow);
-      
-		// This MF is guaranteed to cover tmpFABs & valid region of S_old.
-		MultiFab tmpS_old(ba,ncomps+ntracers,0);
-      
-		// Note that S_old & tmpS_old have the same distribution.
-		for (FillPatchIterator fpi(pm_lev,S_old,ngrow,time,State_Type,0,ncomps+ntracers);
-		     fpi.isValid();++fpi) 
-		  tmpS_old[fpi.index()].copy(fpi());
-      
-		tmpFABs.copy(tmpS_old,0,0,ncomps+ntracers);
-		
-		tmpS_old.clear();
-		
-		pm_lev.strang_chem(tmpFABs,dt/2,ngrow);
-
-		pm_lev.aux_boundary_data_old.copyFrom(tmpFABs,ncomps,ncomps,ntracers);
-   
-		// Activate hook in FillPatch hack to get better data now.
+		pm_lev.strang_chem(time,dt/2,HYP_GROW);
 		FillPatchedOldState_ok = false;
 	      }
 
@@ -2531,15 +2439,15 @@ PorousMedia::multilevel_advance (Real time,
       }
   }
 #ifdef MG_USE_FBOXLIB
-    if (model == model_list["richard"]) 
-      {
-	advance_multilevel_richard(time,dt);
-      }
+  if (model == model_list["richard"]) 
+    {
+      advance_multilevel_richard(time,dt);
+    }
 #endif
-    if (model == model_list["steady-saturated"])
-      {
-	advance_multilevel_saturated(time,dt);
-      }
+  if (model == model_list["steady-saturated"])
+    {
+      advance_multilevel_saturated(time,dt);
+    }
   //
   // second half of the strang splitting
   //
@@ -2553,8 +2461,7 @@ PorousMedia::multilevel_advance (Real time,
 	  for (int lev = 0; lev <= parent->finestLevel(); lev++)
 	    {
 	      PorousMedia&  pm_lev = getLevel(lev);
-	      MultiFab&     S_new  = pm_lev.get_new_data(State_Type);	      
-	      pm_lev.strang_chem(S_new,dt/2.0);
+	      pm_lev.strang_chem(time+dt,dt/2.0,0);
 	    }
 	}
       else
@@ -2567,9 +2474,7 @@ PorousMedia::multilevel_advance (Real time,
 	      for (int lev = 0; lev <= parent->finestLevel(); lev++)
 		{
 		  PorousMedia&  pm_lev = getLevel(lev);
-		  MultiFab&     S_new  = pm_lev.get_new_data(State_Type);
-		  
-		  pm_lev.strang_chem(S_new,dt);
+		  pm_lev.strang_chem(time+dt,dt,0);
 		}
 	    }
 	  else
@@ -2585,18 +2490,15 @@ PorousMedia::multilevel_advance (Real time,
 		  for (int lev = 0; lev <= parent->finestLevel(); lev++)
 		    {
 		      PorousMedia&  pm_lev = getLevel(lev);
-		      MultiFab&     S_new  = pm_lev.get_new_data(State_Type);
-		  
-		      pm_lev.strang_chem(S_new,dt_chem);
+		      pm_lev.strang_chem(time+dt,dt_chem,0);
 		    }
 		  
 		  it_chem = 0;
 		  dt_chem = 0;
-		  
 		}
 	    }	    
 	}
-
+      
       FillPatchedOldState_ok = true;
     }
 
@@ -2713,9 +2615,9 @@ PorousMedia::advance_incompressible (Real time,
       if (do_chem>0)
 	{
 	  if (do_full_strang)
-	    strang_chem(S_new,dt/2.0);
+	    strang_chem(time,dt/2.0,HYP_GROW);
 	}
-
+      
       //
       // Corrector Step
       //    
@@ -4786,342 +4688,348 @@ ChemistryGrids (const MultiFab& state,
 // ODE-solve for chemistry: cell-by-cell
 //
 void
-PorousMedia::strang_chem (MultiFab&  state,
-			  Real       dt,
-                          int        ngrow)
+PorousMedia::strang_chem (Real time,
+			  Real dt,
+                          int  ngrow)
 {
-    BL_PROFILE(BL_PROFILE_THIS_NAME() + "::strang_chem()");
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::strang_chem()");
+  const Real strt_time = ParallelDescriptor::second();
 
-    // HACK!
-#if 0
-    if (ParallelDescriptor::IOProcessor()) {
-        BoxLib::Warning("******************** Skipping of chemistry advance for now...");
-    }
-    return;
-#endif
-
-    const Real strt_time = ParallelDescriptor::second();
+  const TimeLevel whichTime = which_time(State_Type,time);
+  MultiFab& S = (whichTime == AmrOldTime ? get_old_data(State_Type) : get_new_data(State_Type));
+  MultiFab& Fcnt = (whichTime == AmrOldTime ? get_old_data(FuncCount_Type) : get_new_data(FuncCount_Type));
+  MultiFab& Aux = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type) : get_new_data(Aux_Chem_Type));
 
 #if defined(AMANZI)
-    //
-    // ngrow == 0 -> we're working on the valid region of state.
-    //
-    // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
-    //
-    int tnum = 1;
+  //
+  // ngrow == 0 -> we're working on the valid region of state.
+  //
+  // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
+  //
+  int tnum = 1;
 #ifdef _OPENMP
-    tnum = omp_get_max_threads();
+  tnum = omp_get_max_threads();
 #endif
 
-    BL_ASSERT(state.nComp() >= ncomps+ntracers);
-    BL_ASSERT(components.size() == tnum);
-    for (int ithread = 0; ithread < tnum; ithread++)
+  BL_ASSERT(S.nComp() >= ncomps+ntracers);
+  for (int ithread = 0; ithread < tnum; ithread++)
     {
-        BL_ASSERT(components[ithread].mineral_volume_fraction.size() == nminerals);
-        BL_ASSERT(components[ithread].mineral_specific_surface_area.size() == nminerals);
-        BL_ASSERT(components[ithread].total.size() == ntracers);
-        BL_ASSERT(components[ithread].free_ion.size() == ntracers);
-        if (using_sorption) {
-            BL_ASSERT(components[ithread].total_sorbed.size() == ntracers);
-        }
-        if (nsorption_isotherms > 0) {
-            BL_ASSERT(components[ithread].isotherm_kd.size() == ntracers);
-            BL_ASSERT(components[ithread].isotherm_langmuir_b.size() == ntracers);
-            BL_ASSERT(components[ithread].isotherm_freundlich_n.size() == ntracers);
-        }
-        BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
+      BL_ASSERT(components[ithread].mineral_volume_fraction.size() == nminerals);
+      BL_ASSERT(components[ithread].mineral_specific_surface_area.size() == nminerals);
+      BL_ASSERT(components[ithread].total.size() == ntracers);
+      BL_ASSERT(components[ithread].free_ion.size() == ntracers);
+      if (using_sorption) {
+	BL_ASSERT(components[ithread].total_sorbed.size() == ntracers);
+      }
+      if (nsorption_isotherms > 0) {
+	BL_ASSERT(components[ithread].isotherm_kd.size() == ntracers);
+	BL_ASSERT(components[ithread].isotherm_langmuir_b.size() == ntracers);
+	BL_ASSERT(components[ithread].isotherm_freundlich_n.size() == ntracers);
+      }
+      BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
     }
 
-    //
-    // Assume we are always doing funccount.
-    //
-    BoxArray            ba = ChemistryGrids(state, parent, level);
-    DistributionMapping dm = getFuncCountDM(ba,ngrow);
+  //
+  // Assume we are always doing funccount.
+  //
+  BoxArray            ba = ChemistryGrids(S, parent, level);
+  DistributionMapping dm = getFuncCountDM(ba,ngrow);
 
-    if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     {
-        if (ngrow == 0)
-            std::cout << "*** strang_chem: FABs in tmp MF covering valid region: " << ba.size() << std::endl;
-        else
-            std::cout << "*** strang_chem: FABs in tmp MF covering aux_boundary_data_old: " << ba.size() << std::endl;
+      if (ngrow == 0)
+	std::cout << "*** strang_chem: FABs in tmp MF covering valid region: " << ba.size() << std::endl;
+      else
+	std::cout << "*** strang_chem: FABs in tmp MF covering aux_boundary_data_old: " << ba.size() << std::endl;
     }
   
-    MultiFab stateTemp, phiTemp, volTemp, fcnCntTemp;
+  MultiFab stateTemp, phiTemp, volTemp, fcnCntTemp, auxTemp;
 
-    stateTemp.define(ba, state.nComp(), 0, dm, Fab_allocate);
+  stateTemp.define(ba, S.nComp(), 0, dm, Fab_allocate);
+  auxTemp.define(ba, Aux.nComp(), 0, dm, Fab_allocate);
 
-    stateTemp.copy(state,0,0,state.nComp());  // Parallel copy.
+  stateTemp.copy(S,0,0,ncomps+ntracers);  // Parallel copy.
+  auxTemp.copy(Aux,0,0,Aux.nComp());  // Parallel copy.
 
-    phiTemp.define(ba, 1, 0, dm, Fab_allocate);
+  phiTemp.define(ba, 1, 0, dm, Fab_allocate);
 
-    if (ngrow == 0)
+  if (ngrow == 0)
     {
-        phiTemp.copy(*rock_phi,0,0,1);
+      phiTemp.copy(*rock_phi,0,0,1);
     }
-    else
+  else
     {
-        BL_ASSERT(rock_phi->nGrow() >= ngrow);
-
-        BoxArray ba(rock_phi->boxArray());
-
-        ba.grow(ngrow);
-
-        MultiFab phiGrow(ba, 1, 0);
-
-        for (MFIter mfi(*rock_phi); mfi.isValid(); ++mfi)
-            phiGrow[mfi].copy((*rock_phi)[mfi],0,0,1);
-
-        phiTemp.copy(phiGrow,0,0,1);  // Parallel copy.
+      BL_ASSERT(rock_phi->nGrow() >= ngrow);
+      MultiFab phiGrow(BoxArray(rock_phi->boxArray()).grow(ngrow), 1, 0);
+      for (MFIter mfi(*rock_phi); mfi.isValid(); ++mfi)
+	phiGrow[mfi].copy((*rock_phi)[mfi],0,0,1);
+      phiTemp.copy(phiGrow,0,0,1);  // Parallel copy.
     }
-    //
-    // This gets set by the chemistry solver.
-    //
-    fcnCntTemp.define(ba, 1, 0, dm, Fab_allocate);
-    //
-    // It's cheaper to just build a new volume than doing a parallel copy
-    // from the existing one.  Additionally this also works when ngrow > 0.
-    //
-    volTemp.define(ba, 1, 0, dm, Fab_allocate);
-    for (MFIter mfi(volTemp); mfi.isValid(); ++mfi)
-        geom.GetVolume(volTemp[mfi], volTemp.boxArray(), mfi.index(), 0);
+  //
+  // This gets set by the chemistry solver.
+  //
+  fcnCntTemp.define(ba, 1, 0, dm, Fab_allocate);
+  //
+  // It's cheaper to just build a new volume than doing a parallel copy
+  // from the existing one.  Additionally this also works when ngrow > 0.
+  //
+  volTemp.define(ba, 1, 0, dm, Fab_allocate);
+  for (MFIter mfi(volTemp); mfi.isValid(); ++mfi)
+    geom.GetVolume(volTemp[mfi], volTemp.boxArray(), mfi.index(), 0);
   
-    // Grab the auxiliary chemistry data
-    MultiFab& chem_state_new = get_new_data(Aux_Chem_Type);
+  // Make some handy indices, do some more checking to be sure all is set up correctly
+  Array<int> guess_comp(ntracers,-1);
+  Array<int> activity_comp(ntracers,-1);
+  Array<int> sorbed_comp(ntracers,-1);
+  Array<int> kd_comp(ntracers,-1);
+  Array<int> freundlich_n_comp(ntracers,-1);
+  Array<int> langmuir_b_comp(ntracers,-1);
+  int cation_exchange_capacity_comp = -1;
 
-    for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
+  int nAux = Aux.nComp();
+  for (int i = 0; i < ntracers; ++i) {
+    const std::string& name = tNames[i];
+
+    BL_ASSERT(sorption_isotherm_label_map.find(name)!=sorption_isotherm_label_map.end());
+    guess_comp[i] = sorption_isotherm_label_map[name]["Free_Ion_Guess"];
+    BL_ASSERT(guess_comp[i] >= 0  &&  guess_comp[i] < nAux);
+    activity_comp[i] = sorption_isotherm_label_map[name]["Activity_Coefficient"];
+    BL_ASSERT(activity_comp[i] >= 0  &&  activity_comp[i] < nAux);
+
+    if (using_sorption) {
+      sorbed_comp[i] = sorption_isotherm_label_map[name]["Total_Sorbed"];
+      BL_ASSERT(sorbed_comp[i] >= 0  &&  sorbed_comp[i] < nAux);
+    }
+
+    if (nsorption_isotherms > 0) {
+      kd_comp[i] = sorption_isotherm_label_map[name]["Kd"];
+      freundlich_n_comp[i] = sorption_isotherm_label_map[name]["Freundlich_n"];
+      langmuir_b_comp[i] = sorption_isotherm_label_map[name]["Langmuir_b"];
+
+      BL_ASSERT(kd_comp[i] >= 0  &&  kd_comp[i] < nAux);
+      BL_ASSERT(freundlich_n_comp[i] >= 0  &&  freundlich_n_comp[i] < nAux);
+      BL_ASSERT(langmuir_b_comp[i] >= 0  &&  langmuir_b_comp[i] < nAux);
+    }
+  }
+  if (ncation_exchange > 0) {
+    cation_exchange_capacity_comp = cation_exchange_label_map["Cation_Exchange_Capacity"];
+    BL_ASSERT(cation_exchange_capacity_comp >= 0  &&  cation_exchange_capacity_comp < nAux);      
+  }
+
+  // Grab the auxiliary chemistry data
+  for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
     {
-        FArrayBox& fab     = stateTemp[mfi];
-        FArrayBox& phi_fab = phiTemp[mfi];
-        FArrayBox& vol_fab = volTemp[mfi];
-        FArrayBox& fct_fab = fcnCntTemp[mfi];
-        FArrayBox& chem_fab = chem_state_new[mfi];
-        const int* lo      = fab.loVect();
-        const int* hi      = fab.hiVect();
+      FArrayBox& fab     = stateTemp[mfi];
+      FArrayBox& phi_fab = phiTemp[mfi];
+      FArrayBox& vol_fab = volTemp[mfi];
+      FArrayBox& fct_fab = fcnCntTemp[mfi];
+      FArrayBox& aux_fab = auxTemp[mfi];
+      const int* lo      = fab.loVect();
+      const int* hi      = fab.hiVect();
 
 #if (BL_SPACEDIM == 2)
-
-        for (int iy=lo[1]; iy<=hi[1]; iy++)
+      for (int iy=lo[1]; iy<=hi[1]; iy++)
         {
-            int threadid = 0;
+	  int threadid = 0;
+	  amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
+	  amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+	  amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
 
-            amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-	    amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
-            amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
-
-            for (int ix=lo[0]; ix<=hi[0]; ix++)
+	  for (int ix=lo[0]; ix<=hi[0]; ix++)
             {
-
 #elif (BL_SPACEDIM == 3)
-
+      
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic,1) 
 #endif
-        for (int iz = lo[2]; iz<=hi[2]; iz++)
-        {		
-            int threadid = 0;
+      for (int iz = lo[2]; iz<=hi[2]; iz++)
+	{		
+	  int threadid = 0;
 #ifdef _OPENMP
-            threadid = omp_get_thread_num();
+	  threadid = omp_get_thread_num();
 #endif
-            amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-            amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
-            amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
-
-            for (int iy = lo[1]; iy<=hi[1]; iy++)
-            {
-                for (int ix = lo[0]; ix<=hi[0]; ix++)
-                {
+	  amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
+	  amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+	  amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
+	  
+	  for (int iy = lo[1]; iy<=hi[1]; iy++)
+	    {
+	      for (int ix = lo[0]; ix<=hi[0]; ix++)
+		{
 #else
 #error "We only support 2 or 3-D"
 #endif
-                    int idx_minerals = 0, idx_sorbed = 0, idx_total = 0;
+		  int idx_minerals = 0, idx_sorbed = 0, idx_total = 0;
+		  
+		  IntVect iv(D_DECL(ix,iy,iz));
+		  
+		  bool allzero = true;
+		  bool skip_cell = false;
+		  for (int i = 0; i < ntracers && !skip_cell; ++i)
+		    {
+		      // data from the primary state fab
+		      Real value = fab(iv, ncomps+i);
+		      allzero = allzero && (value == 0);
+		      if (std::fabs(value) > uninitialized_data) {
+			skip_cell = true;
+		      }
+		    }
+		  skip_cell |= allzero;
+		  
+		  if (!skip_cell) 
+		    {
+		      for (int i = 0; i < ntracers; ++i)
+			{
+			  TheComponent.total[i] = fab(iv,ncomps+i);;
+			  TheComponent.free_ion[i] = aux_fab(iv,guess_comp[i]);
+			  if (using_sorption) {
+			    TheComponent.total_sorbed[i] = aux_fab(iv, sorbed_comp[i]);
+			  }
+			  if (nsorption_isotherms > 0) {
+			    TheComponent.isotherm_kd[i] = aux_fab(iv,kd_comp[i]);
+			    TheComponent.isotherm_freundlich_n[i] = aux_fab(iv,freundlich_n_comp[i]);
+			    TheComponent.isotherm_langmuir_b[i] = aux_fab(iv,langmuir_b_comp[i]);
+			  }
+			}
+		      
+		      // FIXME:
+		      //if (ncation_exchange_capacities > 0) {
+		      //TheComponent.cation_exchange_capacity = aux_fab(iv,cation_exchange_capacity_comp);
+		      //}
 
-                    IntVect iv(D_DECL(ix,iy,iz));
+		      // TODO: loop over minerals
+		      // TODO: loop over surface complexation sites
+		      
+		      TheParameter.porosity   = phi_fab(iv,0);
+		      TheParameter.saturation = std::min(1., std::max(0., fab(iv,0) / density[0]));
+		      TheParameter.volume     = vol_fab(iv,0);
+		      TheParameter.water_density = density[0];
+		      
+		      amanzi::chemistry::Beaker::SolverStatus stat;
+		      
+		      try
+			{
+			  //TheComponent.Display("-- before rxn step: \n");
+			  TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
+			  
+			  stat = TheChemSolve.status();
+			  
+			  fct_fab(iv,0) = use_funccount ? stat.num_rhs_evaluations : 1;
+			}
+		      catch (const amanzi::chemistry::ChemistryException& geochem_error)
+			{
+			  std::cout << iv << " : ";
+			  for (int icmp = 0; icmp < ntracers; icmp++)
+			    std::cout << fab(iv,icmp+ncomps) << ' ';
+			  std::cout << std::endl;
+			  TheComponent.Display("components: ");
+			  BoxLib::Abort(geochem_error.what());	    
+			}
+		      //
+		      // After calculating the change in the tracer species,
+		      // update the state variables.
+		      //
+		      
+		      // loop over the solutes and store the calculated
+		      // values in the appropriate place in the fabs
+		      for (int i = 0; i < ntracers; ++i)
+			{
+			  fab(iv, ncomps+i) = TheComponent.total[i];
+			  aux_fab(iv,guess_comp[i]) = TheComponent.free_ion[i];
+			  if (using_sorption) {
+			    aux_fab(iv,sorbed_comp[i]) = TheComponent.total_sorbed[i];
+			  }
+			  if (nsorption_isotherms) {
+			    aux_fab(iv,kd_comp[i]) = TheComponent.isotherm_kd[i];
+			    aux_fab(iv,freundlich_n_comp[i]) = TheComponent.isotherm_freundlich_n[i];
+			    aux_fab(iv,langmuir_b_comp[i]) = TheComponent.isotherm_langmuir_b[i];
+			  }
+			}
 
-                    bool allzero = true;
-                    bool skip_cell = false;
-                    for (int i = 0; i < ntracers; ++i)
-                    {
-                        // data from the primary state fab
-                        Real value = fab(iv, ncomps+i);
-                        allzero = allzero && (value == 0);
-                        if (std::fabs(value) > uninitialized_data) {
-                          skip_cell = true;
-                        }
-                        TheComponent.total.at(i) = value;
-                        // data from the auxiliary chem fab
-                        std::string name = tNames.at(i);
-                        int index = sorption_isotherm_label_map[name]["Free_Ion_Guess"];
-                        value = chem_fab(iv, index);
-                        TheComponent.free_ion.at(i) = value;
+		      // FIXME:
+		      //if (ncation_exchange > 0) {
+		      //  aux_fab(iv,cation_exchange_capacity_comp) = TheComponent.cation_exchange_capacity;
+		      //}
 
-                        if (using_sorption) {
-                          index = sorption_isotherm_label_map[name]["Total_Sorbed"];
-                          value = chem_fab(iv, index);
-                          TheComponent.total_sorbed.at(i) = value;
-                        }
-
-                        if (nsorption_isotherms > 0) {
-                          index = sorption_isotherm_label_map[name]["Kd"];
-                          value = chem_fab(iv, index);
-                          TheComponent.isotherm_kd.at(i) = value;
-                          index = sorption_isotherm_label_map[name]["Langmuir_b"];
-                          value = chem_fab(iv, index);
-                          TheComponent.isotherm_freundlich_n.at(i) = value;
-                          index = sorption_isotherm_label_map[name]["Freundlich_n"];
-                          value = chem_fab(iv, index);
-                          TheComponent.isotherm_langmuir_b.at(i) = value;
-                        }
-                    }
-                    // TODO: loop over minerals
-                    // TODO: loop over surface complexation sites
-
-                    Real sat_tmp = fab(iv,0) / density[0];
-
-                    sat_tmp = std::min(1.e0,sat_tmp);
-                    sat_tmp = std::max(0.e0,sat_tmp);
-
-                    TheParameter.porosity   = phi_fab(iv,0);
-                    TheParameter.saturation = sat_tmp;
-                    TheParameter.volume     = vol_fab(iv,0);
-                    TheParameter.water_density = density[0];
-
-                    if (allzero || skip_cell) continue;
-
-                    amanzi::chemistry::Beaker::SolverStatus stat;
-	  
-                    try
-                    {
-                      //TheComponent.Display("-- before rxn step: \n");
-                        TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
-
-                        stat = TheChemSolve.status();
-
-                        fct_fab(iv,0) = use_funccount ? stat.num_rhs_evaluations : 1;
-                    }
-                    catch (const amanzi::chemistry::ChemistryException& geochem_error)
-                    {
-                        std::cout << iv << " : ";
-                        for (int icmp = 0; icmp < ntracers; icmp++)
-                            std::cout << fab(iv,icmp+ncomps) << ' ';
-                        std::cout << std::endl;
-                        TheComponent.Display("components: ");
-                        BoxLib::Abort(geochem_error.what());	    
-                    }
-                    //
-                    // After calculating the change in the tracer species,
-                    // update the state variables.
-                    //
-
-                    // loop over the solutes and store the calculated
-                    // values in the appropriate place in the fabs
-                    for (int i = 0; i < ntracers; ++i)
-                    {
-                        // primary state fab
-                        Real value = TheComponent.total.at(i);
-                        fab(iv, ncomps+i) = value;
-                        // auxiliary chem fab
-                        std::string name = tNames[i];
-                        int index = sorption_isotherm_label_map[name]["Free_Ion_Guess"];
-                        value = TheComponent.free_ion.at(i);
-                        chem_fab(iv, index) = value;
-                        if (using_sorption) {
-                            index = sorption_isotherm_label_map[name]["Total_Sorbed"];
-                            value = TheComponent.total_sorbed.at(i);
-                            chem_fab(iv, index) = value;
-                        }
-                        if (nsorption_isotherms) {
-                            index = sorption_isotherm_label_map[name]["Kd"];
-                            value = TheComponent.isotherm_kd.at(i);
-                            chem_fab(iv, index) = value;
-                            index = sorption_isotherm_label_map[name]["Freundlich_n"];
-                            value = TheComponent.isotherm_freundlich_n.at(i);
-                            chem_fab(iv, index) = value;
-                            index = sorption_isotherm_label_map[name]["Langmuir_b"];
-                            value = TheComponent.isotherm_langmuir_b.at(i);
-                            chem_fab(iv, index) = value;
-                        }
-                    }
-                    // TODO: loop over minerals, etc
-                }
-            }
+		      // TODO: loop over minerals, porosity, etc
+		    }
+		}
+	    }
 #if (BL_SPACEDIM == 3)
-          }
-#endif
 	}
-        phiTemp.clear();
-        volTemp.clear();
-
-        state.copy(stateTemp,ncomps,ncomps,ntracers); // Parallel copy.
-
-        stateTemp.clear();
-
-        MultiFab& Fcnt = get_new_data(FuncCount_Type);
-
-        if (ngrow == 0)
-        {
-            Fcnt.copy(fcnCntTemp,0,0,1); // Parallel copy.
-
-            fcnCntTemp.clear();
-
-            state.FillBoundary();
-            Fcnt.FillBoundary();
-
-            geom.FillPeriodicBoundary(state,true);
-            geom.FillPeriodicBoundary(Fcnt,true);
-        }
-        else
-        {
-            //
-            // Can't directly use a parallel copy to update FuncCount_Type.
-            //
-            BoxArray ba = Fcnt.boxArray();
-            ba.grow(ngrow);
-            MultiFab grownFcnt(ba, 1, 0);
-            grownFcnt.setVal(1);
-                
-            for (MFIter mfi(Fcnt); mfi.isValid(); ++mfi)
-                grownFcnt[mfi].copy(Fcnt[mfi]);
-
-            grownFcnt.copy(fcnCntTemp); // Parallel copy.
-
-            fcnCntTemp.clear();
-
-            for (MFIter mfi(grownFcnt); mfi.isValid(); ++mfi)
-                Fcnt[mfi].copy(grownFcnt[mfi]);
-        }
-
-#else /* Not AMANZI */
-
-        if (do_chem==0)
-        {
-            MultiFab tmp;
-            tmp.define(state.boxArray(),ncomps,0,Fab_allocate);
-            tmp.copy(state,0,0,ncomps);
-
-            for (MFIter mfi(state);mfi.isValid();++mfi)
-            {
-                const int* s_lo  = tmp[mfi].loVect();
-                const int* s_hi  = tmp[mfi].hiVect();
-                const Real* sdat = tmp[mfi].dataPtr();
-
-                if (ncomps == 4) 
-                    FORT_CHEM_DUMMY(sdat,ARLIM(s_lo),ARLIM(s_hi),&dt,&ncomps);
-            }     
-            state.copy(tmp,0,0,ncomps);
-        }
 #endif
-
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-  {
-    const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-    Real      run_time = ParallelDescriptor::second() - strt_time;
-    ParallelDescriptor::ReduceRealMax(run_time,IOProc);
-
-    std::cout << "PorousMedia::strang_chem time: " << run_time << '\n';
-  }
-}
+    }
+    
+  phiTemp.clear();
+  volTemp.clear();
+    
+  S.copy(stateTemp,ncomps,ncomps,ntracers); // Parallel copy, tracers only
+  stateTemp.clear();
+    
+  Aux.copy(auxTemp,0,0,Aux.nComp()); // Parallel copy, everything.
+  auxTemp.clear();
+    
+  if (ngrow == 0)
+    {
+      Fcnt.copy(fcnCntTemp,0,0,1); // Parallel copy.
+      fcnCntTemp.clear();
 	
-
+      S.FillBoundary();
+      Aux.FillBoundary();
+      Fcnt.FillBoundary();
+	
+      geom.FillPeriodicBoundary(S,true);
+      geom.FillPeriodicBoundary(Aux,true);
+      geom.FillPeriodicBoundary(Fcnt,true);
+    }
+  else
+    {
+      //
+      // Can't directly use a parallel copy to update FuncCount_Type.
+      //
+      MultiFab grownFcnt(BoxArray(Fcnt.boxArray()).grow(ngrow), 1, 0);
+      grownFcnt.setVal(1);
+      for (MFIter mfi(Fcnt); mfi.isValid(); ++mfi)
+	grownFcnt[mfi].copy(Fcnt[mfi]);
+	
+      grownFcnt.copy(fcnCntTemp); // Parallel copy.
+      fcnCntTemp.clear();
+	
+      for (MFIter mfi(grownFcnt); mfi.isValid(); ++mfi)
+	Fcnt[mfi].copy(grownFcnt[mfi]);
+    }
+    
+#else /* Not AMANZI */
+    
+  if (do_chem==0)
+    {
+      MultiFab tmp;
+      tmp.define(S.boxArray(),ncomps,0,Fab_allocate);
+      tmp.copy(S,0,0,ncomps);
+	
+      for (MFIter mfi(S);mfi.isValid();++mfi)
+	{
+	  const int* s_lo  = tmp[mfi].loVect();
+	  const int* s_hi  = tmp[mfi].hiVect();
+	  const Real* sdat = tmp[mfi].dataPtr();
+	    
+	  if (ncomps == 4) 
+	    FORT_CHEM_DUMMY(sdat,ARLIM(s_lo),ARLIM(s_hi),&dt,&ncomps);
+	}     
+      S.copy(tmp,0,0,ncomps);
+    }
+#endif
+    
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+    {
+      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
+      Real      run_time = ParallelDescriptor::second() - strt_time;
+      ParallelDescriptor::ReduceRealMax(run_time,IOProc);
+	
+      std::cout << "PorousMedia::strang_chem time: " << run_time << '\n';
+    }
+}
+    
 void
 PorousMedia::set_preferred_boundary_values (MultiFab& S,
 					    int       state_index,

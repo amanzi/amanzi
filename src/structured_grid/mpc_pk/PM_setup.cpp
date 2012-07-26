@@ -161,7 +161,7 @@ bool               PorousMedia::using_sorption;
 PorousMedia::ChemICMap PorousMedia::sorption_isotherm_ics;
 PorousMedia::ChemICMap PorousMedia::mineralogy_ics;
 PorousMedia::ChemICMap PorousMedia::surface_complexation_ics;
-PorousMedia::ICLabelParmPair PorousMedia::cation_exchange_ics;
+PorousMedia::ICParmPair PorousMedia::cation_exchange_ics;
 PorousMedia::LabelIdx PorousMedia::mineralogy_label_map;
 PorousMedia::LabelIdx PorousMedia::sorption_isotherm_label_map;
 PorousMedia::LabelIdx PorousMedia::surface_complexation_label_map;
@@ -1115,7 +1115,6 @@ PorousMedia::read_rock()
     Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
     rocks.clear();
     rocks.resize(nrock,PArrayManage);
-
     Array<std::string> material_regions;
     for (int i = 0; i<nrock; i++)
     {
@@ -1176,68 +1175,108 @@ PorousMedia::read_rock()
         rocks.set(i, new Rock(rname,rdensity,rporosity,rporosity_dist_type,rporosity_dist_param,
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
                               rkrType,rkrParam,rcplType,rcplParam,rregions));
-                  
-        if (ntracers>0 && do_chem>0) {
-            Array<std::pair<std::string,Real> > parameters;
-            parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 0));
-            parameters.push_back(std::make_pair<std::string,Real>(                  "Kd", 0));
-            parameters.push_back(std::make_pair<std::string,Real>(          "Langmuir_b", 0));
-            parameters.push_back(std::make_pair<std::string,Real>(        "Freundlich_n", 1));
-            parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 0));
-            parameters.push_back(std::make_pair<std::string,Real>("Activity_Coefficient", 0));
+    }
 
-            for (int k=0; k<tNames.size(); ++k) {
-                for (int j=0; j<parameters.size(); ++j) {
-                    const std::string& str = parameters[j].first;
-                    const std::string prefixM(prefix+".Sorption_Isotherms."+tNames[k]);
-                    ParmParse pprm(prefixM.c_str());
-                    sorption_isotherm_ics[rname][tNames[k]][str] = parameters[j].second;
-                    pprm.query(str.c_str(),sorption_isotherm_ics[rname][tNames[k]][str]);
-                }
-            }
+    // Read rock parameters associated with chemistry
+    if (do_chem>0)
+      {
+        ParmParse ppm("mineral");
+        nminerals = ppm.countval("minerals");
+        minerals.resize(nminerals);
+        if (nminerals>0) {
+	  ppm.getarr("minerals",minerals,0,nminerals);
         }
 
-        if (nminerals>0 && do_chem>0) {
+        ParmParse pps("sorption_site");
+        nsorption_sites = pps.countval("sorption_sites");
+        sorption_sites.resize(nsorption_sites);
+        if (nsorption_sites>0) {
+	  pps.getarr("sorption_sites",sorption_sites,0,nsorption_sites);
+        }
+
+        // TODO: don't need for 2012 demo, but we only use if the user
+        // supplied CEC in input file.
+	// If any rock specifies Cation Exchange Capacity, they all will use it.
+	ncation_exchange = 0;
+	for (int i=0; i<nrock; ++i) {
+	  const std::string& rname = r_names[i];
+	  const std::string prefix("rock." + rname);
+	  ParmParse ppr(prefix.c_str());
+	  ncation_exchange = std::max(ncation_exchange,ppr.countval("Cation_Exchange_Capacity"));
+	}
+
+	// Now loop over all rocks and set the required data
+	for (int i=0; i<nrock; ++i) {
+	  const std::string& rname = r_names[i];
+	  const std::string prefix("rock." + rname);
+	  ParmParse ppr(prefix.c_str());
+
+	  if (nminerals>0) {
             Array<std::pair<std::string,Real> > parameters;
-            parameters.push_back(std::make_pair<std::string,Real>(       "Volume_Fraction", 0));
+            parameters.push_back(std::make_pair<std::string,Real>(      "Volume_Fraction", 0));
             parameters.push_back(std::make_pair<std::string,Real>("Specific_Surface_Area", 0));
-
+	    
             for (int k=0; k<minerals.size(); ++k) {
-                for (int j=0; j<parameters.size(); ++j) {
-                    const std::string& str = parameters[j].first;
-                    const std::string prefixM(prefix+".Mineralogy."+minerals[k]);
-                    ParmParse pprm(prefixM.c_str());
-                    mineralogy_ics[rname][minerals[k]][str] = parameters[j].second;
-                    pprm.query(str.c_str(),mineralogy_ics[rname][minerals[k]][str]);
-                }
+	      for (int j=0; j<parameters.size(); ++j) {
+		const std::string& str = parameters[j].first;
+		const std::string prefixM(prefix+".Mineralogy."+minerals[k]);
+		ParmParse pprm(prefixM.c_str());
+		mineralogy_ics[rname][minerals[k]][str] = parameters[j].second;
+		pprm.query(str.c_str(),mineralogy_ics[rname][minerals[k]][str]);
+	      }
             }
-        }
+	  }
         
-        if (nsorption_sites>0 && do_chem>0) {
+	  if (nsorption_sites>0) {
             Array<std::pair<std::string,Real> > parameters;
             parameters.push_back(std::make_pair<std::string,Real>("Site_Density", 0));
-
+	    
             for (int k=0; k<sorption_sites.size(); ++k) {
-                for (int j=0; j<parameters.size(); ++j) {
-                    const std::string& str = parameters[j].first;
-                    const std::string prefixM(prefix+".Surface_Complexation_Sites."+sorption_sites[k]);
-                    ParmParse pprm(prefixM.c_str());
-                    surface_complexation_ics[rname][sorption_sites[k]][str] = parameters[j].second;
-                    pprm.query(str.c_str(),surface_complexation_ics[rname][sorption_sites[k]][str]);
-                }
+	      for (int j=0; j<parameters.size(); ++j) {
+		const std::string& str = parameters[j].first;
+		const std::string prefixM(prefix+".Surface_Complexation_Sites."+sorption_sites[k]);
+		ParmParse pprm(prefixM.c_str());
+		surface_complexation_ics[rname][sorption_sites[k]][str] = parameters[j].second;
+		pprm.query(str.c_str(),surface_complexation_ics[rname][sorption_sites[k]][str]);
+	      }
             }
-        }
+	  }
 
-        if (ncation_exchange>0 && do_chem>0) {
-            Array<std::pair<std::string,Real> > parameters;
-            parameters.push_back(std::make_pair<std::string,Real>("Cation_Exchange_Capacity", 0));
-            for (int j=0; j<parameters.size(); ++j) {
-                cation_exchange_ics[rname][parameters[j].first] = parameters[j].second;
-            }
-        }
-        
-    }
-    
+	  if (ncation_exchange>0) {
+	    std::string cap_str = "Cation_Exchange_Capacity";
+	    cation_exchange_ics[rname] = 0; ppr.query(cap_str.c_str(),cation_exchange_ics[rname]);
+	  }
+
+	  if (ntracers>0)
+	    {
+	      Array<std::pair<std::string,Real> > parameters;
+	      parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 0));
+	      parameters.push_back(std::make_pair<std::string,Real>(                  "Kd", 0));
+	      parameters.push_back(std::make_pair<std::string,Real>(          "Langmuir_b", 0));
+	      parameters.push_back(std::make_pair<std::string,Real>(        "Freundlich_n", 1));
+	      parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 0));
+	      parameters.push_back(std::make_pair<std::string,Real>("Activity_Coefficient", 0));
+	      
+	      for (int k=0; k<tNames.size(); ++k) {
+                for (int j=0; j<parameters.size(); ++j) {
+		  const std::string& str = parameters[j].first;
+		  const std::string prefixM(prefix+".Sorption_Isotherms."+tNames[k]);
+		  ParmParse pprm(prefixM.c_str());
+		  sorption_isotherm_ics[rname][tNames[k]][str] = parameters[j].second;
+		  pprm.query(str.c_str(),sorption_isotherm_ics[rname][tNames[k]][str]);
+                }
+	      }
+	      
+	      if (sorption_isotherm_ics.size()>0) {
+		nsorption_isotherms = ntracers;
+	      }
+	    }
+	}
+      }
+
+    // Require sorption data container?
+    using_sorption = do_chem && (nsorption_sites || ncation_exchange || nsorption_isotherms);
+
     bool read_full_pmap  = false;
     bool read_full_kmap  = false;
     bool build_full_pmap = true;
@@ -1707,8 +1746,8 @@ void  PorousMedia::read_comp()
           cNames.push_back(p_cNames[j]);
       }
       Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
-      // FIXME: Assume visc given in mass units, George hardwaired rho top 
-      Real p_visc; ppr.get("viscosity",p_visc); p_visc *= 1.e3; muval.push_back(p_visc);
+      // FIXME: Assume visc given in mass units, George hardwired rho top 
+      Real p_visc; ppr.get("viscosity",p_visc); p_visc *= p_rho; muval.push_back(p_visc);
       Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
 
       // Only components have diffusion at the moment.  
@@ -2469,150 +2508,118 @@ void  PorousMedia::read_chem()
     }
       
 #ifdef AMANZI
-  amanzi::chemistry::SetupDefaultChemistryOutput();
 
   // get input file name, create SimpleThermoDatabase, process
   if (do_chem>0)
     {
-        ParmParse ppm("mineral");
-        nminerals = ppm.countval("minerals");
-        minerals.resize(nminerals);
-        if (nminerals>0) {
-            ppm.getarr("minerals",minerals,0,nminerals);
-        }
+      amanzi::chemistry::SetupDefaultChemistryOutput();
 
-        ParmParse pps("sorption_site");
-        nsorption_sites = pps.countval("sorption_sites");
-        sorption_sites.resize(nsorption_sites);
-        if (nsorption_sites>0) {
-            pps.getarr("sorption_sites",sorption_sites,0,nsorption_sites);
-        }
+      ParmParse pb("prob.amanzi");
+      
+      std::string verbose_chemistry_init = "silent"; pb.query("verbose_chemistry_init",verbose_chemistry_init);
+      
+      if (verbose_chemistry_init == "silent") {
+	amanzi::chemistry::chem_out->AddLevel("silent");
+      }
 
-        // TODO: don't need for 2012 demo, but we only use if the user
-        // supplied CEC in input file.
-        ncation_exchange = 0;
-        if (false) {
-          ParmParse pp_ion_exchange("Cation_Exchange_Capacity");
-          // TODO: if (valid pp section)
-          ncation_exchange = 1;
-        }
-
-        if (sorption_isotherm_ics.size() > 0) {
-          nsorption_isotherms = ntracers;
-        }
-
-        // did the user specify chemistry that requires storing sorption data?
-        if (nsorption_sites > 0 ||
-            ncation_exchange > 0 ||
-            nsorption_isotherms > 0) {
-          using_sorption = true;
-        }
-
-        int tnum = 1;
+      std::string fmt = "simple"; pb.query("Thermodynamic_Database_Format",fmt);
+      pb.query("chem_database_file", amanzi_database_file);
+      
+      const std::string& activity_model_dh = amanzi::chemistry::ActivityModelFactory::debye_huckel;
+      const std::string& activity_model_ph = amanzi::chemistry::ActivityModelFactory::pitzer_hwm;
+      const std::string& activity_model_u  = amanzi::chemistry::ActivityModelFactory::unit;
+      std::string activity_model = activity_model_u; pp.query("Activity_Model",activity_model);
+      
+      Real tolerance=1.5e-12; pp.query("Tolerance",tolerance);
+      int max_num_Newton_iters = 150; pp.query("Maximum_Newton_Iterations",max_num_Newton_iters);
+      std::string outfile=""; pp.query("Output_File_Name",outfile);
+      bool use_stdout = true; pp.query("Use_Standard_Out",use_stdout);
+      int num_aux = pp.countval("Auxiliary_Data");
+      if (num_aux>0) {
+	aux_chem_variables.resize(num_aux);
+	pp.getarr("Auxiliary_Data",aux_chem_variables,0,num_aux);
+      }
+      
+      // TODO: here down goes into seperate function init_chem()
+      
+      //
+      // In order to thread the AMANZI chemistry, we had to give each thread 
+      // its own chemSolve and components object.
+      //
+      int tnum = 1;
 #ifdef _OPENMP
-	tnum = omp_get_max_threads();
+      tnum = omp_get_max_threads();
 #endif
-        ParmParse pb("prob.amanzi");
-
-        std::string verbose_chemistry_init = "silent"; pb.query("verbose_chemistry_init",verbose_chemistry_init);
-
-        if (verbose_chemistry_init == "silent") {
-          amanzi::chemistry::chem_out->AddLevel("silent");
-        }
-
-        std::string fmt = "simple"; pb.query("Thermodynamic_Database_Format",fmt);
-	pb.query("chem_database_file", amanzi_database_file);
-
-        const std::string& activity_model_dh = amanzi::chemistry::ActivityModelFactory::debye_huckel;
-        const std::string& activity_model_ph = amanzi::chemistry::ActivityModelFactory::pitzer_hwm;
-        const std::string& activity_model_u  = amanzi::chemistry::ActivityModelFactory::unit;
-        std::string activity_model = activity_model_dh; pp.query("Activity_Model",activity_model);
-
-        Real tolerance=1.5e-12; pp.query("Tolerance",tolerance);
-        int max_num_Newton_iters = 150; pp.query("Maximum_Newton_Iterations",max_num_Newton_iters);
-        std::string outfile=""; pp.query("Output_File_Name",outfile);
-        bool use_stdout = true; pp.query("Use_Standard_Out",use_stdout);
-        int num_aux = pp.countval("Auxiliary_Data");
-        if (num_aux>0) {
-            aux_chem_variables.resize(num_aux);
-            pp.getarr("Auxiliary_Data",aux_chem_variables,0,num_aux);
-        }
-
-        // TODO: here down goes into seperate function init_chem()
-
-        //
-	// In order to thread the AMANZI chemistry, we had to give each thread 
-	// its own chemSolve and components object.
-        //
-	chemSolve.resize(tnum);
-        components.resize(tnum);
-	parameters.resize(tnum);
-
-
-	for (int ithread = 0; ithread < tnum; ithread++)
+      chemSolve.resize(tnum);
+      components.resize(tnum);
+      parameters.resize(tnum);
+      
+      
+      for (int ithread = 0; ithread < tnum; ithread++)
         {
-            if (ParallelDescriptor::IOProcessor() && ithread == 0) {
-                BoxLib::Warning("PM_setup::read_chem: Translate ntracers, nminerals, nsorption_sites, etc into amanzi chem parlance");
-            }
-
-            chemSolve.set(ithread, new amanzi::chemistry::SimpleThermoDatabase());
+	  if (ParallelDescriptor::IOProcessor() && ithread == 0) {
+	    BoxLib::Warning("PM_setup::read_chem: Translate ntracers, nminerals, nsorption_sites, etc into amanzi chem parlance");
+	  }
 	  
-            parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
-            parameters[ithread].thermo_database_file = amanzi_database_file;
-            parameters[ithread].activity_model_name = activity_model;
-            parameters[ithread].porosity   = 1.0; 
-            parameters[ithread].saturation = 1.0;
-            parameters[ithread].volume     = 1.0;
-
-            // minimal initialization of the chemistry arrays to the
-            // correct size based on the xml input. Remaining arrays
-            // will be sized by chemistry
-            components[ithread].total.resize(ntracers,1.0e-40);
-            components[ithread].free_ion.resize(ntracers, 1.0e-9);
-
-            components[ithread].mineral_volume_fraction.resize(nminerals, 0.0);
-
-            if (using_sorption) { 
-              components[ithread].total_sorbed.resize(ntracers, 1.0e-40);
-            }
-
-            chemSolve[ithread].verbosity(amanzi::chemistry::kTerse);
+	  chemSolve.set(ithread, new amanzi::chemistry::SimpleThermoDatabase());
 	  
-            // initialize the chemistry objects
-            chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
-            // let chemistry finish resizing the arrays
-            chemSolve[ithread].CopyBeakerToComponents(&(components[ithread]));
-            if (ParallelDescriptor::IOProcessor() && ithread == 0) {
-                chemSolve[ithread].Display();
-                chemSolve[ithread].DisplayComponents(components[ithread]);
-            }
+	  parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
+	  parameters[ithread].thermo_database_file = amanzi_database_file;
+	  parameters[ithread].activity_model_name = activity_model;
+	  parameters[ithread].porosity   = 0.25; 
+	  parameters[ithread].saturation = 0;
+	  parameters[ithread].volume     = 1.0;
+	  parameters[ithread].water_density = density[0];
+	  
+	  // minimal initialization of the chemistry arrays to the
+	  // correct size based on the xml input. Remaining arrays
+	  // will be sized by chemistry
+	  components[ithread].total.resize(ntracers,1.0e-40);
+	  components[ithread].free_ion.resize(ntracers, 1.0e-9);
+	  
+	  components[ithread].mineral_volume_fraction.resize(nminerals, 0.0);
+	  
+	  if (using_sorption) { 
+	    components[ithread].total_sorbed.resize(ntracers, 1.0e-40);
+	  }
+	  
+	  chemSolve[ithread].verbosity(amanzi::chemistry::kTerse);
+	  
+	  // initialize the chemistry objects
+	  chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
+	  // let chemistry finish resizing the arrays
+	  chemSolve[ithread].CopyBeakerToComponents(&(components[ithread]));
+	  if (ParallelDescriptor::IOProcessor() && ithread == 0) {
+	    chemSolve[ithread].Display();
+	    chemSolve[ithread].DisplayComponents(components[ithread]);
+	  }
 	}  // for(threads)
+      
+      // Verify that amr and chemistry agree on the names and ordering of the tracers
+      std::vector<std::string> chem_names;
+      chemSolve[0].GetPrimaryNames(&chem_names);
+      BL_ASSERT(chem_names.size() == tNames.size());
+      for (int i = 0; i < chem_names.size(); ++i) {
+	if (chem_names.at(i) != tNames[i]) {
+	  if (ParallelDescriptor::IOProcessor()) {
+	    std::stringstream message;
+	    message << "PM_setup::read_chem():\n"
+		    << "  chemistry and amr do not agree on the name of tracer " << i << ".\n"
+		    << "  chemistry : " << chem_names.at(i) << "\n"
+		    << "  amr : " << tNames[i] << "\n";
+	    BoxLib::Warning(message.str().c_str());
+	  }
+	}
+      }
 
-        // Verify that amr and chemistry agree on the names and ordering of the tracers
-        std::vector<std::string> chem_names;
-        chemSolve[0].GetPrimaryNames(&chem_names);
-        BL_ASSERT(chem_names.size() == tNames.size());
-        for (int i = 0; i < chem_names.size(); ++i) {
-          if (chem_names.at(i) != tNames[i]) {
-            if (ParallelDescriptor::IOProcessor()) {
-              std::stringstream message;
-              message << "PM_setup::read_chem():\n"
-                      << "  chemistry and amr do not agree on the name of tracer " << i << ".\n"
-                      << "  chemistry : " << chem_names.at(i) << "\n"
-                      << "  amr : " << tNames[i] << "\n";
-              BoxLib::Warning(message.str().c_str());
-            }
-          }
-        }
-
-        // TODO: not needed for 2012 demo... request additional
-        // secondary storage data from chemistry object (secondary
-        // species activity coefficients)
-        if (components[0].secondary_activity_coeff.size() > 0) {
-          // allocate additional storage for secondary activity coeffs
-        }
-
-    }  // if(do_chem)
+      // TODO: not needed for 2012 demo... request additional
+      // secondary storage data from chemistry object (secondary
+      // species activity coefficients)
+      if (components[0].secondary_activity_coeff.size() > 0) {
+	// allocate additional storage for secondary activity coeffs
+      }
+      
+    }
 #endif
 
   pp.query("use_funccount",use_funccount);

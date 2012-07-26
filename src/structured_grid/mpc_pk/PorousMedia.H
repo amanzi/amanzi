@@ -629,9 +629,9 @@ public:
   //
   // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
   //
-  void strang_chem (MultiFab&  state,
-		    Real       dt,
-                    int        ngrow = 0);
+  void strang_chem (Real time,
+		    Real dt,
+		    int  ngrow=0);
   //
   // Ensure state is consistent, i.e. velocity field is nondivergent,
   // coarse level data are averages of fine level data, pressure is zero.
@@ -1071,13 +1071,13 @@ protected:
   static Array<std::string> aux_chem_variables;
   static bool using_sorption;
 
-  typedef std::map<std::string,Real> ICParmPair;
-  typedef std::map<std::string, ICParmPair > ICLabelParmPair;
-  typedef std::map<std::string, ICLabelParmPair> ChemICMap;
-  static ChemICMap sorption_isotherm_ics;
-  static ChemICMap mineralogy_ics;
-  static ChemICMap surface_complexation_ics;
-  static ICLabelParmPair cation_exchange_ics;
+  typedef std::map<std::string,Real> ICParmPair; // ic parameter and value
+  typedef std::map<std::string, ICParmPair > ICLabelParmPair; // ic parameter and value associated with a labeled entity
+  typedef std::map<std::string, ICLabelParmPair> ChemICMap; // 
+  static ChemICMap sorption_isotherm_ics;    // isotherm[rockname][solute][property] = val
+  static ChemICMap mineralogy_ics;           // mineralogy[rockname][mineralsname][property] = val
+  static ChemICMap surface_complexation_ics; // sc[rockname][sorptionsitename][property]) = val
+  static ICParmPair cation_exchange_ics; // capacity[rockname] = val
   static Array<Real> tInflow;
 
   typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
