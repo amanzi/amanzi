@@ -1252,13 +1252,10 @@ PorousMedia::read_rock()
 	  if (ntracers>0)
 	    {
 	      Array<std::pair<std::string,Real> > parameters;
-	      parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 1.e-40));
 	      parameters.push_back(std::make_pair<std::string,Real>(                  "Kd", 0));
 	      parameters.push_back(std::make_pair<std::string,Real>(          "Langmuir_b", 0));
 	      parameters.push_back(std::make_pair<std::string,Real>(        "Freundlich_n", 1));
-	      parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 1.e-9));
-	      parameters.push_back(std::make_pair<std::string,Real>("Activity_Coefficient", 0));
-	      
+
 	      for (int k=0; k<tNames.size(); ++k) {
                 for (int j=0; j<parameters.size(); ++j) {
 		  const std::string& str = parameters[j].first;
@@ -1278,6 +1275,31 @@ PorousMedia::read_rock()
 
     // Require sorption data container?
     using_sorption = do_chem && (nsorption_sites || ncation_exchange || nsorption_isotherms);
+    
+    if (using_sorption) 
+    {
+        // If necessary, set these for all materials
+	for (int i=0; i<nrock; ++i) {
+            const std::string& rname = r_names[i];
+            const std::string prefix("rock." + rname);
+            ParmParse ppr(prefix.c_str());
+            
+            Array<std::pair<std::string,Real> > parameters;
+            parameters.push_back(std::make_pair<std::string,Real>(        "Total_Sorbed", 1.e-40));
+            parameters.push_back(std::make_pair<std::string,Real>(      "Free_Ion_Guess", 1.e-9));
+            parameters.push_back(std::make_pair<std::string,Real>("Activity_Coefficient", 1));
+            for (int k=0; k<tNames.size(); ++k) {
+                for (int j=0; j<parameters.size(); ++j) {
+                    const std::string& str = parameters[j].first;
+                    const std::string prefixM(prefix+".Sorption_Isotherms."+tNames[k]);
+                    ParmParse pprm(prefixM.c_str());
+                    sorption_isotherm_ics[rname][tNames[k]][str] = parameters[j].second;
+                    pprm.query(str.c_str(),sorption_isotherm_ics[rname][tNames[k]][str]);
+                }
+            }
+        }
+    }
+
 
     bool read_full_pmap  = false;
     bool read_full_kmap  = false;
