@@ -19,30 +19,6 @@ namespace Amanzi {
     ParameterList convert_to_structured(const ParameterList& parameter_list);
     std::string underscore(const std::string& instring);
 
-#if 0
-
-    typedef struct {
-	std::string phase;
-	std::string component;
-	std::string solute;
-      } tridata;
-
-    static std::map<std::string,std::string> AMR_to_Amanzi_label_map;
-
-    ParameterList setup_structured();
-    
-    void convert_to_structured_mesh    (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_control (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_region  (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_material(const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_output  (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-#endif
-
       struct ICBCFunc
       {
           ICBCFunc() {};

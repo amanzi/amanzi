@@ -9,16 +9,18 @@
     <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.5778463e9"/>
+        <Parameter name="End" type="double" value="3.e8"/>
         <Parameter name="Switch" type="double" value="0.0"/>
     	<Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
         <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="Verbosity" type="string" value="Extreme"/>
+    <Parameter name="Verbosity" type="string" value="Low"/>
 
     <ParameterList name="Numerical Control Parameters">
 
@@ -64,7 +66,7 @@
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="1"/>
-          <Parameter name="verbose" type="double" value="2"/>
+          <Parameter name="verbose" type="double" value="1"/>
 
         </ParameterList>
       </ParameterList>
@@ -142,21 +144,21 @@
             <ParameterList name="A">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
+                <!-- <Parameter name="Free Ion Guess" type="double" value="1.e-20"/> -->
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="B">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
+                <!-- <Parameter name="Free Ion Guess" type="double" value="1.e-20"/> -->
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="C">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
+                <!-- <Parameter name="Free Ion Guess" type="double" value="1.e-20"/> -->
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>

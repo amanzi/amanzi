@@ -2546,7 +2546,8 @@ namespace Amanzi {
         void
         convert_to_structured_output(const ParameterList& parameter_list, 
                                      ParameterList&       struc_list,
-                                     StateDef&            state)
+                                     StateDef&            state,
+                                     bool                 do_chem)
         {
             ParameterList& amr_list = struc_list.sublist("amr");
             ParameterList& obs_list = struc_list.sublist("observation");
@@ -2576,7 +2577,7 @@ namespace Amanzi {
                 }
             }
             
-            if (state.HasSolidChem()) {
+            if (do_chem && state.HasSolidChem()) {
                 if (struc_list.isSublist("tracer")) {
                     const Array<std::string>& solute_names = struc_list.sublist("tracer").get<Array<std::string> >("tracers");
                     for (int i=0; i<solute_names.size(); ++i) {
@@ -3009,7 +3010,7 @@ namespace Amanzi {
             //
             // Output
             // 
-            convert_to_structured_output(parameter_list, struc_list,stateDef);
+            convert_to_structured_output(parameter_list, struc_list,stateDef,do_chem);
 
             std::string dump_str = "Dump ParmParse Table";
             if (parameter_list.isParameter(dump_str)) {

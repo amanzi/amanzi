@@ -2247,12 +2247,12 @@ PorousMedia::advance (Real time,
       if (level == 0)
           multilevel_advance(time,dt,iteration,ncycle);
       else
-      if (verbose>1 && ParallelDescriptor::IOProcessor())
+      if (verbose>2 && ParallelDescriptor::IOProcessor())
 	std::cout << " Doing multilevel solve : skipping level advance.\n";
   }
   else
   {
-    if (verbose > 1 && ParallelDescriptor::IOProcessor())
+    if (verbose > 2 && ParallelDescriptor::IOProcessor())
       {
 	std::cout << "Advancing grids at level " << level
 		  << " : starting time = "       << time
@@ -2285,7 +2285,7 @@ PorousMedia::advance (Real time,
       {
 	if (do_full_strang)
 	  {
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "... advancing 1/2 strang step for chemistry\n";
 	    
 	    // Old state is chem-advanced in-place.  Hook set to get grow data
@@ -2324,7 +2324,7 @@ PorousMedia::advance (Real time,
       {      
 	if (do_full_strang)
 	  {
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "Second 1/2 Strang step of chemistry\n";
 	    
 	    // New state is chem-advanced in-place.  Fillpatch hook unset
@@ -2335,7 +2335,7 @@ PorousMedia::advance (Real time,
 	  {
 	    if (n_chem_interval == 0)
 	      {
-		if (verbose && ParallelDescriptor::IOProcessor())
+		if (verbose>2 && ParallelDescriptor::IOProcessor())
 		  std::cout << "... advancing full strang step for chemistry\n";
 		strang_chem(pcTime,dt,0);
 	      }
@@ -2351,7 +2351,7 @@ PorousMedia::advance (Real time,
 		    parent->levelSteps(level)%parent->nCycle(level)==parent->nCycle(level)-1 &&
 		    level == parent->finestLevel())
 		  {
-		    if (verbose && ParallelDescriptor::IOProcessor())
+		    if (verbose>2 && ParallelDescriptor::IOProcessor())
 		      std::cout << "... advancing full strang step for chemistry with dt ="
 				<< dt_chem << "\n";
 		    
@@ -2366,7 +2366,7 @@ PorousMedia::advance (Real time,
     // 
     // Check sum of components
     //
-    if (verbose) check_sum();
+    if (verbose>3) check_sum();
     
     //
     // Clean up after the predicted value at t^n+1.
@@ -2423,7 +2423,7 @@ PorousMedia::multilevel_advance (Real time,
       {
 	if (do_full_strang)
 	  {
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "... advancing 1/2 strang step for chemistry\n";
 	    
 	    for (int lev = 0; lev <= parent->finestLevel(); lev++)
@@ -2433,7 +2433,7 @@ PorousMedia::multilevel_advance (Real time,
 		FillPatchedOldState_ok = false;
 	      }
 
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "PorousMedia::advance(): end of first 1/2 Strang step\n";
 	  }
       }
@@ -2455,7 +2455,7 @@ PorousMedia::multilevel_advance (Real time,
     {
       if (do_full_strang)
 	{
-	  if (verbose && ParallelDescriptor::IOProcessor())
+	  if (verbose>2 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Second 1/2 Strang step of chemistry\n";
 	  
 	  for (int lev = 0; lev <= parent->finestLevel(); lev++)
@@ -2468,7 +2468,7 @@ PorousMedia::multilevel_advance (Real time,
 	{
 	  if (n_chem_interval == 0)
 	    {
-	      if (verbose && ParallelDescriptor::IOProcessor())
+	      if (verbose>2 && ParallelDescriptor::IOProcessor())
 		std::cout << "... advancing full strang step for chemistry\n";
 	      
 	      for (int lev = 0; lev <= parent->finestLevel(); lev++)
@@ -2484,7 +2484,7 @@ PorousMedia::multilevel_advance (Real time,
 	      
 	      if (it_chem == n_chem_interval)
 		{
-		  if (verbose && ParallelDescriptor::IOProcessor())
+		  if (verbose>2 && ParallelDescriptor::IOProcessor())
 		    std::cout << "... advancing full strang step for chemistry with dt ="
 			      << dt_chem << "\n";
 		  for (int lev = 0; lev <= parent->finestLevel(); lev++)
@@ -2508,12 +2508,12 @@ PorousMedia::multilevel_advance (Real time,
 
     pm_lev.avgDown();
 
-    if (verbose) pm_lev.check_sum();      
+    if (verbose>3) pm_lev.check_sum();      
 
     pm_lev.advance_cleanup(dt,iteration,ncycle);
   }
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>2 && ParallelDescriptor::IOProcessor())
     std::cout << "PorousMedia::advance(): end of multilevel advance\n";
 
 }
@@ -2890,7 +2890,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 	    else
 	      dt_iter = dt_new;
 
-	    if (verbose > 0 && ParallelDescriptor::IOProcessor())
+	    if (verbose > 2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "MULTILEVEL ADVANCE INNER STEP: Iter " << iter++ 
 			<< " Solver Status: " << ret 
 			<< " Time Step: " << dt_iter  << std::endl;
@@ -2960,7 +2960,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 
 	k++;
 	t = t + dt_iter;
-	if (verbose > 0 &&  ParallelDescriptor::IOProcessor())
+	if (verbose > 2 &&  ParallelDescriptor::IOProcessor())
 	  std::cout << "MULTILEVEL ADVANCE SUBCYCLE: Iter: " << k 
 		    << " Current time: " << t 
 		    << " Current time step: " << dt_iter 
@@ -3175,7 +3175,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::mac_project()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     std::cout << "... mac_projection at level " << level 
 	      << " at time " << time << '\n';
   
@@ -3277,7 +3277,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
     }
 
   // compute time spend in mac_project()
-  if (verbose > 1)
+  if (verbose > 2)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -3830,7 +3830,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::scalar_advection()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
   {
     if (reflux_on_this_call) 
       std::cout << "... advect scalars with contribution to refluxing \n";
@@ -4061,7 +4061,7 @@ PorousMedia::scalar_update (Real      dt,
 			    MultiFab* u_mac)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::scalar_update()");
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     std::cout << "... update scalars\n";
 
   int last_scalar = num_comp-1;
@@ -4124,7 +4124,7 @@ PorousMedia::scalar_advection_update (Real dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (corrector || verbose > 1) check_minmax();
+  if (corrector || verbose > 3) check_minmax();
 }
 
 void
@@ -4173,7 +4173,7 @@ PorousMedia::tracer_advection_update (Real dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (corrector || verbose > 1) check_minmax(first_scalar,last_scalar);
+  if (corrector || verbose > 3) check_minmax(first_scalar,last_scalar);
 }
 
 void
@@ -4185,7 +4185,7 @@ PorousMedia::scalar_diffusion_update (Real dt,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::scalar_diffusion_update()");
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
     std::cout << "... diffuse scalars\n";
 
   BL_ASSERT(model == model_list["single-phase"] || model == model_list["single-phase-solid"]);
@@ -4294,7 +4294,7 @@ PorousMedia::scalar_diffusion_update (Real dt,
   Real pcTime = state[State_Type].curTime();
   FillStateBndry(pcTime,State_Type,0,ncomps);
 
-  if (verbose > 1)
+  if (verbose > 2)
   {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -4306,7 +4306,7 @@ PorousMedia::scalar_diffusion_update (Real dt,
   }
     
   // Write out the min and max of each component of the new state
-  if (corrector && verbose) check_minmax();
+  if (corrector && verbose>3) check_minmax();
     
 }
 
@@ -4406,7 +4406,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 
   BL_ASSERT(do_tracer_transport);
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
   {
     std::cout << "... advect tracers\n";
   }
@@ -4735,7 +4735,7 @@ PorousMedia::strang_chem (Real time,
   BoxArray            ba = ChemistryGrids(S, parent, level);
   DistributionMapping dm = getFuncCountDM(ba,ngrow);
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
     {
       if (ngrow == 0)
 	std::cout << "*** strang_chem: FABs in tmp MF covering valid region: " << ba.size() << std::endl;
@@ -5020,7 +5020,7 @@ PorousMedia::strang_chem (Real time,
     }
 #endif
     
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -5142,7 +5142,7 @@ PorousMedia::scalar_capillary_update (Real      dt,
 				  0,alpha,cmp_pcnp1,cmp_pcnp1_dp,
 				  pcnp1_cc,S_nwt,&err_nwt);
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
 
@@ -5154,13 +5154,13 @@ PorousMedia::scalar_capillary_update (Real      dt,
       calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
       itr_nwt += 1;
 
-      if (verbose > 1)
+      if (verbose > 3)
 	check_minmax();
     }
     
   diffusion->compute_flux(nc,dt,be_cn_theta,fluxSCnp1,pcnp1_cc,cmp_pcnp1);
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       if (itr_nwt < max_itr_nwt)
 	std::cout << "Newton converged at iteration " << itr_nwt
@@ -5261,7 +5261,7 @@ PorousMedia::scalar_capillary_update (Real      dt,
   diffusion->removeFluxBoxesLevel(fluxSCn);
   diffusion->removeFluxBoxesLevel(fluxSCnp1);
     
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -5275,7 +5275,7 @@ PorousMedia::scalar_capillary_update (Real      dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
 }
 
@@ -5385,7 +5385,7 @@ PorousMedia::diff_capillary_update (Real      dt,
 				  0,alpha,tmp,cmp_pcnp1_dp,
 				  pcnp1_cc,S_nwt,&err_nwt);
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
 
@@ -5397,13 +5397,13 @@ PorousMedia::diff_capillary_update (Real      dt,
       calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
       itr_nwt += 1;
 
-      if (verbose > 1)
+      if (verbose > 3)
 	check_minmax();
     }
 
   diffusion->compute_flux(nc,dt,be_cn_theta,fluxSCnp1,pcnp1_cc,tmp);
     
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       if (itr_nwt < max_itr_nwt)
 	std::cout << "Newton converged at iteration " << itr_nwt
@@ -5494,7 +5494,7 @@ PorousMedia::diff_capillary_update (Real      dt,
   diffusion->removeFluxBoxesLevel(fluxSCn);
   diffusion->removeFluxBoxesLevel(fluxSCnp1);
     
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -5508,7 +5508,7 @@ PorousMedia::diff_capillary_update (Real      dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 }
 
 #ifdef MG_USE_FBOXLIB
@@ -5576,7 +5576,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
       diffusion->richard_iter_eqb(nc,gravity,density,res_fix,
 				  cmp_pcp1,cmp_pcp1_dp,
 				  u_mac,do_upwind,&err_nwt);      
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
       scalar_adjust_constraint(0,ncomps-1);
@@ -5590,12 +5590,12 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
       calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_n);
       itr_nwt += 1;
 
-      if (verbose > 1)	check_minmax();
+      if (verbose > 3)	check_minmax();
     }
     
   diffusion->compute_flux(nc,1.0,1.0,fluxSC,pcnp1_cc,cmp_pcp1);
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       if (itr_nwt < max_itr_nwt)
 	std::cout << "Newton converged at iteration " << itr_nwt
@@ -5647,7 +5647,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
   diffusion->removeFluxBoxesLevel(fluxSC);
     
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -5663,7 +5663,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
 }
 
@@ -5766,7 +5766,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
                 compute_vel_phase(u_mac,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
                 calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
-                if (verbose > 1) check_minmax();
+                if (verbose > 3) check_minmax();
             }
 	}
     }
@@ -5795,7 +5795,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
                 calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
                 //calc_richard_alpha(&dalpha,pcTime);
-                if (verbose > 1)  check_minmax();
+                if (verbose > 3)  check_minmax();
             }
 	}
     }
@@ -5878,7 +5878,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   ParallelDescriptor::ReduceRealMax(richard_time);
   richard_time_min = std::min(richard_time_min,richard_time);
   
-  if (verbose > 1)
+  if (verbose > 3)
     { 
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       ParallelDescriptor::ReduceRealMax(run_time,IOProc);
@@ -5891,7 +5891,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
   return retVal;
 }
@@ -6058,7 +6058,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
   ParallelDescriptor::ReduceRealMax(solve_time);
   richard_time_min = std::min(richard_time_min,richard_time);
   
-  if (0 && verbose > -1)
+  if (verbose > 3)
     { 
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       ParallelDescriptor::ReduceRealMax(run_time,IOProc);
@@ -6071,7 +6071,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
   return retVal;
 }
@@ -6572,7 +6572,7 @@ PorousMedia::sum_integrated_quantities ()
       mass += ns_level.volWgtSum("Water",time);
     }
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       const int old_prec = std::cout.precision(12);
       std::cout << "TIME= " << time << " MASS= " << mass << '\n';
@@ -7043,7 +7043,7 @@ PorousMedia::predictDT (MultiFab* u_macG)
   
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       ParallelDescriptor::ReduceRealMax(&eigmax[0], BL_SPACEDIM, IOProc);
@@ -7154,7 +7154,7 @@ PorousMedia::computeInitialDt (int                   finest_level,
   if (level > 0)
     return;
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>2 && ParallelDescriptor::IOProcessor())
     std::cout << "... computing dt at level 0 only in computeInitialDt\n";
 
   const int max_level = parent->maxLevel();
@@ -7215,7 +7215,7 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
   const Real strt_time    = state[State_Type].curTime();
   const int  finest_level = parent->finestLevel();
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>2 && ParallelDescriptor::IOProcessor())
     std::cout << "... computing dt at all levels in post_init_estDT\n";
 
   if (dt_init > 0) {
@@ -7336,7 +7336,7 @@ PorousMedia::post_timestep (int crse_iteration)
     {      
       for (int lev = 0; lev <= finest_level; lev++)
 	{
-	  if (verbose>1 && ParallelDescriptor::IOProcessor())
+	  if (verbose>2 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Final solutions at level = " 
 		      << lev << '\n';
 
@@ -7361,7 +7361,7 @@ PorousMedia::post_timestep (int crse_iteration)
          parent->levelSteps(0) >= max_step)
         && ParallelDescriptor::IOProcessor())
   {
-      if (verbose)
+      if (verbose>1)
 	{
 	  for (int i=0; i<observations.size(); ++i)
 	    {
@@ -8708,7 +8708,7 @@ PorousMedia::mac_sync ()
   //
   MultiFab& S_new = get_new_data(State_Type);
 
-  if (verbose > 1)
+  if (verbose > 3)
     {
       Real tmp = (*Ssync).norm2(0);
       if (ParallelDescriptor::IOProcessor())
@@ -8864,7 +8864,7 @@ PorousMedia::mac_sync ()
 				      0,alpha,cmp_pcnp1,cmp_pcnp1_dp,
 				      pcnp1_cc,S_nwt,&err_nwt);
 
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+	  if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Newton iteration " << itr_nwt 
 		      << " : Error = "       << err_nwt << "\n"; 
 
@@ -8876,13 +8876,13 @@ PorousMedia::mac_sync ()
 	  calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
 	  itr_nwt += 1;	  
 
-	  if (verbose > 1) 
+	  if (verbose > 3) 
 	    check_minmax();
 	}
 
       diffusion->compute_flux(nc,dt,be_cn_theta,fluxSCp1,pcnp1_cc,cmp_pcnp1);
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	{
 	  if (itr_nwt < max_itr_nwt)
 	    std::cout << "Newton converged at iteration " << itr_nwt
@@ -9010,7 +9010,7 @@ PorousMedia::richard_sync ()
   //   Ssync*dt*density[0] is the source to the actual sync amount.
   //
 
-  if (verbose > 1)
+  if (verbose > 3)
     {
       Real tmp = (*Ssync).norm2(0);
       if (ParallelDescriptor::IOProcessor())
@@ -9119,7 +9119,7 @@ PorousMedia::richard_sync ()
             err_nwt = linear_status.residual_norm_post_ls;
 
             if (linear_status.success) {
-                if (verbose > 1 && ParallelDescriptor::IOProcessor())
+                if (verbose > 3 && ParallelDescriptor::IOProcessor())
                     std::cout << "Newton iteration " << itr_nwt 
                               << " : Error = "       << err_nwt << "\n"; 
                 if (model != model_list["richard"])
@@ -9133,7 +9133,7 @@ PorousMedia::richard_sync ()
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
                 calc_richard_jac (cmp_pcp1_dp,0,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
                 itr_nwt += 1;
-                if (verbose > 1)  check_minmax();
+                if (verbose > 3)  check_minmax();
             }
 	}
     }
@@ -9152,7 +9152,7 @@ PorousMedia::richard_sync ()
 
             if (linear_status.success) {
                 linear_status.success = true;
-                if (verbose > 1 && ParallelDescriptor::IOProcessor())
+                if (verbose > 3 && ParallelDescriptor::IOProcessor())
                     std::cout << "Newton iteration " << itr_nwt 
                               << " : Error = "       << err_nwt << "\n"; 
                 calcInvPressure (S_new,P_new); 
@@ -9164,7 +9164,7 @@ PorousMedia::richard_sync ()
                 calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
                 //calc_richard_alpha(&dalpha,pcTime);
                 itr_nwt += 1;
-                if (verbose > 1)  check_minmax();
+                if (verbose > 3)  check_minmax();
             }
         }
     }
@@ -9183,7 +9183,7 @@ PorousMedia::richard_sync ()
   {  
       diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
       {
           std::cout << "Newton converged at iteration " << itr_nwt
                     << " with error " << err_nwt << '\n';
@@ -11600,7 +11600,7 @@ PorousMedia::fill_from_plotfile (MultiFab&          mf,
   if (varname.empty())
     BoxLib::Abort("fill_from_plotfile(): varname not specified");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     std::cout << "fill_from_plotfile(): reading data from: " << pltfile << '\n';
 
   DataServices::SetBatchMode();
@@ -11637,10 +11637,10 @@ PorousMedia::fill_from_plotfile (MultiFab&          mf,
   amrData.FillVar(mf, level, varname, dcomp);
   amrData.FlushGrids(idx);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     std::cout << "fill_from_plotfile(): finished init from plotfile" << '\n';
 
-  if (verbose)
+  if (verbose>3)
   {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -11749,7 +11749,7 @@ PorousMedia::check_sum()
 
   ParallelDescriptor::ReduceRealMax(&minmax[0],2,IOProc);
 
-  if (verbose>1 && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     {
       std::cout << "   SUM SATURATION MAX/MIN = " 
 		<< minmax[1] << ' ' << minmax[0] << '\n';
@@ -11786,7 +11786,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomps, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomps, IOProc);
   
-  if (0 && verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomps; kk++)
 	{
@@ -11805,7 +11805,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(&rhomaxmin[0], 1, IOProc);
   ParallelDescriptor::ReduceRealMin(&rhomaxmin[1], 1, IOProc);
 
-  if (0 && verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {  
       std::cout << "   RHO MAX/MIN "
 		<< ' ' << rhomaxmin[0] << "  " << rhomaxmin[1] << '\n';
@@ -11835,7 +11835,7 @@ PorousMedia::check_minmax(int fscalar, int lscalar)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), nscal, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), nscal, IOProc);
   
-  if (verbose>1 && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     {
         for (int kk = 0; kk < nscal; kk++)
 	{
@@ -11866,7 +11866,7 @@ PorousMedia::check_minmax(MultiFab& mf)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomp, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomp, IOProc);
   
-  if (verbose>1 && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomp; kk++)
 	{
@@ -11904,7 +11904,7 @@ PorousMedia::check_minmax(MultiFab* u_mac)
   ParallelDescriptor::ReduceRealMax(&umax[0], BL_SPACEDIM, IOProc);
   ParallelDescriptor::ReduceRealMin(&umin[0], BL_SPACEDIM, IOProc);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
   {
       D_TERM(std::cout << "   UMAC MAX/MIN  " << umax[0] << "  " << umin[0] << '\n';,
              std::cout << "   VMAC MAX/MIN  " << umax[1] << "  " << umin[1] << '\n';,
