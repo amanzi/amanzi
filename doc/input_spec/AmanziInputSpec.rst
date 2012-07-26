@@ -268,7 +268,7 @@ Usage:
 
    * [U] `"transport subcycling`" [bool] turn transport subcycling on or off. The default is false (ie. subcycling is off).
 
-   * [U] `"max chemistry to transport timestep ratio`" [double] when both chemistry and transport process kernels are on, the chemistry time step will be limited such that the ratio of (chemistry time step)/(transport time step) < this parameter. By default this parameter equals 1.0e99. I this parameter is set for example to 10.0, then we limit the chemistry time step to 10 times what the current transport time step is, such that for each chemistry sub-cycle, there will be at most 10 transport sub cycles. 
+   * [U] `"max chemistry to transport timestep ratio`" [double] when both chemistry and transport process kernels are on, the chemistry time step will be limited such that the ratio of (chemistry time step)/(transport time step) < this parameter. By default this parameter equals 10.0. I this parameter is set for example to 10.0, then we limit the chemistry time step to 10 times what the current transport time step is, such that for each chemistry sub-cycle, there will be at most 10 transport sub cycles. 
 
    * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. 
 
