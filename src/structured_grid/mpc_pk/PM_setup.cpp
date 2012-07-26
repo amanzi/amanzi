@@ -454,7 +454,7 @@ PorousMedia::InitializeStaticVariables ()
   //
   // Set all default values for static variables here!!!
   //
-  PorousMedia::num_state_type = 4;
+  PorousMedia::num_state_type = -1;
 
   PorousMedia::kappadata = 0;
   PorousMedia::phidata   = 0;
@@ -973,6 +973,8 @@ PorousMedia::variableSetUp ()
           BoxLib::Abort(std::string("Unrecognized refinement indicator for " + refinement_indicators[i]).c_str());
       }
   }
+
+  num_state_type = desc_lst.size();
 
   BoxLib::ExecOnFinalize(PM_Setup_CleanUpStatics);
 
