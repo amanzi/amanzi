@@ -60,7 +60,13 @@ void IonExchangeRxn::AddIonExchangeSite(const IonExchangeSite& site) {
 }
 
 void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
+  // pflotran: reaction.F90, function RTotalSorbEqIonX
 
+  //
+  // Note: "X" is the fraction of sites occupied by a particular
+  // cation (accounting for charge). X = sorbed_conc * charge / CEC
+  // sum(X) = 1 (res == 0), should be a requirement for convergence of
+  // the update loop.
   bool one_more;
   double tol = 1.e-12;
 
@@ -96,6 +102,9 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
         ionx_complexes_[i].set_X(value);
         total += value;
       }
+      if (false) {
+        std::cout << "-- ionx total: " << total << std::endl;
+      }
       ++interation_count;
       if (one_more) break;
       double res = 1. - total;
@@ -107,7 +116,10 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
       }
       double dref_cation_X = -res / dres_dref_cation_X;
       ref_cation_X -= dref_cation_X;
-      if (abs(dref_cation_X/ref_cation_X) < tol) one_more = true;
+      if (std::fabs(dref_cation_X/ref_cation_X) < tol &&
+          std::fabs(res) < tol) {
+        one_more = true;
+      }
     }
     ref_cation_sorbed_conc_ = ref_cation_X*omega/ref_cation_Z;
   }
@@ -132,12 +144,14 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
            ionx_complexes_.begin();
        ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
+    // NOTE: pflotran is doing a += here, but the array was zeroed out.
     ionx->set_concentration(ionx->X()*omega/primarySpecies[icomp].charge());
   }
 
 }  // end Update()
 
 void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
+  // pflotran: reaction.F90, function RTotalSorbEqIonX
   for (std::vector<IonExchangeComplex>::iterator ionx =
            ionx_complexes_.begin();
        ionx != ionx_complexes_.end(); ionx++) {
@@ -149,6 +163,7 @@ void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
 void IonExchangeRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
     MatrixBlock* dtotal) {
+  // pflotran: reaction.F90, function RTotalSorbEqIonX
 
   // sum up charges
   double sumZX = 0.;
@@ -193,6 +208,7 @@ void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primarySpecies) {
     }
   }
   set_uniform_z(uniform_z);
+  uniform_z_set_ = true;
 }
 
 void IonExchangeRxn::DisplaySite(void) const {
