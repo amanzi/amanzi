@@ -1612,32 +1612,34 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	  
 	}
 
-        // write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component
-        for (int ii=0; ii<comp_names.size(); ii++) {
-          if (! ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
-            std::stringstream ss;
-            ss << "Initial condition for solute " << comp_names[ii] << " in region " << *i << " is missing.";
-            Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
-          }
-
-          double conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Value");
-
-          std::stringstream ss;
-          ss << "Constant component concentration " << comp_names_map[ comp_names[ii] ];
-
-          stt_mat.set<double>(ss.str(), conc);
-
-          conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-9);
-          ss.clear();
-          ss.str("");
-          ss << "Free Ion Guess " << comp_names_map[ comp_names[ii] ];
-          stt_mat.set<double>(ss.str(), conc);
-          ss.clear();
-          ss.str("");
-        }
+	if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
+	    plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off") ) {
+	  // write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component
+	  for (int ii=0; ii<comp_names.size(); ii++) {
+	    if (! ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
+	      std::stringstream ss;
+	      ss << "Initial condition for solute " << comp_names[ii] << " in region " << *i << " is missing.";
+	      Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+	    }
+	    
+	    double conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Value");
+	    
+	    std::stringstream ss;
+	    ss << "Constant component concentration " << comp_names_map[ comp_names[ii] ];
+	    
+	    stt_mat.set<double>(ss.str(), conc);
+	    
+	    conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-9);
+	    ss.clear();
+	    ss.str("");
+	    ss << "Free Ion Guess " << comp_names_map[ comp_names[ii] ];
+	    stt_mat.set<double>(ss.str(), conc);
+	    ss.clear();
+	    ss.str("");
+	  }
+	}
       }
     }
-
     // write the mapping between region name and material id
     // (here material ID is an atificial integer that is only used for visualization)
     Teuchos::Array<int> matids(region_to_matid.size());
