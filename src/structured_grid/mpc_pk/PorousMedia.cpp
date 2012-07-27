@@ -10862,11 +10862,15 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
                                    geom.ProbDomain(),dest_comp,src_comp,num_comp);
 
     if (state_indx==State_Type) {
-        if (src_comp==0) {
-          dirichletStateBC(dest,time);
+        int n_c = std::min(ncomps-1,src_comp+num_comp-1) - src_comp + 1;
+        int s_t = src_comp + n_c;
+        int n_t = num_comp - n_c;
+
+        if (n_c>0) {
+            dirichletStateBC(dest,time,src_comp,dest_comp,n_c);
         }
-        else if (src_comp==ncomps) {
-           dirichletTracerBC(dest,time);
+        else if (n_t > 0) {
+            dirichletTracerBC(dest,time,s_t,dest_comp+n_c,n_t);
         }
     }
     else if (state_indx==Press_Type) {
@@ -10928,7 +10932,7 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
 }
 
 void
-PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
+PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, int nComp)
 {
     if (bc_descriptor_map.size()) 
     {
@@ -10943,7 +10947,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
         {
             const Box bndBox = it->second.first;
             const Array<int>& face_bc_idxs = it->second.second;
-            sdat.resize(bndBox,ncomps); sdat.setVal(0);
+            sdat.resize(bndBox,nComp); sdat.setVal(0);
 
             for (int i=0; i<face_bc_idxs.size(); ++i) {
                 const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
@@ -10952,25 +10956,26 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
 		  get_inflow_density(it->first,face_bc,sdat,time);
 		}
 		else {
-		  face_bc.apply(sdat,dx,0,ncomps,time);
+		  face_bc.apply(sdat,dx,0,nComp,time);
 		}
 	    }
             Box ovlp = bndBox & fab.box();
             if (ovlp.ok()) {
-                fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
+                fab.copy(sdat,ovlp,0,ovlp,dComp,nComp);
             }
         }
     }    
 }  
 
 void
-PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time)
+PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp)
 {
     BL_ASSERT(do_tracer_transport);
     
-    for (int n=0; n<ntracers; ++n) 
+    for (int n=0; n<nComp; ++n) 
     {
-        if (tbc_descriptor_map[n].size()) 
+        int tracer_idx = sComp+n-ncomps;
+        if (tbc_descriptor_map[tracer_idx].size()) 
         {
             const Box domain = geom.Domain();
             const int* domhi = domain.hiVect();
@@ -10979,19 +10984,20 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time)
             FArrayBox sdat;
             
             for (std::map<Orientation,BCDesc>::const_iterator
-                     it=tbc_descriptor_map[n].begin(); it!=tbc_descriptor_map[n].end(); ++it) 
+                     it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
             {
                 const Box bndBox = it->second.first;
                 const Array<int>& face_bc_idxs = it->second.second;
-                sdat.resize(bndBox,ntracers); sdat.setVal(0);
+                sdat.resize(bndBox,1); sdat.setVal(0);
                 
                 for (int i=0; i<face_bc_idxs.size(); ++i) {
-                    const RegionData& face_tbc = tbc_array[n][face_bc_idxs[i]];
-                    face_tbc.apply(sdat,dx,0,ntracers,time);
+                    const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
+                    face_tbc.apply(sdat,dx,0,1,time);
                 }
+
                 Box ovlp = bndBox & fab.box();
                 if (ovlp.ok()) {
-                    fab.copy(sdat,ovlp,0,ovlp,0,1);
+                    fab.copy(sdat,ovlp,0,ovlp,dComp+n,1);
                 }
             }
         }    
