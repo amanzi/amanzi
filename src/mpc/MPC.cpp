@@ -641,6 +641,14 @@ void MPC::cycle_driver() {
     }
   }
 
+  // write final visualization dump if no time stepping was done
+  if (iter == 0) {
+    ++iter;
+    S->set_cycle(iter);
+    S->write_vis(*visualization, false, true);
+  }
+
+
   // some final output
   if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
   {
