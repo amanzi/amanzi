@@ -250,7 +250,8 @@ PorousMedia::setup_bound_desc()
         const Orientation& face = Faces[iface];
         if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
         {
-            Box ccBndBox  = BoxLib::adjCell(domain,face,HYP_GROW);
+            Box ccBndBox  = BoxLib::adjCell(domain,face,1);
+
             if (ccBndBox.ok()) {
 
                 // Find BCs for this face
@@ -326,7 +327,7 @@ PorousMedia::setup_bound_desc()
         const Orientation& face = Faces[iface];
         if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
         {
-            Box ccBndBox  = BoxLib::adjCell(domain,face,HYP_GROW);
+            Box ccBndBox  = BoxLib::adjCell(domain,face,1);
             if (ccBndBox.ok()) {
 
                 // Find BCs for this face
@@ -2150,8 +2151,10 @@ PorousMedia::advance_setup (Real time,
   //
   for (int k = 0; k < num_state_type; k++)
     {
-      state[k].allocOldData();
-      state[k].swapTimeLevels(dt);
+        if (k!=FuncCount_Type && k!=Aux_Chem_Type) {
+            state[k].allocOldData();
+            state[k].swapTimeLevels(dt);
+        }
     }
   //
   // Alloc MultiFab to hold advective update terms.
@@ -4474,11 +4477,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
   MultiFab* divu_fp = new MultiFab(grids,1,1);
   (*divu_fp).setVal(0.);
 
-  MultiFab& S_new = get_new_data(State_Type); 
-  for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
-    setPhysBoundaryValues(S_new[mfi],State_Type,cur_time,fscalar,fscalar,nscal);
-  }
-
   MultiFab fluxes[BL_SPACEDIM];
   if (reflux_on_this_call && do_reflux && level < parent->finestLevel())
     {
@@ -4679,10 +4677,55 @@ PorousMedia::getFuncCountDM (const BoxArray& bxba, int ngrow)
 
 #if defined(AMANZI)
 static
+void
+TagUnusedGrowCells(MultiFab&    state, 
+		   int          state_idx,
+		   const BCRec& bc,
+		   PorousMedia& pm, 
+		   int          ngrow, 
+		   Real         tagVal,
+		   int          comp,
+		   int          nComp)
+{
+  const BoxArray& ba = state.boxArray();
+  const Geometry& geom = pm.Geom();
+  const Box& domain = geom.Domain();
+  Array<Orientation> Faces;
+  pm.getDirichletFaces(Faces,state_idx,bc);
+
+  BoxList bl_unused;
+  for (int iface = 0; iface < Faces.size(); iface++)
+    {
+      const Orientation& face = Faces[iface];
+      Box bnd = BoxLib::adjCell(domain,face,ngrow);
+      int dir = face.coordDir();
+      for (int d=0; d<BL_SPACEDIM; ++d) 
+	{
+	  bnd.grow(d,ngrow);
+	}
+      bl_unused.join(BoxLib::boxDiff(bnd,BoxLib::adjCell(domain,face,1)));
+    }
+  BoxLib::removeOverlap(bl_unused);
+  BoxArray ba_unused(bl_unused);
+
+  for (MFIter mfi(state); mfi.isValid(); ++mfi) 
+    {
+      FArrayBox& fab = state[mfi];
+      const Box& box = fab.box();
+      std::vector< std::pair<int,Box> > isects = ba_unused.intersections(box);
+      for (int ii = 0, N = isects.size(); ii < N; ii++)
+	{
+	  fab.setVal(tagVal,isects[ii].second,comp,nComp);
+	}
+    }
+}
+
+static
 BoxArray
 ChemistryGrids (const MultiFab& state,
                 const Amr*      parent,
-                int             level)
+                int             level,
+                int             ngrow)
 {
     //
     // Let's chop the grids up a bit.
@@ -4692,6 +4735,11 @@ ChemistryGrids (const MultiFab& state,
     const int NProcs = ParallelDescriptor::NProcs();
 
     BoxArray ba = state.boxArray();
+
+    if (ngrow>0) {
+        BoxList bl = BoxList(ba).accrete(ngrow);
+        ba = BoxArray(BoxLib::removeOverlap(bl));
+    }
 
     bool done = false;
 
@@ -4733,9 +4781,10 @@ PorousMedia::strang_chem (Real time,
   const Real strt_time = ParallelDescriptor::second();
 
   const TimeLevel whichTime = which_time(State_Type,time);
-  MultiFab& S = (whichTime == AmrOldTime ? get_old_data(State_Type) : get_new_data(State_Type));
+  MultiFab& S    = (whichTime == AmrOldTime ? get_old_data(State_Type)     : get_new_data(State_Type));
   MultiFab& Fcnt = (whichTime == AmrOldTime ? get_old_data(FuncCount_Type) : get_new_data(FuncCount_Type));
-  MultiFab& Aux = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type) : get_new_data(Aux_Chem_Type));
+  //MultiFab& Aux  = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type)  : get_new_data(Aux_Chem_Type));
+  MultiFab& Aux  = get_new_data(Aux_Chem_Type);
 
 #if defined(AMANZI)
   //
@@ -4769,7 +4818,7 @@ PorousMedia::strang_chem (Real time,
   //
   // Assume we are always doing funccount.
   //
-  BoxArray            ba = ChemistryGrids(S, parent, level);
+  BoxArray            ba = ChemistryGrids(S, parent, level, ngrow);
   DistributionMapping dm = getFuncCountDM(ba,ngrow);
 
   if (verbose > 2 && ParallelDescriptor::IOProcessor())
@@ -4788,6 +4837,15 @@ PorousMedia::strang_chem (Real time,
   stateTemp.copy(S,0,0,ncomps+ntracers);  // Parallel copy.
   auxTemp.copy(Aux,0,0,Aux.nComp());  // Parallel copy.
 
+  Real tagVal = -1;
+  if (ngrow>0) {
+    for (int n=0; n<ncomps+ntracers; ++n) 
+      {      
+	const BCRec& theBC = AmrLevel::desc_lst[State_Type].getBC(n);
+	TagUnusedGrowCells(S,State_Type,theBC,*this,ngrow,tagVal,n,1);
+      }
+  }
+  
   phiTemp.define(ba, 1, 0, dm, Fab_allocate);
 
   if (ngrow == 0)
@@ -4880,6 +4938,13 @@ PorousMedia::strang_chem (Real time,
     //std::cout << "Cation Exchange Capacity in comp: " << cation_exchange_capacity_comp << std::endl;
   }
 
+
+//  HACK...should be unnecessary
+  for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi) {
+    setPhysBoundaryValues(stateTemp[mfi],State_Type,time,0,0,ncomps+ntracers);
+  }
+
+
   // Grab the auxiliary chemistry data
   for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
     {
@@ -4928,15 +4993,10 @@ PorousMedia::strang_chem (Real time,
 		  IntVect iv(D_DECL(ix,iy,iz));
 		  
 		  bool allzero = true;
-		  bool skip_cell = false;
+		  bool skip_cell = fab(iv,0) < tagVal+0.1;
 		  for (int i = 0; i < ntracers && !skip_cell; ++i)
 		    {
-		      // data from the primary state fab
-		      Real value = fab(iv, ncomps+i);
-		      allzero = allzero && (value == 0);
-		      if (std::fabs(value) > uninitialized_data) {
-			skip_cell = true;
-		      }
+		      allzero = allzero && (fab(iv, ncomps+i) == 0);
 		    }
 		  skip_cell |= allzero;
 		  
@@ -10866,10 +10926,10 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
         int s_t = src_comp + n_c;
         int n_t = num_comp - n_c;
 
-        if (n_c>0) {
+        if (n_c > 0) {
             dirichletStateBC(dest,time,src_comp,dest_comp,n_c);
         }
-        else if (n_t > 0) {
+        if (n_t > 0) {
             dirichletTracerBC(dest,time,s_t,dest_comp+n_c,n_t);
         }
     }
@@ -10908,6 +10968,7 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
 				      const Box&         _domain,
 				      const Orientation& _Face) 
 {
+  // FIOXME: this should use the intersections code
     const int idir = _Face.coordDir();
 
     if (_Face.isLow())

@@ -912,7 +912,6 @@ public:
                               int        dest_comp,
                               int        src_comp,
                               int        num_comp);
-  void dirichletStateBC (const Real time);
   void dirichletStateBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
   void dirichletTracerBC(FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
   void dirichletPressBC (FArrayBox& fab, Real time);
