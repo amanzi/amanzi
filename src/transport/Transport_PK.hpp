@@ -30,7 +30,7 @@ Usage:
 #include "Reconstruction.hpp"
 
 /*
-This is Amanzi Transport Process Kernel (PK), release Beta.
+This is Amanzi Transport Process Kernel (PK).
 
 The transport PK receives a reduced (optional) copy of 
 a physical state at time n and returns a different state 
@@ -104,11 +104,8 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   void CheckDivergenceProperty();
   void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
-  void CheckTracerBounds(Epetra_MultiVector& tracer, 
-                         int component,
-                         double lower_bound,
-                         double upper_bound,
-                         double tol = 0.0) const;
+  void CheckTracerBounds(Epetra_MultiVector& tracer, int component,
+                         double lower_bound, double upper_bound, double tol = 0.0) const;
   void CheckInfluxBC() const;
 
   // access members  
@@ -126,9 +123,9 @@ class Transport_PK : public Explicit_TI::fnBase {
  private:
   // advection members
   void AdvanceDonorUpwind(double dT);
-  void AdvanceSecondOrderUpwind(double dT);
-  void AdvanceSecondOrderUpwindEulerTI(double dT);
-  void AdvanceArbitraryOrderUpwind(double dT);
+  void AdvanceSecondOrderUpwindGeneric(double dT);
+  void AdvanceSecondOrderUpwindRK1(double dT);
+  void AdvanceSecondOrderUpwindRK2(double dT);
 
   // time integration members
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
@@ -231,9 +228,9 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 
-  int cmax_owned, cmax, ncells_owned, ncells_wghost;
-  int fmax_owned, fmax, nfaces_owned, nfaces_wghost;
-  int vmax;
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
+  int nnodes_wghost;
  
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   int dim;

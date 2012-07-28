@@ -28,10 +28,12 @@ class Transport_State {
   ~Transport_State() {};
 
   // data management
-  void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target, int target_is_parallel = 1);
-  void copymemory_vector(Epetra_Vector& source, Epetra_Vector& target);
   void CopyMasterCell2GhostCell(Epetra_Vector& v);
+  void CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vv);
+  void CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vv);
   void CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
+  void CopyMasterMultiCell2GhostMultiCell(const Epetra_MultiVector& v, 
+                                          Epetra_MultiVector& vv, int parallel_comm = 1);
 
   // access methods for state variables
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration() { return total_component_concentration_; }
@@ -54,7 +56,9 @@ class Transport_State {
   // miscaleneous
   void InterpolateCellVector(
       const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int);
-  double get_time() { return (S_ == NULL) ? -1.0 : S_->get_time(); }
+  double intermediate_time() { return (S_ == NULL) ? -1.0 : S_->intermediate_time(); }
+  double initial_time() { return (S_ == NULL) ? -1.0 : S_->initial_time(); }
+  double final_time() { return (S_ == NULL) ? -1.0 : S_->final_time(); }
   
   // debug routines
   void AnalyticTotalComponentConcentration(double f_tcc(const AmanziGeometry::Point&, double), double t = 0.0);

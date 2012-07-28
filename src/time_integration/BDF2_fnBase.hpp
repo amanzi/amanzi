@@ -1,7 +1,10 @@
 #ifndef _BDF2_FNBASE_HPP_
 #define _BDF2_FNBASE_HPP_
 
+#include "Mesh.hh"
+
 class Epetra_Operator;
+
 
 namespace BDF2 {
 
@@ -11,7 +14,7 @@ namespace BDF2 {
 // usable with BDF2::Dae
 
 class fnBase {
- public:   
+ public:
   // computes the non-linear functional f = f(t,u,udot) 
   virtual void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, const double dT=0.0) = 0;
 
@@ -24,10 +27,17 @@ class fnBase {
 
   // updates the preconditioner
   virtual void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc) = 0;
-    
-  // interface for NOX
-  // virtual void compute_precon(const double t, const double dt, const Epetra_Vector& x, Teuchos::ParameterList* params) = 0;
 
+  // access to AmanziMesh
+  virtual Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh() = 0;
+  
+  // access to Epetra Map
+  virtual const Epetra_Map& super_map() = 0;
+  
+  // Aplly Preconditioner
+  virtual int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) = 0;
+    
+  
   // check the admissibility of a solution
   // override with the actual admissibility check
   virtual bool is_admissible(const Epetra_Vector& up) { return true; }

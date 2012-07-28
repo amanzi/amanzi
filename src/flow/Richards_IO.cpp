@@ -227,6 +227,10 @@ void Richards_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int* c
         *control += FLOW_TI_ERROR_CONTROL_SATURATION;
       } else if (options[i] == "residual") {
         *control += FLOW_TI_ERROR_CONTROL_RESIDUAL;
+      } else {
+        Errors::Message msg;
+        msg << "Richards Problem: unknown error control option has been specified.";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }

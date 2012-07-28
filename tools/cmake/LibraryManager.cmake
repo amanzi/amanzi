@@ -23,7 +23,7 @@ include(InstallManager)
 #
 #   SOURCE List of source files to compile 
 #
-#   HEADERS (Optional) List of heard files needed to build and use this library
+#   HEADERS (Optional) List of heard files associated with this library
 #
 #   LINK_LIBS (Optional) Defines the list of link libraries required to build and link target
 #
@@ -35,8 +35,7 @@ include(InstallManager)
 #   target. Use this option to not install the library.
 #
 #   NO_INSTALL_HEADERS (Optional) Any file found in the HEADERS variable will be added to the
-#   install by this function will be added to the install
-#   target. Use this option to not install the library.
+#   install target. Use this option to not install the library.
 #
 # 
 function(ADD_AMANZI_LIBRARY target)

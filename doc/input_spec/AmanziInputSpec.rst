@@ -268,6 +268,8 @@ Usage:
 
    * [U] `"transport subcycling`" [bool] turn transport subcycling on or off. The default is false (ie. subcycling is off).
 
+   * [U] `"max chemistry to transport timestep ratio`" [double] when both chemistry and transport process kernels are on, the chemistry time step will be limited such that the ratio of (chemistry time step)/(transport time step) < this parameter. By default this parameter equals 10.0. I this parameter is set for example to 10.0, then we limit the chemistry time step to 10 times what the current transport time step is, such that for each chemistry sub-cycle, there will be at most 10 transport sub cycles. 
+
    * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. 
 
    * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`.
@@ -316,11 +318,22 @@ Usage:
 
    * [U] `"ML cycle applications`" [int] This is the number of V-cycles that are performed in each preconditioner invocation. (The default is 2).
 
+   * [U] `"use Hypre AMG`" [bool] use Hypre BoomerAMG as a preconditioner instead of the default ML.
+
+   * [U] `"Hypre AMG tolerance`" [double] set a tolerance stopping criterion for the Hypre BoomerAMG preconditioner. If this is greater zero, then the preconditioner will run as many V-cycles as necessary to reach this prescribed accuracy, up to the maximum number of cycles that can also be specified as a parameter (see `"Hypre AMG cycle applications`").
+
+   * [U] `"Hypre AMG cycle applications`" [int] the maximum number of V-cycles that are performed per preconditioner invocation. Note that if  `"Hypre AMG tolerance`" is zero, then this is the exact number of V-cycles that are performed per preconditioner invocation.
+
+   * [U] `"Hypre AMG smoother sweeps`" [int] the number of both pre and post smoothing sweeps.
+
+   * [U] `"Hypre AMG strong threshold`" [double] set this to 0.25 for a 2D problem, and to 0.5 for a 3D problem. 
+
    * [U] `"linear solver tolerance`" [double] Set the tolerance for the AztecOO linear solver that may be used in a saturated steady state computation.
 
    * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation.
  
    * [U] `"linear solver method`" [string] Select the AztecOO linear solver that may be used in a saturated steady state computation. For example, GMRES.
+
 
    * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution.
 

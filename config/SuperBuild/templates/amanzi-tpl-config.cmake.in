@@ -53,6 +53,7 @@ set(Boost_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for Boost libraries in 
 
 # HDF5  
 set(HDF5_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "HDF5 installation prefix")
+set(HDF5_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for HDF5 libraries in system paths")
 
 # ASCEM-IO  
 set(ASCEMIO_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ASCEM-IO installation prefix")

@@ -58,7 +58,7 @@ endif()
 # Search for the PYTHON_INCLUDE_DIRS and PYTHON_LIBRARIES
 if ( PYTHON_EXECUTABLE AND (NOT PYTHON_INCLUDE_DIRS) )
 
-  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print sys.prefix"
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print(sys.prefix)"
                   OUTPUT_VARIABLE PYTHON_PREFIX
                   RESULT_VARIABLE ret
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
