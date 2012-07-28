@@ -3,7 +3,7 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
-cmake_minimum_required(VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.5)
 
 if ("${CMAKE_PATCH_VERSION}" GREATER 3)
   set(ADJUST_POLICY "True")
@@ -187,6 +187,8 @@ set(Amanzi_CMAKE_CXX_COMPILER_ARGS
      -DCMAKE_CXX_FLAGS_MINSIZEREL:STRING=${CMAKE_CXX_FLAGS_MINSIZEREL}
      -DCMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}
      -DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+
+print_variable(Amanzi_CMAKE_CXX_COMPILER_ARGS)
 
 # Fortran language flags    
 set(Amanzi_CMAKE_Fortran_COMPILER_ARGS

@@ -55,8 +55,8 @@ list(REVERSE time_integration_tpl_libs)
 add_amanzi_library(time_integration
                    SOURCE ${time_integration_source_files} HEADERS ${time_int_inc_files}
                    LINK_LIBS error_handling solvers ${time_integration_tpl_libs} atk)
-
-if (BUILD_TESTS)
+#if (BUILD_TESTS)
+if (0)
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -74,15 +74,15 @@ if (BUILD_TESTS)
     add_amanzi_test(time_integration test_time_integration
                     KIND unit
                     SOURCE 
-		          test/Main.cc
-			  test/test_solhist.cpp
-			  test/test_1Dfem.cpp
-			  test/test_Explicit_RK.cpp 
+   		          test/Main.cc
+   			  test/test_solhist.cpp
+   			  test/test_1Dfem.cpp
+   			  test/test_Explicit_RK.cpp 
                     LINK_LIBS
-		          time_integration
-			  solvers
-			  error_handling
-			  ${UnitTest_LIBRARIES}
-			  ${time_integration_tpl_libs})
+   		          time_integration
+   			  solvers
+   			  error_handling
+   			  ${UnitTest_LIBRARIES}
+   			  ${time_integration_tpl_libs})
 
 endif()

@@ -258,12 +258,19 @@ void State::initialize_from_parameter_list()
       for (int nc=0; nc<number_of_components; nc++) {
         std::stringstream s;
         s << "Constant component concentration " << nc;
-
-        tcc_const[nc] = sublist.get<double>(s.str());
+	if (sublist.isParameter(s.str())) {
+	  tcc_const[nc] = sublist.get<double>(s.str());
+	} else {
+	  tcc_const[nc] = 0.0;
+	}
         s.clear();
         s.str("");
         s << "Free Ion Guess " << nc;
-        free_ion_guess[nc] = sublist.get<double>(s.str());
+	if (sublist.isParameter(s.str())) {
+	  free_ion_guess[nc] = sublist.get<double>(s.str());
+	} else {
+	  free_ion_guess[nc] = 0.0;
+	}
         s.clear();
         s.str("");
       }

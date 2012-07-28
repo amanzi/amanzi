@@ -45,6 +45,7 @@
           <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
           <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
           <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          <Parameter name="use Hypre AMG" type="bool" value="true"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -264,7 +265,7 @@
         <Parameter name="File Name Base" type="string" value="plot"/>
         <Parameter name="File Name Digits" type="string" value="5"/>
 <!--	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/> -->
- 	<Parameter name="Time Macro" type="string" value="Every 100 years"/> 
+ 	<Parameter name="Time Macro" type="Array string" value="{Every 100 years}"/> 
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
 <!-- 	<Parameter name="Time Macro" type="string" value="Every_1000_year"/> -->
       </ParameterList>

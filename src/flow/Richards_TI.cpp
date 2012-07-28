@@ -81,6 +81,15 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
 
 
 /* ******************************************************************
+* .                                   
+****************************************************************** */
+int Richards_PK::ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
+{
+  return preconditioner_->ApplyInverse(X, Y);
+}
+
+
+/* ******************************************************************
 * Check difference du between the predicted and converged solutions.
 * This is a wrapper for various error control methods. 
 ****************************************************************** */
@@ -141,11 +150,12 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
 
 
 /* ******************************************************************
-* Error control from RC1
+* Error control from RC1 (OBSOLETE)
 ****************************************************************** */
 double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du)
 {
   double error_norm = 0.0;
+  double absolute_tol = 1.0, relative_tol = 1e-6;
   for (int n = 0; n < u.MyLength(); n++) {
     double tmp = fabs(du[n]) / (absolute_tol + relative_tol * fabs(u[n]));
     error_norm = std::max<double>(error_norm, tmp);

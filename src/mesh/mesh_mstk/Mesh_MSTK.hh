@@ -90,7 +90,9 @@ private:
   // Parent entity attribute - populated if the mesh is derived from
   // another mesh
 
-  MAttrib_ptr parentatt;
+  MAttrib_ptr rparentatt, fparentatt, eparentatt, vparentatt;
+
+  const Mesh_MSTK *parent_mesh;
   
   // Private methods
   // ----------------------------
@@ -119,6 +121,7 @@ private:
   void init_node_map();
   
   void init_set_info();
+  void inherit_labeled_sets(MAttrib_ptr copyatt);
 
   int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
 			     double x1, double y1, double z1, int nx,

@@ -75,8 +75,9 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
     total_component_concentration_ = Teuchos::rcp(new Epetra_MultiVector(cmap, number_vectors));
     darcy_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
 
-    copymemory_multivector(S.ref_total_component_concentration(), *total_component_concentration_);
-    copymemory_vector(S.ref_darcy_flux(), *darcy_flux_);
+    CopyMasterMultiCell2GhostMultiCell(
+        S.ref_total_component_concentration(), *total_component_concentration_);
+    CopyMasterFace2GhostFace(S.ref_darcy_flux(), *darcy_flux_);
 
   } else if (mode == ViewMemory) {
     porosity_ = S.porosity();
@@ -103,74 +104,8 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 
 
 /* *******************************************************************
-* Routine imports a short multivector to a parallel overlaping vector.
-* No parallel communications are performed if target_is_parallel = 0.
-******************************************************************* */
-void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
-                                             Epetra_MultiVector& target,
-                                             int target_is_parallel)
-{
-  const Epetra_BlockMap& source_cmap = source.Map();
-  const Epetra_BlockMap& target_cmap = target.Map();
-
-  int cmin, cmax, cmax_s, cmax_t;
-  cmin = source_cmap.MinLID();
-  cmax_s = source_cmap.MaxLID();
-  cmax_t = target_cmap.MaxLID();
-  cmax = std::min(cmax_s, cmax_t);
-
-  int num_vectors = source.NumVectors();
-  for (int c = cmin; c <= cmax; c++) {
-    for (int i = 0; i < num_vectors; i++) target[i][c] = source[i][c];
-  }
-
-#ifdef HAVE_MPI
-  if (target_is_parallel == 1) {
-    if (cmax_s > cmax_t) {
-      Errors::Message msg;
-      msg << "The source map is bigger than the target map.\n";
-      Exceptions::amanzi_throw(msg);
-    }
-
-    Epetra_Import importer(target_cmap, source_cmap);
-    target.Import(source, importer, Insert);
-  }
-#endif
-}
-
-
-/* *******************************************************************
-* Routine imports a short vector to a parallel overlaping vector.                
-******************************************************************* */
-void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& target)
-{
-  const Epetra_BlockMap& source_fmap = source.Map();
-  const Epetra_BlockMap& target_fmap = target.Map();
-
-  int fmin, fmax, fmax_s, fmax_t;
-  fmin   = source_fmap.MinLID();
-  fmax_s = source_fmap.MaxLID();
-  fmax_t = target_fmap.MaxLID();
-  fmax   = std::min(fmax_s, fmax_t);
-
-  for (int f = fmin; f <= fmax; f++) target[f] = source[f];
-
-#ifdef HAVE_MPI
-  if (fmax_s > fmax_t)  {
-    Errors::Message msg;
-    msg << "Source map (in copy_vector) is larger than target map.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Epetra_Import importer(target_fmap, source_fmap);
-  target.Import(source, importer, Insert);
-#endif
-}
-
-
-/* *******************************************************************
 * Copy cell-based data from master to ghost positions.              
-* WARNING: MultiVector v must contain ghost cells.                
+* WARNING: Vector v must contain ghost cells.                
 ******************************************************************* */
 void Transport_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 {
@@ -189,7 +124,30 @@ void Transport_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 
 
 /* *******************************************************************
-* Copy data in ghost positions for a multivector.              
+* Routine imports a short vector to a parallel overlapping vector.                
+******************************************************************* */
+void Transport_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vv)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
+  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  Epetra_Import importer(target_cmap, source_cmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vcells(View, source_cmap, vdata);
+
+  vv.Import(vcells, importer, Insert);
+#else
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) vv[c] = v[c];
+#endif
+}
+
+
+/* *******************************************************************
+* Copy cell-based data from master to ghost positions.              
+* WARNING: MultiVector v must contain ghost cells.                
 ******************************************************************* */
 void Transport_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 {
@@ -203,6 +161,59 @@ void Transport_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
   Epetra_MultiVector vv(View, source_cmap, vdata, v.NumVectors());
 
   v.Import(vv, importer, Insert);
+#endif
+}
+
+
+/* *******************************************************************
+* Routine imports a short multivector to a parallel overlapping multivector.                
+******************************************************************* */
+void Transport_State::CopyMasterMultiCell2GhostMultiCell(const Epetra_MultiVector& v, 
+                                                         Epetra_MultiVector& vv,
+                                                         int parallel_comm)
+{
+#ifdef HAVE_MPI
+  if (parallel_comm == 1) {
+    const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
+    const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+    Epetra_Import importer(target_cmap, source_cmap);
+
+    vv.Import(v, importer, Insert);
+  } else {
+    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int num_vectors = v.NumVectors();
+    for (int c = 0; c < ncells_owned; c++) {
+      for (int i = 0; i < num_vectors; i++) vv[i][c] = v[i][c];
+    }
+  }
+#else
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_vectors = v.NumVectors();
+  for (int c = 0; c < ncells_owned; c++) {
+    for (int i = 0; i < num_vectors; i++) vv[i][c] = v[i][c];
+  }
+#endif
+}
+
+
+/* *******************************************************************
+* Routine imports a short vector to a parallel overlapping vector.                
+******************************************************************* */
+void Transport_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vv)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_cmap = mesh_->face_map(false);
+  const Epetra_BlockMap& target_cmap = mesh_->face_map(true);
+  Epetra_Import importer(target_cmap, source_cmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vcells(View, source_cmap, vdata);
+
+  vv.Import(vcells, importer, Insert);
+#else
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) vv[f] = v[f];
 #endif
 }
 

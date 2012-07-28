@@ -17,7 +17,7 @@ find_package(Python)
 if ( PYTHON_FOUND )
 
   # Define the install location
-  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_lib(1,0,prefix='${CMAKE_INSTALL_PREFIX}')"
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib(1,0,prefix='${CMAKE_INSTALL_PREFIX}'))"
                   OUTPUT_VARIABLE AmanziPython_INSTALL_PREFIX
                   RESULT_VARIABLE prefix_err
                   OUTPUT_STRIP_TRAILING_WHITESPACE)

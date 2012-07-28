@@ -66,6 +66,7 @@ class Darcy_PK : public Flow_PK {
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
+  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; }
 
   // io members
   void ProcessParameterList();
@@ -77,8 +78,10 @@ class Darcy_PK : public Flow_PK {
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
 
   // access methods
+  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
   Epetra_Vector& ref_solution_faces() { return *solution_faces; }
   Epetra_Import& ref_face_importer() { return *face_importer_; }
+  const Epetra_Map& super_map() { return *super_map_; }
 
   double rho() { return rho_; }
   double mu() { return mu_; }

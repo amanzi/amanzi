@@ -8,6 +8,7 @@ include(FeatureSummary)
 
 # Amanzi CMake modules see <root source>/tools/cmake
 include(CheckMPISourceCompiles)
+include(TrilinosMacros)
 include(PrintVariable)
 
 
@@ -82,6 +83,7 @@ endif()
 find_package(Trilinos 10.6 REQUIRED
              HINTS ${Trilinos_DIR}
              PATH_SUFFIXES include)
+trilinos_package_enabled_tpls(Trilinos)           
             
 if ( Trilinos_FOUND )
 
@@ -94,50 +96,81 @@ if ( Trilinos_FOUND )
     # using the ALL POWERFUL(TM) Trilinos_LIBRARIES.
     # When/If we create wrappers, using this variable
     # will make that transition easier.
-    find_package(Epetra
-                 NO_MODULE
-                 HINTS ${Trilinos_DIR}
-                 PATH_SUFFIXES include
-                 )
-                
-    find_package(Teuchos
-                 NO_MODULE
-                 HINTS ${Trilinos_DIR}
-                 PATH_SUFFIXES include
-                 )
-                
-    # STK (Mesh framework) is not a default Trilinos package
-    # Must explicity build this package. This is a check to see
-    # if STK is in Trilinos. 
-    if (ENABLE_STK_Mesh)
-      find_package(STK 
-        NO_MODULE
-        HINTS ${Trilinos_DIR}
-        PATH_SUFFIXES include
-        )
+
+    # Verify that the Trilinos found has all the required packages
+    # Amanzi needs. This list changes for structured and unstructured
+    # mesh capabilities.
+    # List of required Trilinos packages
+    # Teuchos - general purpose toolkit, used through the code
+    # Epetra  - distributed data objects
+    # NOX     - nonlinear solver (Unstructured ONLY)
+    # ML      - multilevel preconditioner (Unstructured ONLY)
+    set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
+    if ( ENABLE_Unstructured )
+      list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML)
     endif()
 
-    # NOX non-linear solver used in flow
-    find_package(NOX
-                 NO_MODULE
-                 HINTS ${Trilinos_DIR}
-                 PATH_SUFFIXES include
-                 )
-                
-    # For some reason, Trilinos defines dependent TPLs in *_TPL_LIBRARIES not
-    # in *_LIBRARIES. We update the variables so the usage of these variables
-    # is consistent with other FindXXX modules.
-    list(APPEND Epetra_LIBRARIES "${Epetra_TPL_LIBRARIES}")
-    list(APPEND Epetra_INCLUDE_DIRS "${Epetra_TPL_INCLUDE_DIRS}")
-    list(APPEND Teuchos_LIBRARIES "${Teuchos_TPL_LIBRARIES}")
-    list(APPEND Teuchos_INCLUDE_DIRS "${Teuchos_TPL_INCLUDE_DIRS}")
-    list(APPEND STK_LIBRARIES "${STK_TPL_LIBRARIES}")
-    list(APPEND STK_INCLUDE_DIRS "${STK_TPL_INCLUDE_DIRS}")
-    list(APPEND NOX_LIBRARIES "${NOX_TPL_LIBRARIES}")
-    list(APPEND NOX_INCLUDE_DIRS "${NOX_TPL_INCLUDE_DIRS}")
+    foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
+      find_package(${tri_package} REQUIRED
+                   NO_MODULE
+                   HINTS ${Trilinos_DIR}
+                   PATH_SUFFIXES include lib)
+      trilinos_package_enabled_tpls(${tri_package})
+      # For some reason, Trilinos defines dependent TPLs in *_TPL_LIBRARIES not
+      # in *_LIBRARIES. We update the variables so the usage of these variables
+      # is consistent with other FindXXX modules.
+      list(APPEND ${tri_package}_LIBRARIES  "${${tri_package}_TPL_LIBRARIES}")
+      list(APPEND ${tri_package}_INCLUDE_DIRS "${${tri_package}_TPL_INCLUDE_DIRS}")
 
+    endforeach()
+
+    # Now check optional Trilinos packages
+
+    # STK - mesh 
+    if ( ENABLE_STK_Mesh )
+      find_package(STK
+                   NO_MODULE
+                   HINTS ${Trilinos_DIR}
+                   PATH_SUFFIXES include lib)
+      if (STK_FOUND)
+        trilinos_package_enabled_tpls(STK)
+        list(APPEND STK_LIBRARIES "${STK_TPL_LIBRARIES}")
+        list(APPEND STK_INCLUDE_DIRS "${STK_TPL_INCLUDE_DIRS}")
+      else()  
+        message(WARNING "Could not locate STK in ${Trilinos_DIR}. Will not enable STK_Mesh")
+        set(ENABLE_STK_Mesh OFF CACHE BOOL "Disable STK Mesh capability" FORCE)
+      endif()
+
+    endif()
+
+    option(ENABLE_HYPRE "Enable HYPRE APIs in flow" OFF)
+    if ( ENABLE_HYPRE )
+
+      # Ifpack - preconditioner package that serves as a wrapper for HYPRE
+      find_package(Ifpack 
+                   NO_MODULE
+                   HINTS ${Trilinos_DIR}
+                   PATH_SUFFIXES include lib
+                   )
+      list(APPEND Ifpack_LIBRARIES "${Ifpack_TPL_LIBRARIES}")
+      list(APPEND Ifpack_INCLUDE_DIRS "${Ifpack_TPL_INCLUDE_DIRS}")
+      if (Ifpack_FOUND)      
+        trilinos_package_enabled_tpls(Ifpack)
+      else()
+        message(SEND_ERROR "Trilinos in ${Trilinos_DIR} does not have the Ifpack package")
+      endif()
+
+      if ( NOT Ifpack_ENABLE_HYPRE )
+        message(WARNING "ENABLE_HYPRE requires the Trilinos package Ifpack with enabled HYPRE."
+                           " Deactivating HYPRE APIs")
+        set(ENABLE_HYPRE OFF CACHE BOOL "Disable the HYPRE APIs" FORCE)                 
+      endif()
+    endif()
+       
+    # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
     list(APPEND Trilinos_LIBRARIES "${Trilinos_TPL_LIBRARIES}")
     list(APPEND Trilinos_INCLUDE_DIRS "${Trilinos_TPL_INCLUDE_DIRS}")
+
 else()
     message(FATAL_ERROR "Can not locate Trilinos configuration file\n"
                         " Please define the location of your Trilinos installation\n"

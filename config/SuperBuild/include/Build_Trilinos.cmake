@@ -25,7 +25,7 @@ if(Trilinos_Build_Config_File)
 endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX)
+set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX Zoltan)
 if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
@@ -172,6 +172,7 @@ set(Trilinos_CMAKE_ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
                    ${Amanzi_CMAKE_CXX_COMPILER_ARGS})
+print_variable(Trilinos_CMAKE_LANG_ARGS)
 
 #  --- Define the Trilinos patch step
 
