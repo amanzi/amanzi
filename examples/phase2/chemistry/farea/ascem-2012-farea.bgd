@@ -1,5 +1,5 @@
 # pflotran database preprocessing :
-#        date : 20120717  13   184706.894
+#        date : 20120727   1   173758.836
 #       input : ascem-2012-1d-farea-full.in
 
 <Primary Species
@@ -61,53 +61,38 @@ UO2OSi(OH)3+ =   2.00 H2O  -1.00 H+   1.00 SiO2(aq)   1.00 UO2++  ;    2.48100 ;
   1.00 Tritium <->  ;   1.00 Tritium ;   1.78577E-09 ;  ;   0.00000E+00
 
 <Minerals
-Schoepite =   3.00 H2O  -2.00 H+   1.00 UO2++  ;   4.84430E+00 ;   3.22058E+02 ;   6.60800E+01 ;   1.00000E+00
+Quartz =   1.00 SiO2(aq)  ;  -3.75010E+00 ;   6.00843E+01 ;   2.26880E+01 ;   1.00000E+00
 Kaolinite =   5.00 H2O  -6.00 H+   2.00 Al+++   2.00 SiO2(aq)  ;   7.57000E+00 ;   2.58160E+02 ;   9.95200E+01 ;   1.00000E+00
+Goethite =   2.00 H2O  -3.00 H+   1.00 Fe+++  ;   1.75800E-01 ;   8.88537E+01 ;   2.08200E+01 ;   1.00000E+00
+Schoepite =   3.00 H2O  -2.00 H+   1.00 UO2++  ;   4.84430E+00 ;   3.22058E+02 ;   6.60800E+01 ;   1.00000E+00
 Gibbsite =   3.00 H2O  -3.00 H+   1.00 Al+++  ;   7.73800E+00 ;   7.80036E+01 ;   3.19560E+01 ;   1.00000E+00
 Jurbanite =   6.00 H2O  -1.00 H+   1.00 Al+++   1.00 SO4--  ;  -3.80000E+00 ;   2.30064E+02 ;   1.26000E+02 ;   1.00000E+00
 Basaluminite =  15.00 H2O -10.00 H+   4.00 Al+++   1.00 SO4--  ;   2.22510E+01 ;   4.64140E+02 ;   2.18934E+02 ;   1.00000E+00
 Opal =   1.00 SiO2(aq)  ;  -3.00500E+00 ;   6.00840E+01 ;   2.90000E+01 ;   1.00000E+00
-Quartz =   1.00 SiO2(aq)  ;  -3.75010E+00 ;   6.00843E+01 ;   2.26880E+01 ;   1.00000E+00
-Goethite =   2.00 H2O  -3.00 H+   1.00 Fe+++  ;   1.75800E-01 ;   8.88537E+01 ;   2.08200E+01 ;   1.00000E+00
 
 <Mineral Kinetics
-Schoepite ; TST ; log10_rate_constant   3.01030E-01 moles/cm^2/sec 
+Quartz ; TST ; log10_rate_constant  -1.33450E+01 moles/cm^2/sec 
 Kaolinite ; TST ; log10_rate_constant     -12.967 moles/cm^2/sec  ; H+   7.77000E-01 
+Goethite ; TST ; log10_rate_constant  -7.94000E+00 moles/cm^2/sec 
+Schoepite ; TST ; log10_rate_constant   3.01030E-01 moles/cm^2/sec 
 Gibbsite ; TST ; log10_rate_constant  -1.15000E+01 moles/cm^2/sec 
 Jurbanite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
 Basaluminite ; TST ; log10_rate_constant  -8.00000E+00 moles/cm^2/sec 
 Opal ; TST ; log10_rate_constant  -1.21350E+01 moles/cm^2/sec 
-Quartz ; TST ; log10_rate_constant  -1.33450E+01 moles/cm^2/sec 
-Goethite ; TST ; log10_rate_constant  -7.94000E+00 moles/cm^2/sec 
 
 <Ion Exchange Sites
 X- ; -1.0 ; Bulk
 
 <Ion Exchange Complexes
 Na+X = 1.0 Na+  1.00 X-  ;   1.00000E+00
-UO2++X = 1.0 UO2++  2.00 X-  ;   2.23872E-01
 Ca++X = 1.0 Ca++  2.00 X-  ;   3.16228E-01
 Al+++X = 1.0 Al+++  3.00 X-  ;   1.71133E+00
 H+X = 1.0 H+  1.00 X-  ;   2.51189E-02
 
 <Surface Complex Sites
->dong_kOH ;   2.25800E+01
->dong_FeOH ;   5.52000E+00
->SiOH ;   5.41900E+00
+>davis_OH ;   1.56199E-01
 
 <Surface Complexes
-(>dong_kOH)2UO2+ =   2.00 >dong_kOH  1.00 UO2++ ;  -5.30000E+00 ;   1.00
-(>dong_kOH)2UO2CO3- =   2.00 >dong_kOH  1.00 H2O  -2.00 H+  1.00 CO2(aq)  1.00 UO2++ ;   1.44700E-01 ;  -1.00
->dong_kOH2+0.5 =   1.00 >dong_kOH  1.00 H+ ;  -4.90000E+00 ;   0.50
->dong_kOH2NO3-0.5 =   1.00 >dong_kOH  1.00 H+  1.00 NO3- ;  -4.90000E+00 ;  -0.50
->dong_kOHNa+0.5 =   1.00 >dong_kOH  1.00 Na+ ;   2.10000E+00 ;   0.50
-(>dong_FeOH)2UO2+ =   2.00 >dong_FeOH  1.00 UO2++ ;  -1.41100E+01 ;   1.00
-(>dong_FeOH)2UO2CO3- =   2.00 >dong_FeOH  1.00 H2O  -2.00 H+  1.00 CO2(aq)  1.00 UO2++ ;  -4.35530E+00 ;  -1.00
->dong_FeOH2+0.5 =   1.00 >dong_FeOH  1.00 H+ ;  -9.18000E+00 ;   0.50
-(>dong_FeOH)2CO2- =   2.00 >dong_FeOH -1.00 H2O   1.00 CO2(aq) ;  -5.88530E+00 ;  -1.00
->dong_FeOCO2Na-0.5 =   1.00 >dong_FeOH -1.00 H+  1.00 CO2(aq)  1.00 Na+ ;   3.06470E+00 ;  -0.50
->SiOH2+ =   1.00 >SiOH  1.00 H+ ;   1.10000E+00 ;  -1.00
->SiO- =   1.00 >SiOH -1.00 H+ ;   8.10000E+00 ;  -1.00
->SiONa =   1.00 >SiOH -1.00 H+  1.00 Na+ ;   6.80000E+00 ;   0.00
+(>davis_O)UO2+ =   1.00 >davis_OH -1.00 H+  1.00 UO2++ ;  -4.44000E-01 ;   1.00
 
 <Isotherms
