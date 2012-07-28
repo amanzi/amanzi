@@ -254,7 +254,7 @@
       <Parameter name="File Name Digits" type="int" value="5"/>
       <Parameter name="Time Macros" type="Array string" value="{Every_year}"/>
       <Parameter name="Cycle Macros" type="Array string" value="{Every_100_steps}"/>
-<!-- 	<Parameter name="Time Macros" type="Array string" value="{Every_0.05_year}"/> -->
+      <Parameter name="Time Macros" type="Array string" value="{Every_0.05_year}"/>
     </ParameterList>
   </ParameterList>
 

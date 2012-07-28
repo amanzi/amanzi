@@ -133,11 +133,13 @@ EventCoord::TimeEvent::ThisEventDue(Real time, Real dt, Real& dt_red) const
         if ( ( ( stop < 0 ) || ( time < stop ) )
              && ( time >= start ) )
         {
-            Real intPart;
-            if ( modf( (time-start+dt)/period, &intPart ) == 0 )
-            {
-                return true;
-            }
+	Real interval_t1, interval_t2;
+	if (interval_t2!=interval_t1) 
+	  {
+	    Real desired_tpdt = start + period*(interval_t1 + 1);
+	    dt_red = desired_tpdt - time;
+	    return (dt_red > 0 && dt_red < dt);
+	  }
         }
     }
     else {
