@@ -250,7 +250,7 @@ PorousMedia::setup_bound_desc()
         const Orientation& face = Faces[iface];
         if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
         {
-            Box ccBndBox  = BoxLib::adjCell(domain,face,1);
+	    Box ccBndBox  = BoxLib::adjCell(domain,face,1);
 
             if (ccBndBox.ok()) {
 
@@ -2470,7 +2470,8 @@ PorousMedia::multilevel_advance (Real time,
 	      {
 		PorousMedia& pm_lev = getLevel(lev);
 		pm_lev.strang_chem(time,dt/2,HYP_GROW);
-		FillPatchedOldState_ok = false;
+		// FIXME: Have no code for chem-advancing grow cells
+		//FillPatchedOldState_ok = false;
 	      }
 
 	    if (verbose>2 && ParallelDescriptor::IOProcessor())
@@ -4785,6 +4786,9 @@ PorousMedia::strang_chem (Real time,
   MultiFab& Fcnt = (whichTime == AmrOldTime ? get_old_data(FuncCount_Type) : get_new_data(FuncCount_Type));
   //MultiFab& Aux  = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type)  : get_new_data(Aux_Chem_Type));
   MultiFab& Aux  = get_new_data(Aux_Chem_Type);
+
+  // FIXME: Curently have no code to set Aux_Chem_Type data at the physical boundaries, so we just punt
+  ngrow = 0;
 
 #if defined(AMANZI)
   //

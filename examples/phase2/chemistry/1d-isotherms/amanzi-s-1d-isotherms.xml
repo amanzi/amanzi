@@ -13,10 +13,9 @@
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.5778463e9"/>
-        <Parameter name="End" type="double" value="1.5778463e8"/>
         <Parameter name="Switch" type="double" value="0.0"/>
     	<Parameter name="Steady Initial Time Step" type="double" value="1.5778463e9"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.5778463e7"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1.5778463e9"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="Low"/>
@@ -191,7 +190,6 @@
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
                 <Parameter name="Values" type="Array double" value="{1.e-3, 1.e-3}"/>
-                <Parameter name="Values" type="Array double" value="{2.e-3, 2.e-3}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -200,7 +198,6 @@
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
                 <Parameter name="Values" type="Array double" value="{1.e-3, 1.e-3}"/>
-                <Parameter name="Values" type="Array double" value="{3.e-3, 3.e-3}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
