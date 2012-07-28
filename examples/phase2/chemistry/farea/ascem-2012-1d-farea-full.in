@@ -58,7 +58,6 @@ CHEMISTRY
     UO2OSi(OH)3+
   /
 
-
   REDOX_SPECIES
     Fe+++
   /
@@ -68,14 +67,14 @@ CHEMISTRY
   /
 
   MINERALS
-    Schoepite
+    Quartz
     Kaolinite
+    Goethite
+    Schoepite
     Gibbsite
     Jurbanite
     Basaluminite
     Opal
-    Quartz
-    Goethite
   /
 
   GENERAL_REACTION
@@ -124,36 +123,10 @@ CHEMISTRY
   SORPTION
     SURFACE_COMPLEXATION_RXN
       EQUILIBRIUM
-      :MINERAL Kaolinite
-      SITE >dong_kOH 22.58   : [mol/m^3 bulk]
+      :MINERAL bulk sediment
+      SITE >davis_OH 1.56199E-01  : [mol/m^3 bulk]
       COMPLEXES
-        (>dong_kOH)2UO2+
-        (>dong_kOH)2UO2CO3-
-        >dong_kOH2+0.5
-        >dong_kOH2NO3-0.5
-        >dong_kOHNa+0.5
-      /
-    /
-    SURFACE_COMPLEXATION_RXN
-      EQUILIBRIUM
-      :MINERAL Goethite
-      SITE >dong_FeOH 5.52   : [mol/m^3 bulk]
-      COMPLEXES
-        (>dong_FeOH)2UO2+
-        (>dong_FeOH)2UO2CO3-
-        >dong_FeOH2+0.5
-        (>dong_FeOH)2CO2-
-        >dong_FeOCO2Na-0.5
-     /
-    /
-    SURFACE_COMPLEXATION_RXN
-      EQUILIBRIUM
-      :MINERAL Quartz
-      SITE >SiOH 5.419   : [mol/m^3 bulk]
-      COMPLEXES
-        >SiOH2+
-        >SiO-
-        >SiONa
+        (>davis_O)UO2+
       /
     /
     ION_EXCHANGE_RXN
@@ -161,7 +134,6 @@ CHEMISTRY
       CEC 2.75  : [mol/m^3 bulk]
       CATIONS
         Na+   1.0
-        UO2++ 0.223872113857
         Ca++  0.316227766017
         Al+++ 1.71132830416
         H+    0.0251188643151
@@ -177,14 +149,14 @@ CHEMISTRY
   OUTPUT
     primary_species
     total_sorbed
-    Schoepite
+    Quartz
     Kaolinite
+    Goethite
+    Schoepite
     Gibbsite
     Jurbanite
     Basaluminite
     Opal
-    Quartz
-    Goethite
   /
 
 END

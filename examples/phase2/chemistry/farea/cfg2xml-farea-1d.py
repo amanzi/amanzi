@@ -330,8 +330,10 @@ chemistry_template = Template(
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
     <Parameter name="Auxiliary Data" type="Array string" value="{pH}"/>
+    <!-- 1.0 yr -->
+    <Parameter name="Max Time Step (s)" type="double" value="31556926.0"/>
     <!-- 0.1 yr -->
-    <Parameter name="Max Time Step (s)" type="double" value="3155692.60"/>
+<!--    <Parameter name="Max Time Step (s)" type="double" value="3155692.60"/> -->
     <!-- 0.05 yr -->
 <!--    <Parameter name="Max Time Step (s)" type="double" value="1577846.3"/> -->
     <!-- 0.01 yr -->
@@ -487,7 +489,7 @@ def mineralogy(ic_cfg_file, bgd_file, mineral_names_dict, mineral_ssa):
         if config.has_option('mineral', m):
             volume_fraction = config.getfloat('mineral', m)
         else:
-            raise Exception('Error: mineral "0" is not in mineral section.'.format(m))
+            raise Exception('Error: mineral "{0}" is not in mineral section.'.format(m))
         mineral_vf[name] = volume_fraction
     # bgd files just contains ssa = 1.0 for everything. Use the hard
     # coded values instead
@@ -529,9 +531,11 @@ def cec(ic_cfg_file):
 
     if not config.has_section('ion_exchange'):
         raise Exception('Error: no "ion_exchange" section in {0}'.format(ic_cfg_file))
-
-    value = config.getfloat('ion_exchange', 'X-')
-    cec_xml = cation_exchange_capacity_template.substitute(value=value)
+    if config.has_option('ion_exchange', 'X-'):
+        value = config.getfloat('ion_exchange', 'X-')
+        cec_xml = cation_exchange_capacity_template.substitute(value=value)
+    else:
+        cec_xml = ""
     return cec_xml
 
 def surface_complexation(bgd_file):
@@ -576,33 +580,62 @@ if __name__ == "__main__":
 
     # config parser changes upper case to lower case and we can't do a
     # nieve conversion back, so we need a translator.
-    species_names_dict = {'h+' : 'H+',
-                     'al+++' : 'Al+++',
-                     'ca++' : 'Ca++',
-                     'cl-' : 'Cl-',
-                     'fe+++' : 'Fe+++',
-                     'co2(aq)' : 'CO2(aq)',
-                     'k+' : 'K+',
-                     'mg++' : 'Mg++',
-                     'na+' : 'Na+',
-                     'sio2(aq)' : 'SiO2(aq)',
-                     'so4--' : 'SO4--',
-                     'tritium' : 'Tritium',
-                     'no3-' : 'NO3-',
-                     'uo2++' : 'UO2++'}
+    species_names_dict = {
+        'h+' : 'H+',
+        'al+++' : 'Al+++',
+        'ca++' : 'Ca++',
+        'cl-' : 'Cl-',
+        'fe+++' : 'Fe+++',
+        'co2(aq)' : 'CO2(aq)',
+        'k+' : 'K+',
+        'mg++' : 'Mg++',
+        'na+' : 'Na+',
+        'sio2(aq)' : 'SiO2(aq)',
+        'so4--' : 'SO4--',
+        'tritium' : 'Tritium',
+        'no3-' : 'NO3-',
+        'uo2++' : 'UO2++'
+        }
     # Dict doesn't preserve order, so we hard code it...
-    species_names = ['H+', 'Al+++', 'Ca++', 'Cl-', 'Fe+++', 'CO2(aq)', 'K+', 'Mg++', 'Na+', 'SiO2(aq)', 'SO4--', 'Tritium', 'NO3-', 'UO2++']
+    species_names = [
+        'H+',
+        'Al+++',
+        'Ca++',
+        'Cl-',
+        'Fe+++',
+        'CO2(aq)',
+        'K+',
+        'Mg++',
+        'Na+',
+        'SiO2(aq)',
+        'SO4--',
+        'Tritium',
+        'NO3-',
+        'UO2++',
+        ]
 
-    mineral_names_dict = {'schoepite' : 'Schoepite',
-                          'kaolinite' : 'Kaolinite',
-                          'gibbsite' : 'Gibbsite',
-                          'jurbanite' : 'Jurbanite',
-                          'basaluminite' : 'Basaluminite',
-                          'opal' : 'Opal',
-                          'quartz' : 'Quartz',
-                          'goethite' : 'Goethite'}
+    mineral_names_dict = {
+        'kaolinite' : 'Kaolinite',
+        'quartz' : 'Quartz',
+        'goethite' : 'Goethite',
+        'schoepite' : 'Schoepite',
+        'gibbsite' : 'Gibbsite',
+        'jurbanite' : 'Jurbanite',
+        'basaluminite' : 'Basaluminite',
+        'opal' : 'Opal',
+        }
 
-    mineral_names = ['Schoepite', 'Kaolinite', 'Gibbsite', 'Jurbanite', 'Basaluminite', 'Opal', 'Quartz', 'Goethite']
+    mineral_names = [
+        'Quartz',
+        'Goethite',
+        'Kaolinite',
+
+        'Schoepite',
+        'Gibbsite',
+        'Jurbanite',
+        'Basaluminite',
+        'Opal',
+        ]
 
     # pflotran doesn't write the mineral specific surface area for us,
     # so we need to hard code it.
@@ -613,11 +646,13 @@ if __name__ == "__main__":
                    'Gibbsite' : 0.1,
                    'Basaluminite' : 0.1,
                    'Opal' : 0.1,
-                   'Jurbanite' : 0.1 }
+                   'Jurbanite' : 0.1
+                   }
 
-    surface_site_names = ['>dong_kOH',
-                          '>dong_FeOH',
-                          '>SiOH']
+    surface_site_names = ['>davis_OH']
+    # surface_site_names = ['>dong_kOH',
+    #                       '>dong_FeOH',
+    #                       '>SiOH']
 
 
     complete_xml = boilerplate_main_xml.substitute(description='1-D advection with ASCEM 2012 F-Area full chemistry')

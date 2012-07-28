@@ -74,7 +74,23 @@ class Beaker {
       utilities::PrintVector("Freundlich n", isotherm_freundlich_n, 16, true);
       utilities::PrintVector("Langmuir b", isotherm_langmuir_b, 16, true);
     }
-
+    void DumpCfg(const std::vector<std::string>& names) const {
+      std::stringstream message;
+      message << std::scientific << std::setprecision(12);
+      message << "\n[total]\n";
+      for (int i = 0; i < total.size(); ++i) {
+        message << names.at(i) << " = " << total.at(i) << "\n";
+      }
+      message << "\n[total_sorbed]\n";
+      for (int i = 0; i < total_sorbed.size(); ++i) {
+        message << names.at(i) << " = " << total_sorbed.at(i) << "\n";
+      }
+      message << "\n[free_ion]\n";
+      for (int i = 0; i < free_ion.size(); ++i) {
+        message << names.at(i) << " = " << free_ion.at(i) << "\n";
+      }
+      chem_out->Write(kVerbose, message);
+    }
   };
 
   struct BeakerParameters {

@@ -224,8 +224,8 @@
     </ParameterList> <!-- Aqueous Phase -->
     
     <ParameterList name="Solid">
-      <Parameter name="Minerals" type="Array string" value="{Schoepite, Kaolinite, Gibbsite, Jurbanite, Basaluminite, Opal, Quartz, Goethite}"/>
-      <Parameter name="Sorption Sites" type="Array string" value="{>dong_kOH, >dong_FeOH, >SiOH}"/>
+      <Parameter name="Minerals" type="Array string" value="{Quartz, Goethite, Kaolinite, Schoepite, Gibbsite, Jurbanite, Basaluminite, Opal}"/>
+      <Parameter name="Sorption Sites" type="Array string" value="{>davis_OH, >dong_FeOH, >SiOH}"/>
     </ParameterList> <!-- Solid Phase -->
   </ParameterList> <!-- Phase Definitions -->
 
@@ -297,16 +297,8 @@
 
       <ParameterList name="Surface Complexation Sites">
 
-	<ParameterList name=">dong_kOH">
-	  <Parameter name="Site Density" type="double" value="22.58"/>
-	</ParameterList>
-
-	<ParameterList name=">SiOH">
-	  <Parameter name="Site Density" type="double" value="5.419"/>
-	</ParameterList>
-
-	<ParameterList name=">dong_FeOH">
-	  <Parameter name="Site Density" type="double" value="5.52"/>
+	<ParameterList name=">davis_OH">
+	  <Parameter name="Site Density" type="double" value="0.156199"/>
 	</ParameterList>
 
       </ParameterList> <!-- Surface Complexation Sites -->

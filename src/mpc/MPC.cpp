@@ -537,6 +537,9 @@ void MPC::cycle_driver() {
         }
       
         if (chemistry_enabled) {
+          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+            *out << "Chemistry PK: advancing...." << std::endl;
+          }
           try {
             CPK->advance(mpc_dT, total_component_concentration_star);
             S->update_total_component_concentration(CPK->get_total_component_concentration());

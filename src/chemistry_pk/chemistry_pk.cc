@@ -174,6 +174,7 @@ void Chemistry_PK::InitializeChemistry(void) {
       std::cout << "ChemistryPK::InitializeChemistry(): " 
                 << "An error occured while initializing chemistry in cell: " 
                 << cell << ".\n" << geochem_error.what() << std::endl;
+      beaker_components_.Display("-- input components:\n");
       Exceptions::amanzi_throw(geochem_error);
     }
 
@@ -692,9 +693,13 @@ void Chemistry_PK::advance(
       }
       ave_iterations += num_iterations;
     } catch (ChemistryException& geochem_error) {
-      std::cout << "ERROR: Chemistry_PR::advance() "
+      std::cout << "ERROR: Chemistry_PK::advance() "
                 << "cell[" << cell << "]: " << std::endl;
       std::cout << geochem_error.what();
+      std::vector<std::string> names;
+      chem_->GetPrimaryNames(&names);
+      beaker_components_copy_.DumpCfg(names);
+      beaker_components_copy_.Display("--- input ");
       chem_->DisplayTotalColumnHeaders(display_free_columns_);
       std::cout << "\nFailed Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
@@ -705,7 +710,6 @@ void Chemistry_PK::advance(
       std::cout << std::endl;
       Exceptions::amanzi_throw(geochem_error);
     }
-
     // update this cell's data in the arrays
     CopyBeakerStructuresToCellState(cell);
 
