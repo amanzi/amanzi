@@ -357,11 +357,11 @@ void MPC::cycle_driver() {
 
   
   if (flow_enabled) {
-    if (ti_mode == STEADY) {
+    if (ti_mode == STEADY  && flow_model != std::string("Steady State Saturated")) {
       FPK->InitSteadyState(S->get_time(), dTsteady);
     } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
       FPK->InitTransient(S->get_time(), dTtransient);
-    } else if ( ti_mode == INIT_TO_STEADY && flow_model == std::string("Steady State Saturated")) {
+    } else if ( (ti_mode == INIT_TO_STEADY || ti_mode == STEADY) && flow_model == std::string("Steady State Saturated")) {
       if (!restart_requested) {
 	FPK->InitSteadyState(S->get_time(), dTsteady);
 	FPK->InitializeSteadySaturated();
