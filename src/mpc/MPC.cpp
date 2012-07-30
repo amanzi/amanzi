@@ -21,6 +21,10 @@
 #include "boost/filesystem/path.hpp"
 #include "time_step_manager.hh"
 
+// make sure that we use default parameters
+// that are consistent with the input translator
+#include "InputParserIS-defaults.hh"
+
 namespace Amanzi {
 
 using amanzi::chemistry::Chemistry_State;
@@ -126,9 +130,9 @@ void MPC::mpc_init() {
   }
   
   // transport and chemistry...
-  chem_trans_dt_ratio = 10.0;
+  chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
   if (transport_enabled && chemistry_enabled) {
-    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",10.0);
+    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
   }
 
   // flow...
