@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -28,6 +29,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
+include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
@@ -57,27 +59,18 @@ add_definitions("-DUSE_MPI")
 #
 # Library: mpc
 #
-add_library(mpc MPC.cpp Unstructured_observations.cpp)
-add_install_library(mpc)
-set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
+set(boost_libs_used ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY})
+set(mpc_tpl_libs ${boost_libs_used} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
 list(REVERSE mpc_tpl_libs)
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 list(REVERSE mpc_tpl_libs)
-target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
-
-#
-# Install Targets
-#
 file(GLOB mpc_inc_files "*.hpp")
-add_install_include_file(${mpc_inc_files})
-
-#
-# Install Targets
-#
-file(GLOB mpc_inc_files "*.hpp")
-add_install_include_file(${mpc_inc_files})
+add_amanzi_library(mpc 
+                   SOURCE MPC.cpp Unstructured_observations.cpp HEADERS ${mpc_inc_files}
+                   LINK_LIBS time_integration solvers output state simple_mesh mesh_data ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
+#if (0)
 
   include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
@@ -94,16 +87,27 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit moab_mesh state mpc flow transport chemistry whetstone)
+    set(amanzi_libs geometry mesh mesh_audit mstk_mesh state mpc flow transport chemistry whetstone)
     
-    if ( ENABLE_MOAB_Mesh )
-        include_directories(${MOAB_SOURCE_DIR})
-        include_directories(${MOAB_INCLUDE_DIRS})
+    if ( ENABLE_MSTK_Mesh )
+        include_directories(${MSTK_INCLUDE_DIRS})
+        include_directories(${MSTK_SOURCE_DIR})
 
-        # Test: mpc-moab
-        add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
-        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry flow transport whetstone ${UnitTest_LIBRARIES})
-        add_amanzi_test(mpc-moab test_mpc_moab KIND int)
+	add_definitions("-DMSTK_HAVE_MPI")
+
+        # Test: mpc-mstk
+	add_amanzi_test(mpc-mstk test_mpc_mstk
+	                KIND      int
+			SOURCE    test/Main.cc test/test_driver.cpp
+			LINK_LIBS mpc
+			          mesh
+				  mstk_mesh
+				  chemistry_pk
+				  flow
+				  transport
+				  whetstone
+				  ${UnitTest_LIBRARIES})
+
     
     endif()
 

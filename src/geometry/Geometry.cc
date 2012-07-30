@@ -37,6 +37,7 @@ namespace Amanzi
 				  Point *centroid)
     {
       Point v1(3), v2(3), v3(3);
+      bool negvol = false;
 
 
       // Initialize to sane values
@@ -81,6 +82,8 @@ namespace Amanzi
               v3 = fcoords[offset+2]-center;
               tvolume = (v1^v2)*v3;
               
+              if (tvolume <= 0.0) negvol = true;
+
               (*centroid) += tvolume*tcentroid;      // sum up 1st moment
               (*volume) += tvolume;                  // sum up 0th moment
 
@@ -108,6 +111,8 @@ namespace Amanzi
               v3 = fcenter-center;
               tvolume = (v1^v2)*v3;
               
+              if (tvolume <= 0.0) negvol = true;
+
               (*centroid) += tvolume*tcentroid;      // sum up 1st moment
               (*volume) += tvolume;                  // sum up 0th moment
 	    
@@ -124,6 +129,13 @@ namespace Amanzi
 
       (*volume) /= 6; // Account for multiplier here rather than in
                       // computation of each tet
+
+      if (negvol) { // one of the subtets was inverted. Label the volume
+                    // total as negative so that calling applications 
+                    // understand that this is an invalid element
+        if (*volume > 0.0)
+          (*volume) = -(*volume);
+      }
  
     } // polyhed_get_vol_centroid
 
@@ -218,18 +230,18 @@ namespace Amanzi
 
 
 
-    // Compute area of polygon 
-
-    // In 2D, the area and centroid are computed by a contour integral
-    // around the perimeter.
+    // Compute area and centroid of polygon by connecting a center
+    // point to the edges of the polygon and summing the moments of
+    // the resulting triangles
     //
-    // In 3D, the area and centroid computed by connecting a "center"
-    // point of the polygon to the edges of the polygon and summing
-    // the moments of the resulting triangles
+    // Cannot use the contour integral method as it might indicate that a
+    // self-intersecting polygon has positive volume. This situation 
+    // might occur in dynamic meshes
 
     void polygon_get_area_centroid(const std::vector<Point> coords,
 				   double *area, Point *centroid) {
 
+      bool negvol = false;
 
       (*area) = 0;
 	centroid->set(0.0);
@@ -244,78 +256,59 @@ namespace Amanzi
 
       int dim = coords[0].dim();
 
-      switch (dim) {
-      case 2: {
-	// We may have to adjust coordinates relative to one
-	// corner of the polygon if the coordinates are very
-	// large and are generating large roundoff errors.
-
-	double moment_1x=0, moment_1y=0;
-
-	for (int i = 0; i < np; i++) {
-	  (*area) += ((coords[i].x())*(coords[(i+1)%np].y()) - 
-		      (coords[(i+1)%np].x())*(coords[i].y()));
-
-	  moment_1x += ( ((coords[i].x())*(coords[(i+1)%np].y()) - 
-			  (coords[(i+1)%np].x())*(coords[i].y())) *
-			 (coords[i].x()+coords[(i+1)%np].x()) );
-
-	  moment_1y += ( ((coords[i].x())*(coords[(i+1)%np].y()) - 
-			  (coords[(i+1)%np].x())*(coords[i].y())) *
-			 (coords[i].y()+coords[(i+1)%np].y()) );
-	}
-	    
-	(*area) /= 2;
-
-	moment_1x /= 6;
-	moment_1y /= 6;
-       
-	(*centroid).set( moment_1x/(*area), moment_1y/(*area) );
-
-	break;
-      }
-      case 3: {
-
-	Point center(3);
+      Point center(dim);
 	
-	// Compute a center point 
-	
-	for (int i = 0; i < np; i++)
-	  center += coords[i];
-	center /= np;
-	  
-	if (coords.size() == 3) { // triangle - straightforward
-	  Point v1 = coords[2]-coords[1];
-	  Point v2 = coords[0]-coords[1];
-
-	  Point v3 = v1^v2;
-
-	  *area = sqrt(v1*v1);
-	  (*centroid) = center;   
-	}
-	else {
-	  // Compute the area of each triangle formed by
-	  // the center point and each polygon edge
-	  
-	  *area = 0.0;
-	  for (int i = 0; i < np; i++) {
-	    Point v1 = coords[i]-center;
-	    Point v2 = coords[(i+1)%np]-center;
-	    
-	    Point v3 = v1^v2;
-	    
-            double area_temp = norm(v3)/2;
-	    (*area) += area_temp;
-	    (*centroid) += (coords[i]+coords[(i+1)%np]+center) * (area_temp/3.0);
-	  }
-
-	  (*centroid) /= (*area);
-	}
-	break;
+      // Compute a center point 
+      
+      for (int i = 0; i < np; i++)
+        center += coords[i];
+      center /= np;
+      
+      if (coords.size() == 3) { // triangle - straightforward
+        Point v1 = coords[2]-coords[1];
+        Point v2 = coords[0]-coords[1];
+        
+        Point v3 = v1^v2;
+        
+        *area = sqrt(v3*v3) / 2;
+        (*centroid) = center;   
       }
-      default:
-	cout << "Invalid coordinate dimensions" << std::endl;
-      } // end switch(dim)
+      else {
+        // Compute the area of each triangle formed by
+        // the center point and each polygon edge
+	
+        *area = 0.0;
+        for (int i = 0; i < np; i++) {
+          Point v1 = coords[i]-center;
+          Point v2 = coords[(i+1)%np]-center;
+	  
+          Point v3 = v1^v2;
+	  
+          double area_temp = norm(v3)/2;
+
+          // In 2D, if the cross-product is negative, the element is inverted
+          // In 3D, validity is a lot more subtle - a polygon in 3D is 
+          // "inverted" if its normal deviates "substantially" from the
+          // average normal of the "surface" in that neighborhood - we won't
+          // deal with that judgement here
+
+          if (dim == 2 && v3[0] <= 0.0)
+            negvol = true;
+
+          (*area) += area_temp;
+          (*centroid) += (coords[i]+coords[(i+1)%np]+center) * (area_temp/3.0);
+        }
+        
+        (*centroid) /= (*area);
+      }
+      
+      if (negvol) { // one of the subtris was inverted or degenerate.
+                    // Label the volume total as negative so that
+                    // calling applications understand that this is an
+                    // invalid element
+        if (*area > 0.0)
+          (*area) = -(*area);
+      }
       
     } // polygon_get_area_centroid
   

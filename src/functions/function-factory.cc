@@ -219,10 +219,11 @@ Function* FunctionFactory::create_static_head(Teuchos::ParameterList &params) co
     double p0 = params.get<double>("p0");
     double density = params.get<double>("density");
     double gravity = params.get<double>("gravity");
+    int dim = params.get<int>("space dimension");
     if (params.isSublist("water table elevation")) {
       Teuchos::ParameterList &sublist = params.sublist("water table elevation");
       std::auto_ptr<Function> water_table(factory.Create(sublist));
-      f = new StaticHeadFunction(p0, density, gravity, water_table);
+      f = new StaticHeadFunction(p0, density, gravity, water_table, dim);
     } else {
       Errors::Message m;
       m << "missing sublist \"water table elevation\"";

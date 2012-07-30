@@ -8,7 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
-include(InstallManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -19,24 +19,13 @@ include(InstallManager)
 # through these variables.
 project(DBC)
 
-#
-# Define a the list of include files
-#  will use this if/when we define an install make target
-file(GLOB dbc_inc_files "*.hh")
 
 #
-# Define source files
+# Library Target: error_handling
+#
 file(GLOB dbc_lib_files "*.cc")
-
-# Define the library 
-# add_library(<libaname> file1 file2 ... )
-add_library(error_handling ${dbc_lib_files})
-add_install_library(error_handling)
-
-#
-# Install Targets
-#
-add_install_include_file(${dbc_inc_files})
+file(GLOB dbc_inc_files "*.hh")
+add_amanzi_library(error_handling SOURCE ${dbc_lib_files} HEADERS ${dbc_inc_files})
 
 if (BUILD_TESTS)
    
@@ -48,18 +37,12 @@ if (BUILD_TESTS)
   # Add UnitTest include directory
   include_directories(${UnitTest_INCLUDE_DIRS})
 
-  # Define the test executable
-  # File containing the 'main' symbol should be listed first
-  add_executable(test_error_handling 
-                 test/Main.cc test/test_exceptions.cc test/test_dbc.cc test/test_errors.cc)
-  
-  # Define the links this binary needs
-  target_link_libraries(test_error_handling error_handling ${UnitTest_LIBRARIES})
-
-  # Add the executable to the 'make test' target
-  # this command does nothing if enable_testing() is not 
-  # called in a parent CMakeLists.txt file 
-  add_amanzi_test(error test_error_handling KIND unit)
+  # Create the error test suite
+  file(GLOB error_test_files RELATIVE ${DBC_SOURCE_DIR} "${DBC_SOURCE_DIR}/test/test*.cc")
+  add_amanzi_test(error test_error_handling
+                  KIND unit
+		  SOURCE test/Main.cc ${error_test_files}
+		  LINK_LIBS error_handling ${UnitTest_LIBRARIES})
 
 endif()
 

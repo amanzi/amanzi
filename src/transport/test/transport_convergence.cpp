@@ -49,6 +49,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   string xmlFileName = "test/transport_convergence.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
+  // convergence estimate
+  std::vector<double> h;
+  std::vector<double> L1error, L2error;
+
   for (int nx=20; nx<321; nx*=2 ) {
     // create an MSTK mesh framework 
     ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
@@ -57,35 +61,34 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
 
     // create a transport state with one component 
     int num_components = 1;
-    State mpc_state(num_components, mesh);
+    State mpc_state(num_components, 0, mesh);
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
  
     Point u(1.0, 0.0, 0.0);
-    TS->analytic_darcy_flux(u);
-    TS->analytic_total_component_concentration(f_cubic);
-    TS->analytic_porosity(1.0);
-    TS->analytic_water_saturation(1.0);
-    TS->analytic_water_density(1.0);
+    TS->AnalyticDarcyFlux(u);
+    TS->AnalyticTotalComponentConcentration(f_cubic);
+    TS->AnalyticPorosity(1.0);
+    TS->AnalyticWaterSaturation(1.0);
+    TS->AnalyticWaterDensity(1.0);
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
-  
-    TPK.set_standalone_mode(true);
+    TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
-    if (nx == 20) TPK.print_statistics();
-    TPK.verbosity_level = 0;
+    if (nx == 20) TPK.PrintStatistics();
+    TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
  
     // advance the state
     int i, k, iter = 0;
     double T = 0.0, T1 = 1.0;
 
-    RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-    RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-    RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+    RCP<Transport_State> TS_next = TPK.transport_state_next();
+    RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+    RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
     while (T < T1) {
-      double dT = std::min(TPK.calculate_transport_dT(), T1 - T);
-      TPK.advance(dT);
+      double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
+      TPK.Advance(dT);
       T += dT;
 
       *tcc = *tcc_next;
@@ -97,8 +100,19 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
+    h.push_back(5.0 / nx);
+    L1error.push_back(L1);
+    L2error.push_back(L2);
+
     delete gm;
   }
+
+  double L1rate = Amanzi::AmanziTransport::bestLSfit(h, L1error);
+  double L2rate = Amanzi::AmanziTransport::bestLSfit(h, L2error);
+  printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
+
+  CHECK_CLOSE(L1rate, 1.0, 0.1);
+  CHECK_CLOSE(L2rate, 1.0, 0.1);
 
   delete comm;
 }
@@ -123,47 +137,52 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
-  for (int nx=10; nx<81; nx*=2 ) {
+  // convergence estimate
+  std::vector<double> h;
+  std::vector<double> L1error, L2error;
+
+  for (int nx=20; nx<161; nx*=2 ) {
     RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, (const Epetra_MpiComm *)comm, gm)); 
 
     // create a transport states with one component
     int num_components = 1;
-    State mpc_state(num_components, mesh);
+    State mpc_state(num_components, 0, mesh);
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
     Point u(1.0, 0.0, 0.0);
-    TS->analytic_darcy_flux(u);
-    TS->analytic_total_component_concentration(f_cubic);
-    TS->analytic_porosity(1.0);
-    TS->analytic_water_saturation(1.0);
-    TS->analytic_water_density(1.0);
+    TS->AnalyticDarcyFlux(u);
+    TS->AnalyticTotalComponentConcentration(f_cubic);
+    TS->AnalyticPorosity(1.0);
+    TS->AnalyticWaterSaturation(1.0);
+    TS->AnalyticWaterDensity(1.0);
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
-    if (nx == 10) TPK.print_statistics();
-    TPK.verbosity_level = 0;
+    TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
+    if (nx == 20) TPK.PrintStatistics();
+    TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
 
     // advance the state
     int i, k, iter = 0;
     double T = 0.0, T1 = 2.0;
 
-    RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-    RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-    RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+    RCP<Transport_State> TS_next = TPK.transport_state_next();
+    RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+    RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
     double dT, dT0;
-    if (nx==10) dT0 = TPK.calculate_transport_dT();
+    if (nx == 20) dT0 = TPK.CalculateTransportDt();
     else dT0 /= 2;
 
     while (T < T1) {
-      dT = std::min(TPK.calculate_transport_dT(), T1 - T);
+      dT = std::min(TPK.CalculateTransportDt(), T1 - T);
       dT = std::min(dT, dT0);
 
-      TPK.advance(dT);
+      TPK.Advance(dT);
       T += dT;
       if (TPK.internal_tests) {
-        TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+        TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
       }
 
       *tcc = *tcc_next;
@@ -174,7 +193,18 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     double L1, L2;  // L1 and L2 errors
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
     printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
+
+    h.push_back(5.0 / nx);
+    L1error.push_back(L1);
+    L2error.push_back(L2);
   }
+
+  double L1rate = Amanzi::AmanziTransport::bestLSfit(h, L1error);
+  double L2rate = Amanzi::AmanziTransport::bestLSfit(h, L2error);
+  printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
+
+  CHECK_CLOSE(2.0, L1rate, 0.3);
+  CHECK_CLOSE(2.0, L2rate, 0.5);
 
   delete gm;
   delete comm;

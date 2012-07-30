@@ -21,6 +21,9 @@ class SorptionIsotherm {
 
   virtual void Display(void) const = 0;
 
+  virtual std::vector<double> GetParameters(void) const = 0;
+  virtual void SetParameters(const std::vector<double>& params) = 0;
+
   std::string name(void) const {
     return name_;
   }

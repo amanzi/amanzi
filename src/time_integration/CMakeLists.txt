@@ -22,11 +22,23 @@ project(TIME_INTEGRATION)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${FLOW_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
+include_directories(${HDF5_C_INCLUDE_DIR})
+include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # Need to move this to roo level -- lpritch
 add_definitions("-DUSE_MPI")
@@ -35,22 +47,16 @@ add_definitions("-DUSE_MPI")
 # Library: time_integration
 #
 file(GLOB time_integration_source_files "*.cpp" "*.cc")
-add_library(time_integration ${time_integration_source_files})
-add_install_library(time_integration)
+file(GLOB time_int_inc_files "*.hpp" "*.hh")
 set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE time_integration_tpl_libs)
 list(REMOVE_DUPLICATES time_integration_tpl_libs)
 list(REVERSE time_integration_tpl_libs)
-target_link_libraries(time_integration error_handling solvers ${time_integration_tpl_libs})
-
-#
-# Install Targets
-#
-file(GLOB time_int_inc_files "*.hpp" "*.hh")
-add_install_include_file(${time_int_inc_files})
-
-
-if (BUILD_TESTS)
+add_amanzi_library(time_integration
+                   SOURCE ${time_integration_source_files} HEADERS ${time_int_inc_files}
+                   LINK_LIBS error_handling solvers ${time_integration_tpl_libs} atk)
+#if (BUILD_TESTS)
+if (0)
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -65,8 +71,18 @@ if (BUILD_TESTS)
     include_directories(${TIME_INTEGRATION_SOURCE_DIR})
     include_directories(${SOLVERS_SOURCE_DIR})
 
-    add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp test/test_Explicit_RK.cpp) 
-    target_link_libraries(test_time_integration time_integration solvers error_handling ${UnitTest_LIBRARIES} ${time_integration_tpl_libs})
-    add_amanzi_test(time_integration test_time_integration KIND unit)
+    add_amanzi_test(time_integration test_time_integration
+                    KIND unit
+                    SOURCE 
+   		          test/Main.cc
+   			  test/test_solhist.cpp
+   			  test/test_1Dfem.cpp
+   			  test/test_Explicit_RK.cpp 
+                    LINK_LIBS
+   		          time_integration
+   			  solvers
+   			  error_handling
+   			  ${UnitTest_LIBRARIES}
+   			  ${time_integration_tpl_libs})
 
 endif()

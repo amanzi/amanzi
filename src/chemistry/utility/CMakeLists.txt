@@ -9,15 +9,15 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(SRCS 
-	 ./block.cc 
+	 ./matrix_block.cc 
 	 ./file_io.cc 
-	 ./glenn.cc 
 	 ./chemistry_exception.cc
+	 ./chemistry_output.cc
+	 ./chemistry_utilities.cc
 	 ./string_tokenizer.cc
-	 ./verbosity.cc
+	 ./chemistry_verbosity.cc
 )
 
-add_library(geochemutil ${SRCS}) 
-add_install_library(geochemutil)
+add_amanzi_library(geochemutil SOURCE ${SRCS}) 
 
 

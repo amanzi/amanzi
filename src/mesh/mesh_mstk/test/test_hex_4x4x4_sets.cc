@@ -22,7 +22,7 @@ TEST(MSTK_HEX_4x4x4_SETS)
                                  "Sample Point InCell", "Sample Point OnFace",
                                  "Sample Point OnEdge", "Sample Point OnVertex",
                                  "Bottom ColFunc", "Middle ColFunc", "Top ColFunc"};
-  unsigned int csetsize, expcsetsizes[12] = {9,9,9,18,9,1,2,4,8,9,9,9};
+  Amanzi::AmanziMesh::Set_ID csetsize, expcsetsizes[12] = {9,9,9,18,9,1,2,4,8,9,9,9};
   
   int expcsetcells[12][18] = {{0,1,2,3,4,5,6,7,8,-1,-1,-1,-1,-1,-1,-1,-1},
 			      {9,10,11,12,13,14,15,16,17,-1,-1,-1,-1,-1,-1,-1,-1,-1},
@@ -41,7 +41,7 @@ TEST(MSTK_HEX_4x4x4_SETS)
 				  "Face 10005", "Face 20004", "Face 30004",
                                   "ZLO FACE Plane", "YLO FACE Box"};
 
-  unsigned int expfsetids[7]={101,102,10005,20004,30004,0,0};
+  Amanzi::AmanziMesh::Set_ID expfsetids[7]={101,102,10005,20004,30004,0,0};
   
   unsigned int fsetsize, expfsetsizes[7] = {9,9,3,3,3,9,9};
 

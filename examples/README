@@ -1,0 +1,38 @@
+===============================================
+ Amanzi Examples
+===============================================
+
+This directory contains a collection of examples that showcase the
+capabilities of Amanzi.  Here we use a very inclusive definition of
+the word "example" and include our sequence of problems used to prepare
+for the demonstration simulations, as well as verification problems.
+In addition we plan to include the tutorial examples from the User
+Guide here.
+
+The high-level directory structure is as follows:
+
+  * phase1     -  Phase 1 demonstration examples
+     * f-area    -  Savannah River F-Area
+  * phase2     - Phase 2 demonstration examples
+     * dvz       -  BC Cribs Deep Vadose Zone 
+     * f-area    -  Savannah River F-Area
+     * tanks     -  Representative Waste Tanks for Savannah River
+  * python     - Python generation testing/examples (not supported yet). 
+  * verification 
+     * flow    -  Flow focused tests 
+     * transport - Transport focused tests (to be added soon)
+     * chemistry - Geochemistry (to be added soon)
+  * tutorial  (to be added soon)
+
+The naming conventions of subsequent directories and files still needs
+work.  A starting point is in phase2/dvz/ where we have a convention of
+
+ problem_string_{1d|2d}-{s|u}
+
+for directory names. Although the structured and unstructured input
+files are very similar, it seems best to explictily call out which an
+input file will invoke.  So in some cases this distinction may be made
+only a the file level, with files of both types in a single generically
+named directory.
+
+

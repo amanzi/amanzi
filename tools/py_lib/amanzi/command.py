@@ -20,14 +20,19 @@ class CommandInterface:
         try:
             import subprocess
             self.use_ospipe = False
-        except:
+	except ImportError:
             self.use_ospipe = True
+	except:
+	    print "Unexpected error:",sys.exec_info()[0]
+	    raise
+	    
 
     def _dump_state(self):
         print 'command=',self.command
         print 'args=',self.args
         print 'exit_code=',self.exit_code
         print 'output=',self.output
+        print 'use_ospipe=',self.use_ospipe
 
     def _parse_arg_list(self,args):
         list_args=[]
@@ -37,10 +42,11 @@ class CommandInterface:
             list_args = shlex.split(args)
         else:
             raise TypeError, 'args must be of type list or str'
-
+        self.args = list_args 
         return list_args
 
     def _build_run_command(self):
+        string=' '.join(self.args)
         return self.command + ' ' + ' '.join(self.args)
 
     def _parse_shell_exit(self,pattern):
@@ -59,10 +65,11 @@ class CommandInterface:
         return self.args
 
     def add_args(self,args):
-        new_args = self._parse_arg_list(args)
-        for item in new_args:
-            self.args.append(item)
-
+        if len(self.args) == 0:
+	  self.set_args(args)
+	else:  
+          new_args = self._parse_arg_list(args)
+	  self.args.append(new_args)
         return self.args
 
     def search_args(self,target,index=None):
@@ -86,18 +93,32 @@ class CommandInterface:
     
     def _subprocess_run(self):
 
-        try:
-            import subprocess
-            from subprocess import Popen,PIPE,STDOUT
-            run_command=self._build_run_command()
-            pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
-            output = pipe.stdout
-            self.output = output.read()
-            output.close()
-            self.exit_code = pipe.wait()
-            print self.output
-        except:
-            raise ImportError, 'Python module subprocess is not available'
+        import subprocess
+        from subprocess import Popen,PIPE,STDOUT
+	import time
+	import signal
+
+        run_command=self._build_run_command()
+	try:
+          pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
+	except ValueError:
+	  raise ValueError, 'Incorrect arguments in Popen'
+	except:
+	  raise
+	else:
+	  output=pipe.stdout
+	  self.ouput=output.read()
+	  output.close
+
+        # Do not leave until the process completes!
+        while pipe.poll() == None:
+	  pass
+
+        # Set the return code
+        self.exit_code=pipe.returncode 
+        
+        # Dump out the output
+	print self.output
 
         return self.exit_code
 
@@ -143,7 +164,7 @@ if __name__ == '__main__':
     cmd = Command(command,args=args)
     cmd._dump_state()
 
-
+    yacmd = Command('which','h5diff')
 
     bad_cmd=Command('dummy_exe')
     bad_cmd._dump_state()

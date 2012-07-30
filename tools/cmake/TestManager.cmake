@@ -7,71 +7,20 @@
 include(CMakeParseArguments)
 include(PrintVariable)
 
+function(_APPEND_TEST_LABEL test_name label)
 
-function (_REGISTER_TEST test_name test_exec test_args nprocs is_parallel mpi_args)
-
-  if ("${nprocs}" STREQUAL "")
-    set(nprocs 1)
+  get_test_property(${test_name} LABELS current_labels)
+  if (current_labels)
+    set_tests_properties(${test_name} PROPERTIES LABELS "${current_labels};${label}")
+  else()  
+    set_tests_properties(${test_name} PROPERTIES LABELS "${label}")
   endif()
 
-  foreach(nproc ${nprocs})
-      if ((${nproc} GREATER 1) OR "${is_parallel}" OR "${TESTS_REQUIRE_MPIEXEC}")
-      _add_parallel_test(${test_name} ${test_exec} "${test_args}" ${nproc} "${mpi_args}")
-      _add_test_labels(${test_name} "PARALLEL")
-    else()
-      add_test(${test_name} ${test_exec} ${test_args})
-      _add_test_labels(${test_name} "SERIAL")
-    ENDIF()
-  endforeach()
-
-endfunction(_REGISTER_TEST)
-
-
-
-function(_ADD_PARALLEL_TEST test_name test_exec test_args nproc mpi_args)
-
-  set(_options  "")
-  set(_oneValue "")
-  set(_multiValue "MPI_EXEC_ARGS")
-  cmake_parse_arguments(ADD_PARALLEL_TEST "${_options}" "${_oneValue}" "${_multiValue}" ${ARGN}) 
-
-  # Do not allow mpi_exec to run more than the MAX_NPROCS
-  if ( MPI_EXEC_MAX_NUMPROCS )
-    if (${MPI_EXEC_MAX_NUMPROCS} LESS ${nproc}  )
-      set(nproc ${MPI_EXEC_MAX_NUMPROCS})
-      message(WARNING "Test ${test_name} requested too many procs. "
-        "Will run ${test_name} with ${nproc} ranks")
-    endif()
-  endif()
-
-  # Build MPI_EXEC cpmmand
-  # This will have to change if POE is used as MPI_EXEC!
-  set(_mpi_cmd "${MPI_EXEC}" "${MPI_EXEC_NUMPROCS_FLAG}" "${nproc}" "${MPI_EXEC_ARGS_FLAG}" "${mpi_args}" "${test_exec}" "${test_args}")
-
-  # Register the test
-  add_test(${test_name} ${_mpi_cmd})
-
-endfunction(_ADD_PARALLEL_TEST)
-
-
-
-function(_ADD_TEST_LABELS test_name)
-
-  get_test_property(${test_name} LABELS labels)
-  if ("${labels}" STREQUAL "NOTFOUND")
-    unset(labels)
-  endif()
-
-  list(APPEND labels "${ARGN}")
-  list(REMOVE_DUPLICATES labels)
-  set_tests_properties(${test_name} PROPERTIES LABELS "${labels}")
-
-endfunction(_ADD_TEST_LABELS)
-
+endfunction(_APPEND_TEST_LABEL)
 
 function(_ADD_TEST_KIND_LABEL test_name kind_in)
 
-  set(kind_prefixes UNIT INT REG)
+  set(kind_prefixes UNIT INT REG AMANZI)
 
   string(TOUPPER "${kind_in}" kind)
 
@@ -83,32 +32,41 @@ function(_ADD_TEST_KIND_LABEL test_name kind_in)
   endforeach()
 
  if (match)
-    _add_test_labels("${test_name}" "${match}")
+    _append_test_label(${test_name} ${match})
   else()
-    message(FATAL_ERROR, "No, or invalid test kind specified.")
+    message(FATAL_ERROR "Invalid test label ${kind_in} (Valid Labels:${kind_prefixes})")
   endif()
 
-endfunction()
-
-
+endfunction(_ADD_TEST_KIND_LABEL)
 
 
 # Usage:
 #
 # ADD_AMANZI_TEST(<test_name> <test_executable>
 #                  [arg1 ...]
-#                  KIND [unit | int | reg]
-#                  PARALLEL
+#                  KIND [unit | int | reg | AMANZI ]
+#                  [AMANZI_INPUT file.xml]
+#                  [SOURCE file1 file2  ...]
+#                  [LINK_LIBS lib1 lib2 ...]
+#                  [DEPENDS test1 test2 ...]
+#                  [PARALLEL] [EXPECTED_FAIL]
 #                  [NPROCS procs1 ... ]
-#                  [MPI_EXEC_ARGS arg1 ... ]
+#                  [MPI_EXEC_ARGS arg1 ... ])
+
 #
 # Arguments:
 #  test_name: the name given to the resulting test in test reports
-#  test_executable: The test executable which performs the test
+#  test_executable: The test executable which performs the test. 
+#                   Required if KIND is unit, int or reg
 #  arg1 ...: Additional arguments for the test executable
 #
-# Keyword KIND is required and should be one of unit, int or reg. 
-
+# Keyword KIND is required and should be one of unit, int, reg or AMANZI.
+#         AMANZI is a special case where the test executable is
+#         set to the main Amanzi binary.
+#
+# KEYWORD AMANZI_INPUT is required if keyword KIND is set to AMANZI. This
+#         key word defines the Amanzi XML input file.
+#
 # Option PARALLEL signifies that this is a parallel job. This is also
 # implied by an NPROCS value > 1
 #
@@ -117,37 +75,201 @@ endfunction()
 #
 # Optional MPI_EXEC_ARGS keyword denotes extra arguments to give to
 # mpi. It is ignored for serial tests.
+#
+# Optional SOURCE_FILES keyword that defines a list of source files
+# required to build test_executable. An add_executable call will be made
+# if this option is active.
+#
+# Optional LINK_LIBS keyword defines a list of link libraries or link options
+# to link test_executable. An target_link_libraries call will be made if
+# this option is active.
+#
+# Optional DEPENDS keyword defines a list of tests that should finish before
+# test_name
 
+function(ADD_AMANZI_TEST test_name)
 
-function(ADD_AMANZI_TEST test_name test_exec)
+  # --- Initialize 
 
-  set(options "PARALLEL")
-  set(oneValueArgs "KIND")
-  set(multiValueArgs "NPROCS" "FILES")
-
-  cmake_parse_arguments(AMANZI_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-  set(test_args    "${AMANZI_TEST_UNPARSED_ARGUMENTS}")
-  set(is_parallel  "${AMANZI_TEST_PARALLEL}")
-  set(kind_in      "${AMANZI_TEST_KIND}")
-  set(mpi_args     "${AMANZI_TEST_MPI_EXEC_ARGS}")
-  set(nprocs       "${AMANZI_TEST_NPROCS}")
-  
-  separate_arguments(global_mpi_args UNIX_COMMAND "${MPI_EXEC_ARGS}")
-  list(APPEND mpi_args ${global_mpi_args})
-
-  # Append current CMAKE_CURRENT_BINARY_DIR if full path names are required
-  if ( TESTS_REQUIRE_FULLPATH )
-      if ( NOT ("${test_exec}" MATCHES "^/") )
-        set(_tmp      "${CMAKE_CURRENT_BINARY_DIR}/${test_exec}")
-        set(test_exec "${_tmp}")
-      endif()  
+  # Check test_name
+  if ( NOT test_name )
+    message(FATAL_ERROR "Must define a test name.")
   endif()
 
+  # Parse through the remaining options
+  set(options PARALLEL EXPECTED_FAIL)
+  set(oneValueArgs KIND AMANZI_INPUT)
+  set(multiValueArgs NPROCS SOURCE LINK_LIBS DEPENDS MPI_EXEC_ARGS)
+  cmake_parse_arguments(AMANZI_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  _register_test("${test_name}" "${test_exec}" "${test_args}" "${nprocs}" "${is_parallel}" "${mpi_args}")
+  # --- Check options
 
-  _add_test_kind_label("${test_name}" "${kind_in}")
+  # Require a KIND value
+  if ( NOT AMANZI_TEST_KIND )
+    message(FATAL_ERROR "A test type has not been specified for ${test_name}.")
+  endif()
+
+  # Force each test to parallel run if mpiexec is required
+  if(TESTS_REQUIRE_MPIEXEC)
+    set(AMANZI_TEST_PARALLEL TRUE)
+  endif()
+
+  # Force each PARALLEL TRUE if NPROCS set 
+  if(AMANZI_TEST_NPROCS AND ( "${AMANZI_TEST_NPROCS}" GREATER 1 ) )
+    set(AMANZI_TEST_PARALLEL TRUE)
+  endif()  
+
+  # Default to nprocs=1 when running parallel
+  if ( AMANZI_TEST_PARALLEL AND (NOT AMANZI_TEST_NPROCS) )
+    set(AMANZI_TEST_NPROCS 1)
+  endif() 
+
+  # Test the value of number of procs value
+  if(AMANZI_TEST_NPROCS)
+    if(NOT ("${AMANZI_TEST_NPROCS}" GREATER 0) )
+      message(FATAL_ERROR "${AMANZI_TEST_NPROCS} is an invalid NPROCS value.")
+    endif()
+
+    if(MPI_EXEC_MAX_NUMPROCS AND AMANZI_TEST_PARALLEL)
+      if ( "${MPI_EXEC_MAX_NUMPROCS}" LESS "${AMANZI_TEST_NPROCS}")
+        message(WARNING "Test ${test_name} request too many nprocs (${AMANZI_TEST_NPROCS}). "
+                        "Will skip this test.")
+        return()
+      endif()
+    endif()
+  endif()
+
+  # --- Define the test executable
+
+  if ( "${AMANZI_TEST_KIND}" MATCHES "AMANZI" )
+
+    # In this case, we need the Amanzi target definition
+    if (NOT TARGET amanzi )
+      message(FATAL_ERROR "Can not define an Amanzi test before defining Amanzi binary")
+    endif()  
+
+    get_target_property(base amanzi OUTPUT_NAME)
+    get_target_property(dir  amanzi OUTPUT_DIRECTORY)
+    set(test_exec "${dir}/${base}")
+   
+  else() 
+   
+    # Do not set if this variable is empty
+    if ( AMANZI_TEST_UNPARSED_ARGUMENTS )
+      list(GET AMANZI_TEST_UNPARSED_ARGUMENTS 0 test_exec)
+      list(REMOVE_AT AMANZI_TEST_UNPARSED_ARGUMENTS 0)
+    endif()  
+
+    # Throw an error if test_exec is not defined
+    if ( NOT test_exec )
+      message(FATAL_ERROR "Must define a test executable for ${test_name}")
+    endif()  
+
+    # Create the executable if SOURCE is defined
+    if(AMANZI_TEST_SOURCE)
+      add_executable(${test_exec} ${AMANZI_TEST_SOURCE})
+    endif()
+
+    # Add link libraries if needed
+    if(AMANZI_TEST_LINK_LIBS)
+      target_link_libraries(${test_exec} ${AMANZI_TEST_LINK_LIBS})
+    endif()
+
+  endif()  
+
+  
+  # --- Define the test arguments
+
+  set(test_args "${AMANZI_TEST_UNPARSED_ARGUMENTS}")
+  if ( "${AMANZI_TEST_KIND}" MATCHES "AMANZI" )
+    
+    # In this case, we need an Amanzi input file
+    if ( NOT AMANZI_TEST_AMANZI_INPUT )
+      message(FATAL_ERROR "Amanzi tests require an Amanzi input file")
+    endif()
+
+    set(test_args "--xml_file;${AMANZI_TEST_AMANZI_INPUT};${test_args}")
+
+  endif()  
+
+  # --- Add test
+
+  # Adjust the execuable name if NOT fullpath AND TESTS_REQUIRE_FULLPATH is set
+  if ( TESTS_REQUIRE_FULLPATH )
+    if ( NOT ("${test_exec}" MATCHES "^/") )
+      set(_tmp      "${CMAKE_CURRENT_BINARY_DIR}/${test_exec}")
+      set(test_exec "${_tmp}")
+    endif()  
+  endif()
+
+  # Construct the test execution command
+  set(add_test_exec)
+  set(add_test_args)
+  if (AMANZI_TEST_PARALLEL)
+
+    if ( MPI_EXEC_GLOBAL_ARGS )
+      separate_arguments(global_mpi_args UNIX_COMMAND "${MPI_EXEC_GLOBAL_ARGS}")
+    endif() 
+
+    set(add_test_exec ${MPI_EXEC})
+    set(add_test_args
+                      ${MPI_EXEC_NUMPROCS_FLAG}
+                      ${AMANZI_TEST_NPROCS}
+                      ${global_mpi_args}
+                      ${AMANZI_TEST_MPI_EXEC_ARGS}
+                      ${MPI_EXEC_PREFLAGS}
+                      ${test_exec}
+                      ${MPI_EXEC_POSTFLAGS}
+                      ${test_args})
+  else()
+    set(add_test_exec ${test_exec})
+    set(add_test_args ${test_args})
+  endif()
+
+  # Call add_test
+  add_test(NAME ${test_name} COMMAND ${add_test_exec} ${add_test_args})
+
+  # --- Add test properties
+
+  # Labels
+  _add_test_kind_label(${test_name} ${AMANZI_TEST_KIND})
+  if ( AMANZI_TEST_PARALLEL AND AMANZI_TEST_NPROCS )
+    if ( ${AMANZI_TEST_NPROCS} GREATER 1 )
+      _append_test_label(${test_name} PARALLEL)
+    else()
+      _append_test_label(${test_name} SERIAL)
+    endif()  
+  else()  
+    _append_test_label(${test_name} SERIAL)
+  endif()
+
+  # Add test dependencies
+  if ( AMANZI_TEST_DEPENDS )
+    set_tests_properties(${test_name} PROPERTIES
+                         DEPENDS "${AMANZI_TEST_DEPENDS}")
+  endif()		       
+  
+  # Remaining properties are single valued. Building 
+  # test_properties as a list should get past the CMake parser.
+
+  # Timeout
+  if ( TESTS_TIMEOUT_THRESHOLD )
+    list(APPEND test_properties TIMEOUT ${TESTS_TMIEOUT_THRESHOLD})
+  endif()
+
+  # CTest needs to know how procs this test needs
+  if ( AMANZI_TEST_PARALLEL )
+    list(APPEND test_properties PROCESSORS ${AMANZI_TEST_NPROCS})
+  endif()
+
+  # Set expected failure flag
+  if ( AMANZI_TEST_EXPECTED_FAIL )
+     list(APPEND test_properties WILL_FAIL TRUE)
+  endif() 
+
+  if ( test_properties )
+    set_tests_properties(${test_name} PROPERTIES ${test_properties})
+  endif()
 
 endfunction(ADD_AMANZI_TEST)
 

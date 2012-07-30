@@ -40,15 +40,10 @@ add_definitions("-DUSE_MPI -DMSTK_HAVE_MPI")
 # Library: mstk_mesh
 #
 set(mstk_mesh_files Mesh_MSTK.cc) 
-add_library(mstk_mesh ${mstk_mesh_files})
-add_install_library(mstk_mesh)
-target_link_libraries(mstk_mesh mesh geometry error_handling ${MSTK_LIBRARY} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-
-#
-# Install Targets
-#
 file(GLOB mstk_inc_files "*.hh")
-add_install_include_file(${mstk_inc_files})
+add_amanzi_library(mstk_mesh
+                   SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
+                   LINK_LIBS geometry mesh mesh_data ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
     
@@ -63,26 +58,31 @@ if (BUILD_TESTS)
 
 
     # Test: mstk_mesh
-    add_executable(test_mstk_mesh 
-                   test/Main.cc 
-                   test/test_hex_2x2x2.cc
-                   test/test_hex_3x3x2.cc
-                   test/test_hex_4x4x4.cc
-	           test/test_hex_4x4x4_sets.cc
-		   test/test_hex_gen_4x4x4.cc
-		   test/test_quad_gen_4x4.cc)
-    target_link_libraries(test_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(mstk_mesh test_mstk_mesh KIND unit)
+    add_amanzi_test(mstk_mesh test_mstk_mesh
+                    KIND int
+                    SOURCE
+                         test/Main.cc 
+                         test/test_hex_2x2x2.cc
+                         test/test_hex_3x3x2.cc
+                         test/test_hex_4x4x4.cc
+                         test/test_hex_4x4x4_sets.cc
+                         test/test_hex_gen_4x4x4.cc
+                         test/test_quad_gen_4x4.cc
+                         test/test_extract_surface.cc
+                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES}) 
 
     # Test: mstk_mesh_parallel
-    add_executable(test_parallel_mstk_mesh
-        test/Main.cc
-        test/test_hex_4x4x4_4P.cc
-	test/test_hex_4x4x4_sets_4P.cc
-	test/test_quad_gen_4x4_4P.cc
-	test/test_hex_gen_4x4x4_4P.cc)
-    target_link_libraries(test_parallel_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh NPROCS 4 KIND unit)
+    add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh
+                    KIND unit
+                    NPROCS 4
+                    SOURCE
+                         test/Main.cc
+                         test/test_hex_4x4x4_4P.cc
+                         test/test_hex_4x4x4_sets_4P.cc
+                         test/test_quad_gen_4x4_4P.cc
+                         test/test_hex_gen_4x4x4_4P.cc
+			 test/test_extract_surface_4P.cc
+                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES})
 
 endif()
 

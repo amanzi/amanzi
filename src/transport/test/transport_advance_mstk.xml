@@ -10,7 +10,7 @@
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="String" value="101"/>
-        <Parameter name="File" type="String" value="../mesh/mesh_mstk/test/hex_4x4x4_ss.exo"/>
+        <Parameter name="File" type="String" value="hex_4x4x4_ss.exo"/>
         <Parameter name="Format" type="String" value="Exodus II"/>
         <Parameter name="Entity" type="String" value="Cell"/>
       </ParameterList>
@@ -18,7 +18,7 @@
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="String" value="103"/>
-        <Parameter name="File" type="String" value="../mesh/mesh_mstk/test/hex_4x4x4_ss.exo"/>
+        <Parameter name="File" type="String" value="hex_4x4x4_ss.exo"/>
         <Parameter name="Format" type="String" value="Exodus II"/>
         <Parameter name="Entity" type="String" value="Face"/>
       </ParameterList>
@@ -29,11 +29,15 @@
     <Parameter name="CFL" type="double" value="0.5"/>   
     <Parameter name="spatial discretization order" type="int" value="1"/>   
     <Parameter name="temporal discretization order" type="int" value="1"/>   
+    <Parameter name="advection limiter" type="string" value="Tensorial"/>
     <!-- developers parameters --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
-    <Parameter name="verbosity level" type="int" value="10"/>  
     <!-- end of developers parameters -->
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
 
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="2"/>

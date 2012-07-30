@@ -46,42 +46,41 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4.par", comm, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_STK("test/cube_4x4x4.par", comm, gm));
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();
    
   // create a transport state with two component 
   int num_components = 2;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);
-  TS->analytic_total_component_concentration(f_step);
-  TS->analytic_porosity();
-  TS->analytic_darcy_flux(u);
-  TS->analytic_water_saturation();
+  TS->AnalyticTotalComponentConcentration(f_step);
+  TS->AnalyticPorosity();
+  TS->AnalyticDarcyFlux(u);
+  TS->AnalyticWaterSaturation();
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
-  TPK.set_standalone_mode(true);
+  TPK.InitPK();
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();  
-  TPK.advance(dT);
+  double dT = TPK.CalculateTransportDt();  
+  TPK.Advance(dT);
 
   // printing cell concentration
   int  iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   while(T < 1.0) {
-    dT = TPK.calculate_transport_dT();
-    TPK.advance(dT);
+    dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 

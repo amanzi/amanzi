@@ -1,6 +1,11 @@
 /*
 This is the transport component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
   Transport_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Transport_State> TS);
@@ -18,14 +23,14 @@ Usage:
 
 #include "tensor.hpp"
 #include "Explicit_TI_fnBase.hpp"
-#include "boundary-function.hh"
+#include "boundary_function.hh"
 
 #include "State.hpp"
 #include "Transport_State.hpp"
 #include "Reconstruction.hpp"
 
 /*
-This is Amanzi Transport Process Kernel (PK), release Beta.
+This is Amanzi Transport Process Kernel (PK).
 
 The transport PK receives a reduced (optional) copy of 
 a physical state at time n and returns a different state 
@@ -72,7 +77,15 @@ const int TRANSPORT_LIMITER_TENSORIAL = 2;
 const int TRANSPORT_LIMITER_KUZMIN = 3;
 const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
+const int TRANSPORT_VERBOSITY_NONE = 0;
+const int TRANSPORT_VERBOSITY_LOW = 1;
+const int TRANSPORT_VERBOSITY_MEDIUM = 2;
+const int TRANSPORT_VERBOSITY_HIGH = 3;
+const int TRANSPORT_VERBOSITY_EXTREME = 4;
+
 const int TRANSPORT_AMANZI_VERSION = 2;  
+
+double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
 
 class Transport_PK : public Explicit_TI::fnBase {
@@ -83,96 +96,96 @@ class Transport_PK : public Explicit_TI::fnBase {
   ~Transport_PK() { for (int i=0; i<bcs.size(); i++) delete bcs[i]; }
 
   // primary members
-  double calculate_transport_dT();
-  void advance(double dT, int subcycling = 0);
-  void commit_state(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
+  int InitPK();
+  double EstimateTransportDt();
+  double CalculateTransportDt();
+  void Advance(double dT);
+  void CommitState(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
 
-  void check_divergence_property();
-  void check_GEDproperty(Epetra_MultiVector& tracer) const; 
-  void check_tracer_bounds(Epetra_MultiVector& tracer, 
-                           int component,
-                           double lower_bound,
-                           double upper_bound,
-                           double tol = 0.0) const;
-  void check_influx_bc() const;
+  void CheckDivergenceProperty();
+  void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
+  void CheckTracerBounds(Epetra_MultiVector& tracer, int component,
+                         double lower_bound, double upper_bound, double tol = 0.0) const;
+  void CheckInfluxBC() const;
 
   // access members  
-  Teuchos::RCP<Transport_State> get_transport_state() { return TS; }
-  Teuchos::RCP<Transport_State> get_transport_state_next() { return TS_nextMPC; }
+  Teuchos::RCP<Transport_State> transport_state() { return TS; }
+  Teuchos::RCP<Transport_State> transport_state_next() { return TS_nextMPC; }
   Transport_State& ref_transport_state_next() { return *TS_nextBIG; }
 
-  inline double get_transport_dT() { return dT; }
-  inline double get_cfl() { return cfl; }
+  inline double cfl() { return cfl_; }
   inline int get_transport_status() { return status; }
 
   // control members
-  inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
-  void print_statistics() const;
+  void PrintStatistics() const;
+  void WriteGMVfile(Teuchos::RCP<Transport_State> TS) const;
  
  private:
-  // advection routines
-  void advance_donor_upwind(double dT);
-  void advance_second_order_upwind(double dT);
-  void advance_arbitrary_order_upwind(double dT);
+  // advection members
+  void AdvanceDonorUpwind(double dT);
+  void AdvanceSecondOrderUpwindGeneric(double dT);
+  void AdvanceSecondOrderUpwindRK1(double dT);
+  void AdvanceSecondOrderUpwindRK2(double dT);
+
+  // time integration members
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
-  void limiterBarthJespersen(const int component,
+  void LimiterBarthJespersen(const int component,
                              Teuchos::RCP<Epetra_Vector> scalar_field, 
                              Teuchos::RCP<Epetra_MultiVector> gradient, 
                              Teuchos::RCP<Epetra_Vector> limiter);
 
-  void limiterTensorial(const int component,
+  void LimiterTensorial(const int component,
                         Teuchos::RCP<Epetra_Vector> scalar_field, 
                         Teuchos::RCP<Epetra_MultiVector> gradient);
 
-  void limiterKuzmin(const int component,
+  void LimiterKuzmin(const int component,
                      Teuchos::RCP<Epetra_Vector> scalar_field, 
                      Teuchos::RCP<Epetra_MultiVector> gradient);
 
-  void calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
-                                   AmanziGeometry::Point& normal_new,
-                                   double& L22normal_new, 
-                                   AmanziGeometry::Point& direction);
+  void CalculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
+                                 AmanziGeometry::Point& normal_new,
+                                 double& L22normal_new, 
+                                 AmanziGeometry::Point& direction);
 
-  void apply_directional_limiter(AmanziGeometry::Point& normal, 
-                                 AmanziGeometry::Point& p,
-                                 AmanziGeometry::Point& direction, 
-                                 AmanziGeometry::Point& gradient);
+  void ApplyDirectionalLimiter(AmanziGeometry::Point& normal, 
+                               AmanziGeometry::Point& p,
+                               AmanziGeometry::Point& direction, 
+                               AmanziGeometry::Point& gradient);
 
-  void process_parameter_list();
-  void identify_upwind_cells();
+  void IdentifyUpwindCells();
 
   const Teuchos::RCP<Epetra_IntVector>& get_upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& get_downwind_cell() { return downwind_cell_; }  
 
   // dispersion routines
-  void calculate_dispersion_tensor();
-  void extract_boundary_conditions(const int component,
-                                   std::vector<int>& bc_face_id,
-                                   std::vector<double>& bc_face_value);
-  void populate_harmonic_points_values(int component,
-                                       Teuchos::RCP<Epetra_MultiVector> tcc,
-                                       std::vector<int>& bc_face_id,
-                                       std::vector<double>& bc_face_values);
-  void add_dispersive_fluxes(int component,
-                             Teuchos::RCP<Epetra_MultiVector> tcc,
-                             std::vector<int>& bc_face_id,
-                             std::vector<double>& bc_face_values,
-                             Teuchos::RCP<Epetra_MultiVector> tcc_next);
+  void CalculateDispersionTensor();
+  void ExtractBoundaryConditions(const int component,
+                                 std::vector<int>& bc_face_id,
+                                 std::vector<double>& bc_face_value);
+  void PopulateHarmonicPointsValues(int component,
+                                    Teuchos::RCP<Epetra_MultiVector> tcc,
+                                    std::vector<int>& bc_face_id,
+                                    std::vector<double>& bc_face_values);
+  void AddDispersiveFluxes(int component,
+                           Teuchos::RCP<Epetra_MultiVector> tcc,
+                           std::vector<int>& bc_face_id,
+                           std::vector<double>& bc_face_values,
+                           Teuchos::RCP<Epetra_MultiVector> tcc_next);
+
+  // io methods
+  void ProcessParameterList();
+  void ProcessStringAdvectionLimiter(const std::string name, int* method);
+  void ProcessStringVerbosity(const std::string name, int* verbosity);
 
  public:
-  std::vector<double> calculate_accumulated_influx();
-  std::vector<double> calculate_accumulated_outflux();
-
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
-  int verbosity_level, internal_tests;  // output information
+  int verbosity, internal_tests;  // output information
   double tests_tolerance;
 
  private:
-  int Init();  // move here all code from constructor 
-
   Teuchos::RCP<Transport_State> TS;
   Teuchos::RCP<Transport_State> TS_nextBIG;  // involves both owned and ghost values
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
@@ -206,19 +219,18 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> harmonic_points_value;
   std::vector<WhetStone::Tensor> dispersion_tensor;
 
-  double cfl, dT, dT_debug, T_internal, T_physical;  
+  double cfl_, dT, dT_debug, T_physics;  
   int number_components; 
   int status;
-  bool standalone_mode;  // If it is true the internal time will be used.
   int flow_mode;  // steady-sate or transient
 
   std::vector<BoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 
-  int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
-  int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
-  int vmin, vmax;
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
+  int nnodes_wghost;
  
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   int dim;

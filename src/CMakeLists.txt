@@ -2,6 +2,7 @@
 
 # Standard utilities
 add_subdirectory(error_handling)
+add_subdirectory(utils)
 
 # Functions
 add_subdirectory(functions)
@@ -10,7 +11,6 @@ add_subdirectory(functions)
 add_subdirectory(geometry)
 
 if (ENABLE_Unstructured)
-  add_subdirectory(utils)
   add_subdirectory(input)
 
   # Mesh

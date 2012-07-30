@@ -13,7 +13,7 @@ namespace amanzi {
 namespace chemistry {
 
 // forward declarations from chemistry
-class Block;
+class MatrixBlock;
 
 class SurfaceComplex {
  public:
@@ -47,7 +47,7 @@ class SurfaceComplex {
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
-                               Block* dtotal);
+                               MatrixBlock* dtotal);
 
   void display(void) const;
   void Display(void) const;
@@ -129,7 +129,7 @@ class SurfaceComplex {
   SpeciesId identifier_;
   double charge_;
 
-  double surface_concentration_;
+  double surface_concentration_;  // units? ?[mol/m^3 bulk]?
 
   int ncomp_;  // # components in reaction
   std::vector<SpeciesName> species_names_;

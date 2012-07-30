@@ -10,6 +10,8 @@
 
 namespace Amanzi {
 
+enum bdf_nonlinear_solver_t { BDFNKA, BDFJFNK }; 
+
 struct BDF1State {
   
  public:
@@ -33,6 +35,8 @@ struct BDF1State {
     elimit = 1e15;
     maxpclag = 0;
 
+    nonlinear_solver = BDFNKA;
+
     verbose = false;
   }
 
@@ -50,7 +54,6 @@ struct BDF1State {
   double    hlast;        // last step size
   double    hpc;          // step size built into the current preconditioner
   bool      usable_pc;    // whether the current preconditioner is usable
-  int       freeze_count; // don't increase step size for this number of steps
   int       mitr;         // maximum number of nonlinear iterations, more and we fail 
   int       minitr;       // minimum number of nonlinear iterations (we will increase time step here)
   int       maxitr;       // maximum number of nonlinear iterations (we cut time step here)
@@ -73,6 +76,8 @@ struct BDF1State {
   double hmax;           // maximum step size used on a successful step
   double hinc;           // stepsize increase factor
   double hred;           // stepsize reduction factor
+
+  bdf_nonlinear_solver_t nonlinear_solver;
 
   // Diagnostics
   bool   verbose;

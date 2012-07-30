@@ -35,7 +35,7 @@ set(ZLIB_VERSION_MAJOR 1)
 set(ZLIB_VERSION_MINOR 2)
 set(ZLIB_VERSION_PATCH 6)
 set(ZLIB_VERSION ${ZLIB_VERSION_MAJOR}.${ZLIB_VERSION_MINOR}.${ZLIB_VERSION_PATCH})
-set(ZLIB_URL_STRING     "http://zlib.net")
+set(ZLIB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ZLIB_ARCHIVE_FILE   zlib-${ZLIB_VERSION}.tar.gz)
 set(ZLIB_MD5_SUM        618e944d7c7cd6521551e30b32322f4a) 
 
@@ -53,13 +53,13 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 #
 # TPL: CCSE
 #
-set(CCSE_VERSION_MAJOR 0)
-set(CCSE_VERSION_MINOR 1)
-set(CCSE_VERSION_PATCH 10)
+set(CCSE_VERSION_MAJOR 1)
+set(CCSE_VERSION_MINOR 0)
+set(CCSE_VERSION_PATCH 1)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        0914c9ef955e64490335a54d583dd648) 
+set(CCSE_MD5_SUM        04c255b7c022776f7ac88be096125534) 
 
 
 #
@@ -92,7 +92,7 @@ set(Boost_VERSION_MINOR 48)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     "http://downloads.sourceforge.net/project/boost/boost/${Boost_VERSION}")
+set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.gz)
 set(Boost_MD5_SUM        313a11e97eb56eb7efd18325354631be) 
 
@@ -114,7 +114,7 @@ set(HDF5_VERSION_MAJOR 1)
 set(HDF5_VERSION_MINOR 8)
 set(HDF5_VERSION_PATCH 8)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
-set(HDF5_URL_STRING    "http://www.hdfgroup.org/ftp/HDF5/prev-releases/hdf5-${HDF5_VERSION}/src")
+set(HDF5_URL_STRING    "http://software.lanl.gov/ascem/tpls")
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)      
 
@@ -125,7 +125,7 @@ set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 1)
 set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
-set(NetCDF_URL_STRING     "http://www.unidata.ucar.edu/downloads/netcdf/ftp")
+set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
 set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814) 
 
@@ -133,33 +133,32 @@ set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814)
 # TPL: ASCEMIO
 #
 set(ASCEMIO_VERSION_MAJOR 2)
-set(ASCEMIO_VERSION_MINOR 0)
+set(ASCEMIO_VERSION_MINOR 1)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
 set(ASCEMIO_URL_STRING    "http://software.lanl.gov/ascem/tpls")
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
-set(ASCEMIO_MD5_SUM       04d1fba6b566b38628f503a3d39c6883)      
+set(ASCEMIO_MD5_SUM        a3c3387ee7909e50a43c6a4fe50dd15f)      
 
 #
 # TPL: ExodusII
 #
-set(ExodusII_VERSION_MAJOR 5)
-set(ExodusII_VERSION_MINOR 14)
+set(ExodusII_VERSION_MAJOR 4)
+set(ExodusII_VERSION_MINOR 98)
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
-#set(ExodusII_URL_STRING     "http://downloads.sourceforge.net/project/exodusii/exodusii/${ExodusII_VERSION}")
 set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar)
-set(ExodusII_MD5_SUM        ed150bd50cbb2fb9c6d5fe95a9d46eff) 
+set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
+set(ExodusII_MD5_SUM        4480e641d6ada58f5d8ecb7172e76791) 
 
 #
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 1)
 set(MSTK_VERSION_MINOR 85)
-set(MSTK_VERSION_PATCH rc2)
+set(MSTK_VERSION_PATCH rc4)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        d2acd6da234e580b8d389224f3b2b9b1) 
+set(MSTK_MD5_SUM        96da647aea4208fdb40f89ac5a673628)
 
 #
 # TPL: MOAB
@@ -168,6 +167,17 @@ set(MOAB_VERSION        r4276)
 set(MOAB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MOAB_ARCHIVE_FILE   MOAB-${MOAB_VERSION}.tar.gz)
 set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e) 
+
+#
+# TPL: HYPRE
+#
+set(HYPRE_VERSION_MAJOR  2)
+set(HYPRE_VERSION_MINOR  8)
+set(HYPRE_VERSION_PATCH  0b)
+set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
+set(HYPRE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(HYPRE_ARCHIVE_FILE   hypre-${HYPRE_VERSION}.tar.gz)
+set(HYPRE_MD5_SUM        6b4db576c68d2072e48efbc00ea58489) 
 
 #
 # TPL: Trilinos

@@ -9,8 +9,11 @@
 project(SSC)
 
 include(CCSEOptions)
+include(BinaryManager)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
+
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 # The interfaces
@@ -81,7 +84,7 @@ endif()
 # Binary: amanzi-demo-driver
 #
 if ( ENABLE_Unstructured )
-  set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry whetstone)
+  set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit)
 else()
   set(ssc_unstructured_grid_libs)
 endif()
@@ -108,17 +111,23 @@ endif()
 #message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface)
+set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
 set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
 set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(amanzi main.cpp)
 
-target_link_libraries(amanzi ${ssc_tpl_libs_incl} ${ssc_tpl_libs} z)
+# 
+# Main: Amanzi
+#
+#print_variable(ssc_tpl_libs_incl)
+#print_variable(ssc_tpl_libs)
 #message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
-add_install_binary(amanzi)
-
+add_amanzi_executable(amanzi
+                      SOURCE main.cpp
+                      LINK_LIBS ${ssc_tpl_libs_incl} ${ssc_tpl_libs}
+                      OUTPUT_NAME amanzi
+                      OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 
 if (BUILD_TESTS)
 

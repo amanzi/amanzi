@@ -19,6 +19,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh_simple.hh"
 #include "MeshAudit.hh"
 
+#include "Mesh.hh"
+#include "Point.hh"
+
 #include "mfd3d.hpp"
 #include "tensor.hpp"
 
@@ -29,7 +32,7 @@ TEST(DARCY_MASS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "============ TEST DARCY: MASS MATRIX =====================" << endl;
+  std::cout << "Test: Mass matrix for Darcy" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -68,7 +71,7 @@ TEST(DARCY_INVERSE_MASS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "============ TEST DARCY: INVERSE MASS MATRIX ==============" << endl;
+  std::cout << "Test: Inverse mass matrix for Darcy" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else

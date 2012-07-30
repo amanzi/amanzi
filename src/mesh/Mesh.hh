@@ -27,14 +27,27 @@ class Mesh
  private:
 
   unsigned int celldim, spacedim;
-  mutable bool geometry_precomputed;
-  int precompute_geometric_quantities() const;
+  mutable bool geometry_precomputed, columns_built;
   mutable std::vector<double> cell_volumes, face_areas;
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
-    face_centroids, face_normals;
+    face_centroids, face_normal0, face_normal1;
+  mutable Entity_ID_List cell_cellabove, cell_cellbelow;
   AmanziGeometry::GeometricModelPtr geometric_model_;
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
+
+
+  int compute_geometric_quantities() const;
+  int compute_cell_geometry(const Entity_ID cellid, 
+                            double *volume, 
+                            AmanziGeometry::Point *centroid) const;
+  int compute_face_geometry(const Entity_ID faceid, 
+                            double *area, 
+                            AmanziGeometry::Point *centroid, 
+                            AmanziGeometry::Point *normal0,
+                            AmanziGeometry::Point *normal1) const;
+
+  int build_columns() const;
 
  protected:
 
@@ -43,8 +56,8 @@ class Mesh
   // constructor
 
   Mesh()
-    : spacedim(3), celldim(3), geometry_precomputed(false), comm(NULL),
-      geometric_model_(NULL)
+    : spacedim(3), celldim(3), geometry_precomputed(false), columns_built(false),
+      comm(NULL),geometric_model_(NULL)
   {
   }
 
@@ -267,6 +280,23 @@ class Mesh
                                Entity_ID_List *nadj_cellids) const = 0;
 
 
+  // Special adjacency information for geological domains with a
+  // semi-structured mesh. Will return -1 if there is no suitable cell
+  // The code currently makes the assumption that the "bottom" of the
+  // is a flat surface in the XY plane. It then builds up information
+  // about the cell above and cell below for each cell based on the
+  // orientation of the face normals w.r.t the z direction. If the
+  // mesh is highly warped, this could lead to ambiguities. Also,
+  // intersecting columns in an unstructured mesh will lead to an
+  // exception being thrown. These data structures are never populated
+  // if these operators are never called. The above and below cells
+  // are computed for all cells the first time one of these routines
+  // is called and then cached
+
+  Entity_ID cell_get_cell_above(const Entity_ID cellid) const;
+
+  Entity_ID cell_get_cell_below(const Entity_ID cellid) const;
+
 
   //
   // Mesh Topology for viz
@@ -322,13 +352,6 @@ class Mesh
                              std::vector<AmanziGeometry::Point> *ccoords) const = 0;
 
 
-  // Set Node coordinates to new location
-
-  virtual
-  void node_set_coordinates (const Entity_ID nodeid,
-                             const double *coords) = 0;
-
-
   // Mesh entity geometry
   //--------------
   //
@@ -336,46 +359,37 @@ class Mesh
 
   // Volume/Area of cell
 
-  inline
-  double cell_volume (const Entity_ID cellid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return cell_volumes[cellid];
-  }
+  double cell_volume (const Entity_ID cellid, const bool recompute=false) const;
 
   // Area/length of face
 
-  inline
-  double face_area(const Entity_ID faceid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return face_areas[faceid];
-  }
-
+  double face_area(const Entity_ID faceid, const bool recompute=false) const;
 
   // Centroid of cell
 
-  inline
-  AmanziGeometry::Point& cell_centroid (const Entity_ID cellid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return cell_centroids[cellid];
-  }
+  AmanziGeometry::Point cell_centroid (const Entity_ID cellid, const bool recompute=false) const;
 
   // Centroid of face
 
-  inline
-  AmanziGeometry::Point& face_centroid (const Entity_ID faceid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return face_centroids[faceid];
-  }
+  AmanziGeometry::Point face_centroid (const Entity_ID faceid, const bool recompute=false) const;
 
   // Normal to face
   // The vector is normalized and then weighted by the area of the face
+  //
+  // If recompute is TRUE, then the normal is recalculated using current
+  // face coordinates but not stored. (If the recomputed normal must be
+  // stored, then call recompute_geometric_quantities). 
+  //
+  // If cellid is not specified, the normal is the natural normal of
+  // the face. If cellid is specified, the normal is the outward normal
+  // with respect to the cell. In planar and solid meshes, the normal
+  // with respect to the cell on one side of the face is just the
+  // negative of the normal with respect to the cell on the other
+  // side. In general surfaces meshes, this will not be true at C1
+  // discontinuities
 
-  inline
-  AmanziGeometry::Point& face_normal (const Entity_ID faceid) const {
-    if (!geometry_precomputed) precompute_geometric_quantities();
-    return face_normals[faceid];
-  }
 
+  AmanziGeometry::Point face_normal (const Entity_ID faceid, const bool recompute=false, const Entity_ID cellid=-1) const;
 
   // Point in cell
 
@@ -383,6 +397,33 @@ class Mesh
                       const Entity_ID cellid) const;
 
 
+  //
+  // Mesh modification
+  //-------------------
+
+  // Set coordinates of node
+
+  virtual
+  void node_set_coordinates (const Entity_ID nodeid,
+                             const AmanziGeometry::Point ncoord) = 0;
+
+
+  virtual
+  void node_set_coordinates (const Entity_ID nodeid,
+                             const double *ncoord) = 0;
+
+
+
+  // Deform the mesh by moving given nodes to given coordinates
+  // If the flag keep_valid is true, then the nodes are moved
+  // only as much as possible without making the mesh invalid
+  // The final positions of the nodes is returned in final_positions
+
+
+  int deform (const Entity_ID_List nodeids,
+              const AmanziGeometry::Point_List new_positions,
+              const bool keep_valid,
+              AmanziGeometry::Point_List *final_positions);
 
   //
   // Epetra maps
@@ -406,27 +447,6 @@ class Mesh
   //--------------------------------------------------------------
   //
 
-  // Number of sets containing entities of type 'kind' in mesh
-  // 
-  // DEPRECATED due to ambiguity in determining what types of sets
-  // some regions are supposed to create (a planar region can 
-  // result in sidesets or nodesets
-
-  unsigned int num_sets(const Entity_kind kind) const;
-
-
-  // Ids of sets containing entities of 'kind'
-  // 
-  // DEPRECATED due to ambiguity in determining what types of sets
-  // some regions are supposed to create (a planar region can 
-  // result in sidesets or nodesets
-
-  void get_set_ids (const Entity_kind kind,
-                    Set_ID_List *setids) const;
-
-
-
-
   // Is this is a valid ID of a set containing entities of 'kind'
 
   bool valid_set_id (const Set_ID setid,
@@ -440,12 +460,12 @@ class Mesh
 
   // Get set ID from set name - returns 0 if no match is found
   
-  unsigned int set_id_from_name(const std::string setname) const;
+  Set_ID set_id_from_name(const std::string setname) const;
 
 
   // Get set name from set ID - returns 0 if no match is found
   
-  std::string set_name_from_id(const int setid) const;
+  std::string set_name_from_id(const Set_ID setid) const;
 
 
   // Get number of entities of type 'category' in set
@@ -506,63 +526,6 @@ class Mesh
   }
 
 
-  // Temporary routines for backward compatibility
-
-  void cell_to_faces (unsigned int cell,
-                      std::vector<unsigned int>::iterator begin,
-                      std::vector<unsigned int>::iterator end) const;
-
-  void cell_to_faces (unsigned int cell,
-                      unsigned int* begin, unsigned int *end) const;
-
-
-  void cell_to_face_dirs (unsigned int cell,
-                          std::vector<int>::iterator begin,
-                          std::vector<int>::iterator end) const;
-  void cell_to_face_dirs (unsigned int cell,
-                          int * begin, int * end) const;
-
-
-
-  void cell_to_nodes (unsigned int cell,
-                      std::vector<unsigned int>::iterator begin,
-                      std::vector<unsigned int>::iterator end) const;
-  void cell_to_nodes (unsigned int cell,
-                      unsigned int * begin, unsigned int * end) const;
-
-
-
-
-  void face_to_nodes (unsigned int face,
-                      std::vector<unsigned int>::iterator begin,
-                      std::vector<unsigned int>::iterator end) const;
-  void face_to_nodes (unsigned int face,
-                      unsigned int * begin, unsigned int * end) const;
-
-
-
-  void node_to_coordinates (unsigned int node,
-                            std::vector<double>::iterator begin,
-                            std::vector<double>::iterator end) const;
-  void node_to_coordinates (unsigned int node,
-                            double * begin,
-                            double * end) const;
-
-  void face_to_coordinates (unsigned int face,
-                            std::vector<double>::iterator begin,
-                            std::vector<double>::iterator end) const;
-  void face_to_coordinates (unsigned int face,
-                            double * begin,
-                            double * end) const;
-
-  void cell_to_coordinates (unsigned int cell,
-                            std::vector<double>::iterator begin,
-                            std::vector<double>::iterator end) const;
-  void cell_to_coordinates (unsigned int cell,
-                            double * begin,
-                            double * end) const;
-
-
   const Epetra_Map& cell_map (bool include_ghost) const
   {
     return cell_epetra_map (include_ghost);
@@ -578,28 +541,6 @@ class Mesh
     return node_epetra_map (include_ghost);
   };
 
-
-  unsigned int count_entities (Entity_kind kind,
-                               Parallel_type ptype) const;
-
-
-  void get_set (unsigned int set_id, Entity_kind kind,
-                Parallel_type ptype,
-                std::vector<unsigned int>::iterator begin,
-                std::vector<unsigned int>::iterator end) const;
-  void get_set (unsigned int set_id, Entity_kind kind,
-                Parallel_type ptype,
-                unsigned int * begin,
-                unsigned int * end) const;
-
-  // Id numbers
-  // DEPRECATED - DO NOT USE
-  void get_set_ids (Entity_kind kind,
-                    std::vector<unsigned int>::iterator begin,
-                    std::vector<unsigned int>::iterator end) const;
-  void get_set_ids (Entity_kind kind,
-                    unsigned int * begin,
-                    unsigned int * end) const;
 
 }; // End class Mesh
 

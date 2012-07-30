@@ -3,28 +3,46 @@
 #
 #  NB: not a good solution, just an initial hack.
 
-CBpath =./code-block/
+CBpath =./code-block
 PY_CSS = --stylesheet=$(CBpath)/pygments-default.css
 PY_STY = --stylesheet=$(CBpath)/pygments-default.sty
 
-html: AmanziInputSpec.rst
-	$(CBpath)/rst2html-pygments $(PY_CSS) AmanziInputSpec.rst AmanziInputSpec.html 
+SRC = \
+	AmanziNativeSpecV2.rst \
+	AmanziChemistryInputSpec.rst \
+	AmanziInputSpec.rst
 
-pdf: AmanziInputSpec.rst
-	$(CBpath)/rst2latex-pygments $(PY_STY) AmanziInputSpec.rst AmanziInputSpec.tex; \
-	pdflatex AmanziInputSpec.tex; \
-	pdflatex AmanziInputSpec.tex; \
-	pdflatex AmanziInputSpec.tex
+HTML = $(SRC:%.rst=%.html)
 
-all: html pdf
+PDF = $(SRC:%.rst=%.pdf)
 
-clean-html: 
-	/bin/rm -f AmanziInputSpec.html
+# generic rules for targets
 
-clean-pdf:
-	/bin/rm -f AmanziInputSpec.tex AmanziInputSpec.pdf 
-	/bin/rm -f *.aux *.toc *.log *.out
+%.html : %.rst
+	$(CBpath)/rst2html-pygments $(PY_CSS) $< $@ 
 
-clean: clean-html clean-pdf
+%.tex : %.rst
+	$(CBpath)/rst2latex-pygments $(PY_STY) $< $@
 
-distclean: clean
+%.pdf : %.tex
+	pdflatex $<
+	pdflatex $<
+	pdflatex $<
+
+all : html pdf
+
+html : $(HTML)
+
+pdf : $(PDF)
+
+clean-html : 
+	-/bin/rm -f *.html
+
+clean-pdf :
+	-/bin/rm -f *.tex *.pdf
+	-/bin/rm -f *.aux *.toc *.log *.out
+
+clean : clean-html clean-pdf
+	-/bin/rm -f *~
+
+distclean : clean

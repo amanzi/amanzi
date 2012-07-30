@@ -7,6 +7,8 @@
 
 include(CMakeParseArguments)
 include(AmanziLinkLine)
+include(CreateImportedTargetFile)
+
 
 export(PACKAGE Amanzi)
 
@@ -133,6 +135,19 @@ function( CREATE_TPL_EXPORT_FILE )
     file(APPEND ${BUILD_TPL_OUTFILE} "# Amanzi TPL (External Software Packages) Configuration\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "#\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# ############################################################################ #\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "\n")
+
+    file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "# TPL Config File Directory\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "GET_FILENAME_COMPONENT(SELF_DIR "\${CMAKE_CURRENT_LIST_FILE}" PATH)\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "\n")
+
+    file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "# Imported Target File\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "SET(AMANZI_IMPORT_TARGET_FILE \${SELF_DIR}/AmanziImportedTargets.cmake)\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "INCLUDE(\${AMANZI_IMPORT_TARGET_FILE})\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "\n")
 
   endmacro(_write_header)
@@ -295,6 +310,11 @@ endforeach()
 # Write and install the link-line file
 file(WRITE ${AMANZI_LINK_LINE_FILE} ${LINK_LINE_STRING})
 install(FILES ${AMANZI_LINK_LINE_FILE} DESTINATION lib)
+
+# Write the imported target file
+set(import_target_file "${AMANZI_BINARY_DIR}/AmanziImportedTargets.cmake")
+create_imported_target_file(${import_target_file})
+install(FILES ${import_target_file} DESTINATION lib)
 
 # Write the TPL file
 set(tpl_config_file "${AMANZI_BINARY_DIR}/AmanziConfigTPL.cmake")

@@ -8,7 +8,7 @@
 #include <sstream>
 
 #include "chemistry_exception.hh"
-#include "block.hh"
+#include "matrix_block.hh"
 
 #include "exceptions.hh"
 
@@ -60,7 +60,13 @@ void IonExchangeRxn::AddIonExchangeSite(const IonExchangeSite& site) {
 }
 
 void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
+  // pflotran: reaction.F90, function RTotalSorbEqIonX
 
+  //
+  // Note: "X" is the fraction of sites occupied by a particular
+  // cation (accounting for charge). X = sorbed_conc * charge / CEC
+  // sum(X) = 1 (res == 0), should be a requirement for convergence of
+  // the update loop.
   bool one_more;
   double tol = 1.e-12;
 
@@ -96,18 +102,24 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
         ionx_complexes_[i].set_X(value);
         total += value;
       }
+      if (false) {
+        std::cout << "-- ionx total: " << total << std::endl;
+      }
       ++interation_count;
       if (one_more) break;
       double res = 1. - total;
       double dres_dref_cation_X = 1.;
       for (unsigned int i = 1; i < ionx_complexes_.size(); i++) {
         int icomp = ionx_complexes_[i].primary_id();
-        dres_dref_cation_X += primarySpecies[icomp].charge()*
-                              ionx_complexes_[i].X()/ref_cation_X;
+        dres_dref_cation_X += (primarySpecies[icomp].charge() / ref_cation_Z) *
+            (ionx_complexes_[i].X() / ref_cation_X);
       }
       double dref_cation_X = -res / dres_dref_cation_X;
       ref_cation_X -= dref_cation_X;
-      if (abs(dref_cation_X/ref_cation_X) < tol) one_more = true;
+      if (std::fabs(dref_cation_X/ref_cation_X) < tol &&
+          std::fabs(res) < tol) {
+        one_more = true;
+      }
     }
     ref_cation_sorbed_conc_ = ref_cation_X*omega/ref_cation_Z;
   }
@@ -132,12 +144,14 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
            ionx_complexes_.begin();
        ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
+    // NOTE: pflotran is doing a += here, but the array was zeroed out.
     ionx->set_concentration(ionx->X()*omega/primarySpecies[icomp].charge());
   }
 
 }  // end Update()
 
 void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
+  // pflotran: reaction.F90, function RTotalSorbEqIonX
   for (std::vector<IonExchangeComplex>::iterator ionx =
            ionx_complexes_.begin();
        ionx != ionx_complexes_.end(); ionx++) {
@@ -148,7 +162,8 @@ void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
 
 void IonExchangeRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
+  // pflotran: reaction.F90, function RTotalSorbEqIonX
 
   // sum up charges
   double sumZX = 0.;
@@ -163,7 +178,7 @@ void IonExchangeRxn::AddContributionToDTotal(
            ionx_complexes_.begin();
        ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
-    double temp = primarySpecies[icomp].charge()*sumZX;
+    double temp = primarySpecies[icomp].charge() / sumZX;
     for (std::vector<IonExchangeComplex>::iterator ionx2 =
              ionx_complexes_.begin();
          ionx2 != ionx_complexes_.end(); ionx2++) {
@@ -175,7 +190,7 @@ void IonExchangeRxn::AddContributionToDTotal(
       else {
         value = -ionx->concentration()*temp*ionx2->X()/primarySpecies[jcomp].molality();
       }
-      dtotal->addValue(icomp,jcomp,value);
+      dtotal->AddValue(icomp,jcomp,value);
     }
   }
 }  // end AddContributionToDTotal()
@@ -193,6 +208,7 @@ void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primarySpecies) {
     }
   }
   set_uniform_z(uniform_z);
+  uniform_z_set_ = true;
 }
 
 void IonExchangeRxn::DisplaySite(void) const {

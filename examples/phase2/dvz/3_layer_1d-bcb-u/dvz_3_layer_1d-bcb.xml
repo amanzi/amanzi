@@ -1,0 +1,281 @@
+<ParameterList name="Main">
+    <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+    <ParameterList name="General Description">
+      <Parameter name="Model ID" type="string" value="TBD"/>
+      <Parameter name="Author" type="string" value="Chandrika"/>
+    </ParameterList>
+    <ParameterList name="Execution Control">
+      <Parameter name="Flow Model" type="string" value="Richards"/>
+      <Parameter name="Transport Model" type="string" value="On"/>
+      <Parameter name="Chemistry Model" type="string" value="Off"/>
+      <ParameterList name="Time Integration Mode">
+        <ParameterList name="Initialize To Steady">
+          <Parameter name="Start" type="double" value="0.0"/>
+          <Parameter name="Switch" type="double" value="6.17266656e+10"/>
+	  <Parameter name="End" type="double" value="9.46728e+10"/>	  
+          <Parameter name="Steady Initial Time Step" type="double" value="1000"/>
+          <Parameter name="Transient Initial Time Step" type="double" value="10"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Time Period Control">
+        <Parameter name="Start Times" type="Array double" value="{6.1729344E10, 6.173178481E10, 6.173705521E10}"/>
+        <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10}"/>
+      </ParameterList>
+      <Parameter name="Verbosity" type="string" value="None"/>
+      <ParameterList name="Numerical Control Parameters">
+        <ParameterList name="Unstructured Algorithm">
+          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Numerical Control Parameters">
+        <ParameterList name="Unstructured Algorithm">
+          <Parameter name="steady max iterations" type="int" value="15"/>
+          <Parameter name="steady min iterations" type="int" value="10"/>
+          <Parameter name="steady limit iterations" type="int" value="20"/>
+          <Parameter name="steady nonlinear tolerance" type="double" value="1e-4"/>
+          <Parameter name="steady max time step" type="double" value="6.0e+10"/>
+          <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
+          <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
+          <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+          <Parameter name="transient max iterations" type="int" value="15"/>
+          <Parameter name="transient min iterations" type="int" value="10"/>
+          <Parameter name="transient limit iterations" type="int" value="20"/>
+          <Parameter name="transient nonlinear tolerance" type="double" value="1e-4"/>
+          <Parameter name="transient max time step" type="double" value="6.0e+10"/>
+          <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
+          <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
+          <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          <Parameter name="use Hypre AMG" type="bool" value="true"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Domain">
+      <Parameter name="Spatial Dimension" type="int" value="3"/>
+    </ParameterList>
+    <ParameterList name="Mesh">
+      <ParameterList name="Unstructured">
+        <ParameterList name="Expert">
+           <Parameter name="Framework" type="string" value="MSTK"/>
+        </ParameterList>
+        <ParameterList name="Generate Mesh">
+           <ParameterList name="Uniform Structured">
+             <Parameter name="Number of Cells" type="Array int" value="{4, 1, 256}"/>
+             <Parameter name="Domain Low Corner" type="Array double" value="{143.5, 0.0,  0.0}" />
+             <Parameter name="Domain High Corner" type="Array double" value="{147.5, 1.0, 107.52}" />
+           </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Regions">
+      <ParameterList name="Bottom Surface Outside All">
+        <ParameterList name="Region: Box">
+          <Parameter name="Low Coordinate" type="Array double" value="{143.5.0,0.0,0.0}"/>
+          <Parameter name="High Coordinate" type="Array double" value="{147.5.0,1.0,0.0}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Region between Plane Surface 0 and Plane Surface 1">
+        <ParameterList name="Region: Box">
+          <Parameter name="Low Coordinate" type="Array double" value="{143.5,0.0,0.0}"/>
+          <Parameter name="High Coordinate" type="Array double" value="{147.5,1.0,39.9}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Region between Plane Surface 1 and Plane Surface 2">
+        <ParameterList name="Region: Box">
+          <Parameter name="Low Coordinate" type="Array double" value="{143.5,0.0,39.9}"/>
+          <Parameter name="High Coordinate" type="Array double" value="{147.5.0,1.0,80.22}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Region between Plane Surface 2 and Plane Surface 3">
+        <ParameterList name="Region: Box">
+          <Parameter name="Low Coordinate" type="Array double" value="{143.5,0.0,80.22}"/>
+          <Parameter name="High Coordinate" type="Array double" value="{147.5.0,1.0,107.52}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Crib_216-B-18">
+        <ParameterList name="Region: Box">
+          <Parameter name="Low Coordinate" type="Array double" value="{143.5,0.0,106.52}"/>
+          <Parameter name="High Coordinate" type="Array double" value="{147.5,1.0,107.52}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Top Surface Outside Crib_216-B-18">
+        <ParameterList name="Region: Box">
+          <Parameter name="Low Coordinate" type="Array double" value="{143.5,0.0,107.52}"/>
+          <Parameter name="High Coordinate" type="Array double" value="{147.5,1.0,107.52}"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Material Properties">
+      <ParameterList name="Facies_1">
+        <ParameterList name="Porosity: Uniform">
+          <Parameter name="Value" type="double" value="0.4082"/>
+        </ParameterList>
+        <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+          <Parameter name="Horizontal" type="double" value="1.9976E-12"/>
+          <Parameter name="Vertical" type="double" value="1.9976E-13"/>
+        </ParameterList>
+        <ParameterList name="Capillary Pressure: Brooks Corey">
+          <Parameter name="lambda" type="double" value="2.83180E-01"/>
+          <Parameter name="alpha" type="double" value="2.470612E-04"/>
+          <Parameter name="Sr" type="double" value="0.0"/>
+          <Parameter name="Relative Permeability" type="string" value="Burdine"/>
+        </ParameterList>
+        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
+      </ParameterList>
+      <ParameterList name="Facies_2">
+        <ParameterList name="Porosity: Uniform">
+          <Parameter name="Value" type="double" value="0.2206"/>
+        </ParameterList>
+        <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+          <Parameter name="Horizontal" type="double" value="6.9365E-11"/>
+          <Parameter name="Vertical" type="double" value="6.9365E-12"/>
+        </ParameterList>
+        <ParameterList name="Capillary Pressure: Brooks Corey">
+          <Parameter name="lambda" type="double" value="2.60990E-01"/>
+          <Parameter name="alpha" type="double" value="2.573475E-03"/>
+          <Parameter name="Sr" type="double" value="0.0"/>
+          <Parameter name="Relative Permeability" type="string" value="Burdine"/>
+        </ParameterList>
+        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
+      </ParameterList>
+      <ParameterList name="Facies_3">
+        <ParameterList name="Porosity: Uniform">
+          <Parameter name="Value" type="double" value="0.2400"/>
+        </ParameterList>
+        <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+          <Parameter name="Horizontal" type="double" value="2.0706E-09"/>
+          <Parameter name="Vertical" type="double" value="2.0706E-10"/>
+        </ParameterList>
+        <ParameterList name="Capillary Pressure: Brooks Corey">
+          <Parameter name="lambda" type="double" value="3.86968E-01"/>
+          <Parameter name="alpha" type="double" value="2.756137E-03"/>
+          <Parameter name="Sr" type="double" value="0.0"/>
+          <Parameter name="Relative Permeability" type="string" value="Burdine"/>
+        </ParameterList>
+        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 2 and Plane Surface 3}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Phase Definitions">
+      <ParameterList name="Aqueous">
+        <ParameterList name="Phase Properties">
+          <ParameterList name="Viscosity: Uniform">
+            <Parameter name="Viscosity" type="double" value="1.002e-3 "/>
+          </ParameterList>
+          <ParameterList name="Density: Uniform">
+            <Parameter name="Density" type="double" value="998.2 "/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="Phase Components">
+          <ParameterList name="Water">
+            <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Initial Conditions">
+      <ParameterList name="All">
+        <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
+        <ParameterList name="IC: Linear Pressure">
+          <Parameter name="Phase" type="string" value="Aqueous"/>
+          <Parameter name="Reference Value" type="double" value="101325 "/>
+          <Parameter name="Reference Coordinate" type="Array double" value="{0,0,0}"/>
+          <Parameter name="Gradient Value" type="Array double" value="{0,0,-9793.5192 }"/>
+        </ParameterList>
+        <ParameterList name="Solute IC">
+          <ParameterList name="Aqueous">
+            <ParameterList name="Water">
+              <ParameterList name="Tc-99">
+                <ParameterList name="IC: Uniform Concentration">
+                  <Parameter name="Value" type="double" value="0"/>
+                </ParameterList>
+                <Parameter name="Concentration Units" type="string" value="TBC"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Boundary Conditions">
+      <ParameterList name="BC For Bottom Surface Outside All">
+        <Parameter name="Assigned Regions" type="Array string" value="{Bottom Surface Outside All}"/>
+        <ParameterList name="BC: Uniform Pressure">
+          <Parameter name="Times" type="Array double" value="{0.0, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+          <Parameter name="Values" type="Array double" value="{101325., 101325.}"/>
+        </ParameterList>
+        <ParameterList name="Solute BC">
+          <ParameterList name="Aqueous">
+            <ParameterList name="Water">
+              <ParameterList name="Tc-99">
+                <ParameterList name="BC: Uniform Concentration">
+                  <Parameter name="Times" type="Array double" value="{0.0, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+                  <Parameter name="Values" type="Array double" value="{0.0, 0.0}"/>
+                </ParameterList>
+                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="BC For Top Surface Outside Crib_216-B-18">
+        <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Outside Crib_216-B-18}"/>
+        <ParameterList name="BC: Flux">
+          <Parameter name="Times" type="Array double" value="{0.0, 6.17266656e+10, 6.173178481E10, 6.173705521E10, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant, Constant}"/>
+	  <Parameter name="Inward Mass Flux" type="Array double" value="{1.1071E-7, 1.48666E-6, 0.000330423, 1.48666E-6, 1.48666E-6}"/>	 		
+        </ParameterList>
+        <ParameterList name="Solute BC">
+          <ParameterList name="Aqueous">
+            <ParameterList name="Water">
+              <ParameterList name="Tc-99">
+                <ParameterList name="BC: Uniform Concentration">
+                  <Parameter name="Times" type="Array double" value="{0.0, 6.17266656e+10, 6.173178481E10, 6.173705521E10, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant, Constant}"/>
+                  <Parameter name="Values" type="Array double" value="{0.0, 0.0, 2.266885E-06, 0.0, 0.0}"/>
+                </ParameterList>
+                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Output">
+      <ParameterList name="Time Macros">
+        <ParameterList name="Every_0.01_year">
+	  <Parameter name="Start_Period_Stop" type="Array double" value="{6.17266656e+10, 315576, -1}"/>
+	</ParameterList>
+	<ParameterList name="Every_1000_year">
+	  <Parameter name="Start_Period_Stop" type="Array double" value="{0, 315576e+5, -1}"/>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="Cycle Macros">
+        <ParameterList name="Every_1.0_1000.0_-1">
+          <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
+        </ParameterList>
+      </ParameterList> 
+      <ParameterList name="Time Macros">
+         <ParameterList name="Every 100 years">
+            <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3155760000.,-1}"/>
+         </ParameterList>
+      </ParameterList>
+      <ParameterList name="Variable Macros"/>
+      <ParameterList name="Observation Data"/>
+      <ParameterList name="Visualization Data">
+        <Parameter name="File Name Base" type="string" value="plot"/>
+        <Parameter name="File Name Digits" type="string" value="5"/>
+<!--	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/> -->
+ 	<Parameter name="Time Macro" type="Array string" value="{Every 100 years}"/> 
+<!-- 	<Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
+<!-- 	<Parameter name="Time Macro" type="string" value="Every_1000_year"/> -->
+      </ParameterList>
+      <ParameterList name="Checkpoint Data">
+        <Parameter name="File Name Base" type="string" value="checkpoint"/>
+        <Parameter name="File Name Digit" type="int" value="5"/>
+	<Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
+<!-- 	<Parameter name="Time Macro" type="string" value="Every 100 years"/> -->
+<!--    <Parameter name="Time Macro" type="string" value="Every_0.01_year"/> -->
+<!-- 	<Parameter name="Time Macro" type="string" value="Every_1000_year"/> -->
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>

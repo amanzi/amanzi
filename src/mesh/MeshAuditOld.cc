@@ -13,7 +13,6 @@
 #include "Epetra_IntVector.h"
 
 #include "Cell_topology.hh"
-#include "cell_geometry.hh"
 
 #include <iostream>
 #include <iomanip>

@@ -1124,7 +1124,6 @@ void Mesh_MOAB::cell_get_faces (Entity_ID cellid, Entity_ID_List *faceids) const
 void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs) const
 {
   MBEntityHandle cell;
-  unsigned int *cell_faces;
   int *cell_facedirs;
   int j,nf, result;
   
@@ -1135,9 +1134,9 @@ void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs
 
   facedirs->clear();
 
-  cell_faces = new unsigned int[nf];
+  Entity_ID_List cell_faces;
 
-  cell_to_faces(cellid,cell_faces,cell_faces+nf);
+  cell_get_faces(cellid,&cell_faces);
 
   cell_facedirs = new int[nf];
 
@@ -1160,7 +1159,6 @@ void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs
   for (int i = 0; i < nf; i++)
     facedirs->push_back(cell_facedirs[i]);
 
-  delete [] cell_faces;
   delete [] cell_facedirs;
 }
 
@@ -1442,6 +1440,23 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
   MBEntityHandle v = vtx_id_to_handle[nodeid];
 
   int result = mbcore->set_coords(&v, 1, coords);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Problem setting node coordinates" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
+}
+
+void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
+                                     const AmanziGeometry::Point coords) {
+  MBEntityHandle v = vtx_id_to_handle[nodeid];
+
+  double coordarray[3] = {0.0,0.0,0.0};
+
+  for (int i = 0; i < spacedim; i++)
+    coordarray[i] = coords[i];
+
+  int result = mbcore->set_coords(&v, 1, coordarray);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem setting node coordinates" << std::endl;
     assert(result == MB_SUCCESS);

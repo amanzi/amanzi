@@ -3,19 +3,24 @@
 
 #include <cstdlib>
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "string_tokenizer.hh"
-#include "verbosity.hh"
+#include "chemistry_output.hh"
+#include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {
 
+extern ChemistryOutput* chem_out;
+
 KineticRate::KineticRate(void)
-    : verbosity_(kSilent),
+    : debug_(false),
       name_("KineticRate"),
-      identifier_(0) {
+      identifier_(0),
+      reaction_rate_(0.0) {
   reactant_names.clear();
   reactant_stoichiometry.clear();
   reactant_ids.clear();
@@ -56,13 +61,13 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
           // geh          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
           (*out_stoichiometry)[(*s).identifier()] = in_stoichiometry.at(current);
         }
-        if (verbosity() == kDebugMineralKinetics) {
+        if (debug() == kDebugMineralKinetics) {
           std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type
                     << " species " << (*s).name() << std::endl;
         }
       }
     }
-    if (species_found == false && verbosity() == kDebugMineralKinetics) {
+    if (species_found == false && debug() == kDebugMineralKinetics) {
       // TODO(bandre): is this actually a runtime error?
       std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'"
                 << in_names.at(current) << "\' in " << species_type
@@ -72,20 +77,22 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
 }  // end SetSpeciesIds()
 
 void KineticRate::DisplayReaction(void) const {
-  std::cout << "    Reaction: " << std::endl;
-  std::cout << "      ";
+  std::stringstream message;
+  message << "    Reaction: " << std::endl;
+  message << "      ";
 
-  std::cout << name();
-  std::cout << " = ";
+  message << name();
+  message << " = ";
   for (unsigned int species = 0;
        species < this->reactant_names.size(); species++) {
-    std::cout << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " "
+    message << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " "
               << this->reactant_names.at(species);
     if (species < this->reactant_names.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
-  std::cout << std::endl;
+  message << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayReaction
 
 }  // namespace chemistry

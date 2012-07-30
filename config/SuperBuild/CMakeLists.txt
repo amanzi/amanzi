@@ -3,7 +3,7 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
-cmake_minimum_required(VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.5)
 
 if ("${CMAKE_PATCH_VERSION}" GREATER 3)
   set(ADJUST_POLICY "True")
@@ -14,9 +14,24 @@ if (${ADJUST_POLICY})
 endif()
 
 # ############################################################################ #
+# Compiler Definition Warnings
+# ############################################################################ #
+if ( NOT CMAKE_C_COMPILER )
+  message(WARNING "C compiler not specified. CMake will guess!")
+endif()
+
+if ( NOT CMAKE_CXX_COMPILER )
+  message(WARNING "C++ compiler not specified. CMake will guess!")
+endif()
+
+if ( NOT CMAKE_Fortran_COMPILER )
+  message(WARNING "Fortran compiler not specified. CMake will guess!")
+endif()
+
+# ############################################################################ #
 # Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
 # ############################################################################ #
-project(SuperBuild)
+project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -45,26 +60,14 @@ set(SuperBuild_TEMPLATE_FILES_DIR "${SuperBuild_SOURCE_DIR}/templates")
 # ############################################################################ #
 # Compiler checks
 # ############################################################################ #
-if ( NOT CMAKE_C_COMPILER )
-  message(WARNING "C compiler not specified. CMake will guess!")
-endif()
-enable_language(C)
-
-if ( NOT CMAKE_CXX_COMPILER )
-  message(WARNING "C++ compiler not specified. CMake will guess!")
-endif()
-enable_language(CXX)
-
-if ( NOT CMAKE_Fortran_COMPILER )
-  message(WARNING "Fortran compiler not specified. CMake will guess!")
-endif()
-enable_language(Fortran)
-
 include(FortranCInterface)
 FortranCInterface_VERIFY()
 
 include(DefineCompilerVersion)
 define_compiler_version()
+
+include(CheckMPISourceCompiles)
+check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 
 # ############################################################################ #
 # Build options
@@ -116,6 +119,10 @@ if ( ENABLE_OpenMP )
   if ( OPENMP_FOUND )
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    if ( ${CMAKE_C_COMPILER_ID} STREQUAL "Intel" )
+      set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -openmp") 
+      set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -openmp")
+    endif() 
   else()  
     message(SEND_ERROR "Failed to determine the OpenMP compiler flags. Will deactivate.")
     set(ENABLE_OpenMP FALSE CACHE BOOL "Enable OpenMP compile directives" FORCE)
@@ -193,6 +200,8 @@ set(Amanzi_CMAKE_CXX_COMPILER_ARGS
      -DCMAKE_CXX_FLAGS_MINSIZEREL:STRING=${CMAKE_CXX_FLAGS_MINSIZEREL}
      -DCMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}
      -DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+
+print_variable(Amanzi_CMAKE_CXX_COMPILER_ARGS)
 
 # Fortran language flags    
 set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
@@ -324,21 +333,18 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-# MSTK
-if ( ENABLE_MSTK_Mesh )
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
-  append_set(Amanzi_TPL_CMAKE_ARGS
-            -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
-            -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
-            -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
-endif()
-
 # MOAB
 if ( ENABLE_MOAB_Mesh )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
   append_set(Amanzi_TPL_CMAKE_ARGS
              -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
 	     -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
+endif()
+
+# HYPRE
+option(ENABLE_HYPRE "Build the HYPRE solver package" FALSE)
+if ( ENABLE_HYPRE )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
 endif()
 
 # Trilinos  
@@ -350,6 +356,14 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
+# MSTK
+if ( ENABLE_MSTK_Mesh )
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
+  append_set(Amanzi_TPL_CMAKE_ARGS
+            -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
+            -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
+            -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+endif()
 
 # ############################################################################ #
 #  Final steps

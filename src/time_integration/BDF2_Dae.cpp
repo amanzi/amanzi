@@ -30,7 +30,6 @@ namespace BDF2 {
     
     // make sure that the line prefix is printed
     this->getOStream()->setShowLinePrefix(true);
-
   }
 
   Dae::~Dae() {
@@ -77,7 +76,6 @@ namespace BDF2 {
 
     // Read the sublist for verbosity settings.
     Teuchos::readVerboseObjectSublist(&*paramList_,this);
-
   }
 
 
@@ -151,7 +149,6 @@ namespace BDF2 {
     
     state.hmin = std::min<double>(h, state.hmin);
     state.hmax = std::max<double>(h, state.hmax);
-
   }
 
 
@@ -311,7 +308,7 @@ namespace BDF2 {
     state.usable_pc = true;
 
     // Solve the nonlinear BCE system.
-    solve_bce ( t, etah, u0, u, errc);
+    solve_bce (t, etah, u0, u, errc);
     if (errc != 0) 
       {
 	state.failed_bce++;

@@ -54,15 +54,15 @@ TEST(CONSTRUCTOR) {
 
   /* create a Transport state with two components */
   int num_components = 2;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
+  TPK.InitPK();
+  TPK.PrintStatistics();
 
-  TPK.print_statistics();
-
-  double cfl = TPK.get_cfl();
+  double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);
  
   delete comm;
@@ -97,7 +97,7 @@ TEST(FACES_VOLUMES) {
  
   // create a transport state with two components
   int num_components = 2;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);

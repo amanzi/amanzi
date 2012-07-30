@@ -33,14 +33,14 @@ include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${HDF5_INCLUDE_DIRS})
-include_directories(${ASCEMIO_INCLUDE_DIR})
 
 
-add_library(chemistry chemistry_pk.cc chemistry_state.cc)
-target_link_libraries(chemistry ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
-add_install_library(chemistry)
+file(GLOB chem_inc_files "*hh")
+add_amanzi_library(chemistry_pk
+                   SOURCE chemistry_state.cc chemistry_pk.cc HEADERS ${chem_inc_files}
+                   LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
+
 
 if (BUILD_TESTS)
-  add_subdirectory(tests_unit)
+  add_subdirectory(tests_integration)
 endif()

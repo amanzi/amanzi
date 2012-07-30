@@ -28,6 +28,9 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
   double one_over_n(void) const { return one_over_n_; }
   void set_one_over_n(const double one_over_n) { one_over_n_ = one_over_n; }
 
+  std::vector<double> GetParameters(void) const;
+  void SetParameters(const std::vector<double>& params);
+
  private:
   double KD_; // distribution coefficient
   double one_over_n_; // chemical-specific constant

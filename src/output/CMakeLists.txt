@@ -8,6 +8,8 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(BinaryManager)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -67,49 +69,63 @@ if(ENABLE_CGNS)
     list(APPEND output_tpl_list ${CGNS_LIBRARIES})
 endif()
 
-add_library(output ${output_source_files})
-target_link_libraries(output simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list} )
-
-#
-# Install Targets
-#
 file(GLOB output_inc_files "*.h*")
-add_install_include_file(${output_inc_files})
-add_install_library(output)
+
+add_amanzi_library(output 
+                   SOURCE ${output_source_files} HEADERS ${output_inc_files}
+                   LINK_LIBS simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list})
+
 #
-# Install Targets
+# Binaries
 #
-file(GLOB output_inc_files "*.h*")
-add_install_include_file(${output_inc_files})
+add_amanzi_executable(unscramble_viz
+                      SOURCE unscramble_viz.cpp
+                      LINK_LIBS ${HDF5_LIBRARIES}
+                      OUTPUT_NAME unscramble_viz
+                      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
+
+add_amanzi_executable(unscramble_restart
+                      SOURCE unscramble_restart.cpp
+                      LINK_LIBS ${HDF5_LIBRARIES}
+                      OUTPUT_NAME unscramble_restart
+                      OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
 
 
+#
+# Tests
+#
 if (BUILD_TESTS)
 
     # Add UnitTest
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Test: gmv_output
-    add_executable(test_gmv_output test/Main.cc test/test_gmv.cc)
-    target_link_libraries(test_gmv_output output ${UnitTest_LIBRARIES})
-    add_amanzi_test(gmv_output test_gmv_output KIND unit)
+    add_amanzi_test(gmv_output test_gmv_output
+                    SOURCE     test/Main.cc test/test_gmv.cc
+		    LINK_LIBS  output ${UnitTest_LIBRARIES}
+		    KIND unit)
 
     # Test: cgns_output
     if (ENABLE_CGNS)
-        add_executable(test_cgns_output test/Main.cc test/test_cgns.cc)
-        target_link_libraries(test_cgns_output output ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES} z)
-        add_amanzi_test(cgns_output test_cgns_output KIND int)
+      add_amanzi_test(cgns_output test_cgns_output
+	              SOURCE      test/Main.cc test/test_cgns.cc
+		      LINK_LIBS   output ${UnitTest_LIBRARIES}
+		      KIND int)
     endif()
 
     # Test: hdf5_output
-    add_executable(test_hdf5_output test/Main.cc test/test_hdf5.cc)
-    target_link_libraries(test_hdf5_output output ${UnitTest_LIBRARIES} z)
-    add_amanzi_test(hdf5_output test_hdf5_output KIND int)
+    add_amanzi_test(hdf5_output test_hdf5_output
+                    SOURCE      test/Main.cc test/test_hdf5.cc
+		    LINK_LIBS   output ${UnitTest_LIBRARIES}
+		    KIND int)
 
     # Test: hdf5_mpi_output
     if (ENABLE_STK_Mesh)
-        add_executable(test_hdf5mpi_output test/Main.cc test/test_hdf5mpi.cc)
-        target_link_libraries(test_hdf5mpi_output stk_mesh output ${UnitTest_LIBRARIES} z)
-        add_amanzi_test(hdf5mpi_output test_hdf5mpi_output NPROCS 2 KIND int)
+        add_amanzi_test(hdf5mpi_output test_hdf5mpi_output
+                        SOURCE         test/Main.cc test/test_hdf5mpi.cc
+		        LINK_LIBS      stk_mesh output ${UnitTest_LIBRARIES}
+			NPROCS         2
+		        KIND           int)
     endif()
 
 endif()

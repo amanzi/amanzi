@@ -27,15 +27,10 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 # Library: simple_mesh
 file(GLOB simple_mesh_source_files "*.cc")
-add_library(simple_mesh ${simple_mesh_source_files})
-add_install_library(simple_mesh)
-target_link_libraries(simple_mesh mesh geometry error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-
-#
-# Install Targets
-#
 file(GLOB simple_inc_files "*.hh")
-add_install_include_file(${simple_inc_files})
+add_amanzi_library(simple_mesh
+                   SOURCE ${simple_mesh_source_files} HEADERS ${simple_inc_files}
+                   LINK_LIBS mesh geometry error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
 
@@ -52,16 +47,16 @@ if (BUILD_TESTS)
     endif()
 
     # Test: simple_mesh
-
-    add_executable(test_simple_mesh 
-      test/Main.cc 
-      test/test_maps.cpp 
-      test/test_cell_numbering.cc 
-      test/test_face_adj_cells.cc 
-      test/test_node_cell_faces.cc
-      test/test_sets.cc)
-    target_link_libraries(test_simple_mesh simple_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(simple_mesh test_simple_mesh KIND unit)
+    add_amanzi_test(simple_mesh test_simple_mesh
+                    KIND unit
+		    SOURCE
+                          test/Main.cc 
+                          test/test_maps.cpp 
+                          test/test_cell_numbering.cc 
+                          test/test_face_adj_cells.cc 
+                          test/test_node_cell_faces.cc
+                          test/test_sets.cc
+                    LINK_LIBS simple_mesh ${UnitTest_LIBRARIES})
 
 endif()
 

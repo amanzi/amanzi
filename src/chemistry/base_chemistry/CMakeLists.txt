@@ -18,5 +18,4 @@ set(SRCS
 	./surface_site.cc
 )
 
-add_library(geochembase ${SRCS}) 
-add_install_library(geochembase)
+add_amanzi_library(geochembase SOURCE ${SRCS}) 

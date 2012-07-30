@@ -38,7 +38,7 @@ class Glenn {
 
 static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   // primary species
-  g->resize(2);
+  g->ResizeInternalMemory(2);
 
   total->push_back(1.e-6);
   total->push_back(1.e-3);
@@ -48,14 +48,14 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   double charge = 1.;
   double mol_wt = 1.0079;
   double size = 9.;
-  g->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
+  g->AddPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   id = 2;
   name = "HCO3-";
   charge = -1.;
   mol_wt = 61.0171;
   size = 4.;
-  g->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
+  g->AddPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   // secondary aqueous complexes
   std::vector<SpeciesName> species;
@@ -74,7 +74,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   charge = -1.;
   mol_wt = 17.0073;
   logK = 13.9951;
-  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+  g->AddAqueousEquilibriumComplex(AqueousEquilibriumComplex(
       name,
       id,
       species,
@@ -100,7 +100,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   charge = -2.;
   mol_wt = 60.0092;
   logK = 10.3288;
-  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+  g->AddAqueousEquilibriumComplex(AqueousEquilibriumComplex(
       name,
       id,
       species,
@@ -126,7 +126,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   charge = 0.;
   mol_wt = 44.0098;
   logK = -6.3447;
-  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+  g->AddAqueousEquilibriumComplex(AqueousEquilibriumComplex(
       name,
       id,
       species,
@@ -145,7 +145,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
   // first line indicates number of primary and secondary components
   file->getLine();
   file->readInt(&ncomp);
-  g->resize(ncomp);
+  g->ResizeInternalMemory(ncomp);
   file->readInt(&neqcplx);
   file->readInt(&ngeneral_rxn);
   file->readInt(&nsurfcplx_rxn);
@@ -169,7 +169,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 #ifdef DEBUG
     std::cout << name << " " << charge << " " << size << endl;
 #endif
-    g->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
+    g->AddPrimarySpecies(Species(id, name, charge, mol_wt, size));
   }
 
   std::vector<std::string> primary_names;
@@ -251,7 +251,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     std::cout << logK << endl;
     std::cout << "-------------------------\n";
 #endif
-    g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+    g->AddAqueousEquilibriumComplex(AqueousEquilibriumComplex(
         name,
         irxn,
         species, stoichiometries,
@@ -422,7 +422,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     std::cout << "-------------------------\n";
 #endif
 
-    g->addGeneralRxn(GeneralRxn(name, species,
+    g->AddGeneralRxn(GeneralRxn(name, species,
                                 stoichiometries, species_ids,
                                 forward_stoichiometries, forward_species_ids,
                                 backward_stoichiometries, backward_species_ids,
@@ -542,7 +542,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     }
     // have to pass in a new object here as the SurfaceSite destructor fails when
     // deleting the vector storing mineral pointers
-    g->addSurfaceComplexationRxn(SurfaceComplexationRxn(surface_site, surface_complexes));
+    g->AddSurfaceComplexationRxn(SurfaceComplexationRxn(surface_site, surface_complexes));
     surface_complexes.clear();
   }
 
@@ -659,7 +659,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
                     logK,
                     molar_vol,
                     specific_surface_area);
-    g->addMineral(mineral);
+    g->AddMineral(mineral);
 
 
     MineralKineticsFactory mkf;

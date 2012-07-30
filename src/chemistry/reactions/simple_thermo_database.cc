@@ -56,12 +56,13 @@ SimpleThermoDatabase::~SimpleThermoDatabase(void) {
 
 void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
                                  const Beaker::BeakerParameters& parameters) {
-  this->SetParameters(parameters);
-  this->ReadFile(parameters.thermo_database_file);
-  this->SetupActivityModel(parameters.activity_model_name, parameters.pitzer_database, parameters.jfunction_pitzer);
-  this->resize(this->primary_species().size());
-  this->VerifyComponentSizes(components);
-  this->SetComponents(components);
+  ReadFile(parameters.thermo_database_file);
+  SetParameters(parameters);
+  SetupActivityModel(parameters.activity_model_name, 
+                     parameters.pitzer_database, parameters.jfunction_pitzer);
+  ResizeInternalMemory(primary_species().size());
+  VerifyComponentSizes(components);
+  CopyComponentsToBeaker(components);
 }  // end Setup()
 
 /*******************************************************************************
@@ -93,7 +94,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
   if (!input) {
     std::ostringstream error_stream;
     error_stream << "SimpleThermoDatabase::ReadFile(): \n";
-    error_stream << "file could not be opened.... " << file_name << "\n";
+    error_stream << "file could not be opened.... '" << file_name << "'\n";
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 
@@ -341,7 +342,7 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
   // std::cout << "gmw: " << gram_molecular_weight << std::endl;
 
   Species primary(primary_id_++, name, charge, gram_molecular_weight, size_parameter);
-  this->addPrimarySpecies(primary);
+  this->AddPrimarySpecies(primary);
   if (verbosity() == kDebugInputFile) {
     primary.display();
   }
@@ -396,7 +397,7 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
                                       species_ids,
                                       h2o_stoich,
                                       charge, gram_molecular_weight, size_parameter, logKeq);
-  this->addAqueousEquilibriumComplex(secondary);
+  this->AddAqueousEquilibriumComplex(secondary);
   if (verbosity() == kDebugInputFile) {
     secondary.display();
   }
@@ -540,7 +541,7 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
                      forward_stoichiometries,forward_species_ids,
                      backward_stoichiometries,backward_species_ids,
                      forward_rate_constant,backward_rate_constant);
-  this->addGeneralRxn(general);
+  this->AddGeneralRxn(general);
 
 }  // end ParseGeneralKinetics()
 
@@ -666,7 +667,7 @@ void SimpleThermoDatabase::RemoveLeadingAndTrailingSpaces(std::string* s) {
 **
 **  Secondary Species Fields:
 **
-**  Name = coeff reactant ... ; log Keq ; gram molecular weight [g/mole] ; molar volume [cm^3/mole] ; specific surface area [m^2]
+**  Name = coeff reactant ... ; log Keq ; gram molecular weight [g/mole] ; molar volume [cm^3/mole] ; specific surface area [cm^2 mineral / cm^3 bulk]
 **
 *******************************************************************************/
 void SimpleThermoDatabase::ParseMineral(const std::string& data) {
@@ -696,9 +697,13 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
 
   no_spaces.tokenize(mineral_eq.at(3), space);
   double molar_volume(std::atof(no_spaces.at(0).c_str()));
+  // convert: [cm^3/mole] --> [m^3/mole]
+  molar_volume /= 1000000.0;
 
   no_spaces.tokenize(mineral_eq.at(4), space);
   double specific_surface_area(std::atof(no_spaces.at(0).c_str()));
+  // convert: [cm^2 mineral / cm^3 bulk] --> [m^2 mineral / m^3 bulk]
+  specific_surface_area *= 100.0;
 
   Mineral mineral(name, mineral_id_++,
                   species,
@@ -710,7 +715,7 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
                   molar_volume,
                   specific_surface_area);
   mineral.set_verbosity(verbosity());
-  this->addMineral(mineral);
+  this->AddMineral(mineral);
   if (verbosity() == kDebugInputFile) {
     mineral.display();
   }
@@ -749,7 +754,7 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
   rate_data.erase(rate_data.begin());  // erase reaction type string
 
   MineralKineticsFactory mkf;
-  mkf.set_verbosity(verbosity());
+  mkf.set_debug(false);
   SpeciesId mineral_id = mkf.VerifyMineralName(mineral_name, minerals());
   Mineral mineral = minerals().at(mineral_id);
   KineticRate* kinetic_rate = mkf.Create(rate_type, rate_data, mineral, primary_species());
@@ -878,7 +883,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
  **
  **  <Surface Complex Site
  **
- **  Name ; change ; location
+ **  Name ; density 
  **
  **  where location is the mineral where the exchanger is located, i.e. kaolinite
  **
@@ -915,7 +920,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
   surface_complexation_reactions_.push_back(rxn);
   surface_complexation_rxn_id_++;
 
-  // this->addSurfaceComplexationRxn(rxn);
+  // this->AddSurfaceComplexationRxn(rxn);
   if (verbosity() == kDebugInputFile) {
     site.display();
     // rxn.Display();
@@ -930,7 +935,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
  **
  **  Secondary Species Fields:
  **
- **  Name = coeff primary coeff exchanger ; Keq
+ **  Name = coeff primary coeff exchanger ; Keq ; charge
  **
  **  Assume:
  **
@@ -993,8 +998,12 @@ void SimpleThermoDatabase::FinishSurfaceComplexation(void) {
   std::vector<SurfaceComplexationRxn>::iterator rxn;
   for (rxn = surface_complexation_reactions_.begin();
        rxn != surface_complexation_reactions_.end(); rxn++) {
-    this->addSurfaceComplexationRxn(*rxn);
+    this->AddSurfaceComplexationRxn(*rxn);
   }
+  // just to maintain our sanity, clear our temporary working copies
+  // to make sure they aren't used anywhere else!
+  surface_sites_.clear();
+  surface_complexation_reactions_.clear();
 }  // end FinishSurfaceComplexation()
 
 /*******************************************************************************

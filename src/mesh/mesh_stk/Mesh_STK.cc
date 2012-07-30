@@ -392,7 +392,7 @@ Mesh_STK::node_get_faces(const Entity_ID nodeid,
   std::for_each(face_ids.begin(), face_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
   outfaceids->clear();
   for (STK::Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
-    Entity_ID local_face_id(this->cell_epetra_map(true).LID(*i));
+    Entity_ID local_face_id(this->face_epetra_map(true).LID(*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_face_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
       outfaceids->push_back(local_face_id);
@@ -416,9 +416,10 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
   Entity_ID_List cell_faces;
   Entity_ID_List outids;
 
+  outfaceids->clear();
   this->node_get_faces(nodeid, ptype, &node_faces);
   std::sort(node_faces.begin(), node_faces.end());
-  this->node_get_cells(cellid, ptype, &cell_faces);
+  this->cell_get_faces(cellid, &cell_faces);
   std::sort(cell_faces.begin(), cell_faces.end());
 
   std::set_intersection(node_faces.begin(), node_faces.end(),
@@ -630,6 +631,20 @@ Mesh_STK::node_set_coordinates(const Entity_ID nodeid, const double *coords)
   stk::mesh::EntityId gid(this->GID(nodeid, NODE));
   gid++;                                // need 1-based for stk::mesh
   mesh_->set_coordinates(gid, coords);
+}
+
+void
+Mesh_STK::node_set_coordinates(const Entity_ID nodeid, 
+                               const AmanziGeometry::Point coords)
+{
+  stk::mesh::EntityId gid(this->GID(nodeid, NODE));
+  gid++;                                // need 1-based for stk::mesh
+
+  double coordarray[3] = {0.0,0.0,0.0};
+  for (int i = 0; i < Mesh::space_dimension(); i++)
+    coordarray[i] = coords[i];
+
+  mesh_->set_coordinates(gid, coordarray);
 }
 
 

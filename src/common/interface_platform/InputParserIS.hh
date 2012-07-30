@@ -22,17 +22,23 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist );
-Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel );
+Teuchos::ParameterList CreateChemistryList ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_Preconditioners_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_HypreAMG_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
 
 static std::string phase_name;
 static std::string phase_comp_name;
 static Teuchos::Array<std::string> comp_names;
 static std::map<std::string, int> comp_names_map;
+static Teuchos::Array<std::string> mineral_names_;
+static Teuchos::Array<std::string> sorption_site_names_;
 static std::string verbosity_level("low");
 static int numproc_;
-  
+static int spatial_dimension_;  
 }
 }

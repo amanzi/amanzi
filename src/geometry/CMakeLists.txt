@@ -8,6 +8,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
+include(TestManager)
 
 #
 # Define a project name
@@ -28,21 +29,15 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # geometry library
 #
 file (GLOB geometry_source_files "*.cc")
-add_library(geometry ${geometry_source_files})
-target_link_libraries(geometry error_handling functions ${Teuchos_LIBRARIES})
-
-#
-# Install Targets
-#
-add_install_library(geometry)
-file(GLOB _inc_files "*.h*")
-add_install_include_file(${_inc_files})
+file(GLOB  geometry_inc_files "*.h*")
+add_amanzi_library(geometry 
+                   SOURCE ${geometry_source_files} HEADERS ${geometry_inc_files}
+                   LINK_LIBS error_handling functions ${Teuchos_LIBRARIES} )
 
 
 #
 # Unit tests
 #
-
 if (BUILD_TESTS)
     
    # Add UnitTest ExodusII include directories
@@ -55,37 +50,38 @@ if (BUILD_TESTS)
    endif()
 
    # Test: test geometric operators
-
-   add_executable(test_geomops
-                  test/Main.cc
-		  test/test_geometric_ops.cc)
-   target_link_libraries(test_geomops geometry ${Teuchos_LIBRARIES} ${Trilinos_LIBRARIES} ${UnitTest_LIBRARIES})
+   add_amanzi_test(geometry-operators test_geomops
+                   KIND unit
+                   SOURCE test/Main.cc test/test_geometric_ops.cc
+                   LINK_LIBS geometry ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
 
    # Test: test region creation
-   add_executable(test_region 
-                  test/Main.cc 
-                  test/test_box_region.cc
-                  test/test_plane_region.cc
-                  test/test_labeledset.cc
-		  test/test_colorfunc_region.cc
-		  )
-   target_link_libraries(test_region geometry ${Teuchos_LIBRARIES} ${Trilinos_LIBRARIES} ${UnitTest_LIBRARIES})
+   add_amanzi_test(geometry-region test_region
+                   KIND unit
+                   SOURCE  
+                          test/Main.cc 
+                          test/test_box_region.cc
+                          test/test_plane_region.cc
+                          test/test_labeledset.cc
+                          test/test_colorfunc_region.cc
+                   LINK_LIBS 
+                          geometry
+                          ${UnitTest_LIBRARIES}
+                          ${Teuchos_LIBRARIES}
+                          ${Epetra_LIBRARIES})  
 
    # Test: test geometric model creation
-   add_executable(test_geometric_model
-                  test/Main.cc 
-                  test/test_geometric_model.cc)
-   target_link_libraries(test_geometric_model geometry ${Teuchos_LIBRARIES} ${Trilinos_LIBRARIES} ${UnitTest_LIBRARIES})
-
-
-   add_amanzi_test(geometry test_region test_geometric_model test_geomops KIND unit)
-
-    # Test: test geometric model creation from regions
-#    add_executable(test_geometric_model
-#        test/Main.cc
-#        test/test_geometric_model.cc)
-#    target_link_libraries(test_geometric_model geometry ${UnitTest_LIBRARIES})
-#    add_amanzi_test(geometry test_geometric_model KIND int)
+   add_amanzi_test(geometry-model test_geometric_model
+                   KIND unit
+                   SOURCE
+                          test/Main.cc
+                          test/test_geometric_model.cc
+                   LINK_LIBS 
+                          geometry
+                          ${UnitTest_LIBRARIES}
+                          ${Teuchos_LIBRARIES}
+                          ${Epetra_LIBRARIES})  
+           
 
 endif()
 

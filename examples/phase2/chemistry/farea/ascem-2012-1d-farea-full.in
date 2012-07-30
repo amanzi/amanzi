@@ -1,0 +1,348 @@
+:Description: ASCEM 2012 F-Area benchmark problem, 1-d fixed velocity flow w/ full chemistry
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    H+
+    Al+++
+    Ca++
+    Cl-      : charge balance
+    Fe+++
+    CO2(aq)
+    K+       : conservative tracer
+    Mg++
+    Na+
+    SiO2(aq)
+    SO4--
+    Tritium  : tracer w/ radioactive decay for calibrating flow
+    NO3-
+    UO2++
+  /
+  SECONDARY_SPECIES
+    OH-
+    HCO3-
+    CO3--
+    NaHCO3(aq)
+    NaCO3-
+    NaOH(aq)
+    AlOH++
+    Al(OH)2+
+    Al(OH)3(aq)
+    Al(OH)4-
+    CaOH+
+    CaHCO3+
+    CaCO3(aq)
+    MgOH+
+    MgHCO3+
+    MgCO3(aq)
+    (UO2)2(OH)2++  
+    (UO2)2CO3(OH)3-
+    (UO2)2OH+++
+    (UO2)3(CO3)6(6-)
+    (UO2)3(OH)4++
+    UO2(OH)4--
+    (UO2)3(OH)5+
+    (UO2)3(OH)7-
+    (UO2)3O(OH)2(HCO3)+
+    (UO2)4(OH)7+
+    UO2NO3+
+    UO2OH+
+    UO2(OH)2(aq)
+    UO2(OH)3-
+    UO2CO3(aq)
+    UO2(CO3)2--
+    UO2(CO3)3----
+    CaUO2(CO3)3--
+    Ca2UO2(CO3)3(aq)
+    MgUO2(CO3)3--
+    UO2OSi(OH)3+
+  /
+
+  REDOX_SPECIES
+    Fe+++
+  /
+
+  GAS_SPECIES
+    CO2(g)
+  /
+
+  MINERALS
+    Quartz
+    Kaolinite
+    Goethite
+    Schoepite
+    Gibbsite
+    Jurbanite
+    Basaluminite
+    Opal
+  /
+
+  GENERAL_REACTION
+    REACTION Tritium <-> 
+    FORWARD_RATE 1.78577e-09 : [s^-1] half life of 12.3 y
+    BACKWARD_RATE 0.d0
+  /
+
+  MINERAL_KINETICS
+    Quartz
+      :RATE_CONSTANT 4.51856e-14
+      RATE_CONSTANT -13.345
+    /
+    Kaolinite
+      RATE_CONSTANT -12.967
+      PREFACTOR
+      : acid
+        RATE_CONSTANT -12.967
+        PREFACTOR_SPECIES H+
+          ALPHA 0.777
+        /
+      /
+    /
+    Goethite
+      RATE_CONSTANT -7.94
+    /
+    Schoepite
+      : equilibrium => fast rate
+      RATE_CONSTANT 2.0
+    /
+    Gibbsite
+      RATE_CONSTANT -11.5
+    /
+    Jurbanite
+      RATE_CONSTANT -8.0
+    /
+    Basaluminite
+      RATE_CONSTANT -8.0
+    /
+    Opal
+      : dissolution
+      RATE_CONSTANT -12.135
+    /
+  /
+
+  SORPTION
+    SURFACE_COMPLEXATION_RXN
+      EQUILIBRIUM
+      :MINERAL bulk sediment
+      SITE >davis_OH 1.56199E-01  : [mol/m^3 bulk]
+      COMPLEXES
+        (>davis_O)UO2+
+      /
+    /
+    ION_EXCHANGE_RXN
+      :MINERAL Kaolinite
+      CEC 2.75  : [mol/m^3 bulk]
+      CATIONS
+        Na+   1.0
+        Ca++  0.316227766017
+        Al+++ 1.71132830416
+        H+    0.0251188643151
+      /
+    /
+  END :sorption
+
+
+  DATABASE ascem-2012-farea.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS TIMESTEP
+
+  OUTPUT
+    primary_species
+    total_sorbed
+    Quartz
+    Kaolinite
+    Goethite
+    Schoepite
+    Gibbsite
+    Jurbanite
+    Basaluminite
+    Opal
+  /
+
+END
+
+:=========================== solver options ===================================
+TIMESTEPPER
+  TS_ACCELERATION 8
+/
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  ORIGIN 0.d0 0.d0 0.d0
+  NXYZ 100 1 1
+  BOUNDS
+    0.d0 100.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+END
+
+:=========================== flow =============================================
+UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.25d0
+/
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION all
+  AT_CELL_CENTER
+/
+
+:=========================== output options ===================================
+OUTPUT
+  FORMAT HDF5
+  PERIODIC TIME 1 y
+/
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 50.d0 y
+  INITIAL_TIMESTEP_SIZE 1.d-6 y
+  MAXIMUM_TIMESTEP_SIZE 1.d-1 y
+/
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION west
+  FACE WEST
+  COORDINATES
+    0.d0 0.d0 0.d0
+    0.d0 1.d0 1.d0
+  /
+END
+
+REGION east
+  FACE EAST
+  COORDINATES
+    100.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 background
+  /
+END
+
+TRANSPORT_CONDITION west
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 seepage
+  /
+END
+
+TRANSPORT_CONDITION east
+  TYPE dirichlet_zero_gradient
+  CONSTRAINT_LIST
+    0.d0 background
+  /
+END
+
+:=========================== constraints ======================================
+CONSTRAINT background
+  : initial condition
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+       5.4        P
+    Al+++    3.09d-8    M Kaolinite
+    Ca++     1.00e-5    T
+    Cl-      9.98e-3    Z
+    Fe+++    2.92e-16   M Goethite
+    CO2(aq)  -3.5       G CO2(g)
+    K+       3.32e-5    T
+    Mg++     5.35e-3    T
+    Na+      2.78e-4    T
+    SiO2(aq) 1.77e-4    M Quartz
+    SO4--    2.25e-5    T
+    Tritium  1.0e-15    T
+    NO3-     1.0e-3     T
+    UO2++    1.25e-10   T
+  /
+  MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
+    Quartz        0.88      3262.3
+    Kaolinite     0.11     59093.9
+    Goethite      0.016    11076.3
+    Schoepite     0.0      0.1
+    Gibbsite      0.0      0.1
+    Basaluminite  0.0      0.1
+    Opal          0.0      0.1
+    Jurbanite     0.0      0.1
+  /
+
+END
+
+CONSTRAINT seepage
+  : west BC
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+       2.05       P
+    Al+++    1.00d-8    T
+    Ca++     1.00e-5    T
+    Cl-      3.39e-5    T
+    Fe+++    2.75e-6    M Goethite
+    CO2(aq)  -3.5       G CO2(g)
+    K+       1.72e-6    T
+    Mg++     2.47e-6    T
+    Na+      6.82e-5    Z
+    SiO2(aq) 1.18e-4    T
+    SO4--    4.80e-5    T
+    Tritium  2.17e-9    T
+    NO3-     1.00e-2    T
+    UO2++    3.01e-5    T
+  /
+  MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
+    Quartz        0.88      3262.3
+    Kaolinite     0.11     59093.9
+    Goethite      0.016    11076.3
+    Schoepite     0.0      0.1
+    Gibbsite      0.0      0.1
+    Basaluminite  0.0      0.1
+    Opal          0.0      0.1
+    Jurbanite     0.0      0.1
+  /
+
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+: west boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION west
+  REGION west
+END
+
+: east boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION east
+  REGION east
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+

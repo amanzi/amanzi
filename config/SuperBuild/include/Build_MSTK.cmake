@@ -6,7 +6,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(MSTK
                              TARGET mstk
-                             DEPENDS HDF5 NetCDF ExodusII METIS)
+                             DEPENDS HDF5 NetCDF ExodusII METIS Trilinos)
 
 
 # --- Define the configure parameters
@@ -23,9 +23,11 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=-L${TPL_INSTALL_PREFIX}/lib
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
+                    -DENABLE_ZOLTAN:BOOL=TRUE
                     -DHDF5_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DNetCDF_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX} 
+                    -DZOLTAN_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DMetis_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DMETIS_LIB_DIR:PATH=${TPL_INSTALL_PREFIX}/lib 
                     -DMETIS_LIBRARY:PATH=${METIS_LIBRARY}

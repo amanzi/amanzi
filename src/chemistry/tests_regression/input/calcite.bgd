@@ -1,49 +1,34 @@
-# Calcite chemistry test problem for ascem geochemistry code validation
+# pflotran database preprocessing :
+#        date : 20120511   182302.799
+#       input : calcite-kinetics-large-time-steps.in
+
 <Primary Species
-H+ ; 9.0 ; 1.0 ; 1.0079
-
-HCO3- ; 4.0 ; -1.0 ; 61.0171
-
-Ca++ ; 6.0 ; 2.0 ; 40.0780
+H+  ;   9.00 ;   1.00 ;   1.01
+HCO3-  ;   4.00 ;  -1.00 ;  61.02
+Ca++  ;   6.00 ;   2.00 ;  40.08
 
 <Aqueous Equilibrium Complexes
-OH- = -1.0000 H+ 1.0000 H2O ; 13.9951 ; 3.5 ; -1.0 ; 17.0073
+OH- =   1.00 H2O  -1.00 H+  ;   13.99510 ;    3.50000 ;   -1.00000 ;   17.00730
+CO3-- =  -1.00 H+   1.00 HCO3-  ;   10.32880 ;    4.50000 ;   -2.00000 ;   60.00920
+CO2(aq) =  -1.00 H2O   1.00 H+   1.00 HCO3-  ;   -6.34470 ;    3.00000 ;    0.00000 ;   44.00980
+CaOH+ =   1.00 H2O  -1.00 H+   1.00 Ca++  ;   12.85000 ;    4.00000 ;    1.00000 ;   57.08530
+CaHCO3+ =   1.00 HCO3-   1.00 Ca++  ;   -1.04670 ;    4.00000 ;    1.00000 ;  101.09510
+CaCO3(aq) =  -1.00 H+   1.00 HCO3-   1.00 Ca++  ;    7.00170 ;    3.00000 ;    0.00000 ;  100.08720
 
-CO3-- = -1.0000 H+ 1.0000 HCO3- ; 10.3288 ; 4.5 ; -2.0 ; 60.0092
-
-CO2(aq)  = -1.0000 H2O 1.0000 H+ 1.0000 HCO3- ; -6.3447 ; 3.0 ; 0.0 ; 44.0098
-
-CaOH+ = -1.0000 H+ 1.0000 Ca++ 1.0000 H2O ; 12.8500 ; 4.0 ; 1.0 ; 57.0853
-
-CaHCO3+ = 1.0000 Ca++ 1.0000 HCO3- ; -1.0467 ; 4.0 ; 1.0 ; 101.0951
-
-CaCO3(aq) = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 7.0017 ; 3.0 ; 0.0 ; 100.0872
-
-#
-# mineral input:
-# Name = coeff Species .... ; log Keq ; GMW [g/mol] ; molar volume [cm^3/mol] ; SSA [m^2/g] 
+<General Kinetics
 
 <Minerals
-Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340 ; 1.0
-
-#
-# crude input file format for mineral kinetics
-#
-# units are shown in the example, but not verified or converted by the code!
-#
-# each line is a semicolon delimited list for a single reaction rate expression:
-# field 1 : mineral : name from the "<Minerals" section
-# field 2 : rate type : string
-#
-# remaining fields depend on the rate type
-#
-# TST rate : Rate = k * area * Prod (a_i^m_i) * ( 1 - Q/Keq)
-#   field : 'log10_rate_constant double moles_m2_sec' : k, rate constant [moles m^2 s^-1]
-#   field : 'name double' : list of modifying species primary and exponent
-#
+Calcite =  -1.00 H+   1.00 HCO3-   1.00 Ca++  ;   1.84870E+00 ;   1.00087E+02 ;   3.69340E+01 ;   1.00000E+00
 
 <Mineral Kinetics
-#Calcite ; TST ; log10_rate_constant -6.19 moles_m2_sec
+Calcite ; TST ; log10_rate_constant  -1.30000E+01 moles/cm^2/sec 
 
-Calcite ; TST ; log10_rate_constant -9.0 moles_m2_sec
+<Ion Exchange Sites
 
+<Ion Exchange Complexes
+
+<Surface Complex Sites
+
+<Surface Complexes
+
+<Isotherms

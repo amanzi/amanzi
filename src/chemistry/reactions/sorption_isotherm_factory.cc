@@ -11,7 +11,7 @@
 #include "sorption_isotherm_freundlich.hh"
 #include "chemistry_exception.hh"
 #include "string_tokenizer.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
 #include "exceptions.hh"
 
 namespace amanzi {

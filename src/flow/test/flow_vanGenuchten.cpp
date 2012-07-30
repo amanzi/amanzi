@@ -1,52 +1,55 @@
 #include <iostream>
+#include <cstdio>
 #include "UnitTest++.h"
 
-#include "vanGenuchtenModel.hpp"
+#include "WRM_vanGenuchten.hpp"
 #include "math.h"
 
 TEST(vanGenuchten) {
+  using namespace Amanzi::AmanziFlow;
 
   double m = 0.5;
-  double alpha = 0.1;
+  double l = 0.5;
+  double alpha = 0.01;
   double sr = 0.4;
-  double p_atm = 1.0e+5;
+  double p_atm = 101325.0;
+  std::string krel_function("Mualem");
+  double pc0 = 500.0;
 
-  vanGenuchtenModel vG("test", m, alpha, sr, p_atm);
-  
+  WRM_vanGenuchten vG("test", m, l, alpha, sr, krel_function, pc0);
+ 
   // check k_relative for p = 2*p_atm
-  CHECK_EQUAL(vG.k_relative(2.0*p_atm),1.0);
+  double pc = -p_atm;
+  CHECK_EQUAL(vG.k_relative(pc), 1.0);
   
-  // check k_relative for p = 0, then pc = -p_atm
-  double se = pow(1.0 + pow(alpha*p_atm,1.0/(1.0-m)),-m);
-  CHECK_CLOSE(vG.k_relative(0.0),
-	      sqrt(se)*pow(1.0-pow(1.0-pow(se,1.0/m),m),2.0),1e-15);
+  // check k_relative for p = 0
+  pc = p_atm;
+  double se = pow(1.0 + pow(alpha * pc, 1.0 / (1.0-m)),-m);
+  CHECK_CLOSE(vG.k_relative(pc), 
+              sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m), m), 2.0), 1e-15);
   
   // check saturation for p = 2*p_atm
-  CHECK_EQUAL(vG.saturation(2*p_atm),1.0);
+  pc = -p_atm;
+  CHECK_EQUAL(vG.saturation(pc), 1.0);
   
-  // check saturation for p = 0, then pc = -p_atm
-  CHECK_CLOSE(vG.saturation(0.0),
-	      pow(1.0 + pow(alpha*p_atm,1.0/(1.0-m)),-m)*(1.0-sr)+sr,1e-15);
- 
+  // check saturation for p = 0  
+  pc = p_atm;
+  CHECK_CLOSE(vG.saturation(pc),
+	      pow(1.0 + pow(alpha * pc, 1.0/ (1.0-m)), -m) * (1.0-sr) + sr, 1e-15);
 
-  // check derivative of saturation(p) at p=2*p_atm
-  CHECK_EQUAL(vG.d_saturation(2*p_atm), 0.0);
+  // check derivative of saturation(pc) at p = 2*p_atm.
+  pc = -p_atm;
+  CHECK_EQUAL(vG.dSdPc(pc), 0.0);
 
-  // check derivative of saturation(p) at p=0.0
-  CHECK_CLOSE(vG.d_saturation(0.0), 
-	      (1.0-sr)*(-m)*pow(1.0+pow(alpha*p_atm,1.0/(1.0-m)),-m-1.0)
-	      *(-alpha)*pow(alpha*p_atm,m/(1.0-m))/(1.0-m),1e-15);
-  
+  // check derivative of saturation(p) at p = 0.
+  pc = p_atm;
+  CHECK_CLOSE(vG.dSdPc(pc), 
+              (1.0-sr) * m * pow(1.0 + pow(alpha*pc, 1.0/(1.0-m)), -m-1.0)
+               * (-alpha) * pow(alpha*pc, m/(1.0-m)) / (1.0-m), 1e-15);
 
-  // double h = 1e-7;
-  
-  // for (int i=1; i<=1000; i+=20) {
-  //   double p = p_atm - (double)i;
-  
-  //   std::cout << p << " " << vG.d_saturation(p) << " " << (vG.saturation(p+0.5*h)-vG.saturation(p-0.5*h))/(h)<< std::endl;
-  
-  // }
-
+  // check smoothing at p = 0.998 * p_atm
+  pc = 0.002 * p_atm;
+  CHECK_CLOSE(vG.k_relative(pc), 6.40454234e-1, 1e-9);
 }
 
 

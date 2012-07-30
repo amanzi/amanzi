@@ -10,19 +10,28 @@ define_external_project_args(CGNS
                              BUILD_IN_SOURCE)
 
 # --- Define the configure command
-
-# Build the configure script
-set(CGNS_sh_configure ${CGNS_prefix_dir}/cgns-configure-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/cgns-configure-step.sh.in
-               ${CGNS_sh_configure}
-	       @ONLY)
-
-# Configure the CMake command file
 set(CGNS_cmake_configure ${CGNS_prefix_dir}/cgns-configure-step.cmake)
+set(CGNS_sh_configure    ${CGNS_prefix_dir}/cgns-configure-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/cgns-configure-step.cmake.in
                ${CGNS_cmake_configure}
-	       @ONLY)
-set(CGNS_CONFIGURE_COMMAND ${CMAKE_COMMAND} -P ${CGNS_cmake_configure})	
+               @ONLY)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/cgns-configure-step.sh.in
+               ${CGNS_sh_configure}
+               @ONLY)
+set(CGNS_CONFIGURE_COMMAND ${CMAKE_COMMAND} -P ${CGNS_cmake_configure})
+
+
+
+# --- Define the install command
+set(CGNS_cmake_install ${CGNS_prefix_dir}/cgns-install-step.cmake)
+set(CGNS_sh_install    ${CGNS_prefix_dir}/cgns-install-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/cgns-install-step.cmake.in
+               ${CGNS_cmake_install}
+               @ONLY)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/cgns-install-step.sh.in
+               ${CGNS_sh_install}
+               @ONLY)
+set(CGNS_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${CGNS_cmake_install})
 
 # --- Add external project build and tie to the CGNS build target
 ExternalProject_Add(${CGNS_BUILD_TARGET}
@@ -41,22 +50,7 @@ ExternalProject_Add(${CGNS_BUILD_TARGET}
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   ${CGNS_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${CGNS_prefix_dir}        # Install directory
+                    INSTALL_COMMAND  ${CGNS_INSTALL_COMMAND}   # Install command
                     # -- Output control
                     ${CGNS_logging_args})
-
-# Add the external project and tie to zlib target
-#ExternalProject_Add(${CGNS_target}
-#    DEPENDS curl
-#    ${CGNS_ep_directory_args}
-#    ${CGNS_url_args}
-#    CONFIGURE_COMMAND
-#                    <SOURCE_DIR>/configure 
-#                              --prefix=<INSTALL_DIR>
-#                              --enable-lfs
-#                              --enable-64bit
-#                              --with-fortran=no
-#                              FC=false
-#    BUILD_IN_SOURCE TRUE      
-#    ${CGNS_logging_opts}               
-#)

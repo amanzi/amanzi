@@ -1,13 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "surface_site.hh"
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
+#include "chemistry_output.hh"
 #include "block.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 SurfaceSite::SurfaceSite()
     : name_(""),
@@ -42,6 +46,11 @@ void SurfaceSite::AddMineral(Mineral* mineral) {
   // minerals_.push_back(mineral);
 }
 
+void SurfaceSite::UpdateSiteDensity(const double site_density) {
+  // needs to change for minerals....
+  set_molar_density(site_density);
+}  // end UpdateSiteDenity()
+
 // Sum the total site concentration based on minerals
 double SurfaceSite::SiteDensity(void) const {
   /* For now, we are skipping the use of minerals - geh
@@ -65,22 +74,31 @@ void SurfaceSite::display(void) const {
 }  // end display()
 
 void SurfaceSite::Display(void) const {
-  std::cout << std::setw(15) << name()
-            << std::setw(15) << molar_density()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::setw(15) << std::scientific << molar_density()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void SurfaceSite::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Site Name"
-            << std::setw(15) << "Free Conc."
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << "Site Name"
+          << std::setw(15) << "Free Conc."
+          << std::endl;
+  message << std::setw(15) << " "
+          << std::setw(15) << "[mol/m^3 bulk]"
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceSite::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << free_site_concentration()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << free_site_concentration()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry

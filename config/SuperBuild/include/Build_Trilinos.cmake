@@ -4,16 +4,28 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
+set(trilinos_depend_projects NetCDF ExodusII Boost)
+if(ENABLE_HYPRE)
+  list(APPEND trilinos_depend_projects HYPRE)
+endif()
 define_external_project_args(Trilinos
                              TARGET trilinos
-                             DEPENDS NetCDF ExodusII Boost)
+                             DEPENDS ${trilinos_depend_projects})
 
 # --- Define the configuration parameters   
 
 #  - Trilinos Package Configuration
 
+if(Trilinos_Build_Config_File)
+  message(STATUS "Including Trilinos build configuration file ${Trilinos_Build_Config_File}")
+  if ( NOT EXISTS ${Trilinos_Build_Config_File} )
+    message(FATAL_ERROR "File ${Trilinos_Build_Config_File} does not exist.")
+  endif()
+  include(${Trilinos_Build_Config_File})
+endif()
+
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX)
+set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX Zoltan)
 if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
@@ -46,22 +58,23 @@ set(MPI_CMAKE_ARGS DIR EXEC EXEC_NUMPROCS_FLAG EXE_MAX_NUMPROCS C_COMPILER)
 foreach (var ${MPI_CMAKE_ARGS} )
   set(mpi_var "MPI_${var}")
   if ( ${mpi_var} )
-    list(APPEND Trilinos_CMAKE_TPL_ARGS "-D${mpi_var}=${${mpi_var}}")
+    list(APPEND Trilinos_CMAKE_TPL_ARGS "-D${mpi_var}:STRING=${${mpi_var}}")
   endif()
 endforeach() 
 
 # BLAS
-option(ENABLE_BLAS_Search "Search for BLAS libraries" OFF)
-if (ENABLE_BLAS_Search)
+option(ENABLE_BLA_Search "Search for BLAS/LAPACK libraries" OFF)
+if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
-      message(STATUS "Search all possible BLAS vendor types")
+      set(BLA_VENDOR All)
     endif()
+    message(STATUS "Searching BLAS libraries vendor - ${BLA_VENDOR}")
     find_package(BLAS)
     if (NOT BLAS_FOUND )
       message(FATAL_ERROR "Failed to locate BLAS libraries."
                           "Define BLAS libraries with"
-  "\n-DBLAS_LIBRARIES:STRING=....\n"
-  "and re-run cmake")
+                          "\n-DBLAS_LIBRARIES:STRING=....\n"
+                          "and re-run cmake")
     endif()      
 endif()
 
@@ -74,22 +87,24 @@ if ( BLAS_LIBRARIES )
 endif()            
  
 # LAPACK
-if (ENABLE_BLAS_Search)
+if (ENABLE_BLA_Search)
     if ( NOT BLA_VENDOR )
-      message(STATUS "Search all possible BLAS vendor types")
+      set(BLA_VENDOR All)
     endif()
+    message(STATUS "Searching LAPACK libraries vendor - ${BLA_VENDOR}")
     find_package(LAPACK)
     if ( NOT LAPACK_FOUND )
       message(FATAL_ERROR "Failed to locate LAPACK libraries."
                           "Define LAPACK libraries with"
-  "\n-DLAPACK_LIBRARIES:STRING=....\n"
-  "and re-run cmake")
+                          "\n-DLAPACK_LIBRARIES:STRING=....\n"
+                          "and re-run cmake")
     endif()
 endif()
 
 if ( LAPACK_LIBRARIES )
   list(APPEND Trilinos_CMAKE_TPL_ARGS
-    "-DTPL_LAPACK_LIBRARIES:FILEPATH=${LAPACK_LIBRARIES}")
+              "-DTPL_LAPACK_LIBRARIES:FILEPATH=${LAPACK_LIBRARIES}")
+            message(STATUS "Trilinos LAPACK libraries: ${LAPACK_LIBRARIES}")    
 endif()
 
 # Boost
@@ -101,14 +116,22 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_Netcdf:BOOL=ON"
-            "-DNetcdf_INCLUDE_DIRS=${TPL_INSTALL_PREFIX}/include"
-            "-DNetcdf_LIBRARY_DIRS:PATH=${TPL_INSTALL_PREFIX}/lib")
+            "-DNetcdf_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
+            "-DNetcdf_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
 
 # ExodusII 
 list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_ExodusII:BOOL=ON" 
-            "-DExodusII_LIBRARY_DIRS:PATH=${TPL_INSTALL_PREFIX}/lib"
-            "-DExodusII_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include")
+            "-DExodusII_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+            "-DExodusII_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+
+# HYPRE
+if( ENABLE_HYPRE )
+  list(APPEND Trilinos_CMAKE_TPL_ARGS
+              "-DTPL_ENABLE_HYPRE:BOOL=ON"
+              "-DHYPRE_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+              "-DHYPRE_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+endif()
 
 #  - Addtional Trilinos CMake Arguments
 set(Trilinos_CMAKE_EXTRA_ARGS
@@ -146,9 +169,8 @@ set(Trilinos_CMAKE_ARGS
 # - Final language ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                   -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-                   ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                   -DCMAKE_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER})
+                   ${Amanzi_CMAKE_CXX_COMPILER_ARGS})
+print_variable(Trilinos_CMAKE_LANG_ARGS)
 
 #  --- Define the Trilinos patch step
 
@@ -156,20 +178,25 @@ set(Trilinos_CMAKE_LANG_ARGS
 set(Trilinos_PATCH_COMMAND)
 option(ENABLE_Trilinos_Patch "Enable the patch step for the Trilinos build" OFF)
 if ( CMAKE_CXX_COMPILER_VERSION )
-  if (     ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-       AND (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER "4.6" ) )
-     message(STATUS "Trilinos requires a patch when using"
-                    " GNU ${CMAKE_CXX_COMPILER_VERSION}")
-     set(ENABLE_Trilinos_Patch ON)
+  if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
+    if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
+      set(ENABLE_Trilinos_Patch OFF)
+    else()
+      message(STATUS "Trilinos requires a patch when using"
+                     " GNU ${CMAKE_CXX_COMPILER_VERSION}")
+      set(ENABLE_Trilinos_Patch ON)
+    endif()
   endif()
 endif()  
 
+set(Trilinos_PATCH_COMMAND)
 if (ENABLE_Trilinos_Patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                @ONLY)
   set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
 endif()  
+#print_variable(Trilinos_PATCH_COMMAND)
 
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}
@@ -184,9 +211,10 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
-                    CMAKE_ARGS    ${Trilinos_CMAKE_LANG_ARGS} 
-                                  ${Trilinos_CMAKE_ARGS}
-                                 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+		    CMAKE_ARGS          ${Trilnos_Config_File_ARGS}
+                    CMAKE_CACHE_ARGS    ${Trilinos_CMAKE_LANG_ARGS} 
+                                        ${Trilinos_CMAKE_ARGS}
+                                        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make

@@ -26,6 +26,9 @@ CHEMISTRY
   DATABASE ./calcite.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
+  OUTPUT
+    All
+  /
 END
 
 :=========================== solver options ===================================
@@ -94,9 +97,9 @@ END
 :=========================== constraints ======================================
 CONSTRAINT initial
   CONCENTRATIONS
-    H+     -2.d-5     T
-    HCO3-  1.d-3      T
-    Ca++   1.d-4      T
+    H+     -1.d-5     T
+    HCO3-   1.d-5      T
+    Ca++    1.d-5      T
   /
   MINERALS
     Calcite  0.2 1.0

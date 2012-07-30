@@ -12,8 +12,7 @@ set(FPP_files GSLIB_${AMANZI_SPACEDIM}D.F)
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_files})
 
-add_library(gsint ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files})
-add_install_library(gsint)
+add_amanzi_library(gsint SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files})
 
 if (BUILD_TESTS)
 

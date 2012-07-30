@@ -49,7 +49,7 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("Number of Cells");
   Teuchos::Array<double> low_corner = parameter_list.get< Teuchos::Array<double> >("Domain Low Corner");
   Teuchos::Array<double> high_corner = parameter_list.get< Teuchos::Array<double> >("Domain High Corner");
-
+  
   unsigned int dimension = ncells.size();
 
   nx_ = ncells[0];
@@ -61,7 +61,7 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   p0.set(&(low_corner[0]));
   p1.set(&(high_corner[0]));
 
-
+  
   domain_ = new AmanziGeometry::BoxRegion("GenDomain", 0, p0, p1);
 
 }

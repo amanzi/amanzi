@@ -7,19 +7,22 @@
 #include <iomanip>
 #include <sstream>
 
+#include "matrix_block.hh"
+#include "chemistry_output.hh"
 #include "chemistry_exception.hh"
-#include "block.hh"
 
 #include "exceptions.hh"
 
 namespace amanzi {
 namespace chemistry {
 
+extern ChemistryOutput* chem_out;
+
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
   surface_site_.clear();
   surface_complexes_.clear();
-  dSx_dmi_.clear();
+  //dSx_dmi_.clear();
 }
 
 SurfaceComplexationRxn::SurfaceComplexationRxn(
@@ -60,10 +63,16 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void) {
   }
 }  // end SetNewtonSolveFlag
 
+void SurfaceComplexationRxn::UpdateSiteDensity(const double site_density) {
+  surface_site_.at(0).UpdateSiteDensity(site_density);
+}  // end UpdateSiteDensity()
+
 void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) {
+  // see pflotran source: surface_complexation.F90:694, subroutine RTotalSorbEqSurfCplx1
   const double site_density = (surface_site_[0]).SiteDensity();
 
   bool one_more = false;
+  double damping_factor = 1.0;
   int max_iterations = 5000;
   int iterations = 0;
   while (iterations < max_iterations) {
@@ -96,9 +105,14 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
             free_site_concentration;
       }
       double dfree_site_conc = residual / dresidual_dfree_site_conc;
-      free_site_concentration += dfree_site_conc;
+      if (iterations > 1000) {
+        // excessive iterations, try damping the update
+        damping_factor = 0.5;
+      }
+      free_site_concentration += damping_factor * dfree_site_conc;
       double tolerance = 1.e-12;
-      if (fabs(dfree_site_conc / free_site_concentration) < tolerance) {
+      double rel_change_in_free_site_conc = fabs(dfree_site_conc / free_site_concentration);
+      if (rel_change_in_free_site_conc < tolerance) {
         one_more = true;
       }
     } else {
@@ -119,6 +133,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
 }  // end Update()
 
 void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) {
+  // see pflotran source: surface_complexation.F90:825, subroutine RTotalSorbEqSurfCplx1
   for (std::vector<SurfaceComplex>::iterator srfcplx =
            surface_complexes_.begin();
        srfcplx != surface_complexes_.end(); srfcplx++) {
@@ -128,25 +143,25 @@ void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) 
 
 void SurfaceComplexationRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
-    Block* dtotal) {
+    MatrixBlock* dtotal) {
+  // see pflotran source: surface_complexation.F90:773, subroutine RTotalSorbEqSurfCplx1
+
   // All referenced equations #s are from the pflotran chemistry implementation
   // document by Peter Lichtner
 
   // Eq. 2.3-47c
   unsigned int num_primary_species = primarySpecies.size();
-  double* nu_li_nu_i_Si = new double[num_primary_species];
-  for (unsigned int i = 0; i < num_primary_species; i++) {
-    nu_li_nu_i_Si[i] = 0.;
-  }
+  std::vector<double> nu_li_nu_i_Si(num_primary_species, 0.0);
+
   double sum_nu_i_sq_Si = 0.;
-  for (std::vector<SurfaceComplex>::iterator srfcplx =
-           surface_complexes_.begin();
+  std::vector<SurfaceComplex>::iterator srfcplx;
+  for (srfcplx = surface_complexes_.begin();
        srfcplx != surface_complexes_.end(); srfcplx++) {
     double tempd = srfcplx->free_site_stoichiometry() *
         srfcplx->surface_concentration();
     for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
       // sum of nu_li * nu_i * S_i
-      nu_li_nu_i_Si[srfcplx->species_id(icomp)] +=
+      nu_li_nu_i_Si.at(srfcplx->species_id(icomp)) +=
           srfcplx->stoichiometry(icomp) * tempd;
     }
     // sum of nu_i^2 * S_i
@@ -154,27 +169,35 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
         tempd;  // (free_site_stoich*surf_conc)
   }
   // complete the denominator within the brackets
+  sum_nu_i_sq_Si /= surface_site_.at(0).free_site_concentration();
   double Sx_plus_sum_nu_i_sq_Si = 1. + sum_nu_i_sq_Si;
+  for (unsigned int i = 0; i < num_primary_species; ++i) {
+    nu_li_nu_i_Si.at(i) *= -1.0;
+    nu_li_nu_i_Si.at(i) /= Sx_plus_sum_nu_i_sq_Si;
+    // convert from dlogm to dm
+    nu_li_nu_i_Si.at(i) /= primarySpecies.at(i).molality();
+  }
 
-  for (std::vector<SurfaceComplex>::iterator srfcplx =
-           surface_complexes_.begin();
-       srfcplx != surface_complexes_.end(); srfcplx++) {
+  for (srfcplx = surface_complexes_.begin();
+       srfcplx != surface_complexes_.end(); ++srfcplx) {
     double surface_concentration = srfcplx->surface_concentration();
+    double nui_Si_over_Sx =
+        srfcplx->free_site_stoichiometry() * surface_concentration /
+        surface_site_.at(0).free_site_concentration();
     for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
       int primary_species_id_i = srfcplx->species_id(icomp);
       // 2.3-47c converted to non-log form
-      double dSi_mi = surface_concentration /
-          primarySpecies[primary_species_id_i].molality() *
-          (srfcplx->stoichiometry(icomp) -
-           (nu_li_nu_i_Si[icomp] / Sx_plus_sum_nu_i_sq_Si));
+      double dSi_mi = (srfcplx->stoichiometry(icomp) * surface_concentration /
+                                primarySpecies.at(primary_species_id_i).molality()) +
+          nu_li_nu_i_Si.at(icomp) * nui_Si_over_Sx;
       for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
         double dPsij_dmi = dSi_mi * srfcplx->stoichiometry(jcomp);
-        dtotal->addValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
+        // NOTE: is this the correct i,j indexing...?
+        dtotal->AddValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
       }
     }
   }
-  delete [] nu_li_nu_i_Si;
 }  // end AddContributionToDTotal()
 
 void SurfaceComplexationRxn::DisplaySite(void) const {
@@ -203,8 +226,10 @@ void SurfaceComplexationRxn::display(void) const {
 }  // end display()
 
 void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "---"
+  std::stringstream message;
+  message << std::setw(7) << "---"
             << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceComplexationRxn::DisplayResults(void) const {
@@ -214,7 +239,7 @@ void SurfaceComplexationRxn::DisplayResults(void) const {
        site != surface_site_.end(); site++) {
     site->DisplayResults();
   }
-
+  chem_out->Write(kVerbose, "\n");
   surface_complexes_[0].DisplayResultsHeader();
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();

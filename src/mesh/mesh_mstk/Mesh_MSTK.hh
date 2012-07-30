@@ -85,6 +85,14 @@ private:
   // flag whether to flip a face dir or not when returning nodes of a face
   
   bool *faceflip;
+
+
+  // Parent entity attribute - populated if the mesh is derived from
+  // another mesh
+
+  MAttrib_ptr rparentatt, fparentatt, eparentatt, vparentatt;
+
+  const Mesh_MSTK *parent_mesh;
   
   // Private methods
   // ----------------------------
@@ -96,6 +104,8 @@ private:
   void post_create_steps_();
 
   void collapse_degen_edges();
+  Cell_type MFace_Celltype(MFace_ptr f);
+  Cell_type MRegion_Celltype(MRegion_ptr r);
   void label_celltype();
 
   void init_pvert_lists();
@@ -111,6 +121,7 @@ private:
   void init_node_map();
   
   void init_set_info();
+  void inherit_labeled_sets(MAttrib_ptr copyatt);
 
   int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
 			     double x1, double y1, double z1, int nx,
@@ -155,6 +166,19 @@ public:
 	    (AmanziGeometry::GeometricModelPtr) NULL);
 
 
+  // Construct a mesh by extracting a subset of entities from another
+  // mesh. In some cases like extracting a surface mesh from a volume
+  // mesh, constructor can be asked to "flatten" the mesh to a lower
+  // dimensional space or to extrude the mesh to give higher
+  // dimensional cells
+
+  Mesh_MSTK(const Mesh_MSTK& inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
+
+
   ~Mesh_MSTK ();
 
 
@@ -167,6 +191,13 @@ public:
   // Get cell type
     
   Cell_type cell_get_type(const Entity_ID cellid) const;
+
+
+  // Parent entity in the source mesh if mesh was derived from another mesh
+
+  Entity_ID entity_get_parent (const Entity_kind kind, const Entity_ID entid) const;
+
+
         
    
   //
@@ -368,6 +399,10 @@ public:
 			     std::vector<AmanziGeometry::Point> *ccoords) const;
     
   // Modify the coordinates of a node
+
+  void node_set_coordinates (const Entity_ID nodeid, 
+                             const AmanziGeometry::Point coords);
+
   void node_set_coordinates (const Entity_ID nodeid, const double *coords);
 
     
@@ -426,7 +461,6 @@ public:
 
 
 };
-
 
 
     

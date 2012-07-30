@@ -23,11 +23,17 @@ double ActivityModelUnit::Evaluate(const Species& species) {
   return 1.0;
 }  // end Evaluate()
 
-void ActivityModelUnit::EvaluateVector (std::vector<double>& gamma, double& actw, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec){
-	const double r1(1.0e0);
-	for (std::vector<double>::iterator i=gamma.begin(); i!=gamma.end(); i++) (*i)=r1;
-	actw=r1;
-} // end EvaluateVector
+void ActivityModelUnit::EvaluateVector(
+    const std::vector<Species>& prim, 
+    const std::vector<AqueousEquilibriumComplex>& sec,
+    std::vector<double>* gamma, 
+    double* actw) {
+  const double r1(1.0e0);
+  for (std::vector<double>::iterator i = gamma->begin(); i != gamma->end(); i++) {
+    (*i) = r1;
+  }
+  *actw = r1;
+}  // end EvaluateVector
 
 
 void ActivityModelUnit::Display(void) const {

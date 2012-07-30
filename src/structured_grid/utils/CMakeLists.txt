@@ -25,10 +25,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 set(CXX_header_files ParmParseHelpers.H InputParser_Structured.H TabularFunction.H EventCoord.H)
 set(CXX_source_files ParmParseHelpers.cpp InputParser_Structured.cpp TabularFunction.cpp EventCoord.cpp)
 
-add_install_include_file(${CXX_header_files})
-
-add_library(structutils ${CXX_source_files})
-add_install_library(structutils)
+add_amanzi_library(structutils SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
 
 if (BUILD_TESTS)
 
@@ -62,20 +59,22 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${Teuchos_LIBRARIES})
 
-  add_executable(tPPH tParmParseHelpers.cpp)
-  target_link_libraries(tPPH ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(tPPH tPPH KIND unit)
+  add_amanzi_test(tPPH tPPH
+                  KIND unit
+                  SOURCE tParmParseHelpers.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E
                     copy ${STRUCTUREDUTILS_SOURCE_DIR}/sample.xml ${STRUCTUREDUTILS_BINARY_DIR})
   endif()
 
-  add_executable(tEC tEventCoord.cpp)
-  target_link_libraries(tEC ${structured_grid_libs} ${tpl_libs})
+  add_amanzi_test(tEC tEC
+                  KIND unit
+                  SOURCE tEventCoord.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(tEC tEC KIND unit)
 
 endif()
 

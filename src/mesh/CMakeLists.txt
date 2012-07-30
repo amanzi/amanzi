@@ -29,24 +29,12 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # Library: mesh
 #
-add_library(mesh Mesh.cc GenerationSpec.cc)
-add_install_library(mesh)
-target_link_libraries(mesh geometry)
-
-
-
-#
-# Library: cell_geometry (WILL GO AWAY WHEN EVERYONE SWITCHES TO THE NEW API)
-#
-add_library(cell_geometry cell_geometry.cc)
-add_install_library(cell_geometry)
+add_amanzi_library(mesh SOURCE Mesh.cc GenerationSpec.cc LINK_LIBS geometry)
 
 #
 # Library: mesh_audit
 #
-add_library(mesh_audit MeshAudit.cc MeshAuditOld.cc)
-add_install_library(mesh_audit)
-target_link_libraries(mesh_audit mesh error_handling cell_geometry ${Epetra_LIBRARIES})
+add_amanzi_library(mesh_audit SOURCE MeshAudit.cc LINK_LIBS error_handling ${Epetra_LIBRARIES})
 
 #
 # Install Header files
@@ -84,3 +72,68 @@ endif(ENABLE_MSTK_Mesh)
 
 add_subdirectory(mesh_factory)
 
+
+if (BUILD_TESTS)
+
+    # Include dirs for test
+    include_directories(${MESH_SOURCE_DIR})
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${GEOMETRY_SOURCE_DIR})
+    include_directories(${Epetra_INCLUDE_DIRS})
+
+    # Add UnitTest ExodusII include directories
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Need to copy files for the tests 
+    if (NOT (${MESH_SOURCE_DIR} EQUAL ${MESH_BINARY_DIR}))
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        copy_directory ${MESH_SOURCE_DIR}/test ${MESH_BINARY_DIR}/test) 
+    endif()
+
+    # Test link libraries
+    set(test_link_libs geometry simple_mesh mesh_factory ${UnitTest_LIBRARIES})
+
+    # STK (Trilinos Package)
+    if (ENABLE_STK_Mesh)
+      list(APPEND test_link_libs stk_mesh)
+    endif(ENABLE_STK_Mesh)    
+
+    # MOAB Mesh framework
+    if (ENABLE_MOAB_Mesh)
+      list(APPEND test_link_libs moab_mesh)
+    endif(ENABLE_MOAB_Mesh)    
+    
+    # MSTK Mesh framework
+    if (ENABLE_MSTK_Mesh)
+      list(APPEND test_link_libs mstk_mesh)
+    endif(ENABLE_MSTK_Mesh)    
+
+    # Test: mesh geometry
+
+    set(test_src_files test/Main.cc test/test_mesh_geometry.cc)
+
+    add_amanzi_test(mesh_geometry test_mesh_geometry
+                    KIND unit
+		            SOURCE ${test_src_files}
+		            LINK_LIBS ${test_link_libs})
+
+
+    # Test: mesh deformation
+    set(test_src_files test/Main.cc test/test_deform.cc)
+
+    add_amanzi_test(mesh_deform test_deform
+                    KIND unit
+		    SOURCE ${test_src_files}
+		    LINK_LIBS ${test_link_libs})
+
+    # Test: mesh columns
+
+    set(test_src_files test/Main.cc test/test_columns.cc)
+
+    add_amanzi_test(mesh_columns test_columns
+                    KIND unit
+		    SOURCE ${test_src_files}
+		    LINK_LIBS ${test_link_libs})
+
+endif()
+  

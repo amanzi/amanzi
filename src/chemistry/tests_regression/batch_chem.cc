@@ -7,7 +7,13 @@
 #include <unistd.h>
 #endif
 
+//#define ABORT_ON_FLOATING_POINT_EXCEPTIONS
+#ifdef __APPLE__
+  #include <xmmintrin.h>
+#endif
+
 #include <cstdlib>
+#include <cctype>
 
 #include <iostream>
 #include <iomanip>
@@ -19,17 +25,48 @@
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "activity_model_factory.hh"
-#include "verbosity.hh"
+#include "chemistry_verbosity.hh"
+#include "chemistry_output.hh"
+#include "chemistry_containers.hh"
+#include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 #include "string_tokenizer.hh"
+
+// create a global ChemistryOutput* pointer in the amanzi::chemisry
+// namespace that can be used by an other chemistry object
+namespace amanzi {
+namespace chemistry {
+extern ChemistryOutput* chem_out;
+}  // end namespace chemistry
+}  // end namespace amanzi
 
 namespace ac = amanzi::chemistry;
 
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
 
+/* TODO: might be worth switching over to reading the component values
+   into a map rather than a vector, then order of components in the
+   cfg file wouldn't matter, but we need to request an name-id map
+   from the beaker.  */
 
 int main(int argc, char** argv) {
+#ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
+#ifdef __APPLE__
+  // Make floating point exceptions abort the program. runtime error
+  // message isn't helpful, but running in gdb will stop at the
+  // correct line. This may code may not be apple specific....
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DENORM);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_DIV_ZERO);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_OVERFLOW);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_UNDERFLOW);
+#endif
+#endif
+
+  ac::SetupDefaultChemistryOutput();
+  std::stringstream message;
+
   bool debug_batch_driver(false);
   std::string verbosity_name("");
   std::string input_file_name("");
@@ -48,11 +85,6 @@ int main(int argc, char** argv) {
   }
 
   ac::Beaker::BeakerComponents components;
-  components.free_ion.clear();
-  components.minerals.clear();
-  components.ion_exchange_sites.clear();
-  components.total.clear();
-  components.total_sorbed.clear();
 
   SimulationParameters simulation_params;
   if (!input_file_name.empty()) {
@@ -60,21 +92,39 @@ int main(int argc, char** argv) {
   }
 
   if (components.total.size() == 0) {
-    std::cout << "Must have a non-zero number of total component values." << std::endl;
+    message.str("");
+    message << "Must have a non-zero number of total component values.\n";
+    ac::chem_out->Write(ac::kError, message);
     abort();
   }
 
-  ac::VerbosityMap verbosity_map = ac::CreateVerbosityMap();
-  simulation_params.verbosity = verbosity_map[simulation_params.verbosity_name];
-  // if verbosity was specified on the command line, override the
-  // value specified in the input file
+  // if verbosity was specified on the command line, add the level on chem_out
   if (!verbosity_name.empty()) {
-    simulation_params.verbosity = verbosity_map[verbosity_name];
+    ac::chem_out->AddLevel(verbosity_name);
+  }
+
+  // if verbosity levels were specified in the input file, add the levels
+  std::vector<std::string>::const_iterator name;
+  for (name = simulation_params.verbosity_names.begin();
+       name != simulation_params.verbosity_names.end();
+       ++name) {
+    std::string data = *name;
+    ac::utilities::RemoveLeadingAndTrailingWhitespace(&data);
+    ac::chem_out->AddLevel(data);
   }
 
   if (debug_batch_driver) {
     PrintInput(simulation_params, components);
   }
+
+  double time_units_conversion = 1.0;
+  char time_units = 's';
+  std::fstream text_output;
+  if (simulation_params.text_output.size() > 0) {
+    SetupTextOutput(simulation_params, input_file_name,
+                    &text_output, &time_units, &time_units_conversion);
+  }
+
   ac::Beaker* chem = NULL;
 
   try {
@@ -85,18 +135,15 @@ int main(int argc, char** argv) {
       ac::Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
       parameters.thermo_database_file = simulation_params.database_file;
       parameters.activity_model_name = simulation_params.activity_model;
+      parameters.max_iterations = simulation_params.max_iterations;
+      parameters.tolerance = simulation_params.tolerance;
       parameters.porosity = simulation_params.porosity;  // -
       parameters.saturation = simulation_params.saturation;  // -
       parameters.volume = simulation_params.volume;  // m^3
       ModelSpecificParameters(simulation_params.comparison_model, &parameters);
-
-      if (components.free_ion.size() == 0) {
-        // initialize free-ion concentrations, these are actual
-        // concentrations, so the value must be positive or ln(free_ion)
-        // will return a nan!
+      if (components.free_ion.size() != components.total.size()) {
         components.free_ion.resize(components.total.size(), 1.0e-9);
       }
-
       chem->Setup(components, parameters);
 
       if (simulation_params.verbosity >= ac::kVerbose) {
@@ -105,61 +152,78 @@ int main(int argc, char** argv) {
       }
 
       // solve for free-ion concentrations
-      chem->Speciate(components, parameters);
-      chem->UpdateComponents(&components);
+      chem->Speciate(&components, parameters);
+      chem->CopyBeakerToComponents(&components);
       if (simulation_params.verbosity >= ac::kTerse) {
         chem->DisplayResults();
       }
 
       if (simulation_params.num_time_steps != 0) {
-        std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
-        chem->DisplayTotalColumnHeaders();
-        chem->DisplayTotalColumns(0.0, components);
+        message.str("");
+        message << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
+        ac::chem_out->Write(ac::kVerbose, message);
+
+        // write out the headers info and initial conditions
+        chem->DisplayTotalColumnHeaders(simulation_params.display_free_columns);
+        chem->DisplayTotalColumns(0.0, components,
+                                  simulation_params.display_free_columns);
+        std::vector<std::string> names;
+        chem->GetPrimaryNames(&names);
+        WriteTextOutputHeader(&text_output, time_units, names);
+        WriteTextOutput(&text_output, 0.0, components);
+
         // parameters.max_iterations = 2;
         for (int time_step = 0; time_step < simulation_params.num_time_steps;
              time_step++) {
           chem->ReactionStep(&components, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
-            chem->DisplayTotalColumns((time_step + 1) * simulation_params.delta_time,
-                                      components);
+            double time = (time_step + 1) * simulation_params.delta_time;
+            chem->DisplayTotalColumns(time, components, 
+                                      simulation_params.display_free_columns);
+            WriteTextOutput(&text_output, time * time_units_conversion, components);
           }
-          if (simulation_params.verbosity >= ac::kDebugNewtonSolver) {
+          if (simulation_params.verbosity >= ac::kDebugBeaker) {
+            message.str("");
             ac::Beaker::SolverStatus status = chem->status();
-            std::cout << "Timestep: " << time_step << std::endl;
-            std::cout << "    number of rhs evaluations: " << status.num_rhs_evaluations << std::endl;
-            std::cout << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
-            std::cout << "    number of newton iterations: " << status.num_newton_iterations << std::endl;
-            std::cout << "    solution converged: " << status.converged << std::endl;
+            message << "Timestep: " << time_step << std::endl;
+            message << "    number of rhs evaluations: " << status.num_rhs_evaluations << std::endl;
+            message << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
+            message << "    number of newton iterations: " << status.num_newton_iterations << std::endl;
+            message << "    solution converged: " << status.converged << std::endl;
+            ac::chem_out->Write(ac::kVerbose, message);
           }
         }
-        std::cout << "---- Final Speciation" << std::endl;
-        chem->Speciate(components, parameters);
+        ac::chem_out->Write(ac::kVerbose, "---- Final Speciation\n");
+        chem->Speciate(&components, parameters);
         if (simulation_params.verbosity >= ac::kTerse) {
           chem->DisplayResults();
         }
       }
     } else {
-      std::cout << "No database file specified in input file." << std::endl;
+      ac::chem_out->Write(ac::kVerbose, "No database file specified in input file.\n");
     }
   } catch (const ac::ChemistryException& geochem_error) {
-    std::cout << geochem_error.what() << std::endl;
+    ac::chem_out->Write(ac::kError, geochem_error.what());
     error = EXIT_FAILURE;
   } catch (const std::runtime_error& rt_error) {
-    std::cout << rt_error.what() << std::endl;
+    ac::chem_out->Write(ac::kError, rt_error.what());
     error = EXIT_FAILURE;
   } catch (const std::logic_error& lg_error) {
-    std::cout << lg_error.what() << std::endl;
+    ac::chem_out->Write(ac::kError, lg_error.what());
     error = EXIT_FAILURE;
   }
 
+  if (!error) {
+    ac::chem_out->Write(ac::kVerbose, "Success!\n");
+  } else {
+    ac::chem_out->Write(ac::kVerbose, "Failed!\n");
+  }
+
+  text_output.close();
   // cleanup memory
   delete chem;
+  delete ac::chem_out;
 
-  if (!error) {
-    std::cout << "Success!\n";
-  } else {
-    std::cout << "Failed!\n";
-  }
   return error;
 }  // end main()
 
@@ -176,6 +240,7 @@ void ModelSpecificParameters(const std::string model,
     // bad model name, how did we get here....
   }
 }  // end ModelSpecificParameters()
+
 
 /*******************************************************************************
  **
@@ -227,7 +292,7 @@ int CommandLineOptions(int argc, char** argv,
         std::cout << "         write a template input file" << std::endl;
         std::cout << std::endl;
         std::cout << "    -v string" << std::endl;
-        std::cout << "         override verbosity from input file:" << std::endl;
+        std::cout << "         additional verbosity level:" << std::endl;
         std::cout << "            silent" << std::endl;
         std::cout << "            terse" << std::endl;
         std::cout << "            verbose" << std::endl;
@@ -253,13 +318,15 @@ int CommandLineOptions(int argc, char** argv,
   }
 
   if (*debug_batch_driver) {
-    std::cout << "- Command Line Options -----------------------------------------------" << std::endl;
-    std::cout << "\tdebug batch driver: " << *debug_batch_driver << std::endl;
-    std::cout << "\tinput file name: " << *input_file_name << std::endl;
-    std::cout << "\ttemplate file name: " << *template_file_name << std::endl;
-    std::cout << "\tverbosity name: " << *verbosity_name << std::endl;
-    std::cout << "----------------------------------------------- Command Line Options -" << std::endl;
-    std::cout << std::endl << std::endl;
+    std::stringstream message;
+    message << "- Command Line Options -----------------------------------------------" << std::endl;
+    message << "\tdebug batch driver: " << *debug_batch_driver << std::endl;
+    message << "\tinput file name: " << *input_file_name << std::endl;
+    message << "\ttemplate file name: " << *template_file_name << std::endl;
+    message << "\tverbosity name: " << *verbosity_name << std::endl;
+    message << "----------------------------------------------- Command Line Options -" << std::endl;
+    message << std::endl << std::endl;
+    ac::chem_out->Write(ac::kDebugDriver, message);
   }
   return error;
 }  // end commandLineOptions()
@@ -274,12 +341,14 @@ void ReadInputFile(const std::string& file_name,
                    SimulationParameters* simulation_params,
                    ac::Beaker::BeakerComponents* components)
 {
+  std::stringstream message;
   std::ifstream input_file(file_name.c_str());
   if (!input_file) {
-    std::ostringstream error_stream;
-    std::cout << "batch_chem: \n";
-    std::cout << "input file \'" << file_name
+    message.str("");
+    message << "batch_chem: \n";
+    message << "input file \'" << file_name
               << "\' could not be opened." << std::endl;
+    ac::chem_out->Write(ac::kError, message);
     abort();
   }
 
@@ -295,7 +364,10 @@ void ReadInputFile(const std::string& file_name,
     kSectionMineral,
     kSectionSorbed,
     kSectionFreeIon,
-    kSectionIonExchange
+    kSectionIonExchange,
+    kSectionSiteDensity,
+    kSectionSpecificSurfaceArea,
+    kSectionIsotherms
   } current_section;
 
   int count = 0;
@@ -338,10 +410,18 @@ void ReadInputFile(const std::string& file_name,
         current_section = kSectionSorbed;
       } else if (section_name.compare(kFreeIonSection) == 0) {
         current_section = kSectionFreeIon;
+      } else if (section_name.compare(kSiteDensitySection) == 0) {
+        current_section = kSectionSiteDensity;
+      } else if (section_name.compare(kSpecificSurfaceAreaSection) == 0) {
+        current_section = kSectionSpecificSurfaceArea;
+      } else if (section_name.compare(kIsothermSection) == 0) {
+        current_section = kSectionIsotherms;
       } else {
-        std::cout << "batch_chem::ReadInputFile(): ";
-        std::cout << "unknown section found on line " << count << ":";
-        std::cout << "\'" << raw_line << "\'"<< std::endl;
+        message.str("");
+        message << "batch_chem::ReadInputFile(): ";
+        message << "unknown section found on line " << count << ":";
+        message << "\'" << raw_line << "\'"<< std::endl;
+        ac::chem_out->Write(ac::kDebugInputFile, message);
       }
     } else if (line_type == kParameter) {
       // assume parameter line, but it may be empty (just spaces or missing an = )...
@@ -349,14 +429,20 @@ void ReadInputFile(const std::string& file_name,
         ParseSimulationParameter(raw_line, simulation_params);
       } else if (current_section == kSectionTotal) {
         ParseComponentValue(raw_line, &(components->total));
-      } else if (current_section == kSectionMineral) {
-        ParseComponentValue(raw_line, &(components->minerals));
-      } else if (current_section == kSectionIonExchange) {
-        ParseComponentValue(raw_line, &(components->ion_exchange_sites));
       } else if (current_section == kSectionSorbed) {
         ParseComponentValue(raw_line, &(components->total_sorbed));
       } else if (current_section == kSectionFreeIon) {
         ParseComponentValue(raw_line, &(components->free_ion));
+      } else if (current_section == kSectionMineral) {
+        ParseComponentValue(raw_line, &(components->mineral_volume_fraction));
+      } else if (current_section == kSectionSpecificSurfaceArea) {
+        ParseComponentValue(raw_line, &(components->mineral_specific_surface_area));
+      } else if (current_section == kSectionIonExchange) {
+        ParseComponentValue(raw_line, &(components->ion_exchange_sites));
+      } else if (current_section == kSectionSiteDensity) {
+        ParseComponentValue(raw_line, &(components->surface_site_density));
+      } else if (current_section == kSectionIsotherms) {
+        // TODO: need to figure out the format of this data...
       }
     }
   }
@@ -374,18 +460,24 @@ void ParseSimulationParameter(const std::string& raw_line,
   //std::cout << "\'" << raw_line << "\'" << std::endl;
   // if param.size() == 0 then we have a blank line
   if (param.size() != 0) {
-    ac::StringTokenizer param_value(param.at(1), spaces);
+    ac::StringTokenizer values(param.at(1), ",");
     std::string value("");
-    if (param_value.size() > 0) {
-      value.assign(param_value.at(0));
+    if (values.size() == 1) {
+      value.assign(values.at(0));
+      ac::utilities::RemoveLeadingAndTrailingWhitespace(&value);
     }
+    //std::cout << "Parsing ----->  '" << param.at(0) << "'" << std::endl;
     if (param.at(0).find(kDescriptionParam) != std::string::npos) {
       // the description probably has spaces in it, so we want to use
       // the raw parameter value from param.at(1) rather than the
       // version in value, which has been tokenized by spaces!
       params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
-      params->verbosity_name.assign(value);
+      params->verbosity_names.assign(values.begin(), values.end());
+    } else if (param.at(0).find(kTextOutputParam) != std::string::npos) {
+      params->text_output.assign(value) ;
+    } else if (param.at(0).find(kTextTimeUnitsParam) != std::string::npos) {
+      params->text_time_units.assign(value) ;
     } else if (param.at(0).find(kComparisonModelParam) != std::string::npos) {
       params->comparison_model.assign(value);
     } else if (param.at(0).find(kDatabaseTypeParam) != std::string::npos) {
@@ -406,6 +498,10 @@ void ParseSimulationParameter(const std::string& raw_line,
       params->num_time_steps = std::atoi(value.c_str());
     } else if (param.at(0).find(kOutputIntervalParam) != std::string::npos) {
       params->output_interval = std::atoi(value.c_str());
+    } else if (param.at(0).find(kToleranceParam) != std::string::npos) {
+      params->tolerance = std::atof(value.c_str());
+    } else if (param.at(0).find(kMaxIterationsParam) != std::string::npos) {
+      params->max_iterations = std::atoi(value.c_str());
     }
   }
 
@@ -433,6 +529,26 @@ void ParseComponentValue(const std::string& raw_line,
 
 }  // end ParseComponentValue();
 
+void ParseComponentValue(const std::string& raw_line,
+                         double* component)
+{
+  // this is intended for a single value, not a c-style array!
+  std::string equal("=:");
+  std::string spaces(" \t");
+  ac::StringTokenizer param(raw_line, equal);
+  //std::cout << "\'" << raw_line << "\'" << std::endl;
+  // if param.size() == 0 then we have a blank line
+  if (param.size() != 0) {
+    ac::StringTokenizer param_value(param.at(1), spaces);
+    double value;
+    if (param_value.size() > 0) {
+      value = std::atof(param_value.at(0).c_str());
+    }
+    *component = value;
+  }
+
+}  // end ParseComponentValue();
+
 
 /*******************************************************************************
  **
@@ -443,15 +559,20 @@ void WriteTemplateFile(const std::string& file_name)
 {
   std::ofstream template_file(file_name.c_str());
   if (!template_file) {
-    std::cout << "batch_chem: \n";
-    std::cout << "template file \'" << file_name
+    std::stringstream message;
+    message << "batch_chem: \n";
+    message << "template file \'" << file_name
               << "\' could not be opened." << std::endl;
+    ac::chem_out->Write(ac::kError, message);
     abort();
   }
   template_file << "[" << kSimulationSection << "]" << std::endl;
   template_file << kDescriptionParam << " = " << std::endl;
+  template_file << "# verbosity can be a comma seperated list." << std::endl;
   template_file << kVerbosityParam << " = verbose" << std::endl;
   template_file << kComparisonModelParam << " = pflotran" << std::endl;
+  template_file << kTextOutputParam << " = true" << std::endl;
+  template_file << kTextTimeUnitsParam << " = days" << std::endl;
   template_file << std::endl;
   template_file << kDatabaseTypeParam << " = simple" << std::endl;
   template_file << kDatabaseFileParam << " = " << std::endl;
@@ -472,64 +593,112 @@ void WriteTemplateFile(const std::string& file_name)
   template_file << std::endl;
   template_file << "[" << kFreeIonSection << "]" << std::endl;
   template_file << std::endl;
-  template_file << "[" << kIonExchangeSection << "]" << std::endl;
+  template_file << "[" << kIonExchangeSection << "] # CEC" << std::endl;
+  template_file << std::endl;
+  template_file << "[" << kIsothermSection << "]" << std::endl;
   template_file << std::endl;
   template_file.close();
 }  // end WriteTemplateFile()
+
+void SetupTextOutput(const SimulationParameters& simulation_params,
+                     const std::string& input_file_name,
+                     std::fstream* text_output, char* time_units,
+                     double* time_units_conversion) {
+  // are we writting to observations to a text file?
+  if (ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "true") ||
+      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "yes") ||
+      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "on")) {
+    // generate the output file name:
+    size_t position = input_file_name.find_last_of('.');
+    std::string text_output_name = input_file_name.substr(0, position) + ".txt";
+
+    text_output->open(text_output_name.c_str(), std::fstream::out);
+
+    // do we want to change the time units for the output?
+    if (simulation_params.text_time_units.size() > 0) {
+      *time_units = std::tolower(simulation_params.text_time_units.at(0));
+      switch (*time_units) {
+        case 's':
+          break;
+        case 'm':
+          *time_units_conversion = 60.0;
+          break;
+        case 'h':
+          *time_units_conversion = 60.0 * 60.0;
+          break;
+        case 'd':
+          *time_units_conversion = 60.0 * 60.0 * 24.0;
+          break;
+        case 'y':
+          *time_units_conversion = 60.0 * 60.0 * 24.0 * 365.25;
+          break;
+        default:
+          break;
+      }
+    }
+    *time_units_conversion = 1.0 / (*time_units_conversion);
+  }
+
+}  // end SetupTextOutput()
+
+void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
+                           const std::vector<std::string>& names) {
+  if (text_output->is_open()) {
+    *text_output << "# Time(" << time_units << ")";
+    for (std::vector<std::string>::const_iterator name = names.begin();
+         name != names.end(); ++name) {
+      *text_output <<  " , " << *name;
+    }
+    *text_output << std::endl;
+  }
+}  // end WriteTextOutputHeader()
+
+void WriteTextOutput(std::fstream* text_output, const double time, 
+                     const amanzi::chemistry::Beaker::BeakerComponents& components) {
+  if (text_output->is_open()) {
+    std::string seperator(" , ");
+    *text_output << std::scientific << std::setprecision(6) << std::setw(15) << time;
+    for (int i = 0; i < components.total.size(); ++i) {
+      *text_output << seperator << components.total.at(i);
+    }
+    *text_output << std::endl;
+  }
+}  // end WriteTextOutput()
 
 
 void PrintInput(const SimulationParameters& params,
                 const amanzi::chemistry::Beaker::BeakerComponents& components)
 {
-  std::cout << "- Input File ---------------------------------------------------------" << std::endl;
+  ac::chem_out->Write(ac::kVerbose, "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params);
-  PrintComponents(components);
-  std::cout << "--------------------------------------------------------- Input File -" << std::endl;
+  components.Display("-- Input components: \n");
+  ac::chem_out->Write(ac::kVerbose, "--------------------------------------------------------- Input File -\n");
 }  // end PrintInput()
 
 
 void PrintSimulationParameters(const SimulationParameters& params)
 {
-  std::cout << "-- Simulation parameters:" << std::endl;
-  std::cout << "\tdescription: " << params.description << std::endl;
-  std::cout << "\tverbosity name: " << params.verbosity_name << std::endl;
-  std::cout << "\tverbosity enum: " << params.verbosity << std::endl;
-  std::cout << "\tcomparison model: " << params.comparison_model << std::endl;
-  std::cout << "\tdatabase type: " << params.database_type << std::endl;
-  std::cout << "\tdatabase file: " << params.database_file << std::endl;
-  std::cout << "\tactivity model: " << params.activity_model << std::endl;
-  std::cout << "\tporosity: " << params.porosity << std::endl;
-  std::cout << "\tsaturation: " << params.saturation << std::endl;
-  std::cout << "\tvolume: " << params.volume << std::endl;
-  std::cout << "\tdelta time: " << params.delta_time << std::endl;
-  std::cout << "\tnum time steps: " << params.num_time_steps << std::endl;
-  std::cout << "\toutput interval: " << params.output_interval << std::endl;
+  std::stringstream message;
+  message << "-- Simulation parameters:" << std::endl;
+  message << "\tdescription: " << params.description << std::endl;
+  ac::chem_out->Write(ac::kVerbose, message);
+  ac::utilities::PrintVector("\tverbosity names", params.verbosity_names, true);
+  message.str("");
+  message << "\tverbosity enum: " << params.verbosity << std::endl;
+  message << "\tcomparison model: " << params.comparison_model << std::endl;
+  message << "\tdatabase type: " << params.database_type << std::endl;
+  message << "\tdatabase file: " << params.database_file << std::endl;
+  message << "\tactivity model: " << params.activity_model << std::endl;
+  message << "\tporosity: " << params.porosity << std::endl;
+  message << "\tsaturation: " << params.saturation << std::endl;
+  message << "\tvolume: " << params.volume << std::endl;
+  message << "\tdelta time: " << params.delta_time << std::endl;
+  message << "\tnum time steps: " << params.num_time_steps << std::endl;
+  message << "\toutput interval: " << params.output_interval << std::endl;
+  message << "\tmax iterations: " << params.max_iterations << std::endl;
+  message << "\ttolerance: " << params.tolerance << std::endl;
+  ac::chem_out->Write(ac::kVerbose, message);
 }
 
 
-void PrintComponents(const ac::Beaker::BeakerComponents& components)
-{
-  std::cout << "-- Input components: " << std::endl;
-  std::cout << "  Totals: " << std::endl;
-  PrintDoubleVector(components.total);
-  std::cout << "  Minerals: " << std::endl;
-  PrintDoubleVector(components.minerals);
-  std::cout << "  Total sorbed: " << std::endl;
-  PrintDoubleVector(components.total_sorbed);
-  std::cout << "  Free Ion: " << std::endl;
-  PrintDoubleVector(components.free_ion);
-  std::cout << "  Ion Exchange: " << std::endl;
-  PrintDoubleVector(components.ion_exchange_sites);
-
-}  // end PrintComponents()
-
-
-void PrintDoubleVector(const std::vector<double> &total) {
-  std::cout << "[ ";
-  std::vector<double>::const_iterator i;
-  for (i = total.begin(); i != total.end(); i++) {
-    std::cout << std::scientific << std::setprecision(10) << *i << ", ";
-  }
-  std::cout << " ]" << std::endl;
-}  // end PrintDoubleVector()
 

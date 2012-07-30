@@ -15,7 +15,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "MSTK_types.h"
 #include "Mesh_MSTK.hh"
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
@@ -59,35 +58,35 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   
   /* create a MPC state with one component */
   int num_components = 1;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
  
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
-  TS->analytic_darcy_flux(f_velocity);
-  TS->analytic_porosity();
-  TS->analytic_water_saturation();
-  TS->analytic_water_density();
+  TS->AnalyticDarcyFlux(f_velocity);
+  TS->AnalyticPorosity();
+  TS->AnalyticWaterSaturation();
+  TS->AnalyticWaterDensity();
 
   /* initialize a transport process kernel from the transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
-  TPK.set_standalone_mode(true);
-  TPK.print_statistics();
+  TPK.InitPK();
+  TPK.PrintStatistics();
  
   /* advance the transport state */
   int iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
 
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   iter = 0;
   bool flag = true;
   while (T < 0.3) {
-    double dT = TPK.calculate_transport_dT();
-    TPK.advance(dT);
+    double dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
     iter++;
 

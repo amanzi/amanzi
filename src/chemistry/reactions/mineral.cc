@@ -1,21 +1,25 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "mineral.hh"
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "secondary_species.hh"
-#include "verbosity.hh"
+#include "matrix_block.hh"
+#include "chemistry_output.hh"
+#include "chemistry_verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {
+
+extern ChemistryOutput* chem_out;
 
 Mineral::Mineral()
     : SecondarySpecies(),
       verbosity_(kSilent),
       molar_volume_(0.0),
       specific_surface_area_(0.0),
-      surface_area_(0.0),
       volume_fraction_(0.0) {
 }  // end Mineral() constructor
 
@@ -35,7 +39,6 @@ Mineral::Mineral(const SpeciesName in_name,
       verbosity_(kSilent),
       molar_volume_(molar_volume),
       specific_surface_area_(specific_surface_area),
-      surface_area_(0.0),
       volume_fraction_(0.0) {
 }  // end Mineral costructor
 
@@ -43,35 +46,36 @@ Mineral::Mineral(const SpeciesName in_name,
 Mineral::~Mineral() {
 }  // end Mineral() destructor
 
-/*
-**
-**  these functions are only needed if mineral equilibrium is added.
-**
-*/
+void Mineral::UpdateSpecificSurfaceArea(void) {
+  // updating SSA not supported at this time!
 
-void Mineral::UpdateSurfaceAreaFromVolumeFraction(const double total_volume) {
-  // area = SSA * GMW * V_fraction * V_total * unit_conversion / mole volume
-  // m^2 = (m^2/g * g/mol * -- * m^3 * cm^3/m^3) / (cm^3/mol)
-  // double cm3_in_m3 = 10.0;
-  double cm3_in_m3 = 1.0e6;
-  set_surface_area(specific_surface_area() * gram_molecular_weight() *
-                   volume_fraction() * total_volume * cm3_in_m3 / molar_volume());
-  // hard code bulk surface area: 100 m^2/m^3
-  set_surface_area(100.0 * total_volume);
+}  // end UpdateSpecificSurfaceArea()
 
-  if (verbosity() == kDebugMineralKinetics) {
-    std::cout << "Mineral: " << name() << "\n"
-              << "   SSA: " << specific_surface_area() << " [m^2/g]\n"
-              << "   GMW:" << gram_molecular_weight() << " [g/mole]\n"
-              << "   mole volume^-1: " << 1.0 / molar_volume() << " [mole/cm^3]\n"
-              << "   volume fraction: " << volume_fraction() << " [-]\n"
-              << std::scientific << "   total volume: " << total_volume << " [m^3]\n"
-              << "   cm3 in m3=" << cm3_in_m3 << "\n"
-              << "   surface area=" << surface_area() << " [m^2]\n"
-              << std::fixed
-              << std::endl;
+void Mineral::UpdateVolumeFraction(const double rate,
+                                   const double delta_time) {
+  // NOTE: the rate is a dissolution rate so either need to use -rate
+  // or vol_frac -= .... inorder to get the correct
+  // dissolution/precipitation behavior.
+
+  // TODO(bandre): Right now we are just setting volume fraction to
+  // zero if they go negative, introducing mass balance errors! Need
+  // to adjust time step or reaction rate in the N-R solve!
+
+  // delta_vf = [m^3/mole] * [moles/m^3/sec] * [sec]
+  volume_fraction_ -= molar_volume() * rate * delta_time;
+  if (volume_fraction_ < 0.0) {
+    volume_fraction_ = 0.0;
   }
-}  // end UpdateSurfaceAreaFromVolumeFraction()
+  if (false) {
+    std::stringstream message;
+    message << name() << "::UpdateVolumeFraction() : \n"
+            << "molar_volume : " << molar_volume() << "\n"
+            << "rate : " << rate << "\n"
+            << "dt : " << delta_time << "\n"
+            << "delta_vf : " << molar_volume() * rate * delta_time << std::endl;
+    chem_out->Write(kVerbose, message);
+  }
+}  // end UpdateVolumeFraction()
 
 void Mineral::Update(const std::vector<Species>& primary_species, const Species& water_species) {
   double lnQK = -lnK_;
@@ -88,7 +92,7 @@ void Mineral::AddContributionToTotal(std::vector<double> *total) {
 }  // end addContributionToTotal()
 
 void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                      Block* dtotal) {
+                                      MatrixBlock* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
 }  // end addContributionToDTotal()
@@ -100,42 +104,47 @@ void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_specie
 **
 */
 void Mineral::Display(void) const {
-  std::cout << "    " << name() << " = ";
+  std::stringstream message;
+  message << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << std::setprecision(2) << stoichiometry_[i] << " " << species_names_[i];
+    message << std::setprecision(2) << stoichiometry_[i] << " " << species_names_[i];
     if (i < species_names_.size() - 1) {
-      std::cout << " + ";
+      message << " + ";
     }
   }
   if (SecondarySpecies::h2o_stoich_!=0.0) {
-	  std::cout << " + ";
-	  std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+    message << " + ";
+    message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
-  std::cout << std::endl;
-  std::cout << std::setw(40) << " "
-            << std::setw(10) << std::setprecision(5) << std::fixed << logK_
-            << std::setw(13) << molar_volume()
-            << std::setw(13) << gram_molecular_weight()
-            << std::setw(13) << specific_surface_area()
-            << std::setw(13) << std::scientific << surface_area()
-            << std::setw(13) << std::fixed << volume_fraction()
-            << std::endl;
+  message << std::endl;
+  message << std::setw(40) << " "
+          << std::setw(10) << std::setprecision(5) << std::fixed << logK_
+          << std::setw(13) << std::scientific << molar_volume()
+          << std::setw(13) << std::fixed << gram_molecular_weight()
+          << std::setw(13) << specific_surface_area()
+          << std::setw(13) << std::fixed << volume_fraction()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end Display()
 
 void Mineral::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Q/K"
-            << std::setw(15) << "SI"
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << "Name"
+          << std::setw(15) << "Q/K"
+          << std::setw(15) << "SI"
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResultsHeader()
 
 void Mineral::DisplayResults(void) const {
-  std::cout << std::setw(15) << name()
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << Q_over_K()
-            << std::fixed << std::setprecision(3)
-            << std::setw(15) << saturation_index()
-            << std::endl;
+  std::stringstream message;
+  message << std::setw(15) << name()
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << Q_over_K()
+          << std::fixed << std::setprecision(3)
+          << std::setw(15) << saturation_index()
+          << std::endl;
+  chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
 }  // namespace chemistry

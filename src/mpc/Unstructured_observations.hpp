@@ -6,6 +6,7 @@
 
 #include "ObservationData.H"
 #include "State.hpp"
+#include "time_step_manager.hh"
 
 namespace Amanzi {
 
@@ -20,8 +21,8 @@ namespace Amanzi {
       Observable (std::string variable_,
 		  std::string region_,
 		  std::string functional_,
-		  Teuchos::Array<double> times_,
-		  Teuchos::Array<double> sps_):
+		  std::vector<double> times_,
+		  std::vector<std::vector<double> > sps_):
 	variable(variable_), region(region_),
 	functional(functional_), times(times_),
 	sps(sps_)
@@ -30,8 +31,8 @@ namespace Amanzi {
       std::string variable;
       std::string region;
       std::string functional;
-      Teuchos::Array<double> times;
-      Teuchos::Array<double> sps;   // start period stop
+      std::vector<double> times;
+      std::vector<std::vector<double> > sps;   // start period stop
     };
 
 
@@ -39,7 +40,9 @@ namespace Amanzi {
 			       Amanzi::ObservationData& observation_data_);
 
     void make_observations(State& state);
-    bool observation_requested(double time, double last_time, Teuchos::Array<double>& T, Teuchos::Array<double>& SPS);
+    bool observation_requested(double time, double last_time, const std::vector<double>& T, 
+			       const std::vector<std::vector<double> >& SPS);
+    void register_with_time_step_manager(TimeStepManager& TSM);
   private:
     
     Amanzi::ObservationData& observation_data;

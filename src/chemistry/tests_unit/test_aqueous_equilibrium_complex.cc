@@ -9,7 +9,7 @@
 
 #include "aqueous_equilibrium_complex.hh"
 #include "chemistry_exception.hh"
-#include "block.hh"
+#include "matrix_block.hh"
 
 SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
   namespace ac = amanzi::chemistry;
@@ -136,19 +136,19 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
                                       h2o_stoich_, charge_, gram_molecular_weight_,
                                       ion_size_parameter_, logK_);
 
-    ac::Block expected(aec.ncomp());
-    expected.zero();
-    expected.setValue(0, 0, 6.9485826433413e-08);
-    expected.setValue(0, 1, -5.21143698250598e-08);
-    expected.setValue(1, 0, -6.9485826433413e-08);
-    expected.setValue(1, 1, 5.21143698250598e-08);
-    double** e = expected.getValues();
+    ac::MatrixBlock expected(aec.ncomp());
+    expected.Zero();
+    expected.SetValue(0, 0, 6.9485826433413e-08);
+    expected.SetValue(0, 1, -5.21143698250598e-08);
+    expected.SetValue(1, 0, -6.9485826433413e-08);
+    expected.SetValue(1, 1, 5.21143698250598e-08);
+    double** e = expected.GetValues();
 
-    ac::Block dtotal(aec.ncomp());
-    dtotal.zero();
+    ac::MatrixBlock dtotal(aec.ncomp());
+    dtotal.Zero();
     aec.Update(primarySpecies_,water_);
     aec.AddContributionToDTotal(primarySpecies_, &dtotal);
-    double** dt = dtotal.getValues();
+    double** dt = dtotal.GetValues();
     CHECK_ARRAY_CLOSE(dt[0], e[0], aec.ncomp(), 1.0e-15);
     CHECK_ARRAY_CLOSE(dt[1], e[1], aec.ncomp(), 1.0e-15);
   }

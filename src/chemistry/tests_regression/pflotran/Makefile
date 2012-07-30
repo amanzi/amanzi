@@ -3,12 +3,15 @@ PFLOTRAN = ~/projects/pflotran/src/pflotran/pflotran
 PFLOTRAN_FLAGS = -pflotranin
 
 TESTS = \
-	carbonate-unit \
-	carbonate-debye-huckel \
-	ca-carbonate-unit \
-	ca-carbonate-debye-huckel \
-	calcite \
-	general
+	carbonate-unit-activity \
+	carbonate-debye-huckel-activity \
+	ca-carbonate-unit-activity \
+	ca-carbonate-debye-huckel-activity \
+	calcite-kinetics \
+	calcite-kinetics-volume-fractions \
+	general-reaction \
+	surface-complexation-1 \
+	surface-complexation-2
 
 #
 # tests
@@ -20,32 +23,57 @@ tests : test
 
 test : $(TESTS)
 
-carbonate-unit :
+carbonate-unit-activity :
 	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
 	mv pflotran.out $@.pfout 
 	@echo 
 
-carbonate-debye-huckel :
+carbonate-debye-huckel-activity :
 	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
 	mv pflotran.out $@.pfout 
 	@echo 
 
-ca-carbonate-unit :
+ca-carbonate-unit-activity :
 	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
 	mv pflotran.out $@.pfout 
 	@echo 
 
-ca-carbonate-debye-huckel :
+ca-carbonate-debye-huckel-activity :
 	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
 	mv pflotran.out $@.pfout 
 	@echo 
 
-calcite :
+calcite-kinetics :
 	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
 	mv pflotran.out $@.pfout 
 	@echo 
 
-general :
+calcite-kinetics-volume-fractions :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+general-reaction :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+ion-exchange-valocchi :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+ionx-valocchi :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+surface-complexation-1 :
+	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
+	mv pflotran.out $@.pfout 
+	@echo 
+
+surface-complexation-2 :
 	$(PFLOTRAN) $(PFLOTRAN_FLAGS) $@.in > $@.cout
 	mv pflotran.out $@.pfout 
 	@echo 

@@ -11,6 +11,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
+include(LibraryManager)
 
 #
 # Define a project name
@@ -21,14 +22,33 @@ include(PrintVariable)
 # through these variables.
 project(ATK)
 
-set(atk_inc_files Utils.hh)
-
-#
-# Install Targets
-#
-add_install_include_file(${atk_inc_files})
+include_directories(${Boost_INCLUDE_DIRS})
 
 
+add_amanzi_library(atk
+                   SOURCE Timer.cc TimerManager.cc time_step_manager.cc
+                   HEADERS Utils.hh Timer.hh TimerManager.hh time_step_manager.hh
+                   )
+if (BUILD_TESTS)
+  
+    # Add UnitTest include directoy
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Copy test directory files if an out of source build
+    if (NOT (${ATK_SOURCE_DIR} EQUAL ${ATK_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${ATK_SOURCE_DIR}/test ${ATK_BINARY_DIR}/test) 
+    endif()
+
+    # Add the utils directory to the include paths
+    include_directories(${ATK_SOURCE_DIR})
+
+    ADD_AMANZI_TEST(utils test_utils
+                    KIND unit
+                    SOURCE test/Main.cc test/test_time_step_manager.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES} )
+
+endif()
 
 
 

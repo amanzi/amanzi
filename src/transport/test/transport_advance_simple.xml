@@ -31,11 +31,15 @@
     <Parameter name="CFL" type="double" value="0.5"/>   
     <Parameter name="spatial discretization order" type="int" value="1"/>   
     <Parameter name="temporal discretization order" type="int" value="1"/>   
+    <Parameter name="advection limiter" type="string" value="Tensorial"/>
     <!-- developers parameters --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
-    <Parameter name="verbosity level" type="int" value="10"/>  
     <!-- end of developers parameters -->
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
 
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="2"/>

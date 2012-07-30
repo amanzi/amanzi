@@ -11,7 +11,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "UnitTest++.h"
 
-#include "MSTK_types.h"
 #include "Mesh_MSTK.hh"
 
 #include "State.hpp"
@@ -46,38 +45,38 @@ TEST(ADVANCE_WITH_MSTK) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
 
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", (Epetra_MpiComm *)comm, 3, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/hex_4x4x4_ss.exo", (Epetra_MpiComm *)comm, 3, gm));
   
   // create a transport state with two component 
   int num_components = 2;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);
-  TS->analytic_darcy_flux(u);
-  TS->analytic_porosity();
-  TS->analytic_water_saturation();
-  TS->analytic_water_density();
+  TS->AnalyticDarcyFlux(u);
+  TS->AnalyticPorosity();
+  TS->AnalyticWaterSaturation();
+  TS->AnalyticWaterDensity();
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
-
+  TPK.InitPK();
 
   // advance the state
-  double dT = TPK.calculate_transport_dT();
-  TPK.advance(dT);
+  double dT = TPK.CalculateTransportDt();
+  TPK.Advance(dT);
 
   // printing cell concentration 
   int i, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   int iter = 0;
   while(T < 1.2) {
-    dT = TPK.calculate_transport_dT();
-    TPK.advance(dT);
+    dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT);
     T += dT;
  
     if (T < 0.4) {

@@ -17,6 +17,29 @@ TEST(NUMBERING) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
+
+  double expnodecoords[8][3] = {{0.0,0.0,0.0},
+                                {1.0,0.0,0.0},
+                                {0.0,1.0,0.0},
+                                {1.0,1.0,0.0},
+                                {0.0,0.0,1.0},
+                                {1.0,0.0,1.0},
+                                {0.0,1.0,1.0},
+                                {1.0,1.0,1.0}};
+  int expcellnodes[8] = {0,1,3,2,4,5,7,6};
+  int expfacenodes[6][4] = {{0,1,3,2},
+                            {4,5,7,6},
+                            {0,1,5,4},
+                            {2,3,7,6},
+                            {0,2,6,4},
+                            {1,3,7,5}};
+
+  int expcellfaces[6] = {2,5,3,4,0,1};
+  int expfacedirs[6] = {1,1,-1,-1,-1,1};
+                              
+
+
+
   // Create a single-cell mesh;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm));
   
@@ -26,45 +49,36 @@ TEST(NUMBERING) {
   //  S.write_gmv(gmvfile);
   
   // Write node coordinates
-  std::cout << "Node coordinates..." << std::endl;
-  double x[3];
-  for (unsigned int j = 0; j < 8; ++j) {
-    std::cout << j << ":";
-    mesh->node_to_coordinates(j, x, x+3);
-    for (int i = 0; i < 3; ++i) std::cout << " " << x[i];
-    std::cout << std::endl;
+
+  Amanzi::AmanziGeometry::Point x;
+  for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 8; ++j) {
+    mesh->node_get_coordinates(j, &x);
+    CHECK_ARRAY_EQUAL(expnodecoords[j],x,3);
   }
-  std::cout << std::endl;
   
   // Write face-node connectivity
-  unsigned int fnode[8];
-  std::cout << "Face node connectivity..." << std::endl;
-  for (unsigned int j = 0; j < 6; ++j) {
-    mesh->face_to_nodes(j, fnode, fnode+4);
-    std::cout << j << ":";
-    for (int i = 0; i < 4; ++i) std::cout << " " << fnode[i];
-    std::cout << std::endl;
+  Amanzi::AmanziMesh::Entity_ID_List fnode;
+  for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 6; ++j) {
+    mesh->face_get_nodes(j, &fnode);
+    CHECK_EQUAL(4,fnode.size());
+    CHECK_ARRAY_EQUAL(expfacenodes[j],fnode,fnode.size());
   }
-  std::cout << std::endl;
   
   // Write cell-node connectivity
-  unsigned int cnode[8];
-  std::cout << "Cell node connectivity..." << std::endl;
-  for (unsigned int j = 0; j < 1; ++j) {
-    mesh->cell_to_nodes(j, cnode, cnode+8);
-    std::cout << j << ":";
-    for (int i = 0; i < 8; ++i) std::cout << " " << cnode[i];
-    std::cout << std::endl;
+  Amanzi::AmanziMesh::Entity_ID_List cnode;
+  for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 1; ++j) {
+    mesh->cell_get_nodes(j, &cnode);
+    CHECK_EQUAL(8,cnode.size());
+    CHECK_ARRAY_EQUAL(expcellnodes,cnode,cnode.size());
   }
-  std::cout << std::endl;
   
   // Write cell face-node connectivity
-  //  unsigned int cface[6];
+  //  Amanzi::AmanziMesh::Entity_ID cface[6];
   //  int fdir[6];
   Amanzi::AmanziMesh::Entity_ID_List cface;
   std::vector<int> fdir;
-  std::cout << "Cell " << 0 << " faces (relative orientation)..." << std::endl;
   mesh->cell_get_faces_and_dirs(0,&cface,&fdir);
-  for (int j = 0; j < 6; ++j) std::cout << j << ": " << cface[j] << "(" << fdir[j] << ")" << std::endl;
+  CHECK_ARRAY_EQUAL(expcellfaces,cface,6);
+  CHECK_ARRAY_EQUAL(expfacedirs,fdir,6);
   
 }

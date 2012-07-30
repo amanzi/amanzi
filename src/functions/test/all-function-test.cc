@@ -315,7 +315,7 @@ TEST(static_head_test)
   std::vector<double> gradvec(grad, grad+3);
   Function *h = new LinearFunction(y0, gradvec);
   double patm = -1.0, rho = 0.5, g = 4.0;
-  Function *f = new StaticHeadFunction(patm, rho, g, *h);
+  Function *f = new StaticHeadFunction(patm, rho, g, *h, 3);
   double a[4] = {0.0, 1.0, 0.5, 2.0}; // t, x, y, z
   CHECK_EQUAL(patm+rho*g*(y0+grad[1]*a[1]+grad[2]*a[2]-a[3]), (*f)(a));
   double b[4] = {1.0, 2.0, 1.0, 1.0}; // t, x, y, z

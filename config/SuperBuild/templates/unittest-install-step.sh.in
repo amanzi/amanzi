@@ -7,7 +7,7 @@
 # UnitTest Makefile does not have an install target
 
 # Set the make environment variables
-export LDFLAGS='-L@TPL_INSTALL_PREFIX@/lib'
+export LDFLAGS='-L@TPL_INSTALL_PREFIX@/lib @CMAKE_CXX_LINK_FLAGS@'
 export CXXFLAGS='@Amanzi_COMMON_CXXFLAGS@'
 
 # Directory Definitions

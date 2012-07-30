@@ -10,6 +10,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(BinaryManager)
 
 #
 # Define a project name
@@ -29,6 +30,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
+include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
@@ -39,6 +41,7 @@ include_directories(${EXO_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 
 # Chemistry includes directory
@@ -86,12 +89,13 @@ add_definitions("-DUSE_MPI")
           copy_directory ${EXEC_SOURCE_DIR}/inputfiles ${EXEC_BINARY_DIR}/inputfiles ) 
     endif()
 
-include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
-add_library(udriv amanzi_unstructured_grid_simulation_driver.cpp)
-target_link_libraries(udriv ${Epetra_LIBRARIES} 
+add_amanzi_library(udriv
+                   SOURCE amanzi_unstructured_grid_simulation_driver.cpp
+                   LINK_LIBS 
+                            ${Epetra_LIBRARIES} 
                             ${Teuchos_LIBRARIES}
-                            mesh state mpc error_handling)
-add_install_library(udriv)
+                            mesh mesh_audit state mpc error_handling
+			                ${Boost_LIBRARIES})
 
 #
 # Binary: amanzi-demo-driver
@@ -136,19 +140,19 @@ add_install_library(udriv)
 #
 # Binary: verify_mesh
 #
-add_executable(verify_mesh verify_mesh.cc)
-target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
-                      ${Boost_LIBRARIES})
-add_install_binary(verify_mesh)		     
+add_amanzi_executable(verify_mesh
+                      SOURCE verify_mesh.cc
+                      LINK_LIBS mesh_factory mesh mesh_audit ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
 
 #
-# Binary: verify_mesh
+# Binary: verify_hex
 #
 if ( ENABLE_CGNS )
-    add_executable(verify_hex verify_hex.cc)
-    target_link_libraries(verify_hex mesh_factory mesh mesh_audit output
-                          ${Boost_LIBRARIES} ${CGNS_LIBRARIES})
-    add_install_binary(verify_hex)		     
+    add_amanzi_executable(verify_hex
+                          SOURCE verify_hex.cc
+                          LINK_LIBS mesh_factory
+                                    mesh mesh_audit
+                                    output ${Boost_LIBRARIES} ${CGNS_LIBRARIES})
 endif()
 
 #
@@ -162,6 +166,19 @@ endif()
 #    add_install_binary(stk_mesh_test_hex)		     
 #endif()
 
+#
+# Binary: verify_deform
+#
+add_amanzi_executable(verify_deform
+                      SOURCE verify_deform.cc
+                      LINK_LIBS mesh_factory
+                                mesh
+                                ${amanzi_mesh_libs}
+                                output
+                                ${Epetra_LIBRARIES}
+                                ${Teuchos_LIBRARIES})
+
+                                
 #
 #
 #
