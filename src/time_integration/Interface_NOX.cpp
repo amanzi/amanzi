@@ -40,8 +40,10 @@ bool Interface_NOX::computeF(const Epetra_Vector& x,
 //     std::cout << "evaluate nonlinear functional: " << t1 << std::endl;
     fun_eval++;
     fun_eval_time += t1.getTime();
+    
 
 //     printTime();
+    
 
     return true;
 }
