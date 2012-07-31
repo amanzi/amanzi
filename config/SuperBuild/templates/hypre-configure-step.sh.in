@@ -8,6 +8,9 @@
 export CC=@CMAKE_C_COMPILER@
 export CXX=@CMAKE_CXX_COMPILER@
 export F77=@CMAKE_Fortran_COMPILER@
+export CFLAGS='@Amanzi_COMMON_CFLAGS@'
+export CXXFLAGS='@Amanzi_COMMON_CXXFLAGS@'
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 
 cd @HYPRE_source_dir@/src
 ./configure --prefix=@TPL_INSTALL_PREFIX@ --with-MPI
