@@ -24,21 +24,29 @@ namespace Flow {
 // -------------------------------------------------------------
 void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<CompositeVector>& g) {
+  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+  Teuchos::RCP<CompositeVector> darcy_flux =
+    S->GetFieldData("overland_flux", "overland_flow");
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> upwind_conductivity =
+  Teuchos::RCP<const CompositeVector> cond =
     S->GetFieldData("upwind_overland_conductivity", "overland_flow");
 
+  // std::cout << "Rel perm at funky cell: " << (*cond)("cell",48) << std::endl;
+  // std::cout << "   (145) " << (*cond)("face",145);
+  // std::cout << "   (146) " << (*cond)("face",146);
+  // std::cout << "   (147) " << (*cond)("face",147);
+  // std::cout << "   (143) " << (*cond)("face",143) << std::endl;
+
   // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(*upwind_conductivity);
+  matrix_->CreateMFDstiffnessMatrices(*cond);
   matrix_->CreateMFDrhsVectors();
 
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
-  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
   matrix_->ComputeNegativeResidual(*pres_elev, g);
 };
 
@@ -149,13 +157,15 @@ void OverlandFlow::Conductivity_(const Teuchos::RCP<State>& S,
                                  const CompositeVector& manning_coef,
                                  const CompositeVector& slope_mag,
                                  const Teuchos::RCP<CompositeVector>& conductivity) {
-  double eps = 1.e-14;
   double exponent = 1.0 + manning_exp_;
 
   int ncells = conductivity->size("cell");
   for (int c=0; c!=ncells; ++c ) {
-    double scaling = manning_coef("cell",c) * std::sqrt(slope_mag("cell",c) + eps);
-    (*conductivity)("cell",c) = std::pow(pressure("cell",c), exponent) / scaling;
+    double scaling = manning_coef("cell",c) *
+        std::sqrt(std::max(slope_mag("cell",c), slope_regularization_));
+    //std::sqrt(slope_mag("cell",c) + slope_regularization_);
+    (*conductivity)("cell",c) = std::pow(std::abs(pressure("cell",c)), exponent) / scaling;
+    //(*conductivity)("cell",c) = std::pow(pressure("cell",c), exponent) / scaling;
   }
 };
 

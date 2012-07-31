@@ -15,6 +15,7 @@ Authors: Gianmarco Manzini
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "composite_vector.hh"
 #include "tree_vector.hh"
@@ -50,6 +51,7 @@ public:
 
   // -- Choose a time step compatible with physics.
   virtual double get_dt() {
+    std::cout << "TIME STPPR: PK recommending size " << dt_ << std::endl;
     return dt_;
   }
 
@@ -82,10 +84,12 @@ public:
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  void update_precon_for_real(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 private:
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::RCP<State>& S);
+  virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::RCP<State>& S);
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres );
 
@@ -132,7 +136,7 @@ private:
   void   TestOneSetUpElevationPars_() ;
   double TestOneElevation_( double x, double y ) ;
   void   TestOneSetElevation_( const Teuchos::RCP<State>& S ) ;
-  
+
   // -- test 2, elevation methods
   int    TestTwoZoneFlag_ ( double x, double y ) ;
   void   TestTwoSetUpElevationPars_() ;
@@ -142,7 +146,9 @@ private:
   // -- setup of elevation pars
   void SetUpElevation_( const Teuchos::RCP<State>& S ) ;
 
-private:
+  void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
+ private:
   // OVERLAND parameters
   std::vector<double> manning ;
   std::vector<double> slope_x ;
@@ -155,10 +161,13 @@ private:
   bool standalone_mode_; // domain mesh == surface mesh
 
   // time stuff
-  int    niter_ ;
+  int    nsteps_ ;
+  int niter_;
+  int ntries_;
   double flow_time_;
   double dt_;
   double dt0_;
+  Teuchos::RCP<Teuchos::Time> steptime_; //timer
 
   // input parameter data
   Teuchos::ParameterList flow_plist_;
@@ -174,6 +183,7 @@ private:
   Teuchos::RCP<Functions::CompositeVectorFunction> slope_function_;
   Teuchos::RCP<Functions::CompositeVectorFunction> manning_coef_function_;
   double manning_exp_;
+  double slope_regularization_;
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
