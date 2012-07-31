@@ -29,7 +29,7 @@ bool Interface_NOX::computeF(const Epetra_Vector& x,
 
     Epetra_Vector u_tmp(x);
 
-//     u_tmp = x;
+    u_tmp = x;
     u_tmp.Update(-1.0/deltaT, u0, 1.0/deltaT);
 
     // evaluate nonlinear functional
@@ -44,7 +44,7 @@ bool Interface_NOX::computeF(const Epetra_Vector& x,
 
 //     printTime();
     
-
+// 
     return true;
 }
 
