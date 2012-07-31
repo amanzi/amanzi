@@ -21,7 +21,7 @@
         <Parameter name="Start" type="double" value="0.0"/>
 	<Parameter name="Switch" type="double" value="6.16635504e+10"/> <!-- Jan 1955 -->
 	<Parameter name="End" type="double" value="6.6271e+10"/> <!-- 2100 year-->
-   	<Parameter name="Steady Initial Time Step" type="double" value="100.0"/>
+   	<Parameter name="Steady Initial Time Step" type="double" value="1.0e6"/>
 	<Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
         <Parameter name="Use Picard" type="bool" value="true"/>
       </ParameterList>
@@ -33,6 +33,9 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
+        <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+	<Parameter name="transport subcycling" type="bool" value="true"/>
+	<Parameter name="max chemistry to transport timestep ratio" type="double" value="1.0"/>
         <Parameter name="pseudo time integrator initialize with darcy" type="bool" value="true"/> 
         <Parameter name="pseudo time integrator clipping saturation value" type="double" value="0.9"/>
         <Parameter name="pseudo time integrator time integration method" type="string" value="Picard"/> 
@@ -56,7 +59,7 @@
         <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
         <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
         <Parameter name="transient time step increase factor" type="double" value="1.25"/>
-        <Parameter name="ML cycle applications" type="int" value="20"/>
+        <Parameter name="ML cycle applications" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -398,9 +401,11 @@
     <ParameterList name="BC for F-3 basin">
       <Parameter name="Assigned Regions" type="Array string" value="{Seepage basin}"/>
       <ParameterList name="BC: Flux">
+         <!-- 
+             1955.0 [y] = 6.16635504e+10 [s]   - basin turns on
+             1988.0 [y] = 6.27365088e+10 [s]   - basin turns off 
+        -->
         <Parameter name="Times" type="Array double" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array double" value="{4.743e-6, 4.743e-6}"/>  <!-- 0.15 [m3 m-2 yr-1] -->
         <Parameter name="Time Functions" type="Array string" value="{Constant,Constant}"/>
         <Parameter name="Inward Mass Flux" type="Array double" value="{4.743e-6, 1.2648e-4, 4.743e-6}"/>  <!-- 4 [m3 m-2 yr-1] -->
       </ParameterList>
@@ -455,17 +460,47 @@
   </ParameterList>
        
   <ParameterList name="Output">
+
     <!-- define some handy cycle macros -->
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every-5000-steps">
         <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5000, -1}"/>
       </ParameterList>
     </ParameterList>
+
     <!-- define some handy time macros -->
+
     <ParameterList name="Time Macros">
+
       <ParameterList name="Every-two-month">
         <Parameter name="Start_Period_Stop" type="Array double" value="{6.16635504e+10, 5.184e+06, 6.6271e+10}"/>
       </ParameterList>
+
+      <ParameterList name="Active Basin">
+	<!--
+	    Start:    t=1955.00  [y] = 6.16635504e+10 [s]
+	    Period:  dt=   2.00  [m] = 5.18400000e+06 [s]
+	    End:      t=1988.00  [y] = 6.27365088e+10 [s]
+	  -->
+	<Parameter name="Start_Period_Stop" type="Array double" value="{6.16635504e+10, 5.18400000e+06, 6.27365088e+10}"/>
+      </ParameterList>
+      <ParameterList name="Plume evolution: every year">
+	<!--
+	    Start:    t=1989.00  [y] = 6.276806640e+10 [s]
+	    Period:  dt=   1.00  [y] = 3.155760000e+7  [s]
+	    End:      t=2010.00  [y] = 6.343077600e+10 [s]
+	  -->
+	<Parameter name="Start_Period_Stop" type="Array double" value="{6.276806640e+10, 3.155760000e+7, 6.343077600e+10}"/>
+      </ParameterList>
+      <ParameterList name="Plume evolution: every five years">
+	<!--
+	    Start:    t=2015.00  [y] = 6.358856400e+10 [s]
+	    Period:  dt=   5.00  [y] = 1.577880000e+8  [s]
+	    End:      t=2100.00  [y] = 6.627096000e+10 [s]
+	  -->
+	<Parameter name="Start_Period_Stop" type="Array double" value="{6.358856400e+10, 1.577880000e+8, 6.627096000e+10}"/>
+      </ParameterList>
+
     </ParameterList>
 
 <!-- For now we have desactivated the observation data -->
@@ -483,13 +518,15 @@
 
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="plot"/>
-      <Parameter name="Time Macro" type="Array string" value="{Every-two-month}"/>
+      <Parameter name="Time Macro" type="Array string" value="{Active Basin, Plume evolution: every year, Plume evolution: every five years}"/>
     </ParameterList>
 
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="chkpoint"/>
       <Parameter name="Cycle Macro" type="string" value="Every-5000-steps"/>
     </ParameterList>
+
   </ParameterList>     
+
 </ParameterList> 
        
