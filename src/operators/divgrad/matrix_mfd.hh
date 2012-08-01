@@ -130,8 +130,8 @@ public:
                                const Teuchos::RCP<CompositeVector>& F) const;
 
   // extra methods for preconditioning
-  void InitMLPreconditioner(Teuchos::ParameterList& ml_plist_);
-  void UpdateMLPreconditioner();
+  void InitPreconditioner(Teuchos::ParameterList& ml_plist_);
+  void UpdatePreconditioner();
 
   // extra methods for convenience
   void DeriveFlux(const CompositeVector& solution,
@@ -170,8 +170,9 @@ private:
   Teuchos::ParameterList ml_plist_;
 
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
-  double hypre_tol, hypre_strong_threshold;
-  int hypre_nsmooth, hypre_ncycles;
+  Teuchos::ParameterList hypre_plist_;
+  int hypre_ncycles_, hypre_nsmooth_;
+  double hypre_tol_, hypre_strong_threshold_;
 
   Teuchos::RCP<const Epetra_Map> supermap_;
   Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO

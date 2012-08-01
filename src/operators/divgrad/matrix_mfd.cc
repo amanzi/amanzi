@@ -523,23 +523,24 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-void MatrixMFD::InitMLPreconditioner(Teuchos::ParameterList& ml_plist) {
+void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
   if (prec_method_ == TRILINOS_ML) {
-    ml_plist_ = ml_plist;
+    ml_plist_ =  prec_plist.sublist("ML Parameters");
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
   } else if (prec_method_ == HYPRE_AMG) {
-    // read some boomer amg parameters (need to read these from parameter list)
-    hypre_ncycles = 5;
-    hypre_nsmooth = 3;
-    hypre_tol = 0.0;
-    hypre_strong_threshold = 0.5;
+    // read some boomer amg parameters 
+    hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
+    hypre_ncycles_ = hypre_plist_.get<int>("number of cycles",5);
+    hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
+    hypre_tol_ = hypre_plist_.get<double>("tolerance",0.0);
+    hypre_strong_threshold_ = hypre_plist_.get<double>("strong threshold",0.25);
   }
 }
 
 /* ******************************************************************
- * Rebuild ML preconditioner.
+ * Rebuild preconditioner.
  ****************************************************************** */
-void MatrixMFD::UpdateMLPreconditioner() {
+void MatrixMFD::UpdatePreconditioner() {
   if (prec_method_ == TRILINOS_ML) {
     if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
     ml_prec_->SetParameterList(ml_plist_);
@@ -549,15 +550,14 @@ void MatrixMFD::UpdateMLPreconditioner() {
     Teuchos::RCP<FunctionParameter> functs[10];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
-    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
-    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
+    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
+    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
     functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold)); 
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol)); 
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_)); 
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_)); 
     functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
     
     Teuchos::ParameterList hypre_list;
-    //hypre_list.set("Solver", PCG);
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);

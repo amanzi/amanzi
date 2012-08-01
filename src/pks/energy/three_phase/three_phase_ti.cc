@@ -215,7 +215,7 @@ void ThreePhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   preconditioner_->AssembleGlobalMatrices();
 
   preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-  preconditioner_->UpdateMLPreconditioner();
+  preconditioner_->UpdatePreconditioner();
 
   //  test_precon(t, up, h);
 };

@@ -114,7 +114,6 @@ void Coordinator::initialize() {
       visualization_.push_back(vis);
     }
   }
-  parameter_list_.print(std::cout);
 }
 
 void Coordinator::read_parameter_list() {
