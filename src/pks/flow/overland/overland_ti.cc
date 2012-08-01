@@ -48,8 +48,19 @@ void OverlandFlow::fun( double t_old,
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
+
+  // ensure postive pressure
+  // double minval = 0.0;
+  // S_next_->GetFieldData("overland_pressure")->ViewComponent("cell", false)->MinValue(&minval);
+  // if (minval < 0.0) {
+  //   // cannot handle negative pressures, punt
+  //   std::cout << "Cutting time step due negative pressure in residual function." << std::endl;
+  //   Errors::Message m("Cut time step");
+  //   Exceptions::amanzi_throw(m);
+  // }
+
   UpdateSecondaryVariables_(S_next_);
- 
+
   // update boundary conditions
   bc_pressure_->Compute(t_new);
   bc_flux_->Compute(t_new);
@@ -99,7 +110,42 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,0) << std::endl;
   std::cout << "  p1: " << (*u->data())("cell",0,9) << " " << (*u->data())("face",0,29) << std::endl;
 #endif
+
+  // check for nans in residual
+  Teuchos::RCP<const CompositeVector> res = u->data();
+  for (int c=0; c!=res->size("cell"); ++c) {
+    if (boost::math::isnan<double>((*res)("cell",c))) {
+      std::cout << "Cutting time step due to NaN in cell residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+  for (int f=0; f!=res->size("face"); ++f) {
+    if (boost::math::isnan<double>((*res)("face",f))) {
+      std::cout << "Cutting time step due to NaN in face residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
+
+  // check for nans in preconditioned residual
+  Teuchos::RCP<const CompositeVector> Pres = Pu->data();
+  for (int c=0; c!=Pres->size("cell"); ++c) {
+    if (boost::math::isnan<double>((*Pres)("cell",c))) {
+      std::cout << "Cutting time step due to NaN in PC'd cell residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+  for (int f=0; f!=Pres->size("face"); ++f) {
+    if (boost::math::isnan<double>((*Pres)("face",f))) {
+      std::cout << "Cutting time step due to NaN in PC'd face residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
 
   if (niter_ == 21) {
     std::cout << "SETTING RES21!!!" << std::endl;
@@ -162,6 +208,7 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
   double enorm_val_cell = 0.0;
   for (int c=0; c!=pres->size("cell",false); ++c) {
     if (boost::math::isnan<double>((*dpres)("cell",c))) {
+      std::cout << "Cutting time step due to NaN in correction." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
     }
@@ -263,19 +310,6 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
   UpdateSecondaryVariables_(S_next_);
 #endif
 
-  double minval = 0.0;
-  S_next_->GetFieldData("overland_pressure")->ViewComponent("cell", false)->MinValue(&minval);
-  std::cout << "Min pres in precon: " << minval << std::endl;
-#ifdef HAVE_MPI
-  double buf = minval;
-  MPI_Allreduce(&buf, &minval, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-#endif
-  if (minval < 0.0) {
-    // cannot handle negative pressures, punt
-    Errors::Message m("Cut time step");
-    Exceptions::amanzi_throw(m);
-  }
-
 #ifdef UPDATE_FOR_REAL
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -328,12 +362,12 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
   preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
 
   // Code to dump Schur complement to check condition number
-    Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
-    std::stringstream filename_s;
-    filename_s << "schur_" << S_next_->cycle() << ".txt";
-    //a  std::string filename = filename_s.str();
-    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-    std::cout << "updated precon " << S_next_->cycle() << std::endl;
+    // Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+    // std::stringstream filename_s;
+    // filename_s << "schur_" << S_next_->cycle() << ".txt";
+    // //a  std::string filename = filename_s.str();
+    // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+    // std::cout << "updated precon " << S_next_->cycle() << std::endl;
 
   preconditioner_->UpdateMLPreconditioner();
 
