@@ -1263,6 +1263,7 @@ protected:
   static int  max_step;
   static Real stop_time;
   static bool do_richard_sat_solve;
+  static bool use_PETSc_snes;
 
   static int  richard_solver_verbose;
 

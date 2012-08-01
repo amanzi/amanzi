@@ -1729,8 +1729,6 @@ PorousMedia::richard_init_to_steady()
                 bool solved = false;
                 bool continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
 
-		//bool use_PETSc_snes = true;
-		bool use_PETSc_snes = false;
                 RichardNLSdata::Reason ret;
                 RichardNLSdata nld = BuildInitNLS();
 
@@ -1739,7 +1737,6 @@ PorousMedia::richard_init_to_steady()
                 int total_rejected_Newton_steps = 0;
                 while (continue_iterations)
                 {
-#if 0
 		  for (int lev=0;lev<= finest_level;lev++)
 		    {
 		      PorousMedia& pm = getLevel(lev);
@@ -1752,8 +1749,11 @@ PorousMedia::richard_init_to_steady()
 			  MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next time step
 			}
 		    }
-		  rs.ResetRhoSat();
-#endif
+
+		  if (use_PETSc_snes) {
+		    rs.ResetRhoSat();
+		  }
+
 		  MultiFab& S_new = get_new_data(State_Type);
 		  MultiFab::Copy(tmp,S_new,nc,0,1,0);
 		  tmp.mult(-1.0);
@@ -1771,12 +1771,14 @@ PorousMedia::richard_init_to_steady()
 			    PorousMedia&    fine_lev   = getLevel(lev);
 			    if (do_richard_sat_solve)
 			      {
-				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+				//MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+				MultiFab& S_lev = fine_lev.get_old_data(State_Type);
 				MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
 			      }
 			    else
 			      {
-				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+				//MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+				MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
 				MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
 			      }
 			  }

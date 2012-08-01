@@ -308,6 +308,7 @@ Real PorousMedia::richard_ls_acceptance_factor;
 Real PorousMedia::richard_ls_reduction_factor;
 int PorousMedia::richard_monitor_linear_solve;
 int PorousMedia::richard_monitor_line_search;
+bool PorousMedia::use_PETSc_snes;
 
 static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
 namespace
@@ -551,6 +552,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_cpl_advect       = 0;
   PorousMedia::do_richard_sat_solve = false;
 
+  PorousMedia::use_PETSc_snes = false;
   PorousMedia::richard_solver_verbose = 1;
 
   PorousMedia::do_richard_init_to_steady = false;
@@ -1500,6 +1502,8 @@ void PorousMedia::read_prob()
   pb.query("v",verbose);
   pb.query("richard_solver_verbose",richard_solver_verbose);
   pb.query("do_richard_sat_solve",do_richard_sat_solve);
+
+  pb.query("use_PETSc_snes",use_PETSc_snes);
 
   pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
