@@ -24,12 +24,16 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
     method_ = MFD_HEXAHEDRA_MONOTONE;
   }
 
-  std::string precmethodstring = plist.get<string>("preconditioner", "Trilinos ML");
+  std::string precmethodstring = plist.get<string>("preconditioner", "ML");
   
-  if (precmethodstring == "Trilinos ML") {
+  if (precmethodstring == "ML") {
     prec_method_ = TRILINOS_ML;
   } else if (precmethodstring == "HYPRE AMG") {
     prec_method_ = HYPRE_AMG;
+  } else {
+    // error the specified preconditioner is not supported
+    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML and HYPRE AMG.");
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -485,7 +489,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   if (prec_method_ == TRILINOS_ML) {
     ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
   } else if (prec_method_ == HYPRE_AMG) {
-    IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+    ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
   }
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
@@ -547,7 +551,7 @@ void MatrixMFD::UpdatePreconditioner() {
     ml_prec_->ComputePreconditioner();
   } else if (prec_method_ == HYPRE_AMG) {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
-    Teuchos::RCP<FunctionParameter> functs[10];
+    Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
