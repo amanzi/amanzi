@@ -50,13 +50,12 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
+  double eps = 1.e-16;
 
   // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
   potential.ScatterMasterToGhosted("cell");
-  if (overlap_ != potential_) {
-    overlap.ScatterMasterToGhosted("cell");
-  }
+  overlap.ScatterMasterToGhosted("cell");
 
   for (int f=0; f!=face_coef->size("face",false); ++f) {
     mesh->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -68,13 +67,12 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
     } else {
       // Determine the size of the overlap region, a smooth transition region
       // near zero potential difference.
-      double flow_eps;
+      double flow_eps = 0.0;
       if ((overlap("cell",cells[0]) > 0) || (overlap("cell",cells[1]) > 0)) {
         flow_eps = (overlap("cell",cells[0]) * overlap("cell",cells[1]))
             / (overlap("cell",cells[0]) + overlap("cell",cells[1]));
-      } else {
-        flow_eps = 0.0;
       }
+      flow_eps = std::max(flow_eps, eps);
 
       // Determine the coefficient.
       if (potential("cell",cells[0]) - potential("cell", cells[1]) > flow_eps) {
@@ -84,7 +82,7 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
       } else {
         // Parameterization of a linear scaling between upwind and downwind.
         double param;
-        if (flow_eps == 0.0) {
+        if (flow_eps < 2*eps) {
           param = 0.5;
         } else {
           param = (potential("cell",cells[1]) - potential("cell", cells[0]))
@@ -95,6 +93,21 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
         (*face_coef)("face",f) = cell_coef("cell", cells[1]) * param
             + cell_coef("cell", cells[0]) * (1. - param);
       }
+
+      // if ((0.0 < (*face_coef)("face",f)) && ((*face_coef)("face",f) < 1.0e-40)) {
+      //   std::cout << "Near null space rel perm calculated: face = " << f << ", rel perm = " <<  (*face_coef)("face",f) << std::endl;
+      //   std::cout << "  pres+elev: " << potential("cell", cells[0]) << "  "
+      //             << potential("cell", cells[0]) << std::endl;
+      //   std::cout << "  cell perms: " << cell_coef("cell", cells[0]) << "  "
+      //             << cell_coef("cell", cells[0]) << std::endl;
+      //   std::cout << "  flow_eps: " << flow_eps << std::endl;
+      //   std::cout << "  if branches: " <<  (potential("cell",cells[0]) - potential("cell", cells[1]) > flow_eps)
+      //             << (potential("cell",cells[1]) - potential("cell", cells[0]) > flow_eps)
+      //             << (flow_eps == 0.0)
+      //             << (potential("cell",cells[1]) - potential("cell", cells[0]))
+      //       / (2*flow_eps) + 0.5 << std::endl;
+
+      // }
     }
   }
 };

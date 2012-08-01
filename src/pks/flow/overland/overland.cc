@@ -499,6 +499,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> darcy_flux =
     S->GetFieldData("overland_flux", "overland_flow");
 
+  // communicate face perms
   matrix_->CreateMFDstiffnessMatrices(*upwind_conductivity);
   matrix_->DeriveFlux(*pres_elev, darcy_flux);
 };
@@ -561,6 +562,11 @@ void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
 
   // Then upwind.  This overwrites the boundary if upwinding says so.
   upwinding_->Update(S.ptr());
+
+  // commnicate.  this could be done later, but i'm not exactly sure where, so
+  // we'll do it here
+  upwind_conductivity->ScatterMasterToGhosted();
+
 }
 
 
@@ -666,6 +672,19 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::RCP<State>& S)
     bc_markers_[f] = Operators::MFD_BC_FLUX;
     bc_values_[f] = bc->second;
   }
+
+  // Attempt of a hack to deal with zero rel perm
+  double eps = 1.e-16;
+  Teuchos::RCP<const CompositeVector> relperm =
+      S->GetFieldData("upwind_overland_conductivity");
+  for (int f=0; f!=relperm->size("face"); ++f) {
+    if ((*relperm)("face",f) < eps) {
+      bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+      bc_values_[f] = 0.0;
+    }
+  }
+
+
 };
 
 /* ******************************************************************
@@ -892,15 +911,15 @@ void OverlandFlow::output_flow_rate() {
   Functions::BoundaryFunction::Iterator bc;
   double total_flow_rate = 0.;
   int nfaces_owned = flux->size("face",false);
-  std::cout << "DATA ON DOWNGRADIENT EDGE " << S_next_->Mesh("surface")->get_comm()->MyPID() << std::endl;
+//  std::cout << "DATA ON DOWNGRADIENT EDGE " << S_next_->Mesh("surface")->get_comm()->MyPID() << std::endl;
   for (bc=bc_zero_gradient_->begin(); bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
     if (f < nfaces_owned) {
       double face_area = S_next_->Mesh("surface")->face_area(f) ;
       AmanziGeometry::Point cent = S_next_->Mesh("surface")->face_centroid(f);
       total_flow_rate += (*flux)("face",0,f);
-      printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e x=(%14.7e,%14.7e)\n",
-             f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f),cent[0],cent[1]) ;
+      //      printf("f=%5i area=%14.7e flux(%5i)=%14.7e pres(%5i)=%14.7e elev(%5i)=%14.7e krel=%14.7e x=(%14.7e,%14.7e)\n",
+      //             f,face_area,f,(*flux)("face",0,f)/face_area,f,(*pres)("face",0,f),f,(*elev)("face",0,f),(*krel)("face",0,f),cent[0],cent[1]) ;
 
 
 #if 0

@@ -164,7 +164,11 @@ void OverlandFlow::Conductivity_(const Teuchos::RCP<State>& S,
     double scaling = manning_coef("cell",c) *
         std::sqrt(std::max(slope_mag("cell",c), slope_regularization_));
     //std::sqrt(slope_mag("cell",c) + slope_regularization_);
-    (*conductivity)("cell",c) = std::pow(std::abs(pressure("cell",c)), exponent) / scaling;
+    if (pressure("cell",c) > 0.0) {
+      (*conductivity)("cell",c) = std::pow(std::abs(pressure("cell",c)), exponent) / scaling;
+    } else {
+      (*conductivity)("cell",c) = 0.0;
+    }
     //(*conductivity)("cell",c) = std::pow(pressure("cell",c), exponent) / scaling;
   }
 };
