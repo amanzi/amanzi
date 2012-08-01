@@ -23,6 +23,14 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
   } else if (methodstring == "hexahedra monotone") {
     method_ = MFD_HEXAHEDRA_MONOTONE;
   }
+
+  std::string precmethodstring = plist.get<string>("preconditioner", "Trilinos ML");
+  
+  if (precmethodstring == "Trilinos ML") {
+    prec_method_ = TRILINOS_ML;
+  } else if (precmethodstring == "HYPRE AMG") {
+    prec_method_ = HYPRE_AMG;
+  }
 }
 
 // main computational methods
@@ -474,7 +482,11 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   Tf.Update(1.0, *X.ViewComponent("face", false), -1.0);
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
-  ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+  if (prec_method_ == TRILINOS_ML) {
+    ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+  } else if (prec_method_ == HYPRE_AMG) {
+    IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+  }
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
@@ -512,18 +524,50 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
  * Initialization of the preconditioner
  ****************************************************************** */
 void MatrixMFD::InitMLPreconditioner(Teuchos::ParameterList& ml_plist) {
-  ml_plist_ = ml_plist;
-  ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
+  if (prec_method_ == TRILINOS_ML) {
+    ml_plist_ = ml_plist;
+    ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
+  } else if (prec_method_ == HYPRE_AMG) {
+    // read some boomer amg parameters (need to read these from parameter list)
+    hypre_ncycles = 5;
+    hypre_nsmooth = 3;
+    hypre_tol = 0.0;
+    hypre_strong_threshold = 0.5;
+  }
 }
-
 
 /* ******************************************************************
  * Rebuild ML preconditioner.
  ****************************************************************** */
 void MatrixMFD::UpdateMLPreconditioner() {
-  if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
-  ml_prec_->SetParameterList(ml_plist_);
-  ml_prec_->ComputePreconditioner();
+  if (prec_method_ == TRILINOS_ML) {
+    if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
+    ml_prec_->SetParameterList(ml_plist_);
+    ml_prec_->ComputePreconditioner();
+  } else if (prec_method_ == HYPRE_AMG) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
+    Teuchos::RCP<FunctionParameter> functs[10];
+    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
+    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
+    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
+    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold)); 
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol)); 
+    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
+    
+    Teuchos::ParameterList hypre_list;
+    //hypre_list.set("Solver", PCG);
+    hypre_list.set("Preconditioner", BoomerAMG);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 8);
+    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs); 
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();
+  }
 }
 
 
