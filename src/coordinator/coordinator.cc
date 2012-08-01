@@ -155,6 +155,15 @@ void Coordinator::read_parameter_list() {
 // timestep loop
 // -----------------------------------------------------------------------------
 void Coordinator::cycle_driver() {
+  // start at time t = t0 and initialize the state.  In a flow steady-state
+  // problem, this should include advancing flow to steady state (which should
+  // be done by flow_pk->initialize_state(S)
+  S_->set_time(t0_);
+  S_->set_cycle(0);
+  initialize();
+  S_->set_time(t0_); // in case steady state solve changed this
+  S_->set_cycle(0);
+
   // the time step manager coordinates all non-physical timesteps
   TimeStepManager tsm;
   // register times with the tsm
@@ -168,15 +177,6 @@ void Coordinator::cycle_driver() {
   //if (observations_) observations_->register_with_time_step_manager(TSM);
   // -- register the final time
   tsm.RegisterTimeEvent(t1_);
-
-  // start at time t = t0 and initialize the state.  In a flow steady-state
-  // problem, this should include advancing flow to steady state (which should
-  // be done by flow_pk->initialize_state(S)
-  S_->set_time(t0_);
-  S_->set_cycle(0);
-  initialize();
-  S_->set_time(t0_); // in case steady state solve changed this
-  S_->set_cycle(0);
 
   // make observations
   //  observations_->MakeObservations(*S_);
@@ -202,6 +202,7 @@ void Coordinator::cycle_driver() {
   while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
     // get the physical step size
     dt = pk_->get_dt();
+    std::cout << "TIME STPPR: Got PK recommendation of " << dt << std::endl;
 
     // check if the step size has gotten too small
     if (dt < min_dt_) {
@@ -211,11 +212,13 @@ void Coordinator::cycle_driver() {
 
     // cap the max step size
     if (dt > max_dt_) {
+      std::cout << "TIME STPPR: Capping step size at max of " << max_dt_ << std::endl;
       dt = max_dt_;
     }
 
     // ask the step manager if this step is ok
     dt = tsm.TimeStep(S_->time(), dt);
+    std::cout << "TIME STPPR Manager: dt is " << dt << std::endl;
 
     std::cout << "Cycle = " << S_->cycle();
     std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
