@@ -20,6 +20,9 @@
 #include "Epetra_FECrsMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
 
+#include "Ifpack.h"
+#include "Ifpack_Hypre.h"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -161,8 +164,14 @@ private:
   int nokay_;
   int npassed_; // performance of algorithms generating mass matrices
 
+  enum { TRILINOS_ML, HYPRE_AMG } prec_method_; 
+  
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
+
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
+  double hypre_tol, hypre_strong_threshold;
+  int hypre_nsmooth, hypre_ncycles;
 
   Teuchos::RCP<const Epetra_Map> supermap_;
   Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO

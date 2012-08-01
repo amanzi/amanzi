@@ -517,8 +517,8 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
   int ncells = velocity->size("cell");
   for (int c=0; c!=ncells; ++c) {
-    (*velocity)("cell",0,c) /= (*pressure)("cell",c);
-    (*velocity)("cell",1,c) /= (*pressure)("cell",c);
+    (*velocity)("cell",0,c) /= std::max( (*pressure)("cell",c) , 1e-7);
+    (*velocity)("cell",1,c) /= std::max( (*pressure)("cell",c) , 1e-7);
   }
 };
 
