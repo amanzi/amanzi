@@ -21,10 +21,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 
 #include "Ifpack.h"
-#include "Ifpack_Hypre.h"
 #include "Ifpack_ILU.h"
-#include "Ifpack_IKLU.h"
-
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -172,10 +169,12 @@ private:
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
 
+#ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
   Teuchos::ParameterList hypre_plist_;
   int hypre_ncycles_, hypre_nsmooth_;
   double hypre_tol_, hypre_strong_threshold_;
+#endif
 
   Teuchos::RCP<Ifpack_ILU> ilu_prec_;
   Teuchos::ParameterList ilu_plist_;

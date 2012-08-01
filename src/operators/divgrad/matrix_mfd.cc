@@ -30,14 +30,20 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
     prec_method_ = TRILINOS_ML;
   } else if (precmethodstring == "ILU" ) {
     prec_method_ = TRILINOS_ILU;
+#ifdef HAVE_HYPRE
   } else if (precmethodstring == "HYPRE AMG") {
     prec_method_ = HYPRE_AMG;
   } else if (precmethodstring == "HYPRE Euclid") {
     prec_method_ = HYPRE_EUCLID;
   } else if (precmethodstring == "HYPRE ParaSails") {
     prec_method_ = HYPRE_EUCLID;
+#endif
   } else {
+#ifdef HAVE_HYPRE
     Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
+#else
+    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, and ILU");
+#endif
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -495,8 +501,10 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
     ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
   } else if (prec_method_ == TRILINOS_ILU) {
     ierr |= ilu_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+#ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+#endif
   } 
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
@@ -540,6 +548,7 @@ void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
   } else if (prec_method_ == TRILINOS_ILU) {
     ilu_plist_ = prec_plist.sublist("ILU Parameters");
+#ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
     // read some boomer amg parameters 
     hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
@@ -551,6 +560,7 @@ void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
     hypre_plist_ = prec_plist.sublist("HYPRE Euclid Parameters");
   } else if (prec_method_ == HYPRE_PARASAILS) {
     hypre_plist_ = prec_plist.sublist("HYPRE ParaSails Parameters");
+#endif
   }
 }
 
@@ -568,6 +578,7 @@ void MatrixMFD::UpdatePreconditioner() {
     ilu_prec_->SetParameters(ilu_plist_);
     ilu_prec_->Initialize();
     ilu_prec_->Compute();
+#ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[8];
@@ -614,6 +625,7 @@ void MatrixMFD::UpdatePreconditioner() {
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
     IfpHypre_Sff_->Compute();    
+#endif
   }
 }
 
