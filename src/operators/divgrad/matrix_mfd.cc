@@ -28,11 +28,16 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
   
   if (precmethodstring == "ML") {
     prec_method_ = TRILINOS_ML;
+  } else if (precmethodstring == "ILU" ) {
+    prec_method_ = TRILINOS_ILU;
   } else if (precmethodstring == "HYPRE AMG") {
     prec_method_ = HYPRE_AMG;
+  } else if (precmethodstring == "HYPRE Euclid") {
+    prec_method_ = HYPRE_EUCLID;
+  } else if (precmethodstring == "HYPRE ParaSails") {
+    prec_method_ = HYPRE_EUCLID;
   } else {
-    // error the specified preconditioner is not supported
-    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML and HYPRE AMG.");
+    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -488,9 +493,11 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   // Solve the Schur complement system Sff_ * Yf = Tf.
   if (prec_method_ == TRILINOS_ML) {
     ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
-  } else if (prec_method_ == HYPRE_AMG) {
+  } else if (prec_method_ == TRILINOS_ILU) {
+    ierr |= ilu_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
-  }
+  } 
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
@@ -531,6 +538,8 @@ void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
   if (prec_method_ == TRILINOS_ML) {
     ml_plist_ =  prec_plist.sublist("ML Parameters");
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
+  } else if (prec_method_ == TRILINOS_ILU) {
+    ilu_plist_ = prec_plist.sublist("ILU Parameters");
   } else if (prec_method_ == HYPRE_AMG) {
     // read some boomer amg parameters 
     hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
@@ -538,8 +547,13 @@ void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
     hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
     hypre_tol_ = hypre_plist_.get<double>("tolerance",0.0);
     hypre_strong_threshold_ = hypre_plist_.get<double>("strong threshold",0.25);
+  } else if (prec_method_ == HYPRE_EUCLID) {
+    hypre_plist_ = prec_plist.sublist("HYPRE Euclid Parameters");
+  } else if (prec_method_ == HYPRE_PARASAILS) {
+    hypre_plist_ = prec_plist.sublist("HYPRE ParaSails Parameters");
   }
 }
+
 
 /* ******************************************************************
  * Rebuild preconditioner.
@@ -549,6 +563,11 @@ void MatrixMFD::UpdatePreconditioner() {
     if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
     ml_prec_->SetParameterList(ml_plist_);
     ml_prec_->ComputePreconditioner();
+  } else if (prec_method_ == TRILINOS_ILU) {
+    ilu_prec_ = Teuchos::rcp(new Ifpack_ILU(&*Sff_));
+    ilu_prec_->SetParameters(ilu_plist_);
+    ilu_prec_->Initialize();
+    ilu_prec_->Compute();
   } else if (prec_method_ == HYPRE_AMG) {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[8];
@@ -571,6 +590,30 @@ void MatrixMFD::UpdatePreconditioner() {
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
     IfpHypre_Sff_->Compute();
+  } else if (prec_method_ == HYPRE_EUCLID) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
+
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", Euclid);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 0);
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();    
+  } else if (prec_method_ == HYPRE_PARASAILS) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
+
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", ParaSails);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 0);
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();    
   }
 }
 
