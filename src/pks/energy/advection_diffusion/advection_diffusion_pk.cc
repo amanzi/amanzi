@@ -84,8 +84,7 @@ AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh()));
   preconditioner_->SetSymmetryProperty(true);
   preconditioner_->SymbolicAssembleGlobalMatrices();
-  Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
-  preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
+  preconditioner_->InitPreconditioner(mfd_pc_plist);
 };
 
 

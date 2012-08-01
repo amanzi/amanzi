@@ -172,8 +172,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh("surface")));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
-  Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
-  preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
+  preconditioner_->InitPreconditioner(mfd_pc_plist);
 
   steptime_ = Teuchos::TimeMonitor::getNewCounter("overland flow advance time");
 
