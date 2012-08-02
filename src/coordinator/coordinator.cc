@@ -49,12 +49,10 @@ void Coordinator::coordinator_init() {
   const Teuchos::ParameterEntry &pk_value = pks_list.entry(pk_item);
 
   // -- create the solution
-  std::cout << "Coordinator creating TreeVec with name: " << pk_name << std::endl;
   soln_ = Teuchos::rcp(new TreeVector(pk_name));
 
   // -- create the pk
   PKFactory pk_factory;
-  std::cout << "Coordinator creating PK with name: " << pk_name << std::endl;
   pk_ = pk_factory.CreatePK(pks_list.sublist(pk_name), S_, soln_);
   pk_->set_name(pk_name);
 
@@ -200,7 +198,6 @@ void Coordinator::cycle_driver() {
   while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
     // get the physical step size
     dt = pk_->get_dt();
-    std::cout << "TIME STPPR: Got PK recommendation of " << dt << std::endl;
 
     // check if the step size has gotten too small
     if (dt < min_dt_) {
@@ -210,17 +207,17 @@ void Coordinator::cycle_driver() {
 
     // cap the max step size
     if (dt > max_dt_) {
-      std::cout << "TIME STPPR: Capping step size at max of " << max_dt_ << std::endl;
       dt = max_dt_;
     }
 
     // ask the step manager if this step is ok
     dt = tsm.TimeStep(S_->time(), dt);
-    std::cout << "TIME STPPR Manager: dt is " << dt << std::endl;
 
-    std::cout << "Cycle = " << S_->cycle();
-    std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
-    std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+    if (comm_->MyPID() == 0) {
+      std::cout << "Cycle = " << S_->cycle();
+      std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
+      std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+    }
 
     // advance
     S_next_->advance_time(dt);
