@@ -33,12 +33,6 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const CompositeVector> cond =
     S->GetFieldData("upwind_overland_conductivity", "overland_flow");
 
-  // std::cout << "Rel perm at funky cell: " << (*cond)("cell",48) << std::endl;
-  // std::cout << "   (145) " << (*cond)("face",145);
-  // std::cout << "   (146) " << (*cond)("face",146);
-  // std::cout << "   (147) " << (*cond)("face",147);
-  // std::cout << "   (143) " << (*cond)("face",143) << std::endl;
-
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(*cond);
   matrix_->CreateMFDrhsVectors();
