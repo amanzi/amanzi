@@ -191,10 +191,6 @@ void BDF1Dae::commit_solution(const double h, const Epetra_Vector& u) {
 
   state.hlast = h;
   state.seq++;
-
-  state.hmin = std::min<double>(h, state.hmin);
-  state.hmax = std::max<double>(h, state.hmax);
-
 }
 
 
@@ -252,10 +248,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   Epetra_Vector usav(map);
   usav = u;
   
-
-  if (h < state.hmin) {
-    *out << h << " " << state.hmin << std::endl;
-
+  if (h < 10.0 * state.eps * tlast) {
     std::string msg = "BDF1 failed: Time step crash";
     Errors::Message m(msg);
     Exceptions::amanzi_throw(m);    
