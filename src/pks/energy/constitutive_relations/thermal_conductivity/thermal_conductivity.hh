@@ -25,7 +25,7 @@ class TwophaseThermalConductivity {
 public:
   TwophaseThermalConductivity(Teuchos::ParameterList& plist);
 
-  double CalculateConductivity(double porosity, double sat_liq);
+  double ThermalConductivity(double porosity, double sat_liq);
 
 private:
   void InitializeFromPlist_();

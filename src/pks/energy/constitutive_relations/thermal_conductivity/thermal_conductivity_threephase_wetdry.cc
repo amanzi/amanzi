@@ -26,7 +26,7 @@ ThermalConductivityThreePhaseWetDry::ThermalConductivityThreePhaseWetDry(
   InitializeFromPlist_();
 };
 
-double ThermalConductivityThreePhaseWetDry::CalculateConductivity(double poro,
+double ThermalConductivityThreePhaseWetDry::ThermalConductivity(double poro,
         double sat_liq, double sat_ice) {
   double kersten_u = pow(sat_liq + eps_, alpha_u_);
   double kersten_f = pow(sat_ice + eps_, alpha_f_);
