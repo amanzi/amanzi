@@ -35,7 +35,7 @@
       <ParameterList name="Unstructured Algorithm">
         <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
 	<Parameter name="transport subcycling" type="bool" value="true"/>
-	<Parameter name="max chemistry to transport timestep ratio" type="double" value="10.0"/>
+	<Parameter name="max chemistry to transport timestep ratio" type="double" value="1.0"/>
         <Parameter name="pseudo time integrator initialize with darcy" type="bool" value="true"/> 
         <Parameter name="pseudo time integrator clipping saturation value" type="double" value="0.9"/>
         <Parameter name="pseudo time integrator time integration method" type="string" value="Picard"/> 
@@ -1341,7 +1341,7 @@
       <ParameterList name="Active Basin">
 	<!--
 	    Start:    t=1955.00  [y] = 6.16635504e+10 [s]
-	    Period:  dt=   2.00  [m] = 5.18400000e+06 [s]
+	    Period:  dt=   1.00  [y] = 3.155760000e+7 [s]
 	    End:      t=1988.00  [y] = 6.27365088e+10 [s]
 	  -->
 	<Parameter name="Start_Period_Stop" type="Array double" value="{6.16635504e+10, 5.18400000e+06, 6.27365088e+10}"/>
