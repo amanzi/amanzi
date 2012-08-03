@@ -21,7 +21,7 @@ namespace EnergyRelations {
 class ThermalConductivityThreePhase {
 
 public:
-  virtual double CalculateConductivity(double porosity, double sat_liq, double sat_ice) = 0;
+  virtual double ThermalConductivity(double porosity, double sat_liq, double sat_ice) = 0;
 };
 
 } // namespace

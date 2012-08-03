@@ -26,7 +26,7 @@ ThermalConductivityTwoPhasePetersLidard::ThermalConductivityTwoPhasePetersLidard
   InitializeFromPlist_();
 };
 
-double ThermalConductivityTwoPhasePetersLidard::CalculateConductivity(double poro,
+double ThermalConductivityTwoPhasePetersLidard::ThermalConductivity(double poro,
         double sat_liq) {
   double k_dry = (d_*(1-poro)*k_rock_ + k_gas_*poro)/(d_*(1-poro) + poro);
   double k_sat = pow(k_rock_,(1-poro)) * pow(k_liquid_,poro);

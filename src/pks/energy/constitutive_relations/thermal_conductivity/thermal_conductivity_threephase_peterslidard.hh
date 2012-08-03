@@ -46,7 +46,7 @@ class ThermalConductivityThreePhasePetersLidard : public ThermalConductivityThre
 public:
   ThermalConductivityThreePhasePetersLidard(Teuchos::ParameterList& plist);
 
-  double CalculateConductivity(double porosity, double sat_liq, double sat_ice);
+  double ThermalConductivity(double porosity, double sat_liq, double sat_ice);
 
 private:
   void InitializeFromPlist_();

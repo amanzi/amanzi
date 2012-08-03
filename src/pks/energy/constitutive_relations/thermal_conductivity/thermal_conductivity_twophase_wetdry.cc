@@ -33,7 +33,7 @@ ThermalConductivityTwoPhaseWetDry::ThermalConductivityTwoPhaseWetDry(
 };
 
 // do the physics
-double ThermalConductivityTwoPhaseWetDry::CalculateConductivity(double poro,
+double ThermalConductivityTwoPhaseWetDry::ThermalConductivity(double poro,
         double sat_liq) {
   double kersten = pow(sat_liq + eps_, alpha_);
   return k_dry_ + (k_wet_ - k_dry_)*kersten;
