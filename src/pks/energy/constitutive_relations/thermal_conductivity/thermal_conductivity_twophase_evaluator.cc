@@ -54,9 +54,9 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
   Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);
   Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
 
-  for (CompositeVector::name_iterator comp=poro->begin();
-       comp!=poro->end(); ++comp) {
-    for (int i=0; i!=poro->size(*comp); ++i) {
+  for (CompositeVector::name_iterator comp=result->begin();
+       comp!=result->end(); ++comp) {
+    for (int i=0; i!=result->size(*comp); ++i) {
       (*result)(*comp, i) = tc_->ThermalConductivity((*poro)(*comp, i), (*sat)(*comp, i));
     }
   }

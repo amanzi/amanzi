@@ -44,9 +44,7 @@ public:
   virtual void initialize(const Teuchos::RCP<State>& S);
 
   // -- Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return dt_;
-  }
+  virtual double get_dt() { return dt_; }
 
   // -- transfer operators -- pointer copy
   virtual void state_to_solution(const Teuchos::RCP<State>& S,
@@ -84,8 +82,7 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& temperature);
+  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres);
 
   // bdf needs help
   virtual void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,

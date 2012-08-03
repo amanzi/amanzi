@@ -6,27 +6,25 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_ENERGY_RELATIONS_IEM_EVALUATOR_
-#define AMANZI_ENERGY_RELATIONS_IEM_EVALUATOR_
+#ifndef AMANZI_ENERGY_RELATIONS_IEM_WATER_VAPOR_EVALUATOR_
+#define AMANZI_ENERGY_RELATIONS_IEM_WATER_VAPOR_EVALUATOR_
 
 #include "secondary_variable_field_evaluator.hh"
+#include "iem_water_vapor.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class IEM; // forward declaration
-
-class IEMEvaluator : public SecondaryVariableFieldEvaluator {
+class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
   explicit
-  IEMEvaluator(Teuchos::ParameterList& iem_plist);
-  IEMEvaluator(Teuchos::ParameterList& iem_plist, const Teuchos::RCP<IEM>& iem);
-  IEMEvaluator(const IEMEvaluator& other);
-
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  IEMWaterVaporEvaluator(Teuchos::ParameterList& iem_plist);
+  IEMWaterVaporEvaluator(Teuchos::ParameterList& iem_plist,
+                         const Teuchos::RCP<IEMWaterVapor>& iem);
+  IEMWaterVaporEvaluator(const IEMWaterVaporEvaluator& other);
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -34,14 +32,15 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
 
-  Teuchos::RCP<IEM> get_IEM() { return iem_; }
+  Teuchos::RCP<IEMWaterVapor> get_IEM() { return iem_; }
 
  protected:
   void InitializeFromPlist_();
 
   Key temp_key_;
+  Key mol_frac_key_;
   Teuchos::ParameterList iem_plist_;
-  Teuchos::RCP<IEM> iem_;
+  Teuchos::RCP<IEMWaterVapor> iem_;
 };
 
 } //namespace

@@ -11,6 +11,7 @@
 #define AMANZI_ENERGY_RELATIONS_TC_TWOPHASE_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
+#include "thermal_conductivity_twophase.hh"
 
 namespace Amanzi {
 namespace Energy {

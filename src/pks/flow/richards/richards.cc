@@ -77,7 +77,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
   // Get data for non-field quanitites.
   S->RequireFieldEvaluator("cell_volume");
   S->RequireGravity();
-  S->RequireScalar("atmospheric_pressure", "flow");
+  S->RequireScalar("atmospheric_pressure");
 
   // Create the absolute permeability tensor.
   int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -239,7 +239,7 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
     time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
     // -- initialize time derivative
-    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(*solution_));
+    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
@@ -320,7 +320,7 @@ bool Richards::advance(double dt) {
   // commit the step as successful
   time_stepper_->commit_solution(h, solution_);
   solution_to_state(solution_, S_next_);
-  commit_state(h,S_next_);
+  commit_state(h, S_next_);
 
   return false;
 };
@@ -415,8 +415,8 @@ void Richards::UpdateBoundaryConditions_() {
 // -----------------------------------------------------------------------------
 // Add a boundary marker to owned faces.
 // -----------------------------------------------------------------------------
-void Richards::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& pres) {
+void
+Richards::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres) {
   int nfaces = pres->size("face");
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {

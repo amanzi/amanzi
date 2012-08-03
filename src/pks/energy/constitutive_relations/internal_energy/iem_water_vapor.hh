@@ -23,10 +23,10 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class InternalEnergyWaterVapor {
+class IEMWaterVapor {
 
 public:
-  InternalEnergyWaterVapor(Teuchos::ParameterList& plist);
+  IEMWaterVapor(Teuchos::ParameterList& plist);
 
   bool IsMolarBasis() { return molar_basis_; }
 
@@ -44,8 +44,8 @@ private:
   bool molar_basis_;
 };
 
-}
-}
-}
+} //namespace
+} //namespace
+} //namespace
 
 #endif

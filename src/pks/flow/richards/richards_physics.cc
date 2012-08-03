@@ -48,7 +48,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
-  // update the saturation at both the old and new times.
+  // update the water content at both the old and new times.
   S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), "richards_pk");
   S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(), "richards_pk");
 
