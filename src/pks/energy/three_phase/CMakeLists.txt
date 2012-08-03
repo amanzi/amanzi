@@ -5,12 +5,15 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
+include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/thermal_conductivity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
-add_library(pk_energy_three_phase three_phase_pk.cc three_phase_ti.cc three_phase_physics.cc)
+add_library(pk_energy_three_phase three_phase_energy_evaluator.cc
+  three_phase_pk.cc)
 
 # WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 

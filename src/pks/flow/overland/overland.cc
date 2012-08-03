@@ -415,7 +415,11 @@ void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   if (S->GetFieldEvaluator("overland_conductivity")->HasFieldChanged(S.ptr(), "overland_pk")) {
     // Update the perm only if needed.
 
-    // This needs fixed to use the evaluator, not assume a evaluator. -- etc
+    // This needs fixed to use the model, not assume a model.
+    // Then it needs to be fixed to use a smart evaluator which picks
+    // vals from cells and faces.
+    // Then it needs to be fixed to work on a CompositeVector whose
+    // components are cells and boundary faces. --etc
     Teuchos::RCP<const CompositeVector> pressure =
         S->GetFieldData("overland_pressure");
     Teuchos::RCP<const CompositeVector> slope =

@@ -14,32 +14,32 @@ documentation for details.
 UNITS: J/mol
 ------------------------------------------------------------------------- */
 
-#include "internal_energy_water_vapor.hh"
+#include "iem_water_vapor.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-InternalEnergyWaterVapor::InternalEnergyWaterVapor(Teuchos::ParameterList& plist) :
+IEMWaterVapor::IEMWaterVapor(Teuchos::ParameterList& plist) :
     plist_(plist) {
   InitializeFromPlist_();
 };
 
-double InternalEnergyWaterVapor::InternalEnergy(double temp, double mol_frac_gas) {
+double IEMWaterVapor::InternalEnergy(double temp, double mol_frac_gas) {
   return (1.0 + 0.622*mol_frac_gas) * Cv_air_ * (temp - 273.15) + mol_frac_gas*heat_vaporization_;
 };
 
-double InternalEnergyWaterVapor::DInternalEnergyDT(double temp, double mol_frac_gas) {
+double IEMWaterVapor::DInternalEnergyDT(double temp, double mol_frac_gas) {
   // evaluated at constant mol_frac gas for now?
   return (1.0 + 0.622*mol_frac_gas) * Cv_air_;
 };
 
-double InternalEnergyWaterVapor::DInternalEnergyDomega(double temp, double mol_frac_gas) {
+double IEMWaterVapor::DInternalEnergyDomega(double temp, double mol_frac_gas) {
   // evaluated at constant mol_frac gas for now?
   return heat_vaporization_ + 0.622 * Cv_air_ * (temp - 273.15);
 };
 
-void InternalEnergyWaterVapor::InitializeFromPlist_() {
+void IEMWaterVapor::InitializeFromPlist_() {
   molar_basis_ = plist_.get<bool>("molar-basis (otherwise, mass-basis)", true);
   Cv_air_ = plist_.get<double>("heat capacity of air [J/(mol-K)]", 13.0);
   heat_vaporization_ = plist_.get<double>("heat of vaporization of water [J/mol]", 4.065e4);

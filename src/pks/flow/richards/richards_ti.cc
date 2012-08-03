@@ -71,7 +71,9 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
   std::cout << "  p1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
 #endif
+
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
+
 #if DEBUG_FLAG
   std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
   std::cout << "  PC*p1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,497) << std::endl;
@@ -131,7 +133,10 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+#if DEBUG_FLAG
   std::cout << "Precon update at t = " << t << std::endl;
+#endif
+
   // update state with the solution up.
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_);

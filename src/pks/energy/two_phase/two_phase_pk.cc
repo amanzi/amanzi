@@ -7,12 +7,21 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include "bdf1_time_integrator.hh"
-#include "advection_factory.hh"
-#include "energy_bc_factory.hh"
-#include "thermal_conductivity_twophase_factory.hh"
-#include "iem_factory.hh"
+#include "primary_variable_field_evaluator.hh"
 
+#include "energy_bc_factory.hh"
+#include "advection_factory.hh"
+
+#include "composite_vector_function.hh"
+#include "composite_vector_function_factory.hh"
+
+#include "bdf1_time_integrator.hh"
+
+#include "eos_evaluator.hh"
+#include "iem_evaluator.hh"
+#include "two_phase_energy_evaluator.hh"
+#include "enthalpy_evaluator.hh"
+#include "thermal_conductivity_twophase_evaluator.hh"
 #include "two_phase.hh"
 
 namespace Amanzi {
@@ -28,12 +37,15 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :
     energy_plist_(plist) {
-
   solution_ = solution;
+  SetupEnergy_(S);
+  SetupPhysicalEvaluators_(S);
+};
 
-  // require fields
-  Teuchos::RCP<CompositeVectorFactory> factory;
 
+void TwoPhase::SetupEnergy_(const Teuchos::RCP<State>& S) {
+
+  // Require fields and evaluators for those fields.
   // primary variable: temperature on both cells and faces, ghosted, with 1 dof
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
@@ -43,86 +55,18 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   names2[0] = "cell";
   names2[1] = "face";
 
-  factory = S->RequireField("temperature", "energy");
-  factory->SetMesh(S->Mesh());
-  factory->SetGhosted();
-  factory->SetComponents(names2, locations2, num_dofs2);
-          // Note that these can be chained together.  The above four lines
-          // are equivalent to:
-          // S->RequireField("temperature", "energy")->SetMesh(S->Mesh())
-          //            ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField("temperature", "energy")->SetMesh(S->Mesh())
+    ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> temp_evaluator =
+    Teuchos::rcp(new PrimaryVariableFieldEvaluator("temperature"));
+  S->SetFieldEvaluator("temperature", temp_evaluator);
 
-
-  // secondary variables
-  //   Nearly all of these will be defined on a single dof on cells.  To make
-  //   this process easier, we set up two factories, one owned, one not, and
-  //   use those to initialize the data factories.
-
-  CompositeVectorFactory one_cell_owned_factory;
-  one_cell_owned_factory.SetMesh(S->Mesh());
-  one_cell_owned_factory.SetGhosted();
-  one_cell_owned_factory.SetComponent("cell", AmanziMesh::CELL, 1);
-                          // The use of SetComponent() implies this is final.
-
-  CompositeVectorFactory one_cell_factory;
-  one_cell_factory.SetMesh(S->Mesh());
-  one_cell_factory.SetGhosted();
-  one_cell_factory.AddComponent("cell", AmanziMesh::CELL, 1);
-                          // The use of AddComponent() implies the actual
-                          // vector may include other components.
-
-  // -- gas
-  factory = S->RequireField("internal_energy_gas", "energy");
-  factory->Update(one_cell_owned_factory);
-
-  // -- liquid
-  // ----- Note that the above two lines for gas is equivalent to one-liner below:
-  S->RequireField("internal_energy_liquid", "energy")->Update(one_cell_owned_factory);
-  S->RequireField("enthalpy_liquid", "energy")->Update(one_cell_owned_factory);
-
-  // -- rock assumed constant for now?
+  // Get data for non-field quanitites.
+  S->RequireFieldEvaluator("cell_volume");
   S->RequireScalar("density_rock");
-  S->RequireField("internal_energy_rock", "energy")->Update(one_cell_owned_factory);
-
-  // -- thermal conductivity
-  S->RequireField("thermal_conductivity", "energy")->Update(one_cell_owned_factory);
-
-  // independent variables
-  //   These are not owned by this pk, but we want to make sure they exist.
-  S->RequireField("cell_volume")->Update(one_cell_factory);
-  S->RequireField("porosity")->Update(one_cell_factory);
-  S->RequireField("density_gas")->Update(one_cell_factory);
-  S->RequireField("density_liquid")->Update(one_cell_factory);
-  S->RequireField("molar_density_gas")->Update(one_cell_factory);
-  S->RequireField("molar_density_liquid")->Update(one_cell_factory);
-  S->RequireField("mol_frac_gas")->Update(one_cell_factory);
-  S->RequireField("saturation_liquid")->Update(one_cell_factory);
-  S->RequireField("saturation_gas")->Update(one_cell_factory);
 
   S->RequireField("darcy_flux")->SetMesh(S->Mesh())->SetGhosted()
                                 ->AddComponent("face", AmanziMesh::FACE, 1);
-
-  S->RequireField("pressure")->SetMesh(S->Mesh())->SetGhosted()
-                                ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  // constitutive relations
-  // -- thermal conductivity
-  Teuchos::ParameterList tcm_plist = energy_plist_.sublist("Thermal Conductivity Model");
-  EnergyRelations::ThermalConductivityTwoPhaseFactory tc_factory;
-  thermal_conductivity_model_ = tc_factory.createThermalConductivityModel(tcm_plist);
-
-  // -- internal energy models
-  // -- water vapor requires a specialized model
-  Teuchos::ParameterList ieg_plist = energy_plist_.sublist("Internal Energy Gas Model");
-  iem_gas_ = Teuchos::rcp(new EnergyRelations::InternalEnergyWaterVapor(ieg_plist));
-
-  // -- other IEM come from factory
-  EnergyRelations::IEMFactory iem_factory;
-  Teuchos::ParameterList iel_plist = energy_plist_.sublist("Internal Energy Liquid Model");
-  iem_liquid_ = iem_factory.createIEM(iel_plist);
-
-  Teuchos::ParameterList ier_plist = energy_plist_.sublist("Internal Energy Rock Model");
-  iem_rock_ = iem_factory.createIEM(ier_plist);
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = energy_plist_.sublist("boundary conditions", true);
@@ -145,7 +89,6 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   matrix_->CreateMFDmassMatrices(Teuchos::null);
 
   // preconditioner
-  // NOTE: may want to allow these to be the same/different?
   Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("Diffusion PC");
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh()));
   preconditioner_->SetSymmetryProperty(symmetric);
@@ -156,10 +99,44 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
 
 
 // -------------------------------------------------------------
+// Create the physical evaluators for water content, water
+// retention, rel perm, etc, that are specific to Richards.
+// -------------------------------------------------------------
+void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
+  // Get data and evaluators needed by the PK
+  // -- energy, the conserved quantity
+  S->RequireField("energy")->SetMesh(S->Mesh())->SetGhosted()
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList ee_plist = energy_plist_.sublist("energy evaluator");
+  ee_plist.set("energy key", "energy");
+  Teuchos::RCP<TwoPhaseEnergyEvaluator> ee =
+    Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_plist));
+  S->SetFieldEvaluator("energy", ee);
+
+  // -- advection of enthalpy
+  S->RequireField("enthalpy_liquid")->SetMesh(S->Mesh())
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList enth_plist = energy_plist_.sublist("enthalpy evaluator");
+  enth_plist.set("enthalpy key", "enthalpy_liquid");
+  Teuchos::RCP<EnthalpyEvaluator> enth =
+    Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
+  S->SetFieldEvaluator("enthalpy_liquid", enth);
+
+  // -- thermal conductivity
+  S->RequireField("thermal_conductivity")->SetMesh(S->Mesh())
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList tcm_plist =
+    energy_plist_.sublist("thermal conductivity model");
+  Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhaseEvaluator> tcm =
+    Teuchos::rcp(new EnergyRelations::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
+  S->SetFieldEvaluator("thermal_conductivity", tcm);
+}
+
+
+// -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
 void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
-
   // initial timestep size
   dt_ = energy_plist_.get<double>("Initial time step", 1.);
 
@@ -168,22 +145,45 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
-  // update face temperatures as a hint?
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-  DeriveFaceValuesFromCellValues_(S, temp);
+  // For the boundary conditions, we currently hack in the enthalpy to
+  // the boundary faces to correctly advect in a constant temperature
+  // BC.  This requires density and internal energy, which in turn
+  // require a model based on p,T.
+  Teuchos::RCP<FieldEvaluator> eos_fe = S->GetFieldEvaluator("density_liquid");
+  Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
+    Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
+  ASSERT(eos_eval != Teuchos::null);
+  eos_liquid_ = eos_eval->get_EOS();
 
-  // declare secondary variables initialized, as they get done in a call to
-  // commit_state
-  S->GetField("thermal_conductivity","energy")->set_initialized();
-  S->GetField("internal_energy_gas","energy")->set_initialized();
-  S->GetField("internal_energy_liquid","energy")->set_initialized();
-  S->GetField("internal_energy_rock","energy")->set_initialized();
-  S->GetField("enthalpy_liquid","energy")->set_initialized();
+  Teuchos::RCP<FieldEvaluator> iem_fe = S->GetFieldEvaluator("internal_energy_liquid");
+  Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
+    Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
+  ASSERT(iem_eval != Teuchos::null);
+  iem_liquid_ = iem_eval->get_IEM();
+
+  // initial conditions
+  // -- Get the IC function plist.
+  if (!energy_plist_.isSublist("initial condition")) {
+    std::stringstream messagestream;
+    messagestream << "Two Phase Energy PK has no initial condition parameter list.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  // -- Calculate the IC.
+  Teuchos::ParameterList ic_plist = energy_plist_.sublist("initial condition");
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+  Teuchos::RCP<Functions::CompositeVectorFunction> ic =
+      Functions::CreateCompositeVectorFunction(ic_plist, *temp);
+  ic->Compute(S->time(), temp.ptr());
+
+  // update face temperatures as a hint?
+  DeriveFaceValuesFromCellValues_(S, temp);
 
   // initialize the timesteppper
   solution_->set_data(temp);
-  atol_ = energy_plist_.get<double>("Absolute error tolerance",1e0);
-  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e0);
+  atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1.0);
 
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- instantiate time stepper
@@ -193,7 +193,7 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
     time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
     // -- initialize time derivative
-    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(*solution_));
+    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
@@ -209,12 +209,7 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  // update secondary variables for IC i/o
-  UpdateSecondaryVariables_(S);
-  UpdateThermalConductivity_(S);
-  UpdateEnthalpyLiquid_(S);
-};
+void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {};
 
 
 // -----------------------------------------------------------------------------
@@ -232,14 +227,10 @@ void TwoPhase::state_to_solution(const Teuchos::RCP<State>& S,
 void TwoPhase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
   S->SetData("temperature", "energy", solution->data());
-};
-
-
-// -----------------------------------------------------------------------------
-// Choose a time step compatible with physics.
-// -----------------------------------------------------------------------------
-double TwoPhase::get_dt() {
-  return dt_;
+  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("temperature");
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pri_fm =
+      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
+  pri_fm->SetFieldAsChanged();
 };
 
 

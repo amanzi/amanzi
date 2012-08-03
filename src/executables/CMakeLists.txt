@@ -44,16 +44,16 @@ target_link_libraries(ats
                       ${mpc}
                       ${pk_factory}
 #                      ${pk_transport_passive_tracer}
-#                      ${pk_energy_constant_temperature}
-#                      ${pk_energy_advection_diffusion}
-#                      ${pk_energy_two_phase}
-#                      ${pk_energy_three_phase}
+                      ${pk_energy_constant_temperature}
+                      ${pk_energy_advection_diffusion}
+                      ${pk_energy_two_phase}
+                      ${pk_energy_three_phase}
                       ${pk_flow_permafrost}
                       ${pk_flow_richards}
                       ${pk_flow_overland}
-#                      energy_bc_factory
-#                      ${energy_relations_thermal_conductivity}
-#                      ${energy_relations_internal_energy}
+                      energy_bc_factory
+                      ${energy_relations_thermal_conductivity}
+                      ${energy_relations_internal_energy}
                       flow_bc_factory
                       ${flow_relations_wrm}
                       ${relations_eos}

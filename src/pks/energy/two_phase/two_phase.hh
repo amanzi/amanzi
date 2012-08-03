@@ -11,23 +11,24 @@ permafrost.  This starts with the simplification that T > T_freezing, limiting
 us to the air-water system.
 ------------------------------------------------------------------------- */
 
-#ifndef PKS_ENERGY_AIRWATERROCK_HH_
-#define PKS_ENERGY_AIRWATERROCK_HH_
+#ifndef PKS_ENERGY_TWOPHASE_HH_
+#define PKS_ENERGY_TWOPHASE_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "state.hh"
+#include "composite_vector.hh"
 #include "tree_vector.hh"
-#include "pk_factory.hh"
-#include "PK.hh"
-#include "bdf_time_integrator.hh"
+#include "state.hh"
 
-#include "thermal_conductivity_twophase.hh"
-#include "internal_energy_model.hh"
-#include "internal_energy_water_vapor.hh"
+#include "iem.hh"
+#include "eos.hh"
+#include "pk_factory.hh"
+#include "bdf_time_integrator.hh"
 #include "advection.hh"
 #include "matrix_mfd.hh"
+
+#include "PK.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -35,7 +36,7 @@ namespace Energy {
 class TwoPhase : public PK {
 
 public:
-
+  TwoPhase() {};
   TwoPhase(Teuchos::ParameterList& plist, const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& solution);
 
@@ -50,7 +51,7 @@ public:
                                  const Teuchos::RCP<State>& S);
 
   // -- Choose a time step compatible with physics.
-  virtual double get_dt();
+  virtual double get_dt() { return dt_; }
 
   // -- Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool advance(double dt);
@@ -76,49 +77,24 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-private:
+protected:
   // for now, several points of entry into the science, as I'm not sure where
   // things will settle for a Phalanx-like system
-  void InternalEnergyGas_(const Teuchos::RCP<State>& S,
-                          const CompositeVector& temp,
-                          const CompositeVector& mol_frac_gas,
-                          const Teuchos::RCP<CompositeVector>& int_energy_gas);
+  virtual void SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S);
+  virtual void SetupEnergy_(const Teuchos::RCP<State>& S);
 
-  void InternalEnergyLiquid_(const Teuchos::RCP<State>& S,
-                             const CompositeVector& temp,
-                             const Teuchos::RCP<CompositeVector>& int_energy_liquid);
+  virtual void UpdateBoundaryConditions_();
+  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
+  virtual void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<CompositeVector>& temp);
 
-  void InternalEnergyRock_(const Teuchos::RCP<State>& S,
-                           const CompositeVector& temp,
-                           const Teuchos::RCP<CompositeVector>& int_energy_rock);
-
-  void EnthalpyLiquid_(const Teuchos::RCP<State>& S,
-                       const CompositeVector& int_energy_liquid,
-                       const CompositeVector& pres,
-                       const CompositeVector& mol_dens_liq,
-                       const Teuchos::RCP<CompositeVector>& enthalpy_liq);
-
-  void ThermalConductivity_(const Teuchos::RCP<State>& S,
-                            const CompositeVector& porosity,
-                            const CompositeVector& saturation_liquid,
-                            const Teuchos::RCP<CompositeVector>& thermal_conductivity);
-
-  // helper methods for calling the above methods
-  void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
-  void UpdateThermalConductivity_(const Teuchos::RCP<State>& S);
-  void UpdateEnthalpyLiquid_(const Teuchos::RCP<State>& S);
-
-  void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
-  void AddAdvection_(const Teuchos::RCP<State> S,
+  virtual void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
+  virtual void AddAdvection_(const Teuchos::RCP<State> S,
                      const Teuchos::RCP<CompositeVector> f, bool negate);
-  void ApplyDiffusion_(const Teuchos::RCP<State> S, const Teuchos::RCP<CompositeVector> f);
+  virtual void ApplyDiffusion_(const Teuchos::RCP<State> S,
+          const Teuchos::RCP<CompositeVector> f);
 
-  // methods for applying/using the discretization/operators
-  void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-                                       const Teuchos::RCP<CompositeVector>& temp);
-  void UpdateBoundaryConditions_();
-  void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
-
+protected:
   // misc setup information
   Teuchos::ParameterList energy_plist_;
   double dt_;
@@ -129,16 +105,14 @@ private:
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
 
-  // constitutive relations
-  Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhase> thermal_conductivity_model_;
-  Teuchos::RCP<EnergyRelations::InternalEnergyWaterVapor> iem_gas_;
-  Teuchos::RCP<EnergyRelations::InternalEnergyModel> iem_liquid_;
-  Teuchos::RCP<EnergyRelations::InternalEnergyModel> iem_rock_;
-
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+
+  // models for evaluating BCs
+  Teuchos::RCP<Relations::EOS> eos_liquid_;
+  Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
 
   // time integration
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
@@ -146,6 +120,7 @@ private:
   double rtol_;
   double time_step_reduction_factor_;
 
+private:
   // factory registration
   static RegisteredPKFactory<TwoPhase> reg_;
 };

@@ -10,6 +10,7 @@
 #ifndef AMANZI_RELATIONS_EOS_EVALUATOR_HH_
 #define AMANZI_RELATIONS_EOS_EVALUATOR_HH_
 
+#include "eos.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {
@@ -33,6 +34,7 @@ class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
 
+  Teuchos::RCP<EOS> get_EOS() { return eos_; }
  protected:
 
   // PList
