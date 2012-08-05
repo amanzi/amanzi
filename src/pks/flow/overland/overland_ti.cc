@@ -167,14 +167,6 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const CompositeVector> pres = u->data();
   Teuchos::RCP<const CompositeVector> dpres = du->data();
 
-  if (niter_ == 21) {
-    *S_next_->GetFieldData("overland_nka_pc_correction21", "overland_flow") = *dpres;
-  } else if (niter_ == 22) {
-    *S_next_->GetFieldData("overland_nka_pc_correction22", "overland_flow") = *dpres;
-  } else if (niter_ == 23) {
-    *S_next_->GetFieldData("overland_nka_pc_correction23", "overland_flow") = *dpres;
-  }
-
   Teuchos::RCP<const CompositeVector> cell_volume =
     S_next_->GetFieldData("surface_cell_volume");
   Teuchos::RCP<const CompositeVector> slope =

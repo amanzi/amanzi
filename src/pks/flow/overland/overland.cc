@@ -838,7 +838,7 @@ void OverlandFlow::output_flow_rate() {
   if (S_next_->Mesh("surface")->get_comm()->MyPID() == 0) MPI_Barrier(MPI_COMM_WORLD);
   MPI_Barrier(MPI_COMM_WORLD);
 
-  LINE(--);
+  //LINE(--);
 
   // std::cout << "DATA ON OUTER EDGE" << std::endl;
   // for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
