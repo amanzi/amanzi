@@ -259,6 +259,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   solution_->set_data(pres);
   atol_ = flow_plist_.get<double>("Absolute error tolerance",1.0);
   rtol_ = flow_plist_.get<double>("Relative error tolerance",1.0);
+  precon_lag_ = flow_plist_.get<int>("preconditioner lag", 0);
 
   if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
     // -- Instantiate the time stepper.

@@ -33,8 +33,6 @@ void OverlandFlow::fun( double t_old,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
                         Teuchos::RCP<TreeVector> g ) {
-  niter_++;
-
   S_inter_->set_time(t_old);
   S_next_ ->set_time(t_new);
 
@@ -74,8 +72,10 @@ void OverlandFlow::fun( double t_old,
   ApplyDiffusion_(S_next_, res);
 
   // update the preconditioner
-  UpdateBoundaryConditionsNoElev_(S_next_);
-  update_precon_for_real(t_new, u_new, t_new - t_old);
+  if (niter_ % (precon_lag_+1) == 0) {
+    UpdateBoundaryConditionsNoElev_(S_next_);
+    update_precon_for_real(t_new, u_new, t_new - t_old);
+  }
 
 #if DEBUG_RES_FLAG
   std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
@@ -97,6 +97,8 @@ void OverlandFlow::fun( double t_old,
 #endif
 
   //print_vector(S_next_,res, "residual") ;
+
+  niter_++;
 };
 
 

@@ -190,6 +190,7 @@ private:
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
   double atol_;
   double rtol_;
+  int precon_lag_;
   double time_step_reduction_factor_;
 
   // boundary condition data
