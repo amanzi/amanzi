@@ -449,7 +449,7 @@ void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
 
   // commnicate.  this could be done later, but i'm not exactly sure where, so
   // we'll do it here
-  upwind_conductivity->ScatterMasterToGhosted();
+  upwind_conductivity->ScatterMasterToGhosted("face");
 
 }
 
