@@ -304,9 +304,9 @@ bool OverlandFlow::advance(double dt) {
 
   // save flow_rate
   // 2D test case
-  if ( nsteps_%6==0 || true ) {
-    output_flow_rate() ;
-  }
+  // if ( nsteps_%6==0 || true ) {
+  //   output_flow_rate() ;
+  // }
   ++nsteps_ ;
 
   // take a bdf timestep
