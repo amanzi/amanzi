@@ -51,7 +51,6 @@ public:
 
   // -- Choose a time step compatible with physics.
   virtual double get_dt() {
-    std::cout << "TIME STPPR: PK recommending size " << dt_ << std::endl;
     return dt_;
   }
 
