@@ -851,9 +851,14 @@ function define_install_directories
 {
   # The prefix option overrides the other install choices
   if [ ! -z  "${prefix}" ] ; then
+    status_message "Global prefix (${prefix}) set override Amanzi and TPL installations"
     amanzi_install_prefix=${prefix}
     tpl_install_prefix=${prefix}/tpls
   fi
+
+  status_message "Amanzi installation: ${amanzi_install_prefix}"
+  status_message "TPL installation: ${tpl_install_prefix}"
+
 }    
 #
 # End functions

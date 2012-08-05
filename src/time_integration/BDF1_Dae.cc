@@ -574,7 +574,10 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   
 
   const Teuchos::RCP<AmanziFlow::Interface_NOX> interface = 
-    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, u0, t, h));
+    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, &state, u0, t, h));
+    
+    interface->resetPrecLagCounter();
+    interface->setPrecLag(5);
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
@@ -672,6 +675,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     ttotal.stop();
 
 //     std::cout << "nonlinear solver takes: " << ttotal << std::endl;
+    write_bdf1_stepping_statistics();
 
     throw solver->getNumIterations();
   }

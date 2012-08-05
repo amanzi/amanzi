@@ -19,8 +19,10 @@ Authors: Neil Carlson (version 1)
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
 #include "Mesh.hh"
+#include "BDF1_State.hh"
 
 
+class BDF1State;
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -29,8 +31,9 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
                       public NOX::Epetra::Interface::Jacobian,
                       public NOX::Epetra::Interface::Preconditioner {
  public:
-  Interface_NOX(BDF2::fnBase* FPK_, const Epetra_Vector& uprev, double time_, double dt) : 
+  Interface_NOX(BDF2::fnBase* FPK_, BDF1State* state_, const Epetra_Vector& uprev, double time_, double dt) : 
 		FPK(FPK_), u0(uprev), lag_prec_(3), lag_count_(0) {
+                        state = state_;
 			time = time_;
 			deltaT = dt;
 			fun_eval = 0;
@@ -51,6 +54,7 @@ class Interface_NOX : public NOX::Epetra::Interface::Required,
 
  private:
   BDF2::fnBase* FPK;
+  BDF1State *state;
   const Epetra_Vector& u0;	// value at the previous time step
 
   double deltaT, time;		// time step

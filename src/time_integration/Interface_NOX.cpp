@@ -27,6 +27,8 @@ bool Interface_NOX::computeF(const Epetra_Vector& x,
                                    FillType flag) {
 //   for (int i=0; i<x.MyLength(); i++) f[i] = x[i]*x[i] - 9;
 
+//     std::cout << "Interface_NOX::computeF\n ";
+
     Epetra_Vector u_tmp(x);
 
     u_tmp = x;
@@ -41,6 +43,8 @@ bool Interface_NOX::computeF(const Epetra_Vector& x,
     fun_eval++;
     fun_eval_time += t1.getTime();
     
+    state->pcfun_calls++;
+    
 
 //     printTime();
     
@@ -53,15 +57,19 @@ bool Interface_NOX::computeF(const Epetra_Vector& x,
 * Update preconditioner for JFNK method
 ****************************************************************** */
 bool Interface_NOX::computePreconditioner(
-  const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params) {
-  lag_count_++;
+  const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params) 
+{
+  
   lag_count_ %= lag_prec_;
   int errc;
-
+  
   if (lag_count_ == 0) {
+//     std::cout << "Interface_NOX::computePreconditioner\n ";
     FPK->update_precon(time, x, deltaT, errc);
+    state->updpc_calls++;
   }
 
+  lag_count_++;
 
   return true;
 }

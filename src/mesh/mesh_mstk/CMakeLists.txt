@@ -43,7 +43,7 @@ set(mstk_mesh_files Mesh_MSTK.cc)
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
-                   LINK_LIBS geometry mesh mesh_data ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+                   LINK_LIBS geometry mesh mesh_data ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES})
 
 if (BUILD_TESTS)
     
