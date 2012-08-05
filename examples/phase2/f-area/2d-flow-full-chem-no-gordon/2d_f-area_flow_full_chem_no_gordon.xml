@@ -110,22 +110,6 @@
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Gordon confining">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="20000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Cell"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Gordon aquifer">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="10000"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Cell"/>
-      </ParameterList>
-    </ParameterList>
 
 <!-- This face is corresponding to natural recharge (left side) (Bc1) -->
     <ParameterList name="Natural recharge (left)">
@@ -176,24 +160,6 @@
     <ParameterList name="UTRA downstream">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label"  type="string" value="5"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
-      </ParameterList>
-    </ParameterList>
-<!-- This face is corresponding to Gordon aquifer (GA) upstream side (Bc7) -->
-    <ParameterList name="GA upstream">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="7"/>
-        <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
-      </ParameterList>
-    </ParameterList>
-<!-- This face is corresponding to Gordon aquifer (GA) downstream side (Bc6) -->
-    <ParameterList name="GA downstream">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label"  type="string" value="6"/>
         <Parameter name="File"   type="string" value="f_area_mesh_2D.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
@@ -478,154 +444,9 @@
       </ParameterList> <!-- Surface Complexation Sites -->
     </ParameterList> <!-- Tan clay (TCCZ) -->
 
-    <!-- Gordon confining (GC) -->
-    <ParameterList name="Mesh block 4">
-      <Parameter name="Assigned Regions" type="Array string" value="{Gordon confining}"/>
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.39"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Vertical" type="double" value="1.0e-17"/> 
-        <Parameter name="Horizontal" type="double" value="1.0e-17"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/>
-        <Parameter name="Sr" type="double" value="0.39"/>
-        <Parameter name="m" type="double" value="0.5"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-      </ParameterList>
-      <ParameterList name="Mineralogy">
-
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Quartz">
-	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
-	  <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
-	</ParameterList>
-
-	<ParameterList name="Opal">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Jurbanite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Basaluminite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Mineralogy -->
-
-
-      <Parameter name="Cation Exchange Capacity" type="double" value="2.75"/>
-
-
-      <ParameterList name="Surface Complexation Sites">
-
-	<ParameterList name=">davis_OH">
-	  <Parameter name="Site Density" type="double" value="0.156199"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Surface Complexation Sites -->
-    </ParameterList> <!-- Gordon confining (GC) -->
-
-    <!-- Gordon aquifer (GA) -->
-    <ParameterList name="Mesh block 5">
-      <Parameter name="Assigned Regions" type="Array string" value="{Gordon aquifer}"/>
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.39"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Vertical" type="double" value="1.0e-17"/> 
-      <Parameter name="Horizontal" type="double" value="1.0e-17"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="5.1e-5"/>
-        <Parameter name="Sr" type="double" value="0.39"/>
-        <Parameter name="m" type="double" value="0.5"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-      </ParameterList>
-      <ParameterList name="Mineralogy">
-
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Quartz">
-	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
-	  <Parameter name="Specific Surface Area" type="double" value="3262.3"/>
-	</ParameterList>
-
-	<ParameterList name="Opal">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Jurbanite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Basaluminite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="59093.9"/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="0.1"/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="11076.3"/>
-	</ParameterList>
-
-      </ParameterList> <!-- Mineralogy -->
-
-
-      <Parameter name="Cation Exchange Capacity" type="double" value="2.75"/>
-
-
-      <ParameterList name="Surface Complexation Sites">
-	
-	<ParameterList name=">davis_OH">
-	  <Parameter name="Site Density" type="double" value="0.156199"/>
-	</ParameterList>
-	
-      </ParameterList> <!-- Surface Complexation Sites -->
-    </ParameterList> <!-- Gordon aquifer (GA) -->
     
   </ParameterList> <!-- Material Properties -->
-  
+ 
      
   
   <ParameterList name="Initial Conditions">
