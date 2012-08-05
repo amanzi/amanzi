@@ -304,7 +304,7 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
     // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
     // std::cout << "updated precon " << S_next_->cycle() << std::endl;
 
-  preconditioner_->UpdateMLPreconditioner();
+  preconditioner_->UpdatePreconditioner();
 
   //  test_precon(t,up,h);
 };

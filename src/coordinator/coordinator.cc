@@ -84,7 +84,8 @@ void Coordinator::initialize() {
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->Mesh("surface");
 
     std::string plist_name = "Visualization surface";
-    Teuchos::ParameterList vis_plist = parameter_list_.sublist(plist_name);
+    Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
+      vis_plist.set<std::string>("File Name Base","surface");
     Teuchos::RCP<Visualization> vis =
       Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
@@ -94,7 +95,6 @@ void Coordinator::initialize() {
     S_->RemoveMesh("surface_3d");
     surface_done = true;
   }
-
   for (State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
@@ -103,7 +103,8 @@ void Coordinator::initialize() {
       // pass
     } else {
       std::string plist_name = "Visualization "+mesh->first;
-      Teuchos::ParameterList vis_plist = parameter_list_.sublist(plist_name);
+      Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
+      vis_plist.set<std::string>("File Name Base",mesh->first);
       Teuchos::RCP<Visualization> vis =
         Teuchos::rcp(new Visualization(vis_plist, comm_));
       vis->set_mesh(mesh->second);

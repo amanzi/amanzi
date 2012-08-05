@@ -20,6 +20,9 @@
 #include "Epetra_FECrsMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
 
+#include "Ifpack.h"
+#include "Ifpack_ILU.h"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -127,8 +130,8 @@ public:
                                const Teuchos::RCP<CompositeVector>& F) const;
 
   // extra methods for preconditioning
-  void InitMLPreconditioner(Teuchos::ParameterList& ml_plist_);
-  void UpdateMLPreconditioner();
+  void InitPreconditioner(Teuchos::ParameterList& ml_plist_);
+  void UpdatePreconditioner();
 
   // extra methods for convenience
   void DeriveFlux(const CompositeVector& solution,
@@ -161,8 +164,20 @@ private:
   int nokay_;
   int npassed_; // performance of algorithms generating mass matrices
 
+  enum { TRILINOS_ML, TRILINOS_ILU, HYPRE_AMG, HYPRE_EUCLID, HYPRE_PARASAILS } prec_method_; 
+  
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
+
+#ifdef HAVE_HYPRE
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
+  Teuchos::ParameterList hypre_plist_;
+  int hypre_ncycles_, hypre_nsmooth_;
+  double hypre_tol_, hypre_strong_threshold_;
+#endif
+
+  Teuchos::RCP<Ifpack_ILU> ilu_prec_;
+  Teuchos::ParameterList ilu_plist_;
 
   Teuchos::RCP<const Epetra_Map> supermap_;
   Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO

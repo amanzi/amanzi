@@ -157,8 +157,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh("surface")));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
-  Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
-  preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
+  preconditioner_->InitPreconditioner(mfd_pc_plist);
 
   steptime_ = Teuchos::TimeMonitor::getNewCounter("overland flow advance time");
 
@@ -401,8 +400,8 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
   int ncells = velocity->size("cell");
   for (int c=0; c!=ncells; ++c) {
-    (*velocity)("cell",0,c) /= (*pressure)("cell",c);
-    (*velocity)("cell",1,c) /= (*pressure)("cell",c);
+    (*velocity)("cell",0,c) /= std::max( (*pressure)("cell",c) , 1e-7);
+    (*velocity)("cell",1,c) /= std::max( (*pressure)("cell",c) , 1e-7);
   }
 };
 
