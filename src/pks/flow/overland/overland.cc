@@ -53,6 +53,8 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
       Errors::Message message("Overland Flow PK requires surface mesh, which is currently only supported by MSTK.  Make the domain mesh an MSTK mesh.");
       Exceptions::amanzi_throw(message);
     }
+    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
+    Teuchos::TimeMonitor timer(*meshtime);
 
     // Check that the surface mesh has a subset
     std::string surface_sideset_name =
@@ -81,6 +83,8 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
     Exceptions::amanzi_throw(message);
   }
 
+  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::zeroOutTimers();
 
 
   // Create data structures
@@ -94,25 +98,6 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   names2[1] = "face";
 
   S->RequireField("overland_pressure", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-
-  S->RequireField("overland_nka_residual21", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_residual22", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_residual23", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_pc_residual21", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_pc_residual22", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_pc_residual23", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_pc_correction21", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_pc_correction22", "overland_flow")->SetMesh(S->Mesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("overland_nka_pc_correction23", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
 
   // -- secondary variable: elevation on both cells and faces, ghosted, with 1 dof
@@ -188,33 +173,6 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize boundary conditions
   int nfaces = S->Mesh("surface")->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nfaces_owned = S->Mesh("surface")->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-  int ncells = S->Mesh("surface")->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int ncells_owned = S->Mesh("surface")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  int nnodes = S->Mesh("surface")->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
-  int nnodes_owned = S->Mesh("surface")->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-
-  std::cout << "Overland Initialize: " << S->Mesh("surface")->get_comm()->MyPID() << std::endl;
-  std::cout << "  nnodes (owned, used):" << nnodes_owned << " " << nnodes << std::endl;
-  std::cout << "  nfaces (owned, used):" << nfaces_owned << " " << nfaces << std::endl;
-  std::cout << "  ncells (owned, used):" << ncells_owned << " " << ncells << std::endl;
-
-  int dnfaces = S->Mesh("domain")->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int dnfaces_owned = S->Mesh("domain")->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-  int dncells = S->Mesh("domain")->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int dncells_owned = S->Mesh("domain")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  int dnnodes = S->Mesh("domain")->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
-  int dnnodes_owned = S->Mesh("domain")->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-
-  std::cout << "Domain Initialize: " << S->Mesh("domain")->get_comm()->MyPID() << std::endl;
-  std::cout << "  nnodes (owned, used):" << dnnodes_owned << " " << dnnodes << std::endl;
-  std::cout << "  nfaces (owned, used):" << dnfaces_owned << " " << dnfaces << std::endl;
-  std::cout << "  ncells (owned, used):" << dncells_owned << " " << dncells << std::endl;
-
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -222,24 +180,6 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> pres =
     S->GetFieldData("overland_pressure", "overland_flow");
   DeriveFaceValuesFromCellValues_(S, pres ) ;
-  S->GetFieldData("overland_nka_residual21", "overland_flow")->PutScalar(0.0);
-  S->GetFieldData("overland_nka_residual22", "overland_flow")->PutScalar(0.0);
-  S->GetFieldData("overland_nka_residual23", "overland_flow")->PutScalar(0.0);
-  S->GetField("overland_nka_residual21","overland_flow")->set_initialized();
-  S->GetField("overland_nka_residual22","overland_flow")->set_initialized();
-  S->GetField("overland_nka_residual23","overland_flow")->set_initialized();
-  S->GetFieldData("overland_nka_pc_residual21", "overland_flow")->PutScalar(0.0);
-  S->GetFieldData("overland_nka_pc_residual22", "overland_flow")->PutScalar(0.0);
-  S->GetFieldData("overland_nka_pc_residual23", "overland_flow")->PutScalar(0.0);
-  S->GetField("overland_nka_pc_residual21","overland_flow")->set_initialized();
-  S->GetField("overland_nka_pc_residual22","overland_flow")->set_initialized();
-  S->GetField("overland_nka_pc_residual23","overland_flow")->set_initialized();
-  S->GetFieldData("overland_nka_pc_correction21", "overland_flow")->PutScalar(0.0);
-  S->GetFieldData("overland_nka_pc_correction22", "overland_flow")->PutScalar(0.0);
-  S->GetFieldData("overland_nka_pc_correction23", "overland_flow")->PutScalar(0.0);
-  S->GetField("overland_nka_pc_correction21","overland_flow")->set_initialized();
-  S->GetField("overland_nka_pc_correction22","overland_flow")->set_initialized();
-  S->GetField("overland_nka_pc_correction23","overland_flow")->set_initialized();
   ntries_ = 0;
 
   // Initialize the elevation field and its slope.
@@ -363,46 +303,13 @@ bool OverlandFlow::advance(double dt) {
 
   // save flow_rate
   // 2D test case
-  if ( nsteps_%6==0 || true ) {
-    output_flow_rate() ;
-  }
+  // if ( nsteps_%6==0 || true ) {
+  //   output_flow_rate() ;
+  // }
   ++nsteps_ ;
 
   // take a bdf timestep
   double h = dt;
-  std::cout << "TIME STPPR taking step of size " << h << std::endl;
-
-  if (ntries_ == 0) {
-    std::cout << "ZEROING RES21!!!" << std::endl;
-    S_next_->GetFieldData("overland_nka_residual21", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_residual22", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_residual23", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_pc_residual21", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_pc_residual22", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_pc_residual23", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_pc_correction21", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_pc_correction22", "overland_flow")->PutScalar(0.0);
-    S_next_->GetFieldData("overland_nka_pc_correction23", "overland_flow")->PutScalar(0.0);
-  } else {
-    *S_next_->GetFieldData("overland_nka_residual21", "overland_flow") =
-        *S_->GetFieldData("overland_nka_residual21");
-    *S_next_->GetFieldData("overland_nka_residual22", "overland_flow") =
-        *S_->GetFieldData("overland_nka_residual22");
-    *S_next_->GetFieldData("overland_nka_residual23", "overland_flow") = 
-        *S_->GetFieldData("overland_nka_residual23");
-    *S_next_->GetFieldData("overland_nka_pc_residual21", "overland_flow") =
-        *S_->GetFieldData("overland_nka_pc_residual21");
-    *S_next_->GetFieldData("overland_nka_pc_residual22", "overland_flow") =
-        *S_->GetFieldData("overland_nka_pc_residual22");
-    *S_next_->GetFieldData("overland_nka_pc_residual23", "overland_flow") =
-        *S_->GetFieldData("overland_nka_pc_residual23");
-    *S_next_->GetFieldData("overland_nka_pc_correction21", "overland_flow") =
-        *S_->GetFieldData("overland_nka_pc_correction21");
-    *S_next_->GetFieldData("overland_nka_pc_correction22", "overland_flow") =
-        *S_->GetFieldData("overland_nka_pc_correction22");
-    *S_next_->GetFieldData("overland_nka_pc_correction23", "overland_flow") =
-        *S_->GetFieldData("overland_nka_pc_correction23");
-  }
 
   niter_ = 0;
   ntries_++;
@@ -412,35 +319,15 @@ bool OverlandFlow::advance(double dt) {
     Teuchos::TimeMonitor timer(*steptime_);
     //time_stepper_->time_step(h, solution_);
     dt_solver = time_stepper_->time_step(h, solution_);
-    std::cout << "TIME STPPER Recommends: " << dt_solver << std::endl;
     flow_time_ += h;
   } catch (Exceptions::Amanzi_exception &error) {
-    std::cout << "Timestepper called error: " << error.what() << std::endl;
+    if (S_next_->Mesh("surface")->get_comm()->MyPID() == 0) {
+      std::cout << "Timestepper called error: " << error.what() << std::endl;
+    }
     if (error.what() == std::string("BDF time step failed") ||
         error.what() == std::string("Cut time step")) {
       // try cutting the timestep
       dt_ = h*time_step_reduction_factor_;
-
-
-      *S_inter_->GetFieldData("overland_nka_residual21", "overland_flow")
-          = *S_next_->GetFieldData("overland_nka_residual21", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_residual22", "overland_flow") =
-          *S_next_->GetFieldData("overland_nka_residual22", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_residual23", "overland_flow") = 
-          *S_next_->GetFieldData("overland_nka_residual23", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_pc_residual21", "overland_flow") =
-          *S_next_->GetFieldData("overland_nka_pc_residual21", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_pc_residual22", "overland_flow") =
-          *S_next_->GetFieldData("overland_nka_pc_residual22", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_pc_residual23", "overland_flow") =
-          *S_next_->GetFieldData("overland_nka_pc_residual23", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_pc_correction21", "overland_flow") =
-          *S_next_->GetFieldData("overland_nka_pc_correction21", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_pc_correction22", "overland_flow") =
-          *S_next_->GetFieldData("overland_nka_pc_correction22", "overland_flow");
-      *S_inter_->GetFieldData("overland_nka_pc_correction23", "overland_flow") =
-          *S_next_->GetFieldData("overland_nka_pc_correction23", "overland_flow");
-
       return true;
     } else {
       throw error;
@@ -461,11 +348,8 @@ bool OverlandFlow::advance(double dt) {
     // We took a smaller step than we recommended, and it worked fine (not
     // suprisingly).  Likely this was due to constraints from other PKs or
     // vis.  Do not reduce our recommendation.
-    std::cout << "TIME STPPER took too small a step of size " << h << " but we want to take stpes of size " << dt_ << std::endl;
   } else {
     dt_ = dt_solver;
-    std::cout << "TIME STPPER new size " << dt_ << std::endl;
-
   }
 
   return false;
@@ -564,7 +448,7 @@ void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
 
   // commnicate.  this could be done later, but i'm not exactly sure where, so
   // we'll do it here
-  upwind_conductivity->ScatterMasterToGhosted();
+  upwind_conductivity->ScatterMasterToGhosted("face");
 
 }
 
@@ -953,7 +837,7 @@ void OverlandFlow::output_flow_rate() {
   if (S_next_->Mesh("surface")->get_comm()->MyPID() == 0) MPI_Barrier(MPI_COMM_WORLD);
   MPI_Barrier(MPI_COMM_WORLD);
 
-  LINE(--);
+  //LINE(--);
 
   // std::cout << "DATA ON OUTER EDGE" << std::endl;
   // for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {

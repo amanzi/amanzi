@@ -86,16 +86,7 @@ public:
   // case a name s is already in the map? (i.e. two implementations trying to
   // call themselves the same thing) --etc
   RegisteredPKFactory(const std::string& s) {
-    std::cout << "inserting option: " << s << std::endl;
-    for (typename PKFactory::map_type::iterator iter=PKFactory::GetMap()->begin();
-         iter!=PKFactory::GetMap()->end(); ++iter) {
-      std::cout << "  before option: " << iter->first << std::endl;
-    }
     GetMap()->insert(std::pair<std::string,PK* (*)(Teuchos::ParameterList&, const Teuchos::RCP<State>&, const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
-    for (typename PKFactory::map_type::iterator iter=PKFactory::GetMap()->begin();
-         iter!=PKFactory::GetMap()->end(); ++iter) {
-      std::cout << "  after option: " << iter->first << std::endl;
-    }
   }
 };
 
