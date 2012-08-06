@@ -16,6 +16,15 @@ build_whitespace_string(openmpi_cxxflags
 build_whitespace_string(openmpi_fcflags 
                         -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_FCFLAGS} )
 
+# --- Add RPATH to the link flags for the compiler wrappers
+set(openmpi_extra_ldflags "-Wl,-rpath,${TPL_INSTALL_PREFIX}/lib")
+print_variable(openmpi_extra_ldflags)
+find_package(Threads)
+
+
+				   #                 CFLAGS=${openmpi_cflags}
+				   # CXXFLAGS=${openmpi_cxxflags}
+				   #FCFLAGS=${openmpi_fcflags}
 # --- Add external project build and tie to the OpenMPI build target
 ExternalProject_Add(${OpenMPI_BUILD_TARGET}
                     DEPENDS   ${OpenMPI_PACKAGE_DEPENDS}             # Package dependency target
@@ -28,19 +37,19 @@ ExternalProject_Add(${OpenMPI_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${OpenMPI_source_dir}           # Source directory
                     CONFIGURE_COMMAND
-                                    <SOURCE_DIR>/configure
+                                   <SOURCE_DIR>/configure
                                                 --prefix=<INSTALL_DIR>
+						--enable-option-checking
                                                 --enable-mpi-f77
                                                 --enable-mpi-f90
                                                 --enable-mpi-cxx
                                                 --enable-binaries
+						--enable-shared
+						--enable-static
+						--with-wrapper-ldflags=${openmpi_extra_ldflags}
                                                 CC=${CMAKE_C_COMPILER}
                                                 CXX=${CMAKE_CXX_COMPILER}
                                                 FC=${CMAKE_Fortran_COMPILER}
-                                                CFLAGS=${openmpi_cflags}
-                                                CXXFLAGS=${openmpi_cxxflags}
-                                                FCFLAGS=${openmpi_fcflags}
-                                                LDFLAGS=-L<INSTALL_DIR>/lib
                     # -- Build
                     BINARY_DIR        ${OpenMPI_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make

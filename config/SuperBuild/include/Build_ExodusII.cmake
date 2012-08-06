@@ -7,7 +7,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(ExodusII 
                              TARGET exodusii
-                             DEPENDS NetCDF)
+                             DEPENDS ${MPI_PROJECT} NetCDF)
 
 # --- Define the configure command
 
@@ -15,7 +15,7 @@ define_external_project_args(ExodusII
 include(BuildWhitespaceString)
 build_whitespace_string(common_cmake_args
                        ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                       -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
                        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 
 # Build the configure script

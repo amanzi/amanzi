@@ -8,7 +8,7 @@
 define_external_project_args(ASCEMIO 
                              TARGET ascemio
                              BUILD_IN_SOURCE
-                             DEPENDS HDF5)
+                             DEPENDS ${MPI_PROJECT} HDF5)
 
 
 # -- Define the build command

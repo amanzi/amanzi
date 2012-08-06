@@ -5,18 +5,18 @@
 #  
 
 # --- Define all the directories and common external project flags
-define_external_project_args(CCSE TARGET ccse)
+define_external_project_args(CCSE TARGET ccse DEPENDS ${MPI_PROJECT})
 
 # --- Define the CMake configure parameters
 # Note:
 #      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
 #      CMAKE_ARGS -DVAR=VALUE OK
 # NO WHITESPACE between -D and VAR. Parser blows up otherwise.
+# 
 message(STATUS "Build CCSE with space dimension ${CCSE_BL_SPACEDIM}")
 set(CCSE_CMAKE_CACHE_ARGS
-                       
                        -DENABLE_Config_Report:BOOL=TRUE
-       -DENABLE_MPI:BOOL=TRUE
+                       -DENABLE_MPI:BOOL=TRUE
                        -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
                        -DENABLE_TESTS:BOOL=FALSE
                        -DBL_PRECISION:STRING=DOUBLE
@@ -37,11 +37,11 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}               # Source directory
                     CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                                     -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
                                      ${Amanzi_CMAKE_C_COMPILER_ARGS}    # Ensure uniform build
-                                     -DCMAKE_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
                                      ${Amanzi_CMAKE_CXX_COMPILER_ARGS}  # Ensure uniform build
-                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
+                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                                      ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}  # Ensure uniform build
                     # -- Build
                     BINARY_DIR        ${CCSE_build_dir}           # Build directory 

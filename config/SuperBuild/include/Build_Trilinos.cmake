@@ -4,7 +4,7 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
-set(trilinos_depend_projects NetCDF ExodusII Boost)
+set(trilinos_depend_projects ${MPI_PROJECT} NetCDF ExodusII Boost)
 if(ENABLE_HYPRE)
   list(APPEND trilinos_depend_projects HYPRE)
 endif()
@@ -169,7 +169,9 @@ set(Trilinos_CMAKE_ARGS
 # - Final language ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                   ${Amanzi_CMAKE_CXX_COMPILER_ARGS})
+		   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+                   ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+		   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE})
 print_variable(Trilinos_CMAKE_LANG_ARGS)
 
 #  --- Define the Trilinos patch step

@@ -7,7 +7,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(MOAB 
                              TARGET moab
-                             DEPENDS ZLIB HDF5 NetCDF
+                             DEPENDS ${MPI_PROJECT} ZLIB HDF5 NetCDF
                             )
 
 # --- Build common compiler and link flags
@@ -49,9 +49,9 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                                                 --with-mpi
                                                 --with-hdf5=${TPL_INSTALL_PREFIX}
                                                 --with-netcdf=${TPL_INSTALL_PREFIX}
-                                                CC=${MPI_C_COMPILER}
+                                                CC=${CMAKE_C_COMPILER_USE}
                                                 CFLAGS=${moab_cflags}
-                                                CXX=${MPI_CXX_COMPILER}
+                                                CXX=${CMAKE_CXX_COMPILER_USE}
                                                 CFLAGS=${moab_cxxflags}
                                                 LDFLAGS=${moab_ldflags}
                     # -- Build

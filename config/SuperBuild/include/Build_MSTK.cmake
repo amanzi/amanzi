@@ -6,7 +6,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(MSTK
                              TARGET mstk
-                             DEPENDS HDF5 NetCDF ExodusII METIS Trilinos)
+                             DEPENDS ${MPI_PROJECT} HDF5 NetCDF ExodusII METIS Trilinos)
 
 
 # --- Define the configure parameters
@@ -15,12 +15,15 @@ define_external_project_args(MSTK
 set(mstk_cflags_list -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CFLAGS})
 build_whitespace_string(mstk_cflags ${mstk_cflags_list})
 
+set(mstk_ldflags_list -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES})
+build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
+
 # The CMake cache args
 set(MSTK_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                    -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
                     -DCMAKE_C_FLAGS:STRING=${mstk_cflags}
-                    -DCMAKE_EXE_LINKER_FLAGS:STRING=-L${TPL_INSTALL_PREFIX}/lib
+                    -DCMAKE_EXE_LINKER_FLAGS:STRING=${mstk_ldflags}
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE

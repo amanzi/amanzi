@@ -6,7 +6,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(HDF5
                              TARGET hdf5
-                             DEPENDS ZLIB)
+                             DEPENDS ${MPI_PROJECT} ZLIB)
 
 # --- Define configure parameters
 
@@ -25,6 +25,13 @@ set(cpp_flag_list
     ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(hdf5_cppflags ${cpp_flags_list})
+
+# Add
+if ( ( NOT BUILD_MPI) AND ( NOT MPI_WRAPPERS_IN_USE ) AND (MPI_C_LIBRARIES) )
+  build_whitespace_string(hdf5_ldflags -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES} ${CMAKE_EXE_LINKER_FLAGS})
+else()
+  build_whitespace_string(hdf5_ldflags -L${TPL_INSTALL_PREFIX}/lib ${CMAKE_EXE_LINKER_FLAGS})
+endif()  
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${HDF5_BUILD_TARGET}
@@ -46,12 +53,12 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                                                  --enable-largefile
                                                  --enable-parallel
                                                  --with-zlib=${TPL_INSTALL_PREFIX}
-                                                 CC=${MPI_C_COMPILER}
+                                                 CC=${CMAKE_C_COMPILER_USE}
                                                  CFLAGS=${hdf5_cflags}
-                                                 CXX=${MPI_CXX_COMPILER}
+                                                 CXX=${CMAKE_CXX_COMPILER_USE}
                                                  CXXFLAGS=${hdf5_cxxflags}
                                                  CPPFLAGS=${hdf5_cppflags}
-                                                 LDFLAGS=-L${TPL_INSTALL_PREFIX}/lib
+                                                 LDFLAGS=${hdf5_ldflags}
                     # -- Build
                     BINARY_DIR        ${HDF5_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
