@@ -111,8 +111,13 @@ struct Layout
 
     bool IsCompatible(const MFTower& mft) const;
 
+    const MultiFab& Volume(int lev) const;
+    const MultiFab& Area(int lev, int dir) const;
+
 protected:
     void DestroyPetscStructures();
+    void BuildMetrics();
+
 #ifdef BL_USE_PETSC
     Mat J_mat;
     Vec JRowScale_vec;
@@ -133,6 +138,9 @@ protected:
     bool initialized;
     Amr* parent;
     int nNodes_global, nNodes_local;
+
+    PArray<MultiFab> volume;
+    Array<PArray<MultiFab> > area;
 };
 
 

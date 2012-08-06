@@ -48,25 +48,27 @@
       end     
 
       subroutine FORT_EC_TO_CC_DIV(div,DIMS(div),
-     &     e,DIMS(e),lo,hi,dx,mult,dir,nc)
+     &     e,DIMS(e),a,DIMS(a),v,DIMS(v),lo,hi,mult,dir,nc)
       implicit none      
       integer DIMDEC(div)
       integer DIMDEC(e)
+      integer DIMDEC(a)
+      integer DIMDEC(v)
       integer lo(SDIM),hi(SDIM)
-      REAL_T  dx(0:SDIM-1)
       REAL_T  div(DIMV(div),0:nc-1)
       REAL_T  e(DIMV(e),0:nc-1)
+      REAL_T  a(DIMV(a))
+      REAL_T  v(DIMV(v))
       REAL_T  mult
       integer dir, nc
       
       integer i, j, n
-      REAL_T tmult
-      tmult = mult/dx(dir)
+
       if (dir.eq.0) then
          do n=0,nc-1
             do j = lo(2),hi(2)
                do i = lo(1),hi(1)
-                  div(i,j,n) = div(i,j,n) + tmult*(e(i+1,j,n) - e(i,j,n))
+                  div(i,j,n) = div(i,j,n) + mult*(e(i+1,j,n)*a(i+1,j) - e(i,j,n)*a(i,j))/v(i,j)
                enddo
             enddo
          enddo
@@ -74,7 +76,7 @@
          do n=0,nc-1
             do j = lo(2),hi(2)
                do i = lo(1),hi(1)
-                  div(i,j,n) = div(i,j,n) + tmult*(e(i,j+1,n) - e(i,j,n))
+                  div(i,j,n) = div(i,j,n) + mult*(e(i,j+1,n)*a(i,j+1) - e(i,j,n)*a(i,j))/v(i,j)
                enddo
             enddo
          enddo

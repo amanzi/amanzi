@@ -20,6 +20,9 @@ public:
   PArray<MFTower>& GetKappa() {return Kappa;}
   MFTower& GetPorosity() {return *Porosity;}
   MFTower& GetPressure() {return *Pnew;}
+  MFTower& GetPStar() {return *PStar;}
+  MFTower& GetRhoSatStar() {return *RhoSatStar;}
+  MFTower& GetAlphaStar() {return *AlphaStar;}
   Vec& GetPressureV() {return SolnV;}
   MFTower& GetResidual() {return *Rhs;}
   Vec& GetResidualV() {return RhsV;}
@@ -42,6 +45,11 @@ public:
 		    MFTower& pressure,
 		    Real     time,
 		    Real     dt);
+
+  void DpDtResidual_Alt(MFTower& residual,
+                        MFTower& pressure,
+                        Real     time,
+                        Real     dt);
 
 protected:
   void BuildOpSkel(Mat& J);
@@ -92,7 +100,7 @@ protected:
 
   int nLevs;
   Array<PArray<MultiFab> > ktmp, ctmp; // Currently maintains its own copy of these, should be fixed
-  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *Pinit;
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *PStar, *RhoSatStar, *AlphaStar;
   PArray<MFTower> Kappa, DarcyVelocity, RichardCoefs;
 
   Vec RhsV, SolnV;

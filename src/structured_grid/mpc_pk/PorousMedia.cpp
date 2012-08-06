@@ -1732,7 +1732,11 @@ PorousMedia::richard_init_to_steady()
                 RichardNLSdata::Reason ret;
                 RichardNLSdata nld = BuildInitNLS();
 
-		RichardSolver rs(*(PMParent()));
+		RichardSolver* rs = 0;
+                if (use_PETSc_snes) {
+                    rs = new RichardSolver(*(PMParent()));
+                }
+                
                 int total_num_Newton_iterations = 0;
                 int total_rejected_Newton_steps = 0;
                 while (continue_iterations)
@@ -1751,7 +1755,7 @@ PorousMedia::richard_init_to_steady()
 		    }
 
 		  if (use_PETSc_snes) {
-		    rs.ResetRhoSat();
+		    rs->ResetRhoSat();
 		  }
 
 		  MultiFab& S_new = get_new_data(State_Type);
@@ -1784,7 +1788,7 @@ PorousMedia::richard_init_to_steady()
 			  }
 			if (use_PETSc_snes) 
 			  {
-			    ret = richard_PETSc_pressure_solve(dt,rs,nld);
+			    ret = richard_PETSc_pressure_solve(dt,*rs,nld);
 			  }
 			else
 			  {
@@ -1812,7 +1816,6 @@ PorousMedia::richard_init_to_steady()
                         }
                     }
                     else {
-
                         total_rejected_Newton_steps++;
 			for (int lev=0;lev<= finest_level;lev++)
 			  {
@@ -1868,6 +1871,7 @@ PorousMedia::richard_init_to_steady()
                     dt = std::min(dt_new, t_max-t);
                 }
 
+                delete rs;
                 if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
                     std::cout << tag << " Total psuedo-time advanced: " << t << " in " << k << " steps" << std::endl;
                     std::cout << tag << "      Newton iters: " << total_num_Newton_iterations << std::endl;
@@ -2452,7 +2456,8 @@ PorousMedia::multilevel_advance (Real time,
       MultiFab::Copy(P_new,P_old,0,0,1,P_old.nGrow());
 
       Real pcTime = pm_lev.state[State_Type].curTime();
-      pm_lev.FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
+      int ncomp_fill_bndry = do_tracer_transport ? ncomps+ntracers : ncomps;
+      pm_lev.FillStateBndry (pcTime,State_Type,0,ncomp_fill_bndry);
       pm_lev.FillStateBndry (pcTime,Press_Type,0,1);
 
       if (have_capillary)	pm_lev.calcCapillary(pcTime);
@@ -3837,7 +3842,6 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
 		     lo,hi,domain_lo,domain_hi,dx,bc.dataPtr());
 #endif
     }
-
 
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
@@ -6074,10 +6078,13 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
       MultiFab::Copy(alpha[lev],*(fine_lev.rock_phi),0,0,1,1);
 
       res_fix.set(lev,new MultiFab(fine_grids,1,1));
-      if (do_richard_sat_solve)
+      if (do_richard_sat_solve) {
 	MultiFab::Copy(res_fix[lev],nl_data.initialState[lev],nc,0,1,0);
-      else
+      }
+      else {
+	fine_lev.FillStateBndry(pcTime,Press_Type,0,1);
 	fine_lev.calcInvPressure(res_fix[lev],nl_data.initialState[lev]);
+      }
 
       for (MFIter mfi(res_fix[lev]); mfi.isValid(); ++mfi)
 	res_fix[lev][mfi].mult(alpha[lev][mfi],mfi.validbox(),0,0,1);
@@ -6096,7 +6103,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 	  P_lev.mult(-1.0,1);
 	}
   }
-      
+
   Diffusion::NewtonStepInfo linear_status;
   linear_status.success = true;
   linear_status.max_ls_iterations = richard_max_ls_iterations;
@@ -10344,7 +10351,6 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
               int cnt = 1;
               for (int d=0; d<BL_SPACEDIM; ++d) {
                   vals[0] -= rdt * (*wrk[d])(iv,2);
-                  
                   IntVect ivp = iv + BoxLib::BASISV(d);
                   int np = nodeNums(ivp,0);
                   if (np>=0) {
@@ -10385,7 +10391,6 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
                   vals[n] *= max_abs;
               }
 #endif
-
               ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
               ierr = VecSetValues(JRowScale,1,&(rows[0]),&max_abs,INSERT_VALUES);
           }

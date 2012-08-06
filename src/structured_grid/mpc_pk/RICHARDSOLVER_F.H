@@ -6,22 +6,26 @@
 #    define FORT_RS_XMULTYZ  rsxmultyz
 #    define FORT_RS_CTE_UPW  rsacteupw
 #    define FORT_RS_PDOTRES  rspdotres
+#    define FORT_RS_PDOTALT  rspdotalt
 #else
 #  if  defined(BL_FORT_USE_UPPERCASE)
 #    define FORT_RS_GXPA     RSGXPA
 #    define FORT_RS_XMULTYZ  RSXMULTYZ
 #    define FORT_RS_CTE_UPW  RSACTEUPW
 #    define FORT_RS_PDOTRES  RSPDOTRES
+#    define FORT_RS_PDOTALT  RSPDOTALT
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_RS_GXPA     rsardgxpa
 #    define FORT_RS_XMULTYZ  rsxmultyz
 #    define FORT_RS_CTE_UPW  rsacteupw
 #    define FORT_RS_PDOTRES  rspdotres
+#    define FORT_RS_PDOTALT  rspdotalt
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_RS_GXPA     rsardgxpa_
 #    define FORT_RS_XMULTYZ  rsxmultyz_
 #    define FORT_RS_CTE_UPW  rsacteupw_
 #    define FORT_RS_PDOTRES  rspdotres_
+#    define FORT_RS_PDOTALT  rspdotalt_
 #  endif
 
 #include <ArrayLim.H>
@@ -51,6 +55,16 @@ extern "C"
 			const Real* ph, ARLIM_P(phlo), ARLIM_P(phhi),
 			const Real* rho, const Real* dt,
 			const int*  lo, const int*  hi, const int* nc);
+
+  void FORT_RS_PDOTALT (Real* res,      ARLIM_P(rlo),  ARLIM_P(rhi),
+                        const Real* sn, ARLIM_P(snlo), ARLIM_P(snhi),
+                        const Real* pp, ARLIM_P(pplo), ARLIM_P(pphi),
+                        const Real* ss, ARLIM_P(sslo), ARLIM_P(sshi),
+                        const Real* ps, ARLIM_P(pslo), ARLIM_P(pshi),
+                        const Real* as, ARLIM_P(aslo), ARLIM_P(ashi),
+                        const Real* ph, ARLIM_P(phlo), ARLIM_P(phhi),
+                        const Real* rho, const Real* dt,
+                        const int*  lo, const int*  hi, const int* nc);
 }
 
 #endif

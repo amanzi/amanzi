@@ -232,6 +232,45 @@ Write(const Layout::MultiIntFab& imf,
     VisMF::Write(mf,filename);
 }
 
+void
+Layout::BuildMetrics ()
+{
+    //
+    // Build volume and face area arrays.
+    //
+    volume.resize(nLevs,PArrayManage);
+    area.resize(BL_SPACEDIM);
+    for (int dir = 0; dir < BL_SPACEDIM; dir++)
+    {
+        area[dir].resize(nLevs,PArrayManage);
+    }
+
+    for (int lev=0; lev<nLevs; ++lev)
+    {
+        const Geometry& geom = geomArray[lev];
+        volume.set(lev, new MultiFab());
+
+        geom.GetVolume(volume[lev],gridArray[lev],nGrow);
+        for (int dir = 0; dir < BL_SPACEDIM; dir++)
+        {
+            area[dir].set(lev, new MultiFab());
+            geom.GetFaceArea(area[dir][lev],gridArray[lev],dir,nGrow);
+        }
+    }
+}
+
+const MultiFab&
+Layout::Volume(int lev) const
+{
+    return volume[lev];
+}
+
+const MultiFab&
+Layout::Area(int lev, int dir) const
+{
+    return area[dir][lev];
+}
+
 void 
 Layout::Rebuild()
 {
@@ -250,6 +289,8 @@ Layout::Rebuild()
             refRatio[i] = parent->refRatio(i);
         }
     }
+
+    BuildMetrics();
 
     NodeFab fnodeFab;
 

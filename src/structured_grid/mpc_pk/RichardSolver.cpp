@@ -25,6 +25,30 @@ PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     return 0;
 }
 
+PetscErrorCode RichardRes_DpDt_Alt(SNES snes,Vec x,Vec f,void *dummy)
+{
+    PetscErrorCode ierr; 
+    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+    if (!rs) {
+        BoxLib::Abort("Bad cast in RichardRes_DpDt");
+    }
+    Layout& layout = PMAmr::GetLayout();
+    MFTower& xMFT = rs->GetPressure();
+    MFTower& fMFT = rs->GetResidual();
+
+    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+    ierr = layout.VecToMFTower(fMFT,f,0); CHKPETSC(ierr);
+
+    Real time = rs->Time();
+    Real dt = rs->Dt();
+    rs->DpDtResidual_Alt(fMFT,xMFT,time,dt);
+
+    ierr = layout.MFTowerToVec(x,xMFT,0); CHKPETSC(ierr);
+    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+
+    return 0;
+}
+
 RichardSolver::RichardSolver(PMAmr& _pm_amr)
   : pm_amr(_pm_amr)
 {
@@ -41,6 +65,7 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   // Manipulate data already allocated in state into structures more convenient for ml solves
   RhoSatOld = 0;
   RhoSatNew = 0;
+
   // ResetRhoSat();
   PArray<MultiFab> lambda(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
@@ -80,6 +105,11 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
     utmp.clear();
   }
 
+  // Make some temporary space
+  RhoSatStar = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1);
+  AlphaStar = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1);
+  PStar = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1);
+
   PetscErrorCode ierr;       
   int n = layout.NumberOfLocalNodeIds();
   int N = layout.NumberOfGlobalNodeIds();
@@ -108,11 +138,15 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
   ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
   ierr = MatFDColoringSetFunction(matfdcoloring,
-				  (PetscErrorCode (*)(void))RichardRes_DpDt,
+				  (PetscErrorCode (*)(void))RichardRes_DpDt_Alt,
 				  (void*)(this)); CHKPETSC(ierr);
   ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
   ierr = SNESSetJacobian(snes,Jac,Jac,SNESDefaultComputeJacobianColor,matfdcoloring);CHKPETSC(ierr); 
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
+
+  PetscReal errfd = -5.28431526461139824e-12;
+  ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);
+
 
   // TODO: Add deletes/destroys for all structures allocated/created here
 }
@@ -131,6 +165,12 @@ RichardSolver::ResetRhoSat()
   Layout& layout = PMAmr::GetLayout();
   delete RhoSatOld; RhoSatOld = new MFTower(layout,S_old);
   delete RhoSatNew; RhoSatNew = new MFTower(layout,S_new);
+
+  for (int lev=0; lev<nLevs; ++lev) {
+      MultiFab::Copy((*PStar)[lev],pm[lev].get_new_data(Press_Type),0,0,1,0);
+      MultiFab::Copy((*RhoSatStar)[lev],(*RhoSatNew)[lev],0,0,1,0);
+      pm[lev].calc_richard_alpha(&((*AlphaStar)[lev]),(*RhoSatStar)[lev]);
+  }
 }
 
 void
@@ -595,19 +635,20 @@ RichardSolver::DivU(MFTower& divu,
     for (int d=0; d<BL_SPACEDIM; ++d) {
         Real* ap = a.dataPtr(d);
         for (int n=0; n<nComp; ++n) {
-            ap[n] = - GetDensity()[n] * GetGravity()[d];
+            ap[n] = GetDensity()[n] * GetGravity()[d];
         }
     }
 
-    // Get  -Grad(p) - rho.g
+    // Get  -(Grad(p) - rho.g)
     CCtoECgradAdd(GetDarcyVelocity(),pressure,a);
 
-    // Get edge-centered lambda (= krel/mu) based on the sign of (Grad(p) - rho.g)
+
+    // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) - rho.g)
     CenterToEdgeUpwind(GetRichardCoefs(),
 		       GetLambda(),
 		       GetDarcyVelocity(),nComp);
 
-    // Get Darcy flux = lambda * kappa * (Grad(p) - rho.g)
+    // Get Darcy flux = - lambda * kappa * (Grad(p) - rho.g)
     for (int d=0; d<BL_SPACEDIM; ++d) {
         XmultYZ(GetDarcyVelocity()[d],
 		GetRichardCoefs()[d],
@@ -659,6 +700,48 @@ RichardSolver::DpDtResidual(MFTower& residual,
 			Poros.dataPtr(),ARLIM(Poros.loVect()), ARLIM(Poros.hiVect()),
 		        GetDensity().dataPtr(), &dt,
 			vbox.loVect(), vbox.hiVect(), &nComp);
+        }
+    }
+}
+
+void
+RichardSolver::DpDtResidual_Alt(MFTower& residual,
+                                MFTower& pressure,
+                                Real     time,
+                                Real     dt)
+{
+  DivU(residual,
+       GetRhoSatNp1(),
+       pressure,
+       time);
+
+  const Layout& layout = PMAmr::GetLayout();
+  const Array<BoxArray>& gridArray = layout.GridArray();
+  const Array<IntVect>& refRatio = layout.RefRatio();
+
+  int nComp = 1;
+  for (int lev=0; lev<nLevs; ++lev)
+    {
+      MultiFab& Rlev = residual[lev];
+      for (MFIter mfi(Rlev); mfi.isValid(); ++mfi) {
+	const Box& vbox = mfi.validbox();
+	FArrayBox& Res = Rlev[mfi];
+	const FArrayBox& RSn = GetRhoSatN()[lev][mfi];
+        const FArrayBox& Pnp1 = pressure[lev][mfi];
+	const FArrayBox& RSstar = GetRhoSatStar()[lev][mfi];
+	const FArrayBox& Pstar = GetPStar()[lev][mfi];
+	const FArrayBox& Astar = GetAlphaStar()[lev][mfi];
+	const FArrayBox& Poros = GetPorosity()[lev][mfi];
+	
+	FORT_RS_PDOTALT(Res.dataPtr(),ARLIM(Res.loVect()), ARLIM(Res.hiVect()),
+                        RSn.dataPtr(),ARLIM(RSn.loVect()), ARLIM(RSn.hiVect()),
+                        Pnp1.dataPtr(),ARLIM(Pnp1.loVect()), ARLIM(Pnp1.hiVect()),
+                        RSstar.dataPtr(),ARLIM(RSstar.loVect()), ARLIM(RSstar.hiVect()),
+                        Pstar.dataPtr(),ARLIM(Pstar.loVect()), ARLIM(Pstar.hiVect()),
+                        Astar.dataPtr(),ARLIM(Astar.loVect()), ARLIM(Astar.hiVect()),
+                        Poros.dataPtr(),ARLIM(Poros.loVect()), ARLIM(Poros.hiVect()),
+                        GetDensity().dataPtr(), &dt,
+                        vbox.loVect(), vbox.hiVect(), &nComp);
         }
     }
 }

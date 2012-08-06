@@ -203,25 +203,31 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
 
     const Array<Geometry>& geomArray = theLayout.GeomArray();
     int the_nLevs = theLayout.NumLevels();
+    
     for (int lev=0; lev<the_nLevs; ++lev) {
         MultiFab& mfc = mftc[lev];
         BL_ASSERT(dComp+nComp<=mfc.nComp());
 
-        const Real* dx = geomArray[lev].CellSize();
+        const MultiFab& Vol = theLayout.Volume(lev);
+
         for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
             FArrayBox& cfab = mfc[mfi];
+            const FArrayBox& vol = Vol[mfi];
             const Box& vcbox = mfi.validbox();
 
             cfab.setVal(0);
             
             for (int d=0; d<BL_SPACEDIM; ++d) {            
                 const FArrayBox& efab = mfte[d][lev][mfi];
+                const FArrayBox& area = theLayout.Area(lev,d)[mfi];
                 BL_ASSERT(sComp+nComp<=efab.nComp());
                 BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
 
                 FORT_EC_TO_CC_DIV(cfab.dataPtr(dComp),ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
                                   efab.dataPtr(sComp),ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
-                                  vcbox.loVect(), vcbox.hiVect(),dx,&mult,&d,&nComp);
+                                  area.dataPtr(),     ARLIM(area.loVect()), ARLIM(area.hiVect()),
+                                  vol.dataPtr(),      ARLIM(vol.loVect()),  ARLIM(vol.hiVect()),
+                                  vcbox.loVect(), vcbox.hiVect(),&mult,&d,&nComp);
             }
         }
     }

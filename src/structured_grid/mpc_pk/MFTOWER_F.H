@@ -31,8 +31,10 @@ extern "C"
 
     void FORT_EC_TO_CC_DIV (Real* ccg,      ARLIM_P(clo), ARLIM_P(chi),
                             const Real* ec, ARLIM_P(elo), ARLIM_P(ehi),
+                            const Real* a,  ARLIM_P(alo), ARLIM_P(ahi),
+                            const Real* v,  ARLIM_P(vlo), ARLIM_P(vhi),
                             const int*  ccvlo, const int*  ccvhi,
-                            const Real* dx, const Real* mult,
+                            const Real* mult,
                             const int* dir, const int* nc);
 
     void FORT_COARSEN_EC(Real* cefab,       ARLIM_P(celo), ARLIM_P(cehi),
