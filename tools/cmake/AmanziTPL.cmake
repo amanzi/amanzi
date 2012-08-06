@@ -143,6 +143,24 @@ if ( Trilinos_FOUND )
 
     endif()
 
+    # Zoltan - required by MSTK mesh class 
+    if ( ENABLE_MSTK_Mesh )
+      find_package(Zoltan
+                   NO_MODULE
+                   HINTS ${Trilinos_DIR}
+                   PATH_SUFFIXES include lib)
+      if (STK_FOUND)
+        trilinos_package_enabled_tpls(Zoltan)
+        list(APPEND Zoltan_LIBRARIES "${Zoltan_TPL_LIBRARIES}")
+        list(APPEND Zoltan_INCLUDE_DIRS "${Zoltan_TPL_INCLUDE_DIRS}")
+      else()  
+        message(WARNING "Could not locate Zoltan in ${Trilinos_DIR}. Will not enable MSTK_Mesh")
+        set(ENABLE_MSTK_Mesh OFF CACHE BOOL "Disable MSTK Mesh capability" FORCE)
+      endif()
+
+    endif()
+
+
     option(ENABLE_HYPRE "Enable HYPRE APIs in flow" OFF)
     if ( ENABLE_HYPRE )
 

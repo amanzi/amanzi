@@ -26,7 +26,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
-{
+{      
   ComputePreconditionerMFD(u, matrix_, Tp, 0.0, false);  // Calculate only stiffness matrix.
   matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 

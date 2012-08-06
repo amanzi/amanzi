@@ -120,6 +120,9 @@ class Matrix_MFD : public Epetra_Operator {
   ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
 
+  Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
+  Teuchos::ParameterList ifp_plist_;
+
 #ifdef HAVE_HYPRE_API
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
   double hypre_tol, hypre_strong_threshold;

@@ -596,15 +596,15 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
 	if (ncp_list.isParameter("max chemistry to transport timestep ratio")) {
 	  mpc_list.set<double>("max chemistry to transport timestep ratio",ncp_list.get<double>("max chemistry to transport timestep ratio"));
 	} else {
-	  mpc_list.set<double>("max chemistry to transport timestep ratio",10.0);
+	  mpc_list.set<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
 	}
       } else {
         mpc_list.set<bool>("transport subcycling", false);
-	mpc_list.set<double>("max chemistry to transport timestep ratio",10.0);
+	mpc_list.set<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
       }
     } else {
       mpc_list.set<bool>("transport subcycling", false);
-      mpc_list.set<double>("max chemistry to transport timestep ratio",10.0);
+      mpc_list.set<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
     }
 
 
@@ -774,6 +774,7 @@ Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist
   Teuchos::ParameterList prec_list;
   prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
   prec_list.sublist("Hypre AMG") = create_HypreAMG_List(plist);
+  prec_list.sublist("Block ILU") = create_BILU_List(plist);
   return prec_list;
 }
 
@@ -817,11 +818,16 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList flw_list;
 
   bool use_hypre(false);
+  bool use_block_ilu(false);
   if ( plist->isSublist("Execution Control") ) 
     if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) 
       if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {    
 	Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
 	use_hypre =  num_list.get<bool>("use Hypre AMG", false);
+	use_block_ilu = num_list.get<bool>("use Block ILU", false);
+	if (use_hypre && use_block_ilu) {
+	  Exceptions::amanzi_throw(Errors::Message("You can only specify either use HYPRE AMG, or use Block ILU, but not both."));	  
+	}
       }
   
   if ( plist->isSublist("Execution Control") ) {
@@ -908,11 +914,13 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	Teuchos::ParameterList& sti_bdf1_param = sti_bdf1.sublist("BDF1 parameters");
 	
 	// link to preconditioner and linear solver for the steady state time integration
-	if (!use_hypre) {
+	if (!use_hypre && !use_block_ilu) {
 	  steady_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
-	} else {
+	} else if (use_hypre) {
 	  steady_time_integrator.set<std::string>("preconditioner", "Hypre AMG");
-	}
+	} else if (use_block_ilu) {
+	  steady_time_integrator.set<std::string>("preconditioner", "Block ILU");
+	}	  
 	steady_time_integrator.set<std::string>("linear solver", "AztecOO");
 	
 	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
@@ -951,10 +959,12 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         Teuchos::ParameterList& tti_bdf1_param = tti_bdf1.sublist("BDF1 parameters");
 
         // link to preconditioner and linear solver for the transient time integrator
-	if (!use_hypre) {
+	if (!use_hypre && !use_block_ilu) {
 	  transient_time_integrator.set<std::string>("preconditioner", "Trilinos ML");
-	} else {
+	} else if (use_hypre) {
 	  transient_time_integrator.set<std::string>("preconditioner", "Hypre AMG");
+	} else if (use_block_ilu) {
+	  transient_time_integrator.set<std::string>("preconditioner", "Block ILU");
 	}
         transient_time_integrator.set<std::string>("linear solver", "AztecOO");
 
@@ -1164,6 +1174,52 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
 
   return dpc_list;
 }
+
+/* ******************************************************************
+ * Block ILU preconditioner sublist
+ ****************************************************************** */
+Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
+{
+  Teuchos::ParameterList bilu_list;
+  
+  double bilu_relax_value(1.0);
+  double bilu_abs_thresh(0.0);
+  double bilu_rel_thresh(1.0);
+  int bilu_level_of_fill(0);
+  int bilu_overlap(0);
+
+  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+      Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+      if (ncp_list.isParameter("Block ILU relax value")) {
+        bilu_relax_value = ncp_list.get<double>("Block ILU relax value");
+      }
+      if (ncp_list.isParameter("Block ILU relative threshold")) {
+        bilu_rel_thresh = ncp_list.get<double>("Block ILU relative threshold");
+      }      
+      if (ncp_list.isParameter("Block ILU absolute threshold")) {
+        bilu_abs_thresh = ncp_list.get<double>("Block ILU absolute threshold");
+      }
+      if (ncp_list.isParameter("Block ILU level of fill")) {
+        bilu_level_of_fill = ncp_list.get<int>("Block ILU level of fill");
+      }
+      if (ncp_list.isParameter("Block ILU overlap")) {
+        bilu_overlap = ncp_list.get<int>("Block ILU overlap");
+      }      
+    }
+  }
+      
+  Teuchos::ParameterList& p_list = bilu_list.sublist("Block ILU Parameters");
+  p_list.set<double>("fact: relax value",bilu_relax_value);
+  p_list.set<double>("fact: absolute threshold",bilu_abs_thresh);
+  p_list.set<double>("fact: relative threshold",bilu_rel_thresh);
+  p_list.set<int>("fact: level-of-fill",bilu_level_of_fill);
+  p_list.set<int>("overlap",bilu_overlap);
+  p_list.set<std::string>("schwarz: combine mode","Add");
+
+  return bilu_list;
+}
+
 
 
 /* ******************************************************************

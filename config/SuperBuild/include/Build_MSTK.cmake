@@ -27,14 +27,20 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE
+                    -DENABLE_METIS:BOOL=TRUE
                     -DHDF5_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DNetCDF_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DZOLTAN_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DMetis_DIR:PATH=${TPL_INSTALL_PREFIX} 
+                    -DMETIS_DIR:PATH=${TPL_INSTALL_PREFIX} 
+                    -DMetis_LIB_DIR:PATH=${TPL_INSTALL_PREFIX}/lib 
                     -DMETIS_LIB_DIR:PATH=${TPL_INSTALL_PREFIX}/lib 
+                    -DMetis_LIBRARY:PATH=${METIS_LIBRARY}
                     -DMETIS_LIBRARY:PATH=${METIS_LIBRARY}
                     -DMetis_INCLUDE_DIR:PATH=${TPL_INSTALL_PREFIX}/include 
+                    -DMETIS_INCLUDE_DIR:PATH=${TPL_INSTALL_PREFIX}/include 
+                    -DMetis_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include
                     -DMETIS_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include
                     -DENABLE_Tests:BOOL=FALSE
                     -DINSTALL_DIR:PATH=<INSTALL_DIR>
@@ -51,6 +57,7 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     URL_MD5      ${MSTK_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
                     SOURCE_DIR       ${MSTK_source_dir}           # Source directory
+                    CMAKE_ARGS       -Wno-dev
                     CMAKE_CACHE_ARGS ${MSTK_CMAKE_CACHE_ARGS}
                     # -- Build
                     BINARY_DIR        ${MSTK_build_dir}           # Build directory 

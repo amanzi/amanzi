@@ -9,6 +9,7 @@ export CFLAGS='@hypre_cflags@'
 export CXX=@CMAKE_CXX_COMPILER@
 export CXXFLAGS='@hypre_cxxflags@'
 export F77=@CMAKE_Fortran_COMPILER@
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 
 # HYPRE recommends running with the make configure target
 cd @HYPRE_source_dir@/src

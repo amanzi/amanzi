@@ -191,10 +191,6 @@ void BDF1Dae::commit_solution(const double h, const Epetra_Vector& u) {
 
   state.hlast = h;
   state.seq++;
-
-  state.hmin = std::min<double>(h, state.hmin);
-  state.hmax = std::max<double>(h, state.hmax);
-
 }
 
 
@@ -252,10 +248,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   Epetra_Vector usav(map);
   usav = u;
   
-
-  if (h < state.hmin) {
-    *out << h << " " << state.hmin << std::endl;
-
+  if (h < 10.0 * state.eps * tlast) {
     std::string msg = "BDF1 failed: Time step crash";
     Errors::Message m(msg);
     Exceptions::amanzi_throw(m);    
@@ -267,6 +260,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
   // Predicted solution (initial value for the nonlinear solver)
   Epetra_Vector up(map);
+//   Epetra_Vector utmp(map);
 
   if (state.uhist->history_size() > 1) {
     state.uhist->interpolate_solution(tnew,  up);
@@ -277,6 +271,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   // u at the start of the time step
   Epetra_Vector u0(map);
   u0 = u;
+//   utmp = u;
   
   if (state.pclagcount > state.maxpclag) {
     state.usable_pc = false;
@@ -286,15 +281,15 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   //  Solve the nonlinear BCE system.
   u = up;  // Initial solution guess is the predictor.
   
+  
     
   try {
       if (state.nonlinear_solver == BDFNKA) {
-            solve_bce(tnew, h, u0, u);
+            solve_bce(tnew, h, u0, u);            
       }
       else if (state.nonlinear_solver == BDFJFNK) {
              solve_bce_jfnk(tnew, h, u0, u);
-      }
-//     exit(0);
+      }     
   }
   catch (int itr) { 
     // we end up in here either if the solver took too many iterations, 
@@ -312,6 +307,13 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
       throw itr;
     } 
   }
+  
+//   utmp.Update(-1, u, 1);
+//   
+//   double val;
+//   
+//     std::cout<<"After solve_bce??? "<< val<<"\n";
+//   exit(0);
 }
 
 
@@ -373,6 +375,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
+    
+   
     
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
@@ -472,6 +476,9 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 
   ttotal.start();
 
+//   u0.Print(std::cout);
+//   u.Print(std::cout);
+  
   NOX::Epetra::Vector nox_u(u);
 
   // Begin Nonlinear Solver ************************************
@@ -491,23 +498,25 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
-  
+
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         //   printParams.set("MyPID", MyPID);
-        
-        printParams.set("Linear Solver Details", true);
+
+//         printParams.set("Linear Solver Details", true);
         printParams.set("Output Information",
              NOX::Utils::OuterIteration + 
              NOX::Utils::OuterIterationStatusTest + 
              NOX::Utils::InnerIteration +
-             NOX::Utils::Parameters + 
-             NOX::Utils::Details + 
+//              NOX::Utils::Parameters + 
+//              NOX::Utils::Details + 
              NOX::Utils::Warning);
   }
   else if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)){
            printParams.set("Output Information",
-             NOX::Utils::OuterIterationStatusTest + 
-             NOX::Utils::Warning);    
+                NOX::Utils::OuterIteration + 
+//                 NOX::Utils::OuterIterationStatusTest + 
+                NOX::Utils::InnerIteration +
+                NOX::Utils::Warning);    
   }
   else if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)){
            printParams.set("Output Information",
@@ -520,7 +529,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
   //searchParams.set("Method", "Interval Halving");
-  //searchParams.set("Method", "Polynomial");
+//   searchParams.set("Method", "Polynomial");
 //   searchParams.set("Method", "NonlinearCG");
   //searchParams.set("Method", "Quadratic");
   //searchParams.set("Method", "More'-Thuente");
@@ -552,12 +561,12 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
   lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 80);  
-  lsParams.set("Tolerance", 1e-4); 
+  lsParams.set("Max Iterations", 5);  
+  lsParams.set("Tolerance", 1e-2); 
 //  lsParams.set("Preconditioner", "None");
 //   lsParams.set("Preconditioner", "Ifpack");
     lsParams.set("Preconditioner", "User Defined");
-  lsParams.set("Max Age Of Prec", 5); 
+  lsParams.set("Max Age Of Prec", 1); 
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -565,7 +574,10 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   
 
   const Teuchos::RCP<AmanziFlow::Interface_NOX> interface = 
-    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, u0, t, h));
+    Teuchos::rcp(new AmanziFlow::Interface_NOX(&fn, &state, u0, t, h));
+    
+    interface->resetPrecLagCounter();
+    interface->setPrecLag(5);
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
@@ -582,18 +594,12 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
    Teuchos::RCP<AmanziFlow::JFNK_Preconditioner> Prec_Test = 
      Teuchos::rcp(new AmanziFlow::JFNK_Preconditioner(&fn));
 ///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
-//  exit(0);
-    
+
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = MF;
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
-  
-  
-  
 
-    
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
                         iJac,  MF, iPrec, Prec_Test, nox_u));
@@ -607,8 +613,8 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   // Create the convergence tests
 //   Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
 //     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-2));
-//   Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
-//     Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-2));
+//   Teuchos::RCP<NOX::StatusTest::NormF> converged = 
+//     Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-8));
 //   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
 //     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-0));
 //   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
@@ -624,7 +630,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
         Teuchos::rcp(new AmanziFlow::PK_enorm(&fn, state.ntol));
     
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(state.maxitr));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(state.mitr));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 
@@ -658,25 +664,26 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 
 
   if (status == NOX::StatusTest::Converged) {
-     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) utils.out() << "Test Passed!" << endl;
-    throw solver->getNumIterations();
-  }
-  else {
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) utils.out() << "Nonlinear solver failed to converge!" << endl;
-    throw state.maxitr+1;
-   }
-
-  // Get the Epetra_Vector with the final solution from the solver
+    // if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) 
+    utils.out() << "Test Passed!" << endl;
+    
+     // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
 //   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
     u = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-//
-//   // End Nonlinear Solver **************************************
 
     ttotal.stop();
 
 //     std::cout << "nonlinear solver takes: " << ttotal << std::endl;
+    write_bdf1_stepping_statistics();
 
+    throw solver->getNumIterations();
+  }
+  else 
+  {
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) utils.out() << "Nonlinear solver failed to converge!" << endl;
+    throw state.mitr+1;
+   }
 
 }
 

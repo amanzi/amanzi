@@ -50,6 +50,7 @@ const int FLOW_MFD3D_OPTIMIZED = 6;
 
 const int FLOW_PRECONDITIONER_TRILINOS_ML = 1;  // preconditioners
 const int FLOW_PRECONDITIONER_HYPRE_AMG = 2;
+const int FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU = 3;
 
 const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
 const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;
