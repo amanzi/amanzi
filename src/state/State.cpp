@@ -1108,7 +1108,7 @@ void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   
   if (out.get() && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) {
     *out << std::setprecision(5) << "Writing visualization dump, cycle = " 
-	 << get_cycle() << ", time(y) = " << get_time()/(365.25*24*60*60) << std::endl;
+	 << get_cycle() << ", time(y) = " << std::fixed << get_time()/(365.25*24*60*60) << std::endl;
   }
   
   // create the new time step...

@@ -492,7 +492,7 @@ void MPC::cycle_driver() {
 	  // this is probably iffy...
 	  if (S->get_time() == reset_times_.front()) {
 	    *out << setprecision(5) << "Resetting the time integrator at time(y) = " 
-		 << S->get_time()/(365.25*24*60*60) << std::endl;
+		 << std::fixed << S->get_time()/(365.25*24*60*60) << std::endl;
 	    mpc_dT = reset_times_dt_.front();
 	    mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
 	    tslimiter = MPC_LIMITS;
