@@ -36,7 +36,7 @@ class DarcyProblem {
  public:
   Epetra_MpiComm* comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
-  State *S;
+  State* S;
   Teuchos::ParameterList dp_list;
   AmanziFlow::Darcy_PK* DPK;
   int MyPID;

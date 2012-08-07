@@ -256,9 +256,9 @@ void Richards_PK::InitPicard(double T0)
   Teuchos::ParameterList ML_list;
   if (preconditioner_name_igs_ == "Trilinos ML") {
     ML_list = tmp_list.sublist("ML Parameters"); 
-  } else if ( preconditioner_name_igs_ == "Hypre AMG") {
+  } else if (preconditioner_name_igs_ == "Hypre AMG") {
     ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
-  } else if ( preconditioner_name_igs_ == "Block ILU") {
+  } else if (preconditioner_name_igs_ == "Block ILU") {
     ML_list = tmp_list.sublist("Block ILU Parameters");
   }
 
@@ -351,7 +351,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     ML_list = tmp_list.sublist("ML Parameters");
   } else if (preconditioner_name_sss_ == "Hypre AMG") {
     ML_list = tmp_list.sublist("BoomerAMG Parameters");
-  } else if ( preconditioner_name_sss_ == "Block ILU") {
+  } else if (preconditioner_name_sss_ == "Block ILU") {
     ML_list = tmp_list.sublist("Block ILU Parameters");
   }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
@@ -456,7 +456,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
     ML_list = tmp_list.sublist("ML Parameters");
   } else if (preconditioner_name_trs_ == "Hypre AMG") {
     ML_list = tmp_list.sublist("BoomerAMG Parameters");
-  } else if ( preconditioner_name_trs_ == "Block ILU") {
+  } else if (preconditioner_name_trs_ == "Block ILU") {
     ML_list = tmp_list.sublist("Block ILU Parameters");
   }
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
