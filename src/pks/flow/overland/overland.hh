@@ -51,7 +51,6 @@ public:
 
   // -- Choose a time step compatible with physics.
   virtual double get_dt() {
-    std::cout << "TIME STPPR: PK recommending size " << dt_ << std::endl;
     return dt_;
   }
 
@@ -191,6 +190,7 @@ private:
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
   double atol_;
   double rtol_;
+  int precon_lag_;
   double time_step_reduction_factor_;
 
   // boundary condition data

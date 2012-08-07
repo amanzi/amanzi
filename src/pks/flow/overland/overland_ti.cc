@@ -33,8 +33,6 @@ void OverlandFlow::fun( double t_old,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
                         Teuchos::RCP<TreeVector> g ) {
-  niter_++;
-
   S_inter_->set_time(t_old);
   S_next_ ->set_time(t_new);
 
@@ -74,8 +72,10 @@ void OverlandFlow::fun( double t_old,
   ApplyDiffusion_(S_next_, res);
 
   // update the preconditioner
-  UpdateBoundaryConditionsNoElev_(S_next_);
-  update_precon_for_real(t_new, u_new, t_new - t_old);
+  if (niter_ % (precon_lag_+1) == 0) {
+    UpdateBoundaryConditionsNoElev_(S_next_);
+    update_precon_for_real(t_new, u_new, t_new - t_old);
+  }
 
 #if DEBUG_RES_FLAG
   std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
@@ -97,6 +97,8 @@ void OverlandFlow::fun( double t_old,
 #endif
 
   //print_vector(S_next_,res, "residual") ;
+
+  niter_++;
 };
 
 
@@ -115,14 +117,16 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   Teuchos::RCP<const CompositeVector> res = u->data();
   for (int c=0; c!=res->size("cell"); ++c) {
     if (boost::math::isnan<double>((*res)("cell",c))) {
-      std::cout << "Cutting time step due to NaN in cell residual." << std::endl;
+      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      std::cout << "Cutting time step due to NaN in cell residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
     }
   }
   for (int f=0; f!=res->size("face"); ++f) {
     if (boost::math::isnan<double>((*res)("face",f))) {
-      std::cout << "Cutting time step due to NaN in face residual." << std::endl;
+      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      std::cout << "Cutting time step due to NaN in face residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
     }
@@ -134,35 +138,19 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   Teuchos::RCP<const CompositeVector> Pres = Pu->data();
   for (int c=0; c!=Pres->size("cell"); ++c) {
     if (boost::math::isnan<double>((*Pres)("cell",c))) {
-      std::cout << "Cutting time step due to NaN in PC'd cell residual." << std::endl;
+      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      std::cout << "Cutting time step due to NaN in PC'd cell residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
     }
   }
   for (int f=0; f!=Pres->size("face"); ++f) {
     if (boost::math::isnan<double>((*Pres)("face",f))) {
-      std::cout << "Cutting time step due to NaN in PC'd face residual." << std::endl;
+      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      std::cout << "Cutting time step due to NaN in PC'd face residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
     }
-  }
-
-  if (niter_ == 21) {
-    std::cout << "SETTING RES21!!!" << std::endl;
-    Teuchos::RCP<const CompositeVector> dres = u->data();
-    Teuchos::RCP<const CompositeVector> dpcres = Pu->data();
-    *S_next_->GetFieldData("overland_nka_residual21", "overland_flow") = *dres;
-    *S_next_->GetFieldData("overland_nka_pc_residual21", "overland_flow") = *dpcres;
-  } else if (niter_ == 22) {
-    Teuchos::RCP<const CompositeVector> dres = u->data();
-    Teuchos::RCP<const CompositeVector> dpcres = Pu->data();
-    *S_next_->GetFieldData("overland_nka_residual22", "overland_flow") = *dres;
-    *S_next_->GetFieldData("overland_nka_pc_residual22", "overland_flow") = *dpcres;
-  } else if (niter_ == 23) {
-    Teuchos::RCP<const CompositeVector> dres = u->data();
-    Teuchos::RCP<const CompositeVector> dpcres = Pu->data();
-    *S_next_->GetFieldData("overland_nka_residual23", "overland_flow") = *dres;
-    *S_next_->GetFieldData("overland_nka_pc_residual23", "overland_flow") = *dpcres;
   }
 
   //*Pu = *u ;
@@ -180,14 +168,6 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du) {
   Teuchos::RCP<const CompositeVector> pres = u->data();
   Teuchos::RCP<const CompositeVector> dpres = du->data();
-
-  if (niter_ == 21) {
-    *S_next_->GetFieldData("overland_nka_pc_correction21", "overland_flow") = *dpres;
-  } else if (niter_ == 22) {
-    *S_next_->GetFieldData("overland_nka_pc_correction22", "overland_flow") = *dpres;
-  } else if (niter_ == 23) {
-    *S_next_->GetFieldData("overland_nka_pc_correction23", "overland_flow") = *dpres;
-  }
 
   Teuchos::RCP<const CompositeVector> cell_volume =
     S_next_->GetFieldData("surface_cell_volume");
@@ -218,27 +198,6 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
     //    printf("cell: %5i %14.7e %14.7e\n",lcv,(*(*dpres_vec)(0))[lcv],tmp);
   }
 
-#if DEBUG_ERROR_FLAG
-  for (int c=0; c!=pres->size("cell",false); ++c) {
-    double tmp = abs((*dpres)("cell",c)) / (atol_ + rtol_ * abs((*pres)("cell",c)));
-    if (tmp > 0.8*enorm_val_cell) {
-
-      std::cout.precision(15.);
-      std::cout << "Screwed up cell: " << c << std::endl;
-      std::cout << "  error: " << std::scientific << tmp << std::endl;
-      std::cout << "  vol: " << std::scientific << (*cell_volume)("cell",c) << std::endl;
-      std::cout << "  slope: " << std::scientific << (*slope)("cell",c) << std::endl;
-
-      // centroid
-      AmanziGeometry::Point point = S_next_->Mesh("surface")->cell_centroid(c);
-      std::cout << "  centroid: (" << point[0] << ", " << point[1]
-                << ")" << std::endl;
-    }
-  }
-
-  LINE(---) ;
-#endif
-
   double enorm_val_face = 0.0;
   for (int f=0; f!=pres->size("face",false); ++f) {
     if (boost::math::isnan<double>((*dpres)("face",f))) {
@@ -252,29 +211,9 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
   }
 
 
-#if DEBUG_ERROR_FLAG
-  for (int f=0; f!=pres->size("face",false); ++f) {
-    double tmp = abs((*dpres)("face",f)) / (atol_ + rtol_ * abs((*pres)("face",f)));
-    if (tmp > 0.8*enorm_val_face) {
-
-      std::cout.precision(15.);
-      std::cout << "Screwed up face: " << f << std::endl;
-      std::cout << "  error: " << std::scientific << tmp << std::endl;
-      std::cout << "  relperm: " << std::scientific << (*relperm)("face",f) << std::endl;
-
-      // centroid
-      AmanziGeometry::Point point = S_next_->Mesh("surface")->face_centroid(f);
-      std::cout << "  centroid: (" << point[0] << ", " << point[1]
-                << ")" << std::endl;
-
-    }
-  }
-#endif
-
-
-  std::cout.precision(15);
-  std::cout << "enorm val (cell, face): " << std::scientific << enorm_val_cell
-            << " / " << std::scientific << enorm_val_face << std::endl;
+  //  std::cout.precision(15);
+  //  std::cout << "enorm val (cell, face): " << std::scientific << enorm_val_cell
+  //            << " / " << std::scientific << enorm_val_face << std::endl;
 
   double enorm_val = std::max<double>(enorm_val_cell, enorm_val_face);
 #ifdef HAVE_MPI
@@ -294,10 +233,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 
 
 void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  std::cout << "Precon update at t = " << t << std::endl;
-
 #if DEBUG_FLAG
-  std::cout << "Precon update:" << std::endl;
+  std::cout << "Precon update at t = " << t << std::endl;
   std::cout << "  p0: " << (*up->data())("cell",0,0) << " " << (*up->data())("face",0,0) << std::endl;
   std::cout << "  p1: " << (*up->data())("cell",0,9) << " " << (*up->data())("face",0,29) << std::endl;
 #endif
