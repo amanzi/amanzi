@@ -30,6 +30,8 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
     prec_method_ = TRILINOS_ML;
   } else if (precmethodstring == "ILU" ) {
     prec_method_ = TRILINOS_ILU;
+  } else if (precmethodstring == "Block ILU" ) {
+    prec_method_ = TRILINOS_BLOCK_ILU;
 #ifdef HAVE_HYPRE
   } else if (precmethodstring == "HYPRE AMG") {
     prec_method_ = HYPRE_AMG;
@@ -501,6 +503,8 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
     ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
   } else if (prec_method_ == TRILINOS_ILU) {
     ierr |= ilu_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    ierr |= ifp_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
@@ -548,6 +552,8 @@ void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
   } else if (prec_method_ == TRILINOS_ILU) {
     ilu_plist_ = prec_plist.sublist("ILU Parameters");
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    ifp_plist_ = prec_plist.sublist("Block ILU Parameters");
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
     // read some boomer amg parameters 
@@ -578,6 +584,15 @@ void MatrixMFD::UpdatePreconditioner() {
     ilu_prec_->SetParameters(ilu_plist_);
     ilu_prec_->Initialize();
     ilu_prec_->Compute();
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    Ifpack factory;
+    std::string prectype("ILU");
+    int ovl = ifp_plist_.get<int>("overlap",0);
+    ifp_plist_.set<std::string>("schwarz: combine mode","Add");
+    ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*Sff_, ovl));
+    ifp_prec_->SetParameters(ifp_plist_);
+    ifp_prec_->Initialize();
+    ifp_prec_->Compute();
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
