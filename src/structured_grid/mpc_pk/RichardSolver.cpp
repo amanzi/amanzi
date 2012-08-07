@@ -1,9 +1,135 @@
 #include <RichardSolver.H>
 #include <RICHARDSOLVER_F.H>
 
+#include <Utility.H>
+
+
 // FIXME: Should be user-settable at runtime
 static int pressure_maxorder = 2;
-static Real errfd = -1.e-12;
+static Real errfd = -3.e-14;
+
+int RichardStepPreCheck(SNES snes, Vec x,Vec y,void *checkctx, PetscBool  *changed_y)
+{
+  /*
+      Input parameters:
+	snes 	- nonlinear context
+	checkctx - optional user-defined context for use by step checking routine
+	x 	 - previous iterate
+	y 	 - new search direction and length
+
+      Output parameters:
+	y         - search direction (possibly changed)
+	changed_y - indicates search direction was changed by this routine 
+   */
+
+#if 0
+    // A number of hacks to explore AMR solver
+
+  RichardSolver* rs = static_cast<RichardSolver*>(checkctx);
+
+  PetscErrorCode ierr;
+
+  Layout& layout = PMAmr::GetLayout();
+  int nLevs = layout.NumLevels();
+  MFTower& Pnp1 = rs->GetPStar();
+  ierr = layout.VecToMFTower(Pnp1,y,0); CHKPETSC(ierr);
+
+  int cumRatio = 1;
+  if (myCnt<30) {
+      for (int lev=1; lev<nLevs; ++lev) {
+          for (int d=0; d<BL_SPACEDIM; ++d) {
+              cumRatio *= layout.RefRatio()[lev-1][d];
+          }
+          Pnp1[lev].mult(1/cumRatio);
+      }
+      ierr = layout.MFTowerToVec(y,Pnp1,0); CHKPETSC(ierr);
+      *changed_y = PETSC_TRUE;
+  } else {
+      *changed_y = PETSC_FALSE;
+  }
+
+  Vec w;
+  ierr = VecDuplicate(x,&w);CHKERRQ(ierr);
+  PetscReal alpha = +1;
+  ierr = VecWAXPY(w,alpha,y,x);
+  
+  MFTower& RSnp1 = rs->GetRhoSatStar();
+
+  ierr = layout.VecToMFTower(Pnp1,w,0); CHKPETSC(ierr);
+
+  MFTower& Res = rs->GetResidual();
+
+  std::string itStr = BoxLib::Concatenate("_",myCnt,3);
+  for (int lev=0; lev<nLevs; ++lev) {
+      rs->GetPMlevel(lev).calcInvPressure(RSnp1[lev],Pnp1[lev]);
+      
+      std::string levStr = BoxLib::Concatenate(itStr+"_",lev,1);
+      VisMF::Write(RSnp1[lev],"RSat"+levStr);
+      VisMF::Write(Pnp1[lev],"Pres"+levStr);
+      VisMF::Write(Res[lev],"Res"+levStr);
+  }
+
+  myCnt++;
+
+#endif
+  return 0;
+}
+
+int RichardStepPostCheck(SNES snes, Vec x,Vec y,Vec w, void *checkctx, PetscBool  *changed_y, PetscBool  *changed_w)
+{
+  /*
+    Input
+	snes     - nonlinear context
+	checkctx - optional user-defined context for use by step checking routine
+	x        - previous iterate
+	y        - new search direction and length
+	w        - current candidate iterate
+
+    Output
+	y          - search direction (possibly changed)
+	w          - current iterate (possibly modified)
+	changed_y  - indicates search direction was changed by this routine
+	changed_w  - indicates current iterate was changed by this routine
+
+    Notes: All line searches accept the new iterate computed by the line search checking routine.
+           Only one of changed_y and changed_w can be PETSC_TRUE
+	   On input w = x - y
+
+    SNESLineSearchNo(), SNESLineSearchNoNorms():
+           (1) compute a candidate iterate u_{i+1}, 
+           (2) pass control to the checking routine, and then 
+           (3) compute the corresponding nonlinear function f(u_{i+1}) with the (possibly altered) iterate u_{i+1}.
+
+    SNESLineSearchQuadratic(), SNESLineSearchCubic():
+           (1) compute a candidate iterate u_{i+1} as well as a candidate nonlinear function f(u_{i+1}), 
+           (2) pass control to the checking routine, and then 
+           (3) force a re-evaluation of f(u_{i+1}) if any changes were made to the candidate 
+                 iterate in the checking routine (as indicated by flag=PETSC_TRUE).
+  */
+  RichardSolver* rs = static_cast<RichardSolver*>(checkctx);
+  PetscErrorCode ierr;
+
+#if 0
+  const Layout& layout = PMAmr::GetLayout();
+  MFTower& p_star = rs->GetPStar();
+  MFTower& rs_star = rs->GetRhoSatStar();
+  ierr = layout.VecToMFTower(p_star,w,0); CHKPETSC(ierr);
+  int nLevs = layout.NumLevels();
+  for (int lev=0; lev<nLevs; ++lev) {
+    rs->GetPMlevel(lev).calcInvPressure(rs_star[lev],p_star[lev]);
+  }
+#endif
+
+  *changed_y = PETSC_FALSE;
+  *changed_w = PETSC_FALSE;
+
+  PetscReal norm_dx; ierr = VecNorm(y,NORM_INFINITY,&norm_dx);
+  errfd = -std::min(3.e-12, std::max(1.e-8,3.e-12/norm_dx));
+  ierr = MatFDColoringSetParameters(rs->GetMatFDColoring(),errfd,PETSC_DEFAULT);CHKPETSC(ierr);
+
+  return 0;
+}
+
 
 PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 {
@@ -119,7 +245,7 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   int N = layout.NumberOfGlobalNodeIds();
   MPI_Comm comm = ParallelDescriptor::Communicator();
   ierr = VecCreateMPI(comm,n,N,&RhsV); CHKPETSC(ierr);
-  ierr = VecCreateMPI(comm,n,N,&SolnV); CHKPETSC(ierr);
+  ierr = VecDuplicate(RhsV,&SolnV); CHKPETSC(ierr);
   
   const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
   mftfp->BuildStencil(pressure_bc, pressure_maxorder);
@@ -141,14 +267,14 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
   ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
   ierr = MatFDColoringSetFunction(matfdcoloring,
-				  (PetscErrorCode (*)(void))RichardRes_DpDt_Alt,
+				  (PetscErrorCode (*)(void))RichardRes_DpDt,
 				  (void*)(this)); CHKPETSC(ierr);
   ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
   ierr = SNESSetJacobian(snes,Jac,Jac,SNESDefaultComputeJacobianColor,matfdcoloring);CHKPETSC(ierr); 
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
-
-  ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);
-
+  ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);CHKPETSC(ierr);
+  ierr = SNESLineSearchSetPreCheck(snes,RichardStepPreCheck,(void *)(this));CHKPETSC(ierr);
+  ierr = SNESLineSearchSetPostCheck(snes,RichardStepPostCheck,(void *)(this));CHKPETSC(ierr);
 
   // TODO: Add deletes/destroys for all structures allocated/created here
 }

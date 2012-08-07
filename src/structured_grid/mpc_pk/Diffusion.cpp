@@ -2236,6 +2236,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
 		   Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
+
   if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
       status.reason = "Full linear step accepted";
       status.success = true;

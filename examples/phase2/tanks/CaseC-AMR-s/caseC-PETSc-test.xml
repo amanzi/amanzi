@@ -24,13 +24,14 @@
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
       <Parameter name="Domain Low Corner" type="Array double" value="{0,0}"/>
-      <Parameter name="Domain High Corner" type="Array double" value="{40,24}"/>
+      <Parameter name="Domain High Corner" type="Array double" value="{12,24}"/>
       <Parameter name="Number of Cells" type="Array int" value="{32,64}"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="Execution Control">
     <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00000"/> -->
+    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00000"/> -->
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
@@ -61,11 +62,11 @@
 
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
           <Parameter name="steady_limit_iterations" type="int" value="100"/>
-          <Parameter name="steady_max_iterations" type="int" value="25"/>
+          <Parameter name="steady_max_iterations" type="int" value="60"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
-          <Parameter name="steady_min_iterations" type="int" value="20"/>
+          <Parameter name="steady_min_iterations" type="int" value="6"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="10"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="100"/>
           <Parameter name="steady_min_iterations_2" type="int" value="1"/>
           <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
@@ -76,7 +77,7 @@
           <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
           <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
           <Parameter name="steady_init_time_step" type="double" value="9.467e5"/>
-          <Parameter name="steady_init_time_step" type="double" value="1.e7"/>
+          <Parameter name="steady_init_time_step" type="double" value="1.e8"/>
           <Parameter name="steady_max_time_steps" type="int" value="1000"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
@@ -117,6 +118,7 @@
         <Parameter name="Number Of AMR Levels" type="int" value="2"/>
         <Parameter name="Number Of AMR Levels" type="int" value="1"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{4, 4, 4}"/>
+        <Parameter name="Refinement Ratio" type="Array int" value="{2, 2, 2}"/>
         <Parameter name="Regrid Interval" type="Array int" value="{2}"/>
         <Parameter name="Blocking Factor" type="Array int" value="{8, 8, 8, 8}"/>
         <Parameter name="Blocking Factor" type="Array int" value="{8, 8}"/>
@@ -134,6 +136,9 @@
         </ParameterList>
         <ParameterList name="Expert Settings">
           <Parameter name="regrid_file" type="string" value="mygrids.dat"/>
+          <!-- <Parameter name="regrid_file" type="string" value="mygrids0.dat"/> -->
+          <!-- <Parameter name="regrid_on_restart" type="int" value="1"/> -->
+          <!-- <Parameter name="plotfile_on_restart" type="int" value="1"/> -->
         </ParameterList>
       </ParameterList>
       
@@ -144,25 +149,25 @@
     <ParameterList name="SoilLower">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0,0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{40,10}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{12,12}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SoilUpper">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0,18}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{40,24}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{12,24}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SoilRight">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{12,10}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{40,18}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{3,12}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{12,18}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Tank">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0,10}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{12,18}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0,12}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{3,18}"/>
       </ParameterList>
     </ParameterList>
 

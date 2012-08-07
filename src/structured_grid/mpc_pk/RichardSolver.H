@@ -32,10 +32,11 @@ public:
   const Array<Real>& GetGravity() {return gravity;}
   SNES& GetSNES(){return snes;}
   PMAmr& GetPMAMR() {return pm_amr;}
+  MatFDColoring& GetMatFDColoring() {return matfdcoloring;}
+  PorousMedia& GetPMlevel(int level) {return pm[level];}
   const Array<BoxArray>& GridArray() const {return PMAmr::GetLayout().GridArray();}
   const Array<Geometry>& GeomArray() const {return PMAmr::GetLayout().GeomArray();}
   const Array<IntVect>& RefRatio() const {return PMAmr::GetLayout().RefRatio();}
-
   void DivU(MFTower& divu,
 	    MFTower& rhoSat,
 	    MFTower& pressure,

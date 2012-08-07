@@ -1775,14 +1775,14 @@ PorousMedia::richard_init_to_steady()
 			    PorousMedia&    fine_lev   = getLevel(lev);
 			    if (do_richard_sat_solve)
 			      {
-				//MultiFab& S_lev = fine_lev.get_new_data(State_Type);
-				MultiFab& S_lev = fine_lev.get_old_data(State_Type);
+				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+				//MultiFab& S_lev = fine_lev.get_old_data(State_Type);
 				MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
 			      }
 			    else
 			      {
-				//MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
-				MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
+				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+                                //MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
 				MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
 			      }
 			  }
@@ -1816,6 +1816,7 @@ PorousMedia::richard_init_to_steady()
                         }
                     }
                     else {
+
                         total_rejected_Newton_steps++;
 			for (int lev=0;lev<= finest_level;lev++)
 			  {
@@ -2048,7 +2049,17 @@ PorousMedia::init ()
   //
   // Get best coarse state, pressure and velocity data.
   //
-  FillCoarsePatch(S_new,0,cur_time,State_Type,0,NUM_SCALARS);
+  FillCoarsePatch(S_new,0,cur_time,State_Type,0,ncomps);
+  if (ntracers>0) {
+      if (do_tracer_transport) {
+          FillCoarsePatch(S_new,0,cur_time,State_Type,ncomps,ntracers);
+      }
+      else {
+          // FIXME
+          // If !do_tracer_transport, we dont have the bc descriptors, so we punt
+          S_new.setVal(0.0,ncomps,ntracers);
+      }
+  }
   FillCoarsePatch(P_new,0,cur_time,Press_Type,0,1);
   FillCoarsePatch(U_new,0,cur_time,  Vel_Type,0,BL_SPACEDIM);
   U_cor.setVal(0.);
@@ -6170,6 +6181,10 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
                                               u_mac_local,update_jac,do_upwind,linear_status); 
 	  solve_time+= ParallelDescriptor::second() - tmp_time;
           err_nwt = linear_status.residual_norm_post_ls;
+
+          if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor()) {
+              std::cout << "  " << nl_data.NLIterationsTaken() << "  Amanzi-S Newton Function norm " << err_nwt << "\n"; 
+          }
 	}
     }
 
@@ -6253,7 +6268,7 @@ PorousMedia::richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNL
 
   int  maxit = nl_data.MaxNLIterations();
   int maxf = 10000;
-  Real atol = 1e-8;
+  Real atol = 1e-8; 
   Real rtol = 1e-8;
   Real stol = 1e-50; // FIXME: Better numbers for this??
 
@@ -6296,11 +6311,16 @@ PorousMedia::richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNL
     if (reason==-3) {
       retVal = RichardNLSdata::RICHARD_LINEAR_FAIL;
     }
+    else if (reasonStr=="SNES_DIVERGED_LINE_SEARCH    ") {
+        std::cout << "     **************** Newton failed: " << reasonStr << '\n';
+        BoxLib::Abort();
+    }
     else {
       retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+          std::cout << "     **************** Newton failed: " << reasonStr << '\n';
     }
-    if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
-      std::cout << "     **************** Newton failed: " << reasonStr << '\n';
+    BoxLib::Abort();
   }
 
   if (retVal != RichardNLSdata::RICHARD_SUCCESS) {
@@ -7557,6 +7577,11 @@ PorousMedia::PMParent()
 //
 void PorousMedia::post_restart()
 {
+  if (level==0)
+  {
+      PMAmr::GetLayout().Rebuild();
+  }
+
   if (level == 0)
     {
       Observation::setAmrPtr(parent);
@@ -7566,10 +7591,6 @@ void PorousMedia::post_restart()
           observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 
-  if (level==0)
-  {
-      PMAmr::GetLayout().Rebuild();
-  }
 }
 
 //
