@@ -2191,23 +2191,6 @@ Diffusion::richard_composite_iter_p (Real                      dt,
                         << "Linear solve final res=" << status.initial_residual_norm
                         << std::endl;
           }
-
-#ifdef BL_USE_PETSC
-#if 0
-          ResultMFT.AXPY(SolnMFT,-1);
-          Real diff = ResultMFT.norm();
-          if (ioproc) {
-              std::cout << "PETSc norm of diff: " << diff << std::endl;
-          }
-#endif
-#if 0
-          VisMF::Write(Rhs[0],"JUNK1");
-          if (ioproc) {
-              std::cout << "PETSc write bl solution to JUNK1" << std::endl;
-          }
-#endif
-#endif
-
       }
 
       if (linsol_status!=0)

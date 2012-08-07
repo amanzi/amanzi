@@ -1,6 +1,10 @@
 #include <RichardSolver.H>
 #include <RICHARDSOLVER_F.H>
 
+// FIXME: Should be user-settable at runtime
+static int pressure_maxorder = 2;
+static Real errfd = -1.e-12;
+
 PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 {
     PetscErrorCode ierr; 
@@ -117,7 +121,6 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = VecCreateMPI(comm,n,N,&RhsV); CHKPETSC(ierr);
   ierr = VecCreateMPI(comm,n,N,&SolnV); CHKPETSC(ierr);
   
-  int pressure_maxorder = 4;
   const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
   mftfp->BuildStencil(pressure_bc, pressure_maxorder);
 
@@ -144,7 +147,6 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = SNESSetJacobian(snes,Jac,Jac,SNESDefaultComputeJacobianColor,matfdcoloring);CHKPETSC(ierr); 
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
 
-  PetscReal errfd = -5.28431526461139824e-12;
   ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);
 
 
@@ -225,7 +227,6 @@ RichardSolver::BuildOpSkel(Mat& J)
   
   int myproc = ParallelDescriptor::MyProc();
   int numprocs = ParallelDescriptor::NProcs();
-  std::string name = BoxLib::Concatenate("stuff",myproc,1);
   
   for (int lev=nLevs-1; lev>=0; --lev) 
     {
@@ -438,11 +439,13 @@ void
 RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
 				  MFTower&               mftc,
 				  const PArray<MFTower>& sgn,
-				  int                    nComp) const
+				  int                    nComp,
+                                  const BCRec&           bc) const
 {
     for (int lev=0; lev<nLevs; ++lev) {
         MultiFab& clev = mftc[lev];
         BL_ASSERT(nComp<=clev.nComp());
+        const Box& domain = GeomArray()[lev].Domain();
         for (MFIter mfi(clev); mfi.isValid(); ++mfi) {
             FArrayBox& cfab = clev[mfi];
             const Box& vccbox = mfi.validbox();
@@ -454,10 +457,13 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
                 BL_ASSERT(Box(vccbox).surroundingNodes(d).contains(efab.box()));
                 BL_ASSERT(Box(vccbox).surroundingNodes(d).contains(sgnfab.box()));
                 
+                int dir_bc_lo = bc.lo()[d]==EXT_DIR && vccbox.smallEnd()[d]==domain.smallEnd()[d];
+                int dir_bc_hi = bc.hi()[d]==EXT_DIR && vccbox.bigEnd()[d]==domain.bigEnd()[d];
+                
                 FORT_RS_CTE_UPW(efab.dataPtr(), ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
 				cfab.dataPtr(), ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
 				sgnfab.dataPtr(),ARLIM(sgnfab.loVect()), ARLIM(sgnfab.hiVect()),
-				vccbox.loVect(), vccbox.hiVect(), &d, &nComp);
+				vccbox.loVect(), vccbox.hiVect(), &d, &nComp, &dir_bc_lo, &dir_bc_hi);
             }
         }
     }
@@ -617,12 +623,18 @@ RichardSolver::DivU(MFTower& divu,
 		    MFTower& pressure,
 		    Real     time)
 {
-    // FIXME: Need to update dirichlet data in pressure grow cells
+    // Coming in, the grow cells of pressure area assumed to contained valid data.  On
+    // Dirichlet boundaries, the grow cell will hold the dirichlet value to apply at
+    // the cell wall.  Note that since we use "calcInvPressure" to fill rho.sat, these
+    // are then values on the wall as well.  As a result, the lambda values computed
+    // with rho.sat are evaluated at the wall as well.  
 
-    // fill grow cells of pressure
-    FillPatch(pressure);
+    // We use the FillPatch operation to set pressure values in the grow cells using 
+    // polynomial extrapolation, and will then use these p values only for the puposes
+    // of evaluating the pressure gradient on cell faces via a simple centered difference.
 
-    // Assumes lev=0 here corresponds to Amr.level=0
+    // Assumes lev=0 here corresponds to Amr.level=0, sets dirichlet values of rho.sat and
+    // lambda on dirichlet pressure faces
     const Layout& layout = PMAmr::GetLayout();
     for (int lev=0; lev<nLevs; ++lev) {
         pm[lev].calcInvPressure(rhoSat[lev],pressure[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
@@ -639,16 +651,20 @@ RichardSolver::DivU(MFTower& divu,
         }
     }
 
-    // Get  -(Grad(p) - rho.g)
+    // Convert grow cells of pressure into extrapolated values so that from here on out,
+    // the values are only used to compute gradients at faces.
+    FillPatch(pressure);
+
+    // Get  -(Grad(p) + rho.g)
     CCtoECgradAdd(GetDarcyVelocity(),pressure,a);
 
-
-    // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) - rho.g)
+    // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) + rho.g)
+    const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
     CenterToEdgeUpwind(GetRichardCoefs(),
 		       GetLambda(),
-		       GetDarcyVelocity(),nComp);
+		       GetDarcyVelocity(),nComp,pressure_bc);
 
-    // Get Darcy flux = - lambda * kappa * (Grad(p) - rho.g)
+    // Get Darcy flux = - lambda * kappa * (Grad(p) + rho.g)
     for (int d=0; d<BL_SPACEDIM; ++d) {
         XmultYZ(GetDarcyVelocity()[d],
 		GetRichardCoefs()[d],

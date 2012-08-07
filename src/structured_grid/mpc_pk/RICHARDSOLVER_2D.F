@@ -73,7 +73,7 @@
       end     
 
       subroutine FORT_RS_CTE_UPW(coef,DIMS(coef),
-     &     lam,DIMS(lam),vel,DIMS(vel),lo,hi,dir,nc)
+     &     lam,DIMS(lam),vel,DIMS(vel),lo,hi,dir,nc,dirbclo,dirbchi)
       implicit none      
       integer DIMDEC(coef)
       integer DIMDEC(lam)
@@ -83,7 +83,7 @@
       REAL_T  lam(DIMV(lam),0:nc-1)
       REAL_T  vel(DIMV(vel))
       REAL_T  mult
-      integer dir, nc
+      integer dir, nc, dirbclo, dirbchi
 
       REAL_T thresh
       integer i, j, n, do_upwind
@@ -108,6 +108,22 @@
                enddo
             enddo
          endif
+         if (dirbclo.eq.1) then 
+            do n=0,nc-1
+               i = lo(1)
+               do j = lo(2),hi(2)
+                  coef(i,j,n) = lam(i-1,j,n)
+               enddo
+            enddo
+         endif
+         if (dirbchi.eq.1) then 
+            do n=0,nc-1
+               i = hi(1)+1
+               do j = lo(2),hi(2)
+                  coef(i,j,n) = lam(i,j,n)
+               enddo
+            enddo
+         endif
       else if (dir.eq.1) then
          if (do_upwind.eq.1) then
             do n=0,nc-1
@@ -123,6 +139,22 @@
                   do i = lo(1),hi(1)
                      coef(i,j,n) = 0.5d0 * (lam(i,j-1,n)+lam(i,j,n))
                   enddo
+               enddo
+            enddo
+         endif
+         if (dirbclo.eq.1) then 
+            do n=0,nc-1
+               j = lo(2)
+               do i = lo(1),hi(1)
+                  coef(i,j,n) = lam(i,j-1,n)
+               enddo
+            enddo
+         endif
+         if (dirbchi.eq.1) then 
+            do n=0,nc-1
+               j = hi(2)+1
+               do i = lo(1),hi(1)
+                  coef(i,j,n) = lam(i,j,n)
                enddo
             enddo
          endif

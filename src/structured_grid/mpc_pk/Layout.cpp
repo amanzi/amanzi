@@ -238,10 +238,13 @@ Layout::BuildMetrics ()
     //
     // Build volume and face area arrays.
     //
+    volume.clear();
+
     volume.resize(nLevs,PArrayManage);
     area.resize(BL_SPACEDIM);
     for (int dir = 0; dir < BL_SPACEDIM; dir++)
     {
+        area[dir].clear();
         area[dir].resize(nLevs,PArrayManage);
     }
 

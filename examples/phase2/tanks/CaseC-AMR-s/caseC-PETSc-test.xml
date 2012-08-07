@@ -53,9 +53,9 @@
       <ParameterList name="Basic Algorithm Control">
         <ParameterList name="Expert Settings">
 
-          <Parameter name="use_PETSc_snes" type="bool" value="false"/>
+          <Parameter name="use_PETSc_snes" type="bool" value="true"/>
 
-          <Parameter name="do_multilevel_full" type="int" value="2"/>
+          <Parameter name="do_multilevel_full" type="int" value="1"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
           <Parameter name="do_richard_sat_solve" type="int" value="0"/>
 
@@ -65,7 +65,7 @@
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
           <Parameter name="steady_min_iterations" type="int" value="20"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="100"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="10"/>
           <Parameter name="steady_min_iterations_2" type="int" value="1"/>
           <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
@@ -76,7 +76,7 @@
           <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
           <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
           <Parameter name="steady_init_time_step" type="double" value="9.467e5"/>
-          <Parameter name="steady_init_time_step" type="double" value="1.e11"/>
+          <Parameter name="steady_init_time_step" type="double" value="1.e7"/>
           <Parameter name="steady_max_time_steps" type="int" value="1000"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
@@ -90,7 +90,7 @@
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
-          <Parameter name="richard_monitor_line_search" type="int" value="1"/>
+          <Parameter name="richard_monitor_line_search" type="int" value="3"/>
           <Parameter name="verbose" type="double" value="2"/>
 
         </ParameterList>
