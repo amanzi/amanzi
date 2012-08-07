@@ -102,6 +102,8 @@ void Flow_PK::ProcessStringPreconditioner(const std::string name, int* precondit
     msg << "\nFlow PK: Hypre TPL has not been activated.";
     Exceptions::amanzi_throw(msg);   
 #endif
+  } else if (name == "Block ILU") {
+    *preconditioner = FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU;
   }
 }
 

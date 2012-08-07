@@ -28,6 +28,7 @@ Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel );
 Teuchos::ParameterList CreateChemistryList ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Preconditioners_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_BILU_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_HypreAMG_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
 

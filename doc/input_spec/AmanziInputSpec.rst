@@ -328,6 +328,18 @@ Usage:
 
    * [U] `"Hypre AMG strong threshold`" [double] set this to 0.25 for a 2D problem, and to 0.5 for a 3D problem. 
 
+   * [U] `"use Block ILU`" [bool] use Trilinos Ifpack Block ILU as a preconditioner instead of the default ML.
+
+   * [U] `"Block ILU overlap`" [int] specify the domain decomposition overlap that will be used in constructing the additive Schwarz block ILU preconditioner.
+
+   * [U] `"Block ILU relax value`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: relax value`".
+
+   * [U] `"Block ILU relative threshold`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: relative threshold`".
+
+   * [U] `"Block ILU absolute threshold`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: absolute threshold`".
+
+   * [U] `"Block ILU level of fill`" [int] corresponds to the Trilinos Ifpack ILU parameter `"fact: level-of-fill`".
+
    * [U] `"linear solver tolerance`" [double] Set the tolerance for the AztecOO linear solver that may be used in a saturated steady state computation.
 
    * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation.
