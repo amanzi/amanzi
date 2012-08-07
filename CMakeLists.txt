@@ -43,7 +43,7 @@ endif()
 #set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
 
 # set debug
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 
 # --------------------------------------------------------------------------- #
 #  Define the include paths
