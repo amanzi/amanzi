@@ -18,10 +18,9 @@ namespace AmanziFlow {
 
 const int FLOW_STATUS_NULL = 0;  // used for internal debuging
 const int FLOW_STATUS_INIT = 2;
-const int FLOW_STATUS_STEADY_STATE_INIT = 4;
-const int FLOW_STATUS_STEADY_STATE_COMPLETE = 6;
-const int FLOW_STATUS_TRANSIENT_STATE_INIT = 8;
-const int FLOW_STATUS_TRANSIENT_STATE_COMPLETE = 10;
+const int FLOW_STATUS_INITIAL_GUESS = 4;
+const int FLOW_STATUS_STEADY_STATE = 4;
+const int FLOW_STATUS_TRANSIENT_STATE = 8;
 
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 

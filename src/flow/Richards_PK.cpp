@@ -191,6 +191,9 @@ void Richards_PK::InitPK()
     CalculateKVectorUnit(gravity_, Kgravity_unit);
   }
 
+  // injected water mass
+  mass_bc = 0.0;
+
   flow_status_ = FLOW_STATUS_INIT;
 }
 
@@ -319,6 +322,8 @@ void Richards_PK::InitPicard(double T0)
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
   DeriveSaturationFromPressure(*solution_cells, ws);
   ws_prev = ws;
+
+  flow_status_ = FLOW_STATUS_INITIAL_GUESS;
 }
 
 
@@ -424,7 +429,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
   error_control_ |= error_control_sss_;
 
-  flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
+  flow_status_ = FLOW_STATUS_STEADY_STATE;
 
   // DEBUG
   // AdvanceToSteadyState();
@@ -511,13 +516,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
   DeriveSaturationFromPressure(pressure, water_saturation);
 
-  // calculate total water mass
-  Epetra_Vector& phi = FS->ref_porosity();
-  mass_bc = 0.0;
-  for (int c = 0; c < ncells_owned; c++) {
-    mass_bc += water_saturation[c] * rho * phi[c] * mesh_->cell_volume(c); 
-  }
-
   // control options
   ti_method = ti_method_trs;
   num_itrs = 0;
@@ -526,7 +524,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
   error_control_ |= error_control_trs_;
 
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
 
 
@@ -563,7 +561,7 @@ int Richards_PK::Advance(double dT_MPC)
       bdf1_dae->set_initial_state(time, *solution, udot);
 
     } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
-      if (flow_status_ == FLOW_STATUS_STEADY_STATE_INIT) {
+      if (flow_status_ == FLOW_STATUS_STEADY_STATE) {
         AdvanceToSteadyState();
         block_picard = 1;  // We will wait for transient initialization.
       }
@@ -596,8 +594,6 @@ int Richards_PK::Advance(double dT_MPC)
     }
   }
   num_itrs++;
-
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }
 
@@ -633,16 +629,22 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   // update mass balance
   // ImproveAlgebraicConsistency(flux, ws_prev, ws);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (verbosity >= FLOW_VERBOSITY_HIGH && flow_status_ >= FLOW_STATUS_TRANSIENT_STATE) {
     Epetra_Vector& phi = FS_MPC->ref_porosity();
-    mass_bc += WaterVolumeChangePerSecond(bc_markers, flux) * rho * dT;
+    double mass_bc_dT = WaterVolumeChangePerSecond(bc_markers, flux) * rho * dT;
 
     mass_amanzi = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
       mass_amanzi += ws[c] * rho * phi[c] * mesh_->cell_volume(c);
     }
-    double mass_loss = mass_bc - mass_amanzi; 
-    std::printf("Richards PK: water mass = %9.4e, lost = %9.4e\n", mass_amanzi, mass_loss);
+
+    double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
+    mesh_->get_comm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
+    mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
+
+    mass_bc += mass_bc_dT;
+    if (MyPID == 0)
+        std::printf("Richards PK: water mass [kg] = %10.5e, total boundary flux [kg] = %10.5e\n", mass_amanzi, mass_bc);
   }
 
   dT = dTnext;
