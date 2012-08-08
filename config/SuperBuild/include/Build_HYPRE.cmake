@@ -4,7 +4,10 @@
 # Build TPL:  HYPRE 
 #    
 # --- Define all the directories and common external project flags
-define_external_project_args(HYPRE TARGET hypre BUILD_IN_SOURCE)
+define_external_project_args(HYPRE 
+                             TARGET hypre
+                             DEPENDS ${MPI_PROJECT}
+                             BUILD_IN_SOURCE)
 
 # --- Define configure parameters
 
