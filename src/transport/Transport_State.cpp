@@ -219,6 +219,40 @@ void Transport_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Ve
 
 
 /* *******************************************************************
+* Calculate minimum values in a multivector using master cells.            
+******************************************************************* */
+void Transport_State::MinValueMasterCells(Epetra_MultiVector& v, double* vmin)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+
+  double** vdata;
+  v.ExtractView(&vdata);
+  Epetra_MultiVector vv(View, cmap, vdata, v.NumVectors());
+  
+  vv.MinValue(vmin);
+#endif
+}
+
+
+/* *******************************************************************
+* Calculate miximum values in a multivector using master cells.             
+******************************************************************* */
+void Transport_State::MaxValueMasterCells(Epetra_MultiVector& v, double* vmax)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+
+  double** vdata;
+  v.ExtractView(&vdata);
+  Epetra_MultiVector vv(View, cmap, vdata, v.NumVectors());
+  
+  vv.MaxValue(vmax);
+#endif
+}
+
+
+/* *******************************************************************
 * Interpolate linearly in time between two states v0 and v1. The time 
 * is measuared relative to state v0; so that v1 is at time dT. The
 * interpolated data are at time dT_int.            

@@ -189,12 +189,13 @@ double Transport_PK::CalculateTransportDt()
   // loop over cells and calculate minimal dT
   double outflux, dT_cell;
   const Epetra_Vector& ws_prev = TS->ref_prev_water_saturation();
+  const Epetra_Vector& ws = TS->ref_water_saturation();
   const Epetra_Vector& phi = TS->ref_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
   for (c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * ws_prev[c] / outflux;
+    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * std::min<double>(ws_prev[c], ws[c]) / outflux;
     dT = std::min(dT, dT_cell);
   }
   if (spatial_disc_order == 2) dT /= 2;
@@ -332,8 +333,8 @@ void Transport_PK::Advance(double dT_MPC)
     double tccmin_vec[number_components];
     double tccmax_vec[number_components];
 
-    tcc_next.MinValue(tccmin_vec);
-    tcc_next.MaxValue(tccmax_vec);
+    TS->MinValueMasterCells(tcc_next, tccmin_vec);
+    TS->MaxValueMasterCells(tcc_next, tccmax_vec);
 
     double tccmin, tccmax;
     tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
