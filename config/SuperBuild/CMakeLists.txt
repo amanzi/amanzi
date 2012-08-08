@@ -48,8 +48,8 @@ set(Amanzi_MODULE_PATH
 
 set(CMAKE_MODULE_PATH 
          ${CMAKE_MODULE_PATH} 
-	 ${SuperBuild_SOURCE_DIR}/cmake
-	 ${Amanzi_MODULE_PATH})
+	     ${SuperBuild_SOURCE_DIR}/cmake
+	     ${Amanzi_MODULE_PATH})
 
 # ############################################################################ #
 # Location of the Build_* files and template files
@@ -68,6 +68,70 @@ define_compiler_version()
 
 include(CheckMPISourceCompiles)
 check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
+
+# ############################################################################ #
+# Build options
+# ############################################################################ #
+
+message(STATUS "Setting build type")
+set(SuperBuild_BUILD_TYPE_DFLT "Release")
+if ( NOT CMAKE_BUILD_TYPE ) 
+  set(CMAKE_BUILD_TYPE ${SuperBuild_BUILD_TYPE_DFLT})
+endif()
+message(STATUS "Setting build type -- ${CMAKE_BUILD_TYPE}")
+
+# Download directory TPL_DOWNLOAD_DIR
+set(TPL_DOWNLOAD_DIR_DFLT ${SuperBuild_BINARY_DIR}/Downloads)
+if(NOT TPL_DOWNLOAD_DIR)
+  set(TPL_DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR_DFLT})
+endif()
+message(STATUS "Download TPL files in ${TPL_DOWNLOAD_DIR}") 
+
+# Disable external web downloads
+option(DISABLE_EXTERNAL_DOWNLOAD "Flag to disable external web downloads" FALSE)
+if (DISABLE_EXTERNAL_DOWNLOAD)
+  message(STATUS "Will not download files from the web, instead will search "
+                 "for archive files in ${TPL_DOWNLOAD_DIR}")
+else()
+  include(CheckDownload)
+  check_download(TEST_FILE MD5SUMS TEST_URL http://software.lanl.gov/ascem/tpls)
+endif()
+
+# TPL install location
+set(TPL_INSTALL_PREFIX_DFLT "${SuperBuild_BINARY_DIR}/external-projects")
+if ( NOT TPL_INSTALL_PREFIX )
+  set(TPL_INSTALL_PREFIX ${TPL_INSTALL_PREFIX_DFLT})
+endif()
+message(STATUS "Install TPLs in ${TPL_INSTALL_PREFIX}")
+
+# Amanzi mesh build options
+option(ENABLE_Structured   "Enable Amanzi structured mesh capability" TRUE)
+option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
+
+option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
+option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
+option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
+
+# OpenMP Search
+option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
+if ( ENABLE_OpenMP )
+  find_package(OpenMP)
+  if ( OPENMP_FOUND )
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    if ( ${CMAKE_C_COMPILER_ID} STREQUAL "Intel" )
+      set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -openmp") 
+      set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -openmp")
+    endif() 
+  else()  
+    message(SEND_ERROR "Failed to determine the OpenMP compiler flags. Will deactivate.")
+    set(ENABLE_OpenMP FALSE CACHE BOOL "Enable OpenMP compile directives" FORCE)
+  endif()
+endif()
+
+
+# Amanzi Test Suite
+option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 
 # ############################################################################ #
 # MPI Configuration 
@@ -129,7 +193,7 @@ if ( NOT MPI_CXX_FOUND )
 endif()
 
 if ( NOT MPI_Fortran_FOUND )
-  message(WARNING "Failed to locate MPI C++ include and library files")
+  message(WARNING "Failed to locate MPI Fortran include and library files")
 endif()
 
 # Add MPI to the build if any MPI_*_FOUND == FALSE
@@ -145,6 +209,7 @@ if ( MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND )
     endforeach()
   endforeach()  
 else()
+  message(STATUS "Will build MPI with the other TPLs")
   set(BUILD_MPI TRUE)
   set(MPI_C_COMPILER       ${TPL_INSTALL_PREFIX}/bin/mpicc)
   set(MPI_CXX_COMPILER     ${TPL_INSTALL_PREFIX}/bin/mpicxx)
@@ -268,69 +333,6 @@ if ( NOT MPI_EXEC_POSTFLAGS )
   endif()
 endif()
 
-# ############################################################################ #
-# Build options
-# ############################################################################ #
-
-message(STATUS "Setting build type")
-set(SuperBuild_BUILD_TYPE_DFLT "Release")
-if ( NOT CMAKE_BUILD_TYPE ) 
-  set(CMAKE_BUILD_TYPE ${SuperBuild_BUILD_TYPE_DFLT})
-endif()
-message(STATUS "Setting build type -- ${CMAKE_BUILD_TYPE}")
-
-# Download directory TPL_DOWNLOAD_DIR
-set(TPL_DOWNLOAD_DIR_DFLT ${SuperBuild_BINARY_DIR}/Downloads)
-if(NOT TPL_DOWNLOAD_DIR)
-  set(TPL_DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR_DFLT})
-endif()
-message(STATUS "Download TPL files in ${TPL_DOWNLOAD_DIR}") 
-
-# Disable external web downloads
-option(DISABLE_EXTERNAL_DOWNLOAD "Flag to disable external web downloads" FALSE)
-if (DISABLE_EXTERNAL_DOWNLOAD)
-  message(STATUS "Will not download files from the web, instead will search "
-                 "for archive files in ${TPL_DOWNLOAD_DIR}")
-else()
-  include(CheckDownload)
-  check_download(TEST_FILE MD5SUMS TEST_URL http://software.lanl.gov/ascem/tpls)
-endif()
-
-# TPL install location
-set(TPL_INSTALL_PREFIX_DFLT "${SuperBuild_BINARY_DIR}/external-projects")
-if ( NOT TPL_INSTALL_PREFIX )
-  set(TPL_INSTALL_PREFIX ${TPL_INSTALL_PREFIX_DFLT})
-endif()
-message(STATUS "Install TPLs in ${TPL_INSTALL_PREFIX}")
-
-# Amanzi mesh build options
-option(ENABLE_Structured   "Enable Amanzi structured mesh capability" TRUE)
-option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
-
-option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
-option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
-option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
-
-# OpenMP Search
-option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
-if ( ENABLE_OpenMP )
-  find_package(OpenMP)
-  if ( OPENMP_FOUND )
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if ( ${CMAKE_C_COMPILER_ID} STREQUAL "Intel" )
-      set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -openmp") 
-      set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -openmp")
-    endif() 
-  else()  
-    message(SEND_ERROR "Failed to determine the OpenMP compiler flags. Will deactivate.")
-    set(ENABLE_OpenMP FALSE CACHE BOOL "Enable OpenMP compile directives" FORCE)
-  endif()
-endif()
-
-
-# Amanzi Test Suite
-option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 
 # ############################################################################ #
 # Set common build compiler flags, build types and directories
