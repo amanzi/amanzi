@@ -6268,9 +6268,9 @@ PorousMedia::richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNL
 
   int  maxit = nl_data.MaxNLIterations();
   int maxf = 10000;
-  Real atol = 1e-8; 
+  Real atol = 1e-3; 
   Real rtol = 1e-8;
-  Real stol = 1e-50; // FIXME: Better numbers for this??
+  Real stol = 1e-15; // FIXME: Better numbers for this??
 
   int nc = 0;
   const BCRec& bc = get_desc_lst()[Press_Type].getBC(nc);

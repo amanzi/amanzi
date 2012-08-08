@@ -1528,7 +1528,7 @@ void PorousMedia::read_prob()
   pb.query("steady_max_num_consecutive_increases",steady_max_num_consecutive_increases);
   pb.query("consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
   pb.query("richard_monitor_linear_solve",richard_monitor_linear_solve);
-  pb.query("richard_monitor_linear_solve",richard_monitor_line_search);
+  pb.query("richard_monitor_line_search",richard_monitor_line_search);
   
   // Get timestepping parameters.
   pb.get("cfl",cfl);

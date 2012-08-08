@@ -283,15 +283,6 @@ MFTFillPatch::MFTFillPatch(Layout& _layout)
 {
 }
 
-void
-MFTFillPatch::operator()(MFTower& mft,
-                         int      sComp,
-                         int      nComp,
-                         bool     do_piecewise_constant) const
-{
-    FillGrowCells(mft,sComp,nComp,do_piecewise_constant);
-}
-
 
 
 /*

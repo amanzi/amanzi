@@ -2242,7 +2242,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       status.success = true;
       status.status = "Finished";
       if (ParallelDescriptor::IOProcessor()) {
-          if (status.monitor_linear_solve) {
+          if (status.monitor_line_search) {
               std::cout << tag << status.reason << std::endl;
           }
           

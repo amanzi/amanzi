@@ -18,10 +18,10 @@
 #-mat_view_ordering_draw
 #-mat_coloring_view
 #-snes_view
-##-snes_monitor
--snes_type tr
+-snes_monitor
+#-snes_type tr
 #-snes_ls basic
-#-snes_ls_monitor
+-snes_ls_monitor
 #-help
 #-ksp_monitor
 #-on_error_attach_debugger

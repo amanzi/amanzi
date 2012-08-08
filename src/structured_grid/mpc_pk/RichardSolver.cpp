@@ -8,6 +8,101 @@
 static int pressure_maxorder = 2;
 static Real errfd = -3.e-14;
 
+static int richard_max_ls_iterations = 10;
+static Real richard_min_ls_factor = 1.e-8;
+static Real richard_ls_acceptance_factor = 2;
+static Real richard_ls_reduction_factor = 0.1;
+static int richard_monitor_line_search = 0;
+
+PetscErrorCode FormLineSearch(SNES snes,void* user,Vec X,Vec F,Vec G,Vec Y,Vec W,PetscReal fnorm,PetscReal xnorm,
+                              PetscReal *ynorm,PetscReal *gnorm,PetscBool  *flag)
+{
+  /*
+      Input parameters
+	snes 	- nonlinear context
+	lsctx 	- optional user-defined context for line search
+	x 	- current iterate
+	f 	- residual evaluated at x
+	y 	- search direction
+	fnorm 	- 2-norm of f
+
+      Output parameters
+	g 	- residual evaluated at new iterate y
+	w 	- new iterate
+	gnorm 	- 2-norm of g
+	ynorm 	- 2-norm of search length
+	flag 	- set to PETSC_TRUE if the line search succeeds; PETSC_FALSE on failure. 
+   */
+  PetscErrorCode ierr;
+  PetscScalar mone=-1.0;
+  RichardSolver* rs = static_cast<RichardSolver*>(user);
+
+  std::string tag = "       Newton step: ";
+  std::string tag_ls = "  line-search:  ";
+
+
+  *flag=PETSC_TRUE;
+  ierr=VecNorm(Y,NORM_2,ynorm);
+  ierr=VecWAXPY(W,mone,Y,X); /* W = -Y + X */
+  ierr=SNESComputeFunction(snes,W,G);CHKERRQ(ierr);
+  ierr=VecNorm(G,NORM_2,gnorm);CHKERRQ(ierr);
+
+  bool norm_acceptable = *gnorm < fnorm * richard_ls_acceptance_factor;
+  int ls_iterations = 0;
+  Real ls_factor = 1;
+  bool finished = norm_acceptable 
+    || ls_iterations > richard_max_ls_iterations
+    || ls_factor <= richard_min_ls_factor;
+
+  while (!finished) 
+    {
+      ls_factor *= richard_ls_reduction_factor;
+      if (ls_factor < richard_min_ls_factor) {
+          ls_factor = richard_min_ls_factor;
+      }
+      ierr=VecWAXPY(W,mone*ls_factor,Y,X); /* W = -Y + X */
+      ierr=SNESComputeFunction(snes,W,G);CHKERRQ(ierr);
+      ierr=VecNorm(G,NORM_2,gnorm);CHKERRQ(ierr);
+      norm_acceptable = *gnorm < fnorm * richard_ls_acceptance_factor;
+
+      if (ls_factor < 1 
+	  && richard_monitor_line_search 
+	  && ParallelDescriptor::IOProcessor())
+	{
+          std::cout << tag << tag_ls
+                    << "iter=" << ls_iterations
+                    << ", step length=" << ls_factor
+                    << ", init residual norm=" << fnorm
+                    << ", new residual norm=" << *gnorm << '\n';
+	}
+
+      finished = norm_acceptable 
+	|| ls_iterations > richard_max_ls_iterations
+	|| ls_factor <= richard_min_ls_factor;      
+      ls_iterations++;
+    }
+
+  if (ls_iterations > richard_max_ls_iterations) 
+    {
+      std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
+      *flag = PETSC_FALSE;
+      if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+	std::cout << tag << tag_ls << reason << std::endl;
+      }
+    }
+  else if (ls_factor <= richard_min_ls_factor) {
+    std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
+    *flag = PETSC_FALSE;
+    if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+      std::cout << tag << tag_ls << reason << std::endl;
+    }
+  }
+  else {
+    *flag = PETSC_TRUE;
+  }
+  return ierr;
+}
+
 int RichardStepPreCheck(SNES snes, Vec x,Vec y,void *checkctx, PetscBool  *changed_y)
 {
   /*
@@ -124,7 +219,7 @@ int RichardStepPostCheck(SNES snes, Vec x,Vec y,Vec w, void *checkctx, PetscBool
   *changed_w = PETSC_FALSE;
 
   PetscReal norm_dx; ierr = VecNorm(y,NORM_INFINITY,&norm_dx);
-  errfd = -std::min(3.e-12, std::max(1.e-8,3.e-12/norm_dx));
+  errfd = -std::min(3.e-14, std::max(1.e-12,3.e-14/norm_dx));
   ierr = MatFDColoringSetParameters(rs->GetMatFDColoring(),errfd,PETSC_DEFAULT);CHKPETSC(ierr);
 
   return 0;
@@ -275,6 +370,8 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);CHKPETSC(ierr);
   ierr = SNESLineSearchSetPreCheck(snes,RichardStepPreCheck,(void *)(this));CHKPETSC(ierr);
   ierr = SNESLineSearchSetPostCheck(snes,RichardStepPostCheck,(void *)(this));CHKPETSC(ierr);
+  ierr = SNESLineSearchSet(snes,FormLineSearch,(void *)(this));CHKPETSC(ierr);
+
 
   // TODO: Add deletes/destroys for all structures allocated/created here
 }
@@ -706,9 +803,11 @@ RichardSolver::CCtoECgradAdd(PArray<MFTower>& mfte,
 
 void
 RichardSolver::FillPatch(MFTower& mft,
+			 int sComp,
+			 int nComp,
 			 bool do_piecewise_constant)
 {
-  (*mftfp)(mft,do_piecewise_constant);
+  mftfp->FillGrowCells(mft,sComp,nComp,do_piecewise_constant);
 }
 
 void 
@@ -779,7 +878,8 @@ RichardSolver::DivU(MFTower& divu,
 
     // Convert grow cells of pressure into extrapolated values so that from here on out,
     // the values are only used to compute gradients at faces.
-    FillPatch(pressure);
+    bool do_piecewise_constant = false;
+    FillPatch(pressure,0,nComp,do_piecewise_constant);
 
     // Get  -(Grad(p) + rho.g)
     CCtoECgradAdd(GetDarcyVelocity(),pressure,a);

@@ -65,6 +65,8 @@ protected:
 	      int                nGrow) const;
   
   void FillPatch(MFTower& mft,
+		 int sComp,
+		 int nComp,
 		 bool do_piecewise_constant=false);
   
   void CenterToEdgeUpwind(PArray<MFTower>&       mfte,

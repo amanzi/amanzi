@@ -85,11 +85,6 @@ struct MFTFillPatch
                        int      nComp=1,
                        bool     do_piecewise_constant = false) const;
 
-    void operator()(MFTower& mft,
-                    int      sComp=0,
-                    int      nComp=1,
-                    bool     do_piecewise_constant = false) const;
-     
     void FillGrowCellsSimple(MFTower& mft,
                              int      sComp=0,
                              int      nComp=1) const;
