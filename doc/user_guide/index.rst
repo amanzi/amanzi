@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    install/index.rst
+   testing/index.rst
 
 Indices and tables
 ==================
