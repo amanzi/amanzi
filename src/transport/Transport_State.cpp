@@ -231,6 +231,8 @@ void Transport_State::MinValueMasterCells(Epetra_MultiVector& v, double* vmin)
   Epetra_MultiVector vv(View, cmap, vdata, v.NumVectors());
   
   vv.MinValue(vmin);
+#else
+  v.MinValues(vmin);
 #endif
 }
 
@@ -248,6 +250,8 @@ void Transport_State::MaxValueMasterCells(Epetra_MultiVector& v, double* vmax)
   Epetra_MultiVector vv(View, cmap, vdata, v.NumVectors());
   
   vv.MaxValue(vmax);
+#else
+  v.MaxValues(vmax);
 #endif
 }
 
