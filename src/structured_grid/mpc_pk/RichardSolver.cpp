@@ -5,12 +5,13 @@
 
 
 // FIXME: Should be user-settable at runtime
-static int pressure_maxorder = 2;
-static Real errfd = 1.e-8;
+static int pressure_maxorder = 4;
+static Real errfd = 1.e-10;
 
 static int richard_max_ls_iterations = 10;
 static Real richard_min_ls_factor = 1.e-8;
-static Real richard_ls_acceptance_factor = 2;
+//static Real richard_ls_acceptance_factor = 2;
+static Real richard_ls_acceptance_factor = 1.2;
 static Real richard_ls_reduction_factor = 0.1;
 static int richard_monitor_line_search = 0;
 
@@ -575,7 +576,11 @@ RichardSolver::BuildOpSkel(Mat& J)
 	  std::vector< std::pair<int,Box> > isects = ba.intersections(vbox);
 	  for (int i=0; i<isects.size(); ++i) {
 	    int dst_proc = dm[isects[i].first];
-	    if (dst_proc != myproc) {
+
+            // HACK  This was originally written for parallel, but when I tried it in serial, the entire 
+            // crseContribs structure was ignored!!  For now, set this up as a communication, even if 
+            // serial...probably an easy logic issue to clear up....famous last words...
+	    if (1 || dst_proc != myproc) {
 	      for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
 		{
 		  const std::set<int>& ids = ccFab(iv,0);
@@ -600,6 +605,7 @@ RichardSolver::BuildOpSkel(Mat& J)
 	    }
 	  }
 	}
+
 	int total_num_to_send = 0;
 	Array<int> sends(numprocs,0);
 	Array<int> soffsets(numprocs,0);
@@ -967,6 +973,7 @@ RichardSolver::DivU(MFTower& divu,
     // Convert grow cells of pressure into extrapolated values so that from here on out,
     // the values are only used to compute gradients at faces.
     bool do_piecewise_constant = false;
+    //bool do_piecewise_constant = true;
     FillPatch(pressure,0,nComp,do_piecewise_constant);
 
     // Get  -(Grad(p) + rho.g)

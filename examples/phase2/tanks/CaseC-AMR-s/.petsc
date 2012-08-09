@@ -1,7 +1,7 @@
 #-mat_view_draw
+#-draw_pause 5
 #-mat_view
 #-mat_ascii_output_large
-#-draw_pause 5
 #-vec_view
 #-ksp_monitor 
 #-ksp_error_if_not_converged
@@ -13,21 +13,24 @@
 #-pc_view
 #-pc_factor_mat_ordering_type qmd
 #-ksp_view
+#-pc_factor_mat_ordering_type 1wd
+#-pc_factor_mat_ordering_type qmd
+#-pc_factor_mat_ordering_type rowlength
+#-pc_factor_mat_ordering_type natural
+-pc_factor_mat_ordering_type rcm
 #-ksp_max_it 1000000
 #-mat_view
 #-mat_view_ordering_draw
 #-mat_coloring_view
 #-snes_view
 -snes_monitor
-#-snes_type tr
+-snes_type tr
 #-snes_ls basic
 -snes_ls_monitor
-#-help
-#-ksp_monitor
 #-on_error_attach_debugger
-##-snes_max_it 100
-#-pc_factor_nonzeros_along_diagonal
-#-pc_factor_reuse_fill
+#-snes_max_it 100
+-pc_factor_nonzeros_along_diagonal
+-pc_factor_reuse_fill
 #-ksp_diagonal_scale
 #-ksp_monitor_true_residual
 #-snes_converged_reason
