@@ -61,24 +61,24 @@
           <Parameter name="do_richard_sat_solve" type="int" value="0"/>
 
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
-          <Parameter name="steady_limit_iterations" type="int" value="100"/>
-          <Parameter name="steady_max_iterations" type="int" value="60"/>
+          <Parameter name="steady_limit_iterations" type="int" value="25"/>
+          <Parameter name="steady_max_iterations" type="int" value="20"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
           <Parameter name="steady_min_iterations" type="int" value="6"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="10"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="1.2"/>
           <Parameter name="steady_min_iterations_2" type="int" value="1"/>
           <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
-          <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.5"/>
+          <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.7"/>
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="2"/>
           <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.1"/>
           <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.01"/>
           <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
           <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
           <Parameter name="steady_init_time_step" type="double" value="9.467e5"/>
-          <Parameter name="steady_init_time_step" type="double" value="1.e4"/>
-          <Parameter name="steady_max_time_steps" type="int" value="1000"/>
+          <Parameter name="steady_init_time_step" type="double" value="1.e6"/>
+          <Parameter name="steady_max_time_steps" type="int" value="100"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
@@ -115,8 +115,8 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
         <Parameter name="Number Of AMR Levels" type="int" value="1"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{4, 4, 4}"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{2, 2, 2}"/>
         <Parameter name="Regrid Interval" type="Array int" value="{2}"/>

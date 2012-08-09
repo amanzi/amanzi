@@ -1737,7 +1737,7 @@ PorousMedia::richard_init_to_steady()
                     rs = new RichardSolver(*(PMParent()));
                 }
 
-                bool die_if_timestep_fails = true;
+                bool die_if_timestep_fails = false;
                 
                 int total_num_Newton_iterations = 0;
                 int total_rejected_Newton_steps = 0;
