@@ -1736,6 +1736,8 @@ PorousMedia::richard_init_to_steady()
                 if (use_PETSc_snes) {
                     rs = new RichardSolver(*(PMParent()));
                 }
+
+                bool die_if_timestep_fails = true;
                 
                 int total_num_Newton_iterations = 0;
                 int total_rejected_Newton_steps = 0;
@@ -1816,6 +1818,11 @@ PorousMedia::richard_init_to_steady()
                         }
                     }
                     else {
+
+                        if (die_if_timestep_fails)
+                        {
+                            BoxLib::Abort("Aborting as instructed when timestep fails");
+                        }
 
                         total_rejected_Newton_steps++;
 			for (int lev=0;lev<= finest_level;lev++)
@@ -6293,7 +6300,10 @@ PorousMedia::richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNL
   SNES& snes = rs.GetSNES();
   ierr = SNESSetTolerances(snes,atol,rtol,stol,maxit,maxf);CHKPETSC(ierr);
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
+
+  RichardSolver::SetTheRichardSolver(&rs);
   ierr = SNESSolve(snes,PETSC_NULL,SolnV);CHKPETSC(ierr);
+  RichardSolver::SetTheRichardSolver(0);
 
   int iters;
   ierr = SNESGetIterationNumber(snes,&iters);CHKPETSC(ierr);
@@ -6311,16 +6321,11 @@ PorousMedia::richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNL
     if (reason==-3) {
       retVal = RichardNLSdata::RICHARD_LINEAR_FAIL;
     }
-    else if (reasonStr=="SNES_DIVERGED_LINE_SEARCH    ") {
-        std::cout << "     **************** Newton failed: " << reasonStr << '\n';
-        BoxLib::Abort();
-    }
     else {
       retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
       if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
           std::cout << "     **************** Newton failed: " << reasonStr << '\n';
     }
-    BoxLib::Abort();
   }
 
   if (retVal != RichardNLSdata::RICHARD_SUCCESS) {

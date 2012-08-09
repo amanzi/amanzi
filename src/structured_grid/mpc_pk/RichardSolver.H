@@ -26,6 +26,7 @@ public:
   Vec& GetPressureV() {return SolnV;}
   MFTower& GetResidual() {return *Rhs;}
   Vec& GetResidualV() {return RhsV;}
+  Vec& GetPCapParamsV() {return PCapParamsV;}
   PArray<MFTower>& GetDarcyVelocity() {return DarcyVelocity;}
   PArray<MFTower>& GetRichardCoefs() {return RichardCoefs;}
   const Array<Real>& GetDensity() {return density;}
@@ -51,6 +52,8 @@ public:
                         MFTower& pressure,
                         Real     time,
                         Real     dt);
+
+  static void SetTheRichardSolver(RichardSolver* ptr);
 
 protected:
   void BuildOpSkel(Mat& J);
@@ -107,7 +110,7 @@ protected:
   MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *PStar, *RhoSatStar, *AlphaStar;
   PArray<MFTower> Kappa, DarcyVelocity, RichardCoefs;
 
-  Vec RhsV, SolnV;
+  Vec RhsV, SolnV, PCapParamsV;
 
   Array<Real> gravity;
   Array<Real> density;

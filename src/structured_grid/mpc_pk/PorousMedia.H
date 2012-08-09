@@ -1006,6 +1006,7 @@ public:
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
   MultiFab* Porosity() {return rock_phi;}
   MultiFab* KappaEC() {return kpedge;}
+  MultiFab* PCapParams() {return cpl_coef;}
 
   void set_vel_from_bcs(Real      time,
 			MultiFab* vel);

@@ -585,6 +585,7 @@ Layout::MFTowerToVec(Vec&           V,
     IntFab ifab;
     for (int lev=0; lev<nLevs; ++lev)
     {
+        BL_ASSERT(comp<mft[lev].nComp());
         for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
         {
             // NOTE: We built the node numbering so that the following operation works correctly
@@ -607,7 +608,7 @@ Layout::MFTowerToVec(Vec&           V,
                 const int* ix = ifab.dataPtr();
                 
                 fab.resize(box,1);
-                fab.copy(mft[lev][mfi]);
+                fab.copy(mft[lev][mfi],comp,0,1);
                 const Real* y = fab.dataPtr();
                 
                 ierr = VecSetValues(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);                
@@ -638,8 +639,10 @@ Layout::VecToMFTower(MFTower&   mft,
     ierr = VecAssemblyEnd(V); CHKPETSC(ierr);
     for (int lev=0; lev<nLevs; ++lev)
     {
+        BL_ASSERT(comp<mft[lev].nComp());
+
         if (mft[lev].nGrow()) {
-            mft[lev].setBndry(0);
+            mft[lev].setBndry(0,comp,1);
         }
 
         for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
@@ -660,11 +663,10 @@ Layout::VecToMFTower(MFTower&   mft,
                 const int* ix = ifab.dataPtr();
                 
                 fab.resize(box,1);
-                fab.copy(mft[lev][mfi]);
                 Real* y = fab.dataPtr();
 
                 ierr = VecGetValues(V,ni,ix,y); CHKPETSC(ierr);
-                mft[lev][mfi].copy(fab);
+                mft[lev][mfi].copy(fab,0,comp,1);
             }
         }
     }

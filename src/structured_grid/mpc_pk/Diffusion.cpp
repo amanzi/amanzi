@@ -1932,6 +1932,18 @@ PetscErrorCode FormFunction(SNES snes,Vec x,Vec f,void *dummy)
     return 0;
 }
 #endif
+
+
+static Real MyNorm(const MultiFab& mf,
+                   int             which_norm)
+{
+    if (which_norm ==0) {
+        return mf.norm0();
+    }
+    BL_ASSERT(which_norm==2);
+    return mf.norm2();
+}
+
 void
 Diffusion::richard_composite_iter_p (Real                      dt,
 				     int                       nlevs,
@@ -1953,6 +1965,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   std::string tag = "       Newton step: ";
   std::string tag_ls = "  line-search:  ";
   status.status = "Not Finished";
+  int which_norm = 2;
+
   //
   // This routine solves the time-dependent richards equation based on 
   // composite solve.
@@ -2065,161 +2079,154 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
   residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
 		   Pnew_p,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
-  status.initial_residual_norm = Rhs[0].norm2(0);
+  status.initial_residual_norm = MyNorm(Rhs[0],which_norm);
 
   if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
       std::cout << tag << "Initial residual norm: " << status.initial_residual_norm << std::endl;
   }
 
-  // preconditioning the residual.
-  // If beta_dp is the exact Jacobian, then this is the Newton step. 
-  if (beta_dp.size() > 0)
-    {
-      for (int lev=0; lev<nlevs; lev++)
-	{
-	  Rhs[lev].mult(-1.0);
-	  Soln[lev].setVal(0.);
-	}
-      Real b_dp = dt*density[0];   
-      int linsol_status = 0;
-      Real final_resnorm;
-
-      bool use_petsc_result = true;
-      BL_ASSERT(pm_parent);
-
-      Layout& layout = pm_parent->GetLayout();
-      bool ioproc = ParallelDescriptor::IOProcessor();
-      int myproc = ParallelDescriptor::MyProc();
-      MPI_Comm comm = ParallelDescriptor::Communicator();
-
-      MFTower RhsMFT(layout,Rhs);
-      MFTower SolnMFT(layout,Soln);
-
-      IndexType ccType = IndexType(IntVect::TheZeroVector());
-      MFTower PnewMFT(layout,Pnew_p);
-      MFTower RhoSatOldMFT(layout,Sold);
-      MFTower RhoSatNewMFT(layout,Snew);
-      MFTower PorosityMFT(layout,Porosity);
-      MFTower LambdaMFT(layout,ccType,1,1);
-      PArray<MFTower> DarcyVelocity(BL_SPACEDIM,PArrayNoManage);
-      PArray<MFTower> KappaMFT(BL_SPACEDIM,PArrayNoManage);
-      Array<PArray<MultiFab> > ktmp(BL_SPACEDIM); // TODO: figure out why the ba on this is weird
-      PArray<MultiFab> utmp(BL_SPACEDIM,PArrayNoManage);
-      for (int d=0; d<BL_SPACEDIM; ++d) {
-	ktmp[d].resize(nlevs,PArrayManage);
-	for (int lev=0; lev<nlevs; ++lev) {
+  for (int lev=0; lev<nlevs; lev++)
+  {
+      Rhs[lev].mult(-1.0);
+      Soln[lev].setVal(0.);
+  }
+  Real b_dp = dt*density[0];   
+  int linsol_status = 0;
+  Real final_resnorm;
+  
+  bool use_petsc_result = true;
+  BL_ASSERT(pm_parent);
+  
+  bool ioproc = ParallelDescriptor::IOProcessor();
+  int myproc = ParallelDescriptor::MyProc();
+  MPI_Comm comm = ParallelDescriptor::Communicator();
+  
+  Layout& layout = PMAmr::GetLayout();
+  MFTower RhsMFT(layout,Rhs);
+  MFTower SolnMFT(layout,Soln);
+  
+  IndexType ccType = IndexType(IntVect::TheZeroVector());
+  MFTower PnewMFT(layout,Pnew_p);
+  MFTower RhoSatOldMFT(layout,Sold);
+  MFTower RhoSatNewMFT(layout,Snew);
+  MFTower PorosityMFT(layout,Porosity);
+  MFTower LambdaMFT(layout,ccType,1,1);
+  PArray<MFTower> DarcyVelocity(BL_SPACEDIM,PArrayNoManage);
+  PArray<MFTower> KappaMFT(BL_SPACEDIM,PArrayNoManage);
+  Array<PArray<MultiFab> > ktmp(BL_SPACEDIM); // TODO: figure out why the ba on this is weird
+  PArray<MultiFab> utmp(BL_SPACEDIM,PArrayNoManage);
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+      ktmp[d].resize(nlevs,PArrayManage);
+      for (int lev=0; lev<nlevs; ++lev) {
 	  BoxArray ba = BoxArray(LambdaMFT[lev].boxArray()).surroundingNodes(d);
 	  ktmp[d].set(lev, new MultiFab(ba,1,0)); ktmp[d][lev].copy(pm[lev].kpedge[d]);
 	  //ktmp.set(lev,&(pm[lev].kpedge[d]));
 	  utmp.set(lev,&(umac[lev][d]));
-	}
-	KappaMFT.set(d,new MFTower(layout,ktmp[d]));
-	DarcyVelocity.set(d, new MFTower(layout,utmp));
-	//ktmp.clear();
-	utmp.clear();
       }
-
-      if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
-          BoxLib::Abort("MFT incompatible with layout");
-      }
-
+      KappaMFT.set(d,new MFTower(layout,ktmp[d]));
+      DarcyVelocity.set(d, new MFTower(layout,utmp));
+      //ktmp.clear();
+      utmp.clear();
+  }
+  
+  if (! (layout.IsCompatible(RhsMFT) && layout.IsCompatible(SolnMFT)) ) {
+      BoxLib::Abort("MFT incompatible with layout");
+  }
+  
 #ifdef BL_USE_PETSC
-      Vec RhsV, SolnV;
-      PetscErrorCode ierr; 
-
-      int num_local = layout.NumberOfLocalNodeIds();
-      int num_global = layout.NumberOfGlobalNodeIds();
-
-      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&RhsV); CHKPETSC(ierr);
-      ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&SolnV); CHKPETSC(ierr);
-
-      ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
-      ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
-      // Apply column scaling of J to Rhs
-      Real* RhsV_array, *JRowScale_array;
-      ierr = VecGetArray(RhsV,&RhsV_array); CHKPETSC(ierr);
-      ierr = VecGetArray(layout.JRowScale(),&JRowScale_array); CHKPETSC(ierr);
-      for (int i=0; i<num_local; ++i) {
-          RhsV_array[i] *= JRowScale_array[i];
+  Vec RhsV, SolnV;
+  PetscErrorCode ierr; 
+  
+  int num_local = layout.NumberOfLocalNodeIds();
+  int num_global = layout.NumberOfGlobalNodeIds();
+  
+  ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&RhsV); CHKPETSC(ierr);
+  ierr = VecCreateMPI(ParallelDescriptor::Communicator(),num_local,num_global,&SolnV); CHKPETSC(ierr);
+  
+  ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
+  ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
+  // Apply column scaling of J to Rhs
+  Real* RhsV_array, *JRowScale_array;
+  ierr = VecGetArray(RhsV,&RhsV_array); CHKPETSC(ierr);
+  ierr = VecGetArray(layout.JRowScale(),&JRowScale_array); CHKPETSC(ierr);
+  for (int i=0; i<num_local; ++i) {
+      RhsV_array[i] *= JRowScale_array[i];
+  }
+  ierr = VecRestoreArray(RhsV,&RhsV_array);
+  ierr = VecRestoreArray(layout.JRowScale(),&JRowScale_array);
+  
+  KSP  ksp;
+  ierr = KSPCreate(comm,&ksp); CHKPETSC(ierr);
+  
+  Mat& J = layout.Jacobian();
+  ierr = KSPSetOperators(ksp,J,J,SAME_NONZERO_PATTERN); CHKPETSC(ierr);
+  ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
+  ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
+  ierr = KSPDestroy(&ksp); CHKPETSC(ierr);
+  
+  MFTower ResultMFT(layout);
+  if (use_petsc_result) {
+      ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
+  }
+  else {
+      ierr = layout.VecToMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
+  }
+#else
+  use_petsc_result = false;
+#endif
+  
+  if (!use_petsc_result)
+  {
+      const Real S_tol     = visc_tol;
+      const Real S_tol_abs = visc_abs_tol;
+      int  fill_bcs_for_gradient = 1; 
+      mgt_solver.set_maxorder(2);
+      mgt_solver.set_porous_coefficients(dalpha, a2, beta_dp, b_dp, xa, xb, nc_opt);    
+      
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve init res=" << status.initial_residual_norm
+                    << std::endl;
       }
-      ierr = VecRestoreArray(RhsV,&RhsV_array);
-      ierr = VecRestoreArray(layout.JRowScale(),&JRowScale_array);
-
-      KSP  ksp;
-      ierr = KSPCreate(comm,&ksp); CHKPETSC(ierr);
-
-      Mat& J = layout.Jacobian();
-      ierr = KSPSetOperators(ksp,J,J,SAME_NONZERO_PATTERN); CHKPETSC(ierr);
-      ierr = KSPSetFromOptions(ksp); CHKPETSC(ierr);
-      ierr = KSPSolve(ksp,RhsV,SolnV); CHKPETSC(ierr);
-      ierr = KSPDestroy(&ksp); CHKPETSC(ierr);
-
-      MFTower ResultMFT(layout);
-      if (use_petsc_result) {
-          ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
+      
+      mgt_solver.solve(Soln_p.dataPtr(), Rhs_p.dataPtr(), S_tol, S_tol_abs, 
+                       fill_bcs_for_gradient, final_resnorm,
+                       linsol_status);
+      
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag 
+                    << "Linear solve final res=" << status.initial_residual_norm
+                    << std::endl;
+      }
+  }
+  
+  if (linsol_status!=0)
+  {
+      if (linsol_status==1) {
+          status.reason = "Linear iterations unstable";
       }
       else {
-           ierr = layout.VecToMFTower(ResultMFT,SolnV,0); CHKPETSC(ierr);
+          status.reason = "Linear iterations failed";
       }
-
-      ierr = VecDestroy(&SolnV); CHKPETSC(ierr);
-      ierr = VecDestroy(&RhsV); CHKPETSC(ierr);
-#else
-      use_petsc_result = false;
-#endif
-      
-      if (!use_petsc_result)
-      {
-          const Real S_tol     = visc_tol;
-          const Real S_tol_abs = visc_abs_tol;
-          int  fill_bcs_for_gradient = 1; 
-          mgt_solver.set_maxorder(2);
-          mgt_solver.set_porous_coefficients(dalpha, a2, beta_dp, b_dp, xa, xb, nc_opt);    
-          
-          if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-              std::cout << tag 
-                        << "Linear solve init res=" << status.initial_residual_norm
-                        << std::endl;
+      status.success = false;
+      status.status = "Finished";
+      if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
+          std::cout << tag << status.reason;
+          if (status.monitor_linear_solve > 1) {
+              std::cout << " solver return code: " << linsol_status << std::endl;
           }
-          
-          mgt_solver.solve(Soln_p.dataPtr(), Rhs_p.dataPtr(), S_tol, S_tol_abs, 
-                           fill_bcs_for_gradient, final_resnorm,
-                           linsol_status);
-
-          if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-              std::cout << tag 
-                        << "Linear solve final res=" << status.initial_residual_norm
-                        << std::endl;
-          }
+          std::cout << std::endl;
       }
-
-      if (linsol_status!=0)
-      {
-          if (linsol_status==1) {
-              status.reason = "Linear iterations unstable";
-          }
-          else {
-              status.reason = "Linear iterations failed";
-          }
-          status.success = false;
-          status.status = "Finished";
-          if (ParallelDescriptor::IOProcessor() && status.monitor_linear_solve) {
-              std::cout << tag << status.reason;
-              if (status.monitor_linear_solve > 1) {
-                  std::cout << " solver return code: " << linsol_status << std::endl;
-              }
-              std::cout << std::endl;
-          }
-	  status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
-          delete[] a1_p;
-          return;
-      }
-      
-      status.success = true;
-      for (int lev = nlevs-2; lev >= 0; lev--)
-	pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
-    }
-
+      status.residual_norm_post_ls = status.residual_norm_pre_ls = status.initial_residual_norm;
+      delete[] a1_p;
+      return;
+  }
+  
+  status.success = true;
+  for (int lev=0; lev<nlevs-1; lev++)
+  {
+      pm[lev].avgDown(Soln_p[lev],lev,Soln_p[lev+1],lev+1);
+  }
 
   PArray<MultiFab> Ptmp(nlevs,PArrayManage);
   for (int lev=0; lev<nlevs; lev++)
@@ -2235,7 +2242,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
   residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
 		   Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
-  status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
+  status.residual_norm_post_ls = status.residual_norm_pre_ls = MyNorm(Rhs[0],which_norm);
 
   if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
       status.reason = "Full linear step accepted";
@@ -2274,7 +2281,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
       residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
                        Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
-      status.residual_norm_post_ls = Rhs[0].norm2(0);
+      status.residual_norm_post_ls = MyNorm(Rhs[0],which_norm);
       
       if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
           std::cout << tag << tag_ls
@@ -2319,6 +2326,11 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev]); 
       pm[lev].compute_vel_phase(umac[lev],0,cur_time);
   }
+
+#ifdef BL_USE_PETSC
+  ierr = VecDestroy(&SolnV); CHKPETSC(ierr);
+  ierr = VecDestroy(&RhsV); CHKPETSC(ierr);
+#endif
 
   Real total_time = ParallelDescriptor::second() - strt_time;
 

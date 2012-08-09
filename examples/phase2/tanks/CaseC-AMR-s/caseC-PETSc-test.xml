@@ -91,7 +91,7 @@
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
-          <Parameter name="richard_monitor_line_search" type="int" value="1"/>
+          <Parameter name="richard_monitor_line_search" type="int" value="0"/>
           <Parameter name="verbose" type="double" value="2"/>
 
         </ParameterList>
@@ -117,7 +117,6 @@
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="2"/>
         <Parameter name="Number Of AMR Levels" type="int" value="1"/>
-        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{4, 4, 4}"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{2, 2, 2}"/>
         <Parameter name="Regrid Interval" type="Array int" value="{2}"/>
