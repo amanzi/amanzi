@@ -30,14 +30,8 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="steady max iterations" type="int" value="15"/>
-        <Parameter name="steady min iterations" type="int" value="10"/>
-        <Parameter name="steady limit iterations" type="int" value="20"/>
-        <Parameter name="steady nonlinear tolerance" type="double" value="1e-12"/>
-        <Parameter name="steady max time step" type="double" value="6.0e+10"/>
-        <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
-        <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-        <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+        <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
+        <Parameter name="linear solver maximum iterations" type="int" value="10"/>
       </ParameterList>
     </ParameterList>
   
@@ -68,16 +62,20 @@
 
     Regions: 
 
-      * Entire Domain:  the whole domain
-
   -->
   <ParameterList name="Regions">
+    <!--
+        Domains:
+    -->
     <ParameterList name="Entire Domain">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
         <Parameter name="High Coordinate" type="Array double" value="{100.0,50.0,50.0}"/>
       </ParameterList>
     </ParameterList>
+    <!--
+        Boundaries
+    -->
     <ParameterList name="Upstream">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
@@ -90,7 +88,17 @@
         <Parameter name="High Coordinate" type="Array double" value="{100.0,50.0,50.0}"/>
       </ParameterList>
     </ParameterList>
+    <!-- 
+	 Wells:
+    -->
+    <ParameterList name="Well 1">
+      <ParameterList name="Region: Point">
+	<Parameter name="Coordinate" type="Array double" value="{20.5, 24.5, 24.5}"/>
+      </ParameterList>
+    </ParameterList>
+
   </ParameterList>
+
 
   <!--
 
@@ -150,19 +158,6 @@
         <Parameter name="Value" type="double" value="201325.0"/>
       </ParameterList>
 
-      <ParameterList name="Solute IC">
-        <ParameterList name="Aqueous">
-	  <ParameterList name="Water">
-	    <ParameterList name="Foo">
-	      <ParameterList name="IC: Uniform Concentration">
-		<Parameter name="Value" type="double" value="1"/>
-	      </ParameterList>
-	      <Parameter name="Concentration Units" type="string" value="TBC"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-      </ParameterList>
-	
     </ParameterList>
 
   </ParameterList>
@@ -195,16 +190,31 @@
   </ParameterList>
 
   <ParameterList name="Output">
+
     <ParameterList name="Time Macros">
       <ParameterList name="Steady State">
 	<Parameter name="Values" type="Array double" value="{0.}"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="Observation Data">
+
+      <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
+      <ParameterList name="Pressure 1">
+        <Parameter name="Region" type="string" value="Well 1"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Aqueous pressure"/>
+        <Parameter name="Time Macro" type="string" value="Steady State"/>
+      </ParameterList>
+
+    </ParameterList>
+
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="steady-flow"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
       <Parameter name="Time Macro" type="Array string" value="{Steady State}"/>
     </ParameterList>
+
   </ParameterList>
 
 </ParameterList>
