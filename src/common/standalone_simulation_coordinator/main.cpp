@@ -34,6 +34,13 @@
  #endif
 #endif
 
+struct RunLog
+    : public std::ostream
+{
+    RunLog(std::ostream& _os);
+protected:
+    int rank;
+};
 
 int main(int argc, char *argv[]) {
 
@@ -47,7 +54,7 @@ int main(int argc, char *argv[]) {
     // make sure only PE0 can write to std::cout
     int rank;
     rank = mpiSession.getRank();
-    if (rank != 0) cout.rdbuf(0);
+    //if (rank != 0) cout.rdbuf(0);
 
     Teuchos::CommandLineProcessor CLP;
     

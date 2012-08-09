@@ -1,0 +1,39 @@
+#-mat_view_draw
+#-mat_view
+#-mat_ascii_output_large
+#-draw_pause 5
+#-vec_view
+#-ksp_monitor 
+#-ksp_error_if_not_converged
+#-help
+-ksp_diagonal_scale_fix
+-ksp_type preonly
+-pc_type lu
+#-pc_type ilu
+#-pc_view
+#-pc_factor_mat_ordering_type qmd
+#-ksp_view
+#-ksp_max_it 1000000
+#-mat_view
+#-mat_view_ordering_draw
+#-mat_coloring_view
+#-snes_view
+-snes_monitor
+#-snes_type tr
+#-snes_ls basic
+-snes_ls_monitor
+#-help
+#-ksp_monitor
+#-on_error_attach_debugger
+##-snes_max_it 100
+#-pc_factor_nonzeros_along_diagonal
+#-pc_factor_reuse_fill
+#-ksp_diagonal_scale
+#-ksp_monitor_true_residual
+#-snes_converged_reason
+#-snes_error_if_not_converged
+#-mat_fd_type wp
+#-mat_mffd_compute_normu
+
+
+

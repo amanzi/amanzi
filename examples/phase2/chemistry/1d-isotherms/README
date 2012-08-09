@@ -1,0 +1,20 @@
+
+./amanzi --xml_file=amanzi-u-1d-isotherms.xml 2>/dev/null
+vis-amanzi-1d.py -i isotherms -n A -s total --grid major -t "0 10 20 30 40 50" -o amanzi-a-total.pdf
+vis-amanzi-1d.py -i isotherms -n A -s sorbed --grid major -t "0 10 20 30 40 50" -o amanzi-a-sorbed.pdf
+vis-amanzi-1d.py -i isotherms -n B -s total --grid major -t "0 10 20 30 40 50" -o amanzi-b-total.pdf
+vis-amanzi-1d.py -i isotherms -n B -s sorbed --grid major -t "0 10 20 30 40 50" -o amanzi-b-sorbed.pdf
+vis-amanzi-1d.py -i isotherms -n C -s total --grid major -t "0 10 20 30 40 50" -o amanzi-c-total.pdf
+vis-amanzi-1d.py -i isotherms -n C -s sorbed --grid major -t "0 10 20 30 40 50" -o amanzi-c-sorbed.pdf
+
+
+
+
+
+pflotran -pflotranin 1d-isotherms.in 
+vis-pflotran-1d.py -i pflotran.h5 -n A -s total --grid major -t "0 2 13 24 35 46" -o pflotran-a-total.pdf
+vis-pflotran-1d.py -i pflotran.h5 -n A -s sorbed --grid major -t "0 2 13 24 35 46" -o pflotran-a-sorbed.pdf
+vis-pflotran-1d.py -i pflotran.h5 -n B -s total --grid major -t "0 2 13 24 35 46" -o pflotran-b-total.pdf
+vis-pflotran-1d.py -i pflotran.h5 -n B -s sorbed --grid major -t "0 2 13 24 35 46" -o pflotran-b-sorbed.pdf
+vis-pflotran-1d.py -i pflotran.h5 -n C -s total --grid major -t "0 2 13 24 35 46" -o pflotran-c-total.pdf
+vis-pflotran-1d.py -i pflotran.h5 -n C -s sorbed --grid major -t "0 2 13 24 35 46" -o pflotran-c-sorbed.pdf

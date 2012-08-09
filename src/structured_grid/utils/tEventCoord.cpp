@@ -18,13 +18,15 @@ int main(int argc, char* argv[])
     int cm_1_start = 5;
     int cm_1_period = 7;
     int cm_1_stop = 100;
-    event_coord.InsertCycleEvent(cm_1_name, cm_1_start, cm_1_period, cm_1_stop);
+    EventCoord::CycleEvent ce1(cm_1_start, cm_1_period, cm_1_stop);
+    event_coord.Register(cm_1_name, &ce1);
 
     std::string cm_2_name = "CM2";
     int cm_2_start = 3;
     int cm_2_period = 9;
     int cm_2_stop = -1;
-    event_coord.InsertCycleEvent(cm_2_name, cm_2_start, cm_2_period, cm_2_stop);
+    EventCoord::CycleEvent ce2(cm_2_start, cm_2_period, cm_2_stop);
+    event_coord.Register(cm_2_name, &ce2);
 
     std::string cm_3_name = "CM3";
     Array<int> cm_3_cycles;
@@ -32,14 +34,16 @@ int main(int argc, char* argv[])
     cm_3_cycles.push_back(9);
     cm_3_cycles.push_back(11);
     cm_3_cycles.push_back(19);
-    event_coord.InsertCycleEvent(cm_3_name, cm_3_cycles);
+    EventCoord::CycleEvent ce3(cm_3_cycles);
+    event_coord.Register(cm_3_name, &ce3);
 
 
     std::string tm_1_name = "TM1";
     Real tm_1_start = 4;
     Real tm_1_period = 4;
     Real tm_1_stop = -1;
-    event_coord.InsertTimeEvent(tm_1_name, tm_1_start, tm_1_period, tm_1_stop);
+    EventCoord::TimeEvent te1(tm_1_start, tm_1_period, tm_1_stop);
+    event_coord.Register(tm_1_name, &te1);
 
     std::string tm_2_name = "TM2";
     Array<Real> tm_2_times;
@@ -47,7 +51,8 @@ int main(int argc, char* argv[])
     tm_2_times.push_back(4.51);
     tm_2_times.push_back(4.52);
     tm_2_times.push_back(8.9);
-    event_coord.InsertTimeEvent(tm_2_name, tm_2_times);
+    EventCoord::TimeEvent te2(tm_2_times);
+    event_coord.Register(tm_2_name, &te2);
 
     // build test loop
     Real time_new, time_old = 0;

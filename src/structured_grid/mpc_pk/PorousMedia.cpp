@@ -13,6 +13,7 @@
 #include <DataServices.H>
 #include <AmrData.H>
 #include <time.h> 
+#include <PMAmr.H>
 
 #include <Godunov.H>
 #include <PorousMedia.H>
@@ -70,7 +71,6 @@ BCRec     PorousMedia::phys_bc;
 BCRec     PorousMedia::pres_bc;
 MacProj*  PorousMedia::mac_projector = 0;
 Godunov*  PorousMedia::godunov       = 0;
-static int do_n = true;
 static double richard_time;
 static double richard_time_min = 1.e6;
 
@@ -152,6 +152,9 @@ PorousMedia::CleanupStatics ()
     tic_array.clear();
     tbc_array.clear();
     initialized = false;
+#ifdef AMANZI
+    delete amanzi::chemistry::chem_out;
+#endif
 }
 
 void
@@ -180,7 +183,7 @@ PorousMedia::variableCleanUp ()
   source_array.clear();
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       chemSolve.clear();
       components.clear();
@@ -247,7 +250,8 @@ PorousMedia::setup_bound_desc()
         const Orientation& face = Faces[iface];
         if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
         {
-            Box ccBndBox  = BoxLib::adjCell(domain,face,1);
+	    Box ccBndBox  = BoxLib::adjCell(domain,face,1);
+
             if (ccBndBox.ok()) {
 
                 // Find BCs for this face
@@ -467,8 +471,9 @@ PorousMedia::PorousMedia (Amr&            papa,
   BL_ASSERT(rock_phi == 0);
   rock_phi = new MultiFab(grids,1,3);
 
-  if (model != model_list["single-phase"] ||
-      model != model_list["single-phase-solid"])
+  if (model != model_list["single-phase"] &&
+      model != model_list["single-phase-solid"] &&
+      model != model_list["steady-saturated"])
     {
       BL_ASSERT(kr_coef == 0);
       kr_coef = new MultiFab(grids,5,1);
@@ -540,11 +545,6 @@ PorousMedia::PorousMedia (Amr&            papa,
 
   // Set up boundary condition work
   setup_bound_desc();
-
-#ifdef AMANZI
-  amanzi::chemistry::SetupDefaultChemistryOutput();
-  amanzi::chemistry::chem_out->AddLevel("silent");
-#endif
 }
 
 PorousMedia::~PorousMedia ()
@@ -595,9 +595,6 @@ PorousMedia::~PorousMedia ()
       delete pcnp1_cc;
     }
   delete diffusion;
-#ifdef AMANZI
-  delete amanzi::chemistry::chem_out;
-#endif
 }
 
 void
@@ -629,6 +626,14 @@ PorousMedia::restart (Amr&          papa,
 {
   AmrLevel::restart(papa,is,bReadSpecial);
   is >> dt_eig;
+
+  //int finest_level = parent->finestLevel();
+  //for (int k = 0; k <= finest_level; k++)
+  //{
+  //    Real dt = parent->dtLevel()[k];
+  //    Real strt_time =  static_cast<const PMAmr*>(parent)->StartTime();
+  //    getLevel(k).setTimeLevel(strt_time,dt,dt);
+  //}
 
   if (verbose && ParallelDescriptor::IOProcessor())
     std::cout << "Estimated time step = " << dt_eig << '\n';
@@ -713,8 +718,9 @@ PorousMedia::restart (Amr&          papa,
   BL_ASSERT(rock_phi == 0);
   rock_phi = new MultiFab(grids,1,3);
 
-  if (model != model_list["single-phase"] ||
-      model != model_list["single-phase-solid"])
+  if (model != model_list["single-phase"] &&
+      model != model_list["single-phase-solid"] &&
+      model != model_list["steady-saturated"])
     {
       BL_ASSERT(kr_coef == 0);
       kr_coef = new MultiFab(grids,5,1);
@@ -806,7 +812,8 @@ PorousMedia::restart (Amr&          papa,
 #endif
   
 #ifdef MG_USE_FBOXLIB
-  if (model != model_list["richard"])
+  if (model != model_list["richard"] &&
+      model != model_list["steady-saturated"])
     {
       std::string rxfile = "/rhs_RhoD_x";
       std::string ryfile = "/rhs_RhoD_y";
@@ -872,6 +879,31 @@ PorousMedia::setTimeLevel (Real time,
   for (int k = 0; k < num_state_type; k++)
     state[k].setTimeLevel(time,dt_old,dt_new);
 }
+
+void
+PorousMedia::set_vel_from_bcs(Real      time,
+			      MultiFab* vel)
+{
+  FArrayBox inflow;
+  for (OrientationIter oitr; oitr; ++oitr) {
+    Orientation face = oitr();
+    if (get_inflow_velocity(face,inflow,time)) {
+      // NOTE: Without doing a pressure solve formally, it is not
+      //  obvious how to do this in a way that makes sense.  The hack
+      //  for the moment is to just do a setval over the entire 
+      //  field....
+      Real inflow_val = inflow(inflow.box().smallEnd(),0);
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+	if (d==face.coordDir()) {
+	  vel[d].setVal(inflow_val);
+	} else {
+	  vel[d].setVal(0);
+	}
+      }
+    }
+  }
+}
+
 
 //
 // This function initializes the all relevant data.  
@@ -943,6 +975,18 @@ PorousMedia::initData ()
 				s_bc);
 		}
 	    }
+            else if (type == "pressure") 
+	    {
+	      BL_ASSERT(model == model_list["steady-saturated"]);
+	      Array<Real> vals = ic();
+	      for (int jt=0; jt<ic_regions.size(); ++jt) {
+		regions[jt].setVal(P_new[mfi],vals,
+				   dx,0,0,ncomps);
+	      }
+	      for (int n=0; n<ncomps; ++n) {
+		S_new[mfi].setVal(density[n],mfi.validbox(),n,1);
+	      }
+	    }
             else if (type == "hydrostatic") 
 	    {
                 Array<Real> vals = ic();
@@ -968,59 +1012,29 @@ PorousMedia::initData ()
                           model != model_list["single-phase-solid"]);
                 int nc = 1;
 		Array<Real> vals = ic();
-
-#if 0
-                // ... in progress
-                BL_ASSERT(vals.size()>=4);
-
-                Real darcy_flux = vals[0];
-                Real water_table_height = vals[1];
-                Real aqueous_ref_pres = vals[2];
-                Real aqueous_pres_grad = vals[3];
-
-                Real gravloc = aqueous_pres_grad/(-density[0]);
-
-                // First guess for pressure is linear
-		FORT_HYDRO_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), 
-				    density.dataPtr(),&ncomps, 
-				    dx, vals.dataPtr(), &gravloc);
-                pdat.plus(aqueous_ref_pres);
-
-                // Set the constant phase velocity
-                u_mac_curr[0][mfi].setVal(0);
-                u_mac_curr[BL_SPACEDIM-1][mfi].setVal(vals[0]);
-
-
-                // Init to fully saturated...solve
-                sdat.setVal(density[0],0);
-#endif
-
-                FArrayBox& cdat = (*cpl_coef)[mfi];
-                const int n_cpl_coef = cpl_coef->nComp();
-                DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
-                FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-                           density.dataPtr(),&ncomps, 
-                           c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
-                           dx, &vals[1], &gravity);
-                
-                FArrayBox& kdat = (*kr_coef)[mfi];
-                FArrayBox& kpdat = kpedge[BL_SPACEDIM-1][mfi];
-                const int n_kr_coef = kr_coef->nComp();
-                DEF_CLIMITS(kdat,k_ptr,k_lo,k_hi);
-                DEF_CLIMITS(kpdat,kp_ptr,kp_lo,kp_hi);
-                FORT_STEADYSTATE(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-                                 density.dataPtr(),muval.dataPtr(),&ncomps,
-                                 kp_ptr, ARLIM(kp_lo),ARLIM(kp_hi), 
-                                 k_ptr, ARLIM(k_lo),ARLIM(k_hi), &n_kr_coef,
-                                 dx, &vals[0], &nc, &gravity);
-
-		// set pressure to single value
+		FArrayBox& cdat = (*cpl_coef)[mfi];
+		const int n_cpl_coef = cpl_coef->nComp();
+		DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
+		FArrayBox& kdat = (*kr_coef)[mfi];
+		FArrayBox& kpdat = kpedge[BL_SPACEDIM-1][mfi];
+		const int n_kr_coef = kr_coef->nComp();
+		DEF_CLIMITS(kdat,k_ptr,k_lo,k_hi);
+		DEF_CLIMITS(kpdat,kp_ptr,kp_lo,kp_hi);
+		FORT_STEADYSTATE(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
+				 density.dataPtr(),muval.dataPtr(),&ncomps,
+				 kp_ptr, ARLIM(kp_lo),ARLIM(kp_hi), 
+				 k_ptr, ARLIM(k_lo),ARLIM(k_hi), &n_kr_coef,
+				 dx, &vals[0], &nc, &gravity);
+		
+		// set pressure
 		if (model==model_list["richard"]) {
 		  const int idx = mfi.index();
 		  Array<int> s_bc = getBCArray(State_Type,idx,0,1);
 		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
 				(*kappa)[mfi],(*cpl_coef)[mfi],grids[idx],
 				s_bc);
+		  P_new[mfi].copy((*pcnp1_cc)[mfi]);
+		  P_new[mfi].mult(-1.0);
 		}
 	    }
             else
@@ -1075,20 +1089,179 @@ PorousMedia::initData ()
                     }
                 }
             }
-#if 0
-            FORT_INIT_TRACER(&level,&cur_time,
-                             s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-                             (*it).param.dataPtr(), 
-                             &ncomps, &ntracers, dx);
-#endif
         }
     }
 
-    FillStateBndry(cur_time,State_Type,0,ncomps);
-    FillStateBndry(cur_time,Press_Type,0,1);
+    if (do_chem>0) 
+    {
+        if (ntracers>0)
+        {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=sorption_isotherm_ics.begin(); it!=sorption_isotherm_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const PArray<Region>& rock_regions = find_rock(material_name).regions;
 
-    if (do_tracer_transport) {
-        FillStateBndry(cur_time,State_Type,ncomps,ntracers);
+                    ICLabelParmPair& solute_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=solute_to_pp.begin(); it1!=solute_to_pp.end(); ++it1) 
+                    {
+                        const std::string& solute_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = sorption_isotherm_label_map[solute_name][parameter];
+                            Real value = it2->second;
+                            if (false) {
+                                std::cout << material_name << "   "
+                                          << solute_name << "    "
+                                          << parameter << "    "
+                                          << value << std::endl;
+                            }
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (nminerals>0) {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=mineralogy_ics.begin(); it!=mineralogy_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const PArray<Region>& rock_regions = find_rock(material_name).regions;
+                    
+                    ICLabelParmPair& mineral_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) 
+                    {
+                        const std::string& mineral_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = mineralogy_label_map[mineral_name][parameter];
+                            Real value = it2->second;
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (nsorption_sites>0) {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=surface_complexation_ics.begin(); it!=surface_complexation_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const Rock& rock = find_rock(material_name);
+                    ICLabelParmPair& sorption_site_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) 
+                    {
+                        const std::string& sorption_site_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = surface_complexation_label_map[sorption_site_name][parameter];
+                            Real value = it2->second;
+                            
+                            const PArray<Region>& rock_regions = rock.regions;
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (ncation_exchange>0) {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ICParmPair::iterator it=cation_exchange_ics.begin(); it!=cation_exchange_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const Rock& rock = find_rock(material_name);
+                    Real value = it->second;
+                    int comp = cation_exchange_label_map.begin()->second;
+                    
+                    const PArray<Region>& rock_regions = rock.regions;
+                    for (int j=0; j<rock_regions.size(); ++j) {
+                        rock_regions[j].setVal(fab,value,comp,dx,0);
+                    }
+                }
+            }
+        }
+
+        // These always get set if do_chem>0
+        {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+                
+                for (ChemICMap::iterator it=solute_chem_ics.begin(); it!=solute_chem_ics.end(); ++it)
+                {
+                    const std::string& material_name = it->first;
+                    const Rock& rock = find_rock(material_name);
+                    ICLabelParmPair& sorption_site_to_pp = it->second; 
+                    for (ICLabelParmPair::iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) 
+                    {
+                        const std::string& tracer_name = it1->first;
+                        ICParmPair& parm_pairs = it1->second;
+                        for (ICParmPair::iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) 
+                        {
+                            const std::string& parameter = it2->first;
+                            int comp = solute_chem_label_map[tracer_name][parameter];
+                            Real value = it2->second;
+                            
+                            const PArray<Region>& rock_regions = rock.regions;
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+        
+    if (model == model_list["richard"]) {
+      calcInvPressure(S_new,P_new); // Set sat from p
+
+      // FIXME: Why are these needed here?
+      FillStateBndry(cur_time,State_Type,0,ncomps);
+      FillStateBndry(cur_time,Press_Type,0,1);
+      
+      if (do_tracer_transport) {
+	FillStateBndry(cur_time,State_Type,ncomps,ntracers);
+      }
     }
 
     U_new.setVal(0.);
@@ -1096,37 +1269,406 @@ PorousMedia::initData ()
     if (have_capillary) calcCapillary(cur_time);
     //
     // compute lambda
-    // 
-    calcLambda(cur_time);
+    //
+    if (model != model_list["steady-saturated"]) {
+      calcLambda(cur_time);
+    }
+
     //
     // Initialize u_mac_curr 
     //
-    if (model == model_list["richard"])
-      compute_vel_phase(u_mac_curr,0,cur_time);
+    if (model == model_list["steady-saturated"])
+      {
+	set_vel_from_bcs(cur_time,u_mac_curr);
+      }
     else
-      mac_project(u_mac_curr,rhs_RhoD,cur_time);
+      {
+	if (model == model_list["richard"])
+	  {
+	    compute_vel_phase(u_mac_curr,0,cur_time);
+	  }
+	else 
+	  {
+	    mac_project(u_mac_curr,rhs_RhoD,cur_time);
+	  }
+
+	umac_edge_to_cen(u_mac_curr, Vel_Type); 
+      }
     
-    umac_edge_to_cen(u_mac_curr, Vel_Type); 
-
     is_grid_changed_after_regrid = false;
-
-    if (model == model_list["richard"] && do_richard_init_to_steady) {
-        richard_init_to_steady();        
-    }
-
+        
 #ifdef AMANZI
-  if (do_chem > -1)
-    {
-      get_new_data(FuncCount_Type).setVal(1);
-
-      Real dt_tmp = 1e3;
-      strang_chem(S_new,dt_tmp);
-    }
+    // Call chemistry to relax initial data to equilibrium
+    if (do_chem>0)
+      {
+	MultiFab& Fcnt = get_new_data(FuncCount_Type);
+	Fcnt.setVal(1);
+	Real dt_tmp = 1e3; // HACK
+	int nGrow = 0;
+	strang_chem(cur_time,dt_tmp,nGrow);
+      }
 #endif
-
-  is_first_step_after_regrid = true;
-  old_intersect_new          = grids;
+        
+    is_first_step_after_regrid = true;
+    old_intersect_new          = grids;
 }
+
+void
+RichardNLSdata::SetNLIterationsTaken(int iters){
+  nl_iterations_taken = iters;
+}
+
+RichardNLSdata::RichardNLSdata(int slev, int nlevs, PMAmr* _pm_amr)
+    : start_level(slev), end_level(slev+nlevs-1),
+      num_Jacobian_reuses_remaining(nlevs,0)
+{
+    pm_amr = _pm_amr;
+    BL_ASSERT(pm_amr);
+
+    // Set solver defaults
+    max_num_Jacobian_reuse = 0;
+    max_nl_iterations = 20;
+    max_nl_residual_norm = -1;    
+    max_num_consecutive_success = 0;
+    max_num_consecutive_failures_1 = 3;
+    max_num_consecutive_failures_2 = 4;
+    max_num_consecutive_increases = 15;
+    consecutive_increase_reduction_factor = 0.4;
+    min_nl_iterations_for_dt = 6;
+    min_nl_iterations_for_dt_2 = 3;
+    max_nl_iterations_for_dt = 10;
+    time_step_increase_factor = 1.5;
+    time_step_increase_factor_2 = 2.0;
+    time_step_reduction_factor = 0.8;
+    time_step_retry_factor = 0.5;
+    time_step_retry_factor_2 = 0.1;
+    time_step_retry_factor_f = 0.01;
+
+    num_consecutive_success = 0;
+    num_consecutive_failures_1 = 0;
+    num_consecutive_failures_2 = 0;
+    num_consecutive_increases = 0;
+    first = true;
+
+    ResetCounters();
+    ResetJacobianCounter();
+
+    // Allocate necessary memory and setup pointers
+    Build();
+}
+
+void RichardNLSdata::SetMaxConsecutiveFails(int max_num) {max_num_consecutive_failures_1=max_num;}
+void RichardNLSdata::SetDtRetryFactor(Real factor) {time_step_retry_factor = factor;}
+void RichardNLSdata::SetMaxConsecutiveFails2(int max_num) {max_num_consecutive_failures_2=max_num;}
+void RichardNLSdata::SetDtRetryFactor2(Real factor) {time_step_retry_factor_2 = factor;}
+void RichardNLSdata::SetDtRetryFactorF(Real factor) {time_step_retry_factor_f = factor;}
+void RichardNLSdata::SetMaxConsecutiveErrIncrease(int max_incr) {max_num_consecutive_increases=max_incr;}
+void RichardNLSdata::SetConsecutiveErrIncreaseDtReduction(Real redux) {consecutive_increase_reduction_factor=redux;}
+void RichardNLSdata::SetMaxConsecutiveSuccess(int max_num) {max_num_consecutive_success=max_num;}
+void RichardNLSdata::SetMaxNewtonIterations(int max_iter) {max_nl_iterations=max_iter;}
+void RichardNLSdata::SetMaxJacobianReuse(int max_num_reuse) {max_num_Jacobian_reuse=max_num_reuse;}
+void RichardNLSdata::ResetJacobianCounter(int lev) {num_Jacobian_reuses_remaining[lev]=max_num_Jacobian_reuse;}
+void RichardNLSdata::SetMaxNewtonIterationsForDt(int max_iter) {max_nl_iterations_for_dt=max_iter;}
+void RichardNLSdata::SetMinNewtonIterationsForDt(int min_iter) {min_nl_iterations_for_dt=min_iter;}
+void RichardNLSdata::SetMinNewtonIterationsForDt2(int min_iter) {min_nl_iterations_for_dt_2=min_iter;}
+void RichardNLSdata::SetDtIncreaseFactor(Real factor) {time_step_increase_factor=factor;}
+void RichardNLSdata::SetDtIncreaseFactor2(Real factor) {time_step_increase_factor_2=factor;}
+void RichardNLSdata::SetDtReductionFactor(Real factor) {time_step_reduction_factor=factor;}
+
+void
+RichardNLSdata::ResetCounters()
+{
+    nl_iterations_taken = 0;
+    nl_residual_norm = -1; 
+    //num_consecutive_success = 0;
+    //num_consecutive_failures_1 = 0;
+    //num_consecutive_failures_2 = 0;
+    //num_consecutive_increases = 0;
+    last_chance = false;;
+    prev_abs_err = -1;
+    //first = true;
+}
+
+void
+RichardNLSdata::ResetJacobianCounter()
+{
+    int nlevs = end_level - start_level +1;
+    for (int lev=0; lev<nlevs; ++lev) {
+        ResetJacobianCounter(lev);
+    }
+}
+
+bool
+RichardNLSdata::UpdateJacobian(int lev)
+{
+    bool do_Jacobian_eval = false;
+    num_Jacobian_reuses_remaining[lev]--;
+    if (num_Jacobian_reuses_remaining[lev] <= 0) {
+        do_Jacobian_eval = true;
+        num_Jacobian_reuses_remaining[lev] = max_num_Jacobian_reuse;
+    }
+    return do_Jacobian_eval;
+}
+void
+RichardNLSdata::Build()
+{
+  int nLevs = pm_amr->finestLevel() + 1;
+  velPhase.resize(nLevs);
+  initialState.resize(nLevs,PArrayManage);
+  for (int lev = 0; lev <nLevs; lev++) {
+    BoxArray grids = pm_amr->getLevel(start_level+lev).boxArray();
+    initialState.set(lev,new MultiFab(grids,1,1));
+    velPhase[lev] = dynamic_cast<PorousMedia*>(&pm_amr->getLevel(start_level+lev))->UMac_Curr();
+  }
+
+  Hcoeffs.resize(BL_SPACEDIM);
+  Jacobian.resize(BL_SPACEDIM);
+  for (int dir = 0; dir < BL_SPACEDIM; dir++) 
+    {
+      Hcoeffs[dir].resize(nLevs,PArrayManage);
+      Jacobian[dir].resize(nLevs,PArrayManage);
+      for (int lev = 0; lev < nLevs; lev++) 
+	{
+	  BoxArray grids = BoxArray(pm_amr->getLevel(start_level+lev).boxArray()).surroundingNodes(dir);
+	  Hcoeffs[dir].set(lev, new MultiFab(grids,1,0));
+	  Jacobian[dir].set(lev, new MultiFab(grids,3,0));
+	}
+    }
+  DAlpha.resize(nLevs,PArrayManage);
+  for (int lev = 0; lev <nLevs; lev++) {
+    BoxArray grids = pm_amr->getLevel(start_level+lev).boxArray();
+    DAlpha.set(lev, new MultiFab(grids,1,1)); // Why is this grow cell required/filled?
+  }
+}
+
+bool
+RichardNLSdata::AdjustDt(Real                dt, 
+			 RichardNLSdata::Reason nl_solver_status, 
+			 Real                abs_err, 
+			 Real                rel_err, 
+			 Real&               dt_new) // Note: return bool for whether run should stop
+{
+    dt_new = dt;
+    if (first) {
+        //num_consecutive_increases = 0;
+        //num_consecutive_success = 0;
+        first = false;
+        prev_abs_err = -1;
+    }
+
+    if (nl_solver_status == RICHARD_SUCCESS)
+    {
+        last_chance = false;
+
+        // "success" is when the error is reduced using small number of iters
+        // In this case, increment counter for this event, reset "increase" counter
+        // If this keeps happening, increase dt and reset the counter for these events
+        //  (when we do, if the problem was  particularly easy, increase dt dramatically)
+        if (nl_iterations_taken < min_nl_iterations_for_dt && 
+            (prev_abs_err <= 0  ||   prev_abs_err > abs_err) ) {
+            
+            num_consecutive_success++;
+            num_consecutive_increases = 0;
+            
+            if (num_consecutive_success >= max_num_consecutive_success)
+            {
+                num_consecutive_success = 0;
+                Real fac = time_step_increase_factor;
+                if (nl_iterations_taken < min_nl_iterations_for_dt_2) {
+                    fac = time_step_increase_factor_2;
+                }
+                dt_new = dt * fac;
+            }
+        }
+
+        // "increase" is when the error grows and used large number of iters
+        // In this case, increment counter for this event, guarantee recalc of J, and reset "success" counter
+        // If this keeps happening, reduce dt and reset the counter for these events
+        if (nl_iterations_taken > max_nl_iterations_for_dt && 
+            (prev_abs_err <= 0  ||   prev_abs_err < abs_err) )
+        {
+            ResetJacobianCounter();
+            num_consecutive_increases++;
+            num_consecutive_success = 0;        
+        
+            if (nl_iterations_taken > max_nl_iterations_for_dt)
+            {
+                ResetJacobianCounter();
+                dt_new = dt * time_step_reduction_factor;
+            }
+        }
+
+        num_consecutive_failures_1 = 0;
+        num_consecutive_failures_2 = 0;
+        prev_abs_err = abs_err;
+
+    }
+    else {
+
+        // step was rejected
+        num_consecutive_failures_1++;
+
+        if (num_consecutive_failures_1 <= max_num_consecutive_failures_1)
+        {
+            dt_new = dt * time_step_retry_factor;
+#if 0
+            // If the last increase was immediately undone, cut back on the dt adjustment knobs...
+            //  FIXME: needs more tweaking
+            if (num_consecutive_success == 0) {
+                time_step_increase_factor = 0.5*(1 + time_step_increase_factor);
+                time_step_retry_factor = 0.5*(1 + time_step_retry_factor);
+            }
+#endif
+        }
+        else
+        {
+            num_consecutive_failures_2++;
+
+            if (num_consecutive_failures_2 <= max_num_consecutive_failures_2)
+            {
+                dt_new = dt * time_step_retry_factor_2;
+            }
+            else
+            {
+                if (last_chance)  return false;
+                dt_new = dt * time_step_retry_factor_f;
+                last_chance = true;
+            }
+        }
+
+        num_consecutive_success = 0;
+        ResetJacobianCounter();
+    }
+
+    return true;
+}
+
+bool
+RichardNLSdata::AdjustDt(Real                dt, 
+			 RichardNLSdata::Reason nl_solver_status, 
+			 Real&               dt_new) // Note: return bool for whether run should stop
+{
+    dt_new = dt;
+    if (nl_solver_status == RICHARD_SUCCESS)
+    {
+        last_chance = false;
+
+        // "success" is when the error is reduced using small number of iters
+        // In this case, increment counter for this event, reset "increase" counter
+        // If this keeps happening, increase dt and reset the counter for these events
+        //  (when we do, if the problem was  particularly easy, increase dt dramatically)
+        if (nl_iterations_taken < min_nl_iterations_for_dt ) {
+            
+            num_consecutive_success++;
+            num_consecutive_increases = 0;
+            
+            if (num_consecutive_success >= max_num_consecutive_success)
+            {
+                num_consecutive_success = 0;
+                Real fac = time_step_increase_factor;
+                if (nl_iterations_taken < min_nl_iterations_for_dt_2) {
+                    fac = time_step_increase_factor_2;
+                }
+                dt_new = dt * fac;
+            }
+        }
+
+        // "increase" is when large number of iters
+        // In this case, increment counter for this event, guarantee recalc of J, 
+	// and reset "success" counter
+        // If this keeps happening, reduce dt and reset the counter for these events
+        if (nl_iterations_taken > max_nl_iterations_for_dt  )
+        {
+            ResetJacobianCounter();
+            num_consecutive_increases++;
+            num_consecutive_success = 0;        
+        
+            if (nl_iterations_taken > max_nl_iterations_for_dt)
+            {
+                ResetJacobianCounter();
+                dt_new = dt * time_step_reduction_factor;
+            }
+        }
+
+        num_consecutive_failures_1 = 0;
+        num_consecutive_failures_2 = 0;
+
+    }
+    else {
+
+        // step was rejected
+        num_consecutive_failures_1++;
+
+        if (num_consecutive_failures_1 <= max_num_consecutive_failures_1)
+        {
+            dt_new = dt * time_step_retry_factor;
+#if 0
+            // If the last increase was immediately undone, cut back on the dt adjustment knobs...
+            //  FIXME: needs more tweaking
+            if (num_consecutive_success == 0) {
+                time_step_increase_factor = 0.5*(1 + time_step_increase_factor);
+                time_step_retry_factor = 0.5*(1 + time_step_retry_factor);
+            }
+#endif
+        }
+        else
+        {
+            num_consecutive_failures_2++;
+
+            if (num_consecutive_failures_2 <= max_num_consecutive_failures_2)
+            {
+                dt_new = dt * time_step_retry_factor_2;
+            }
+            else
+            {
+                if (last_chance)  return false;
+                dt_new = dt * time_step_retry_factor_f;
+                last_chance = true;
+            }
+        }
+
+        num_consecutive_success = 0;
+        ResetJacobianCounter();
+    }
+
+    return true;
+}
+
+RichardNLSdata
+PorousMedia::BuildInitNLS()
+{
+    int nlevs = parent->finestLevel() - level + 1;
+    PMAmr* pm_amr = dynamic_cast<PMAmr*>(parent);
+    if (!pm_amr)
+      BoxLib::Abort("Bad cast in PorousMedia::BuildInitNLS");
+    RichardNLSdata nld(0,nlevs,pm_amr);
+    nld.SetMaxJacobianReuse(0); // Currently switched off because it didnt seem to buy anything
+    
+    nld.SetMaxConsecutiveFails(steady_max_consecutive_failures_1);
+    nld.SetDtRetryFactor(steady_time_step_retry_factor_1);
+    
+    nld.SetMaxConsecutiveFails2(steady_max_consecutive_failures_2);
+    nld.SetDtRetryFactor2(steady_time_step_retry_factor_2);
+    nld.SetDtRetryFactorF(steady_time_step_retry_factor_f);
+    
+    nld.SetMinNewtonIterationsForDt(steady_min_iterations);
+    nld.SetDtIncreaseFactor(steady_time_step_increase_factor);
+    nld.SetMinNewtonIterationsForDt2(steady_min_iterations_2);
+    nld.SetDtIncreaseFactor2(steady_time_step_increase_factor_2);
+    
+    nld.SetMaxNewtonIterationsForDt(steady_max_iterations);
+    nld.SetDtReductionFactor(steady_time_step_reduction_factor);
+    
+    nld.SetMaxNewtonIterations(steady_limit_iterations);
+    
+    nld.SetMaxConsecutiveErrIncrease(steady_max_num_consecutive_increases);
+    nld.SetConsecutiveErrIncreaseDtReduction(steady_consecutive_increase_reduction_factor);
+    
+    nld.SetMaxConsecutiveSuccess(steady_max_num_consecutive_success);
+    return nld;
+}
+
+#include <RichardSolver.H>
 
 void
 PorousMedia::richard_init_to_steady()
@@ -1137,8 +1679,9 @@ PorousMedia::richard_init_to_steady()
     //
     if (model == model_list["richard"])
     {
+        std::string tag = "Richard Init-to-Steady";
         if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-            std::cout << "Richard Init-to-Steady..." << std::endl;
+            std::cout << tag << std::endl;
         }        
 
         bool do_brute_force = false;
@@ -1149,133 +1692,237 @@ PorousMedia::richard_init_to_steady()
                 richard_eqb_update(u_mac_curr);
             else
             {
-                int num_consecutive_failures_1 = 0;
-                int num_consecutive_failures_2 = 0;
-                int num_consecutive_increases = 0;
-                int num_consecutive_success = 0;
-                bool last_chance = false;
-
-                Real dt = steady_initial_time_step;
-                MultiFab tmp(grids,1,0);
-                MultiFab& S_new = get_new_data(State_Type);
-
-                PorousMedia::Reason ret = RICHARD_SUCCESS;
-                Real total_psuedo_time = 0;
-                Real prev_err, err = 1.0;
-                int k = 0;
-                while (err > steady_tolerance && 
-                       k < steady_maximum_time_steps &&
-                       ret == RICHARD_SUCCESS)
+                int old_richard_solver_verbose = richard_solver_verbose;
+		richard_solver_verbose = richard_init_to_steady_verbose;
+		initial_iter = 1;
+                
+                Real cur_time = state[State_Type].curTime();
+                int  finest_level = parent->finestLevel();
+                Array<Real> dt_save(finest_level+1);
+                Array<int> nc_save(finest_level+1);
+                int  n_factor;
+                for (int k = 0; k <= finest_level; k++)
                 {
-                    k++;
-                    MultiFab::Copy(tmp,S_new,0,0,1,0);
-                    tmp.mult(-1.0);
-                    int curr_nwt_iter = steady_limit_iterations;
-                    ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+                    nc_save[k] = parent->nCycle(k);
+                    dt_save[k] = parent->dtLevel()[k];
+                    dt_save[k] = parent->getLevel(k).get_state_data(0).curTime()
+                        - getLevel(k).get_state_data(0).prevTime();
+                }
 
-                    if (ret == RICHARD_SUCCESS)
+                Real dt_init = steady_init_time_step;
+                Real t_max = steady_max_psuedo_time;
+                int k_max = steady_max_time_steps;
+                Real t_eps = 1.e-8*dt_init;
+
+                MultiFab tmp(grids,1,1);
+                MultiFab tmpP(grids,1,1);
+                int nc = 0; // Component of water in state
+
+                Real prev_abs_err, init_abs_err;
+                Real rel_err = -1;
+                Real abs_err = -1;
+
+                Real dt = dt_init;
+                Real t = 0;
+                bool first = true;
+                int k = 0;
+                bool solved = false;
+                bool continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
+
+                RichardNLSdata::Reason ret;
+                RichardNLSdata nld = BuildInitNLS();
+
+		RichardSolver* rs = 0;
+                if (use_PETSc_snes) {
+                    rs = new RichardSolver(*(PMParent()));
+                }
+
+                bool die_if_timestep_fails = true;
+                
+                int total_num_Newton_iterations = 0;
+                int total_rejected_Newton_steps = 0;
+                while (continue_iterations)
+                {
+		  for (int lev=0;lev<= finest_level;lev++)
+		    {
+		      PorousMedia& pm = getLevel(lev);
+		      for (int i = 0; i < num_state_type; i++)
+			{
+			  pm.state[i].allocOldData();
+			  pm.state[i].swapTimeLevels(dt);
+			  MultiFab& od = pm.get_old_data(i);
+			  MultiFab& nd = pm.get_new_data(i);
+			  MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next time step
+			}
+		    }
+
+		  if (use_PETSc_snes) {
+		    rs->ResetRhoSat();
+		  }
+
+		  MultiFab& S_new = get_new_data(State_Type);
+		  MultiFab::Copy(tmp,S_new,nc,0,1,0);
+		  tmp.mult(-1.0);
+
+		  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+                        std::cout << tag << "  t=" << t 
+                                  << ", n=" << k << ", dt=" << dt << '\n';
+                    }
+
+                    if (do_multilevel_full) {
+                        nld.ResetCounters();
+                        nld.ResetJacobianCounter();	// Save the initial state 
+			for (int lev=0;lev<= finest_level;lev++)
+			  {
+			    PorousMedia&    fine_lev   = getLevel(lev);
+			    if (do_richard_sat_solve)
+			      {
+				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+				//MultiFab& S_lev = fine_lev.get_old_data(State_Type);
+				MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
+			      }
+			    else
+			      {
+				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+                                //MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
+				MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
+			      }
+			  }
+			if (use_PETSc_snes) 
+			  {
+			    ret = richard_PETSc_pressure_solve(dt,*rs,nld);
+			  }
+			else
+			  {
+			    ret = richard_composite_update(dt,nld);
+			  }
+			total_num_Newton_iterations += nld.NLIterationsTaken();
+                    }
+                    else {
+                        int curr_nwt_iter = steady_limit_iterations;
+                        ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+                        total_num_Newton_iterations += curr_nwt_iter;
+                    }
+
+                    if (ret == RichardNLSdata::RICHARD_SUCCESS)
                     {
-                        total_psuedo_time += dt;
-                        MultiFab::Add(tmp,S_new,0,0,1,0);
-                        prev_err = err;
-                        err = tmp.norm2(0)/S_new.norm2(0);
-                        if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                            std::cout << "   (iter,dt,#Newt,err): "
-                                      << k << " " << dt << " " 
-                                      << curr_nwt_iter << " " << err << std::endl;
-                        }
-                        num_consecutive_failures_1 = 0;
-                        num_consecutive_failures_2 = 0;
-                        last_chance = false;
-
-                        if (err > prev_err) {
-                            num_consecutive_increases++;
-                            num_consecutive_success = 0;
+                        prev_abs_err = abs_err;
+                        MultiFab::Add(tmp,S_new,nc,0,1,0);
+                        abs_err = tmp.norm2(0);
+                        if (first){
+                            init_abs_err = abs_err;
+                            first = false;
                         }
                         else {
-                            num_consecutive_success++;
-                            num_consecutive_increases = 0;
-                        }
-                        
-                        if (num_consecutive_increases > max_num_consecutive_increases) {
-                            dt *= consecutive_increase_reduction_factor;
-                        }
-                        else {
-
-                            if (num_consecutive_success > max_num_consecutive_success
-                                && curr_nwt_iter < steady_min_iterations ) {
-                                dt *= steady_extra_time_step_increase_factor;
-                                num_consecutive_success = 0;
-                            }
-                            else {
-                                if (curr_nwt_iter < steady_min_iterations && prev_err < err) {
-                                    dt *= steady_time_step_increase_factor;
-                                }
-                                else if (curr_nwt_iter > steady_max_iterations ) {
-                                    dt *= steady_time_step_reduction_factor;
-                                }
-                            }
+                            rel_err = abs_err / init_abs_err;
                         }
                     }
                     else {
 
-                        num_consecutive_success = 0;
-
-                        if (last_chance) {
-                            BoxLib::Abort("Too many Newton failures, giving up");
+                        if (die_if_timestep_fails)
+                        {
+                            BoxLib::Abort("Aborting as instructed when timestep fails");
                         }
-                        else {
-                            num_consecutive_failures_1++;
-                            MultiFab::Copy(S_new,tmp,0,0,1,0);
-                            
-                            if (num_consecutive_failures_1 < max_consecutive_failures_1) {
-                                dt *= steady_time_step_retry_factor_1;
-                                if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                    std::cout << "    Newton failed, scaling dt by " << steady_time_step_retry_factor_1
-                                              << " and retrying" << std::endl;
+
+                        total_rejected_Newton_steps++;
+			for (int lev=0;lev<= finest_level;lev++)
+			  {
+			    PorousMedia&    fine_lev   = getLevel(lev);
+			    if (do_richard_sat_solve)
+			      {
+				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+				MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
+			      }
+			    else
+			      {
+				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+				MultiFab::Copy(P_lev,nld.initialState[lev],0,0,1,1);
+			      }
+			  }
+                    }
+
+                    Real dt_new;
+                    bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
+
+                    if (ret == RichardNLSdata::RICHARD_SUCCESS)
+                    {
+                        k++;
+                        t += dt;
+                        solved = ((abs_err <= steady_tolerance) || ((rel_err>0)  && (rel_err <= steady_tolerance)) );
+                        continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
+                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
+                            std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken();
+                            if ( std::abs(dt - dt_new) > t_eps) {
+                                std::cout << "   dt factor = " << dt_new / dt;
+                            }
+                            std::cout << std::endl;
+                        }
+                    }
+                    else 
+                    {
+                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
+                            std::cout << tag << "   Step failed ";
+                            if (ret==RichardNLSdata::RICHARD_NONLINEAR_FAIL) {
+                                std::cout << "(NL failure)";
                             }
                             else {
-                                num_consecutive_failures_2++;
-
-                                if (num_consecutive_failures_2 < max_consecutive_failures_2) {
-                                    dt *= steady_time_step_retry_factor_2;
-                                    if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                        std::cout << "    Newton failed again, scaling dt by "
-                                                  << steady_time_step_retry_factor_2
-                                                  << " and retrying" << std::endl;
-                                }
-                                else {
-                                    
-                                    if (! last_chance) {
-                                        last_chance = true;
-                                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor())
-                                            std::cout << "    Newton failed again, scaling dt by "
-                                                      << steady_time_step_retry_factor_f
-                                                      << " and retrying one last time..." << std::endl;
-                                    }
-                                }
+                                std::cout << "(L failure) ";
                             }
+
+                            if ( std::abs(dt - dt_new) > t_eps) {
+                                std::cout << "   dt factor = " << dt_new / dt;
+                            }
+                            std::cout << std::endl;
                         }
                     }
 
-                    if (richard_init_to_steady_verbose>1 &&  ParallelDescriptor::IOProcessor()) {
-                        std::cout << "    Iteration status: " << std::endl;
-                        std::cout << "      num_consecutive_success: " << num_consecutive_success << std::endl;
-                        std::cout << "      num_consecutive_failures_1: " << num_consecutive_failures_1 << std::endl;
-                        std::cout << "      num_consecutive_failures_2: " << num_consecutive_failures_2 << std::endl;
-                        std::cout << "      last_chance: " << last_chance << std::endl;
-                        std::cout << "      num_consecutive_increases: " << num_consecutive_increases << std::endl;
+                    dt = std::min(dt_new, t_max-t);
+                }
+
+                delete rs;
+                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+                    std::cout << tag << " Total psuedo-time advanced: " << t << " in " << k << " steps" << std::endl;
+                    std::cout << tag << "      Newton iters: " << total_num_Newton_iterations << std::endl;
+                    std::cout << tag << "      Rejected steps: " << total_rejected_Newton_steps << std::endl;
+                }
+
+                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+                    if (solved) {
+                        std::cout << tag << " Success!  Steady solution found" << std::endl;
+                    }
+                    else {
+                        std::cout << tag << " Warning: solution is not steady.  Continuing..." << std::endl;
                     }
                 }
-                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                    std::cout << "Total psuedo-time to steady: " << total_psuedo_time << std::endl;
+
+                richard_solver_verbose = old_richard_solver_verbose;
+		initial_iter = 0;
+
+                //
+                // Re-instate timestep.
+                //		
+		PMParent()->set_cumTime(t_max);
+		cur_time = t_max;
+                parent->setDtLevel(dt_save);
+                parent->setNCycle(nc_save);
+                for (int k = 0; k <= finest_level; k++)
+                {
+		  getLevel(k).setTimeLevel(cur_time,dt_save[k],dt_save[k]);
                 }
+
+                // Fix up pressure field
+                FillStateBndry(cur_time,State_Type,0,ncomps);
+                calcCapillary(cur_time);
+                MultiFab& P_new = get_new_data(Press_Type);
+                MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
+                P_new.mult(-1.0,1);
+                calcLambda(cur_time);
+                compute_vel_phase(u_mac_curr,0,cur_time);
             }
         }
     }
 #endif
 }
-
 
 //
 // Fills a new level n with best level n and coarser data available.
@@ -1358,7 +2005,7 @@ PorousMedia::init (AmrLevel& old)
     }
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       MultiFab& FC_new  = get_new_data(FuncCount_Type); 
       
@@ -1409,13 +2056,23 @@ PorousMedia::init ()
   //
   // Get best coarse state, pressure and velocity data.
   //
-  FillCoarsePatch(S_new,0,cur_time,State_Type,0,NUM_SCALARS);
+  FillCoarsePatch(S_new,0,cur_time,State_Type,0,ncomps);
+  if (ntracers>0) {
+      if (do_tracer_transport) {
+          FillCoarsePatch(S_new,0,cur_time,State_Type,ncomps,ntracers);
+      }
+      else {
+          // FIXME
+          // If !do_tracer_transport, we dont have the bc descriptors, so we punt
+          S_new.setVal(0.0,ncomps,ntracers);
+      }
+  }
   FillCoarsePatch(P_new,0,cur_time,Press_Type,0,1);
   FillCoarsePatch(U_new,0,cur_time,  Vel_Type,0,BL_SPACEDIM);
   U_cor.setVal(0.);
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       FillCoarsePatch(get_new_data(FuncCount_Type),0,cur_time,FuncCount_Type,0,1);
     }
@@ -1518,8 +2175,10 @@ PorousMedia::advance_setup (Real time,
   //
   for (int k = 0; k < num_state_type; k++)
     {
-      state[k].allocOldData();
-      state[k].swapTimeLevels(dt);
+        if (k!=FuncCount_Type && k!=Aux_Chem_Type) {
+            state[k].allocOldData();
+            state[k].swapTimeLevels(dt);
+        }
     }
   //
   // Alloc MultiFab to hold advective update terms.
@@ -1527,78 +2186,80 @@ PorousMedia::advance_setup (Real time,
   BL_ASSERT(aofs == 0);
   aofs = new MultiFab(grids,NUM_SCALARS,0);
   
-  //
-  // Compute lambda at cell centers
-  //
-  if (model != model_list["single-phase"] || 
-      model != model_list["single-phase-solid"]) 
-    {
-      calcLambda(time); 
+  if (model != model_list["steady-saturated"]) {
+    //
+    // Compute lambda at cell centers
+    //
+    if (model != model_list["single-phase"] || 
+	model != model_list["single-phase-solid"]) 
+      {
+	calcLambda(time); 
 #ifdef MG_USE_FBOXLIB
-      if (model != model_list["richard"])
+	if (model != model_list["richard"])
 #endif
-	calcDLambda(time);
-      MultiFab::Copy(*lambdap1_cc,*lambda_cc,0,0,ncomps,1);
-    }
-  //
-  // Compute diffusion coefficients
-  //
-  if (variable_scal_diff)
-    {
-      calcDiffusivity(time,0,ncomps);
-      MultiFab::Copy(*diffnp1_cc,*diffn_cc,0,0,ndiff,1);
-    }
-  //
-  // Compute capillary diffusive coefficients
-  //
-  if (have_capillary)
-    {
-      calcCapillary(time);
-      MultiFab::Copy(*pcnp1_cc,*pcn_cc,0,0,1,(*pcnp1_cc).nGrow());
-    }  
-  //
-  // If we are not doing a full advection scheme, u_mac_curr 
-  // must be recomputed if grid has changed after a timestep.
-  //
+	  calcDLambda(time);
+	MultiFab::Copy(*lambdap1_cc,*lambda_cc,0,0,ncomps,1);
+      }
+    //
+    // Compute diffusion coefficients
+    //
+    if (variable_scal_diff)
+      {
+	calcDiffusivity(time,0,ncomps);
+	MultiFab::Copy(*diffnp1_cc,*diffn_cc,0,0,ndiff,1);
+      }
+    //
+    // Compute capillary diffusive coefficients
+    //
+    if (have_capillary)
+      {
+	calcCapillary(time);
+	MultiFab::Copy(*pcnp1_cc,*pcn_cc,0,0,1,(*pcnp1_cc).nGrow());
+      }  
+    //
+    // If we are not doing a full advection scheme, u_mac_curr 
+    // must be recomputed if grid has changed after a timestep.
+    //
 #ifdef MG_USE_FBOXLIB
-  if (model != model_list["richard"])
+    if (model != model_list["richard"])
 #endif
-    {
-      if (do_simple == 0 && (full_cycle == 1 || no_corrector == 1))
-	{
-	  if (n_pressure_interval == 0)
+      {
+	if (do_simple == 0 && (full_cycle == 1 || no_corrector == 1))
+	  {
+	    if (n_pressure_interval == 0)
+	      mac_project(u_mac_curr,rhs_RhoD,time);
+	    else
+	      {
+		if (level == 0)   it_pressure += 1;
+		
+		if (it_pressure == n_pressure_interval &&
+		    parent->levelSteps(level)%parent->nCycle(level)==parent->nCycle(level)-1)
+		  {
+		    mac_project(u_mac_curr,rhs_RhoD,time);
+		    if (level == parent->finestLevel()) it_pressure = 0;
+		  }	    
+	      }
+	  }
+	else if (is_grid_changed_after_regrid)
+	  {
 	    mac_project(u_mac_curr,rhs_RhoD,time);
-	  else
-	    {
-	      if (level == 0)   it_pressure += 1;
-	      
-	      if (it_pressure == n_pressure_interval &&
-		  parent->levelSteps(level)%parent->nCycle(level)==parent->nCycle(level)-1)
-		{
-		  mac_project(u_mac_curr,rhs_RhoD,time);
-		  if (level == parent->finestLevel()) it_pressure = 0;
-		}	    
-	    }
-	}
-      else if (is_grid_changed_after_regrid)
-	{
-	  mac_project(u_mac_curr,rhs_RhoD,time);
-	}
-    }
-  //
-  // Alloc MultiFab to hold correction velocity.
-  //
-  if (u_corr == 0)
-    {
-      u_corr = new MultiFab[BL_SPACEDIM];
-      for (int dir = 0; dir < BL_SPACEDIM; dir++)
-	{
-	  BoxArray edge_grids(grids);
-	  edge_grids.surroundingNodes(dir).grow(1);
-	  u_corr[dir].define(edge_grids,1,0,Fab_allocate);
-	  u_corr[dir].setVal(0.);
-	}
-    }
+	  }
+      }
+    //
+    // Alloc MultiFab to hold correction velocity.
+    //
+    if (u_corr == 0)
+      {
+	u_corr = new MultiFab[BL_SPACEDIM];
+	for (int dir = 0; dir < BL_SPACEDIM; dir++)
+	  {
+	    BoxArray edge_grids(grids);
+	    edge_grids.surroundingNodes(dir).grow(1);
+	    u_corr[dir].define(edge_grids,1,0,Fab_allocate);
+	    u_corr[dir].setVal(0.);
+	  }
+      }
+  }
     
   //
   // Swap the time levels of u_mac
@@ -1608,7 +2269,7 @@ PorousMedia::advance_setup (Real time,
   u_mac_prev = dummy;
 
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       aux_boundary_data_old.setVal(1.e30);
     }
@@ -1645,18 +2306,17 @@ PorousMedia::advance (Real time,
                       int  ncycle)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::advance()");
-
   if (do_multilevel_full) 
   {
-    if (level == 0)
-      multilevel_advance(time,dt,iteration,ncycle);
-    else
-      if (verbose>1 && ParallelDescriptor::IOProcessor())
+      if (level == 0)
+          multilevel_advance(time,dt,iteration,ncycle);
+      else
+      if (verbose>2 && ParallelDescriptor::IOProcessor())
 	std::cout << " Doing multilevel solve : skipping level advance.\n";
   }
   else
   {
-    if (verbose > 1 && ParallelDescriptor::IOProcessor())
+    if (verbose > 2 && ParallelDescriptor::IOProcessor())
       {
 	std::cout << "Advancing grids at level " << level
 		  << " : starting time = "       << time
@@ -1684,76 +2344,20 @@ PorousMedia::advance (Real time,
     
     FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
     FillStateBndry (pcTime,Press_Type,0,1);
-    //
-    // If do_chem <= -1, then no reaction.
-    // Otherwise, type of reactions depends on magnitude of do_chem.
-    //
-    if (do_chem > -1)
+
+    if (do_chem>0)
       {
 	if (do_full_strang)
 	  {
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "... advancing 1/2 strang step for chemistry\n";
-	    //
-	    // tmpFABs holds data from aux_boundary_data_old after reaction.
-	    //
-	    // We force it to have same distribution as aux_boundary_data_old.
-	    //
-	    MultiFab tmpFABs;
 	    
-	    BL_ASSERT(aux_boundary_data_old.nComp() == ncomps+ntracers);
-	    
-	    tmpFABs.define(aux_boundary_data_old.equivBoxArray(),
-			   ncomps+ntracers,
-			   0,
-			   aux_boundary_data_old.DistributionMap(),
-			   Fab_allocate);
-	    
-	    tmpFABs.setVal(1.e30);
-	    
-	    const int ngrow = aux_boundary_data_old.nGrow();
-
-	    BoxArray ba(S_old.boxArray());
-
-	    ba.grow(ngrow);
-	    //
-	    // This MF is guaranteed to cover tmpFABs & valid region of S_old.
-	    //
-	    MultiFab tmpS_old(ba,ntracers,0);
-	    //
-	    // Note that S_old & tmpS_old have the same distribution.
-	    //
-	    for (FillPatchIterator fpi(*this,S_old,ngrow,time,State_Type,ncomps,ntracers);
-		 fpi.isValid();
-		 ++fpi)
-	      {
-		tmpS_old[fpi.index()].copy(fpi());
-	      }
-	    
-	    tmpFABs.copy(tmpS_old,0,ncomps,ntracers);
-	    
-	    tmpS_old.clear();
-	    //
-	    // strang_chem() expects ncomps+ntracers but only uses and/or modifies ntracers.
-	    //
-	    strang_chem(tmpFABs,dt/2,ngrow);
-	    //
-	    // Only copy the tracer stuff.
-	    //
-	    aux_boundary_data_old.copyFrom(tmpFABs,ncomps,ncomps,ntracers);
-	    
-	    tmpFABs.clear();
-	    
-	    strang_chem(S_old,dt/2);
-	    
+	    // Old state is chem-advanced in-place.  Hook set to get grow data
+	    //  from squirreled away data rather than via a vanilla fillpatch
+	    strang_chem(time,dt/2,HYP_GROW);
 	    FillPatchedOldState_ok = false;
 	  }
       }
-    // 
-    // do_simple: 2 ==> Only solve the tracer equations; assume steady state.
-    //            1 ==> Only solve the pressure equation at time 0.
-    //            0 ==> Solve the pressure equation at every timestep.
-    //
 
 #ifdef MG_USE_FBOXLIB
     if (model == model_list["richard"]) 
@@ -1763,6 +2367,12 @@ PorousMedia::advance (Real time,
     else
 #endif
       {
+	// 
+	// FIXME: Should we leave this 
+	// do_simple: 2 ==> Only solve the tracer equations; assume steady state.
+	//            1 ==> Only solve the pressure equation at time 0.
+	//            0 ==> Solve the pressure equation at every timestep.
+	//
 	if (do_simple == 2 && !is_grid_changed_after_regrid)
 	  advance_tracer(time,dt);
 	else if (do_simple == 1  && !is_grid_changed_after_regrid)
@@ -1774,24 +2384,24 @@ PorousMedia::advance (Real time,
     is_grid_changed_after_regrid = false;
     
     // second half of the strang splitting
-    if (do_chem > -1)
+    if (do_chem>0)
       {      
 	if (do_full_strang)
 	  {
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "Second 1/2 Strang step of chemistry\n";
 	    
-	    strang_chem(S_new,dt/2.0);
-	    
+	    // New state is chem-advanced in-place.  Fillpatch hook unset
+	    strang_chem(pcTime,dt/2.0,0);
 	    FillPatchedOldState_ok = true;
 	  }
 	else
 	  {
 	    if (n_chem_interval == 0)
 	      {
-		if (verbose && ParallelDescriptor::IOProcessor())
+		if (verbose>2 && ParallelDescriptor::IOProcessor())
 		  std::cout << "... advancing full strang step for chemistry\n";
-		strang_chem(S_new,dt);
+		strang_chem(pcTime,dt,0);
 	      }
 	    else
 	      {
@@ -1805,15 +2415,13 @@ PorousMedia::advance (Real time,
 		    parent->levelSteps(level)%parent->nCycle(level)==parent->nCycle(level)-1 &&
 		    level == parent->finestLevel())
 		  {
-		    if (verbose && ParallelDescriptor::IOProcessor())
+		    if (verbose>2 && ParallelDescriptor::IOProcessor())
 		      std::cout << "... advancing full strang step for chemistry with dt ="
 				<< dt_chem << "\n";
 		    
-		    strang_chem(S_new,dt_chem);
-		    
+		    strang_chem(pcTime,dt_chem,0);
 		    it_chem = 0;
-		    dt_chem = 0;
-		    
+		    dt_chem = 0;		    
 		  }
 	      }
 	  }
@@ -1822,7 +2430,7 @@ PorousMedia::advance (Real time,
     // 
     // Check sum of components
     //
-    if (verbose) check_sum();
+    if (verbose>3) check_sum();
     
     //
     // Clean up after the predicted value at t^n+1.
@@ -1833,7 +2441,6 @@ PorousMedia::advance (Real time,
   // Dummy value : not used for determining time step.
   Real dt_test = 1.e20; 
   return dt_test; 
-
 }
 
 void
@@ -1867,107 +2474,73 @@ PorousMedia::multilevel_advance (Real time,
       MultiFab::Copy(P_new,P_old,0,0,1,P_old.nGrow());
 
       Real pcTime = pm_lev.state[State_Type].curTime();
-      pm_lev.FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
+      int ncomp_fill_bndry = do_tracer_transport ? ncomps+ntracers : ncomps;
+      pm_lev.FillStateBndry (pcTime,State_Type,0,ncomp_fill_bndry);
       pm_lev.FillStateBndry (pcTime,Press_Type,0,1);
 
       if (have_capillary)	pm_lev.calcCapillary(pcTime);
 
     }
     
-    // If do_chem <= -1, then no reaction.
+    // If do_chem==0, then no reaction.
     // Otherwise, type of reactions depends on magnitude of have_corereact.
-    if (do_chem > -1)
+    if (do_chem>0)
       {
 	if (do_full_strang)
 	  {
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "... advancing 1/2 strang step for chemistry\n";
 	    
 	    for (int lev = 0; lev <= parent->finestLevel(); lev++)
 	      {
 		PorousMedia& pm_lev = getLevel(lev);
-		MultiFab&    S_old  = pm_lev.get_old_data(State_Type);
-		
-		//tmpFABs holds data from aux_boundary_data_old after reaction.
-		MultiFab tmpFABs;
-		
-		BL_ASSERT(pm_lev.aux_boundary_data_old.nComp() == ncomps+ntracers);
-		
-		tmpFABs.define(pm_lev.aux_boundary_data_old.equivBoxArray(),
-			       ncomps,0,
-			       pm_lev.aux_boundary_data_old.DistributionMap(),
-			       Fab_allocate);
-		
-		tmpFABs.setVal(1.e30);
-		
-		const int ngrow = pm_lev.aux_boundary_data_old.nGrow();
-		
-		BoxArray ba(S_old.boxArray());
-		
-		ba.grow(ngrow);
-      
-		// This MF is guaranteed to cover tmpFABs & valid region of S_old.
-		MultiFab tmpS_old(ba,ntracers,0);
-      
-		// Note that S_old & tmpS_old have the same distribution.
-		for (FillPatchIterator fpi(pm_lev,S_old,ngrow,time,State_Type,ncomps,ntracers);
-		     fpi.isValid();++fpi) 
-		  tmpS_old[fpi.index()].copy(fpi());
-      
-		tmpFABs.copy(tmpS_old,0,ncomps,ntracers);
-		
-		tmpS_old.clear();
-		
-		pm_lev.strang_chem(tmpFABs,dt/2,ngrow);
-
-		pm_lev.aux_boundary_data_old.copyFrom(tmpFABs,ncomps,ncomps,ntracers);
-   
-		// Activate hook in FillPatch hack to get better data now.
-		FillPatchedOldState_ok = false;
+		pm_lev.strang_chem(time,dt/2,HYP_GROW);
+		// FIXME: Have no code for chem-advancing grow cells
+		//FillPatchedOldState_ok = false;
 	      }
 
-	    if (verbose && ParallelDescriptor::IOProcessor())
+	    if (verbose>2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "PorousMedia::advance(): end of first 1/2 Strang step\n";
 	  }
       }
   }
 #ifdef MG_USE_FBOXLIB
-    if (model == model_list["richard"]) 
-      {
-	advance_multilevel_richard(time,dt);
-      }
+  if (model == model_list["richard"]) 
+    {
+      advance_multilevel_richard(time,dt);
+    }
 #endif
-  
+  if (model == model_list["steady-saturated"])
+    {
+      advance_multilevel_saturated(time,dt);
+    }
   //
   // second half of the strang splitting
   //
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       if (do_full_strang)
 	{
-	  if (verbose && ParallelDescriptor::IOProcessor())
+	  if (verbose>2 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Second 1/2 Strang step of chemistry\n";
 	  
 	  for (int lev = 0; lev <= parent->finestLevel(); lev++)
 	    {
 	      PorousMedia&  pm_lev = getLevel(lev);
-	      MultiFab&     S_new  = pm_lev.get_new_data(State_Type);	      
-	      pm_lev.strang_chem(S_new,dt/2.0);
+	      pm_lev.strang_chem(time+dt,dt/2.0,0);
 	    }
 	}
       else
 	{
 	  if (n_chem_interval == 0)
 	    {
-	      if (verbose && ParallelDescriptor::IOProcessor())
+	      if (verbose>2 && ParallelDescriptor::IOProcessor())
 		std::cout << "... advancing full strang step for chemistry\n";
 	      
 	      for (int lev = 0; lev <= parent->finestLevel(); lev++)
 		{
 		  PorousMedia&  pm_lev = getLevel(lev);
-		  MultiFab&     S_new  = pm_lev.get_new_data(State_Type);
-		  
-		  pm_lev.strang_chem(S_new,dt);
+		  pm_lev.strang_chem(time+dt,dt,0);
 		}
 	    }
 	  else
@@ -1977,24 +2550,21 @@ PorousMedia::multilevel_advance (Real time,
 	      
 	      if (it_chem == n_chem_interval)
 		{
-		  if (verbose && ParallelDescriptor::IOProcessor())
+		  if (verbose>2 && ParallelDescriptor::IOProcessor())
 		    std::cout << "... advancing full strang step for chemistry with dt ="
 			      << dt_chem << "\n";
 		  for (int lev = 0; lev <= parent->finestLevel(); lev++)
 		    {
 		      PorousMedia&  pm_lev = getLevel(lev);
-		      MultiFab&     S_new  = pm_lev.get_new_data(State_Type);
-		  
-		      pm_lev.strang_chem(S_new,dt_chem);
+		      pm_lev.strang_chem(time+dt,dt_chem,0);
 		    }
 		  
 		  it_chem = 0;
 		  dt_chem = 0;
-		  
 		}
 	    }	    
 	}
-
+      
       FillPatchedOldState_ok = true;
     }
 
@@ -2004,12 +2574,12 @@ PorousMedia::multilevel_advance (Real time,
 
     pm_lev.avgDown();
 
-    if (verbose) pm_lev.check_sum();      
+    if (verbose>3) pm_lev.check_sum();      
 
     pm_lev.advance_cleanup(dt,iteration,ncycle);
   }
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>2 && ParallelDescriptor::IOProcessor())
     std::cout << "PorousMedia::advance(): end of multilevel advance\n";
 
 }
@@ -2108,12 +2678,12 @@ PorousMedia::advance_incompressible (Real time,
       // Add the advective and other terms to get scalars at t^{n+1}.
       scalar_update(dt,0,ncomps,corrector);
 
-      if (do_chem > -1)
+      if (do_chem>0)
 	{
 	  if (do_full_strang)
-	    strang_chem(S_new,dt/2.0);
+	    strang_chem(time,dt/2.0,HYP_GROW);
 	}
-
+      
       //
       // Corrector Step
       //    
@@ -2253,12 +2823,26 @@ void
 PorousMedia::advance_richard (Real time,
 			      Real dt)
 {
+  std::string tag = "Richard Time Step: ";
   // 
   // Time stepping for richard's equation
   //
   int curr_nwt_iter = 20;
-  PorousMedia::Reason ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
-  BL_ASSERT(ret == RICHARD_SUCCESS);
+  RichardNLSdata::Reason ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+  if (ParallelDescriptor::IOProcessor())
+    {
+      std::cout << tag;
+      if (ret == RichardNLSdata::RICHARD_LINEAR_FAIL) {
+	std::cout << " - linear solver failure ";
+      }
+      else if ( ret == RichardNLSdata::RICHARD_NONLINEAR_FAIL) {
+	std::cout << tag << " - nonlinear solver failure ";
+      }
+      std::cout << std::endl;
+    }
+
+  BL_ASSERT(ret == RichardNLSdata::RICHARD_SUCCESS);
+
   compute_vel_phase(u_mac_curr,0,time+dt);
     
   if (level == 0) {
@@ -2301,50 +2885,249 @@ PorousMedia::advance_multilevel_richard (Real time,
 {
   // 
   // Time stepping for richard's equation
+  // We will do subcycling if the time step is too big and 
+  // and reset the subsequent time step to the smller one.
   //
-  int curr_nwt_iter;
-  int nlevs = parent->finestLevel() - level + 1;
-  PorousMedia::Reason ret = richard_composite_update(dt,curr_nwt_iter);
-  BL_ASSERT(ret == RICHARD_SUCCESS);
 
-  for (int lev=0; lev<nlevs; lev++)
-    {
-      PorousMedia&    fine_lev   = getLevel(lev);  
-      fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,time+dt);
+  if (level == 0) {
+    int finest_level = parent->finestLevel();
+    int nlevs = finest_level + 1;
+    PMAmr* pm_amr = dynamic_cast<PMAmr*>(parent);
+    if (!pm_amr) 
+      BoxLib::Abort("Bad cast in PorousMedia::advance_multilevel_richard");
+    RichardNLSdata nld(0,nlevs,pm_amr);
+    
+    Real cur_time = time;
+    Array<Real> dt_save(nlevs);
+    Array<int> nc_save(nlevs);
+    int n_factor;
+  
+    for (int k = 0; k <= finest_level; k++)
+      {
+	nc_save[k] = parent->nCycle(k);
+	dt_save[k] = parent->dtLevel()[k];
+	dt_save[k] = parent->getLevel(k).get_state_data(0).curTime()
+	  - getLevel(k).get_state_data(0).prevTime();
+      }
+    
+    Real dt_iter = dt;
+    Real t_max = time+dt;
+    int  k_max = 10;
+    Real t_eps = 1.e-8*dt_iter;
 
-      if (lev == 0) 
-	fine_lev.create_umac_grown(fine_lev.u_mac_curr,
-				   fine_lev.u_macG_trac);
-      else 
-	{
-	  PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-	  fine_lev.GetCrseUmac(u_macG_crse,time);
-	  fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
-				     fine_lev.u_macG_trac); 
-	}
+    Real t = time;
+    int  k = 0;
+    bool continue_subtimestep = (k < k_max) && (t < t_max);
+    bool continue_iterations  = (dt_iter > t_eps);
 
-      fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
-      if (do_tracer_transport && ntracers > 0)
-	{
-	  int ltracer = ncomps+ntracers-1;
-	  fine_lev.tracer_advection(fine_lev.u_macG_trac,dt,ncomps,ltracer,true);
-	}
- 
-      // predict the next time step. 
-      Real dt_nwt = dt; 
-      fine_lev.predictDT(fine_lev.u_macG_trac);
-      std::cout << "RICHARD TIME MULTILEVEL" << richard_time << " " << richard_time_min << std::endl;
-      if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 4 && dt_nwt < richard_max_dt)
-	dt_nwt = dt_nwt*1.1;
-      else if (curr_nwt_iter > 5 )
-	dt_nwt = dt_nwt*0.75;
-      else if (curr_nwt_iter < 2 ) 
-	dt_nwt = dt_nwt*1.1;
-      richard_iter = curr_nwt_iter;
-      dt_eig = std::min(dt_eig,dt_nwt); 
-    }
+    RichardNLSdata::Reason ret;
+    Real dt_new = dt_iter;
+    while(continue_subtimestep) 
+      {
+	// Solve the richard equation for the given time step.  
+	// Try with increasing smaller timestep if it fails.
+	// Save the initial state 
+	for (int lev=0;lev<nlevs;lev++)
+	  {
+	    PorousMedia&    fine_lev   = getLevel(lev);
+	    if (do_richard_sat_solve)
+	      {
+		MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+		MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
+	      }
+	    else
+	      {
+		MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+		MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
+	      }
+	  }
+
+	continue_iterations = true;
+	int iter = 0;
+	int max_iter = 100;
+	while (continue_iterations)
+	  {
+	    nld.ResetCounters();
+	    nld.ResetJacobianCounter();
+	    ret = richard_composite_update(dt_iter,nld);
+	    bool cont = nld.AdjustDt(dt_iter,ret,dt_new); 
+	    if (ret == RichardNLSdata::RICHARD_SUCCESS || dt_new <= t_eps || iter > max_iter)
+	      continue_iterations = false;
+	    else
+	      dt_iter = dt_new;
+
+	    if (verbose > 2 && ParallelDescriptor::IOProcessor())
+	      std::cout << "MULTILEVEL ADVANCE INNER STEP: Iter " << iter++ 
+			<< " Solver Status: " << ret 
+			<< " Time Step: " << dt_iter  << std::endl;
+	  }
+
+	if (ret == RichardNLSdata::RICHARD_SUCCESS) 
+	  {
+	    for (int lev=0; lev<nlevs; lev++)
+	      {
+		PorousMedia&    fine_lev   = getLevel(lev);  
+		fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,t_max);
+		
+		if (lev == 0) 
+		  fine_lev.create_umac_grown(fine_lev.u_mac_curr,
+					     fine_lev.u_macG_trac);
+		else 
+		  {
+		    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+		    fine_lev.GetCrseUmac(u_macG_crse,time);
+		    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
+					 fine_lev.u_macG_trac); 
+		  }
+		fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
+
+		
+		if (do_tracer_transport && ntracers > 0)
+		  {
+		    int ltracer = ncomps+ntracers-1;
+
+		    bool cont_tracer_advection = true;
+		    Real t_tracer = 0.;
+
+		    fine_lev.predictDT(fine_lev.u_macG_trac);
+		    dt_eig = std::min(dt_eig,dt_iter);
+
+
+		    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+		    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+		    MultiFab Stmp(grids,1,1); 
+		    for (int i=ncomps;i<=ltracer;i++)
+		      {
+			MultiFab::Copy(Stmp,S_old,i,0,1,1);
+			MultiFab::Multiply(Stmp,S_old,0,0,1,1);
+			Stmp.divide(S_new,0,1,1);
+			MultiFab::Copy(S_old,Stmp,0,i,1,1);
+		      }
+		    MultiFab::Copy(S_old,S_new,0,0,1,1);
+
+		    while (cont_tracer_advection)
+		      {
+			t_tracer += dt_eig;
+			fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_eig,ncomps,ltracer,true);
+			
+			if (t_tracer < dt_iter)
+			  {
+			    dt_eig = std::min(dt_eig,dt_iter-t_tracer);	
+			    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+			    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+			    MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
+			  }
+			else
+			  cont_tracer_advection = false;
+		      }
+		  }
+	      }
+	  }
+
+	k++;
+	t = t + dt_iter;
+	if (verbose > 2 &&  ParallelDescriptor::IOProcessor())
+	  std::cout << "MULTILEVEL ADVANCE SUBCYCLE: Iter: " << k 
+		    << " Current time: " << t 
+		    << " Current time step: " << dt_iter 
+		    << " Next time step " <<  dt_new << std::endl;
+	
+	dt_iter = std::min(dt_new, t_max - t);
+	continue_subtimestep =  (dt_iter > t_eps) && (k < k_max) && (t < t_max);
+      }
+    dt_eig = dt_new;
+  }
+
 }
 #endif
+
+void
+PorousMedia::advance_multilevel_saturated (Real time,
+					   Real dt)
+{
+  // 
+  // Time stepping for saturated flow with subcycling
+  //
+
+  if (level == 0) {
+    int finest_level = parent->finestLevel();
+    int nlevs = finest_level + 1;
+    
+    Real cur_time = time;
+    Array<Real> dt_save(nlevs);
+    Array<int> nc_save(nlevs);
+    int n_factor;
+  
+    for (int k = 0; k <= finest_level; k++)
+      {
+	nc_save[k] = parent->nCycle(k);
+	dt_save[k] = parent->dtLevel()[k];
+	dt_save[k] = parent->getLevel(k).get_state_data(0).curTime()
+	  - getLevel(k).get_state_data(0).prevTime();
+      }
+
+    // Subcycle each level independently
+    for (int lev=0; lev<nlevs; lev++)
+      {
+	PorousMedia& fine_lev = getLevel(lev);	
+
+	// Set velocity (u_mac_curr) from bc at t+dt
+	fine_lev.set_vel_from_bcs(time+dt,fine_lev.u_mac_curr);
+
+	if (lev == 0) 
+	  fine_lev.create_umac_grown(fine_lev.u_mac_curr,
+				     fine_lev.u_macG_trac);
+	else 
+	  {
+	    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+	    fine_lev.GetCrseUmac(u_macG_crse,time);
+	    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
+				       fine_lev.u_macG_trac); 
+	  }
+	
+	fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
+
+	if (do_tracer_transport && ntracers > 0)
+	  {
+	    int ltracer = ncomps+ntracers-1;
+	    
+	    bool cont_tracer_advection = true;
+	    Real t_tracer = 0.;
+	    
+	    fine_lev.predictDT(fine_lev.u_macG_trac);
+	    dt_eig = std::min(dt_eig,dt);
+	    	    
+	    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+	    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+	    MultiFab Stmp(grids,1,1); 
+	    for (int i=ncomps;i<=ltracer;i++)
+	      {
+		MultiFab::Copy(Stmp,S_old,i,0,1,1);
+		MultiFab::Multiply(Stmp,S_old,0,0,1,1);
+		Stmp.divide(S_new,0,1,1);
+		MultiFab::Copy(S_old,Stmp,0,i,1,1);
+	      }
+	    MultiFab::Copy(S_old,S_new,0,0,1,1);
+	    
+	    while (cont_tracer_advection)
+	      {
+		t_tracer += dt_eig;
+		fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_eig,ncomps,ltracer,true);
+		
+		if (t_tracer < dt)
+		  {
+		    dt_eig = std::min(dt_eig,dt-t_tracer);	
+		    MultiFab& S_new = fine_lev.get_new_data(State_Type);
+		    MultiFab& S_old = fine_lev.get_old_data(State_Type);
+		    MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
+		  }
+		else
+		  cont_tracer_advection = false;
+	      }
+	  }
+      }
+  }
+}
 
 void
 PorousMedia::advance_tracer (Real time,
@@ -2458,7 +3241,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::mac_project()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     std::cout << "... mac_projection at level " << level 
 	      << " at time " << time << '\n';
   
@@ -2560,7 +3343,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
     }
 
   // compute time spend in mac_project()
-  if (verbose > 1)
+  if (verbose > 2)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -2741,7 +3524,7 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
   RhoG.FillBoundary();
 
   FArrayBox inflow;
-  for (OrientationIter oitr; oitr(); ++oitr) {
+  for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
       if (get_inflow_velocity(face,inflow,time)) {
           int shift = ( face.isHigh() ? -1 : +1 );
@@ -2764,7 +3547,7 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
 
 bool
 PorousMedia::get_inflow_velocity(const Orientation& face,
-                                 FArrayBox&         ccBndFab,\
+                                 FArrayBox&         ccBndFab,
                                  Real               time)
 {
     bool ret = false;
@@ -2805,6 +3588,12 @@ PorousMedia::get_inflow_density(const Orientation& face,
 				FArrayBox&         ccBndFab,
 				Real               time)
 {
+  if (model == model_list["steady-saturated"]) {
+    for (int n=0; n<ncomps; ++n) {
+      ccBndFab.setVal(density[n],ccBndFab.box(),n,1);
+    }
+  }
+  else {
     const Real* dx   = geom.CellSize();
     if (face_bc.Type() == "zero_total_velocity") {
         Array<Real> inflow_vel = face_bc(time);
@@ -2839,6 +3628,7 @@ PorousMedia::get_inflow_density(const Orientation& face,
 			     v_ptr, ARLIM(v_lo),ARLIM(v_hi), 
 			     dx, &nc, &gravity);
     }
+  }
 }
 
 
@@ -2962,7 +3752,7 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase, MultiFab* u_mac,
     }
 
   FArrayBox inflow;
-  for (OrientationIter oitr; oitr(); ++oitr) {
+  for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
       if (get_inflow_velocity(face,inflow,time)) {
           int shift = ( face.isHigh() ? -1 : +1 );
@@ -3071,7 +3861,6 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
 #endif
     }
 
-
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
@@ -3106,7 +3895,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::scalar_advection()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
   {
     if (reflux_on_this_call) 
       std::cout << "... advect scalars with contribution to refluxing \n";
@@ -3337,7 +4126,7 @@ PorousMedia::scalar_update (Real      dt,
 			    MultiFab* u_mac)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::scalar_update()");
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     std::cout << "... update scalars\n";
 
   int last_scalar = num_comp-1;
@@ -3400,7 +4189,7 @@ PorousMedia::scalar_advection_update (Real dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (corrector || verbose > 1) check_minmax();
+  if (corrector || verbose > 3) check_minmax();
 }
 
 void
@@ -3449,7 +4238,7 @@ PorousMedia::tracer_advection_update (Real dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (corrector || verbose > 1) check_minmax(first_scalar,last_scalar);
+  if (corrector || verbose > 3) check_minmax(first_scalar,last_scalar);
 }
 
 void
@@ -3461,7 +4250,7 @@ PorousMedia::scalar_diffusion_update (Real dt,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::scalar_diffusion_update()");
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
     std::cout << "... diffuse scalars\n";
 
   BL_ASSERT(model == model_list["single-phase"] || model == model_list["single-phase-solid"]);
@@ -3570,7 +4359,7 @@ PorousMedia::scalar_diffusion_update (Real dt,
   Real pcTime = state[State_Type].curTime();
   FillStateBndry(pcTime,State_Type,0,ncomps);
 
-  if (verbose > 1)
+  if (verbose > 2)
   {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -3582,7 +4371,7 @@ PorousMedia::scalar_diffusion_update (Real dt,
   }
     
   // Write out the min and max of each component of the new state
-  if (corrector && verbose) check_minmax();
+  if (corrector && verbose>3) check_minmax();
     
 }
 
@@ -3682,7 +4471,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 
   BL_ASSERT(do_tracer_transport);
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
   {
     std::cout << "... advect tracers\n";
   }
@@ -3712,11 +4501,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 
   MultiFab* divu_fp = new MultiFab(grids,1,1);
   (*divu_fp).setVal(0.);
-
-  MultiFab& S_new = get_new_data(State_Type); 
-  for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
-    setPhysBoundaryValues(S_new[mfi],State_Type,cur_time,fscalar,fscalar,nscal);
-  }
 
   MultiFab fluxes[BL_SPACEDIM];
   if (reflux_on_this_call && do_reflux && level < parent->finestLevel())
@@ -3918,10 +4702,55 @@ PorousMedia::getFuncCountDM (const BoxArray& bxba, int ngrow)
 
 #if defined(AMANZI)
 static
+void
+TagUnusedGrowCells(MultiFab&    state, 
+		   int          state_idx,
+		   const BCRec& bc,
+		   PorousMedia& pm, 
+		   int          ngrow, 
+		   Real         tagVal,
+		   int          comp,
+		   int          nComp)
+{
+  const BoxArray& ba = state.boxArray();
+  const Geometry& geom = pm.Geom();
+  const Box& domain = geom.Domain();
+  Array<Orientation> Faces;
+  pm.getDirichletFaces(Faces,state_idx,bc);
+
+  BoxList bl_unused;
+  for (int iface = 0; iface < Faces.size(); iface++)
+    {
+      const Orientation& face = Faces[iface];
+      Box bnd = BoxLib::adjCell(domain,face,ngrow);
+      int dir = face.coordDir();
+      for (int d=0; d<BL_SPACEDIM; ++d) 
+	{
+	  bnd.grow(d,ngrow);
+	}
+      bl_unused.join(BoxLib::boxDiff(bnd,BoxLib::adjCell(domain,face,1)));
+    }
+  BoxLib::removeOverlap(bl_unused);
+  BoxArray ba_unused(bl_unused);
+
+  for (MFIter mfi(state); mfi.isValid(); ++mfi) 
+    {
+      FArrayBox& fab = state[mfi];
+      const Box& box = fab.box();
+      std::vector< std::pair<int,Box> > isects = ba_unused.intersections(box);
+      for (int ii = 0, N = isects.size(); ii < N; ii++)
+	{
+	  fab.setVal(tagVal,isects[ii].second,comp,nComp);
+	}
+    }
+}
+
+static
 BoxArray
 ChemistryGrids (const MultiFab& state,
                 const Amr*      parent,
-                int             level)
+                int             level,
+                int             ngrow)
 {
     //
     // Let's chop the grids up a bit.
@@ -3931,6 +4760,11 @@ ChemistryGrids (const MultiFab& state,
     const int NProcs = ParallelDescriptor::NProcs();
 
     BoxArray ba = state.boxArray();
+
+    if (ngrow>0) {
+        BoxList bl = BoxList(ba).accrete(ngrow);
+        ba = BoxArray(BoxLib::removeOverlap(bl));
+    }
 
     bool done = false;
 
@@ -3964,294 +4798,396 @@ ChemistryGrids (const MultiFab& state,
 // ODE-solve for chemistry: cell-by-cell
 //
 void
-PorousMedia::strang_chem (MultiFab&  state,
-			  Real       dt,
-                          int        ngrow)
+PorousMedia::strang_chem (Real time,
+			  Real dt,
+                          int  ngrow)
 {
-    BL_PROFILE(BL_PROFILE_THIS_NAME() + "::strang_chem()");
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::strang_chem()");
+  const Real strt_time = ParallelDescriptor::second();
 
-    const Real strt_time = ParallelDescriptor::second();
+  const TimeLevel whichTime = which_time(State_Type,time);
+  MultiFab& S    = (whichTime == AmrOldTime ? get_old_data(State_Type)     : get_new_data(State_Type));
+  MultiFab& Fcnt = (whichTime == AmrOldTime ? get_old_data(FuncCount_Type) : get_new_data(FuncCount_Type));
+  //MultiFab& Aux  = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type)  : get_new_data(Aux_Chem_Type));
+  MultiFab& Aux  = get_new_data(Aux_Chem_Type);
+
+  // FIXME: Curently have no code to set Aux_Chem_Type data at the physical boundaries, so we just punt
+  ngrow = 0;
 
 #if defined(AMANZI)
-    //
-    // ngrow == 0 -> we're working on the valid region of state.
-    //
-    // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
-    //
-    int tnum = 1;
+  //
+  // ngrow == 0 -> we're working on the valid region of state.
+  //
+  // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
+  //
+  int tnum = 1;
 #ifdef _OPENMP
-    tnum = omp_get_max_threads();
+  tnum = omp_get_max_threads();
 #endif
 
-    BL_ASSERT(state.nComp() >= ncomps+ntracers);
-
-    for (int ithread = 0; ithread < tnum; ithread++)
+  BL_ASSERT(S.nComp() >= ncomps+ntracers);
+  for (int ithread = 0; ithread < tnum; ithread++)
     {
-        BL_ASSERT(components[ithread].mineral_volume_fraction.size() == n_minerals);
-        BL_ASSERT(components[ithread].total.size() == n_total);
-        BL_ASSERT(components[ithread].free_ion.size() == n_total);
-        BL_ASSERT(components[ithread].total_sorbed.size() == n_sorbed);
-        BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
+      BL_ASSERT(components[ithread].mineral_volume_fraction.size() == nminerals);
+      BL_ASSERT(components[ithread].mineral_specific_surface_area.size() == nminerals);
+      BL_ASSERT(components[ithread].total.size() == ntracers);
+      BL_ASSERT(components[ithread].free_ion.size() == ntracers);
+      if (using_sorption) {
+	BL_ASSERT(components[ithread].total_sorbed.size() == ntracers);
+      }
+      if (nsorption_isotherms > 0) {
+	BL_ASSERT(components[ithread].isotherm_kd.size() == ntracers);
+	BL_ASSERT(components[ithread].isotherm_langmuir_b.size() == ntracers);
+	BL_ASSERT(components[ithread].isotherm_freundlich_n.size() == ntracers);
+      }
+      BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
     }
-    //
-    // Assume we are always doing funccount.
-    //
-    BoxArray            ba = ChemistryGrids(state, parent, level);
-    DistributionMapping dm = getFuncCountDM(ba,ngrow);
 
-    if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  //
+  // Assume we are always doing funccount.
+  //
+  BoxArray            ba = ChemistryGrids(S, parent, level, ngrow);
+  DistributionMapping dm = getFuncCountDM(ba,ngrow);
+
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
     {
-        if (ngrow == 0)
-            std::cout << "*** strang_chem: FABs in tmp MF covering valid region: " << ba.size() << std::endl;
-        else
-            std::cout << "*** strang_chem: FABs in tmp MF covering aux_boundary_data_old: " << ba.size() << std::endl;
+      if (ngrow == 0)
+	std::cout << "*** strang_chem: FABs in tmp MF covering valid region: " << ba.size() << std::endl;
+      else
+	std::cout << "*** strang_chem: FABs in tmp MF covering aux_boundary_data_old: " << ba.size() << std::endl;
     }
   
-    MultiFab stateTemp, phiTemp, volTemp, fcnCntTemp;
+  MultiFab stateTemp, phiTemp, volTemp, fcnCntTemp, auxTemp;
 
-    stateTemp.define(ba, state.nComp(), 0, dm, Fab_allocate);
+  stateTemp.define(ba, S.nComp(), 0, dm, Fab_allocate);
+  auxTemp.define(ba, Aux.nComp(), 0, dm, Fab_allocate);
 
-    stateTemp.copy(state,0,0,state.nComp());  // Parallel copy.
+  stateTemp.copy(S,0,0,ncomps+ntracers);  // Parallel copy.
+  auxTemp.copy(Aux,0,0,Aux.nComp());  // Parallel copy.
 
-    phiTemp.define(ba, 1, 0, dm, Fab_allocate);
-
-    if (ngrow == 0)
-    {
-        phiTemp.copy(*rock_phi,0,0,1);
-    }
-    else
-    {
-        BL_ASSERT(rock_phi->nGrow() >= ngrow);
-
-        BoxArray ba(rock_phi->boxArray());
-
-        ba.grow(ngrow);
-
-        MultiFab phiGrow(ba, 1, 0);
-
-        for (MFIter mfi(*rock_phi); mfi.isValid(); ++mfi)
-            phiGrow[mfi].copy((*rock_phi)[mfi],0,0,1);
-
-        phiTemp.copy(phiGrow,0,0,1);  // Parallel copy.
-    }
-    //
-    // This gets set by the chemistry solver.
-    //
-    fcnCntTemp.define(ba, 1, 0, dm, Fab_allocate);
-    //
-    // It's cheaper to just build a new volume than doing a parallel copy
-    // from the existing one.  Additionally this also works when ngrow > 0.
-    //
-    volTemp.define(ba, 1, 0, dm, Fab_allocate);
-    for (MFIter mfi(volTemp); mfi.isValid(); ++mfi)
-        geom.GetVolume(volTemp[mfi], volTemp.boxArray(), mfi.index(), 0);
+  Real tagVal = -1;
+  if (ngrow>0) {
+    for (int n=0; n<ncomps+ntracers; ++n) 
+      {      
+	const BCRec& theBC = AmrLevel::desc_lst[State_Type].getBC(n);
+	TagUnusedGrowCells(S,State_Type,theBC,*this,ngrow,tagVal,n,1);
+      }
+  }
   
-    for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
+  phiTemp.define(ba, 1, 0, dm, Fab_allocate);
+
+  if (ngrow == 0)
     {
-        FArrayBox& fab     = stateTemp[mfi];
-        FArrayBox& phi_fab = phiTemp[mfi];
-        FArrayBox& vol_fab = volTemp[mfi];
-        FArrayBox& fct_fab = fcnCntTemp[mfi];
-        const int* lo      = fab.loVect();
-        const int* hi      = fab.hiVect();
+      phiTemp.copy(*rock_phi,0,0,1);
+    }
+  else
+    {
+      BL_ASSERT(rock_phi->nGrow() >= ngrow);
+      MultiFab phiGrow(BoxArray(rock_phi->boxArray()).grow(ngrow), 1, 0);
+      for (MFIter mfi(*rock_phi); mfi.isValid(); ++mfi)
+	phiGrow[mfi].copy((*rock_phi)[mfi],0,0,1);
+      phiTemp.copy(phiGrow,0,0,1);  // Parallel copy.
+    }
+  //
+  // This gets set by the chemistry solver.
+  //
+  fcnCntTemp.define(ba, 1, 0, dm, Fab_allocate);
+  //
+  // It's cheaper to just build a new volume than doing a parallel copy
+  // from the existing one.  Additionally this also works when ngrow > 0.
+  //
+  volTemp.define(ba, 1, 0, dm, Fab_allocate);
+  for (MFIter mfi(volTemp); mfi.isValid(); ++mfi)
+    geom.GetVolume(volTemp[mfi], volTemp.boxArray(), mfi.index(), 0);
+  
+  // Make some handy indices, do some more checking to be sure all is set up correctly
+  Array<int> guess_comp(ntracers,-1);
+  Array<int> activity_comp(ntracers,-1);
+  Array<int> sorbed_comp(ntracers,-1);
+  Array<int> kd_comp(ntracers,-1);
+  std::map<int,int> freundlich_n_comp;
+  std::map<int,int> langmuir_b_comp;
+  Array<int> volume_fraction_comp(nminerals,-1);
+  Array<int> specific_surface_area_comp(nminerals,-1);
+  int cation_exchange_capacity_comp = -1;
+
+  int nAux = Aux.nComp();
+  for (int i = 0; i < ntracers; ++i) {
+    const std::string& name = tNames[i];
+
+    BL_ASSERT(sorption_isotherm_label_map.find(name)!=sorption_isotherm_label_map.end());
+    guess_comp[i] = solute_chem_label_map[name]["Free_Ion_Guess"];
+    BL_ASSERT(guess_comp[i] >= 0  &&  guess_comp[i] < nAux);
+    //std::cout << "Free Ion Guess for " << name << " in comp: " << guess_comp[i] << std::endl;
+
+    activity_comp[i] = solute_chem_label_map[name]["Activity_Coefficient"];
+    BL_ASSERT(activity_comp[i] >= 0  &&  activity_comp[i] < nAux);
+    //std::cout << "Activity Coefficient for " << name << " in comp: " << activity_comp[i] << std::endl;
+
+    if (using_sorption) {
+      sorbed_comp[i] = solute_chem_label_map[name]["Total_Sorbed"];
+      BL_ASSERT(sorbed_comp[i] >= 0  &&  sorbed_comp[i] < nAux);
+      //std::cout << "Total Sorbed for " << name << " in comp: " << sorbed_comp[i] << std::endl;
+    }
+
+    if (nsorption_isotherms > 0) {
+      kd_comp[i] = sorption_isotherm_label_map[name]["Kd"];
+      //std::cout << "Kd for " << name << " in comp: " << kd_comp[i] << std::endl;
+      BL_ASSERT(kd_comp[i] >= 0  &&  kd_comp[i] < nAux);
+      if (sorption_isotherm_label_map[name].count("Freundlich_n")) {
+          freundlich_n_comp[i] = sorption_isotherm_label_map[name]["Freundlich_n"];
+          BL_ASSERT(freundlich_n_comp[i] >= 0  &&  freundlich_n_comp[i] < nAux);
+          //std::cout << "Freundlich n for " << name << " in comp: " << freundlich_n_comp[i] << std::endl;
+      }
+      else if (sorption_isotherm_label_map[name].count("Langmuir_b")) {
+          langmuir_b_comp[i] = sorption_isotherm_label_map[name]["Langmuir_b"];
+          BL_ASSERT(langmuir_b_comp[i] >= 0  &&  langmuir_b_comp[i] < nAux);
+          //std::cout << "Langmuir b for " << name << " in comp: " << langmuir_b_comp[i] << std::endl;
+      }
+    }
+  }
+
+  for (int i = 0; i < nminerals; ++i) {
+    const std::string& name = minerals[i];
+
+    BL_ASSERT(mineralogy_label_map.find(name)!=mineralogy_label_map.end());
+    volume_fraction_comp[i] = mineralogy_label_map[name]["Volume_Fraction"];
+    BL_ASSERT(volume_fraction_comp[i] >= 0  &&  volume_fraction_comp[i] < nAux);
+    //std::cout << "Volume Fraction for " << name << " in comp: " << volume_fraction_comp[i] << std::endl;
+
+    specific_surface_area_comp[i] = mineralogy_label_map[name]["Specific_Surface_Area"];
+    BL_ASSERT(specific_surface_area_comp[i] >= 0  &&  specific_surface_area_comp[i] < nAux);
+    //std::cout << "Specific Surface Area for " << name << " in comp: " << specific_surface_area_comp[i] << std::endl;
+  }
+
+  if (ncation_exchange > 0) {
+    cation_exchange_capacity_comp = cation_exchange_label_map["Cation_Exchange_Capacity"];
+    BL_ASSERT(cation_exchange_capacity_comp >= 0  &&  cation_exchange_capacity_comp < nAux);      
+    //std::cout << "Cation Exchange Capacity in comp: " << cation_exchange_capacity_comp << std::endl;
+  }
+
+
+//  HACK...should be unnecessary
+  for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi) {
+    setPhysBoundaryValues(stateTemp[mfi],State_Type,time,0,0,ncomps+ntracers);
+  }
+
+
+  // Grab the auxiliary chemistry data
+  for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
+    {
+      FArrayBox& fab     = stateTemp[mfi];
+      FArrayBox& phi_fab = phiTemp[mfi];
+      FArrayBox& vol_fab = volTemp[mfi];
+      FArrayBox& fct_fab = fcnCntTemp[mfi];
+      FArrayBox& aux_fab = auxTemp[mfi];
+      const int* lo      = fab.loVect();
+      const int* hi      = fab.hiVect();
 
 #if (BL_SPACEDIM == 2)
-
-        for (int iy=lo[1]; iy<=hi[1]; iy++)
+      for (int iy=lo[1]; iy<=hi[1]; iy++)
         {
-            int threadid = 0;
+	  int threadid = 0;
+	  amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
+	  amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+	  amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
 
-            amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-	    amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
-            amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
-
-            for (int ix=lo[0]; ix<=hi[0]; ix++)
+	  for (int ix=lo[0]; ix<=hi[0]; ix++)
             {
-
 #elif (BL_SPACEDIM == 3)
-
+      
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic,1) 
 #endif
-        for (int iz = lo[2]; iz<=hi[2]; iz++)
-        {		
-            int threadid = 0;
+      for (int iz = lo[2]; iz<=hi[2]; iz++)
+	{		
+	  int threadid = 0;
 #ifdef _OPENMP
-            threadid = omp_get_thread_num();
+	  threadid = omp_get_thread_num();
 #endif
-            amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-            amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
-            amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
-
-            for (int iy = lo[1]; iy<=hi[1]; iy++)
-            {
-                for (int ix = lo[0]; ix<=hi[0]; ix++)
-                {
+	  amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
+	  amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+	  amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
+	  
+	  for (int iy = lo[1]; iy<=hi[1]; iy++)
+	    {
+	      for (int ix = lo[0]; ix<=hi[0]; ix++)
+		{
 #else
 #error "We only support 2 or 3-D"
 #endif
-                    int idx_minerals = 0, idx_sorbed = 0, idx_total = 0;
+		  int idx_minerals = 0, idx_sorbed = 0, idx_total = 0;
+		  
+		  IntVect iv(D_DECL(ix,iy,iz));
+		  
+		  bool allzero = true;
+		  bool skip_cell = fab(iv,0) < tagVal+0.1;
+		  for (int i = 0; i < ntracers && !skip_cell; ++i)
+		    {
+		      allzero = allzero && (fab(iv, ncomps+i) == 0);
+		    }
+		  skip_cell |= allzero;
+		  
+		  if (!skip_cell) 
+		    {
+		      for (int i = 0; i < ntracers; ++i)
+			{
+			  TheComponent.total[i] = fab(iv,ncomps+i);
+			  TheComponent.free_ion[i] = aux_fab(iv,guess_comp[i]);
 
-                    IntVect iv(D_DECL(ix,iy,iz));
+			  if (using_sorption) {
+			    TheComponent.total_sorbed[i] = aux_fab(iv, sorbed_comp[i]);
+			  }
 
-                    bool allzero = true;
+			  if (nsorption_isotherms > 0) {
+			    TheComponent.isotherm_kd[i] = aux_fab(iv,kd_comp[i]);
+                            if (sorption_isotherm_label_map[tNames[i]].count("Freundlich_n")) {
+                                TheComponent.isotherm_freundlich_n[i] = aux_fab(iv,freundlich_n_comp[i]);
+                            }
+                            else {
+                                TheComponent.isotherm_langmuir_b[i] = aux_fab(iv,langmuir_b_comp[i]);
+                            }
+			  }
+			}
+		      
+		      // FIXME:
+		      //if (ncation_exchange_capacities > 0) {
+		      //TheComponent.cation_exchange_capacity = aux_fab(iv,cation_exchange_capacity_comp);
+		      //}
 
-                    for (int icmp = 0; icmp < ntracers; icmp++)
-                    {
-                        Real               val  = fab(iv,icmp+ncomps);
-                        const std::string& name = qNames[tType[icmp]];
+		      // TODO: loop over minerals
+		      // TODO: loop over surface complexation sites
+		      
+		      TheParameter.porosity   = phi_fab(iv,0);
+		      TheParameter.saturation = std::min(1., std::max(0., fab(iv,0) / density[0]));
+		      TheParameter.volume     = vol_fab(iv,0);
+		      TheParameter.water_density = density[0];
+		      
+		      amanzi::chemistry::Beaker::SolverStatus stat;
+		      
+		      try
+			{
+			  //TheComponent.Display("-- before rxn step: \n");
+			  TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
+			  
+			  stat = TheChemSolve.status();
+			  
+			  fct_fab(iv,0) = use_funccount ? stat.num_rhs_evaluations : 1;
+			}
+		      catch (const amanzi::chemistry::ChemistryException& geochem_error)
+			{
+			  std::cout << iv << " : ";
+			  for (int icmp = 0; icmp < ntracers; icmp++)
+			    std::cout << fab(iv,icmp+ncomps) << ' ';
+			  std::cout << std::endl;
+			  TheComponent.Display("components: ");
+			  BoxLib::Abort(geochem_error.what());	    
+			}
+		      //
+		      // After calculating the change in the tracer species,
+		      // update the state variables.
+		      //
+		      
+		      // loop over the solutes and store the calculated
+		      // values in the appropriate place in the fabs
+		      for (int i = 0; i < ntracers; ++i)
+			{
+			  fab(iv, ncomps+i) = TheComponent.total[i];
+			  aux_fab(iv,guess_comp[i]) = TheComponent.free_ion[i];
+			  if (using_sorption) {
+			    aux_fab(iv,sorbed_comp[i]) = TheComponent.total_sorbed[i];
+			  }
+			  if (nsorption_isotherms) {
+			    aux_fab(iv,kd_comp[i]) = TheComponent.isotherm_kd[i];
+			    aux_fab(iv,freundlich_n_comp[i]) = TheComponent.isotherm_freundlich_n[i];
+			    aux_fab(iv,langmuir_b_comp[i]) = TheComponent.isotherm_langmuir_b[i];
+			  }
+			}
 
-                        allzero = allzero && (val == 0);
+		      // FIXME:
+		      //if (ncation_exchange > 0) {
+		      //  aux_fab(iv,cation_exchange_capacity_comp) = TheComponent.cation_exchange_capacity;
+		      //}
 
-                        if (solid.compare(name) == 0)
-                        {
-                            TheComponent.mineral_volume_fraction[idx_minerals++] = val;
-                        }
-                        else if (absorbed.compare(name) == 0)
-                        {
-                            TheComponent.total_sorbed[idx_sorbed++] = val;
-                        }
-                        else
-                        {
-                            TheComponent.total[idx_total++]= val;
-                        }
-                    }
-
-                    Real sat_tmp = fab(iv,0) / density[0];
-
-                    sat_tmp = std::min(1.e0,sat_tmp);
-                    sat_tmp = std::max(0.e0,sat_tmp);
-
-                    TheParameter.porosity   = phi_fab(iv,0);
-                    TheParameter.saturation = sat_tmp;
-                    TheParameter.volume     = vol_fab(iv,0);
-
-                    if (allzero) continue;
-
-                    amanzi::chemistry::Beaker::SolverStatus stat;
-	  
-                    try
-                    {
-                        TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
-
-                        stat = TheChemSolve.status();
-
-                        fct_fab(iv,0) = use_funccount ? stat.num_rhs_evaluations : 1;
-                    }
-                    catch (const amanzi::chemistry::ChemistryException& geochem_error)
-                    {
-                        std::cout << iv << " : ";
-                        for (int icmp = 0; icmp < ntracers; icmp++)
-                            std::cout << fab(iv,icmp+ncomps) << ' ';
-                        std::cout << std::endl;
-
-                        BoxLib::Abort(geochem_error.what());	    
-                    }
-                    //
-                    // After calculating the change in the tracer species,
-                    // update the state variables.
-                    //
-                    idx_minerals = idx_sorbed = idx_total = 0;
-                    //
-                    //
-                    //
-                    for (int icmp = ncomps; icmp < ncomps+ntracers; icmp++)
-                    {
-                        const std::string& name = qNames[tType[icmp-ncomps]];
-
-                        if (solid.compare(name) == 0)
-                        {
-                            fab(iv,icmp) = TheComponent.mineral_volume_fraction[idx_minerals++];
-                        }
-                        else if (absorbed.compare(name) == 0)
-                        {
-                            fab(iv,icmp) = TheComponent.total_sorbed[idx_sorbed++];
-                        }
-                        else
-                        {
-                            fab(iv,icmp) = TheComponent.total[idx_total++];
-                        }
-                    }		
-                }
-            }
+		      // TODO: loop over minerals, porosity, etc
+		    }
+		}
+	    }
 #if (BL_SPACEDIM == 3)
-          }
-#endif
 	}
-        phiTemp.clear();
-        volTemp.clear();
-
-        state.copy(stateTemp,ncomps,ncomps,ntracers); // Parallel copy.
-
-        stateTemp.clear();
-
-        MultiFab& Fcnt = get_new_data(FuncCount_Type);
-
-        if (ngrow == 0)
-        {
-            Fcnt.copy(fcnCntTemp,0,0,1); // Parallel copy.
-
-            fcnCntTemp.clear();
-
-            state.FillBoundary();
-            Fcnt.FillBoundary();
-
-            geom.FillPeriodicBoundary(state,true);
-            geom.FillPeriodicBoundary(Fcnt,true);
-        }
-        else
-        {
-            //
-            // Can't directly use a parallel copy to update FuncCount_Type.
-            //
-            BoxArray ba = Fcnt.boxArray();
-            ba.grow(ngrow);
-            MultiFab grownFcnt(ba, 1, 0);
-            grownFcnt.setVal(1);
-                
-            for (MFIter mfi(Fcnt); mfi.isValid(); ++mfi)
-                grownFcnt[mfi].copy(Fcnt[mfi]);
-
-            grownFcnt.copy(fcnCntTemp); // Parallel copy.
-
-            fcnCntTemp.clear();
-
-            for (MFIter mfi(grownFcnt); mfi.isValid(); ++mfi)
-                Fcnt[mfi].copy(grownFcnt[mfi]);
-        }
-
-#else /* Not AMANZI */
-
-        if (do_chem == 0)
-        {
-            MultiFab tmp;
-            tmp.define(state.boxArray(),ncomps,0,Fab_allocate);
-            tmp.copy(state,0,0,ncomps);
-
-            for (MFIter mfi(state);mfi.isValid();++mfi)
-            {
-                const int* s_lo  = tmp[mfi].loVect();
-                const int* s_hi  = tmp[mfi].hiVect();
-                const Real* sdat = tmp[mfi].dataPtr();
-
-                if (ncomps == 4) 
-                    FORT_CHEM_DUMMY(sdat,ARLIM(s_lo),ARLIM(s_hi),&dt,&ncomps);
-            }     
-            state.copy(tmp,0,0,ncomps);
-        }
 #endif
-
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-  {
-    const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-    Real      run_time = ParallelDescriptor::second() - strt_time;
-    ParallelDescriptor::ReduceRealMax(run_time,IOProc);
-
-    std::cout << "PorousMedia::strang_chem time: " << run_time << '\n';
-  }
-}
+    }
+    
+  phiTemp.clear();
+  volTemp.clear();
+    
+  S.copy(stateTemp,ncomps,ncomps,ntracers); // Parallel copy, tracers only
+  stateTemp.clear();
+    
+  Aux.copy(auxTemp,0,0,Aux.nComp()); // Parallel copy, everything.
+  auxTemp.clear();
+    
+  if (ngrow == 0)
+    {
+      Fcnt.copy(fcnCntTemp,0,0,1); // Parallel copy.
+      fcnCntTemp.clear();
 	
-
+      S.FillBoundary();
+      Aux.FillBoundary();
+      Fcnt.FillBoundary();
+	
+      geom.FillPeriodicBoundary(S,true);
+      geom.FillPeriodicBoundary(Aux,true);
+      geom.FillPeriodicBoundary(Fcnt,true);
+    }
+  else
+    {
+      //
+      // Can't directly use a parallel copy to update FuncCount_Type.
+      //
+      MultiFab grownFcnt(BoxArray(Fcnt.boxArray()).grow(ngrow), 1, 0);
+      grownFcnt.setVal(1);
+      for (MFIter mfi(Fcnt); mfi.isValid(); ++mfi)
+	grownFcnt[mfi].copy(Fcnt[mfi]);
+	
+      grownFcnt.copy(fcnCntTemp); // Parallel copy.
+      fcnCntTemp.clear();
+	
+      for (MFIter mfi(grownFcnt); mfi.isValid(); ++mfi)
+	Fcnt[mfi].copy(grownFcnt[mfi]);
+    }
+    
+#else /* Not AMANZI */
+    
+  if (do_chem==0)
+    {
+      MultiFab tmp;
+      tmp.define(S.boxArray(),ncomps,0,Fab_allocate);
+      tmp.copy(S,0,0,ncomps);
+	
+      for (MFIter mfi(S);mfi.isValid();++mfi)
+	{
+	  const int* s_lo  = tmp[mfi].loVect();
+	  const int* s_hi  = tmp[mfi].hiVect();
+	  const Real* sdat = tmp[mfi].dataPtr();
+	    
+	  if (ncomps == 4) 
+	    FORT_CHEM_DUMMY(sdat,ARLIM(s_lo),ARLIM(s_hi),&dt,&ncomps);
+	}     
+      S.copy(tmp,0,0,ncomps);
+    }
+#endif
+    
+  if (verbose > 2 && ParallelDescriptor::IOProcessor())
+    {
+      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
+      Real      run_time = ParallelDescriptor::second() - strt_time;
+      ParallelDescriptor::ReduceRealMax(run_time,IOProc);
+	
+      std::cout << "PorousMedia::strang_chem time: " << run_time << '\n';
+    }
+}
+    
 void
 PorousMedia::set_preferred_boundary_values (MultiFab& S,
 					    int       state_index,
@@ -4364,7 +5300,7 @@ PorousMedia::scalar_capillary_update (Real      dt,
 				  0,alpha,cmp_pcnp1,cmp_pcnp1_dp,
 				  pcnp1_cc,S_nwt,&err_nwt);
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
 
@@ -4376,13 +5312,13 @@ PorousMedia::scalar_capillary_update (Real      dt,
       calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
       itr_nwt += 1;
 
-      if (verbose > 1)
+      if (verbose > 3)
 	check_minmax();
     }
     
   diffusion->compute_flux(nc,dt,be_cn_theta,fluxSCnp1,pcnp1_cc,cmp_pcnp1);
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       if (itr_nwt < max_itr_nwt)
 	std::cout << "Newton converged at iteration " << itr_nwt
@@ -4483,7 +5419,7 @@ PorousMedia::scalar_capillary_update (Real      dt,
   diffusion->removeFluxBoxesLevel(fluxSCn);
   diffusion->removeFluxBoxesLevel(fluxSCnp1);
     
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -4497,7 +5433,7 @@ PorousMedia::scalar_capillary_update (Real      dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
 }
 
@@ -4607,7 +5543,7 @@ PorousMedia::diff_capillary_update (Real      dt,
 				  0,alpha,tmp,cmp_pcnp1_dp,
 				  pcnp1_cc,S_nwt,&err_nwt);
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
 
@@ -4619,13 +5555,13 @@ PorousMedia::diff_capillary_update (Real      dt,
       calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
       itr_nwt += 1;
 
-      if (verbose > 1)
+      if (verbose > 3)
 	check_minmax();
     }
 
   diffusion->compute_flux(nc,dt,be_cn_theta,fluxSCnp1,pcnp1_cc,tmp);
     
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       if (itr_nwt < max_itr_nwt)
 	std::cout << "Newton converged at iteration " << itr_nwt
@@ -4716,7 +5652,7 @@ PorousMedia::diff_capillary_update (Real      dt,
   diffusion->removeFluxBoxesLevel(fluxSCn);
   diffusion->removeFluxBoxesLevel(fluxSCnp1);
     
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -4730,7 +5666,7 @@ PorousMedia::diff_capillary_update (Real      dt,
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 }
 
 #ifdef MG_USE_FBOXLIB
@@ -4789,13 +5725,16 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
   P_new.mult(-1.0,1);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind);
+  MultiFab* dalpha=0;
+  bool do_n = true;
+  Real dt=-1;
+  calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_n);
   while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
     {
       diffusion->richard_iter_eqb(nc,gravity,density,res_fix,
 				  cmp_pcp1,cmp_pcp1_dp,
 				  u_mac,do_upwind,&err_nwt);      
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
       scalar_adjust_constraint(0,ncomps-1);
@@ -4806,15 +5745,15 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
       P_new.mult(-1.0,1);
       compute_vel_phase(u_mac,0,pcTime);
       calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-      calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind);
+      calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_n);
       itr_nwt += 1;
 
-      if (verbose > 1)	check_minmax();
+      if (verbose > 3)	check_minmax();
     }
     
   diffusion->compute_flux(nc,1.0,1.0,fluxSC,pcnp1_cc,cmp_pcp1);
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       if (itr_nwt < max_itr_nwt)
 	std::cout << "Newton converged at iteration " << itr_nwt
@@ -4866,7 +5805,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
   diffusion->removeFluxBoxesLevel(fluxSC);
     
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -4882,28 +5821,22 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
 }
 
 //
 // Richard equation: Time-dependent solver.  Only doing a first-order implicit scheme
 //
-PorousMedia::Reason
+RichardNLSdata::Reason
 PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_mac)
-
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_update()");
   BL_ASSERT(have_capillary == 1);
 
   const Real strt_time = ParallelDescriptor::second();
 
-  // Build single component edge-centered array of MultiFabs for fluxes
-  MultiFab** fluxSC;
   const int nGrow = 0;
-  const int nComp = 1;
-  diffusion->allocFluxBoxesLevel(fluxSC,nGrow,nComp);
-
   int nc = 0; 
   MultiFab** cmp_pcp1    = 0;
   MultiFab** cmp_pcp1_dp = 0;
@@ -4946,79 +5879,119 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 
   calcLambda(pcTime);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
 
-  if (do_n)
+  MultiFab* dalpha = 0;
+  if (!do_richard_sat_solve) {
+      dalpha = new MultiFab(grids,1,1,Fab_allocate); // Note: requires a delete
+  }
+  calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
+
+  Diffusion::NewtonStepInfo linear_status;
+  linear_status.success = true;
+  linear_status.max_ls_iterations = richard_max_ls_iterations;
+  linear_status.min_ls_factor = richard_min_ls_factor;
+  linear_status.ls_acceptance_factor = richard_ls_acceptance_factor;
+  linear_status.ls_reduction_factor = richard_ls_reduction_factor;
+  linear_status.monitor_linear_solve = richard_monitor_linear_solve;
+  linear_status.monitor_line_search = richard_monitor_line_search;
+
+  if (do_richard_sat_solve)
     {
       calcCapillary(pcTime);
       MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
       P_new.mult(-1.0,1);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
-	  diffusion->richard_iter(dt,nc,gravity,density,res_fix,
-				  alpha,cmp_pcp1,cmp_pcp1_dp,
-				  u_mac,do_upwind,&err_nwt);    
-    
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration " << itr_nwt 
-		      << " : Error = "       << err_nwt << "\n"; 
-	  if (model != model_list["richard"])
-	    scalar_adjust_constraint(0,ncomps-1);
-	  FillStateBndry(pcTime,State_Type,0,ncomps);
-	  calcCapillary(pcTime);
-	  calcLambda(pcTime);
-	  MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
-	  P_new.mult(-1.0,1);
-	  compute_vel_phase(u_mac,0,pcTime);
-	  calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-	  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
-	  itr_nwt += 1;
-	  if (verbose > 1) check_minmax();
+            itr_nwt++;
+            diffusion->richard_iter(dt,nc,gravity,density,res_fix,
+                                    alpha,cmp_pcp1,cmp_pcp1_dp,
+                                    u_mac,do_upwind,linear_status);
+            
+            err_nwt = linear_status.residual_norm_post_ls;
+
+            if (linear_status.success) {
+                if (richard_solver_verbose>0 && ParallelDescriptor::IOProcessor()) {
+                    std::cout << "     Iteration (n) " << itr_nwt 
+                              << " : Error = "       << err_nwt << " (tol: " << max_err_nwt << ")\n";
+                }
+                if (model != model_list["richard"])
+                    scalar_adjust_constraint(0,ncomps-1);
+                FillStateBndry(pcTime,State_Type,0,ncomps);
+                calcCapillary(pcTime);
+                calcLambda(pcTime);
+                MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
+                P_new.mult(-1.0,1);
+                compute_vel_phase(u_mac,0,pcTime);
+                calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
+                if (verbose > 3) check_minmax();
+            }
 	}
     }
   else
     {
-      MultiFab dalpha(grids,1,1);
-      calc_richard_alpha(&dalpha,pcTime);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
-	{
-	  diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
-				    alpha,&dalpha,cmp_pcp1,cmp_pcp1_dp,
-				    u_mac,do_upwind,&err_nwt);  
-    
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration " << itr_nwt 
-		      << " : Error = "       << err_nwt << "\n"; 
-	  calcInvPressure (S_new,P_new); 
-	  if (model != model_list["richard"])
-	    scalar_adjust_constraint(0,ncomps-1);
-	  calcLambda(pcTime);
-	  compute_vel_phase(u_mac,0,pcTime);
-	  calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
-	  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
-	  calc_richard_alpha(&dalpha,pcTime);
-	  itr_nwt += 1;
+        //MultiFab dalpha(grids,1,1);
+        //calc_richard_alpha(&dalpha,pcTime);
 
-	  if (verbose > 1)  check_minmax();
+      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)  && (linear_status.success)) 
+	{
+            itr_nwt++;
+            diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
+                                      alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
+                                      u_mac,do_upwind,linear_status);
+
+	    err_nwt = linear_status.residual_norm_post_ls;
+
+            if (linear_status.success) {
+                if (richard_solver_verbose>0 && ParallelDescriptor::IOProcessor()) {
+                    std::cout << "     Iteration (p) " << itr_nwt 
+                              << " : Error = "       << err_nwt << " (tol: " << max_err_nwt << ")\n";
+                }
+                calcInvPressure (S_new,P_new); 
+                calcLambda(pcTime);
+                compute_vel_phase(u_mac,0,pcTime);
+                calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
+                //calc_richard_alpha(&dalpha,pcTime);
+                if (verbose > 3)  check_minmax();
+            }
 	}
     }
 
-  if (err_nwt > max_err_nwt) {
-      return RICHARD_NEWTON_FAIL;
+  RichardNLSdata::Reason retVal = RichardNLSdata::RICHARD_SUCCESS;
+  if (!linear_status.success) {
+      retVal = RichardNLSdata::RICHARD_LINEAR_FAIL;
+  }
+  if (itr_nwt >= max_itr_nwt) {
+      retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+          std::cout << "     **************** Newton failed: too many iterations (max = " << max_itr_nwt << '\n'; 
   }
 
-  total_nwt_iter = itr_nwt;
-  diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+  MultiFab** fluxSC;
+  const int nComp = 1;
+  if (retVal == RichardNLSdata::RICHARD_SUCCESS) {
+      diffusion->allocFluxBoxesLevel(fluxSC,nGrow,nComp);
+      diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+  }
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-    {
-      if (itr_nwt < max_itr_nwt)
-	std::cout << "Newton converged at iteration " << itr_nwt
-		  << " with error " << err_nwt << '\n';
-      else
-	std::cout << "Newton failed to converged: termination error is "
-		  <<  err_nwt << '\n'; 
-    }
+  delete alpha;
+  if (!do_richard_sat_solve) {
+      delete dalpha;
+  }
+  diffusion->removeFluxBoxesLevel(cmp_pcp1);
+  diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
+
+  if (retVal != RichardNLSdata::RICHARD_SUCCESS) {
+      return retVal;
+  }
+
+  if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor() && retVal == RichardNLSdata::RICHARD_SUCCESS) {
+      std::cout << "     Newton converged in " << itr_nwt << " iterations (max = "
+                << total_nwt_iter << ") with err: " 
+                << err_nwt << " (tol = " << max_err_nwt << ")\n";
+  }
+  total_nwt_iter = itr_nwt;
   
   //
   // Increment the viscous flux registers
@@ -5055,9 +6028,6 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
       }
   }
       
-  delete alpha;
-  diffusion->removeFluxBoxesLevel(cmp_pcp1);
-  diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
   diffusion->removeFluxBoxesLevel(fluxSC);    
 
  
@@ -5066,7 +6036,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   ParallelDescriptor::ReduceRealMax(richard_time);
   richard_time_min = std::min(richard_time_min,richard_time);
   
-  if (verbose > 1)
+  if (verbose > 3)
     { 
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       ParallelDescriptor::ReduceRealMax(run_time,IOProc);
@@ -5079,17 +6049,18 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
-  return RICHARD_SUCCESS;
+  return retVal;
 }
+
+
 
 //
 // Richard equation: Time-dependent solver.  Only doing a first-order implicit scheme
 //
-PorousMedia::Reason 
-PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
-
+RichardNLSdata::Reason 
+PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_composite_update()");
   BL_ASSERT(have_capillary == 1);
@@ -5099,26 +6070,23 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
   int nlevs = parent->finestLevel() - level + 1;
   int nc = 0;
 
+  Array<MultiFab*>& u_mac_local = nl_data.velPhase;
+  Array < PArray <MultiFab> >& cmp_pcp1 = nl_data.Hcoeffs;
+  Array < PArray <MultiFab> >& cmp_pcp1_dp = nl_data.Jacobian;
+  PArray <MultiFab>& dalpha = nl_data.DAlpha;
+
   // Create a nlevs-level array for the coefficients
   PArray <MultiFab> alpha(nlevs,PArrayManage);
   PArray <MultiFab> res_fix(nlevs,PArrayManage);
-  Array < PArray <MultiFab> > cmp_pcp1(BL_SPACEDIM);
-  Array < PArray <MultiFab> > cmp_pcp1_dp(BL_SPACEDIM);
     
-  for (int dir=0; dir<BL_SPACEDIM; dir++)
-    {
-      cmp_pcp1[dir].resize(nlevs,PArrayManage);
-      cmp_pcp1_dp[dir].resize(nlevs,PArrayManage);
-    }
-
   int do_upwind = 1;
-  int  max_itr_nwt = total_nwt_iter;
-  Real max_err_nwt = 1e-8;
-  int  itr_nwt = 0;
+  int  max_itr_nwt = nl_data.MaxNLIterations();
+  Real max_err_nwt = 1e-6;
   Real err_nwt = 1e10;
   Real pcTime = state[State_Type].curTime();
+
   for (int lev=0; lev<nlevs; lev++)
-    {
+  {
       PorousMedia&    fine_lev   = getLevel(lev);
       const BoxArray& fine_grids = fine_lev.boxArray();      
       MultiFab& S_lev = fine_lev.get_new_data(State_Type);
@@ -5128,57 +6096,56 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
       MultiFab::Copy(alpha[lev],*(fine_lev.rock_phi),0,0,1,1);
 
       res_fix.set(lev,new MultiFab(fine_grids,1,1));
-      MultiFab::Copy(res_fix[lev],S_lev,nc,0,1,0);
+      if (do_richard_sat_solve) {
+	MultiFab::Copy(res_fix[lev],nl_data.initialState[lev],nc,0,1,0);
+      }
+      else {
+	fine_lev.FillStateBndry(pcTime,Press_Type,0,1);
+	fine_lev.calcInvPressure(res_fix[lev],nl_data.initialState[lev]);
+      }
+
       for (MFIter mfi(res_fix[lev]); mfi.isValid(); ++mfi)
 	res_fix[lev][mfi].mult(alpha[lev][mfi],mfi.validbox(),0,0,1);
       res_fix[lev].mult(-1.0);
-      fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,pcTime);
-      fine_lev.calc_richard_velbc(res_fix[lev],fine_lev.u_mac_curr,dt*density[0]);
 
-      MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
-      MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
-      for (int dir=0;dir<BL_SPACEDIM;dir++)
-      {
-	BoxArray ba = fine_grids;
-	ba.surroundingNodes(dir);
-	cmp_pcp1[dir].set(lev, new MultiFab(ba,1,0));
-	cmp_pcp1_dp[dir].set(lev, new MultiFab(ba,3,0));
-	tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
-	tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
-      }
-      
-      fine_lev.calcLambda(pcTime);
+      fine_lev.compute_vel_phase(u_mac_local[lev],0,pcTime);
+      fine_lev.calc_richard_velbc(res_fix[lev],u_mac_local[lev],dt*density[0]);
 
-      fine_lev.calcCapillary(pcTime);
-      
-      
-      fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
-				 fine_lev.u_mac_curr,0,do_upwind,pcTime);
-      fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-				fine_lev.u_mac_curr,pcTime,0,do_upwind,do_n);
-
-      if (do_n) 
+      if (do_richard_sat_solve) 
 	{
-	  fine_lev.calcLambda(pcTime);
+            // FIXME: pulled from above after calcLambda
+	  fine_lev.calcCapillary(pcTime);
+            // FIXME: in the scalar version, this is done inside the do_richard_sat_solve loop below
+            //fine_lev.calcLambda(pcTime);
 	  MultiFab::Copy(P_lev,*(fine_lev.pcnp1_cc),0,0,1,1);
 	  P_lev.mult(-1.0,1);
 	}
-    }
+  }
 
-  if (do_n)
+  Diffusion::NewtonStepInfo linear_status;
+  linear_status.success = true;
+  linear_status.max_ls_iterations = richard_max_ls_iterations;
+  linear_status.min_ls_factor = richard_min_ls_factor;
+  linear_status.ls_acceptance_factor = richard_ls_acceptance_factor;
+  linear_status.ls_reduction_factor = richard_ls_reduction_factor;
+  linear_status.monitor_linear_solve = richard_monitor_linear_solve;
+  linear_status.monitor_line_search = richard_monitor_line_search;
+
+  Real solve_time = 0;
+
+  if (do_richard_sat_solve)
     {
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+        while ((nl_data.NLIterationsTaken() < nl_data.MaxNLIterations()) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
+          nl_data++;
 	  diffusion->richard_composite_iter(dt,nlevs,nc,gravity,density,res_fix,
-					    alpha,cmp_pcp1,cmp_pcp1_dp,
-					    do_upwind,&err_nwt); 
+					    alpha,cmp_pcp1,cmp_pcp1_dp,u_mac_local,
+					    do_upwind,linear_status); 
 
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration (n) " << itr_nwt 
-		      << " : Error = "       << err_nwt << "\n"; 
-	  
+          err_nwt = linear_status.residual_norm_post_ls;
+
 	  for (int lev=0; lev<nlevs; lev++)
-	    {
+          {
 	      PorousMedia&  fine_lev = getLevel(lev);   
 	      MultiFab& P_lev        = fine_lev.get_new_data(Press_Type);
 
@@ -5196,105 +6163,191 @@ PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
 		  tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
 		}
 
-	      fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,pcTime);
+	      fine_lev.compute_vel_phase(u_mac_local[lev],0,pcTime);
 	      fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
-					 fine_lev.u_mac_curr,0,do_upwind,pcTime);
-	      fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-					fine_lev.u_mac_curr,pcTime,0,do_upwind,do_n);
-	    }
-	  
-	  itr_nwt += 1;
-	  
-	  if (verbose > 1) check_minmax();
-	}
+					 u_mac_local[lev],0,do_upwind,pcTime);
+              if (nl_data.UpdateJacobian(lev)) {
+                  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,0,fine_lev.lambdap1_cc,
+                                            u_mac_local[lev],pcTime,dt,0,do_upwind,do_richard_sat_solve);
+              }
+ 	    }
+        }
     }
 
   else
     {
-      PArray <MultiFab> dalpha(nlevs,PArrayManage);
-      for (int lev=0; lev<nlevs; lev++)
+      while ((nl_data.NLIterationsTaken() < nl_data.MaxNLIterations()) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
-	  PorousMedia&    fine_lev   = getLevel(lev);
-	  const BoxArray& fine_grids = fine_lev.boxArray();     
-	  dalpha.set(lev,new MultiFab(fine_grids,1,1));
-	  fine_lev.calc_richard_alpha(&dalpha[lev],pcTime);
-	}
+          nl_data++;
 
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
-	{
+	  bool update_jac = false;
+	  for (int lev=0;lev<nlevs;lev++) update_jac = nl_data.UpdateJacobian(lev) || update_jac;
+	  const Real tmp_time = ParallelDescriptor::second();
 	  diffusion->richard_composite_iter_p(dt,nlevs,nc,gravity,density,res_fix,
-					      alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
-					      do_upwind,&err_nwt); 
+                                              alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
+                                              u_mac_local,update_jac,do_upwind,linear_status); 
+	  solve_time+= ParallelDescriptor::second() - tmp_time;
+          err_nwt = linear_status.residual_norm_post_ls;
 
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration (p) " << itr_nwt 
-		      << " : Error = "       << err_nwt << "\n"; 
-	  
-	  for (int lev=0; lev<nlevs; lev++)
-	    {
-	      PorousMedia&  fine_lev = getLevel(lev);    
-	      MultiFab& S_lev        = fine_lev.get_new_data(State_Type);
-	      MultiFab& P_lev        = fine_lev.get_new_data(Press_Type);
-
-	      fine_lev.calcInvPressure(S_lev,P_lev);
-	      fine_lev.FillStateBndry(pcTime,Press_Type,0,1);
-	      fine_lev.calcLambda(pcTime);
-
-	      MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
-	      MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
-	      for (int dir=0;dir<BL_SPACEDIM;dir++)
-		{
-		  tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
-		  tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
-		}
-
-	      fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,pcTime);
-	      fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
-					 fine_lev.u_mac_curr,0,do_upwind,pcTime);
-	      fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
-					fine_lev.u_mac_curr,pcTime,0,do_upwind,do_n);
-	    }
-	  
-	  itr_nwt += 1;
-	  
-	  if (verbose > 1) check_minmax();
+          if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor()) {
+              std::cout << "  " << nl_data.NLIterationsTaken() << "  Amanzi-S Newton Function norm " << err_nwt << "\n"; 
+          }
 	}
     }
 
-  if (err_nwt > max_err_nwt) {
-      return RICHARD_NEWTON_FAIL;
+  RichardNLSdata::Reason retVal = RichardNLSdata::RICHARD_SUCCESS;
+  if (!linear_status.success) {
+      retVal = RichardNLSdata::RICHARD_LINEAR_FAIL;
+  }
+  if (nl_data.NLIterationsTaken() >= nl_data.MaxNLIterations()) {
+      retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+          std::cout << "     **************** Newton failed: too many iterations (max = "
+                    << nl_data.MaxNLIterations() << ")\n"; 
   }
 
-  total_nwt_iter = itr_nwt;
+  if (retVal != RichardNLSdata::RICHARD_SUCCESS) {
+      return retVal;
+  }
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-    {
-      if (itr_nwt < max_itr_nwt)
-	std::cout << "Newton converged at iteration " << itr_nwt
-		  << " with error " << err_nwt << '\n';
-      else
-	std::cout << "Newton failed to converged: termination error is "
-		  <<  err_nwt << '\n'; 
-    }
-    
-  if (verbose > 1)
-    {
+  if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor() && retVal == RichardNLSdata::RICHARD_SUCCESS) {
+      std::cout << "     Newton converged in " << nl_data.NLIterationsTaken() << " iterations (max = "
+                << nl_data.MaxNLIterations() << ") with err: " 
+                << err_nwt << " (tol = " << max_err_nwt << ")\n";
+  }
+
+
+  Real run_time = ParallelDescriptor::second() - strt_time;
+  richard_time = run_time;
+  ParallelDescriptor::ReduceRealMax(richard_time);
+  ParallelDescriptor::ReduceRealMax(solve_time);
+  richard_time_min = std::min(richard_time_min,richard_time);
+  
+  if (verbose > 3)
+    { 
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-      Real      run_time = ParallelDescriptor::second() - strt_time;
-
       ParallelDescriptor::ReduceRealMax(run_time,IOProc);
+
 
       if (ParallelDescriptor::IOProcessor())
         std::cout << "PorousMedia::richard_update(): time: " 
-		  << run_time << '\n';
+		  << run_time << ' ' << solve_time  << '\n';
     }
   //
   // Write out the min and max of each component of the new state.
   //
-  if (verbose > 1) check_minmax();
+  if (verbose > 3) check_minmax();
 
-  return RICHARD_SUCCESS;
+  return retVal;
 }
+
+#ifdef BL_USE_PETSC
+
+static std::map<int,std::string> PETSc_Reasons;
+static std::string
+GetPETScReason(int flag) 
+{
+  PETSc_Reasons[2] = "SNES_CONVERGED_FNORM_ABS     ";
+  PETSc_Reasons[3] = "SNES_CONVERGED_FNORM_RELATIVE"; // ||F|| < atol 
+  PETSc_Reasons[4] = "SNES_CONVERGED_SNORM_RELATIVE"; // Newton computed step size small; || delta x || < stol 
+  PETSc_Reasons[5] = "SNES_CONVERGED_ITS           "; // maximum iterations reached 
+  PETSc_Reasons[7] = "SNES_CONVERGED_TR_DELTA      ";
+  PETSc_Reasons[-1] = "SNES_DIVERGED_FUNCTION_DOMAIN"; // the new x location passed the function is not in the domain of F
+  PETSc_Reasons[-2] = "SNES_DIVERGED_FUNCTION_COUNT ";
+  PETSc_Reasons[-3] = "SNES_DIVERGED_LINEAR_SOLVE   "; // the linear solve failed
+  PETSc_Reasons[-4] = "SNES_DIVERGED_FNORM_NAN      ";
+  PETSc_Reasons[-5] = "SNES_DIVERGED_MAX_IT         ";
+  PETSc_Reasons[-6] = "SNES_DIVERGED_LINE_SEARCH    "; // the line search failed 
+  PETSc_Reasons[-7] = "SNES_DIVERGED_INNER          "; // inner solve failed
+  PETSc_Reasons[-8] = "SNES_DIVERGED_LOCAL_MIN      "; // || J^T b || is small, implies converged to local minimum of F()
+  PETSc_Reasons[0]  = "SNES_CONVERGED_ITERATING     ";
+  if (PETSc_Reasons.find(flag)==PETSc_Reasons.end()) {
+    BoxLib::Abort("Unknown PETSc return flag");
+  }
+  return PETSc_Reasons[flag];
+}
+
+RichardNLSdata::Reason
+PorousMedia::richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNLSdata& nl_data)
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_composite_update()");
+  BL_ASSERT(have_capillary == 1);
+
+  int  maxit = nl_data.MaxNLIterations();
+  int maxf = 10000;
+  Real atol = 1e-3; 
+  Real rtol = 1e-8;
+  Real stol = 1e-15; // FIXME: Better numbers for this??
+
+  int nc = 0;
+  const BCRec& bc = get_desc_lst()[Press_Type].getBC(nc);
+  Real cur_time = state[State_Type].curTime();
+
+  MFTower& RhsMFT = rs.GetResidual();
+  MFTower& SolnMFT = rs.GetPressure();
+  Vec& RhsV = rs.GetResidualV();
+  Vec& SolnV = rs.GetPressureV();
+
+  // Copy from MFTowers in state to Vec structures
+  PetscErrorCode ierr;
+  Layout& layout = PMAmr::GetLayout();
+  ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
+  ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
+
+  rs.SetTime(cur_time);
+  rs.SetDt(dt);
+  
+  SNES& snes = rs.GetSNES();
+  ierr = SNESSetTolerances(snes,atol,rtol,stol,maxit,maxf);CHKPETSC(ierr);
+  ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
+
+  RichardSolver::SetTheRichardSolver(&rs);
+  ierr = SNESSolve(snes,PETSC_NULL,SolnV);CHKPETSC(ierr);
+  RichardSolver::SetTheRichardSolver(0);
+
+  int iters;
+  ierr = SNESGetIterationNumber(snes,&iters);CHKPETSC(ierr);
+  nl_data.SetNLIterationsTaken(iters);
+
+  int nfuncs;
+  ierr = SNESGetNumberFunctionEvals(snes,&nfuncs);CHKPETSC(ierr);
+
+  SNESConvergedReason reason;
+  ierr = SNESGetConvergedReason(snes,&reason);
+
+  std::string reasonStr = GetPETScReason(reason);
+  RichardNLSdata::Reason retVal = RichardNLSdata::RICHARD_SUCCESS;
+  if (reason<0) {
+    if (reason==-3) {
+      retVal = RichardNLSdata::RICHARD_LINEAR_FAIL;
+    }
+    else {
+      retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+          std::cout << "     **************** Newton failed: " << reasonStr << '\n';
+    }
+  }
+
+  if (retVal != RichardNLSdata::RICHARD_SUCCESS) {
+      return retVal;
+  }
+
+  // Copy solution from Vec back into state
+  ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
+
+  Real fnorm;
+  ierr = SNESGetFunctionNorm(snes,&fnorm); CHKPETSC(ierr);
+
+  if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor()) {
+      std::cout << "     Newton converged in " << nl_data.NLIterationsTaken() << " iterations (max = "
+                << nl_data.MaxNLIterations() << ") with err: " 
+                << fnorm << " (atol = " << atol << ")\n";
+  }
+
+  return retVal;
+}
+#endif
+
 #endif
 
 //
@@ -5687,7 +6740,7 @@ PorousMedia::sum_integrated_quantities ()
       mass += ns_level.volWgtSum("Water",time);
     }
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       const int old_prec = std::cout.precision(12);
       std::cout << "TIME= " << time << " MASS= " << mass << '\n';
@@ -6033,6 +7086,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 	    }
 	}
 
+
       predictDT(u_mac);
 
       if (cfl>0) {
@@ -6050,25 +7104,32 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
       estdt = std::min(richard_max_dt,estdt);
   }  
 #endif
-  
+
   return estdt;
 }
 
 Real
 PorousMedia::initialTimeStep (MultiFab* u_mac)
 {
-    Real dt_0 = estTimeStep(u_mac);
+    Real dt_0;
 
-    if (stop_time >= 0.0)
-    {        
-        const Real eps      = 0.0001*dt_0;
-        const Real cur_time = state[State_Type].curTime();
-        if ((cur_time + dt_0) >= (stop_time - eps)) {
-            dt_0 = stop_time - cur_time;
-        }
+    if (dt_init>0) {
+        dt_0 = dt_init;
+    }
+    else {
+        dt_0 = estTimeStep(u_mac);
     }
 
-    return dt_0 * init_shrink;
+    std::cout << "initialTimeStep:  dt_0: " << dt_0 << ", " << dt_init << std::endl;
+
+    const Real cur_time = state[State_Type].curTime();
+    if (stop_time > cur_time) {
+        dt_0 = std::min(dt_0, stop_time - cur_time);
+    }
+    
+    if (init_shrink>0) 
+        dt_0 *= init_shrink;
+    return dt_0;
 }
 
 void 
@@ -6150,7 +7211,7 @@ PorousMedia::predictDT (MultiFab* u_macG)
   
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
-  if (verbose > 1)
+  if (verbose > 3)
     {
       const int IOProc   = ParallelDescriptor::IOProcessorNumber();
       ParallelDescriptor::ReduceRealMax(&eigmax[0], BL_SPACEDIM, IOProc);
@@ -6229,40 +7290,6 @@ PorousMedia::computeNewDt (int                   finest_level,
       n_factor *= n_cycle[i];
       dt_0      = std::min(dt_0,n_factor*dt_min[i]);
     }
-
-  //
-  // Limit dt's by the value of stop_time.
-  //
-  const Real eps      = 0.0001*dt_0;
-  const Real cur_time = state[State_Type].curTime();
-  if (stop_time >= 0.0)
-    {
-      if ((cur_time + dt_0) > (stop_time - eps))
-	dt_0 = stop_time - cur_time;
-    }
-  //
-  // Adjust the time step to be able to output checkpoints at specific times.
-  //
-  const Real check_per = parent->checkPer();
-  if (check_per > 0.0)
-    {
-      int a = int((cur_time + eps ) / check_per);
-      int b = int((cur_time + dt_0) / check_per);
-      if (a != b)
-	dt_0 = b * check_per - cur_time;
-    }
-  //
-  // Adjust the time step to be able to output plot files at specific times.
-  //
-  const Real plot_per = parent->plotPer();
-  if (plot_per > 0.0)
-    {
-      int a = int((cur_time + eps ) / plot_per);
-      int b = int((cur_time + dt_0) / plot_per);
-      if (a != b)
-	dt_0 = b * plot_per - cur_time;
-    }
-
   // 
   // Limit by max_dt: redundant?
   //
@@ -6272,33 +7299,7 @@ PorousMedia::computeNewDt (int                   finest_level,
   }  
 #endif
 
-  //
-  // Adjust time step if there is abrupt change in inflow condition
-  //
-  bool change_inflow = false;
-  for (int i=0; i<bc_array.size(); ++i) {
-    const RegionData& face_bc = bc_array[i];
-    if (face_bc.Type() == "zero_total_velocity") {
-      Array<Real> inflow_curr_time = face_bc(cur_time);
-      Array<Real> inflow_next_time = face_bc(cur_time+dt_0);
-      if (std::abs(inflow_curr_time[0] - inflow_next_time[0]) > 1.e-15) 
-	{
-	  Array<Real> timelist = bc_array[i].time();
-	  for (int j=0;j<timelist.size();j++)
-	    {
-	      Real dtime = timelist[j]-cur_time ;
-	      if (dtime > 0 && dtime < dt_0)
-		dt_0 = std::min(dtime,dt_0);
-	    }
-	  change_inflow = true;
-	}	  
-    }
 
-  if (change_inflow)
-    {
-      if (dt_0 > 1.e3) dt_0 *=0.99;
-    }
-    }
   n_factor = 1;
   for (int i = 0; i <= max_level; i++)
     {
@@ -6321,7 +7322,7 @@ PorousMedia::computeInitialDt (int                   finest_level,
   if (level > 0)
     return;
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>2 && ParallelDescriptor::IOProcessor())
     std::cout << "... computing dt at level 0 only in computeInitialDt\n";
 
   const int max_level = parent->maxLevel();
@@ -6332,17 +7333,24 @@ PorousMedia::computeInitialDt (int                   finest_level,
       n_cycle[i] = sub_cycle ? parent->MaxRefRatio(i-1) : 1;
     }
 
-  Real dt_0    = 1.0e100;
-  int n_factor = 1;
-  for (int i = 0; i <= finest_level; i++)
-    {
-     
-      const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(i));
-      dt_level[i] = getLevel(i).initialTimeStep(pm->u_mac_curr);
-      n_factor   *= n_cycle[i];
-      dt_0        = std::min(dt_0,n_factor*dt_level[i]);
-    }
+  Real dt_0;
+  if (dt_init < 0) {
+      dt_0 = 1.0e100;
+      int n_factor = 1;
+      for (int i = 0; i <= finest_level; i++)
+      {
+          
+          const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(i));
+          dt_level[i] = getLevel(i).initialTimeStep(pm->u_mac_curr);
+          n_factor   *= n_cycle[i];
+          dt_0        = std::min(dt_0,n_factor*dt_level[i]);
+      }
+  }
+  else {
+      dt_0 = dt_init;
+  }
 
+  // FIXME: should be stop_time >= start_time
   if (stop_time >= 0.0)
     {
       const Real eps      = 0.0001*dt_0;
@@ -6351,7 +7359,10 @@ PorousMedia::computeInitialDt (int                   finest_level,
 	dt_0 = stop_time - cur_time;
     }
 
-  n_factor = 1;
+  if (init_shrink>0) 
+      dt_0 *= init_shrink;
+
+  int n_factor = 1;
   for (int i = 0; i <= max_level; i++)
     {
       n_factor   *= n_cycle[i];
@@ -6364,7 +7375,7 @@ PorousMedia::computeInitialDt (int                   finest_level,
 //
 
 void
-PorousMedia::post_init_estDT (Real&        dt_init,
+PorousMedia::post_init_estDT (Real&        dt_init_local,
                               Array<int>&  nc_save,
                               Array<Real>& dt_save,
                               Real         stop_time)
@@ -6372,62 +7383,64 @@ PorousMedia::post_init_estDT (Real&        dt_init,
   const Real strt_time    = state[State_Type].curTime();
   const int  finest_level = parent->finestLevel();
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>2 && ParallelDescriptor::IOProcessor())
     std::cout << "... computing dt at all levels in post_init_estDT\n";
 
-  dt_init = 1.0e+1;
+  if (dt_init > 0) {
 
-  int  n_factor;
+      dt_init_local = dt_init;
 
-  // Create a temporary data structure for this solve -- this u_mac just
-  //   used to compute dt.
+  }
+  else {
 
-  MultiFab* umac = 0;
+      // FIXME: should be std::max(0,stop_time - start_time)
+      dt_init_local = std::abs(stop_time);
+
+      // Create a temporary data structure for this solve -- this u_mac just
+      //   used to compute dt.
+      
+      int n_factor;
+      MultiFab* umac = 0;
+      for (int k = 0; k <= finest_level; k++)
+      {
+          dt_save[k] = getLevel(k).initialTimeStep(umac);
+          
+          n_factor   = 1;
+          for (int m = finest_level; m > k; m--) {
+              n_factor *= parent->nCycle(m);
+          }
+          dt_init_local = std::min( dt_init_local, dt_save[k]/((Real) n_factor) );
+      }
+      
+      dt_init_local *= n_factor;
+
+  }
+
+  // Make something workable if stop>=start
+  if (stop_time <= 0.0)
+  {
+      dt_init_local = std::abs(dt_init);
+  }
+
+  if (init_shrink>0) 
+      dt_init_local *= init_shrink;
+
+  BL_ASSERT(dt_init_local != 0);
+
+  int n_factor = 1;
+  dt_save[0] = dt_init_local;
   for (int k = 0; k <= finest_level; k++)
-    {
+  {
       nc_save[k] = parent->nCycle(k);
-      dt_save[k] = getLevel(k).initialTimeStep(umac);
-
-      n_factor   = 1;
-      for (int m = finest_level; m > k; m--) 
-	n_factor *= parent->nCycle(m);
-      dt_init    = std::min( dt_init, dt_save[k]/((Real) n_factor) );
-    }
- 
-  Array<Real> dt_level(finest_level+1,dt_init);
-  Array<int>  n_cycle(finest_level+1,1);
-
-  Real dt0 = dt_save[0];
-  n_factor = 1;
-  for (int k = 0; k <= finest_level; k++)
-    {
-      n_factor *= nc_save[k];
-      dt0       = std::min(dt0,n_factor*dt_save[k]);
-    }
-
-  if (stop_time >= 0.0)
-    {
-      const Real eps = 0.0001*dt0;
-      if ((strt_time + dt0) > (stop_time - eps))
-	dt0 = stop_time - strt_time;
-    }
-
-  n_factor = 1;
-  for (int k = 0; k <= finest_level; k++)
-    {
       n_factor  *= nc_save[k];
-      dt_save[k] = dt0/( (Real) n_factor);
-    }
+      dt_save[k] = dt_init_local/( (Real) n_factor);
+  }
 
-
-  //
-  // Hack.
-  //
-  parent->setDtLevel(dt_level);
-  parent->setNCycle(n_cycle);
+  parent->setDtLevel(dt_save);
+  parent->setNCycle(nc_save);
   for (int k = 0; k <= finest_level; k++)
     {
-      getLevel(k).setTimeLevel(strt_time,dt_init,dt_init);
+      getLevel(k).setTimeLevel(strt_time,dt_init_local,dt_init_local);
     }
 }
 
@@ -6491,7 +7504,7 @@ PorousMedia::post_timestep (int crse_iteration)
     {      
       for (int lev = 0; lev <= finest_level; lev++)
 	{
-	  if (verbose>1 && ParallelDescriptor::IOProcessor())
+	  if (verbose>2 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Final solutions at level = " 
 		      << lev << '\n';
 
@@ -6516,7 +7529,7 @@ PorousMedia::post_timestep (int crse_iteration)
          parent->levelSteps(0) >= max_step)
         && ParallelDescriptor::IOProcessor())
   {
-      if (verbose)
+      if (verbose>1)
 	{
 	  for (int i=0; i<observations.size(); ++i)
 	    {
@@ -6554,11 +7567,26 @@ PorousMedia::post_timestep (int crse_iteration)
 
 }
 
+PMAmr*
+PorousMedia::PMParent()
+{
+    PMAmr* pm_parent = dynamic_cast<PMAmr*>(parent);
+    if (!pm_parent) {
+        BoxLib::Abort("Bad cast");
+    }
+    return pm_parent;
+}
+
 //
 // Build any additional data structures after restart.
 //
 void PorousMedia::post_restart()
 {
+  if (level==0)
+  {
+      PMAmr::GetLayout().Rebuild();
+  }
+
   if (level == 0)
     {
       Observation::setAmrPtr(parent);
@@ -6567,6 +7595,7 @@ void PorousMedia::post_restart()
       for (int i=0; i<observations.size(); ++i)
           observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
+
 }
 
 //
@@ -6577,6 +7606,12 @@ PorousMedia::post_regrid (int lbase,
                           int new_finest)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_regrid()");
+
+  if (lbase==0)
+  {
+      PMAmr::GetLayout().Rebuild();
+  }
+
   //if (level > lbase)
   {
     //
@@ -6884,7 +7919,9 @@ PorousMedia::init_rock_properties ()
     }
   rock_phi->FillBoundary();
 
-  if (model != model_list["single-phase"] || model != model_list["single-phase-solid"])
+  if (model != model_list["single-phase"] && 
+      model != model_list["single-phase-solid"] &&
+      model != model_list["steady-saturated"])
     {
       bool do_fine_average = true;
       // relative permeability
@@ -6982,9 +8019,10 @@ PorousMedia::post_init (Real stop_time)
     return;
 
   const int   finest_level = parent->finestLevel();
-  Real        dt_init      = 0.;
+  Real        dt_init_local = 0.;
   Array<Real> dt_save(finest_level+1);
   Array<int>  nc_save(finest_level+1);
+
   //
   // Ensure state is consistent, i.e. velocity field is non-divergent,
   // Coarse levels are fine level averages, pressure is zero.
@@ -6994,8 +8032,8 @@ PorousMedia::post_init (Real stop_time)
   //
   // Estimate the initial timestepping.
   //
-  post_init_estDT(dt_init, nc_save, dt_save, stop_time);
-    
+  post_init_estDT(dt_init_local, nc_save, dt_save, stop_time);
+
   const Real strt_time       = state[State_Type].curTime();
   for (int k = 0; k <= finest_level; k++)
     getLevel(k).setTimeLevel(strt_time,dt_save[k],dt_save[k]);
@@ -7037,160 +8075,23 @@ PorousMedia::post_init_state ()
   //
   // Richard initialization
   //
-#if 0
-  if (model == model_list["richard"])
-  {
-      bool do_brute_force = false;
-      //do_brute_force = true;
-      
-      MultiFab&   S_new    = get_new_data(State_Type);
-      
-      //
-      // Richard initialization
-      //
-      if (model == model_list["richard"])
-      {
-          bool do_brute_force = false;
-          //do_brute_force = true;
+  int  finest_level = parent->finestLevel();
+  for (int lev=0;lev<= finest_level;lev++)
+    {
+      PorousMedia& pm = getLevel(lev);
+      for (int i = 0; i < num_state_type; i++)
+	{
+	  pm.state[i].allocOldData();
+	  MultiFab& od = pm.get_old_data(i);
+	  MultiFab& nd = pm.get_new_data(i);
+	  MultiFab::Copy(od,nd,0,0,nd.nComp(),0);
+	}
+    }
 
-#ifdef MG_USE_FBOXLIB
-          if (level == 0) {
-              if (do_brute_force)
-                  richard_eqb_update(u_mac_curr);
-              else
-              {
-                  // Sover settings
-                  int steady_min_iterations = 10;
-                  int steady_max_iterations = 15;
-                  int steady_limit_iterations = 20;
-                  Real steady_time_step_reduction_factor = 0.8;
-                  Real steady_time_step_increase_factor = 1.25;
-                  Real steady_time_step_retry_factor_1 = 0.5;
-                  Real steady_time_step_retry_factor_2 = 0.1;
-                  Real steady_time_step_retry_factor_f = 0.01;
-                  int max_consecutive_failures_1 = 3;
-                  int max_consecutive_failures_2 = 4;
-                  Real steady_tolerance = 1.e-8;
-                  Real steady_initial_time_step = 1.e2;
-                  Real steady_maximum_time_steps = 8000;
-
-                  // Counters, etc
-                  int num_consecutive_failures_1 = 0;
-                  int num_consecutive_failures_2 = 0;
-                  bool last_chance = false;
-                  int num_consecutive_improvement = 0;
-                  int num_consecutive_success = 0;
-                  int min_num_consecutive_success = 40;
-                  int min_num_consecutive_improvement = 4;
-                  Real steady_extra_time_step_increase_factor = 5.;
-
-
-                  // Initialize loop variables
-                  Real dt = steady_initial_time_step;
-                  MultiFab tmp(grids,1,0);
-                  PorousMedia::Reason ret = RICHARD_SUCCESS;
-                  Real err = 1.0;
-                  Real prev_err = err;
-
-                  int k = 0;
-                  while (err > steady_tolerance && 
-                         k < steady_maximum_time_steps &&
-                         ret == RICHARD_SUCCESS)
-                  {
-                      k++;
-                      MultiFab::Copy(tmp,S_new,0,0,1,0);
-                      tmp.mult(-1.0);
-                      int curr_nwt_iter = steady_limit_iterations; // On input, sets max allowed
-                      ret = richard_composite_update(dt,curr_nwt_iter);
-
-                      if (ret == RICHARD_SUCCESS)
-                      {
-                          MultiFab::Add(tmp,S_new,0,0,1,0);
-                          prev_err = err;
-                          err = tmp.norm2(0)/S_new.norm2(0);
-                          if (verbose && ParallelDescriptor::IOProcessor())
-                              std::cout << k << " " << dt << " " << curr_nwt_iter << " " << err << std::endl;
-
-                          if (err < prev_err) {
-                              num_consecutive_improvement++;
-                          }
-                          else {
-                              num_consecutive_improvement = 0;
-                          }
-
-                          num_consecutive_success++;
-                          num_consecutive_failures_1 = 0;
-                          num_consecutive_failures_2 = 0;
-                          last_chance = false;
-
-                          if (num_consecutive_success >= min_num_consecutive_success
-                              && num_consecutive_improvement > min_num_consecutive_improvement
-                              && curr_nwt_iter < steady_min_iterations ) {
-                              dt *= steady_extra_time_step_increase_factor;
-                              num_consecutive_success = 0;
-                              num_consecutive_improvement = 0;                              
-                          }
-                          else {
-                              if (curr_nwt_iter < steady_min_iterations
-                                  && num_consecutive_improvement > min_num_consecutive_improvement) {
-                                  dt *= steady_time_step_increase_factor;
-                              }
-                              else if (curr_nwt_iter > steady_max_iterations ) {
-                                  dt *= steady_time_step_reduction_factor;
-                              }
-                          }
-
-                      }
-                      else {
-
-                          num_consecutive_success = 0;
-
-                          if (last_chance) {
-                              BoxLib::Abort("Too many Newton failures, giving up");
-                          }
-                          else {
-                              num_consecutive_failures_1++;
-                              MultiFab::Copy(S_new,tmp,0,0,1,0);
-                            
-                              if (num_consecutive_failures_1 <= max_consecutive_failures_1) {
-                                  dt *= steady_time_step_retry_factor_1;
-                                  if (ParallelDescriptor::IOProcessor())
-                                      std::cout << " Newton failed, scaling dt by " << steady_time_step_retry_factor_1
-                                                << " and retrying" << std::endl;
-                              }
-                              else {
-                                  num_consecutive_failures_2++;
-
-                                  if (num_consecutive_failures_2 <= max_consecutive_failures_2) {
-                                      dt *= steady_time_step_retry_factor_2;
-                                      if (ParallelDescriptor::IOProcessor())
-                                          std::cout << " Newton failed again, scaling dt by "
-                                                    << steady_time_step_retry_factor_2
-                                                    << " and retrying" << std::endl;
-                                  }
-                                  else {
-                                    
-                                      if (! last_chance) {
-                                          last_chance = true;
-                                          if (ParallelDescriptor::IOProcessor())
-                                              std::cout << " Newton failed again, scaling dt by "
-                                                        << steady_time_step_retry_factor_f
-                                                        << " and retrying one last time..." << std::endl;
-                                      }
-                                  }
-                              }
-                          }
-                      }
-                  }
-              }
-          }
-      }
+  if (model == model_list["richard"] && do_richard_init_to_steady) {
+      richard_init_to_steady();        
   }
-#endif
-#endif
 
-
-  const int finest_level = parent->finestLevel();
   PorousMedia::initial_step = true;
 
   //
@@ -7210,7 +8111,6 @@ void
 PorousMedia::initial_mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
 {
   mac_project(u_mac,RhoD,time);
-
 }
 
 //
@@ -7977,7 +8877,7 @@ PorousMedia::mac_sync ()
   //
   MultiFab& S_new = get_new_data(State_Type);
 
-  if (verbose > 1)
+  if (verbose > 3)
     {
       Real tmp = (*Ssync).norm2(0);
       if (ParallelDescriptor::IOProcessor())
@@ -8133,7 +9033,7 @@ PorousMedia::mac_sync ()
 				      0,alpha,cmp_pcnp1,cmp_pcnp1_dp,
 				      pcnp1_cc,S_nwt,&err_nwt);
 
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+	  if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Newton iteration " << itr_nwt 
 		      << " : Error = "       << err_nwt << "\n"; 
 
@@ -8145,13 +9045,13 @@ PorousMedia::mac_sync ()
 	  calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
 	  itr_nwt += 1;	  
 
-	  if (verbose > 1) 
+	  if (verbose > 3) 
 	    check_minmax();
 	}
 
       diffusion->compute_flux(nc,dt,be_cn_theta,fluxSCp1,pcnp1_cc,cmp_pcnp1);
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
 	{
 	  if (itr_nwt < max_itr_nwt)
 	    std::cout << "Newton converged at iteration " << itr_nwt
@@ -8279,7 +9179,7 @@ PorousMedia::richard_sync ()
   //   Ssync*dt*density[0] is the source to the actual sync amount.
   //
 
-  if (verbose > 1)
+  if (verbose > 3)
     {
       Real tmp = (*Ssync).norm2(0);
       if (ParallelDescriptor::IOProcessor())
@@ -8311,7 +9211,6 @@ PorousMedia::richard_sync ()
     }
   diffusion->set_rho(&sat_res_mf); 
 
-  //do_n = true;
   bool sync_n = true;
 
   MultiFab& S_new  = get_new_data(State_Type);
@@ -8327,7 +9226,7 @@ PorousMedia::richard_sync ()
     MultiFab::Copy(Tmp,P_new,0,0,1,1);
   MultiFab::Copy(*alpha,*rock_phi,0,0,1,alpha->nGrow());
   
-  if (!do_n) dalpha = new MultiFab(grids,1,1);
+  if (!do_richard_sat_solve) dalpha = new MultiFab(grids,1,1);
       
   // Compute first res_fix = -\phi * n^k + dt*\nabla v_inflow.  
   // Its value does not change.
@@ -8353,156 +9252,194 @@ PorousMedia::richard_sync ()
   
   calcLambda(pcTime);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
+  calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
 
   
-  if (!do_n) calc_richard_alpha(dalpha,pcTime);
+  //if (!do_richard_sat_solve) calc_richard_alpha(dalpha,pcTime);
 
-  if (do_n)
+  Diffusion::NewtonStepInfo linear_status;
+  linear_status.status = "";
+  linear_status.success = true;
+  linear_status.reason = "";
+  linear_status.ls_iterations = -1;
+  linear_status.max_ls_iterations = 10;
+  linear_status.min_ls_factor = 1.e-8;
+  linear_status.ls_factor = -1;
+  linear_status.ls_acceptance_factor = 1.;
+  linear_status.ls_reduction_factor = 0.1;
+  linear_status.residual_norm_pre_ls = -1; 
+  linear_status.residual_norm_post_ls = -1;
+  linear_status.initial_residual_norm = -1;
+  linear_status.initial_solution_norm = -1;
+  linear_status.monitor_linear_solve = false;
+  linear_status.monitor_line_search = false;
+
+  if (do_richard_sat_solve)
     {
       calcCapillary(pcTime);
       MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
       P_new.mult(-1.0,1);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.status!="Finished")) 
 	{
-	  diffusion->richard_iter(dt,nc,gravity,density,res_fix,
-				  alpha,cmp_pcp1,cmp_pcp1_dp,
-				  u_mac_curr,do_upwind,&err_nwt);    
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration " << itr_nwt 
-		      << " : Error = "       << err_nwt << "\n"; 
-	  if (model != model_list["richard"])
-	    scalar_adjust_constraint(0,ncomps-1);
-	  FillStateBndry(pcTime,State_Type,0,ncomps);
-	  calcCapillary(pcTime);
-	  calcLambda(pcTime);
-	  MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
-	  P_new.mult(-1.0,1);
-	  compute_vel_phase(u_mac_curr,0,pcTime);
-	  calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-	  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
-	  itr_nwt += 1;
-	  if (verbose > 1)  check_minmax();
+            diffusion->richard_iter(dt,nc,gravity,density,res_fix,
+                                    alpha,cmp_pcp1,cmp_pcp1_dp,
+                                    u_mac_curr,do_upwind,linear_status);    
+            
+            err_nwt = linear_status.residual_norm_post_ls;
+
+            if (linear_status.success) {
+                if (verbose > 3 && ParallelDescriptor::IOProcessor())
+                    std::cout << "Newton iteration " << itr_nwt 
+                              << " : Error = "       << err_nwt << "\n"; 
+                if (model != model_list["richard"])
+                    scalar_adjust_constraint(0,ncomps-1);
+                FillStateBndry(pcTime,State_Type,0,ncomps);
+                calcCapillary(pcTime);
+                calcLambda(pcTime);
+                MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
+                P_new.mult(-1.0,1);
+                compute_vel_phase(u_mac_curr,0,pcTime);
+                calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,0,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
+                itr_nwt += 1;
+                if (verbose > 3)  check_minmax();
+            }
 	}
     }
   else
     {
-      MultiFab dalpha(grids,1,1);
-      calc_richard_alpha(&dalpha,pcTime);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+        //MultiFab dalpha(grids,1,1);
+        //calc_richard_alpha(&dalpha,pcTime);
+
+      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.status!="Finished")) 
 	{
-	  diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
-				    alpha,&dalpha,cmp_pcp1,cmp_pcp1_dp,
-				    u_mac_curr,do_upwind,&err_nwt);  
+            diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
+                                      alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
+                                      u_mac_curr,do_upwind,linear_status);
 
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration " << itr_nwt 
-		      << " : Error = "       << err_nwt << "\n"; 
-	  calcInvPressure (S_new,P_new); 
-	  if (model != model_list["richard"])
-	    scalar_adjust_constraint(0,ncomps-1);
-	  calcLambda(pcTime);
-	  compute_vel_phase(u_mac_curr,0,pcTime);
-	  calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
-	  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
-	  calc_richard_alpha(&dalpha,pcTime);
-	  itr_nwt += 1;
-	  if (verbose > 1)  check_minmax();
-	}
-    }
-  diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+	    err_nwt = linear_status.residual_norm_post_ls;
 
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-    {
-      if (itr_nwt < max_itr_nwt)
-	std::cout << "Newton converged at iteration " << itr_nwt
-		  << " with error " << err_nwt << '\n';
-      else
-	std::cout << "Newton failed to converged: termination error is "
-		  <<  err_nwt << '\n'; 
+            if (linear_status.success) {
+                linear_status.success = true;
+                if (verbose > 3 && ParallelDescriptor::IOProcessor())
+                    std::cout << "Newton iteration " << itr_nwt 
+                              << " : Error = "       << err_nwt << "\n"; 
+                calcInvPressure (S_new,P_new); 
+                if (model != model_list["richard"])
+                    scalar_adjust_constraint(0,ncomps-1);
+                calcLambda(pcTime);
+                compute_vel_phase(u_mac_curr,0,pcTime);
+                calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
+                calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
+                //calc_richard_alpha(&dalpha,pcTime);
+                itr_nwt += 1;
+                if (verbose > 3)  check_minmax();
+            }
+        }
     }
+
+  RichardNLSdata::Reason retVal = RichardNLSdata::RICHARD_SUCCESS;
+  if (!linear_status.success) {
+      retVal = RichardNLSdata::RICHARD_LINEAR_FAIL;
+  }
+
+  if (err_nwt > max_err_nwt) {
+      retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+      std::cout << "     **************** Newton failed: too many iterations\n"; 
+  }
+
+  if (retVal == RichardNLSdata::RICHARD_SUCCESS)
+  {  
+      diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+
+      if (verbose > 3 && ParallelDescriptor::IOProcessor())
+      {
+          std::cout << "Newton converged at iteration " << itr_nwt
+                    << " with error " << err_nwt << '\n';
+      }
   
-  if (level > 0) 
-    {
-      for (int d = 0; d < BL_SPACEDIM; d++) 
-	{
-	  for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
-	    getViscFluxReg().FineAdd((*fluxSC[d])[fmfi],d,fmfi.index(),0,nc,nComp,-dt);
-	}
-    }
+      if (level > 0) 
+      {
+          for (int d = 0; d < BL_SPACEDIM; d++) 
+          {
+              for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
+                  getViscFluxReg().FineAdd((*fluxSC[d])[fmfi],d,fmfi.index(),0,nc,nComp,-dt);
+          }
+      }
   
-  // Determine the corrector after capillary-solve
-  for (MFIter mfi(*Ssync); mfi.isValid();++mfi)
-    {
-      const Box& box = mfi.validbox();
-      if (sync_n)
-	{
-	  (*Ssync)[mfi].copy(S_new[mfi],box,0,box,0,ncomps);
-	  (*Ssync)[mfi].minus(Tmp[mfi],box,0,0,ncomps);
-	}
-      else
-	{
-	  (*Ssync)[mfi].copy(P_new[mfi],box,0,box,0,1);
-	  (*Ssync)[mfi].minus(Tmp[mfi],box,0,0,1);
-	}
-    }
+      // Determine the corrector after capillary-solve
+      for (MFIter mfi(*Ssync); mfi.isValid();++mfi)
+      {
+          const Box& box = mfi.validbox();
+          if (sync_n)
+          {
+              (*Ssync)[mfi].copy(S_new[mfi],box,0,box,0,ncomps);
+              (*Ssync)[mfi].minus(Tmp[mfi],box,0,0,ncomps);
+          }
+          else
+          {
+              (*Ssync)[mfi].copy(P_new[mfi],box,0,box,0,1);
+              (*Ssync)[mfi].minus(Tmp[mfi],box,0,0,1);
+          }
+      }
 
-  MultiFab::Copy(S_new,*Ssync,0,ncomps+ntracers,1,0);
+      MultiFab::Copy(S_new,*Ssync,0,ncomps+ntracers,1,0);
+  
+      //
+      // Get boundary conditions.
+      //
+      Array<int*>         sync_bc(grids.size());
+      Array< Array<int> > sync_bc_array(grids.size());
+      
+      for (int i = 0; i < grids.size(); i++)
+      {
+          sync_bc_array[i] = getBCArray(Press_Type,i,0,1);
+          sync_bc[i]       = sync_bc_array[i].dataPtr();
+      }
+
+      //
+      // Interpolate the sync correction to the finer levels.
+      //
+      IntVect    ratio = IntVect::TheUnitVector();
+      const Real mult  = 1.0;
+      for (int lev = level+1; lev <= parent->finestLevel(); lev++)
+      {
+          ratio                     *= parent->refRatio(lev-1);
+          PorousMedia&     fine_lev  = getLevel(lev);
+          const BoxArray& fine_grids = fine_lev.boxArray();
+          MultiFab sync_incr(fine_grids,1,0);
+          sync_incr.setVal(0.0);
+      
+          SyncInterp(*Ssync,level,sync_incr,lev,ratio,0,0,
+                     1,1,mult,sync_bc.dataPtr());
+
+          MultiFab& S_new = fine_lev.get_new_data(Press_Type);
+          if (sync_n)
+          {
+              for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+                  S_new[mfi].plus(sync_incr[mfi],fine_grids[mfi.index()],
+                                  0,0,1);
+          }
+          else
+          {	    
+              MultiFab& P_new = fine_lev.get_new_data(Press_Type);
+              for (MFIter mfi(P_new); mfi.isValid(); ++mfi)
+                  P_new[mfi].plus(sync_incr[mfi],fine_grids[mfi.index()],
+                                  0,0,1);
+              MultiFab P_tmp(fine_grids,1,0);
+              MultiFab::Copy(P_tmp,P_new,0,0,1,0);
+              P_tmp.mult(-1.0);
+              fine_lev.calcInvCapillary(sync_incr,P_tmp);
+              MultiFab::Copy(S_new,sync_incr,0,0,1,0);
+          }
+      }
+  }
 
   delete alpha;
   if (dalpha) delete dalpha;
   diffusion->removeFluxBoxesLevel(cmp_pcp1);
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
   diffusion->removeFluxBoxesLevel(fluxSC);
-  
-  //
-  // Get boundary conditions.
-  //
-  Array<int*>         sync_bc(grids.size());
-  Array< Array<int> > sync_bc_array(grids.size());
-      
-  for (int i = 0; i < grids.size(); i++)
-    {
-      sync_bc_array[i] = getBCArray(Press_Type,i,0,1);
-      sync_bc[i]       = sync_bc_array[i].dataPtr();
-    }
-
-  //
-  // Interpolate the sync correction to the finer levels.
-  //
-  IntVect    ratio = IntVect::TheUnitVector();
-  const Real mult  = 1.0;
-  for (int lev = level+1; lev <= parent->finestLevel(); lev++)
-    {
-      ratio                     *= parent->refRatio(lev-1);
-      PorousMedia&     fine_lev  = getLevel(lev);
-      const BoxArray& fine_grids = fine_lev.boxArray();
-      MultiFab sync_incr(fine_grids,1,0);
-      sync_incr.setVal(0.0);
-      
-      SyncInterp(*Ssync,level,sync_incr,lev,ratio,0,0,
-		 1,1,mult,sync_bc.dataPtr());
-
-      MultiFab& S_new = fine_lev.get_new_data(Press_Type);
-      if (sync_n)
-	{
-	  for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
-	    S_new[mfi].plus(sync_incr[mfi],fine_grids[mfi.index()],
-			      0,0,1);
-	}
-      else
-	{	    
-	  MultiFab& P_new = fine_lev.get_new_data(Press_Type);
-	  for (MFIter mfi(P_new); mfi.isValid(); ++mfi)
-	    P_new[mfi].plus(sync_incr[mfi],fine_grids[mfi.index()],
-			    0,0,1);
-	  MultiFab P_tmp(fine_grids,1,0);
-	  MultiFab::Copy(P_tmp,P_new,0,0,1,0);
-	  P_tmp.mult(-1.0);
-	  fine_lev.calcInvCapillary(sync_incr,P_tmp);
-	  MultiFab::Copy(S_new,sync_incr,0,0,1,0);
-	}
-    }
 }
 #endif
 
@@ -8590,7 +9527,7 @@ PorousMedia::avgDown ()
   // Average down the cell-centered velocity at the new time.
   //
 #ifdef AMANZI
-  if (do_chem > -1)
+  if (do_chem>0)
     {
       MultiFab& FC_crse = get_new_data(FuncCount_Type);
       MultiFab& FC_fine = fine_lev.get_new_data(FuncCount_Type);
@@ -9167,6 +10104,14 @@ PorousMedia::calc_richard_coef (MultiFab*        diffusivity[BL_SPACEDIM],
 
     }
 
+  // multiply by kedge
+  for (int dir = 0; dir < BL_SPACEDIM; dir++)
+    {
+      for (MFIter ecMfi(*diffusivity[dir]); ecMfi.isValid(); ++ecMfi)
+	  (*diffusivity[dir])[ecMfi].mult(kpedge[dir][ecMfi],0,0,1);
+      (*diffusivity[dir]).FillBoundary();
+    }
+
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
@@ -9183,24 +10128,18 @@ PorousMedia::calc_richard_coef (MultiFab*        diffusivity[BL_SPACEDIM],
           }
       }
   }
-
-  // multiply by kedge
-  for (int dir = 0; dir < BL_SPACEDIM; dir++)
-    {
-      for (MFIter ecMfi(*diffusivity[dir]); ecMfi.isValid(); ++ecMfi)
-	  (*diffusivity[dir])[ecMfi].mult(kpedge[dir][ecMfi],0,0,1);
-      (*diffusivity[dir]).FillBoundary();
-    }
 }
 
 void 
 PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
-			       const MultiFab* lbd_cc, 
+                               MultiFab*       dalpha,
+			       const MultiFab* lbd_cc,                                
 			       const MultiFab* umac,
-			       const Real      time,
-			       const int       nc,
-			       const int       do_upwind,
-			       const bool      do_n)
+			       Real            time,
+			       Real            dt,
+			       int             nc,
+			       int             do_upwind,
+			       bool            do_richard_sat_solve)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_jac()");
 
@@ -9222,6 +10161,16 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 
   //FIXME: analytical jacobian is not working
   bool do_analytic_jac = false;//true;
+
+#ifdef BL_USE_PETSC
+  PetscErrorCode ierr;
+  Mat& J = PMAmr::GetLayout().Jacobian();
+  Vec& JRowScale = PMAmr::GetLayout().JRowScale();
+  BaseFab<int> nodeNums;
+  const BCRec& theBC = AmrLevel::desc_lst[Press_Type].getBC(0);
+  const Layout& layout = PMAmr::GetLayout();
+
+#endif
 
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
        fpi.isValid();
@@ -9303,6 +10252,19 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       const int*  cp_lo  = (*cpl_coef)[fpi].loVect();
       const int*  cp_hi  = (*cpl_coef)[fpi].hiVect();
 
+      if (dalpha) {
+          const Real* adat = (*dalpha)[fpi].dataPtr();
+          const int*  a_lo = (*dalpha)[fpi].loVect();
+          const int*  a_hi = (*dalpha)[fpi].hiVect();
+
+          FORT_RICHARD_ALPHA(adat, ARLIM(a_lo), ARLIM(a_hi),
+                             ndat, ARLIM(n_lo), ARLIM(n_hi),
+                             pdat, ARLIM(p_lo), ARLIM(p_hi),
+                             kdat, ARLIM(k_lo), ARLIM(k_hi),
+                             cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
+                             &n_cpl_coef, lo, hi);
+      }
+
       Array<int> bc;
       bc = getBCArray(Press_Type,idx,0,1);
 
@@ -9335,7 +10297,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       else
 	{
 	  Real deps = 1.e-8;
-	  if (do_n)
+	  if (do_richard_sat_solve)
 	    FORT_RICHARD_NJAC(ndat,   ARLIM(n_lo), ARLIM(n_hi),
 			      dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
 			      dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
@@ -9364,33 +10326,111 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 	  else
 	    {
 	      deps = 1.e-8;
-	    FORT_RICHARD_NJAC2(dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
-			       dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
+	      FORT_RICHARD_NJAC2(dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
+				 dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
 #if(BL_SPACEDIM==3)
-			       dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
+				 dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
 #endif	
-			       uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
-			       uydat, ARLIM(uy_lo), ARLIM(uy_hi),
+				 uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
+				 uydat, ARLIM(uy_lo), ARLIM(uy_hi),
 #if(BL_SPACEDIM==3)
-			       uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
+				 uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
 #endif
-			       kpxdat, ARLIM(kpx_lo), ARLIM(kpx_hi),
-			       kpydat, ARLIM(kpy_lo), ARLIM(kpy_hi),
+				 kpxdat, ARLIM(kpx_lo), ARLIM(kpx_hi),
+				 kpydat, ARLIM(kpy_lo), ARLIM(kpy_hi),
 #if(BL_SPACEDIM==3)
-			       kpzdat, ARLIM(kpz_lo), ARLIM(kpz_hi),
+				 kpzdat, ARLIM(kpz_lo), ARLIM(kpz_hi),
 #endif
-			       lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
-			       prdat, ARLIM(pr_lo), ARLIM(pr_hi),
-			       pdat, ARLIM(p_lo), ARLIM(p_hi),
-			       kdat, ARLIM(k_lo), ARLIM(k_hi),
-			       krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
-			       cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
-			       lo, hi, domlo, domhi, dx, bc.dataPtr(), 
-			       rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
-			       &deps, &do_upwind);
+				 lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
+				 prdat, ARLIM(pr_lo), ARLIM(pr_hi),
+				 pdat, ARLIM(p_lo), ARLIM(p_hi),
+				 kdat, ARLIM(k_lo), ARLIM(k_hi),
+				 krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
+				 cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
+				 lo, hi, domlo, domhi, dx, bc.dataPtr(), 
+				 rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
+				 &deps, &do_upwind);
 	    }
 	}
+
+#ifdef BL_USE_PETSC
+      const Box& vbox = grids[idx];
+      Box gbox = Box(vbox).grow(1);
+      nodeNums.resize(gbox,1);
+      layout.SetNodeIds(nodeNums,level,idx);
+
+      Array<int> cols(1+2*BL_SPACEDIM);
+      Array<int> rows(1);
+      Array<Real> vals(cols.size());
+      FArrayBox* wrk[BL_SPACEDIM];
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+          wrk[d] = &((*diffusivity[d])[idx]);
+      }
+
+      for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
+      {
+          cols[0] = nodeNums(iv);
+          if (cols[0]>=0) {
+              rows[0] = cols[0];
+              vals[0] = (dalpha ? (*dalpha)[fpi](iv,0)  :  0);
+              Real rdt = (dt>0  ?  density[nc]*dt : 1); // The "b" factor
+              int cnt = 1;
+              for (int d=0; d<BL_SPACEDIM; ++d) {
+                  vals[0] -= rdt * (*wrk[d])(iv,2);
+                  IntVect ivp = iv + BoxLib::BASISV(d);
+                  int np = nodeNums(ivp,0);
+                  if (np>=0) {
+                      cols[cnt]  = np; 
+                      vals[cnt]  = -rdt * (*wrk[d])(iv,0);
+                      cnt++;
+                  }
+                  else {
+                      if (theBC.hi()[d]==FOEXTRAP) {
+                          vals[0] -= rdt * (*wrk[d])(iv,0);
+                      }
+                  }
+                  
+                  IntVect ivn = iv - BoxLib::BASISV(d);
+                  int nn = nodeNums(ivn,0);
+                  if (nn>=0) {
+                      cols[cnt]  = nn; 
+                      vals[cnt]  = -rdt * (*wrk[d])(iv,1);
+                      cnt++;
+                  }
+                  else {
+                      if (theBC.lo()[d]==FOEXTRAP) {
+                          vals[0] -= rdt * (*wrk[d])(iv,1);
+                      }
+                  }
+              }
+              
+              // Normalize matrix entries
+#if 1
+              Real max_abs = 1;
+#else
+              Real max_abs = 0;
+              for (int n=0; n<cnt; ++n) {
+                  max_abs = std::max(max_abs,std::abs(vals[n]));
+              }
+              max_abs = 1/max_abs;
+              for (int n=0; n<cnt; ++n) {
+                  vals[n] *= max_abs;
+              }
+#endif
+              ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+              ierr = VecSetValues(JRowScale,1,&(rows[0]),&max_abs,INSERT_VALUES);
+          }
+      }
+#endif
+
     }
+
+#ifdef BL_USE_PETSC
+  ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  ierr = VecAssemblyBegin(JRowScale); CHKPETSC(ierr);  
+  ierr = VecAssemblyEnd(JRowScale); CHKPETSC(ierr);  
+#endif
 }
 
 void 
@@ -9399,40 +10439,52 @@ PorousMedia::calc_richard_alpha (MultiFab*     alpha,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_alpha()");
 
-  MultiFab& S = get_data(State_Type,time);
   const int nGrow = 1;    
-
+  MultiFab S(grids,ncomps,nGrow);
   const int n_cpl_coef = cpl_coef->nComp(); 
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
        fpi.isValid();
        ++fpi)
     {
-      const int idx   = fpi.index();
+      S[fpi].copy(fpi());
+    }
+  calc_richard_alpha(alpha,S);
+}
+
+void 
+PorousMedia::calc_richard_alpha (MultiFab*       alpha,
+				 const MultiFab& S) const
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_alpha()");
+  int nGrow = S.nGrow();
+  const int n_cpl_coef = cpl_coef->nComp(); 
+  for (MFIter mfi(S); mfi.isValid(); ++mfi) 
+    {
+      const int idx   = mfi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
-      BL_ASSERT(box == fpi().box());
 
-      const int* lo      = fpi.validbox().loVect();
-      const int* hi      = fpi.validbox().hiVect();
+      const int* lo      = mfi.validbox().loVect();
+      const int* hi      = mfi.validbox().hiVect();
 
-      const Real* ndat = fpi().dataPtr(); 
-      const int*  n_lo = fpi().loVect();
-      const int*  n_hi = fpi().hiVect();
+      const Real* ndat = S[mfi].dataPtr(); 
+      const int*  n_lo = S[mfi].loVect();
+      const int*  n_hi = S[mfi].hiVect();
 
-      const Real* adat = (*alpha)[fpi].dataPtr();
-      const int*  a_lo = (*alpha)[fpi].loVect();
-      const int*  a_hi = (*alpha)[fpi].hiVect();
+      const Real* adat = (*alpha)[mfi].dataPtr();
+      const int*  a_lo = (*alpha)[mfi].loVect();
+      const int*  a_hi = (*alpha)[mfi].hiVect();
 
-      const Real* pdat   = (*rock_phi)[fpi].dataPtr();
-      const int* p_lo    = (*rock_phi)[fpi].loVect();
-      const int* p_hi    = (*rock_phi)[fpi].hiVect();
+      const Real* pdat   = (*rock_phi)[mfi].dataPtr();
+      const int* p_lo    = (*rock_phi)[mfi].loVect();
+      const int* p_hi    = (*rock_phi)[mfi].hiVect();
 
-      const Real* kdat   = (*kappa)[fpi].dataPtr();
-      const int* k_lo    = (*kappa)[fpi].loVect();
-      const int* k_hi    = (*kappa)[fpi].hiVect();
+      const Real* kdat   = (*kappa)[mfi].dataPtr();
+      const int* k_lo    = (*kappa)[mfi].loVect();
+      const int* k_hi    = (*kappa)[mfi].hiVect();
 
-      const Real* cpdat  = (*cpl_coef)[fpi].dataPtr(); 
-      const int*  cp_lo  = (*cpl_coef)[fpi].loVect();
-      const int*  cp_hi  = (*cpl_coef)[fpi].hiVect();
+      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
+      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
+      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
 
 			  
       FORT_RICHARD_ALPHA(adat, ARLIM(a_lo), ARLIM(a_hi),
@@ -9907,11 +10959,15 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
                                    geom.ProbDomain(),dest_comp,src_comp,num_comp);
 
     if (state_indx==State_Type) {
-        if (src_comp==0) {
-          dirichletStateBC(dest,time);
+        int n_c = std::min(ncomps-1,src_comp+num_comp-1) - src_comp + 1;
+        int s_t = src_comp + n_c;
+        int n_t = num_comp - n_c;
+
+        if (n_c > 0) {
+            dirichletStateBC(dest,time,src_comp,dest_comp,n_c);
         }
-        else if (src_comp==ncomps) {
-           dirichletTracerBC(dest,time);
+        if (n_t > 0) {
+            dirichletTracerBC(dest,time,s_t,dest_comp+n_c,n_t);
         }
     }
     else if (state_indx==Press_Type) {
@@ -9949,6 +11005,7 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
 				      const Box&         _domain,
 				      const Orientation& _Face) 
 {
+  // FIOXME: this should use the intersections code
     const int idir = _Face.coordDir();
 
     if (_Face.isLow())
@@ -9973,7 +11030,7 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
 }
 
 void
-PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
+PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, int nComp)
 {
     if (bc_descriptor_map.size()) 
     {
@@ -9988,7 +11045,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
         {
             const Box bndBox = it->second.first;
             const Array<int>& face_bc_idxs = it->second.second;
-            sdat.resize(bndBox,ncomps); sdat.setVal(0);
+            sdat.resize(bndBox,nComp); sdat.setVal(0);
 
             for (int i=0; i<face_bc_idxs.size(); ++i) {
                 const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
@@ -9997,25 +11054,26 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
 		  get_inflow_density(it->first,face_bc,sdat,time);
 		}
 		else {
-		  face_bc.apply(sdat,dx,0,ncomps,time);
+		  face_bc.apply(sdat,dx,0,nComp,time);
 		}
 	    }
             Box ovlp = bndBox & fab.box();
             if (ovlp.ok()) {
-                fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
+                fab.copy(sdat,ovlp,0,ovlp,dComp,nComp);
             }
         }
     }    
 }  
 
 void
-PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time)
+PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp)
 {
     BL_ASSERT(do_tracer_transport);
     
-    for (int n=0; n<ntracers; ++n) 
+    for (int n=0; n<nComp; ++n) 
     {
-        if (tbc_descriptor_map[n].size()) 
+        int tracer_idx = sComp+n-ncomps;
+        if (tbc_descriptor_map[tracer_idx].size()) 
         {
             const Box domain = geom.Domain();
             const int* domhi = domain.hiVect();
@@ -10024,19 +11082,20 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time)
             FArrayBox sdat;
             
             for (std::map<Orientation,BCDesc>::const_iterator
-                     it=tbc_descriptor_map[n].begin(); it!=tbc_descriptor_map[n].end(); ++it) 
+                     it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
             {
                 const Box bndBox = it->second.first;
                 const Array<int>& face_bc_idxs = it->second.second;
-                sdat.resize(bndBox,ntracers); sdat.setVal(0);
+                sdat.resize(bndBox,1); sdat.setVal(0);
                 
                 for (int i=0; i<face_bc_idxs.size(); ++i) {
-                    const RegionData& face_tbc = tbc_array[n][face_bc_idxs[i]];
-                    face_tbc.apply(sdat,dx,0,ntracers,time);
+                    const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
+                    face_tbc.apply(sdat,dx,0,1,time);
                 }
+
                 Box ovlp = bndBox & fab.box();
                 if (ovlp.ok()) {
-                    fab.copy(sdat,ovlp,0,ovlp,0,1);
+                    fab.copy(sdat,ovlp,0,ovlp,dComp+n,1);
                 }
             }
         }    
@@ -10157,8 +11216,69 @@ PorousMedia::derive (const std::string& name,
         }
 
     }
+    else if (name=="Grid_ID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        mf.setVal(-1,dcomp,1,ngrow);
+
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            mf[mfi].setVal(mfi.index());
+        }
+
+    }
+    else if (name=="Core_ID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        mf.setVal(-1,dcomp,1,ngrow);
+
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            mf[mfi].setVal(ParallelDescriptor::MyProc());
+        }
+
+    }
+    else if (name=="Cell_ID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        mf.setVal(-1,dcomp,1,ngrow);
+        Layout& layout = PMAmr::GetLayout();
+
+        Layout::IntFab ifab;
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            Box gbox = mf[mfi].box();
+            ifab.resize(gbox,1);
+            layout.SetNodeIds(ifab,level,mfi.index());
+            const int* idat = ifab.dataPtr();
+            Real* rdat = mf[mfi].dataPtr();
+            int numpts = gbox.numPts();
+            for (int i=0; i<numpts; ++i) {
+                rdat[i] = Real(idat[i]);
+            }
+        }
+    }
     else if (name=="Capillary_Pressure") {
         
+        int ncomp = rec->numDerive();
         if (have_capillary)
         {
             const BoxArray& BA = mf.boxArray();
@@ -10172,14 +11292,17 @@ PorousMedia::derive (const std::string& name,
                 S[fpi].copy(fpi(),0,0,ncomps);
             }
             
-            int ncomp = rec->numDerive();
             MultiFab tmpmf(BA,ncomp,1);
             calcCapillary(&tmpmf,S);
             MultiFab::Copy(mf,tmpmf,0,dcomp,ncomp,0);
             mf.mult(BL_ONEATM,dcomp,ncomp,0);
         }
-        else {
-            BoxLib::Abort("PorousMedia::derive: cannot derive Capillary Pressure");
+        else if (model == model_list["steady-saturated"]) {
+	  mf.setVal(0,dcomp,ncomp);
+	}
+	else {
+
+	  BoxLib::Abort("PorousMedia::derive: cannot derive Capillary Pressure");
         }
     }
     else if (name=="Volumetric_Water_Content") {
@@ -10258,12 +11381,12 @@ PorousMedia::derive (const std::string& name,
         int ncomp = 1;
         int ngrow = mf.nGrow();
         AmrLevel::derive("pressure",time,mf,dcomp);
-        if (model == model_list["richard"]) {
+        if (model == model_list["richard"] || model == model_list["steady-saturated"]) {
             mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
             mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
         }
         else {
-            BoxLib::Abort("PorousMedia::derive: Aqueous_Pressure not yet implemented for non-Richard");
+  	    BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Pressure not yet implemented for " + model).c_str());
         }
     }
     else if (name=="Aqueous_Volumetric_Flux_X" || name=="Aqueous_Volumetric_Flux_Y" || name=="Aqueous_Volumetric_Flux_Z")
@@ -10272,14 +11395,13 @@ PorousMedia::derive (const std::string& name,
                     name == "Aqueous_Volumetric_Flux_Y" ? 1 : 2);
 
         BL_ASSERT(dir < BL_SPACEDIM);
-        if (model == model_list["richard"]) {
-            compute_vel_phase(u_mac_curr,0,time);    
+        if (model == model_list["richard"] || model == model_list["steady-saturated"]) {
             umac_edge_to_cen(u_mac_curr,Vel_Type); 
             int ncomp = 1;
             MultiFab::Copy(mf,get_new_data(Vel_Type),dir,dcomp,ncomp,0);
         }
         else {
-            BoxLib::Abort("PorousMedia::derive: Aqueous_Volumetric_Flux_{X,Y,Z} not yet implemented for non-Richard");
+	  BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "+model).c_str());
         }
     }
     else if (name=="Porosity") {
@@ -10652,7 +11774,7 @@ PorousMedia::fill_from_plotfile (MultiFab&          mf,
   if (varname.empty())
     BoxLib::Abort("fill_from_plotfile(): varname not specified");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     std::cout << "fill_from_plotfile(): reading data from: " << pltfile << '\n';
 
   DataServices::SetBatchMode();
@@ -10689,10 +11811,10 @@ PorousMedia::fill_from_plotfile (MultiFab&          mf,
   amrData.FillVar(mf, level, varname, dcomp);
   amrData.FlushGrids(idx);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>1 && ParallelDescriptor::IOProcessor())
     std::cout << "fill_from_plotfile(): finished init from plotfile" << '\n';
 
-  if (verbose)
+  if (verbose>3)
   {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -10801,7 +11923,7 @@ PorousMedia::check_sum()
 
   ParallelDescriptor::ReduceRealMax(&minmax[0],2,IOProc);
 
-  if (verbose>1 && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     {
       std::cout << "   SUM SATURATION MAX/MIN = " 
 		<< minmax[1] << ' ' << minmax[0] << '\n';
@@ -10838,7 +11960,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomps, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomps, IOProc);
   
-  if (0 && verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomps; kk++)
 	{
@@ -10857,7 +11979,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(&rhomaxmin[0], 1, IOProc);
   ParallelDescriptor::ReduceRealMin(&rhomaxmin[1], 1, IOProc);
 
-  if (0 && verbose > 1 && ParallelDescriptor::IOProcessor())
+  if (verbose > 3 && ParallelDescriptor::IOProcessor())
     {  
       std::cout << "   RHO MAX/MIN "
 		<< ' ' << rhomaxmin[0] << "  " << rhomaxmin[1] << '\n';
@@ -10887,7 +12009,7 @@ PorousMedia::check_minmax(int fscalar, int lscalar)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), nscal, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), nscal, IOProc);
   
-  if (verbose>1 && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     {
         for (int kk = 0; kk < nscal; kk++)
 	{
@@ -10918,7 +12040,7 @@ PorousMedia::check_minmax(MultiFab& mf)
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomp, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomp, IOProc);
   
-  if (verbose>1 && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomp; kk++)
 	{
@@ -10956,7 +12078,7 @@ PorousMedia::check_minmax(MultiFab* u_mac)
   ParallelDescriptor::ReduceRealMax(&umax[0], BL_SPACEDIM, IOProc);
   ParallelDescriptor::ReduceRealMin(&umin[0], BL_SPACEDIM, IOProc);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose>3 && ParallelDescriptor::IOProcessor())
   {
       D_TERM(std::cout << "   UMAC MAX/MIN  " << umax[0] << "  " << umin[0] << '\n';,
              std::cout << "   VMAC MAX/MIN  " << umax[1] << "  " << umin[1] << '\n';,

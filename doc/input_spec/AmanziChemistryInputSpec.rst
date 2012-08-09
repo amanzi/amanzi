@@ -63,15 +63,23 @@ Example::
 
 Aqueous Kinetics
 ~~~~~~~~~~~~~~~~
+General aqueous reaction:
 
 Example::
 
   <General Kinetics
-    1.00 Pu_238 <->   1.00 U_234 ;   1.00 Pu_238 ;   2.50000E-10 ;   1.00 U_234 ;   0.00000E+00
-    1.00 U_234 <->   1.00 Th_230 ;   1.00 U_234 ;   8.90000E-14 ;   1.00 Th_230 ;   0.00000E+00
-    1.00 Th_230 <->   1.00 Ra_226 ;   1.00 Th_230 ;   2.90000E-13 ;   1.00 Ra_226 ;   0.00000E+00
-    1.00 Ra_226 <->   1.00 Pb_210 ;   1.00 Ra_226 ;   1.40000E-11 ;   1.00 Pb_210 ;   0.00000E+00
+    1.00 A(aq) <->   1.00 B(aq) ;   1.00 A(aq) ;   2.50000E-10 ;   1.00 B(aq) ;   1.00000E-10
+    1.00 C(aq) <->  1.00 D(aq) 1.00 E(aq) ;   1.00 C(aq) ;   2.50000E-10 ;   1.00 D(aq);   1.00000E-10
 
+Radioactive Decay
+~~~~~~~~~~~~~~~~~
+The radioactive decay class decays the parent species into zero or more progeny species based on the total aqueous and total sorbed concestrations. Progeny are seperated by the string " + ". The half life section is seperated from the reaction section by a semicolon. 
+
+Example::
+  <Radioactive Decay
+  # parent --> (coeff progeny + (coeff progeny))  ; half_life XXX units
+  # valid units are years, days, hours, minutes, seconds
+  1.0 Pu_238 --> 1.0 U_234 ; half_life 87.7 years
 
 Minerals
 ~~~~~~~~
@@ -135,15 +143,26 @@ Example::
 
 Sorption Isotherms
 ~~~~~~~~~~~~~~~~~~
+We currently support linear, langmuir and freundlich sorption isotherms.
+
+The Linear isotherm (C_sorbed = Kd*C_activity) requires one parameter, KD [kg_h2o/m^3 bulk]
+
+The Freundlich isotherm (C_sorbed = Kd*C_activity^n) requires two parameters, KD [kg_h2o/m^3 bulk] and n
+
+The Langmuir isotherm (C_sorbed = K * C_activity * b / (1 + K * C_activity)) requires two parameters, K [L_h2o / mol] and b [mol/m^3 bulk]
+
+From the PFloTran user guide: The units of KD are [kgwater / m^3 bulk]. "For
+KD values provided in e.g. mL / g, convert to kgw / m3 bulk by
+multiplying by \rho_w and \rho_b with proper units conversion."
 
 Example::
 
   <Isotherms
-  # Primary Species Name ; linear ; Kd
+  # Primary Species Name ; linear ; KD
   Pu_238 ; linear ;   2.00000E+07
-  # Primary Species Name ; langmuir ; Kd  langmuir_b
+  # Primary Species Name ; langmuir ; KD  langmuir_b
   U_234 ; langmuir ;   5.00000E+06    1.0
-  # Primary Species Name ; langmuir ; Kd  freundlich_n
+  # Primary Species Name ; langmuir ; KD  freundlich_n
   Th_230 ; freundlich ;   1.00000E+07  1.0
 
 

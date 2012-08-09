@@ -26,12 +26,16 @@
 #include <Observation.H>
 #include <RegionData.H>
 
+#include <PMAmr.H>
+class RichardSolver;
+#include <RichardSolver.H>
+
 #ifdef AMANZI
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #endif
 
-enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type};
+enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type};
 
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
@@ -113,6 +117,94 @@ protected:
     PArray<Region> regions;
 };
 
+struct RichardNLSdata {
+  enum Reason
+  {
+      RICHARD_SUCCESS, 
+      RICHARD_NONLINEAR_FAIL,
+      RICHARD_LINEAR_FAIL
+  };
+
+  RichardNLSdata(int slev, int nlevs, PMAmr* amrp);
+  void SetMaxNewtonIterations(int max_iter);
+  void SetMaxJacobianReuse(int max_num_reuse);
+  void SetMaxConsecutiveFails(int max_num);
+  void SetDtRetryFactor(Real factor);
+  void SetMaxConsecutiveFails2(int max_num);
+  void SetDtRetryFactor2(Real factor);
+  void SetDtRetryFactorF(Real factor);
+  void SetMaxConsecutiveErrIncrease(int max_num);
+  void SetConsecutiveErrIncreaseDtReduction(Real factor);
+
+  void SetMaxNewtonIterationsForDt(int max_iter);
+  void SetMaxConsecutiveSuccess(int max_num);
+  void SetDtIncreaseFactor(Real factor);
+  void SetMinNewtonIterationsForDt(int max_iter);
+  void SetDtIncreaseFactor2(Real factor);
+  void SetMinNewtonIterationsForDt2(int max_iter);
+  void SetDtReductionFactor(Real factor);
+
+  bool UpdateJacobian(int lev);
+  void ResetJacobianCounter(int lev);
+  void ResetJacobianCounter();
+  int NLIterationsTaken() {return nl_iterations_taken;}
+  int MaxNLIterations() {return max_nl_iterations;}
+  void operator++() {nl_iterations_taken++;}
+  void operator++(int) {nl_iterations_taken++;}
+  void SetNLIterationsTaken(int iters);
+  void ResetCounters();
+
+  bool AdjustDt(Real                dt, 
+		Reason              nl_solver_status, 
+		Real                abs_err, 
+		Real                rel_err, 
+		Real&               new_dt); // Note: return bool for whether run should stop
+      
+  bool AdjustDt(Real                dt, 
+		Reason              nl_solver_status, 
+		Real&               new_dt); // Note: return bool for whether run should stop
+
+  Array < PArray <MultiFab> > Hcoeffs;
+  Array < PArray <MultiFab> > Jacobian;
+  PArray <MultiFab>  DAlpha;
+  Array <MultiFab*> velPhase;
+  PArray <MultiFab>  initialState;
+
+private:
+  void Build();
+  int start_level, end_level;
+  int max_num_Jacobian_reuse;
+  Array<int> num_Jacobian_reuses_remaining;
+  int max_nl_iterations, nl_iterations_taken;
+  Real max_nl_residual_norm, nl_residual_norm; 
+
+  int max_num_consecutive_success, num_consecutive_success;
+  int max_num_consecutive_failures_1, num_consecutive_failures_1;
+  int max_num_consecutive_failures_2, num_consecutive_failures_2;
+  int max_num_consecutive_increases, num_consecutive_increases;
+  Real consecutive_increase_reduction_factor;
+  int min_nl_iterations_for_dt, min_nl_iterations_for_dt_2, max_nl_iterations_for_dt;
+  Real time_step_increase_factor, time_step_increase_factor_2, time_step_reduction_factor;
+  Real time_step_retry_factor, time_step_retry_factor_2, time_step_retry_factor_f;
+  bool last_chance;
+  Real prev_abs_err;
+  bool first;
+
+  Array<PArray<MultiFab> > ktmp; // Currently maintains its own copy of this, should be fixed
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew;
+  PArray<MFTower> Kappa, DarcyVelocity;
+  Vec RhsV, SolnV;
+  PMAmr* pm_amr;
+
+  SNES           snes;
+  ISColoring     iscoloring;
+  MatFDColoring  matfdcoloring;
+
+  Array<Real> gravity;
+  Array<Real> density;
+  MFTFillPatch* mftfp;
+
+};
 
 class PorousMedia
   :
@@ -122,6 +214,8 @@ public:
   friend class MacProj;
   friend class Diffusion;
   friend class Observation;
+
+    RichardNLSdata BuildInitNLS();
 
   PorousMedia ();
 
@@ -293,6 +387,8 @@ public:
   void advance_multilevel_richard  (Real time,
 				    Real dt);
 #endif
+  void advance_multilevel_saturated (Real time,
+				     Real dt);
 
   void advance_tracer  (Real time,
 			Real dt);
@@ -353,7 +449,7 @@ public:
   static Array<std::string> chk_cycle_macros, chk_time_macros;
   static int echo_inputs;
 
-protected:
+  void BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs);
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
     
@@ -362,10 +458,10 @@ protected:
   static void setup_list ();
   static void read_params ();   // Read input file
   static void read_geometry ();
-  static void read_rock ();
+  static void read_rock (int do_chem);
   static void read_prob ();
   static void read_comp (); 
-  static void read_tracer (); 
+  static void read_tracer (int do_chem); 
   static void read_source (); 
   static void read_observation (); 
   static void read_chem (); 
@@ -491,17 +587,19 @@ protected:
   void diff_capillary_update   (Real dt,
 				int  corrector,
 				MultiFab* u_mac = 0);
+#ifdef BL_USE_PETSC
+  RichardNLSdata::Reason richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNLSdata& nl_data);
+#endif
 
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
-  enum Reason {RICHARD_SUCCESS, RICHARD_NEWTON_FAIL, RICHARD_LINEAR_FAIL};
-  PorousMedia::Reason richard_scalar_update (Real dt, 
-                                  int& total_nwt_iter,
-                                  MultiFab* u_mac = 0);
+  RichardNLSdata::Reason richard_scalar_update (Real dt, 
+						int& total_nwt_iter,
+						MultiFab* u_mac = 0);
 
-  PorousMedia::Reason richard_composite_update (Real dt, 
-                                                int& total_nwt_iter);
+  RichardNLSdata::Reason richard_composite_update (Real dt, 
+						   RichardNLSdata& nl_data);
 
   void richard_init_to_steady();
 
@@ -531,9 +629,9 @@ protected:
   //
   // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
   //
-  void strang_chem (MultiFab&  state,
-		    Real       dt,
-                    int        ngrow = 0);
+  void strang_chem (Real time,
+		    Real dt,
+		    int  ngrow=0);
   //
   // Ensure state is consistent, i.e. velocity field is nondivergent,
   // coarse level data are averages of fine level data, pressure is zero.
@@ -730,18 +828,23 @@ protected:
   // Calculate the diffusive term in the jacobian of richard's equation
   //
   void calc_richard_jac (MultiFab*  diffusivity[BL_SPACEDIM],
+                         MultiFab*  dalpha,
 			 const MultiFab* lbd,
 			 const MultiFab* umac,
-			 const Real time,
-			 const int  nc = 0,
-			 const int do_upwind = 0,
-			 const bool do_n = true);
+			 Real time,
+                         Real dt,
+			 int  nc,
+			 int do_upwind,
+			 bool do_n);
 
   //
   // Calculate the dt term in the jacobian for p-formulation
   //
   void calc_richard_alpha (MultiFab*     alpha,
 			   const Real    time);
+
+  void calc_richard_alpha (MultiFab*       alpha,
+			   const MultiFab& S) const;
   //
   // Calculate divergence of velocity boundary condition 
   //
@@ -809,9 +912,8 @@ protected:
                               int        dest_comp,
                               int        src_comp,
                               int        num_comp);
-  void dirichletStateBC (const Real time);
-  void dirichletStateBC (FArrayBox& fab, Real time);
-  void dirichletTracerBC(FArrayBox& fab, Real time);
+  void dirichletStateBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
+  void dirichletTracerBC(FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
   void dirichletPressBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
@@ -897,6 +999,18 @@ protected:
   static std::string model_name;
   static int model;
 
+  PMAmr* PMParent();
+
+  MultiFab* UMac_Prev() {return u_mac_prev;}
+  MultiFab* UMac_Curr() {return u_mac_curr;}
+  MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
+  MultiFab* Porosity() {return rock_phi;}
+  MultiFab* KappaEC() {return kpedge;}
+  MultiFab* PCapParams() {return cpl_coef;}
+
+  void set_vel_from_bcs(Real      time,
+			MultiFab* vel);
+
 protected:
 
   static void InitializeStaticVariables();
@@ -918,6 +1032,9 @@ protected:
   static MultiFab*   phidata;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
+  static Real        saturation_threshold_for_vg_Kr;
+  static int         use_shifted_Kr_eval;
+
 
   // Phases and components
   static int nphases;
@@ -943,7 +1060,33 @@ protected:
   static Array<PArray<RegionData> > tbc_array;
   static std::map<std::string,Array<int> > group_map;
 
+  // Minerals, Sorption sites
+  static double uninitialized_data;
+  static int nminerals; 
+  static Array<std::string> minerals;
+  static int nsorption_sites; 
+  static Array<std::string> sorption_sites;
+  static int ncation_exchange; 
+  static int nsorption_isotherms;
+  static Array<std::string> aux_chem_variables;
+  static bool using_sorption;
+
+  typedef std::map<std::string,Real> ICParmPair; // ic parameter and value
+  typedef std::map<std::string, ICParmPair > ICLabelParmPair; // ic parameter and value associated with a labeled entity
+  typedef std::map<std::string, ICLabelParmPair> ChemICMap; // 
+  static ChemICMap sorption_isotherm_ics;    // isotherm[rockname][solute][property] = val
+  static ChemICMap mineralogy_ics;           // mineralogy[rockname][mineralsname][property] = val
+  static ChemICMap surface_complexation_ics; // sc[rockname][sorptionsitename][property]) = val
+  static ICParmPair cation_exchange_ics; // capacity[rockname] = val
+  static ChemICMap solute_chem_ics; // sc[rockname][solute][property] = val
   static Array<Real> tInflow;
+
+  typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
+  static LabelIdx mineralogy_label_map;
+  static LabelIdx sorption_isotherm_label_map;
+  static LabelIdx surface_complexation_label_map;
+  static LabelIdx solute_chem_label_map;
+  static std::map<std::string,int> cation_exchange_label_map;
 
   // Pressure
   static Real wt_lo;
@@ -978,13 +1121,10 @@ protected:
 
 #ifdef AMANZI
   static PArray<amanzi::chemistry::SimpleThermoDatabase> chemSolve;
-  static std::string amanzi_input_file;
+  static std::string amanzi_database_file;
   static std::string amanzi_activity_model; 
   static Array<amanzi::chemistry::Beaker::BeakerComponents> components;
   static Array<amanzi::chemistry::Beaker::BeakerParameters> parameters;
-  static int n_total;
-  static int n_minerals;
-  static int n_sorbed;
 #endif
   static int  max_grid_size_chem;
   static bool no_initial_values;
@@ -1073,6 +1213,8 @@ protected:
   static Real dt_cutoff;     // minimum dt allowed
   static int  sum_interval;  // number of timesteps for conservation stats
   static int  full_cycle;
+  static Real dt_init; // if >0, initial time step size
+
   //
   // Internal parameters for options.
   //
@@ -1121,30 +1263,46 @@ protected:
   static int  do_cpl_advect;
   static int  max_step;
   static Real stop_time;
+  static bool do_richard_sat_solve;
+  static bool use_PETSc_snes;
+
+  static int  richard_solver_verbose;
 
   //
   // Init-to-steady parameters
   //
   static bool do_richard_init_to_steady;
-  static int richard_init_to_steady_verbose;
-  static int steady_min_iterations;
-  static int steady_max_iterations;
-  static int steady_limit_iterations;
+  static int  richard_init_to_steady_verbose;
+  static int  steady_min_iterations;
+  static int  steady_min_iterations_2;
+  static int  steady_max_iterations;
+  static int  steady_limit_iterations;
   static Real steady_time_step_reduction_factor;
   static Real steady_time_step_increase_factor;
+  static Real steady_time_step_increase_factor_2;
   static Real steady_time_step_retry_factor_1;
   static Real steady_time_step_retry_factor_2;
   static Real steady_time_step_retry_factor_f;
-  static int max_consecutive_failures_1;
-  static int max_consecutive_failures_2;
+  static int  steady_max_consecutive_failures_1;
+  static int  steady_max_consecutive_failures_2;
   static Real steady_tolerance;
-  static Real steady_initial_time_step;
-  static Real steady_maximum_time_steps;
-  static int max_num_consecutive_success;
+  static Real steady_init_time_step;
+  static Real steady_max_time_steps;
+  static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
-  static int max_num_consecutive_increases;
-  static Real consecutive_increase_reduction_factor;
-    
+  static int  steady_max_num_consecutive_increases;
+  static Real steady_consecutive_increase_reduction_factor;
+  static Real steady_max_psuedo_time;
+  //
+  // Newton step defaults
+  //
+  static int  richard_max_ls_iterations;
+  static Real richard_min_ls_factor;
+  static Real richard_ls_acceptance_factor;
+  static Real richard_ls_reduction_factor;
+  static int richard_monitor_linear_solve;
+  static int richard_monitor_line_search;
+
   //
   // Number of states
   //

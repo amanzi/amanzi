@@ -16,29 +16,8 @@ namespace Amanzi {
 
     static Array<std::string> user_derive_list;
 
-    typedef struct {
-	std::string phase;
-	std::string component;
-	std::string solute;
-      } tridata;
-
-    static std::map<std::string,std::string> AMR_to_Amanzi_label_map;
-    std::string underscore(const std::string& instring);
-
     ParameterList convert_to_structured(const ParameterList& parameter_list);
-
-    ParameterList setup_structured();
-    
-    void convert_to_structured_mesh    (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_control (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_region  (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_material(const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
-    void convert_to_structured_output  (const ParameterList& parameter_list, 
-					ParameterList&       struc_list);
+    std::string underscore(const std::string& instring);
 
       struct ICBCFunc
       {
@@ -113,13 +92,21 @@ namespace Amanzi {
       struct COMP
       {
           const Array<std::string>& getTracerArray() const {return tracers;}
+          bool HasTracer(const std::string& name) {
+              for (int i=0; i<tracers.size(); ++i) {
+                  if (tracers[i]==name) {
+                      return true;
+                  }
+              }
+              return false;
+          }
           std::string& operator [] (int i) {return tracers[i];}
           int size() const {return tracers.size();}
           void push_back(const std::string& str)
               {
                   tracers.push_back(str);
               }
-
+          
       protected:
           Array<std::string> tracers;
       };
@@ -147,6 +134,101 @@ namespace Amanzi {
       };
       
 
+      struct SolidChem
+      {
+          SolidChem() {}
+          struct MineralData
+          {
+              MineralData()
+                  : volume_frac(0), specific_surface_area(0) {}
+              double volume_frac, specific_surface_area;
+              ParameterList BuildPL() const {
+                  ParameterList pl;
+                  pl.set("Volume_Fraction",volume_frac);
+                  pl.set("Specific_Surface_Area",specific_surface_area);
+                  return pl;
+              }
+          };
+          struct SorptionSiteData
+          {
+              SorptionSiteData() 
+                  : site_density(0) {}
+              double site_density;
+              ParameterList BuildPL() const {
+                  ParameterList pl;
+                  pl.set("Site_Density",site_density);
+                  return pl;
+              }
+          };
+          struct SorptionIsothermData
+          {
+              SorptionIsothermData() 
+                  : Kd(0), Langmuir_b(0), Freundlich_n(1) {}
+              double Kd, Langmuir_b, Freundlich_n;
+              ParameterList BuildPL() const {
+                  ParameterList pl;
+                  pl.set("Kd",Kd);
+                  if (Freundlich_n>0) {
+                      pl.set("Freundlich_n",Freundlich_n);
+                  }
+                  else {
+                      pl.set("Langmuir_b",Langmuir_b);
+                  }
+                  return pl;
+              }
+          };
+          void InitializeMinerals(const Array<std::string>& names) {
+              minerals.clear();
+              for (int i=0; i<names.size(); ++i) {
+                  minerals[names[i]] = MineralData();
+              }
+          }
+          SolidChem::MineralData& Mineral(const std::string& name) {return minerals[name];}
+          const std::map<std::string,MineralData>& Minerals() const {return minerals;}
+          bool IsAMineral(const std::string& name) const {
+              return !(minerals.find(name)==minerals.end());
+          }
+
+          void InitializeSorptionSites(const Array<std::string>& names) {
+              sorption_sites.clear();
+              for (int i=0; i<names.size(); ++i) {
+                  sorption_sites[names[i]] = SorptionSiteData();
+              }
+          }
+          SolidChem::SorptionSiteData& SorptionSite(const std::string& name) {return sorption_sites[name];}
+          const std::map<std::string,SorptionSiteData>& SorptionSites() const {return sorption_sites;}
+          bool IsASorptionSite(const std::string& name) const {
+              return !(sorption_sites.find(name)==sorption_sites.end());
+          }
+
+      protected:
+          std::map<std::string,MineralData> minerals;
+          std::map<std::string,SorptionSiteData> sorption_sites;
+          std::map<std::string,SorptionIsothermData> sorption_isotherms;
+      };
+
+
+      struct Solid
+      {
+          bool IsAMineral(const std::string& name) const {
+              for (int i=0; i<mineral_names.size(); ++i) {
+                  if (name==mineral_names[i]) return true;
+              }
+              return false;
+          }
+          bool IsASorptionSite(const std::string& name) const {
+              for (int i=0; i<sorption_site_names.size(); ++i) {
+                  if (name==sorption_site_names[i]) return true;
+              }
+              return false;
+          }
+          bool HasStuff() const {
+              return mineral_names.size() || sorption_site_names.size() || has_cation_exchange;
+          }
+          Array<std::string> mineral_names;
+          Array<std::string> sorption_site_names;
+          bool has_cation_exchange;
+      };
 
 
       typedef std::map<std::string,StateFunc> StateFuncMap;
@@ -160,12 +242,15 @@ namespace Amanzi {
           typedef std::map<std::string,PHASE::CompMap> PhaseCompMap; // phase name to CompMap
 
           Phases& getPhases() {return phases;}
+          Solid& getSolid() {return solid;}
+          const Solid& getSolid() const {return solid;}
           PhaseCompMap& getPhaseCompMap() {return phase_comp_map;}
           CompMap& operator [] (const std::string& phase) {return phase_comp_map[phase];}
           StateFuncMap& IC() {return state_ics;}
           StateFuncMap& BC() {return state_bcs;}
           const ParameterList& PL() const {return parameter_list;}
           void clear();
+          bool HasSolidChem() const {return getSolid().HasStuff();}
 
       protected:
           void build_state_def();
@@ -177,7 +262,9 @@ namespace Amanzi {
           const ParameterList& parameter_list;
           Phases phases;
           PhaseCompMap phase_comp_map;
-          StateFuncMap state_ics, state_bcs;          
+          StateFuncMap state_ics, state_bcs;
+          Solid solid;
+          bool has_solid_chem;
       };
 
       class PLoptions
@@ -233,16 +320,16 @@ namespace Amanzi {
                       }
                   }
                   if (reqListsOnly && optLists.size()) {
-                      bailLists();
+                      bailLists(p);
                   }
                   if (reqParmsOnly && optParms.size()) {
-                      bailParms();
+                      bailParms(p);
                   }
               }   
 
-          void bailParms() 
+          void bailParms(const ParameterList& p) 
               {
-                  std::cerr << "Unsupported option parameters(s) in ParameterList: " << std::endl;
+		  std::cerr << "Unsupported option parameters(s) in ParameterList: " << p.name() << std::endl;
                   for (int i=0; i<optParms.size(); ++i) {
                       std::cerr << "\"" << optParms[i] << "\" ";
                   }
@@ -258,9 +345,9 @@ namespace Amanzi {
                   std::cerr << '\n';
                   throw std::exception();
               }
-          void bailLists() 
+          void bailLists(const ParameterList& p) 
               {
-                  std::cerr << "Unsupported option list(s) in ParameterList: " << std::endl;
+		  std::cerr << "Unsupported option list(s) in ParameterList: " << p.name() << std::endl;
                   for (int i=0; i<optLists.size(); ++i) {
                       std::cerr << "\"" << optLists[i] << "\" ";
                   }
@@ -280,7 +367,6 @@ namespace Amanzi {
           Array<std::string> reqLists, optLists, reqParms, optParms;
           bool reqListsOnly, reqParmsOnly;
       };
-
   }
 }
 #endif // Input_Parser_Structured_H_
