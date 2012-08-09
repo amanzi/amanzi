@@ -420,7 +420,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     ML_list = prec_list;
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
-  } else {
+  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE_API
     // read some boomer amg parameters
     hypre_ncycles = prec_list.get<int>("cycle applications",5);
@@ -428,6 +428,8 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     hypre_tol = prec_list.get<double>("tolerance",0.0);
     hypre_strong_threshold = prec_list.get<double>("strong threshold",0.0);
 #endif
+  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
+    ifp_plist_ = prec_list;
   }
 }
 
@@ -441,7 +443,7 @@ void Matrix_MFD::UpdatePreconditioner()
     if (MLprec->IsPreconditionerComputed()) MLprec->DestroyPreconditioner();
     MLprec->SetParameterList(ML_list);
     MLprec->ComputePreconditioner();
-  } else {
+  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE_API
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[10];
@@ -466,6 +468,15 @@ void Matrix_MFD::UpdatePreconditioner()
     IfpHypre_Sff_->Initialize();
     IfpHypre_Sff_->Compute();
 #endif
+  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
+    Ifpack factory;
+    std::string prectype("ILU");
+    int ovl = ifp_plist_.get<int>("overlap",0);
+    ifp_plist_.set<std::string>("schwarz: combine mode","Add");
+    ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*Sff_, ovl));
+    ifp_prec_->SetParameters(ifp_plist_);
+    ifp_prec_->Initialize();
+    ifp_prec_->Compute();
   }
 }
 
@@ -560,10 +571,12 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   // Solve the Schur complement system Sff * Yf = Tf.
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Tf, Yf);
-  } else { 
+  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
 #ifdef HAVE_HYPRE_API
     IfpHypre_Sff_->ApplyInverse(Tf, Yf);
 #endif
+  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
+    ifp_prec_->ApplyInverse(Tf, Yf);
   }
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)

@@ -28,7 +28,7 @@ struct BDF1State {
     retried_bce = 0;
     failed_bce = 0;
     rejected_steps = 0;
-    hmin = std::numeric_limits<double>::min();
+    eps = std::numeric_limits<double>::epsilon();
     hmax = std::numeric_limits<double>::max();
     
     hlimit = 1e10;
@@ -72,7 +72,7 @@ struct BDF1State {
   int    retried_bce;    // number of retried BCE steps
   int    failed_bce;     // number of completely failed BCE steps
   int    rejected_steps; // number of steps rejected on error tolerance
-  double hmin;           // minimum step size used on a successful step
+  double eps;            // machine epsilon used in deciding when time step is too small
   double hmax;           // maximum step size used on a successful step
   double hinc;           // stepsize increase factor
   double hred;           // stepsize reduction factor

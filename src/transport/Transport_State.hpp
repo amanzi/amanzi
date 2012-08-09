@@ -35,6 +35,10 @@ class Transport_State {
   void CopyMasterMultiCell2GhostMultiCell(const Epetra_MultiVector& v, 
                                           Epetra_MultiVector& vv, int parallel_comm = 1);
 
+  // extension of Trilinos
+  void MinValueMasterCells(Epetra_MultiVector& v, double* vmin);
+  void MaxValueMasterCells(Epetra_MultiVector& v, double* vmax);
+
   // access methods for state variables
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration() { return total_component_concentration_; }
 

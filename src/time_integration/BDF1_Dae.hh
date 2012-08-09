@@ -69,6 +69,7 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   double margin;
 
   int mtries;
+  int total_non_iter;
 
   BDF1State state;
   nka* fpa;

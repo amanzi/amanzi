@@ -21,7 +21,7 @@
 #include "amanzi_unstructured_grid_simulation_driver.hpp"
 #include "InputParserIS.hh"
 
-
+#include "TimerManager.hh"
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
@@ -85,6 +85,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
 
   // Create the simulation domain
+  Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
+  Amanzi::timer_manager.start("Geometric Model creation");
 
   Teuchos::ParameterList domain_params = new_list.sublist("Domain");
   unsigned int spdim = domain_params.get<int>("Spatial Dimension");
@@ -111,6 +113,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
 
+  Amanzi::timer_manager.stop("Geometric Model creation");
 
   // If we had geometric models and free regions coexisting then we would 
   // create the free regions here and add them to the simulation domain
@@ -119,6 +122,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // ---------------- MESH -----------------------------------------------
 
+  Amanzi::timer_manager.add("Mesh creation",Amanzi::Timer::ONCE);
+  Amanzi::timer_manager.start("Mesh creation");
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm) ;
@@ -260,6 +265,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     std::cerr << rank << ": error: " << "Neither Read nor Generate options specified for mesh" << std::endl;
     throw std::exception();
   }
+  Amanzi::timer_manager.stop("Mesh creation");
 
   ASSERT(!mesh.is_null());
 

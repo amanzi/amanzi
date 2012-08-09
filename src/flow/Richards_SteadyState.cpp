@@ -41,7 +41,6 @@ int Richards_PK::AdvanceToSteadyState()
   DeriveSaturationFromPressure(*solution_cells, ws);
   ws_prev = ws;
 
-  if (ierr == 0) flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
   return ierr;
 }
 

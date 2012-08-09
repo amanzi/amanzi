@@ -236,7 +236,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
     std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
   }
 
-  flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
+  flow_status_ = FLOW_STATUS_STEADY_STATE;
 }
 
 
@@ -264,7 +264,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
 
 
@@ -310,8 +310,6 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
     std::cout << "Darcy solver performed " << num_itrs_sss << " iterations." << std::endl
               << "Norm of true residual = " << residual_sss << std::endl;
   }
-
-  flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
 }
 
 
@@ -377,7 +375,6 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
   return 0;
 }
 
