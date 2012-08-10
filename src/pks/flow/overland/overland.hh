@@ -22,6 +22,7 @@ Authors: Gianmarco Manzini
 #include "state.hh"
 #include "matrix_mfd.hh"
 #include "upwinding.hh"
+#include "primary_variable_field_model.hh"
 #include "boundary_function.hh"
 #include "composite_vector_function.hh"
 
@@ -108,42 +109,14 @@ private:
 
   // physical methods
   // -- diffusion term
-  void ApplyDiffusion_(const Teuchos::RCP<State>& S, const Teuchos::RCP<CompositeVector>& g);
-
+  void ApplyDiffusion_(const Teuchos::RCP<State>& S,const Teuchos::RCP<CompositeVector>& g);
   // -- accumulation term
   void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
+  // -- source terms
+  void AddLoadValue_(const Teuchos::RCP<CompositeVector>& g);
 
-  void AddLoadValue_(const Teuchos::RCP<State>& S,
-                     const Teuchos::RCP<CompositeVector>& g) ;
-
-  // -- add elevation to overland pressure
-  void AddElevation_(const Teuchos::RCP<Amanzi::State>&) ;
-
-  // -- update secondary variables from primary variables T,p
-  void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
-
-  void UpdateLoadValue_(const Teuchos::RCP<State>& S);
-
-  void UpdateConductivity_(const Teuchos::RCP<State>& S);
-  void Conductivity_( const Teuchos::RCP<State>& S,
-                      const CompositeVector& pressure,
-                      const CompositeVector& manning_coef,
-                      const CompositeVector& slope_magnitude,
-                      const Teuchos::RCP<CompositeVector>& conductivity);
-
-  // -- test 1, elevation methods
-  void   TestOneSetUpElevationPars_() ;
-  double TestOneElevation_( double x, double y ) ;
-  void   TestOneSetElevation_( const Teuchos::RCP<State>& S ) ;
-
-  // -- test 2, elevation methods
-  int    TestTwoZoneFlag_ ( double x, double y ) ;
-  void   TestTwoSetUpElevationPars_() ;
-  double TestTwoElevation_( double x, double y ) ;
-  void   TestTwoSetElevation_( const Teuchos::RCP<State>& S ) ;
-
-  // -- setup of elevation pars
-  void SetUpElevation_( const Teuchos::RCP<State>& S ) ;
+  // mesh creation
+  void CreateMesh_(const Teuchos::RCP<State>& S);
 
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
@@ -183,6 +156,8 @@ private:
   Teuchos::RCP<Functions::CompositeVectorFunction> manning_coef_function_;
   double manning_exp_;
   double slope_regularization_;
+  bool is_source_term_;
+  bool is_coupling_term_;
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;

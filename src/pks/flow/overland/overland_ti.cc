@@ -33,7 +33,6 @@ void OverlandFlow::fun( double t_old,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
                         Teuchos::RCP<TreeVector> g ) {
-  S_inter_->set_time(t_old);
   S_next_ ->set_time(t_new);
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
@@ -42,22 +41,9 @@ void OverlandFlow::fun( double t_old,
   std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
   std::cout << "  p1: " << (*u)("cell",0,9) << " " << (*u)("face",0,29) << std::endl;
 #endif
-  //print_vector(S_next_,u,"fun") ;
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
-
-  // ensure postive pressure
-  // double minval = 0.0;
-  // S_next_->GetFieldData("overland_pressure")->ViewComponent("cell", false)->MinValue(&minval);
-  // if (minval < 0.0) {
-  //   // cannot handle negative pressures, punt
-  //   std::cout << "Cutting time step due negative pressure in residual function." << std::endl;
-  //   Errors::Message m("Cut time step");
-  //   Exceptions::amanzi_throw(m);
-  // }
-
-  UpdateSecondaryVariables_(S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(t_new);
@@ -90,13 +76,11 @@ void OverlandFlow::fun( double t_old,
 #endif
 
   // add rhs load value
-  AddLoadValue_(S_next_,res);
+  AddLoadValue_(res);
 #if DEBUG_RES_FLAG
   std::cout << "  res0 (after source): " << (*res)("cell",0,0) << " " << (*res)("face",0,0) << std::endl;
   std::cout << "  res1 (after source): " << (*res)("cell",0,9) << " " << (*res)("face",0,29) << std::endl;
 #endif
-
-  //print_vector(S_next_,res, "residual") ;
 
   niter_++;
 };
@@ -153,7 +137,6 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
     }
   }
 
-  //*Pu = *u ;
 #if DEBUG_FLAG
   std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,0) << std::endl;
   std::cout << "  PC*p1: " << (*Pu->data())("cell",0,9) << " " << (*Pu->data())("face",0,29) << std::endl;
@@ -244,7 +227,6 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
 #ifdef UPDATE_FOR_REAL
   S_next_->set_time(t);
   PK::solution_to_state(up, S_next_);
-  UpdateSecondaryVariables_(S_next_);
 #endif
 
 #ifdef UPDATE_FOR_REAL
@@ -267,11 +249,9 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
 
   // 2. Update local matrices diagonal with the accumulation terms.
   Teuchos::RCP<const CompositeVector> cell_volume =
-    S_next_->GetFieldData("surface_cell_volume");
-
-  Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("overland_pressure");
-  Teuchos::RCP<const CompositeVector> rain = S_next_->GetFieldData("rainfall_rate");
-  Teuchos::RCP<const CompositeVector> slope_mag = S_next_->GetFieldData("slope_magnitude");
+      S_next_->GetFieldData("surface_cell_volume");
+  Teuchos::RCP<const CompositeVector> pres =
+      S_next_->GetFieldData("overland_pressure");
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
@@ -280,10 +260,6 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
     // accumulation term
     Acc_cells[c] += (*cell_volume)("cell",c) / h;
     Fc_cells[c] += (*pres)("cell",c) * (*cell_volume)("cell",c) / h;
-
-    // source term
-    //Fc_cells[c] += rhs_load_value(S_next_->time()) * (*cell_volume)("cell",0,c);
-    //Fc_cells[c] += (*rain)("cell",c) * (*cell_volume)("cell",c);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

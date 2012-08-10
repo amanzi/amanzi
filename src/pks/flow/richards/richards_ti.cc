@@ -8,11 +8,14 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
+#include "boost/math/special_functions/fpclassify.hpp"
 
 #include "richards.hh"
 
 namespace Amanzi {
 namespace Flow {
+
+#define DEBUG_FLAG 0
 
 // Richards is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -24,9 +27,11 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   S_next_->set_time(t_new);
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
+#if DEBUG_FLAG
   std::cout << "Richards Residual calculation:" << std::endl;
   std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
   std::cout << "  p1: " << (*u)("cell",0,99) << " " << (*u)("face",0,497) << std::endl;
+#endif
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -42,26 +47,33 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
+#if DEBUG_FLAG
   std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after diffusion): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+#endif
 
   // accumulation term
   AddAccumulation_(res);
+#if DEBUG_FLAG
   std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+#endif
 };
-
 
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
 void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+#if DEBUG_FLAG
   std::cout << "Precon application:" << std::endl;
   std::cout << "  p0: " << (*u->data())("cell",0,0) << " " << (*u->data())("face",0,3) << std::endl;
   std::cout << "  p1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
+#endif
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
+#if DEBUG_FLAG
   std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
   std::cout << "  PC*p1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,497) << std::endl;
+#endif
 };
 
 
@@ -70,28 +82,45 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 // -----------------------------------------------------------------------------
 double Richards::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
-  double enorm_val = 0.0;
-  Teuchos::RCP<const Epetra_MultiVector> pres_vec = u->data()->ViewComponent("cell", false);
-  Teuchos::RCP<const Epetra_MultiVector> dpres_vec = du->data()->ViewComponent("cell", false);
+  Teuchos::RCP<const CompositeVector> pres = u->data();
+  Teuchos::RCP<const CompositeVector> dpres = du->data();
 
-  for (int lcv=0; lcv!=pres_vec->MyLength(); ++lcv) {
-    double tmp = abs((*(*dpres_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*pres_vec)(0))[lcv]));
-    enorm_val = std::max<double>(enorm_val, tmp);
+
+  double enorm_val_cell = 0.0;
+  for (int c=0; c!=pres->size("cell",false); ++c) {
+    if (boost::math::isnan<double>((*dpres)("cell",c))) {
+      std::cout << "Cutting time step due to NaN in correction." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+
+    double tmp = abs((*dpres)("cell",c)) / (atol_ + rtol_ * abs((*pres)("cell",c)));
+    enorm_val_cell = std::max<double>(enorm_val_cell, tmp);
+    //    printf("cell: %5i %14.7e %14.7e\n",lcv,(*(*dpres_vec)(0))[lcv],tmp);
   }
 
-  Teuchos::RCP<const Epetra_MultiVector> fpres_vec = u->data()->ViewComponent("face", false);
-  Teuchos::RCP<const Epetra_MultiVector> fdpres_vec = du->data()->ViewComponent("face", false);
+  double enorm_val_face = 0.0;
+  for (int f=0; f!=pres->size("face",false); ++f) {
+    if (boost::math::isnan<double>((*dpres)("face",f))) {
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
 
-  for (int lcv=0; lcv!=fpres_vec->MyLength(); ++lcv) {
-    double tmp = abs((*(*fdpres_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*fpres_vec)(0))[lcv]));
-    enorm_val = std::max<double>(enorm_val, tmp);
+    double tmp = abs((*dpres)("face",f)) / (atol_ + rtol_ * abs((*pres)("face",f)));
+    enorm_val_face = std::max<double>(enorm_val_face, tmp);
+    //    printf("face: %5i %14.7e %14.7e\n",lcv,(*(*fdpres_vec)(0))[lcv],tmp);
   }
 
+
+  //  std::cout.precision(15);
+  //  std::cout << "enorm val (cell, face): " << std::scientific << enorm_val_cell
+  //            << " / " << std::scientific << enorm_val_face << std::endl;
+
+  double enorm_val = std::max<double>(enorm_val_cell, enorm_val_face);
 #ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
-
   return enorm_val;
 };
 

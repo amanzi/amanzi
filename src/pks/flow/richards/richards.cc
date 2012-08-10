@@ -38,7 +38,6 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   solution_ = solution;
 
   // Require fields and models for those fields.
-
   // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
@@ -64,7 +63,6 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   // -- water content, and model
   S->RequireField("water_content")->SetMesh(S->Mesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-
   Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content model");
   wc_ = Teuchos::rcp(new RichardsWaterContent(wc_plist));
   S->SetFieldModel("water_content", wc_);
@@ -78,9 +76,6 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   // -- Water retention models, for saturation and rel perm.
   S->RequireField("relative_permeability")->SetMesh(S->Mesh())->SetGhosted()
                     ->AddComponents(names2, locations2, num_dofs2);
-  S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
-  S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
 
   Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention model");
   wrm_ = Teuchos::rcp(new FlowRelations::WRMStandardModel(wrm_plist));
@@ -117,6 +112,9 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   bc_flux_ = bc_factory.CreateMassFlux();
 
   // Create the upwinding method
+  S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+  S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
   string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
   bool symmetric = false;
   if (method_name == "Upwind with gravity") {
@@ -271,18 +269,18 @@ bool Richards::advance(double dt) {
 
   // take a bdf timestep
   double h = dt;
-  //  try {
+  try {
     dt_ = time_stepper_->time_step(h, solution_);
-  // } catch (Exceptions::Amanzi_exception &error) {
-  //   std::cout << "Timestepper called error: " << error.what() << std::endl;
-  //   if (error.what() == std::string("BDF time step failed")) {
-  //     // try cutting the timestep
-  //     dt_ = dt_*time_step_reduction_factor_;
-  //     return true;
-  //   } else {
-  //     throw error;
-  //   }
-    //  }
+  } catch (Exceptions::Amanzi_exception &error) {
+    std::cout << "Timestepper called error: " << error.what() << std::endl;
+    if (error.what() == std::string("BDF time step failed")) {
+      // try cutting the timestep
+      dt_ = dt_*time_step_reduction_factor_;
+      return true;
+    } else {
+      throw error;
+    }
+  }
 
   // commit the step as successful
   time_stepper_->commit_solution(h, solution_);
