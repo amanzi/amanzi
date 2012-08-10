@@ -2114,7 +2114,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   PArray<MFTower> DarcyVelocity(BL_SPACEDIM,PArrayNoManage);
   PArray<MFTower> KappaMFT(BL_SPACEDIM,PArrayNoManage);
   Array<PArray<MultiFab> > ktmp(BL_SPACEDIM); // TODO: figure out why the ba on this is weird
-  PArray<MultiFab> utmp(BL_SPACEDIM,PArrayNoManage);
+  PArray<MultiFab> utmp(nlevs,PArrayNoManage);
   for (int d=0; d<BL_SPACEDIM; ++d) {
       ktmp[d].resize(nlevs,PArrayManage);
       for (int lev=0; lev<nlevs; ++lev) {
