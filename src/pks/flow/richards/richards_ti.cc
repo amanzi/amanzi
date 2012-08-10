@@ -154,7 +154,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   std::cout << "updated precon " << S_next_->cycle() << std::endl;
   */
 
-  preconditioner_->UpdateMLPreconditioner();
+  preconditioner_->UpdatePreconditioner();
 };
 
 }  // namespace Flow

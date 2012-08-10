@@ -133,7 +133,7 @@ void Permafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   std::cout << "updated precon " << S_next_->cycle() << std::endl;
   */
 
-  preconditioner_->UpdateMLPreconditioner();
+  preconditioner_->UpdatePreconditioner();
 
   // test_precon(t, up, h);
 };

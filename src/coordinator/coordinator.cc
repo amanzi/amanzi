@@ -49,12 +49,10 @@ void Coordinator::coordinator_init() {
   const Teuchos::ParameterEntry &pk_value = pks_list.entry(pk_item);
 
   // -- create the solution
-  std::cout << "Coordinator creating TreeVec with name: " << pk_name << std::endl;
   soln_ = Teuchos::rcp(new TreeVector(pk_name));
 
   // -- create the pk
   PKFactory pk_factory;
-  std::cout << "Coordinator creating PK with name: " << pk_name << std::endl;
   pk_ = pk_factory.CreatePK(pks_list.sublist(pk_name), S_, soln_);
   pk_->set_name(pk_name);
 
@@ -82,7 +80,8 @@ void Coordinator::initialize() {
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->Mesh("surface");
 
     std::string plist_name = "Visualization surface";
-    Teuchos::ParameterList vis_plist = parameter_list_.sublist(plist_name);
+    Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
+      vis_plist.set<std::string>("File Name Base","surface");
     Teuchos::RCP<Visualization> vis =
       Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
@@ -92,7 +91,6 @@ void Coordinator::initialize() {
     S_->RemoveMesh("surface_3d");
     surface_done = true;
   }
-
   for (State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
@@ -101,7 +99,8 @@ void Coordinator::initialize() {
       // pass
     } else {
       std::string plist_name = "Visualization "+mesh->first;
-      Teuchos::ParameterList vis_plist = parameter_list_.sublist(plist_name);
+      Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
+      vis_plist.set<std::string>("File Name Base",mesh->first);
       Teuchos::RCP<Visualization> vis =
         Teuchos::rcp(new Visualization(vis_plist, comm_));
       vis->set_mesh(mesh->second);
@@ -149,6 +148,15 @@ void Coordinator::read_parameter_list() {
 // timestep loop
 // -----------------------------------------------------------------------------
 void Coordinator::cycle_driver() {
+  // start at time t = t0 and initialize the state.  In a flow steady-state
+  // problem, this should include advancing flow to steady state (which should
+  // be done by flow_pk->initialize_state(S)
+  S_->set_time(t0_);
+  S_->set_cycle(0);
+  initialize();
+  S_->set_time(t0_); // in case steady state solve changed this
+  S_->set_cycle(0);
+
   // the time step manager coordinates all non-physical timesteps
   TimeStepManager tsm;
   // register times with the tsm
@@ -162,15 +170,6 @@ void Coordinator::cycle_driver() {
   //if (observations_) observations_->register_with_time_step_manager(TSM);
   // -- register the final time
   tsm.RegisterTimeEvent(t1_);
-
-  // start at time t = t0 and initialize the state.  In a flow steady-state
-  // problem, this should include advancing flow to steady state (which should
-  // be done by flow_pk->initialize_state(S)
-  S_->set_time(t0_);
-  S_->set_cycle(0);
-  initialize();
-  S_->set_time(t0_); // in case steady state solve changed this
-  S_->set_cycle(0);
 
   // make observations
   //  observations_->MakeObservations(*S_);
@@ -212,9 +211,11 @@ void Coordinator::cycle_driver() {
     // ask the step manager if this step is ok
     dt = tsm.TimeStep(S_->time(), dt);
 
-    std::cout << "Cycle = " << S_->cycle();
-    std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
-    std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+    if (comm_->MyPID() == 0) {
+      std::cout << "Cycle = " << S_->cycle();
+      std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
+      std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+    }
 
     // advance
     S_next_->advance_time(dt);
