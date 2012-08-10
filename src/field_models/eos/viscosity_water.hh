@@ -16,7 +16,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory_with_state.hh"
+#include "factory.hh"
 #include "viscosity_model.hh"
 
 namespace Amanzi {
@@ -27,7 +27,9 @@ namespace FlowRelations {
 class ViscosityModelWater : public ViscosityModel {
 
 public:
-  ViscosityModelWater(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  explicit
+  ViscosityModelWater(Teuchos::ParameterList& eos_plist);
+
   ViscosityModelWater(const ViscosityModelWater& other);
 
   virtual Teuchos::RCP<FieldModel> Clone() const;
@@ -46,7 +48,7 @@ private:
   // -- temperature dependence of viscosity > T1
   const double kbv2_, kcv2_, kT1_;
 
-  static Utils::RegisteredFactoryWithState<ViscosityModel,ViscosityModelWater> factory_;
+  static Utils::RegisteredFactory<FieldModel,ViscosityModelWater> factory_;
 
 };
 

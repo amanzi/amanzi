@@ -37,22 +37,23 @@ WHOLE_ARCHIVE(flow_relations_wrm)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(amanzi_mesh_functions)
+WHOLE_ARCHIVE(amanzi_state)
 
 target_link_libraries(ats
                       coordinator
                       ${mpc}
                       ${pk_factory}
 #                      ${pk_transport_passive_tracer}
-                      ${pk_energy_constant_temperature}
-                      ${pk_energy_advection_diffusion}
-                      ${pk_energy_two_phase}
-                      ${pk_energy_three_phase}
+#                      ${pk_energy_constant_temperature}
+#                      ${pk_energy_advection_diffusion}
+#                      ${pk_energy_two_phase}
+#                      ${pk_energy_three_phase}
                       ${pk_flow_richards}
-                      ${pk_flow_permafrost}
-                      ${pk_flow_overland}
-                      energy_bc_factory
-                      ${energy_relations_thermal_conductivity}
-                      ${energy_relations_internal_energy}
+#                      ${pk_flow_permafrost}
+#                      ${pk_flow_overland}
+#                      energy_bc_factory
+#                      ${energy_relations_thermal_conductivity}
+#                      ${energy_relations_internal_energy}
                       flow_bc_factory
                       ${flow_relations_eos}
                       ${flow_relations_wrm}
@@ -70,7 +71,7 @@ target_link_libraries(ats
                       amanzi_interface
                       amanzi_output
                       amanzi_stk_mesh
-                      amanzi_state
+                      ${amanzi_state}
                       )
 
 install(TARGETS ats DESTINATION ${ATS_SOURCE_DIR}/bin)

@@ -18,10 +18,10 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactoryWithState<ViscosityModel,ViscosityModelWater> ViscosityModelWater::factory_("liquid water");
+Utils::RegisteredFactory<FieldModel,ViscosityModelWater> ViscosityModelWater::factory_("viscosity of liquid water");
 
-ViscosityModelWater::ViscosityModelWater(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
-    ViscosityModel(eos_plist, S),
+ViscosityModelWater::ViscosityModelWater(Teuchos::ParameterList& eos_plist) :
+    ViscosityModel(eos_plist),
     kav1_(998.333),
     kbv1_(-8.1855),
     kcv1_(0.00585),

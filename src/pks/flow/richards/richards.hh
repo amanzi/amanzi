@@ -24,9 +24,8 @@
 #include "pk_factory.hh"
 #include "bdf_time_integrator.hh"
 
-#include "wrm.hh"
-#include "eos.hh"
-#include "eos_vapor_in_gas.hh"
+#include "richards_water_content.hh"
+#include "wrm_standard_model.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -114,46 +113,6 @@ protected:
   virtual void AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& darcy_mass_flux);
 
-  // -- update secondary variables from primary variables T,p
-  virtual void UpdateSecondaryVariables_(const Teuchos::RCP<State>& S);
-
-  virtual void UpdateDensityLiquid_(const Teuchos::RCP<State>& S);
-  virtual void DensityLiquid_(const Teuchos::RCP<State>& S,
-          const CompositeVector& temp,
-          const CompositeVector& pres,
-          const Teuchos::RCP<CompositeVector>& dens_liq,
-          const Teuchos::RCP<CompositeVector>& mol_dens_liq);
-
-  virtual void UpdateViscosityLiquid_(const Teuchos::RCP<State>& S);
-  virtual void ViscosityLiquid_(const Teuchos::RCP<State>& S,
-          const CompositeVector& temp,
-          const Teuchos::RCP<CompositeVector>& visc_liq);
-
-  virtual void UpdateDensityGas_(const Teuchos::RCP<State>& S);
-  virtual void DensityGas_(const Teuchos::RCP<State>& S,
-                           const CompositeVector& temp,
-                           const CompositeVector& pres,
-                           const double& p_atm,
-                           const Teuchos::RCP<CompositeVector>& mol_frac_gas,
-                           const Teuchos::RCP<CompositeVector>& dens_gas,
-                           const Teuchos::RCP<CompositeVector>& mol_dens_gas);
-
-  virtual void UpdateSaturation_(const Teuchos::RCP<State>& S);
-  virtual void Saturation_(const Teuchos::RCP<State>& S,
-                           const CompositeVector& pres,
-                           const double& p_atm,
-                           const Teuchos::RCP<CompositeVector>& sat_liq);
-
-  virtual void DSaturationDp_(const Teuchos::RCP<State>& S,
-          const CompositeVector& pres,
-          const double& p_atm,
-          const Teuchos::RCP<CompositeVector>& dsat_liq);
-
-  virtual void UpdateRelativePermeability_(const Teuchos::RCP<State>& S);
-  virtual void RelativePermeability_(const Teuchos::RCP<State>& S,
-          const CompositeVector& pres,
-          const double& p_atm,
-          const Teuchos::RCP<CompositeVector>& rel_perm);
 
 protected:
   // control switches
@@ -171,13 +130,10 @@ protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
-  // constitutive relations
-  Teuchos::RCP<FlowRelations::EOS> eos_liquid_;
-  Teuchos::RCP<FlowRelations::EOSVaporInGas> eos_gas_;
+  // accumulation of water
+  Teuchos::RCP<RichardsWaterContent> wc_;
+  Teuchos::RCP<FlowRelations::WRMStandardModel> wrm_;
 
-  // wrms specified on a region-basis
-  typedef std::pair< std::string, Teuchos::RCP<FlowRelations::WRM> > WRMRegionPair;
-  std::vector< Teuchos::RCP<WRMRegionPair> > wrm_;
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;

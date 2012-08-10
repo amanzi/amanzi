@@ -16,7 +16,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory_with_state.hh"
+#include "factory.hh"
 #include "eos.hh"
 
 namespace Amanzi {
@@ -27,7 +27,9 @@ namespace FlowRelations {
 class EOSWater : public EOS {
 
 public:
-  EOSWater(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  explicit
+  EOSWater(Teuchos::ParameterList& eos_plist);
+
   EOSWater(const EOSWater& other);
 
   virtual Teuchos::RCP<FieldModel> Clone() const;
@@ -36,8 +38,8 @@ public:
   virtual double DDensityDT(double T, double p);
   virtual double DDensityDp(double T, double p);
 
-  virtual double molar_mass() { return M_; }
-  virtual bool is_molar_basis() { return true; }
+  virtual double molar_mass() const { return M_; }
+  virtual bool is_molar_basis() const { return true; }
 
 private:
   virtual void InitializeFromPlist_();
@@ -53,7 +55,7 @@ private:
   // -- pressure dependence of density
   const double kalpha_, kp0_;
 
-  static Utils::RegisteredFactoryWithState<EOS,EOSWater> factory_;
+  static Utils::RegisteredFactory<FieldModel,EOSWater> factory_;
 
 };
 

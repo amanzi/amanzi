@@ -17,10 +17,10 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactoryWithState<EOS,EOSConstant> EOSConstant::factory_("constant");
+Utils::RegisteredFactory<FieldModel,EOSConstant> EOSConstant::factory_("constant");
 
-EOSConstant::EOSConstant(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
-    EOS(eos_plist, S) {
+EOSConstant::EOSConstant(Teuchos::ParameterList& eos_plist) :
+    EOS(eos_plist) {
   InitializeFromPlist_();
 };
 

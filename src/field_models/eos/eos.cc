@@ -14,30 +14,35 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-EOS::EOS(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
+EOS::EOS(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist) {
 
   // Process the list for my provided field.
-  my_key_ = eos_plist_.get<string>("density key");
-
+  if (eos_plist_.isParameter("density key")) {
+    my_key_ = eos_plist_.get<string>("density key");
+  } else {
+    std::string name = eos_plist_.name();
+    std::size_t start = name.find_last_of(">");
+    my_key_ = name.substr(start+1);
+  }
 
   // Set up my dependencies.
-  std::string::size_t end = my_key_.find_first_of("_");
+  std::size_t end = my_key_.find_first_of("_");
   std::string domain_name = my_key_.substr(0,end);
-  if (domain_name == std::string("density")) {
+  if (domain_name == std::string("density") ||
+      domain_name == std::string("molar")) {
     domain_name = std::string("");
+  } else {
+    domain_name = domain_name+std::string("_");
   }
 
   // -- temperature
-  temp_key_ = domain_name+std::string("_temperature");
+  temp_key_ = domain_name+std::string("temperature");
   dependencies_.insert(temp_key_);
 
   // -- pressure
-  pres_key_ = domain_name+std::string("_pressure");
+  pres_key_ = domain_name+std::string("pressure");
   dependencies_.insert(pres_key_);
-
-  // Check the consistency.
-  CheckCompatibility_or_die_(S);
 };
 
 

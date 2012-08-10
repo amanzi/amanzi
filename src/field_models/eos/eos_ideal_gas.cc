@@ -15,10 +15,10 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactoryWithState<EOS,EOSIdealGas> EOSIdealGas::factory_("ideal gas");
+Utils::RegisteredFactory<FieldModel,EOSIdealGas> EOSIdealGas::factory_("EOS of an ideal gas");
 
-EOSIdealGas::EOSIdealGas(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
-    EOS(eos_plist, S) {
+EOSIdealGas::EOSIdealGas(Teuchos::ParameterList& eos_plist) :
+    EOS(eos_plist) {
   InitializeFromPlist_();
 };
 

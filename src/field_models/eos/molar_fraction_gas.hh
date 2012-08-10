@@ -1,14 +1,14 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  Basic interface of a ViscosityModel.
+  Determining the molar fraction of a gas component within a gas mixture.
 
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef PK_FLOW_VISCOSITY_HH_
-#define PK_FLOW_VISCOSITY_HH_
+#ifndef PK_FLOWRELATIONS_MOLAR_FRACTION_GAS_
+#define PK_FLOWRELATIONS_MOLAR_FRACTION_GAS_
 
 #include "secondary_variable_field_model.hh"
 
@@ -17,18 +17,14 @@ namespace Flow {
 namespace FlowRelations {
 
 // Equation of State model
-class ViscosityModel : public SecondaryVariableFieldModel {
+class MolarFractionGas : public SecondaryVariableFieldModel {
 
  public:
-  // constructor format for all derived classes
   explicit
-  ViscosityModel(Teuchos::ParameterList& eos_plist);
+  MolarFractionGas(Teuchos::ParameterList& mfg_plist);
 
-  ViscosityModel(const ViscosityModel& other);
-
-  // Virtual methods that form the ViscosityModel
-  virtual double Viscosity(double T) = 0;
-  virtual double DViscosityDT(double T) = 0;
+  MolarFractionGas(const MolarFractionGas& other);
+  virtual Teuchos::RCP<FieldModel> Clone() const;
 
   // Required methods from SecondaryVariableFieldModel
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -39,15 +35,18 @@ class ViscosityModel : public SecondaryVariableFieldModel {
  protected:
 
   // PList
-  Teuchos::ParameterList visc_plist_;
-
-  // Keys for fields
-  // dependencies
+  Teuchos::ParameterList mfg_plist_;
   Key temp_key_;
+
+  Teuchos::RCP<VaporPressureModel> sat_vapor_model_;
+
+ private:
+  static Utils::RegisteredFactory<FieldModel,MolarFractionGas> factory_;
+
 };
 
-} // namespace
-} // namespace
-} // namespace
+} //namespace
+} //namespace
+} //namespace
 
 #endif

@@ -65,18 +65,14 @@ void Coordinator::coordinator_init() {
 }
 
 void Coordinator::initialize() {
-  // initialize the state (which should initialize all independent variables)
-  S_->Initialize();
+  // Set up the state, creating all data structures.
+  S_->Setup();
 
-  // initialize the process kernels (which should initialize all dependent variables)
+  // Initialize the process kernels (initializes all independent variables)
   pk_->initialize(S_);
 
-  // commit state to get secondary variables intiailized
-  pk_->commit_state(0.0, S_);
-  pk_->calculate_diagnostics(S_);
-
-  // Check that all fields have now been initialized or die.
-  S_->CheckAllInitialized();
+  // Initialize the state (initializes all dependent variables).
+  S_->Initialize();
 
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
@@ -180,6 +176,7 @@ void Coordinator::cycle_driver() {
   //  observations_->MakeObservations(*S_);
 
   // write visualization if requested at IC
+  pk_->calculate_diagnostics(S_);
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
     S_->WriteVis((*vis).ptr());

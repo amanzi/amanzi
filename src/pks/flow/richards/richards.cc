@@ -10,13 +10,14 @@ Authors: Neil Carlson (version 1)
 
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
-#include "eos_factory.hh"
-#include "wrm_factory.hh"
 
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
+#include "primary_variable_field_model.hh"
+#include "composite_vector_function.hh"
+#include "composite_vector_function_factory.hh"
 
 #include "richards.hh"
 
@@ -36,7 +37,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
 
   solution_ = solution;
 
-  // require fields
+  // Require fields and models for those fields.
 
   // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
   std::vector<AmanziMesh::Entity_kind> locations2(2);
@@ -49,52 +50,59 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
 
   S->RequireField("pressure", "flow")->SetMesh(S->Mesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
+  Teuchos::RCP<PrimaryVariableFieldModel> pressure_model =
+      Teuchos::rcp(new PrimaryVariableFieldModel("pressure"));
+  S->SetFieldModel("pressure", pressure_model);
 
-  // -- secondary variables
-  //   Nearly all of these will be defined on a single dof on cells.  To make
-  //   this process easier, we set up two factories, one owned, one not, and
-  //   use those to initialize the data factories.
-  CompositeVectorFactory one_cell_owned_factory;
-  one_cell_owned_factory.SetMesh(S->Mesh());
-  one_cell_owned_factory.SetGhosted();
-  one_cell_owned_factory.SetComponent("cell", AmanziMesh::CELL, 1);
-
-  CompositeVectorFactory one_cell_factory;
-  one_cell_factory.SetMesh(S->Mesh());
-  one_cell_factory.SetGhosted();
-  one_cell_factory.AddComponent("cell", AmanziMesh::CELL, 1);
-
+  // -- secondary variables, no model used
   S->RequireField("darcy_flux", "flow")->SetMesh(S->Mesh())->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("darcy_velocity", "flow")->SetMesh(S->Mesh())->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
-  S->RequireField("saturation_liquid", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("molar_density_liquid", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("viscosity_liquid", "flow")->Update(one_cell_owned_factory);
 
-  S->RequireField("saturation_gas", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("molar_density_gas", "flow")->Update(one_cell_owned_factory);
-  S->RequireField("mol_frac_gas", "flow")->Update(one_cell_owned_factory);
+  // -- water content, and model
+  S->RequireField("water_content")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  // -- For now, we assume scalar permeability.  This will change.
-  S->RequireField("permeability", "flow")->Update(one_cell_owned_factory);
-  S->RequireScalar("atmospheric_pressure", "flow");
+  Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content model");
+  wc_ = Teuchos::rcp(new RichardsWaterContent(wc_plist));
+  S->SetFieldModel("water_content", wc_);
 
-  // -- independent variables not owned by this PK
-  S->RequireField("cell_volume")->Update(one_cell_factory);
-  S->RequireField("porosity")->Update(one_cell_factory);
-  S->RequireField("temperature")->Update(one_cell_factory);
-  S->RequireGravity();
+  // -- Absolute permeability.
+  //       For now, we assume scalar permeability.  This will change.
+  S->RequireField("permeability")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldModel("permeability");
 
-  // -- work vectors
-  S->RequireField("relative_permeability", "flow")->SetMesh(S->Mesh())->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
+  // -- Water retention models, for saturation and rel perm.
+  S->RequireField("relative_permeability")->SetMesh(S->Mesh())->SetGhosted()
+                    ->AddComponents(names2, locations2, num_dofs2);
   S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
 
-  // abs perm tensor
+  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention model");
+  wrm_ = Teuchos::rcp(new FlowRelations::WRMStandardModel(wrm_plist));
+  S->SetFieldModel("saturation_liquid", wrm_);
+  S->SetFieldModel("saturation_gas", wrm_);
+  S->SetFieldModel("relative_permeability", wrm_);
+
+  // -- Liquid density and viscosity for the transmissivity.
+  S->RequireField("molar_density_liquid")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldModel("molar_density_liquid");
+
+  S->RequireField("viscosity_liquid")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldModel("viscosity_liquid");
+
+  // Get data for non-field quanitites.
+  S->RequireFieldModel("cell_volume");
+  S->RequireGravity();
+  S->RequireScalar("atmospheric_pressure", "flow");
+
+  // Create the absolute permeability tensor.
   variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
   int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
@@ -102,69 +110,13 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
     (*K_)[c].init(S->Mesh()->space_dimension(),1);
   }
 
-  // constitutive relations
-  // -- liquid eos
-  Teuchos::ParameterList water_eos_plist = flow_plist_.sublist("Water EOS");
-  //    -- add the specs to let the EOS get the data
-  water_eos_plist.set<std::string>("temperature key", "temperature");
-  water_eos_plist.set<std::string>("pressure key", "pressure");
-  water_eos_plist.set<std::string>("density key", "molar_density_liquid");
-  //    -- instantiate the EOS
-  FlowRelations::EOSFactory eos_factory;
-  Teuchos::RCP<FieldModel> eos_liquid = eos_factory.createEOS(water_eos_plist, S);
-  ASSERT(eos_liquid->is_molar_basis());
-  //    -- push it into state
-  S->PushBackFieldModel("molar_density_liquid", eos_liquid);
-
-  // -- gas eos
-  Teuchos::ParameterList gas_eos_plist = flow_plist_.sublist("Gas EOS");
-  gas_eos_plist.set<std::string>("temperature key", "temperature");
-  gas_eos_plist.set<std::string>("pressure key", "pressure");
-  gas_eos_plist.set<std::string>("density key", "molar_density_gas");
-  Teuchos::RCP<FieldModel> eos_gas = eos_factory.createEOS(gas_eos_plist, S);
-  ASSERT(eos_gas->is_molar_basis());
-  S->PushBackFieldModel("molar_density_gas", eos_gas);
-
-  // Water content model.  This simply measures the current water content, and
-  // is used for the accumulation term.
-  //  wc = phi * 
-  
-
-
-  // -- water retention models
-  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("Water Retention Models");
-  // count the number of region-model pairs
-  int wrm_count = 0;
-  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
-    if (wrm_plist.isSublist(wrm_plist.name(i))) {
-      wrm_count++;
-    } else {
-      std::string message("Richards: water retention model contains an entry that is not a sublist.");
-      Exceptions::amanzi_throw(message);
-    }
-  }
-
-  // TODO: check and make sure all blocks have a WRM associated with it. --etc
-
-  wrm_.resize(wrm_count);
-
-  // instantiate the region-model pairs
-  FlowRelations::WRMFactory wrm_factory;
-  int iblock = 0;
-  for (Teuchos::ParameterList::ConstIterator i=wrm_plist.begin(); i!=wrm_plist.end(); ++i) {
-    Teuchos::ParameterList wrm_region_list = wrm_plist.sublist(wrm_plist.name(i));
-    std::string region = wrm_region_list.get<std::string>("Region");
-    wrm_[iblock] = Teuchos::rcp(new WRMRegionPair(region, wrm_factory.createWRM(wrm_region_list)));
-    iblock++;
-  }
-
-  // boundary conditions
+  // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
   FlowBCFactory bc_factory(S->Mesh(), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
 
-  // Relative permeability method
+  // Create the upwinding method
   string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
   bool symmetric = false;
   if (method_name == "Upwind with gravity") {
@@ -214,28 +166,30 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
-  // update face pressures as a hint?
+  // initial conditions
+  // -- Get the IC function plist.
+  if (!flow_plist_.isSublist("initial condition")) {
+    std::stringstream messagestream;
+    messagestream << "Richards Flow PK has no initial condition parameter list.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  // -- Calculate the IC.
+  Teuchos::ParameterList ic_plist = flow_plist_.sublist("initial condition");
   Teuchos::RCP<CompositeVector> pres = S->GetFieldData("pressure", "flow");
+  Teuchos::RCP<Functions::CompositeVectorFunction> ic =
+      Functions::CreateCompositeVectorFunction(ic_plist, *pres);
+  ic->Compute(S->time(), pres.ptr());
+
+  // -- Initialize face values as the mean of neighboring cell values.
   DeriveFaceValuesFromCellValues_(S, pres);
 
-  // declare secondary variables initialized, as they will be done by
-  // the commit_state call
-  S->GetField("saturation_liquid","flow")->set_initialized();
-  S->GetField("molar_density_liquid","flow")->set_initialized();
-  S->GetField("viscosity_liquid","flow")->set_initialized();
-
-  S->GetField("saturation_gas","flow")->set_initialized();
-  S->GetField("molar_density_gas","flow")->set_initialized();
-  S->GetField("mol_frac_gas","flow")->set_initialized();
-
-  S->GetField("relative_permeability","flow")->set_initialized();
-  S->GetField("darcy_flux", "flow")->set_initialized();
-  S->GetField("darcy_velocity", "flow")->set_initialized();
-
-  // rel perm is special -- if the mode is symmetric, it needs to be
-  // initialized to 1
+  // Set extra fields as initialized -- these don't currently have models.
   S->GetFieldData("numerical_rel_perm","flow")->PutScalar(1.0);
   S->GetField("numerical_rel_perm","flow")->set_initialized();
+  S->GetField("darcy_flux", "flow")->set_initialized();
+  S->GetField("darcy_velocity", "flow")->set_initialized();
 
   // absolute perm
   SetAbsolutePermeabilityTensor_(S);
@@ -274,8 +228,8 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  // update secondary variables for IC
-  UpdateSecondaryVariables_(S);
+  // update the rel perm on cells.
+  S->GetFieldModel("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
 
   // update the flux
   UpdatePermeabilityData_(S);
@@ -318,18 +272,18 @@ bool Richards::advance(double dt) {
 
   // take a bdf timestep
   double h = dt;
-  try {
+  //  try {
     dt_ = time_stepper_->time_step(h, solution_);
-  } catch (Exceptions::Amanzi_exception &error) {
-    std::cout << "Timestepper called error: " << error.what() << std::endl;
-    if (error.what() == std::string("BDF time step failed")) {
-      // try cutting the timestep
-      dt_ = dt_*time_step_reduction_factor_;
-      return true;
-    } else {
-      throw error;
-    }
-  }
+  // } catch (Exceptions::Amanzi_exception &error) {
+  //   std::cout << "Timestepper called error: " << error.what() << std::endl;
+  //   if (error.what() == std::string("BDF time step failed")) {
+  //     // try cutting the timestep
+  //     dt_ = dt_*time_step_reduction_factor_;
+  //     return true;
+  //   } else {
+  //     throw error;
+  //   }
+    //  }
 
   // commit the step as successful
   time_stepper_->commit_solution(h, solution_);

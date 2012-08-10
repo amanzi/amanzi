@@ -14,23 +14,31 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-ViscosityModel::ViscosityModel(Teuchos::ParameterList& visc_plist,
-        const Teuchos::Ptr<State>& S) :
+ViscosityModel::ViscosityModel(Teuchos::ParameterList& visc_plist) :
     visc_plist_(visc_plist) {
 
-  // Process the list for my dependencies.
-  // -- temperature
-  //      get the name of the temperature field and put it into my list of dependencies
-  temp_key_ = visc_plist_.get<string>("temperature key");
-  dependencies_.insert(temp_key_);
-  //      ensure there is a temperature field in state
-  S->RequireField(temp_key_);
-
   // Process the list for my provided field.
-  my_key_ = visc_plist_.get<string>("viscosity key");
+  // Process the list for my provided field.
+  if (visc_plist_.isParameter("viscosity key")) {
+    my_key_ = visc_plist_.get<string>("viscosity key");
+  } else {
+    std::string name = visc_plist_.name();
+    std::size_t start = name.find_last_of(">");
+    my_key_ = name.substr(start+1);
+  }
 
-  // Ensure there are fields in state, and that this can own them.
-  Teuchos::RCP<CompositeVectorFactory> fac_dens = S->RequireField(my_key_, my_key_);
+  // Set up my dependencies.
+  std::size_t end = my_key_.find_first_of("_");
+  std::string domain_name = my_key_.substr(0,end);
+  if (domain_name == std::string("viscosity")) {
+    domain_name = std::string("");
+  } else {
+    domain_name = domain_name+std::string("_");
+  }
+
+  // -- temperature
+  temp_key_ = domain_name+std::string("temperature");
+  dependencies_.insert(temp_key_);
 };
 
 ViscosityModel::ViscosityModel(const ViscosityModel& other) :
@@ -45,7 +53,7 @@ void ViscosityModel::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
   // Loop over names in the target and then owned entities in that name,
-  // evaluating the model to calculate density.
+  // evaluating the model to calculate viscosity.
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
     for (int id=0; id!=result->size(*comp); ++id) {
@@ -61,7 +69,7 @@ void ViscosityModel::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& 
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
-  // Loop over components, evaluating partial density wrt temp.
+  // Loop over components, evaluating partial viscosity wrt temp.
   if (wrt_key == temp_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {

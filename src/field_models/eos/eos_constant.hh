@@ -16,7 +16,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory_with_state.hh"
+#include "factory.hh"
 #include "eos.hh"
 
 namespace Amanzi {
@@ -27,7 +27,9 @@ namespace FlowRelations {
 class EOSConstant : public EOS {
 
 public:
-  EOSConstant(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  explicit
+  EOSConstant(Teuchos::ParameterList& eos_plist);
+
   EOSConstant(const EOSConstant& other);
 
   virtual Teuchos::RCP<FieldModel> Clone() const;
@@ -36,8 +38,8 @@ public:
   virtual double DDensityDT(double T, double p) { return 0.0; }
   virtual double DDensityDp(double T, double p) { return 0.0; }
 
-  double molar_mass() { return M_; }
-  virtual bool is_molar_basis() { return true; }
+  double molar_mass() const { return M_; }
+  virtual bool is_molar_basis() const { return true; }
 
 private:
   virtual void InitializeFromPlist_();
@@ -45,7 +47,7 @@ private:
   double M_;
   double rho_;
 
-  static Utils::RegisteredFactoryWithState<EOS,EOSConstant> factory_;
+  static Utils::RegisteredFactory<FieldModel,EOSConstant> factory_;
 
 };
 

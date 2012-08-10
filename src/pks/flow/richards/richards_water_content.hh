@@ -29,7 +29,8 @@ namespace Flow {
 class RichardsWaterContent : public SecondaryVariableFieldModel {
 
  public:
-  RichardsWaterContent(Teuchos::ParameterList& wc_plist, const Teuchos::Ptr<State>& S);
+  explicit
+  RichardsWaterContent(Teuchos::ParameterList& wc_plist);
   RichardsWaterContent(const RichardsWaterContent& other);
 
   virtual Teuchos::RCP<FieldModel> Clone() const;
@@ -41,5 +42,8 @@ class RichardsWaterContent : public SecondaryVariableFieldModel {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
 };
+
+} // namespace
+} // namespace
 
 #endif
