@@ -10,5 +10,6 @@
 #define GRAVITY_MAGNITUDE               9.81
 #define PARTICLE_DENSITY                1.0
 #define CHEM_TRANS_DT_RATIO             1.0
+#define MAX_DIVERGENT_ITERATIONS        3
 
 #endif
