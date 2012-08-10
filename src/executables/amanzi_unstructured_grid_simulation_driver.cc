@@ -27,6 +27,7 @@ Effectively stolen from Amanzi, with few modifications.
 #include "Teuchos_Version.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_StrUtils.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "MeshFactory.hh"
 #include "Domain.hh"
@@ -165,6 +166,8 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
       ierr = 0;
       try {
         // create the mesh from the file
+        Teuchos::RCP<Teuchos::Time> volmeshtime = Teuchos::TimeMonitor::getNewCounter("volume mesh creation");
+        Teuchos::TimeMonitor timer(*volmeshtime);
         mesh = factory.create(file, geom_model_ptr);
       } catch (const std::exception& e) {
         std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -196,6 +199,8 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   }
 
   ASSERT(!mesh.is_null());
+  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::zeroOutTimers();
 
   // create the top level Coordinator
   Amanzi::Coordinator coordinator(params_copy, mesh, comm);

@@ -151,8 +151,7 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  Teuchos::ParameterList mfd_pc_ml_plist = mfd_pc_plist.sublist("ML Parameters");
-  preconditioner_->InitMLPreconditioner(mfd_pc_ml_plist);
+  preconditioner_->InitPreconditioner(mfd_pc_plist);
 };
 
 
