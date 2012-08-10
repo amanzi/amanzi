@@ -41,9 +41,9 @@ endif()
 # --------------------------------------------------------------------------- #
 #set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
 #set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
-
-# set debug
-set(CMAKE_BUILD_TYPE Debug)
+if (CMAKE_BUILD_TYPE MATCHES DEBUG)
+  add_definitions(-DENABLE_DBC)
+endif()
 
 # --------------------------------------------------------------------------- #
 #  Define the include paths
