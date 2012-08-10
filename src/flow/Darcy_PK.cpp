@@ -1,6 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
-License: BSD
+This is the flow component of the Amanzi code.
+
+ 
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Authors: Neil Carlson (version 1) 
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
@@ -133,6 +139,11 @@ void Darcy_PK::InitPK()
   solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
   solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
 
+  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+  pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
+  pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
+  
+  // Create algebraic solver
   solver = new AztecOO;
   solver->SetUserOperator(matrix_);
   solver->SetPrecOperator(preconditioner_);
@@ -364,6 +375,7 @@ int Darcy_PK::Advance(double dT_MPC)
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
+  *pdot_cells = *solution_cells;
 
   solver->Iterate(max_itrs_sss, convergence_tol_sss);
   num_itrs_trs++;
@@ -374,7 +386,21 @@ int Darcy_PK::Advance(double dT_MPC)
     std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
-  dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
+  // calculate time derivative and 2nd-order solution approximation
+  for (int c = 0; c < ncells_owned; c++) {
+    double p_prev = (*pdot_cells)[c];
+    (*pdot_cells)[c] = ((*solution)[c] - p_prev) / dT; 
+    (*solution)[c] = p_prev + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+  }
+
+  // estimate time multiplier
+  if (dT_method_ == FLOW_DT_ADAPTIVE) {
+    double dTfactor;
+    ErrorEstimate(&dTfactor);
+    dT_desirable_ = std::min<double>(dT_desirable_ * dTfactor, ti_specs_sss.dTmax);
+  } else {
+    dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
+  }
   return 0;
 }
 
@@ -394,6 +420,9 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
+
+  // update time derivative
+  *pdot_cells_prev = *pdot_cells;
 
   // DEBUG
   // WriteGMVfile(FS_MPC);
