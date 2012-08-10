@@ -22,7 +22,9 @@ class EOS : public SecondaryVariableFieldModel {
 
  public:
   // constructor format for all derived classes
-  EOS(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S);
+  explicit
+  EOS(Teuchos::ParameterList& eos_plist);
+
   EOS(const EOS& other);
 
   // Virtual methods that form the EOS
@@ -30,8 +32,8 @@ class EOS : public SecondaryVariableFieldModel {
   virtual double DDensityDT(double T, double p) = 0;
   virtual double DDensityDp(double T, double p) = 0;
 
-  virtual double molar_mass() = 0;
-  virtual bool is_molar_basis() = 0;
+  virtual double molar_mass() const = 0;
+  virtual bool is_molar_basis() const = 0;
 
   // Required methods from SecondaryVariableFieldModel
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,

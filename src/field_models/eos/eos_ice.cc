@@ -18,10 +18,10 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactoryWithState<EOS,EOSIce> EOSIce::factory_("ice");
+Utils::RegisteredFactory<FieldModel,EOSIce> EOSIce::factory_("EOS of ice");
 
-EOSIce::EOSIce(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
-    EOS(eos_plist, S),
+EOSIce::EOSIce(Teuchos::ParameterList& eos_plist) :
+    EOS(eos_plist),
 
     ka_(916.724),
     kb_(-0.147143),

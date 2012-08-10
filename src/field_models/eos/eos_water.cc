@@ -18,10 +18,10 @@ namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactoryWithState<EOS,EOSWater> EOSWater::factory_("liquid water");
+Utils::RegisteredFactory<FieldModel,EOSWater> EOSWater::factory_("EOS of liquid water");
 
-EOSWater::EOSWater(Teuchos::ParameterList& eos_plist, const Teuchos::Ptr<State>& S) :
-    EOS(eos_plist, S),
+EOSWater::EOSWater(Teuchos::ParameterList& eos_plist) :
+    EOS(eos_plist),
 
     ka_(999.915),
     kb_(0.0416516),

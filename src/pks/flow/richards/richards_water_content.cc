@@ -21,8 +21,7 @@ This is simply the conserved quantity in Richards equation.
 namespace Amanzi {
 namespace Flow {
 
-RichardsWaterContent::RichardsWaterContent(Teuchos::ParameterList& wc_plist,
-        const Teuchos::Ptr<State>& S) {
+RichardsWaterContent::RichardsWaterContent(Teuchos::ParameterList& wc_plist) {
   my_key_ = std::string("water_content");
   dependencies_.insert(std::string("porosity"));
 
@@ -32,8 +31,7 @@ RichardsWaterContent::RichardsWaterContent(Teuchos::ParameterList& wc_plist,
   dependencies_.insert(std::string("saturation_gas"));
   dependencies_.insert(std::string("molar_density_gas"));
   dependencies_.insert(std::string("mol_frac_gas"));
-
-  CheckCompatibility_or_die_(S);
+  //  dependencies_.insert(std::string("cell_volume"));
 };
 
 RichardsWaterContent::RichardsWaterContent(const RichardsWaterContent& other) :
@@ -54,11 +52,13 @@ void RichardsWaterContent::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> n_g = S->GetFieldData("molar_density_gas");
   Teuchos::RCP<const CompositeVector> omega_g = S->GetFieldData("mol_frac_gas");
 
+  Teuchos::RCP<const CompositeVector> cell_volume = S->GetFieldData("cell_volume");
+
   for (int c=0; c!=result->size("cell"); ++c) {
     (*result)("cell",c) = (*phi)("cell",c) * ( (*s_l)("cell",c)*(*n_l)("cell",c)
             + (*s_g)("cell",c)*(*n_g)("cell",c)*(*omega_g)("cell",c) );
+    (*result)("cell",c) *= (*cell_volume)("cell",c);
   }
-
 };
 
 
@@ -71,9 +71,11 @@ void RichardsWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
   Teuchos::RCP<const CompositeVector> n_g = S->GetFieldData("molar_density_gas");
   Teuchos::RCP<const CompositeVector> omega_g = S->GetFieldData("mol_frac_gas");
 
+  Teuchos::RCP<const CompositeVector> cell_volume = S->GetFieldData("cell_volume");
+
   if (wrt_key == "porosity") {
     for (int c=0; c!=result->size("cell"); ++c) {
-j      (*result)("cell",c) = (*s_l)("cell",c)*(*n_l)("cell",c)
+      (*result)("cell",c) = (*s_l)("cell",c)*(*n_l)("cell",c)
           + (*s_g)("cell",c)*(*n_g)("cell",c)*(*omega_g)("cell",c);
     }
   } else if (wrt_key == "saturation_liquid") {
@@ -96,6 +98,10 @@ j      (*result)("cell",c) = (*s_l)("cell",c)*(*n_l)("cell",c)
     for (int c=0; c!=result->size("cell"); ++c) {
       (*result)("cell",c) = (*phi)("cell",c) * (*s_g)("cell",c)*(*n_g)("cell",c);
     }
+  }
+
+  for (int c=0; c!=result->size("cell"); ++c) {
+    (*result)("cell",c) *= (*cell_volume)("cell",c);
   }
 };
 

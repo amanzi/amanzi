@@ -33,7 +33,7 @@ public:
   virtual double DDensityDT(double T, double p);
   virtual double DDensityDp(double T, double p);
 
-  virtual double molar_mass();
+  virtual double molar_mass() const;
 
 protected:
   virtual void InitializeFromPlist_();
