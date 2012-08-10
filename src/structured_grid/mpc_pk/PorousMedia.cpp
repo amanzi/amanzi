@@ -1733,12 +1733,10 @@ PorousMedia::richard_init_to_steady()
                 RichardNLSdata nld = BuildInitNLS();
 
 		RichardSolver* rs = 0;
-                if (use_PETSc_snes) {
+                if (steady_use_PETSc_snes) {
                     rs = new RichardSolver(*(PMParent()));
                 }
 
-                bool die_if_timestep_fails = false;
-                
                 int total_num_Newton_iterations = 0;
                 int total_rejected_Newton_steps = 0;
                 while (continue_iterations)
@@ -1756,7 +1754,7 @@ PorousMedia::richard_init_to_steady()
 			}
 		    }
 
-		  if (use_PETSc_snes) {
+		  if (steady_use_PETSc_snes) {
 		    rs->ResetRhoSat();
 		  }
 
@@ -1788,7 +1786,7 @@ PorousMedia::richard_init_to_steady()
 				MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
 			      }
 			  }
-			if (use_PETSc_snes) 
+			if (steady_use_PETSc_snes) 
 			  {
 			    ret = richard_PETSc_pressure_solve(dt,*rs,nld);
 			  }
@@ -1819,7 +1817,7 @@ PorousMedia::richard_init_to_steady()
                     }
                     else {
 
-                        if (die_if_timestep_fails)
+                        if (steady_abort_on_psuedo_timestep_failure)
                         {
                             BoxLib::Abort("Aborting as instructed when timestep fails");
                         }

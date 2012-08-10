@@ -505,7 +505,7 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   PArray<MultiFab> lambda(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
   PArray<MultiFab> P_new(nLevs,PArrayNoManage);
-  PArray<MultiFab> utmp(BL_SPACEDIM,PArrayNoManage);
+  PArray<MultiFab> utmp(nLevs,PArrayNoManage);
   
   for (int lev=0; lev<nLevs; ++lev) {
     lambda.set(lev,pm[lev].LambdaCC_Curr());

@@ -85,7 +85,7 @@
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e14"/>
           <Parameter name="steady_die_on_failed_timestep" type="int" value="0"/>
-          <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
+          <Parameter name="steady_use_PETSc_snes" type="bool" value="false"/>
 
           <Parameter name="richard_solver_verbose" type="int" value="1"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>

@@ -302,13 +302,15 @@ int  PorousMedia::steady_max_num_consecutive_success;
 Real PorousMedia::steady_extra_time_step_increase_factor;
 int  PorousMedia::steady_max_num_consecutive_increases;
 Real PorousMedia::steady_consecutive_increase_reduction_factor;
+bool PorousMedia::steady_use_PETSc_snes;
+bool PorousMedia::steady_abort_on_psuedo_timestep_failure;
+
 int  PorousMedia::richard_max_ls_iterations;
 Real PorousMedia::richard_min_ls_factor;
 Real PorousMedia::richard_ls_acceptance_factor;
 Real PorousMedia::richard_ls_reduction_factor;
-int PorousMedia::richard_monitor_linear_solve;
-int PorousMedia::richard_monitor_line_search;
-bool PorousMedia::use_PETSc_snes;
+int  PorousMedia::richard_monitor_linear_solve;
+int  PorousMedia::richard_monitor_line_search;
 
 static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
 namespace
@@ -552,7 +554,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_cpl_advect       = 0;
   PorousMedia::do_richard_sat_solve = false;
 
-  PorousMedia::use_PETSc_snes = false;
   PorousMedia::richard_solver_verbose = 1;
 
   PorousMedia::do_richard_init_to_steady = false;
@@ -575,6 +576,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
   PorousMedia::steady_consecutive_increase_reduction_factor = 0.15;
+  PorousMedia::steady_use_PETSc_snes = false;
+  PorousMedia::steady_abort_on_psuedo_timestep_failure = false;
 
   PorousMedia::richard_max_ls_iterations = 10;
   PorousMedia::richard_min_ls_factor = 1.e-8;
@@ -1503,8 +1506,6 @@ void PorousMedia::read_prob()
   pb.query("richard_solver_verbose",richard_solver_verbose);
   pb.query("do_richard_sat_solve",do_richard_sat_solve);
 
-  pb.query("use_PETSc_snes",use_PETSc_snes);
-
   pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
   pb.query("steady_min_iterations",steady_min_iterations);
@@ -1526,7 +1527,10 @@ void PorousMedia::read_prob()
   pb.query("steady_max_num_consecutive_success",steady_max_num_consecutive_success);
   pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
   pb.query("steady_max_num_consecutive_increases",steady_max_num_consecutive_increases);
-  pb.query("consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
+  pb.query("steady_consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
+  pb.query("steady_use_PETSc_snes",steady_use_PETSc_snes);
+  pb.query("steady_abort_on_psuedo_timestep_failure",steady_abort_on_psuedo_timestep_failure);
+
   pb.query("richard_monitor_linear_solve",richard_monitor_linear_solve);
   pb.query("richard_monitor_line_search",richard_monitor_line_search);
   

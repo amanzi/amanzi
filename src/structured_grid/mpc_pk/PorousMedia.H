@@ -1264,7 +1264,6 @@ protected:
   static int  max_step;
   static Real stop_time;
   static bool do_richard_sat_solve;
-  static bool use_PETSc_snes;
 
   static int  richard_solver_verbose;
 
@@ -1293,6 +1292,8 @@ protected:
   static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
   static Real steady_max_psuedo_time;
+  static bool steady_use_PETSc_snes;
+  static bool steady_abort_on_psuedo_timestep_failure;
   //
   // Newton step defaults
   //
@@ -1300,8 +1301,8 @@ protected:
   static Real richard_min_ls_factor;
   static Real richard_ls_acceptance_factor;
   static Real richard_ls_reduction_factor;
-  static int richard_monitor_linear_solve;
-  static int richard_monitor_line_search;
+  static int  richard_monitor_linear_solve;
+  static int  richard_monitor_line_search;
 
   //
   // Number of states
