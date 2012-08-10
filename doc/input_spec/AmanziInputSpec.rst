@@ -1305,9 +1305,9 @@ at intervals corresponding to the numerical time step values; writes are control
   
   * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
   
-  * [SU] `"Time Macro`" [string] one of the labeled time macros (see above)
+  * [SU] `"Time Macro`" [Array string] a list of the labeled time macros (see above)
 
-  * [SU] `"Variables`" [string] can accept a list of field quantities to include in the file
+  * [S] `"Variables`" [Array string] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
 
 
 Example:
