@@ -5,6 +5,8 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+#include "InputParserIS-defaults.hh"
+
 #include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_Vector.H"
@@ -72,6 +74,8 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
 
   state.nonlinear_solver = BDFNKA;
+  
+  max_divergence_count_ = paramList_->get<int>("max divergent interations", MAX_DIVERGENT_ITERATIONS);
 
   std::string nstype = paramList_->get<std::string>("nonlinear solver", "NKA");
   if (nstype == "NKA") {
@@ -175,6 +179,10 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
                               1.0,
                               "Relative error prefactor.",
                               &*pl);
+    setIntParameter("max divergent iterations",
+		              3,
+		    "Maximum divergent nonlinear iterations the bdf1 time iterator will tolerate",
+		              &*pl);
     setupVerboseObjectSublist(&*pl);
     validParams = pl;
   }
@@ -423,7 +431,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       ++divergence_count;
 
       // if it does not recover quickly, abort
-      if (divergence_count == 3) {
+      if (divergence_count == max_divergence_count_) {
     *out << "Nonlinear solver is starting to diverge, cutting current time step." << std::endl;
     throw state.mitr+1;
       }

@@ -71,6 +71,8 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   int mtries;
   int total_non_iter;
 
+  int max_divergence_count_;
+
   BDF1State state;
   nka* fpa;
   BDF2::SolutionHistory* sh_;

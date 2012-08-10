@@ -290,6 +290,8 @@ Usage:
 
    * [U] `"steady error abs tol"` [double] See `"steady error rel tol"`.
 
+   * [U] `"steady max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"steady max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. 
+
    * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. 
 
    * [U] `"transient min iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"transient time step increase factor"`.
@@ -309,6 +311,8 @@ Usage:
    * [U] `"transient error rel tol"` [double] The values specified here and in `"transient error abs tol"` give the user control over the norm that is used in the steady state computation. We refer to the value in `"transient error rel tol"` as rtol and to the value specified in `"transient error abs tol"` as atol. Then these parameters are used in the norm computation in the following way: norm = max_{all cells} ( | pressure update in the cell | / ( atol + rtol * | pressure in the cell | ).  For example, to specify an infinity norm on the pressure update, a user would set atol=1.0 and rtol = 0.0. 
 
    * [U] `"transient error abs tol"` [double] See `"transient error rel tol"`.
+
+   * [U] `"transient max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"transient max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated.
 
    * [U] `"ML smoother type`" [string] The smoother to be used by ML, valid paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`".
 
