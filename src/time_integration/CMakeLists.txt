@@ -32,6 +32,7 @@ include_directories(${STATE_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
