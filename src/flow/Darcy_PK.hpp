@@ -64,6 +64,7 @@ class Darcy_PK : public Flow_PK {
   void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void UpdateSpecificYield();
 
+  void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
   double ErrorEstimate(double* dTfactor);
 
   // linear solvers
@@ -138,6 +139,7 @@ class Darcy_PK : public Flow_PK {
   int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
+  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 

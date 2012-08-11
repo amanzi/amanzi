@@ -185,6 +185,11 @@ void Darcy_PK::InitPK()
   Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
   preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
+  // Allocate memory for wells
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  }
+
   flow_status_ = FLOW_STATUS_INIT;
 };
 
@@ -247,6 +252,11 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
     std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
   }
 
+  // Well modeling
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
   flow_status_ = FLOW_STATUS_STEADY_STATE;
 }
 
@@ -274,6 +284,11 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
+
+  // Well modeling
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
@@ -349,7 +364,7 @@ int Darcy_PK::Advance(double dT_MPC)
     } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
       src_sink->ComputeDistribute(time);
     } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Krel_cells->Values());  // incomplete since Krel=1 but K is a tensor
+      src_sink->ComputeDistribute(time, Kxy->Values());
     } 
   }
 
@@ -446,6 +461,19 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
       for (int i = 0; i < dim-1; i++) K[c](i, i) = horizontal_permeability[c];
       K[c](dim-1, dim-1) = vertical_permeability[c];
     }
+  }
+}
+
+
+/* ******************************************************************
+*  Calculate inner product e^T K e in each cell.                                               
+****************************************************************** */
+void Darcy_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)
+{
+  for (int c = 0; c < K.size(); c++) {
+    Kxy[c] = 0.0;
+    for (int i = 0; i < dim; i++) Kxy[c] += K[c](i, i);
+    Kxy[c] /= dim;
   }
 }
 

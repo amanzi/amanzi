@@ -139,7 +139,7 @@ void Darcy_PK::ProcessStringSourceDistribution(const std::string name, int* meth
     *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_NONE;
   } else if (name == "volume") {
     *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_VOLUME;
-  } else if (name == "premeability") {
+  } else if (name == "permeability") {
     *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_PERMEABILITY;
   } else {
     msg << "Darcy PK: unknown source normalization method has been specified.";
