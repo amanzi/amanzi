@@ -13,28 +13,29 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& wrm_plist) :
-    SecondaryVariableFieldEvaluator(),
-    wrm_plist_(wrm_plist) {
-  ASSERT(wrm_plist.isSublist("WRM parameters"));
-  Teuchos::ParameterList sublist = wrm_plist.sublist("WRM parameters");
-  WRMFactory fac;
-  wrm_ = fac.createWRM(sublist);
+// RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& wrm_plist) :
+//     SecondaryVariableFieldEvaluator(),
+//     wrm_plist_(wrm_plist) {
+//   ASSERT(wrm_plist.isSublist("WRM parameters"));
+//   Teuchos::ParameterList sublist = wrm_plist.sublist("WRM parameters");
+//   WRMFactory fac;
+//   wrm_ = fac.createWRM(sublist);
 
-  InitializeFromPlist_();
-}
+//   InitializeFromPlist_();
+// }
 
-RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm) :
+RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& wrm_plist,
+        const Teuchos::RCP<WRMRegionPairList>& wrms) :
     SecondaryVariableFieldEvaluator(),
     wrm_plist_(wrm_plist),
-    wrm_(wrm) {
+    wrms_(wrms) {
   InitializeFromPlist_();
 }
 
 RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     wrm_plist_(other.wrm_plist_),
-    wrm_(other.wrm_),
+    wrms_(other.wrms_),
     sat_key_(other.sat_key_) {}
 
 
@@ -59,12 +60,20 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
 
-  // Loop over names in the target and then owned entities in that name,
-  // evaluating the evaluator to calculate sat.
-  for (CompositeVector::name_iterator comp=sat->begin();
-       comp!=sat->end(); ++comp) {
-    for (int id=0; id!=sat->size(*comp); ++id) {
-      (*result)(*comp, id) = wrm_->k_relative(wrm_->capillaryPressure((*sat)(*comp, id)));
+  // Evaluate the evaluator to calculate sat.
+  for (WRMRegionPairList::iterator region=wrms_->begin();
+       region!=wrms_->end(); ++region) {
+    std::string name = region->first;
+    int ncells = sat->mesh()->get_set_size(name,
+            AmanziMesh::CELL, AmanziMesh::OWNED);
+    std::vector<int> cells(ncells);
+    sat->mesh()->get_set_entities(name,
+            AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+    // use the wrm to evaluate saturation on each cell in the region
+    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      double pc = region->second->capillaryPressure((*sat)("cell", *c));
+      (*result)("cell", *c) = region->second->k_relative(pc);
     }
   }
 }

@@ -19,8 +19,8 @@ WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& wrm_plist) :
 }
 
 WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& wrm_plist,
-        const Teuchos::RCP<WRM>& wrm) :
-    WRMEvaluator(wrm_plist, wrm) {
+        const Teuchos::RCP<WRMRegionPairList>& wrms) :
+    WRMEvaluator(wrm_plist, wrms) {
   InitializeFromPlist_();
 }
 
@@ -60,21 +60,36 @@ void WRMRichardsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // evaluating the evaluator to calculate sat.
   if (calc_other_sat_) {
     Teuchos::Ptr<CompositeVector> sat_g = results[1];
+    for (WRMRegionPairList::iterator region=wrms_->begin();
+         region!=wrms_->end(); ++region) {
+      std::string name = region->first;
+      int ncells = sat->mesh()->get_set_size(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED);
+      std::vector<int> cells(ncells);
+      sat->mesh()->get_set_entities(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
-    for (CompositeVector::name_iterator comp=sat->begin();
-         comp!=sat->end(); ++comp) {
-      for (int id=0; id!=sat->size(*comp); ++id) {
-        double pc = *p_atm - (*pres)(*comp, id);
-        (*sat)(*comp, id) = wrm_->saturation(pc);
-        (*sat_g)(*comp, id) = 1.0 - (*sat)(*comp, id);
+      // use the wrm to evaluate saturation on each cell in the region
+      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+        double pc = *p_atm - (*pres)("cell", *c);
+        (*sat)("cell",*c) = region->second->saturation(pc);
+        (*sat_g)("cell", *c) = 1.0 - (*sat)("cell", *c);
       }
     }
   } else {
-    for (CompositeVector::name_iterator comp=sat->begin();
-         comp!=sat->end(); ++comp) {
-      for (int id=0; id!=sat->size(*comp); ++id) {
-        double pc = *p_atm - (*pres)(*comp, id);
-        (*sat)(*comp, id) = wrm_->saturation(pc);
+    for (WRMRegionPairList::iterator region=wrms_->begin();
+         region!=wrms_->end(); ++region) {
+      std::string name = region->first;
+      int ncells = sat->mesh()->get_set_size(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED);
+      std::vector<int> cells(ncells);
+      sat->mesh()->get_set_entities(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+      // use the wrm to evaluate saturation on each cell in the region
+      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+        double pc = *p_atm - (*pres)("cell", *c);
+        (*sat)("cell",*c) = region->second->saturation(pc);
       }
     }
   }
@@ -93,20 +108,36 @@ void WRMRichardsEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
   // evaluating the evaluator to calculate sat and rel perm.
   if (calc_other_sat_) {
     Teuchos::Ptr<CompositeVector> dsat_g = results[1];
-    for (CompositeVector::name_iterator comp=dsat->begin();
-         comp!=dsat->end(); ++comp) {
-      for (int id=0; id!=dsat->size(*comp); ++id) {
-        double pc = *p_atm - (*pres)(*comp, id);
-        (*dsat)(*comp, id) = -wrm_->d_saturation(pc);
-        (*dsat_g)(*comp, id) = -(*dsat)(*comp, id);
+    for (WRMRegionPairList::iterator region=wrms_->begin();
+         region!=wrms_->end(); ++region) {
+      std::string name = region->first;
+      int ncells = dsat->mesh()->get_set_size(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED);
+      std::vector<int> cells(ncells);
+      dsat->mesh()->get_set_entities(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+      // use the wrm to evaluate saturation on each cell in the region
+      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+        double pc = *p_atm - (*pres)("cell", *c);
+        (*dsat)("cell",*c) = -region->second->d_saturation(pc);
+        (*dsat_g)("cell", *c) = -(*dsat)("cell", *c);
       }
     }
   } else {
-    for (CompositeVector::name_iterator comp=dsat->begin();
-         comp!=dsat->end(); ++comp) {
-      for (int id=0; id!=dsat->size(*comp); ++id) {
-        double pc = *p_atm - (*pres)(*comp, id);
-        (*dsat)(*comp, id) = -wrm_->d_saturation(pc);
+    for (WRMRegionPairList::iterator region=wrms_->begin();
+         region!=wrms_->end(); ++region) {
+      std::string name = region->first;
+      int ncells = dsat->mesh()->get_set_size(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED);
+      std::vector<int> cells(ncells);
+      dsat->mesh()->get_set_entities(name,
+              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+      // use the wrm to evaluate saturation on each cell in the region
+      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+        double pc = *p_atm - (*pres)("cell", *c);
+        (*dsat)("cell",*c) = -region->second->d_saturation(pc);
       }
     }
   }

@@ -117,12 +117,12 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   Bplist.set("saturation key", Bkey);
   Bplist.set("calculate minor saturation", false);
   Teuchos::RCP<FlowRelations::WRMIceWaterEvaluator> wrm_B =
-      Teuchos::rcp(new FlowRelations::WRMIceWaterEvaluator(Bplist, wrm_A->get_WRM()));
+      Teuchos::rcp(new FlowRelations::WRMIceWaterEvaluator(Bplist, wrm_A->get_WRMs()));
   S->SetFieldEvaluator(Bkey, wrm_B);
 
   // Evaluator 4, the rel perm evaluator, also with the same underlying evaluator.
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm_A->get_WRM()));
+      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm_A->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
 
 

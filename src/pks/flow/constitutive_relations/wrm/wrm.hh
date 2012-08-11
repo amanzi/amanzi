@@ -28,6 +28,9 @@ public:
 
 };
 
+typedef std::pair<std::string, Teuchos::RCP<WRM> > WRMRegionPair;
+typedef std::vector<WRMRegionPair> WRMRegionPairList;
+
 } //namespace
 } //namespace
 } //namespace
