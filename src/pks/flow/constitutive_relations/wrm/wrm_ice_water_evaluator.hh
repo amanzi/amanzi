@@ -26,7 +26,8 @@ class WRMIceWaterEvaluator : public WRMEvaluator {
   explicit
   WRMIceWaterEvaluator(Teuchos::ParameterList& wrm_plist);
 
-  WRMIceWaterEvaluator(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm);
+  WRMIceWaterEvaluator(Teuchos::ParameterList& wrm_plist,
+                       const Teuchos::RCP<WRMRegionPairList>& wrms);
 
   WRMIceWaterEvaluator(const WRMIceWaterEvaluator& other);
 

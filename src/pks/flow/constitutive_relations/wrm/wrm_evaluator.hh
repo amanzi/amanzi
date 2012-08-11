@@ -9,13 +9,12 @@
 #ifndef AMANZI_FLOW_RELATIONS_WRM_EVALUATOR_
 #define AMANZI_FLOW_RELATIONS_WRM_EVALUATOR_
 
+#include "wrm.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
-
-class WRM; // forward declaration
 
 class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
 
@@ -23,7 +22,8 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
   // constructor format for all derived classes
   explicit
   WRMEvaluator(Teuchos::ParameterList& wrm_plist);
-  WRMEvaluator(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm);
+  WRMEvaluator(Teuchos::ParameterList& wrm_plist,
+               const Teuchos::RCP<std::vector<WRMRegionPair> >& wrms);
   WRMEvaluator(const WRMEvaluator& other);
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -32,12 +32,12 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) = 0;
 
-  Teuchos::RCP<WRM> get_WRM() { return wrm_; }
+  Teuchos::RCP<WRMRegionPairList> get_WRMs() { return wrms_; }
 
  protected:
 
   Teuchos::ParameterList wrm_plist_;
-  Teuchos::RCP<WRM> wrm_;
+  Teuchos::RCP<WRMRegionPairList> wrms_;
 };
 
 } //namespace
