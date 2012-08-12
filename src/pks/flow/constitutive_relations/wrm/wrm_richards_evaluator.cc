@@ -14,18 +14,21 @@ namespace Flow {
 namespace FlowRelations {
 
 WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& plist) :
-    WRMEvaluator(plist) {
+    WRMEvaluator(plist),
+    calc_other_sat_(false) {
   InitializeFromPlist_();
 }
 
 WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& plist,
         const Teuchos::RCP<WRMRegionPairList>& wrms) :
-    WRMEvaluator(plist, wrms) {
+    WRMEvaluator(plist, wrms),
+    calc_other_sat_(false) {
   InitializeFromPlist_();
 }
 
 WRMRichardsEvaluator::WRMRichardsEvaluator(const WRMRichardsEvaluator& other) :
     WRMEvaluator(other),
+    calc_other_sat_(other.calc_other_sat_),
     pres_key_(other.pres_key_) {}
 
 Teuchos::RCP<FieldEvaluator>

@@ -222,55 +222,19 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // update the rel perm on cells.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
+  bool update = S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
+  if (update) UpdatePermeabilityData_(S);
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm", name_);
 
   // update the flux
-  UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("numerical_rel_perm");
   Teuchos::RCP<const CompositeVector> pres =
     S->GetFieldData(key_);
   Teuchos::RCP<CompositeVector> darcy_flux =
     S->GetFieldData("darcy_flux", name_);
 
   matrix_->CreateMFDstiffnessMatrices(*rel_perm);
-
-  for (int f=0; f!=darcy_flux->size("face", true); ++f) {
-    if ((*darcy_flux)("face",f) < 0.0) {
-      std::cout << "fail previously" << std::endl;
-    }
-
-    if ((*pres)("face",f) < 0.0) {
-      std::cout << "fail previously" << std::endl;
-    }
-  }
-
   matrix_->DeriveFlux(*pres, darcy_flux);
-
-
-  for (int f=0; f!=darcy_flux->size("face", true); ++f) {
-    if ((*darcy_flux)("face",f) < 0.0) {
-      std::cout << "fail previously" << std::endl;
-    }
-
-    if ((*pres)("face",f) < 0.0) {
-      std::cout << "fail previously" << std::endl;
-    }
-  }
-
   AddGravityFluxesToVector_(S, darcy_flux);
-
-
-  for (int f=0; f!=darcy_flux->size("face", true); ++f) {
-    if ((*darcy_flux)("face",f) < 0.0) {
-      std::cout << "fail previously" << std::endl;
-    }
-
-    if ((*pres)("face",f) < 0.0) {
-      std::cout << "fail previously" << std::endl;
-    }
-  }
-
 };
 
 
