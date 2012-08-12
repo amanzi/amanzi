@@ -10,6 +10,10 @@ add_subdirectory(functions)
 # Geometry
 add_subdirectory(geometry)
 
+# Grid-option agnostic chemistry and interfaces
+add_subdirectory(chemistry)
+add_subdirectory(common/interface_platform)
+
 if (ENABLE_Unstructured)
   add_subdirectory(input)
 
@@ -35,10 +39,6 @@ if (ENABLE_Unstructured)
   add_subdirectory(state)
 
 endif()
-
-# Grid-option agnostic chemistry and interfaces
-add_subdirectory(chemistry)
-add_subdirectory(common/interface_platform)
 
 if (ENABLE_Unstructured)
   add_subdirectory(chemistry_pk)
