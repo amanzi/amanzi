@@ -54,7 +54,7 @@ void Coordinator::coordinator_init() {
   Teuchos::ParameterList pk_list = pks_list.sublist(pk_name);
   pk_list.set("PK name", pk_name);
   pk_ = pk_factory.CreatePK(pk_list, soln_);
-  pk_->setup(S_);
+  pk_->setup(S_.ptr());
 
   // // create the observations
   // Teuchos::ParameterList observation_plist = parameter_list_.sublist("Observation");
@@ -67,7 +67,7 @@ void Coordinator::initialize() {
   S_->Setup();
 
   // Initialize the process kernels (initializes all independent variables)
-  pk_->initialize(S_);
+  pk_->initialize(S_.ptr());
 
   // Initialize the state (initializes all dependent variables).
   S_->Initialize();

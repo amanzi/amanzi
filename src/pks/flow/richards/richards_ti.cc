@@ -201,10 +201,10 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   PK::solution_to_state(u, S_next_);
   double h = S_next_->time() - S_inter_->time();
 
-  S_next_->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S_next_.ptr(), name_);
-  UpdatePermeabilityData_(S_next_);
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S_next_->GetFieldData("numerical_rel_perm", name_);
+  bool update = S_next_->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S_next_.ptr(), name_);
+  if (update) UpdatePermeabilityData_(S);
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm", name_);
+
   matrix_->CreateMFDstiffnessMatrices(*rel_perm);
   Teuchos::RCP<CompositeVector> darcy_flux =
     S_next_->GetFieldData("darcy_flux", name_);

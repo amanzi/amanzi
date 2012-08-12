@@ -24,7 +24,7 @@ class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
 
   // constructor format for all derived classes
   explicit
-  EOSEvaluator(Teuchos::ParameterList& eos_plist);
+  EOSEvaluator(Teuchos::ParameterList& plist);
 
   EOSEvaluator(const EOSEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;

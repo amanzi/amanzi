@@ -63,23 +63,6 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
-
-      if (n < 0) {
-        std::cout << "n < 0!" << std::endl;
-      }
-      if (dirs[n] < 0) {
-        std::cout << "dirs n < 0" << std::endl;
-      }
-      if (flow_eps < 0) {
-        std::cout << "floweps < 0" << std::endl;
-      }
-      if (f < 0) {
-        std::cout << "f < 0!" << std::endl;
-      }
-      if (flux("face",f) < 0) {
-        std::cout << "flux < 0!" << std::endl;
-      }
-
       if ((flux("face",f) * dirs[n] >= flow_eps)) {
         (*face_coef)("face",f) = cell_coef("cell",c);
       } else if (std::abs(flux("face",f) * dirs[n]) < flow_eps) {

@@ -22,12 +22,10 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
 
   // update the rel perm on cells.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
+  bool update = S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
+  if (update) UpdatePermeabilityData_(S);
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm", name_);
 
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("numerical_rel_perm", name_);
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
   // std::cout << "REL PERM:" << std::endl;
@@ -122,8 +120,9 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
 
   // Get the rel perm, and ensure it is up to date.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
+  bool update = S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
+  if (update) UpdatePermeabilityData_(S);
+  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm", name_);
 
   // Get the density, in a mass basis, and ensure it is up to date.
   S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
@@ -165,8 +164,9 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
 
   // Get the rel perm, and ensure it is up to date.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
+  bool update = S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
+  if (update) UpdatePermeabilityData_(S);
+  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm", name_);
 
   // Get the density, in a mass basis, and ensure it is up to date.
   S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
