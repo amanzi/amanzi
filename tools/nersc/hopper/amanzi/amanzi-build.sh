@@ -56,6 +56,9 @@ amanzi_branch=default
 # Amanzi production install
 amanzi_production=FALSE
 
+# Amanzi enable HYPRE interface
+amanzi_enable_hypre=FALSE
+
 # Build as a batch job
 batch_build=FALSE
 batch_build_file=`pwd`/amanzi-build.pbs
@@ -92,6 +95,7 @@ Options: [Defaults in brackets]
 			    fails. 
     --enable-structured     enable structured mesh code ['"${enable_structured}"']
     --enable-unstructured   enable structured mesh code ['"${enable_unstructured}"']
+    --enable-hypre          enable HYPRE interface. Trilinos install MUST have HYPRE enabled ['"${amanzi_enable_hypre}"']
     --build-type=STRING     amanzi build type where STRING=Debug or Release ['"${amanzi_build_type}"']
     --init-file=FILE        initialize the CMake cache with FILE
     --prg-env=STRING        load PrgEnv module STRING ['"${prg_env}"']         
@@ -114,6 +118,10 @@ prg_env             ='"${prg_env}"'
 init_file           ='"${init_file}"'
 clobber             ='"${clobber}"'
 make_np             ='"${make_np}"'
+
+enable_structured   ='"${enable_structured}"'
+enable_unstructured ='"${enable_unstructured}"'
+enable_hypre        ='"${amanzi_enable_hypre}"'
 
 branch_build        ='"${batch_build}"'
 branch_build_file   ='"${batch_build_file}"'
@@ -285,6 +293,11 @@ for a in "$@"; do
 	a_is_valid=TRUE
 	batch_build_args="${batch_build_args} $a"
     fi
+    if echo $a | grep "^--enable-hypre" > /dev/null 2> /dev/null; then
+	amanzi_enable_hypre=TRUE
+	a_is_valid=TRUE
+	batch_build_args="${batch_build_args} $a"
+    fi
     if echo $a | grep "^--init-file=" > /dev/null 2> /dev/null; then
 	init_file=`echo $a | sed "s/^--init-file=//"`
 	a_is_valid=TRUE
@@ -305,8 +318,13 @@ for a in "$@"; do
 	amanzi_build_usage
     fi
     if [[ -d $a ]]; then
-	amanzi_source_dir=$a
-	a_is_valid=TRUE
+	if [[ -e "$a/.hg" ]]; then
+	  amanzi_source_dir=$a
+	  a_is_valid=TRUE
+        else
+	  echo "$a is not a valid mercurial repository"
+	  a_is_valid=FALSE
+        fi  
     fi
     if [ "${a_is_valid}" == "FALSE" ]; then
 	echo "'$a' is an invalid option or an invalid source directory"
@@ -414,6 +432,7 @@ cmake \
     -D BUILD_STATIC_EXECUTABLES:BOOL=TRUE \
     -D ENABLE_Structured:BOOL=${enable_structured} \
     -D ENABLE_Unstructured:BOOL=${enable_unstructured} \
+    -D ENABLE_HYPRE:BOOL=${amanzi_enable_hypre} \
     ${amanzi_source_dir}
 
 if [ $? -ne 0 ]; then
