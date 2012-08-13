@@ -17,6 +17,7 @@ public:
   MFTower& GetRhoSatN() {return *RhoSatOld;}
   MFTower& GetRhoSatNp1() {return *RhoSatNew;}
   MFTower& GetLambda() {return *Lambda;}
+  MFTower& GetKappaCC() {return *KappaCC;}
   PArray<MFTower>& GetKappa() {return Kappa;}
   MFTower& GetPorosity() {return *Porosity;}
   MFTower& GetPressure() {return *Pnew;}
@@ -52,6 +53,10 @@ public:
                         MFTower& pressure,
                         Real     time,
                         Real     dt);
+
+  void CreateJac(Mat& J, 
+		 MFTower& pressure,
+		 Real dt);
 
   static void SetTheRichardSolver(RichardSolver* ptr);
 
@@ -107,7 +112,7 @@ protected:
 
   int nLevs;
   Array<PArray<MultiFab> > ktmp, ctmp; // Currently maintains its own copy of these, should be fixed
-  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *PStar, *RhoSatStar, *AlphaStar;
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *PStar, *RhoSatStar, *AlphaStar, *KappaCC;
   PArray<MFTower> Kappa, DarcyVelocity, RichardCoefs;
 
   Vec RhsV, SolnV, PCapParamsV;

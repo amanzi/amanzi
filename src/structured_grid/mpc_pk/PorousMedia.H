@@ -1004,9 +1004,13 @@ public:
   MultiFab* UMac_Prev() {return u_mac_prev;}
   MultiFab* UMac_Curr() {return u_mac_curr;}
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
+  MultiFab* KappaCC() {return kappa;};
   MultiFab* Porosity() {return rock_phi;}
   MultiFab* KappaEC() {return kpedge;}
   MultiFab* PCapParams() {return cpl_coef;}
+  MultiFab* KrParams() {return kr_coef;}
+  Array<int>& rinflowBCLo() {return rinflow_bc_lo;}
+  Array<int>& rinflowBCHi() {return rinflow_bc_hi;}
 
   void set_vel_from_bcs(Real      time,
 			MultiFab* vel);

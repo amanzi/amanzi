@@ -1,11 +1,12 @@
 #include <RichardSolver.H>
 #include <RICHARDSOLVER_F.H>
+#include <POROUSMEDIA_F.H>
 
 #include <Utility.H>
 
 
-#undef BUILD_DENSE_J
-#define BUILD_DENSE_J 1
+//#undef BUILD_DENSE_J
+//#define BUILD_DENSE_J 0
 #undef PETSC_3_2
 #define PETSC_3_2 1
 
@@ -217,6 +218,29 @@ PetscErrorCode RichardRes_DpDt_Alt(SNES snes,Vec x,Vec f,void *dummy)
 
     return 0;
 }
+
+PetscErrorCode RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy)
+{
+  PetscErrorCode ierr;
+  RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+  if (!rs) {
+    BoxLib::Abort("Bad cast in RichardJacFromPM");
+  }
+  Layout& layout = PMAmr::GetLayout();
+  MFTower& xMFT = rs->GetPressure();
+  
+  ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+  Real dt = rs->Dt();
+  rs->CreateJac(*jacpre,xMFT,dt);
+
+  if (*jac != *jacpre) {
+    ierr = MatAssemblyBegin(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+    ierr = MatAssemblyEnd(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  }
+
+  PetscFunctionReturn(0);
+  
+} 
 
 static RichardSolver* static_rs_ptr = 0;
 
@@ -503,16 +527,19 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
 
   // ResetRhoSat();
   PArray<MultiFab> lambda(nLevs,PArrayNoManage);
+  PArray<MultiFab> kappacc(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
   PArray<MultiFab> P_new(nLevs,PArrayNoManage);
   PArray<MultiFab> utmp(nLevs,PArrayNoManage);
   
   for (int lev=0; lev<nLevs; ++lev) {
     lambda.set(lev,pm[lev].LambdaCC_Curr());
+    kappacc.set(lev,pm[lev].KappaCC());
     porosity.set(lev,pm[lev].Porosity());
     P_new.set(lev,&(pm[lev].get_new_data(Press_Type)));
   }
 
+  KappaCC = new MFTower(layout,kappacc);
   Lambda = new MFTower(layout,lambda);
   Porosity = new MFTower(layout,porosity);
   Pnew = new MFTower(layout,P_new);
@@ -562,7 +589,7 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   
   int d_nz = 1 + 2*BL_SPACEDIM; // Estmated number of nonzero local columns of J
   int o_nz = 0; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
-  Mat Jac;
+  Mat Jac, JacMF;
 #if defined(PETSC_3_2)
   ierr = MatCreateMPIAIJ(comm, n, n, N, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &Jac); CHKPETSC(ierr);
 #else
@@ -578,13 +605,24 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   matfdcoloring = 0;
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
   ierr = SNESSetFunction(snes,RhsV,RichardRes_DpDt,(void*)(this)); CHKPETSC(ierr);
-  ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
-  ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,
-				  (PetscErrorCode (*)(void))RichardRes_DpDt,
-				  (void*)(this)); CHKPETSC(ierr);
-  ierr = SNESSetJacobian(snes,Jac,Jac,RichardComputeJacobianColor,matfdcoloring);CHKPETSC(ierr); 
-  ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);CHKPETSC(ierr);
+
+  bool use_fd_jac = true;
+  if (use_fd_jac) {
+    ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
+    ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
+    ierr = MatFDColoringSetFunction(matfdcoloring,
+				    (PetscErrorCode (*)(void))RichardRes_DpDt,
+				    (void*)(this)); CHKPETSC(ierr);
+    
+    ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
+    ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);CHKPETSC(ierr);
+    ierr = SNESSetJacobian(snes,Jac,Jac,RichardComputeJacobianColor,matfdcoloring);CHKPETSC(ierr);
+  }
+  else {
+    ierr = SNESSetJacobian(snes,Jac,Jac,RichardJacFromPM,(void*)(this));CHKPETSC(ierr);
+  }
+  ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
+  
 #if defined(PETSC_3_2)
   ierr = SNESLineSearchSet(snes,FormLineSearch,(void *)(this));CHKPETSC(ierr);
 #else
@@ -606,7 +644,7 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = SNESLineSearchSetType(ls, SNESLINESEARCHSHELL);CHKPETSC(ierr);
   ierr = SNESLineSearchShellSetUserFunc(ls,FormLineSearch,(void*)(this));CHKPETSC(ierr);
 #endif
-
+  
   // TODO: Add deletes/destroys for all structures allocated/created here
 
 }
@@ -1184,7 +1222,6 @@ RichardSolver::DpDtResidual(MFTower& residual,
 	const FArrayBox& RSn = GetRhoSatN()[lev][mfi];
 	const FArrayBox& RSnp1 = GetRhoSatNp1()[lev][mfi];
 	const FArrayBox& Poros = GetPorosity()[lev][mfi];
-	
 	FORT_RS_PDOTRES(Res.dataPtr(),ARLIM(Res.loVect()), ARLIM(Res.hiVect()),
 			RSn.dataPtr(),ARLIM(RSn.loVect()), ARLIM(RSn.hiVect()),
 			RSnp1.dataPtr(),ARLIM(RSnp1.loVect()), ARLIM(RSnp1.hiVect()),
@@ -1235,4 +1272,169 @@ RichardSolver::DpDtResidual_Alt(MFTower& residual,
                         vbox.loVect(), vbox.hiVect(), &nComp);
         }
     }
+}
+
+void RichardSolver::CreateJac(Mat& J, 
+			      MFTower& pressure,
+			      Real dt)
+{
+  Layout& layout = PMAmr::GetLayout();
+  const Array<BoxArray>& gridArray = layout.GridArray();
+  const Array<IntVect>& refRatio   = layout.RefRatio();
+  BaseFab<int> nodeNums;
+  PetscErrorCode ierr;
+  const BCRec& theBC = pm[0].get_desc_lst()[Press_Type].getBC(0);
+  PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
+  PArray<MultiFab> kr_params(nLevs,PArrayNoManage);
+  
+  for (int lev=0; lev<nLevs; ++lev) {
+    pcap_params.set(lev, pm[lev].PCapParams());
+    kr_params.set(lev, pm[lev].KrParams());
+  }
+  MFTower PCapParamsMFT(layout,pcap_params);
+  MFTower KrParamsMFT(layout,kr_params);
+
+  const Array<int>& rinflow_bc_lo = pm[0].rinflowBCLo();
+  const Array<int>& rinflow_bc_hi = pm[0].rinflowBCHi();
+
+  int do_upwind =1;
+  for (int lev=0; lev<nLevs; ++lev) {
+    const Box& domain = GeomArray()[lev].Domain();
+    const Real* dx = GeomArray()[lev].CellSize();
+    MultiFab& Plev = pressure[lev];
+
+    PArray<MultiFab> jacflux;
+    jacflux.resize(BL_SPACEDIM,PArrayManage);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      BoxArray ba = BoxArray(pressure[lev].boxArray()).surroundingNodes(d);
+      jacflux.set(d,new MultiFab(ba,3,0));
+    }
+
+    // may not necessary since this should be same as the residual
+    pm[lev].calcInvPressure(GetRhoSatNp1()[lev],pressure[lev]); 
+    pm[lev].calcLambda(&(GetLambda()[lev]),GetRhoSatNp1()[lev]); 
+
+    for (MFIter mfi(Plev); mfi.isValid(); ++mfi) {
+      const Box& vbox = mfi.validbox();
+      const int idx   = mfi.index();
+      Array<int> bc   = pm[lev].getBCArray(Press_Type,idx,0,1);      
+
+      Box gbox = Box(vbox).grow(1);
+      nodeNums.resize(gbox,1);
+      layout.SetNodeIds(nodeNums,lev,idx);
+
+      // reusing RichardCoefs to store Jacobian flux term
+      FArrayBox& jfabx = jacflux[0][mfi];
+      FArrayBox& jfaby = jacflux[1][mfi];
+      FArrayBox& vfabx = GetDarcyVelocity()[0][lev][mfi];
+      FArrayBox& vfaby = GetDarcyVelocity()[1][lev][mfi];
+      FArrayBox& kfabx = GetKappa()[0][lev][mfi];
+      FArrayBox& kfaby = GetKappa()[1][lev][mfi];
+      
+#if (BL_SPACEDIM==3)
+      FArrayBox& jfabz = jacflux[2][mfi];
+      FArrayBox& vfabz = GetDarcyVelocity()[2][lev][mfi];
+      FArrayBox& kfabz = GetKappa()[2][lev][mfi];
+#endif
+      FArrayBox& ldfab = GetLambda()[lev][mfi];
+      FArrayBox& prfab = pressure[lev][mfi];
+      FArrayBox& pofab = GetPorosity()[lev][mfi];
+      FArrayBox& kcfab = GetKappaCC() [lev][mfi];
+      FArrayBox& cpfab = PCapParamsMFT[lev][mfi];
+      const int n_cp_coef = cpfab.nComp();
+      FArrayBox& krfab = KrParamsMFT[lev][mfi];
+      const int n_kr_coef = krfab.nComp();
+      Real deps = 1.e-8;
+
+      FORT_RICHARD_NJAC2(jfabx.dataPtr(), ARLIM(jfabx.loVect()),ARLIM(jfabx.hiVect()),
+			 jfaby.dataPtr(), ARLIM(jfaby.loVect()),ARLIM(jfaby.hiVect()),
+
+#if(BL_SPACEDIM==3)
+			 jfabz.dataPtr(), ARLIM(jfabz.loVect()),ARLIM(jfabz.hiVect()),
+#endif	
+			 vfabx.dataPtr(), ARLIM(vfabx.loVect()),ARLIM(vfabx.hiVect()),
+			 vfaby.dataPtr(), ARLIM(vfaby.loVect()),ARLIM(vfaby.hiVect()),
+#if(BL_SPACEDIM==3)
+			 vfabz.dataPtr(), ARLIM(vfabz.loVect()),ARLIM(vfabz.hiVect()),
+#endif
+			 kfabx.dataPtr(), ARLIM(kfabx.loVect()),ARLIM(kfabx.hiVect()),
+			 kfaby.dataPtr(), ARLIM(kfaby.loVect()),ARLIM(kfaby.hiVect()),
+#if(BL_SPACEDIM==3)
+			 kfabz.dataPtr(), ARLIM(kfabz.loVect()),ARLIM(kfabz.hiVect()),  
+#endif
+			 ldfab.dataPtr(), ARLIM(ldfab.loVect()),ARLIM(ldfab.hiVect()),
+			 
+			 prfab.dataPtr(), ARLIM(prfab.loVect()),ARLIM(prfab.hiVect()),
+			 pofab.dataPtr(), ARLIM(pofab.loVect()),ARLIM(pofab.hiVect()),
+			 kcfab.dataPtr(), ARLIM(kcfab.loVect()),ARLIM(kcfab.hiVect()),
+			 krfab.dataPtr(), ARLIM(krfab.loVect()),ARLIM(krfab.hiVect()), &n_kr_coef,
+			 cpfab.dataPtr(), ARLIM(cpfab.loVect()),ARLIM(cpfab.hiVect()), &n_cp_coef,
+			 vbox.loVect(), vbox.hiVect(), domain.loVect(), domain.hiVect(), 
+			 dx, bc.dataPtr(), 
+			 rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
+			 &deps, &do_upwind);
+
+
+      FArrayBox dalpha(gbox,1);
+      FArrayBox& nfab = GetRhoSatNp1()[lev][mfi];
+      
+      FORT_RICHARD_ALPHA(dalpha.dataPtr(), ARLIM(dalpha.loVect()), ARLIM(dalpha.hiVect()),
+			 nfab.dataPtr(), ARLIM(nfab.loVect()),ARLIM(nfab.hiVect()),
+			 pofab.dataPtr(), ARLIM(pofab.loVect()),ARLIM(pofab.hiVect()),
+			 kcfab.dataPtr(), ARLIM(kcfab.loVect()), ARLIM(kcfab.hiVect()),
+			 cpfab.dataPtr(), ARLIM(cpfab.loVect()), ARLIM(cpfab.hiVect()), &n_cp_coef,
+			 vbox.loVect(), vbox.hiVect());
+      
+      Array<int> cols(1+2*BL_SPACEDIM);
+      Array<int> rows(1);
+      Array<Real> vals(cols.size(),0);
+
+      const Array<double>& density = GetDensity();
+      int nc = 0;
+
+      for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
+      {
+	  cols[0] = nodeNums(iv,0);
+          if (cols[0]>=0) {
+              rows[0] = cols[0];
+              vals[0] = dalpha(iv,0);
+              Real rdt = (dt>0  ?  density[nc]*dt : 1); // The "b" factor
+              int cnt = 1;
+              for (int d=0; d<BL_SPACEDIM; ++d) {
+                  vals[0] -= rdt * jacflux[d][mfi](iv,2);
+                  IntVect ivp = iv + BoxLib::BASISV(d);
+                  int np = nodeNums(ivp,0);
+                  if (np>=0) {
+                      cols[cnt]  = np; 
+                      vals[cnt]  = -rdt * jacflux[d][mfi](iv,0);
+                      cnt++;
+                  }
+                  else {
+                      if (theBC.hi()[d]==FOEXTRAP) {
+                          vals[0] -= rdt * jacflux[d][mfi](iv,0);
+                      }
+                  }
+                  
+                  IntVect ivn = iv - BoxLib::BASISV(d);
+                  int nn = nodeNums(ivn,0);
+                  if (nn>=0) {
+                      cols[cnt]  = nn; 
+                      vals[cnt]  = -rdt * jacflux[d][mfi](iv,1);
+                      cnt++;
+                  }
+                  else {
+                      if (theBC.lo()[d]==FOEXTRAP) {
+                          vals[0] -= rdt * jacflux[d][mfi](iv,1);
+                      }
+                  }
+              }
+              
+              // Normalize matrix entries
+	      ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+	  }
+      }
+    }
+  }
+  ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
 }
