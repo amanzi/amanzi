@@ -103,6 +103,10 @@ void Darcy_PK::ProcessParameterList()
     Exceptions::amanzi_throw(msg);
   }
   ProcessStringLinearSolver(linear_solver_name, &max_itrs_sss, &convergence_tol_sss);
+
+  dT_method_ = 0;
+  std::string dT_name = sss_list.get<string>("time stepping strategy", "simple");
+  if (dT_name == "adaptive") dT_method_ = FLOW_DT_ADAPTIVE;
 }
 
 
@@ -135,7 +139,7 @@ void Darcy_PK::ProcessStringSourceDistribution(const std::string name, int* meth
     *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_NONE;
   } else if (name == "volume") {
     *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_VOLUME;
-  } else if (name == "premeability") {
+  } else if (name == "permeability") {
     *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_PERMEABILITY;
   } else {
     msg << "Darcy PK: unknown source normalization method has been specified.";
