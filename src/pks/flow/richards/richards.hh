@@ -16,6 +16,7 @@
 #include "composite_vector.hh"
 #include "tree_vector.hh"
 #include "state.hh"
+#include "primary_variable_field_model.hh"
 #include "boundary_function.hh"
 #include "matrix_mfd.hh"
 #include "upwinding.hh"
