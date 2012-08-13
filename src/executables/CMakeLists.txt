@@ -50,7 +50,7 @@ target_link_libraries(ats
 #                      ${pk_energy_three_phase}
                       ${pk_flow_richards}
 #                      ${pk_flow_permafrost}
-#                      ${pk_flow_overland}
+                      ${pk_flow_overland}
 #                      energy_bc_factory
 #                      ${energy_relations_thermal_conductivity}
 #                      ${energy_relations_internal_energy}

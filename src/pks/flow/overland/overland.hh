@@ -121,16 +121,9 @@ private:
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  private:
-  // OVERLAND parameters
-  std::vector<double> manning ;
-  std::vector<double> slope_x ;
-  std::vector<double> slope_y ;
-  std::vector<double> zone_x  ;
-
   // control switches
-  int internal_tests_;  // output information
-  bool variable_abs_perm_;
   bool standalone_mode_; // domain mesh == surface mesh
+  bool variable_abs_perm_;
 
   // time stuff
   int    nsteps_ ;

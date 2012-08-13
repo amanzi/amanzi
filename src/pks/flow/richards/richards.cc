@@ -258,6 +258,10 @@ void Richards::state_to_solution(const Teuchos::RCP<State>& S,
 void Richards::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
   S->SetData("pressure", "flow", solution->data());
+  Teuchos::RCP<FieldModel> fm = S->GetFieldModel("pressure");
+  Teuchos::RCP<PrimaryVariableFieldModel> pri_fm =
+      Teuchos::rcp_static_cast<PrimaryVariableFieldModel>(fm);
+  pri_fm->SetFieldAsChanged();
 };
 
 

@@ -17,6 +17,7 @@ ManningConductivityModel::ManningConductivityModel(Teuchos::ParameterList& cond_
     cond_plist_(cond_plist) {
   slope_regularization_ = cond_plist_.get<double>("slope regularization epsilon", 1.e-8);
   manning_exp_ = cond_plist_.get<double>("Manning exponent", 0.6666666666666667);
+  manning_key_ = "manning_coefficient";
   pres_key_ = "overland_pressure";
   slope_key_ = "slope_magnitude";
 
@@ -32,7 +33,8 @@ ManningConductivityModel::ManningConductivityModel(const ManningConductivityMode
     slope_regularization_(other.slope_regularization_),
     pres_key_(other.pres_key_),
     slope_key_(other.slope_key_),
-    manning_exp_(other.manning_exp_) {}
+    manning_exp_(other.manning_exp_),
+    manning_key_(other.manning_key_) {}
 
 
 Teuchos::RCP<FieldModel>
@@ -77,11 +79,12 @@ void ManningConductivityModel::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   // special EnsureCompatibility to add in a model for Manning's Coef.
 
   // add the model.
-  S->RequireField("manning_coefficient");
-  dependencies_.insert("manning_coefficient");
+  S->RequireField(manning_key_);
+  dependencies_.insert(manning_key_);
   Teuchos::ParameterList mann_plist = cond_plist_.sublist("Manning coefficient");
+  mann_plist.set("model name", manning_key_);
   Teuchos::RCP<FieldModel> mann_fm = Teuchos::rcp(new IndependentFieldModel(mann_plist));
-  S->SetFieldModel("manning_coefficient", mann_fm);
+  S->SetFieldModel(manning_key_, mann_fm);
 
   // Call the base class's method.
   SecondaryVariableFieldModel::EnsureCompatibility(S);

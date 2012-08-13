@@ -242,6 +242,11 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
 
+#if DEBUG_RES_FLAG
+  std::cout << "  conductivity0: " << (*cond)("cell",0,0) << " " << (*cond)("face",0,0) << std::endl;
+  std::cout << "  conductivity1: " << (*cond)("cell",0,9) << " " << (*cond)("face",0,29) << std::endl;
+#endif
+
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
   preconditioner_->CreateMFDstiffnessMatrices(*cond);
