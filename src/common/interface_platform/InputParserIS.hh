@@ -31,6 +31,7 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_BILU_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_HypreAMG_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
+void output_boundary_conditions( Teuchos::ParameterList* plist );
 
 static std::string phase_name;
 static std::string phase_comp_name;

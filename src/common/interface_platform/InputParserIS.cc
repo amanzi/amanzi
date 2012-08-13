@@ -2,6 +2,7 @@
 #include "InputParserIS-defaults.hh"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include <sstream>
 #include <string>
 #include <algorithm>
 #include <boost/lambda/lambda.hpp>
@@ -1315,7 +1316,7 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         std::stringstream ss;
         ss << "BC " << bc_counter++;
-
+        
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("mass flux").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
@@ -1332,17 +1333,29 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
           std::vector<std::string> forms_(time_fns.size());
 
-          for (int i=0; i<time_fns.size(); i++)
+          for (int i=0; i<time_fns.size(); i++) {
+                  
             if (time_fns[i] == "Linear") {
               forms_[i] = "linear";
+//               values_plot[2*i + 1] = 0.5 *( flux[i] + flux[i+1]);
             } else if (time_fns[i] == "Constant") {
               forms_[i] = "constant";
+//               values_plot[2*i + 1] = flux[i];
             } else {
               Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
             }
+            
+          }
 
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
+          
+//           for (int i=0; i < times_plot.size(); i++)
+//                 std::cout << times_plot[i] <<" "<<values_plot[i] <<"\n";
+//           }
+          
+//           exit(0);
+          
         }
 
       } else if ( bc.isSublist("BC: Uniform Pressure") ) {
@@ -1758,6 +1771,260 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
   }
   return chemistry_list;
 }  // end CreateChemistryList()
+
+
+void output_boundary_conditions( Teuchos::ParameterList* plist ){
+        
+        Teuchos::ParameterList flow_list;
+        int bc_counter = 0;
+        
+        if ( plist->isSublist("Flow") ) {
+               flow_list =  plist->sublist("Flow");
+               std::cout<<"There is flow sublist\n";
+               
+               Teuchos::ParameterList richards_list;
+               if ( flow_list.isSublist("Richards Problem") ){
+                       richards_list = flow_list.sublist("Richards Problem");
+                       std::cout<<"There is richards sublist\n";
+                       
+                       Teuchos::ParameterList bc_list;
+                       if ( richards_list.isSublist("boundary conditions") ){
+                               bc_list = richards_list.sublist("boundary conditions");
+                               std::cout<<"There is bc_list\n";
+                       }
+                       
+                       Teuchos::ParameterList mass_flux_list, pressure_list, seepage_list, head_list;
+                       if (bc_list.isSublist("mass flux") ){
+                               mass_flux_list = bc_list.sublist("mass flux");
+                               for (Teuchos::ParameterList::ConstIterator i = mass_flux_list.begin(); i != mass_flux_list.end(); i++) {
+                                       
+                                       if (mass_flux_list.isSublist(mass_flux_list.name(i))) {
+                                                Teuchos::ParameterList& bc = mass_flux_list.sublist(mass_flux_list.name(i));
+                                                
+                                                std::stringstream ss;
+                                                ss << "BCmassflux" << bc_counter++;
+                                                
+                                                std::cout<< "massflux "<<bc_counter<<"\n";
+                                                
+                                                Teuchos::ParameterList& f_tab = (bc.sublist("outward mass flux")).sublist("function-tabular");
+                                                
+                                                Teuchos::Array<double> times = f_tab.get<Teuchos::Array<double> >("x values");
+                                                Teuchos::Array<double> values = f_tab.get<Teuchos::Array<double> >("y values");
+                                                Teuchos::Array<std::string> time_fns = f_tab.get<Teuchos::Array<std::string> >("forms");
+                                                
+                                                int np = times.size()*2 - 1;
+                                                Teuchos::Array<double> times_plot(np);
+                                                Teuchos::Array<double> values_plot(np);
+                                                
+                                                
+                                                for (int i=0; i < times.size() - 1; i++){
+                                                        times_plot[2*i] = times[i];
+                                                        values_plot[2*i] = values[i];
+                                                        times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
+                                                }
+                                                times_plot[np - 1] = times[times.size() - 1];
+                                                values_plot[np - 1] = values[times.size() - 1];
+                                                
+                                                for (int i=0; i<time_fns.size(); i++) {
+                                                        if (time_fns[i] == "linear") {
+                                                               values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
+                                                        } else if (time_fns[i] == "constant") {
+                                                              values_plot[2*i + 1] = values[i];
+                                                              times_plot[2*i + 1] = times[i+1];
+                                                        } else {
+                                                                Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+                                                        }
+                                                }
+                                                
+                                                
+                                                std::string filename = ss.str() + ".dat";
+                                                std::ofstream ofile(filename.c_str());
+                                                
+                                                ofile << "# "<<"time "<< "flux"<<std::endl;
+                                                for (int i=0; i < np; i++){
+                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
+                                                        ofile <<times_plot[i] << " " << values_plot[i] << std::endl;
+                                                }
+                                                
+                                                ofile.close();
+
+                                       }
+                               }
+                       }
+                       if (bc_list.isSublist("pressure") ){
+                               pressure_list = bc_list.sublist("pressure");
+                               for (Teuchos::ParameterList::ConstIterator i = pressure_list.begin(); i != pressure_list.end(); i++) {
+                                       
+                                       if (pressure_list.isSublist(pressure_list.name(i))) {
+                                                Teuchos::ParameterList& bc = pressure_list.sublist(pressure_list.name(i));
+                                                
+                                                std::stringstream ss;
+                                                ss << "BCpressure" << bc_counter++;
+                                                
+                                                                                            
+                                                Teuchos::ParameterList& f_tab = (bc.sublist("boundary pressure")).sublist("function-tabular");
+                                                
+                                                Teuchos::Array<double> times = f_tab.get<Teuchos::Array<double> >("x values");
+                                                Teuchos::Array<double> values = f_tab.get<Teuchos::Array<double> >("y values");
+                                                Teuchos::Array<std::string> time_fns = f_tab.get<Teuchos::Array<std::string> >("forms");
+                                                
+                                                int np = times.size()*2 - 1;
+                                                Teuchos::Array<double> times_plot(np);
+                                                Teuchos::Array<double> values_plot(np);
+                                                
+                                                
+                                                for (int i=0; i < times.size() - 1; i++){
+                                                        times_plot[2*i] = times[i];
+                                                        values_plot[2*i] = values[i];
+                                                        times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
+                                                }
+                                                times_plot[np - 1] = times[times.size() - 1];
+                                                values_plot[np - 1] = values[times.size() - 1];
+                                                
+                                                for (int i=0; i<time_fns.size(); i++) {
+                                                        if (time_fns[i] == "linear") {
+                                                               values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
+                                                        } else if (time_fns[i] == "constant") {
+                                                              values_plot[2*i + 1] = values[i];
+                                                              times_plot[2*i + 1] = times[i+1];
+                                                        } else {
+                                                                Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+                                                        }
+                                                }
+                                                
+                                                
+                                                std::string filename = ss.str() + ".dat";
+                                                std::ofstream ofile(filename.c_str());
+                                                
+                                                ofile << "# time "<<"pressure"<<std::endl;
+                                                for (int i=0; i < np; i++){
+                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
+                                                        ofile << times_plot[i] << " " << values_plot[i] << std::endl;
+                                                }
+                                                
+                                                ofile.close();
+
+                                       }
+                               }
+                       }
+                       if (bc_list.isSublist("seepage face") ){
+                               seepage_list = bc_list.sublist("seepage face");
+                               for (Teuchos::ParameterList::ConstIterator i = seepage_list.begin(); i != seepage_list.end(); i++) {
+                                       
+                                       if (seepage_list.isSublist(seepage_list.name(i))) {
+                                                Teuchos::ParameterList& bc = seepage_list.sublist(seepage_list.name(i));
+                                                
+                                                std::stringstream ss;
+                                                ss << "BCseepage" << bc_counter++;
+                                                
+                                                                                            
+                                                Teuchos::ParameterList& f_tab = (bc.sublist("outward mass flux")).sublist("function-tabular");
+                                                
+                                                Teuchos::Array<double> times = f_tab.get<Teuchos::Array<double> >("x values");
+                                                Teuchos::Array<double> values = f_tab.get<Teuchos::Array<double> >("y values");
+                                                Teuchos::Array<std::string> time_fns = f_tab.get<Teuchos::Array<std::string> >("forms");
+                                                
+                                                int np = times.size()*2 - 1;
+                                                Teuchos::Array<double> times_plot(np);
+                                                Teuchos::Array<double> values_plot(np);
+                                                
+                                                
+                                                for (int i=0; i < times.size() - 1; i++){
+                                                        times_plot[2*i] = times[i];
+                                                        values_plot[2*i] = values[i];
+                                                        times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
+                                                }
+                                                times_plot[np - 1] = times[times.size() - 1];
+                                                values_plot[np - 1] = values[times.size() - 1];
+                                                
+                                                for (int i=0; i<time_fns.size(); i++) {
+                                                        if (time_fns[i] == "linear") {
+                                                               values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
+                                                        } else if (time_fns[i] == "constant") {
+                                                              values_plot[2*i + 1] = values[i];
+                                                              times_plot[2*i + 1] = times[i+1];
+                                                        } else {
+                                                                Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+                                                        }
+                                                }
+                                                
+                                                
+                                                std::string filename = ss.str() + ".dat";
+                                                std::ofstream ofile(filename.c_str());
+                                                
+                                                ofile << "# time "<<"flux"<<std::endl;
+                                                for (int i=0; i < np; i++){
+                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
+                                                        ofile << times_plot[i] << " " << values_plot[i] << std::endl;
+                                                }
+                                                
+                                                ofile.close();
+
+                                       }
+                               }
+                       }
+                       if (bc_list.isSublist("static head") ){
+                               head_list = bc_list.sublist("static head");
+                               for (Teuchos::ParameterList::ConstIterator i = head_list.begin(); i != head_list.end(); i++) {
+                                       
+                                       if (head_list.isSublist(head_list.name(i))) {
+                                                Teuchos::ParameterList& bc = head_list.sublist(head_list.name(i));
+                                                
+                                                std::stringstream ss;
+                                                ss << "BChead" << bc_counter++;
+                                                
+                                                                                            
+                                                Teuchos::ParameterList& f_tab = (bc.sublist("water table elevation")).sublist("function-tabular");
+                                                
+                                                Teuchos::Array<double> times = f_tab.get<Teuchos::Array<double> >("x values");
+                                                Teuchos::Array<double> values = f_tab.get<Teuchos::Array<double> >("y values");
+                                                Teuchos::Array<std::string> time_fns = f_tab.get<Teuchos::Array<std::string> >("forms");
+                                                
+                                                int np = times.size()*2 - 1;
+                                                Teuchos::Array<double> times_plot(np);
+                                                Teuchos::Array<double> values_plot(np);
+                                                
+                                                
+                                                for (int i=0; i < times.size() - 1; i++){
+                                                        times_plot[2*i] = times[i];
+                                                        values_plot[2*i] = values[i];
+                                                        times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
+                                                }
+                                                times_plot[np - 1] = times[times.size() - 1];
+                                                values_plot[np - 1] = values[times.size() - 1];
+                                                
+                                                for (int i=0; i<time_fns.size(); i++) {
+                                                        if (time_fns[i] == "linear") {
+                                                               values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
+                                                        } else if (time_fns[i] == "constant") {
+                                                              values_plot[2*i + 1] = values[i];
+                                                              times_plot[2*i + 1] = times[i+1];
+                                                        } else {
+                                                                Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+                                                        }
+                                                }
+                                                
+                                                
+                                                std::string filename = ss.str() + ".dat";
+                                                std::ofstream ofile(filename.c_str());
+                                                
+                                                ofile << "# time "<<"head"<<std::endl;
+                                                for (int i=0; i < np; i++){
+                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
+                                                        ofile << times_plot[i] << " " << values_plot[i] << std::endl;
+                                                }
+                                                
+                                                ofile.close();
+
+                                       }
+                               }
+                       }
+               }
+               
+               
+        }
+//         exit(0);
+}
 
 
 }
