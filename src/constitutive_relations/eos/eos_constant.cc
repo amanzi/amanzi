@@ -13,29 +13,15 @@
 #include "eos_constant.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
 // registry of method
-Utils::RegisteredFactory<FieldModel,EOSConstant> EOSConstant::factory_("constant");
+Utils::RegisteredFactory<EOS,EOSConstant> EOSConstant::factory_("constant");
 
 EOSConstant::EOSConstant(Teuchos::ParameterList& eos_plist) :
-    EOS(eos_plist) {
+    eos_plist_(eos_plist) {
   InitializeFromPlist_();
 };
-
-EOSConstant::EOSConstant(const EOSConstant& other) :
-    EOS(other),
-    rho_(other.rho_),
-    M_(other.M_) {}
-
-// ---------------------------------------------------------------------------
-// Virtual copy constructor.
-// ---------------------------------------------------------------------------
-Teuchos::RCP<FieldModel> EOSConstant::Clone() const {
-  return Teuchos::rcp(new EOSConstant(*this));
-}
-
 
 void EOSConstant::InitializeFromPlist_() {
   // defaults to water
@@ -45,9 +31,13 @@ void EOSConstant::InitializeFromPlist_() {
     M_ = eos_plist_.get<double>("Molar mass [g/mol]", 18.0153) * 1.e-3;
   }
 
-  rho_ = eos_plist_.get<double>("Density [kg/m^3]", 1000.0);
+  if (eos_plist_.isParameter("Density [mol/m^3]")) {
+    rho_ = eos_plist_.get<double>("Density [mol/m^3]") * M_;
+  } else {
+    rho_ = eos_plist_.get<double>("Density [kg/m^3]", 1000.0);
+  }
+
 };
 
-} // namespace
 } // namespace
 } // namespace

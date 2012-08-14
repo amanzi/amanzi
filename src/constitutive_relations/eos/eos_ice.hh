@@ -11,41 +11,31 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef FLOWRELATIONS_EOS_ICE_HH_
-#define FLOWRELATIONS_EOS_ICE_HH_
+#ifndef AMANZI_RELATIONS_EOS_ICE_HH_
+#define AMANZI_RELATIONS_EOS_ICE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"
-#include "eos.hh"
+#include "eos_constant_molar_mass.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
 // Equation of State model
-class EOSIce : public EOS {
+class EOSIce : public EOSConstantMolarMass {
 
 public:
-  explicit
-  EOSIce(Teuchos::ParameterList& eos_plist);
+  explicit EOSIce(Teuchos::ParameterList& eos_plist);
 
-  EOSIce(const EOSIce& other);
-
-  virtual Teuchos::RCP<FieldModel> Clone() const;
-
-  virtual double Density(double T, double p);
-  virtual double DDensityDT(double T, double p);
-  virtual double DDensityDp(double T, double p);
-
-  virtual double molar_mass() const { return M_; }
-  virtual bool is_molar_basis() const { return true; }
+  virtual double MassDensity(double T, double p);
+  virtual double DMassDensityDT(double T, double p);
+  virtual double DMassDensityDp(double T, double p);
 
 private:
   virtual void InitializeFromPlist_();
 
   Teuchos::ParameterList eos_plist_;
-  double M_;
 
   // constants for ice, hard-coded because it would be crazy to try to come
   // up with names for these in a parameter list...
@@ -56,11 +46,10 @@ private:
   // -- pressure dependence of density
   const double kalpha_, kp0_;
 
-  static Utils::RegisteredFactory<FieldModel,EOSIce> factory_;
+  static Utils::RegisteredFactory<EOS,EOSIce> factory_;
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 
