@@ -1,14 +1,15 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  This WRM model calls saturation and rel perm using a capillary pressure p_atm - pc.
+  This WRM model calls saturation using a thermal term.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_WRM_STANDARD_MODEL_
-#define AMANZI_FLOWRELATIONS_WRM_STANDARD_MODEL_
+#ifndef AMANZI_FLOWRELATIONS_WRM_ICE_WATER_MODEL_
+#define AMANZI_FLOWRELATIONS_WRM_ICE_WATER_MODEL_
 
+#include "pc_ice_water.hh"
 #include "wrm_model.hh"
 
 namespace Amanzi {
@@ -17,15 +18,15 @@ namespace FlowRelations {
 
 class WRM; // forward declaration
 
-class WRMStandardModel : public WRMModel {
+class WRMIceLiquidModel : public WRMModel {
  public:
 
   explicit
-  WRMStandardModel(Teuchos::ParameterList& wrm_plist);
+  WRMIceLiquidModel(Teuchos::ParameterList& wrm_plist);
 
-  WRMStandardModel(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm);
+  WRMIceLiquidModel(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm);
 
-  WRMStandardModel(const WRMStandardModel& other);
+  WRMIceLiquidModel(const WRMIceLiquidModel& other);
 
   virtual Teuchos::RCP<FieldModel> Clone() const;
 
@@ -39,9 +40,11 @@ class WRMStandardModel : public WRMModel {
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results);
 
  protected:
-  Key pres_key_;
+  Key temp_key_;
+  Key dens_key_;
   bool calc_other_sat_;
 
+  Teuchos::RCP<PCIceWater> pc_;
 };
 
 } // namespae

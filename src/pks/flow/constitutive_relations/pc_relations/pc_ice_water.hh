@@ -23,6 +23,8 @@ public:
   // required methods from the base class
   bool IsMolarBasis() { return molar_basis_; }
   virtual double CapillaryPressure(double T, double dens);
+  virtual double DCapillaryPressureDT(double T, double dens);
+  virtual double DCapillaryPressureDRho(double T, double dens);
 
 private:
   void InitializeFromPlist_();

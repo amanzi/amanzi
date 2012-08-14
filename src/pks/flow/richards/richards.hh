@@ -16,17 +16,13 @@
 #include "composite_vector.hh"
 #include "tree_vector.hh"
 #include "state.hh"
-#include "primary_variable_field_model.hh"
-#include "boundary_function.hh"
 #include "matrix_mfd.hh"
 #include "upwinding.hh"
+#include "boundary_function.hh"
 
 #include "PK.hh"
 #include "pk_factory.hh"
 #include "bdf_time_integrator.hh"
-
-#include "richards_water_content.hh"
-#include "wrm_standard_model.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -40,7 +36,6 @@ class Richards : public PK {
 
 public:
   Richards() {};
-
   Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
 
@@ -83,6 +78,10 @@ public:
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 protected:
+  // Create of physical models.
+  virtual void SetupPhysicalModels_(const Teuchos::RCP<State>& S);
+  virtual void SetupRichardsFlow_(const Teuchos::RCP<State>& S);
+
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
@@ -91,10 +90,6 @@ protected:
   // bdf needs help
   virtual void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres);
-
-  // computational concerns in managing abs, rel perm
-  // -- is abs perm changing?
-  virtual bool variable_abs_perm() { return variable_abs_perm_; }
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual void SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S);
@@ -117,10 +112,7 @@ protected:
 
 protected:
   // control switches
-  int internal_tests_;  // output information
-  bool variable_abs_perm_;
   int Krel_method_;
-
   double dt_;
   double dt0_;
 
@@ -130,11 +122,6 @@ protected:
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
-
-  // accumulation of water
-  Teuchos::RCP<RichardsWaterContent> wc_;
-  Teuchos::RCP<FlowRelations::WRMStandardModel> wrm_;
-
 
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;

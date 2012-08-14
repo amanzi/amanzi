@@ -43,7 +43,7 @@ RegisteredPKFactory<OverlandFlow> OverlandFlow::reg_("overland flow");
 OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& solution) :
-  flow_plist_(flow_plist), flow_time_(0.), nsteps_(0) {
+  flow_plist_(flow_plist) {
 
   solution_ = solution;
   CreateMesh_(S);
@@ -315,24 +315,13 @@ void OverlandFlow::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
 bool OverlandFlow::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
-  // save flow_rate
-  // 2D test case
-  // if ( nsteps_%6==0 || true ) {
-  //   output_flow_rate() ;
-  // }
-  ++nsteps_ ;
-
   // take a bdf timestep
-  double h = dt;
-
   niter_ = 0;
-  ntries_++;
-
+  double h = dt;
   double dt_solver;
   try {
     Teuchos::TimeMonitor timer(*steptime_);
     dt_solver = time_stepper_->time_step(h, solution_);
-    flow_time_ += h;
   } catch (Exceptions::Amanzi_exception &error) {
     if (S_next_->Mesh("surface")->get_comm()->MyPID() == 0) {
       std::cout << "Timestepper called error: " << error.what() << std::endl;
@@ -347,7 +336,6 @@ bool OverlandFlow::advance(double dt) {
     }
   }
 
-  ntries_ = 0;
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
 

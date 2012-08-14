@@ -15,15 +15,13 @@ namespace FlowRelations {
 
 WRMStandardModel::WRMStandardModel(Teuchos::ParameterList& wrm_plist) :
     WRMModel(wrm_plist) {
+  InitializeFromPlist_();
+}
 
-  // my keys are for saturation and rel perm.
-  my_keys_.push_back(wrm_plist_.get<string>("saturation key", "saturation_liquid"));
-  my_keys_.push_back(wrm_plist_.get<string>("other saturation key", "saturation_gas"));
-  my_keys_.push_back(wrm_plist_.get<string>("rel perm key", "relative_permeability"));
-
-  // my dependencies are just pressure.
-  pres_key_ = wrm_plist_.get<string>("pressure key", "pressure");
-  dependencies_.insert(pres_key_);
+WRMStandardModel::WRMStandardModel(Teuchos::ParameterList& wrm_plist,
+        const Teuchos::RCP<WRM>& wrm) :
+    WRMModel(wrm_plist, wrm) {
+  InitializeFromPlist_();
 }
 
 WRMStandardModel::WRMStandardModel(const WRMStandardModel& other) :
@@ -36,24 +34,48 @@ WRMStandardModel::Clone() const {
 }
 
 
+void WRMStandardModel::InitializeFromPlist_() {
+  // my keys are for saturation and rel perm.
+  my_keys_.push_back(wrm_plist_.get<string>("saturation key", "saturation_liquid"));
+
+  calc_other_sat_ = wrm_plist_.get<bool>("calculate minor saturation", true);
+  if (calc_other_sat_) {
+    my_keys_.push_back(wrm_plist_.get<string>("other saturation key", "saturation_gas"));
+  }
+
+  // my dependencies are just pressure.
+  pres_key_ = wrm_plist_.get<string>("pressure key", "pressure");
+  dependencies_.insert(pres_key_);
+}
+
+
 void WRMStandardModel::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   Teuchos::Ptr<CompositeVector> sat = results[0];
-  Teuchos::Ptr<CompositeVector> sat_g = results[1];
-  Teuchos::Ptr<CompositeVector> krel = results[2];
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
 
   // Loop over names in the target and then owned entities in that name,
-  // evaluating the model to calculate sat and rel perm.
-  for (CompositeVector::name_iterator comp=sat->begin();
-       comp!=sat->end(); ++comp) {
-    for (int id=0; id!=sat->size(*comp); ++id) {
-      double pc = *p_atm - (*pres)(*comp, id);
-      (*sat)(*comp, id) = wrm_->saturation(pc);
-      (*sat_g)(*comp, id) = 1.0 - (*sat)(*comp, id);
-      (*krel)(*comp, id) = wrm_->k_relative(pc);
+  // evaluating the model to calculate sat.
+  if (calc_other_sat_) {
+    Teuchos::Ptr<CompositeVector> sat_g = results[1];
+
+    for (CompositeVector::name_iterator comp=sat->begin();
+         comp!=sat->end(); ++comp) {
+      for (int id=0; id!=sat->size(*comp); ++id) {
+        double pc = *p_atm - (*pres)(*comp, id);
+        (*sat)(*comp, id) = wrm_->saturation(pc);
+        (*sat_g)(*comp, id) = 1.0 - (*sat)(*comp, id);
+      }
+    }
+  } else {
+    for (CompositeVector::name_iterator comp=sat->begin();
+         comp!=sat->end(); ++comp) {
+      for (int id=0; id!=sat->size(*comp); ++id) {
+        double pc = *p_atm - (*pres)(*comp, id);
+        (*sat)(*comp, id) = wrm_->saturation(pc);
+      }
     }
   }
 }
@@ -61,22 +83,31 @@ void WRMStandardModel::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void WRMStandardModel::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
-  // note we do NOT evaluate dKrel/d wrt_key.  Not sure if this breaks things or not...
   ASSERT(wrt_key == pres_key_);
-  Teuchos::Ptr<CompositeVector> sat = results[0];
-  Teuchos::Ptr<CompositeVector> sat_g = results[1];
+  Teuchos::Ptr<CompositeVector> dsat = results[0];
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
 
   // Loop over names in the target and then owned entities in that name,
   // evaluating the model to calculate sat and rel perm.
-  for (CompositeVector::name_iterator comp=sat->begin();
-       comp!=sat->end(); ++comp) {
-    for (int id=0; id!=sat->size(*comp); ++id) {
-      double pc = *p_atm - (*pres)(*comp, id);
-      (*sat)(*comp, id) = -wrm_->d_saturation(pc);
-      (*sat_g)(*comp, id) = -(*sat)(*comp, id);
+  if (calc_other_sat_) {
+    Teuchos::Ptr<CompositeVector> dsat_g = results[1];
+    for (CompositeVector::name_iterator comp=dsat->begin();
+         comp!=dsat->end(); ++comp) {
+      for (int id=0; id!=dsat->size(*comp); ++id) {
+        double pc = *p_atm - (*pres)(*comp, id);
+        (*dsat)(*comp, id) = -wrm_->d_saturation(pc);
+        (*dsat_g)(*comp, id) = -(*dsat)(*comp, id);
+      }
+    }
+  } else {
+    for (CompositeVector::name_iterator comp=dsat->begin();
+         comp!=dsat->end(); ++comp) {
+      for (int id=0; id!=dsat->size(*comp); ++id) {
+        double pc = *p_atm - (*pres)(*comp, id);
+        (*dsat)(*comp, id) = -wrm_->d_saturation(pc);
+      }
     }
   }
 }

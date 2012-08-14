@@ -15,9 +15,14 @@ Authors: Neil Carlson (version 1)
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
-#include "primary_variable_field_model.hh"
+
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
+
+#include "primary_variable_field_model.hh"
+#include "wrm_standard_model.hh"
+#include "rel_perm_model.hh"
+#include "richards_water_content.hh"
 
 #include "richards.hh"
 
@@ -36,6 +41,16 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
     flow_plist_(flow_plist) {
 
   solution_ = solution;
+  SetupRichardsFlow_(S);
+  SetupPhysicalModels_(S);
+};
+
+
+// -------------------------------------------------------------
+// Pieces of the construction process that are common to all
+// Richards-like PKs.
+// -------------------------------------------------------------
+void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
 
   // Require fields and models for those fields.
   // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
@@ -59,46 +74,12 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   S->RequireField("darcy_velocity", "flow")->SetMesh(S->Mesh())->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
-
-  // -- water content, and model
-  S->RequireField("water_content")->SetMesh(S->Mesh())->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content model");
-  wc_ = Teuchos::rcp(new RichardsWaterContent(wc_plist));
-  S->SetFieldModel("water_content", wc_);
-
-  // -- Absolute permeability.
-  //       For now, we assume scalar permeability.  This will change.
-  S->RequireField("permeability")->SetMesh(S->Mesh())->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldModel("permeability");
-
-  // -- Water retention models, for saturation and rel perm.
-  S->RequireField("relative_permeability")->SetMesh(S->Mesh())->SetGhosted()
-                    ->AddComponents(names2, locations2, num_dofs2);
-
-  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention model");
-  wrm_ = Teuchos::rcp(new FlowRelations::WRMStandardModel(wrm_plist));
-  S->SetFieldModel("saturation_liquid", wrm_);
-  S->SetFieldModel("saturation_gas", wrm_);
-  S->SetFieldModel("relative_permeability", wrm_);
-
-  // -- Liquid density and viscosity for the transmissivity.
-  S->RequireField("molar_density_liquid")->SetMesh(S->Mesh())->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldModel("molar_density_liquid");
-
-  S->RequireField("viscosity_liquid")->SetMesh(S->Mesh())->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldModel("viscosity_liquid");
-
   // Get data for non-field quanitites.
   S->RequireFieldModel("cell_volume");
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure", "flow");
 
   // Create the absolute permeability tensor.
-  variable_abs_perm_ = false; // currently not implemented, but may eventually want a model
   int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (int c=0; c!=c_owned; ++c) {
@@ -148,7 +129,57 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
-};
+}
+
+// -------------------------------------------------------------
+// Create the physical models for water content, water
+// retention, rel perm, etc, that are specific to Richards.
+// -------------------------------------------------------------
+void Richards::SetupPhysicalModels_(const Teuchos::RCP<State>& S) {
+  // -- Absolute permeability.
+  //       For now, we assume scalar permeability.  This will change.
+  S->RequireField("permeability")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldModel("permeability");
+
+  // -- water content, and model
+  S->RequireField("water_content")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content model");
+  Teuchos::RCP<RichardsWaterContent> wc = Teuchos::rcp(new RichardsWaterContent(wc_plist));
+  S->SetFieldModel("water_content", wc);
+
+  // -- Water retention models, for saturation and rel perm.
+  std::vector<AmanziMesh::Entity_kind> locations2(2);
+  std::vector<std::string> names2(2);
+  std::vector<int> num_dofs2(2,1);
+  locations2[0] = AmanziMesh::CELL;
+  locations2[1] = AmanziMesh::FACE;
+  names2[0] = "cell";
+  names2[1] = "face";
+
+  S->RequireField("relative_permeability")->SetMesh(S->Mesh())->SetGhosted()
+                    ->AddComponents(names2, locations2, num_dofs2);
+  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention model");
+  Teuchos::RCP<FlowRelations::WRMStandardModel> wrm =
+      Teuchos::rcp(new FlowRelations::WRMStandardModel(wrm_plist));
+  S->SetFieldModel("saturation_liquid", wrm);
+  S->SetFieldModel("saturation_gas", wrm);
+
+  Teuchos::RCP<FlowRelations::RelPermModel> rel_perm_model =
+      Teuchos::rcp(new FlowRelations::RelPermModel(wrm_plist, wrm->get_WRM()));
+  S->SetFieldModel("relative_permeability", rel_perm_model);
+
+  // -- Liquid density and viscosity for the transmissivity.
+  S->RequireField("molar_density_liquid")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldModel("molar_density_liquid");
+
+  S->RequireField("viscosity_liquid")->SetMesh(S->Mesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldModel("viscosity_liquid");
+}
+
 
 
 // -------------------------------------------------------------

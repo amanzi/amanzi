@@ -10,6 +10,8 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
 
+#include "field_model.hh"
+
 #include "richards.hh"
 
 namespace Amanzi {
