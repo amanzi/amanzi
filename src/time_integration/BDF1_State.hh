@@ -34,6 +34,7 @@ struct BDF1State {
     hlimit = 1e10;
     elimit = 1e15;
     maxpclag = 0;
+    currentpclag = 0;
 
     nonlinear_solver = BDFNKA;
 
@@ -58,6 +59,7 @@ struct BDF1State {
   int       minitr;       // minimum number of nonlinear iterations (we will increase time step here)
   int       maxitr;       // maximum number of nonlinear iterations (we cut time step here)
   int       maxpclag;     // maximum iterations that the preconditioner can be lagged
+  int       currentpclag;
   int       pclagcount;   // counter for how many iterations the preconditioner has been lagged
   double    hlimit;       // maximum allowed time step
   double    elimit;
