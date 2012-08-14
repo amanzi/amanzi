@@ -360,7 +360,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // DEBUG: Nathan
     int errc(0);
     if (itr%(state.currentpclag+1)==0) {
-      *out << "Update PC\n";
       fn.update_precon (t, u, h, errc);
     }
  
