@@ -109,9 +109,11 @@ void MPC::mpc_init() {
  
         CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
       } catch (const ChemistryException& chem_error) {
-        *out << "MPC::mpc_init() : The chemistry process kernel constructor returned an error: "
-                  << std::endl << chem_error.what() << std::endl;
-        amanzi_throw(chem_error);
+	std::ostringstream error_message;
+	error_message << "MPC:mpc_init(): error... Chemistry_PK() returned an error status: ";
+	error_message << chem_error.what();
+	Errors::Message message(error_message.str());
+	Exceptions::amanzi_throw(message);
       }
     } else {
       Errors::Message message("MPC::mpc_init() : XML input file must contain a \'Chemistry\' section if the chemistry process kernel is enabled.");
@@ -323,9 +325,11 @@ void MPC::cycle_driver() {
       S->set_compnames(compnames);
 
     } catch (const ChemistryException& chem_error) {
-      std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error "
-                << std::endl << chem_error.what() << std::endl;
-      Exceptions::amanzi_throw(chem_error);
+      std::ostringstream error_message;
+      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+      error_message << chem_error.what();
+      Errors::Message message(error_message.str());
+      Exceptions::amanzi_throw(message);
     }
     Amanzi::timer_manager.stop("Chemistry PK");
   }
@@ -618,7 +622,7 @@ void MPC::cycle_driver() {
 	      S->update_total_component_concentration(CPK->get_total_component_concentration());
 	    } catch (const ChemistryException& chem_error) {
 	      std::ostringstream error_message;
-	      error_message << "MPC: error... Chemistry_PK.advance returned an error status";
+	      error_message << "MPC: error... Chemistry_PK.advance returned an error status: ";
 	      error_message << chem_error.what();
 	      Errors::Message message(error_message.str());
 	      Exceptions::amanzi_throw(message);
