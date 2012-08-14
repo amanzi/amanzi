@@ -347,6 +347,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   double du_norm(0.0), previous_du_norm(0.0);
   int divergence_count(0);
 
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
+    *out << "BDF1: preconditioner lag is " << state.currentpclag  <<std::endl;
+  }  
+
   do {
     // Check for too many nonlinear iterations.
     if (itr > state.mitr) {
