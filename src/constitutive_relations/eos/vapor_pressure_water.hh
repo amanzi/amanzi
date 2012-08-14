@@ -8,22 +8,21 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_EOS_WATER_VAPOR_PRESSURE_HH_
-#define _FLOWRELATIONS_EOS_WATER_VAPOR_PRESSURE_HH_
+#ifndef AMANZI_RELATIONS_EOS_WATER_VAPOR_PRESSURE_HH_
+#define AMANZI_RELATIONS_EOS_WATER_VAPOR_PRESSURE_HH_
 
 
 #include "Teuchos_ParameterList.hpp"
 #include "factory.hh"
-#include "vapor_pressure_model.hh"
+#include "vapor_pressure_relation.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
-class WaterVaporPressureModel : public VaporPressureModel {
+class VaporPressureWater : public VaporPressureRelation {
 
 public:
-  explicit WaterVaporPressureModel(Teuchos::ParameterList& plist);
+  explicit VaporPressureWater(Teuchos::ParameterList& plist);
 
   virtual double SaturatedVaporPressure(double T);
   virtual double DSaturatedVaporPressureDT(double T);
@@ -33,10 +32,9 @@ private:
   const double ka0_;
   const double ka_, kb_, kc_, kd_;
 
-  static Utils::RegisteredFactory<VaporPressureModel,WaterVaporPressureModel> factory_;
+  static Utils::RegisteredFactory<VaporPressureRelation,VaporPressureWater> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

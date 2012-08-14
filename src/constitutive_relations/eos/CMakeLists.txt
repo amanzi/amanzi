@@ -12,16 +12,15 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 
 add_library(flow_relations_eos
-  eos.cc
-  eos_ideal_gas.cc
-  eos_constant.cc
-  eos_water.cc
-  eos_ice.cc
-  viscosity_model.cc
+  eos_evaluator.cc
+  eos_factory.cc
+  eos_constant.cc eos_ideal_gas.cc eos_water.cc eos_ice.cc
+  viscosity_evaluator.cc
+  viscosity_relation_factory.cc
   viscosity_water.cc
-  molar_fraction_gas.cc
-  vapor_pressure_model_factory.cc
-  water_vapor_pressure_model.cc
+  molar_fraction_gas_evaluator.cc
+  vapor_pressure_relation_factory.cc
+  vapor_pressure_water.cc
  )
 
 

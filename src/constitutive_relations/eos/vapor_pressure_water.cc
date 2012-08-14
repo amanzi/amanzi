@@ -9,16 +9,15 @@
 */
 
 #include <cmath>
-#include "water_vapor_pressure_model.hh"
+#include "vapor_pressure_water.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
 // registry of method
-Utils::RegisteredFactory<VaporPressureModel,WaterVaporPressureModel> WaterVaporPressureModel::factory_("water vapor over water/ice");
+Utils::RegisteredFactory<VaporPressureRelation,VaporPressureWater> VaporPressureWater::factory_("water vapor over water/ice");
 
-WaterVaporPressureModel::WaterVaporPressureModel(Teuchos::ParameterList& plist) :
+VaporPressureWater::VaporPressureWater(Teuchos::ParameterList& plist) :
   plist_(plist),
   ka0_(16.635764),
   ka_(-6096.9385),
@@ -26,16 +25,15 @@ WaterVaporPressureModel::WaterVaporPressureModel(Teuchos::ParameterList& plist) 
   kc_(1.673952e-5),
   kd_(2.433502) {}
 
-double WaterVaporPressureModel::SaturatedVaporPressure(double T) {
+double VaporPressureWater::SaturatedVaporPressure(double T) {
   return 100.0*exp(ka0_ + ka_/T + (kb_ + kc_*T)*T + kd_*log(T));
 };
 
-double WaterVaporPressureModel::DSaturatedVaporPressureDT(double T) {
+double VaporPressureWater::DSaturatedVaporPressureDT(double T) {
   return 100.0*exp(ka0_ + ka_/T + (kb_ + kc_*T)*T + kd_*log(T))
     * (-ka_/(T*T) + kb_ + kc_*T + kd_/T);
 };
 
 
-} //namespace
 } //namespace
 } //namespace

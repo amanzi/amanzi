@@ -3,7 +3,7 @@
 # operators -- layer between discretization and PK
 add_subdirectory(operators)
 
-add_subdirectory(field_models)
+add_subdirectory(field_evaluators)
 
 # Process Kernels
 add_subdirectory(pks)

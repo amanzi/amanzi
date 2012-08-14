@@ -8,24 +8,22 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_EOS_VAPOR_PRESSURE_HH_
-#define _FLOWRELATIONS_EOS_VAPOR_PRESSURE_HH_
+#ifndef AMANZI_RELATIONS_EOS_VAPOR_PRESSURE_RELATION_HH_
+#define AMANZI_RELATIONS_EOS_VAPOR_PRESSURE_RELATION_HH_
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
-class VaporPressureModel {
+class VaporPressureRelation {
 
 public:
-  // explicit VaporPressureModel(Teuchos::ParameterList& plist);
+  // explicit VaporPressure(Teuchos::ParameterList& plist);
 
   virtual double SaturatedVaporPressure(double T) = 0;
   virtual double DSaturatedVaporPressureDT(double T) = 0;
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

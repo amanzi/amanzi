@@ -3,7 +3,7 @@
 /*
   ATS
 
-  ViscosityModel for liquid water.  See the permafrost physical properties notes for
+  Viscosity for liquid water.  See the permafrost physical properties notes for
   references and documentation of this EOS at:
 
   http://software.lanl.gov/ats/trac
@@ -11,34 +11,30 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef FLOWRELATIONS_EOS_WATER_HH_
-#define FLOWRELATIONS_EOS_WATER_HH_
+#ifndef AMANZI_RELATIONS_VISCOSITY_WATER_HH_
+#define AMANZI_RELATIONS_VISCOSITY_WATER_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"
-#include "viscosity_model.hh"
+#include "dbc.hh"
+#include "viscosity_relation.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
 // Equation of State model
-class ViscosityModelWater : public ViscosityModel {
+class ViscosityWater : public ViscosityRelation {
 
 public:
   explicit
-  ViscosityModelWater(Teuchos::ParameterList& eos_plist);
-
-  ViscosityModelWater(const ViscosityModelWater& other);
-
-  virtual Teuchos::RCP<FieldModel> Clone() const;
+  ViscosityWater(Teuchos::ParameterList& eos_plist);
 
   virtual double Viscosity(double T);
   virtual double DViscosityDT(double T);
 
-private:
-  virtual void InitializeFromPlist_();
+protected:
+  Teuchos::ParameterList eos_plist_;
 
   // constants for water, hard-coded because it would be crazy to try to come
   // up with names for these in a parameter list...
@@ -48,11 +44,11 @@ private:
   // -- temperature dependence of viscosity > T1
   const double kbv2_, kcv2_, kT1_;
 
-  static Utils::RegisteredFactory<FieldModel,ViscosityModelWater> factory_;
+private:
+  static Utils::RegisteredFactory<ViscosityRelation,ViscosityWater> factory_;
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 
