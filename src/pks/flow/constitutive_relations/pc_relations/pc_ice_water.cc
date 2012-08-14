@@ -5,6 +5,7 @@
   Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "dbc.hh"
 #include "pc_ice_water.hh"
 
 namespace Amanzi {
@@ -24,12 +25,22 @@ double PCIceWater::CapillaryPressure(double T, double dens) {
   return gamma_ * dens * (T0_ - T)/T0_;
 };
 
+double PCIceWater::DCapillaryPressureDT(double T, double dens) {
+  return -gamma_ * dens / T0_;
+};
+
+double PCIceWater::DCapillaryPressureDRho(double T, double dens) {
+  return -gamma_ * (T0_ - T)/T0_;
+};
+
+
 void PCIceWater::InitializeFromPlist_() {
   sigma_ice_liq_ = pc_plist_.get<double>("Interfacial tension ice-water");
   sigma_gas_liq_ = pc_plist_.get<double>("Interfacial tension air-water");
   T0_ = pc_plist_.get<double>("Heat of fusion reference temperature [K]", 273.15);
 
   if (pc_plist_.isParameter("Heat of fusion of water [J/kg]")) {
+    ASSERT(0);  // not supported anymore!
     heat_fusion_ = pc_plist_.get<double>("Heat of fusion of water [J/kg]");
     molar_basis_ = false;
   } else {

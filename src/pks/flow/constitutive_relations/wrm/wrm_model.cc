@@ -14,10 +14,18 @@ namespace Flow {
 namespace FlowRelations {
 
 WRMModel::WRMModel(Teuchos::ParameterList& wrm_plist) :
+    SecondaryVariablesFieldModel(),
     wrm_plist_(wrm_plist) {
+  ASSERT(wrm_plist.isSublist("WRM parameters"));
+  Teuchos::ParameterList sublist = wrm_plist.sublist("WRM parameters");
   WRMFactory fac;
-  wrm_ = fac.createWRM(wrm_plist_);
+  wrm_ = fac.createWRM(sublist);
 }
+
+WRMModel::WRMModel(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm) :
+    SecondaryVariablesFieldModel(),
+    wrm_plist_(wrm_plist),
+    wrm_(wrm) {}
 
 WRMModel::WRMModel(const WRMModel& other) :
     SecondaryVariablesFieldModel(other),

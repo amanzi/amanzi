@@ -48,15 +48,15 @@ target_link_libraries(ats
 #                      ${pk_energy_advection_diffusion}
 #                      ${pk_energy_two_phase}
 #                      ${pk_energy_three_phase}
+                      ${pk_flow_permafrost}
                       ${pk_flow_richards}
-#                      ${pk_flow_permafrost}
                       ${pk_flow_overland}
 #                      energy_bc_factory
 #                      ${energy_relations_thermal_conductivity}
 #                      ${energy_relations_internal_energy}
                       flow_bc_factory
-                      ${flow_relations_eos}
                       ${flow_relations_wrm}
+                      ${flow_relations_eos}
                       flow_relations_pc
                       advection
                       divgrad
