@@ -23,6 +23,8 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
+#include "boost/mpi.hpp"
+
 namespace amanzi {
 namespace chemistry {
 
@@ -129,6 +131,7 @@ void Chemistry_PK::InitializeChemistry(void) {
       chemistry_state_->total_component_concentration());
 
   // finish setting up & testing the chemistry object
+  int ierr(0);
   try {
     chem_->set_debug(false);
     chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in cell 0...\n");
@@ -142,9 +145,16 @@ void Chemistry_PK::InitializeChemistry(void) {
       chem_->DisplayResults();
     }
   } catch (ChemistryException& geochem_error) {
-    chem_->DisplayResults();
-    std::cout << geochem_error.what() << std::endl;
-    Exceptions::amanzi_throw(geochem_error);
+    ierr = 1;
+    //chem_->DisplayResults();
+    //std::cout << geochem_error.what() << std::endl;
+    //Exceptions::amanzi_throw(geochem_error);
+  }
+  int recv(0);
+  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  if (recv != 0) {
+    ChemistryException geochem_error("Error in Chemistry_PK::InitializeChemistry 0");
+    Exceptions::amanzi_throw(geochem_error); 
   }
 
   // TODO(bandre): at this point we should know about any additional
@@ -156,6 +166,7 @@ void Chemistry_PK::InitializeChemistry(void) {
   // now loop through all the cells and initialize
   chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
   int num_cells = chemistry_state_->porosity()->MyLength();
+  ierr = 0;
   for (cell = 0; cell < num_cells; ++cell) {
     if (debug()) {
       std::cout << "Initial speciation in cell " << cell << std::endl;
@@ -171,11 +182,12 @@ void Chemistry_PK::InitializeChemistry(void) {
       chem_->Speciate(&beaker_components_, beaker_parameters_);
       CopyBeakerStructuresToCellState(cell);
     } catch (ChemistryException& geochem_error) {
-      std::cout << "ChemistryPK::InitializeChemistry(): " 
-                << "An error occured while initializing chemistry in cell: " 
-                << cell << ".\n" << geochem_error.what() << std::endl;
-      beaker_components_.Display("-- input components:\n");
-      Exceptions::amanzi_throw(geochem_error);
+      ierr = 1;
+      // std::cout << "ChemistryPK::InitializeChemistry(): " 
+      //           << "An error occured while initializing chemistry in cell: " 
+      //           << cell << ".\n" << geochem_error.what() << std::endl;
+      // beaker_components_.Display("-- input components:\n");
+      // Exceptions::amanzi_throw(geochem_error);
     }
 
 #ifdef GLENN_DEBUG
@@ -185,6 +197,16 @@ void Chemistry_PK::InitializeChemistry(void) {
     }
 #endif
   }
+  recv = 0;
+  // figure out if any of the processes threw an error, if so all processes will re-throw
+  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  if (recv != 0) {
+    ChemistryException geochem_error("Error in Chemistry_PK::InitializeChemistry 1");
+    Exceptions::amanzi_throw(geochem_error); 
+  }  
+
+
+
   chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
 }  // end InitializeChemistry()
 
@@ -671,6 +693,7 @@ void Chemistry_PK::advance(
   int imin = -999;
   int min_iterations = 10000000;
 
+  int ierr(0);
   for (int cell = 0; cell < num_cells; cell++) {
     // copy state data into the beaker data structures
     CopyCellStateToBeakerStructures(cell, tcc_star);
@@ -693,25 +716,27 @@ void Chemistry_PK::advance(
       }
       ave_iterations += num_iterations;
     } catch (ChemistryException& geochem_error) {
-      std::cout << "ERROR: Chemistry_PK::advance() "
-                << "cell[" << cell << "]: " << std::endl;
-      std::cout << geochem_error.what();
-      std::vector<std::string> names;
-      chem_->GetPrimaryNames(&names);
-      beaker_components_copy_.DumpCfg(names);
-      beaker_components_copy_.Display("--- input ");
-      chem_->DisplayTotalColumnHeaders(display_free_columns_);
-      std::cout << "\nFailed Solution" << std::endl;
-      std::cout << "  Total Component Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_, display_free_columns_);
-      std::cout << "\nPrevious Solution" << std::endl;
-      std::cout << "  Total Component Concentrations" << std::endl;
-      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_, display_free_columns_);
-      std::cout << std::endl;
-      Exceptions::amanzi_throw(geochem_error);
+      ierr = 1;
+
+      // std::cout << "ERROR: Chemistry_PK::advance() "
+      //           << "cell[" << cell << "]: " << std::endl;
+      // std::cout << geochem_error.what();
+      // std::vector<std::string> names;
+      // chem_->GetPrimaryNames(&names);
+      // beaker_components_copy_.DumpCfg(names);
+      // beaker_components_copy_.Display("--- input ");
+      // chem_->DisplayTotalColumnHeaders(display_free_columns_);
+      // std::cout << "\nFailed Solution" << std::endl;
+      // std::cout << "  Total Component Concentrations" << std::endl;
+      // chem_->DisplayTotalColumns(current_time_, beaker_components_, display_free_columns_);
+      // std::cout << "\nPrevious Solution" << std::endl;
+      // std::cout << "  Total Component Concentrations" << std::endl;
+      // chem_->DisplayTotalColumns(current_time_, beaker_components_copy_, display_free_columns_);
+      // std::cout << std::endl;
+      // Exceptions::amanzi_throw(geochem_error);
     }
     // update this cell's data in the arrays
-    CopyBeakerStructuresToCellState(cell);
+    if (ierr == 0) CopyBeakerStructuresToCellState(cell);
 
     // TODO(bandre): was porosity etc changed? copy someplace
 
@@ -722,6 +747,14 @@ void Chemistry_PK::advance(
     }
 #endif
   }  // for(cells)
+  int recv(0);
+  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  if (recv != 0) {
+    ChemistryException geochem_error("Error in Chemistry_PK::advance");
+    Exceptions::amanzi_throw(geochem_error); 
+  }  
+  
+
 
 #ifdef GLENN_DEBUG
   if (debug() == kDebugChemistryProcessKernel) {
