@@ -6,5 +6,4 @@
 #
 
 add_subdirectory(wrm)
-add_subdirectory(pc_relations)
 

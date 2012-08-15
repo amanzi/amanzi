@@ -21,14 +21,14 @@ UNITS: J/{mol,kg}
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "internal_energy_model.hh"
+#include "iem.hh"
 #include "factory.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class IEMQuadratic : public InternalEnergyModel {
+class IEMQuadratic : public IEM {
 
 public:
   explicit IEMQuadratic(Teuchos::ParameterList& plist);
@@ -51,7 +51,7 @@ private:
 
 private:  
   // iem factor registration
-  static Utils::RegisteredFactory<InternalEnergyModel,IEMQuadratic> factory_;
+  static Utils::RegisteredFactory<IEM,IEMQuadratic> factory_;
 
 };
 

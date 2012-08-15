@@ -14,19 +14,19 @@ documentation for details.
 UNITS: J/{mol/kg}
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_ENERGYRELATIONS_IEM_LINEAR_
-#define AMANZI_ENERGYRELATIONS_IEM_LINEAR_
+#ifndef AMANZI_ENERGY_RELATIONS_IEM_LINEAR_
+#define AMANZI_ENERGY_RELATIONS_IEM_LINEAR_
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "internal_energy_model.hh"
+#include "iem.hh"
 #include "factory.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class IEMLinear : public InternalEnergyModel {
+class IEMLinear : public IEM {
 
 public:
   explicit IEMLinear(Teuchos::ParameterList& plist);
@@ -45,14 +45,14 @@ private:
   double T_ref_; // units: K
   bool molar_basis_;
 
-private:  
+private:
   // iem factor registration
-  static Utils::RegisteredFactory<InternalEnergyModel,IEMLinear> factory_;
+  static Utils::RegisteredFactory<IEM,IEMLinear> factory_;
 
 };
 
-}
-}
-}
+} // namespace
+} // namespace
+} // namespace
 
 #endif

@@ -1,18 +1,18 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  The elevation model gets the surface elevation, slope, and updates pres + elev.
+  The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "elevation_model.hh"
+#include "elevation_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-ElevationModel::ElevationModel() {
+ElevationEvaluator::ElevationEvaluator() {
   my_keys_.push_back("elevation");
   my_keys_.push_back("slope_magnitude");
   my_keys_.push_back("pres_elev");
@@ -21,7 +21,7 @@ ElevationModel::ElevationModel() {
   dependencies_.insert(pres_key_);
 }
 
-void ElevationModel::EvaluateField_(const Teuchos::Ptr<State>& S,
+void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   // If they haven't been done yet, update slope and elevation.
   if (!updated_once_) {
@@ -36,7 +36,7 @@ void ElevationModel::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 
 // This is hopefully never called?
-void ElevationModel::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void ElevationEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   ASSERT(0);
 

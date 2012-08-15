@@ -17,7 +17,7 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-Utils::RegisteredFactory<InternalEnergyModel,IEMQuadratic> IEMQuadratic::factory_("quadratic");
+Utils::RegisteredFactory<IEM,IEMQuadratic> IEMQuadratic::factory_("quadratic");
 
 IEMQuadratic::IEMQuadratic(Teuchos::ParameterList& plist) :
     plist_(plist) {

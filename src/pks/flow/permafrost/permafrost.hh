@@ -7,7 +7,7 @@
   Note that the only difference between permafrost and richards is in
   constitutive relations -- the WRM changes to provide three saturations,
   while the water content changes to account for water in ice phase.  As these
-  are now drop-in field models, there is very little to change in the PK.
+  are now drop-in field evaluators, there is very little to change in the PK.
 
   License: BSD
   Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
@@ -44,8 +44,8 @@ public:
            const Teuchos::RCP<TreeVector>& solution);
 
 protected:
-  // Create of physical models.
-  virtual void SetupPhysicalModels_(const Teuchos::RCP<State>& S);
+  // Create of physical evaluators.
+  virtual void SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S);
 
 private:
   // factory registration

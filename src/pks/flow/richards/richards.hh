@@ -78,8 +78,8 @@ public:
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 protected:
-  // Create of physical models.
-  virtual void SetupPhysicalModels_(const Teuchos::RCP<State>& S);
+  // Create of physical evaluators.
+  virtual void SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S);
   virtual void SetupRichardsFlow_(const Teuchos::RCP<State>& S);
 
   // boundary condition members

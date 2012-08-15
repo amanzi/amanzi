@@ -32,7 +32,7 @@ WHOLE_ARCHIVE(pk_flow_overland)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(mpc)
 
-WHOLE_ARCHIVE(flow_relations_eos)
+WHOLE_ARCHIVE(relations_eos)
 WHOLE_ARCHIVE(flow_relations_wrm)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
@@ -56,8 +56,7 @@ target_link_libraries(ats
 #                      ${energy_relations_internal_energy}
                       flow_bc_factory
                       ${flow_relations_wrm}
-                      ${flow_relations_eos}
-                      flow_relations_pc
+                      ${relations_eos}
                       advection
                       divgrad
                       amanzi_whetstone

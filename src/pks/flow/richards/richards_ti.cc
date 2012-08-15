@@ -10,7 +10,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
 
-#include "field_model.hh"
+#include "field_evaluator.hh"
 
 #include "richards.hh"
 
@@ -152,7 +152,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
   // update with accumulation terms
   // -- update the accumulation derivatives
-  S_next_->GetFieldModel("water_content")
+  S_next_->GetFieldEvaluator("water_content")
       ->HasFieldDerivativeChanged(S_next_.ptr(), "richards_pk", "pressure");
 
   // -- get the accumulation deriv

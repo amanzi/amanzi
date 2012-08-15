@@ -11,7 +11,6 @@ Authors: Gianmarco Manzini
 #define PK_FLOW_OVERLAND_HH_
 
 #include <vector>
-#include <cassert>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -22,7 +21,7 @@ Authors: Gianmarco Manzini
 #include "state.hh"
 #include "matrix_mfd.hh"
 #include "upwinding.hh"
-#include "primary_variable_field_model.hh"
+#include "primary_variable_field_evaluator.hh"
 #include "boundary_function.hh"
 #include "composite_vector_function.hh"
 
@@ -31,7 +30,6 @@ Authors: Gianmarco Manzini
 #include "bdf_time_integrator.hh"
 
 #include "wrm.hh"
-#include "my_macro.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -132,7 +130,7 @@ private:
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
-  // Conductivity model, needed for hacking BCs for upwinding.
+  // Conductivity evaluator, needed for hacking BCs for upwinding.
   double manning_exp_;
   double slope_regularization_;
   bool is_source_term_;

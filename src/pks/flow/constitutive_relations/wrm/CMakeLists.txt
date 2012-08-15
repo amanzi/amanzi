@@ -12,8 +12,13 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 
 add_library(flow_relations_wrm
-  wrm_factory.cc wrm_linear_system.cc wrm_van_genuchten.cc
-  wrm_standard_model.cc wrm_model.cc rel_perm_model.cc
+  wrm_permafrost_evaluator.cc
+  wrm_ice_water_evaluator.cc wrm_richards_evaluator.cc
+  wrm_evaluator.cc
+  wrm_factory.cc
+  wrm_linear_system.cc wrm_van_genuchten.cc
+  pc_ice_water.cc
+  rel_perm_evaluator.cc
   )
 
 # WHOLE_ARCHIVE(flow_relations_wrm)

@@ -9,7 +9,7 @@
   Ethan Coon (ATS version) (ecoon@lanl.gov)
 ------------------------------------------------------------------------- */
 
-#include "eos.hh"
+#include "field_evaluator.hh"
 #include "richards.hh"
 
 namespace Amanzi {
@@ -22,7 +22,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
 
   // update the rel perm on cells.
-  S->GetFieldModel("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S);
@@ -49,8 +49,8 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // update the saturation at both the old and new times.
-  S_next_->GetFieldModel("water_content")->HasFieldChanged(S_next_.ptr(), "richards_pk");
-  S_inter_->GetFieldModel("water_content")->HasFieldChanged(S_inter_.ptr(), "richards_pk");
+  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), "richards_pk");
+  S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(), "richards_pk");
 
   // get these fields
   Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
@@ -68,6 +68,7 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
 // -------------------------------------------------------------
 void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
   // currently assumes isotropic perm, should be updated
+  S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), "richards_pk");
   Teuchos::RCP<const CompositeVector> perm = S->GetFieldData("permeability");
   int ncells = perm->size("cell");
   int ndofs = perm->num_dofs("cell");
@@ -106,19 +107,14 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<Operators::MatrixMFD>& matrix) {
 
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
+
+  // Get the rel perm, and ensure it is up to date.
+  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
   Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
 
-  // Get the density, which requires scaling the molar density by molar mass.
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const FieldModel> eos_fm = S->GetFieldModel("molar_density_liquid");
-  Teuchos::RCP<const FlowRelations::EOS> eos;
-#ifdef ENABLE_DBC
-  eos = Teuchos::rcp_dynamic_cast<const FlowRelations::EOS>(eos_fm);
-  ASSERT(eos != Teuchos::null);
-#else
-  eos = Teuchos::rcp_static_cast<const FlowRelations::EOS>(eos_fm);
-#endif
-  double mm = eos->molar_mass();
+  // Get the density, in a mass basis, and ensure it is up to date.
+  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
+  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -139,7 +135,7 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
       const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
 
       double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-          * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c) * mm;
+          * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c);
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
     }
@@ -154,20 +150,14 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& darcy_flux) {
 
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
+
+  // Get the rel perm, and ensure it is up to date.
+  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
   Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
 
-  // Get the density, which requires scaling the molar density by molar mass.
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const FieldModel> eos_fm = S->GetFieldModel("molar_density_liquid");
-  Teuchos::RCP<const FlowRelations::EOS> eos;
-
-#ifdef ENABLE_DBC
-  eos = Teuchos::rcp_dynamic_cast<const FlowRelations::EOS>(eos_fm);
-  ASSERT(eos != Teuchos::null);
-#else
-  eos = Teuchos::rcp_static_cast<const FlowRelations::EOS>(eos_fm);
-#endif
-  double mm = eos->molar_mass();
+  // Get the density, in a mass basis, and ensure it is up to date.
+  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
+  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -190,7 +180,7 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
 
       if (f<f_owned && !done[f]) {
         (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal)
-            * (*Krel)("cell",c) * (*Krel)("face",f) * (*rho)("cell",c) * mm;
+            * (*Krel)("cell",c) * (*Krel)("face",f) * (*rho)("cell",c);
         done[f] = true;
       }
     }

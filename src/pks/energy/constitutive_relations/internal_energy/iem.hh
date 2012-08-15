@@ -20,10 +20,10 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-class InternalEnergyModel {
+class IEM {
 
 public:
-  // InternalEnergyModel(Teuchos::ParameterList& plist);
+  // IEM(Teuchos::ParameterList& plist);
   virtual bool IsMolarBasis() = 0;
   virtual double InternalEnergy(double temp) = 0;
   virtual double DInternalEnergyDT(double temp) = 0;
