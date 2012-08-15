@@ -19,9 +19,9 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
-#include "primary_variable_field_model.hh"
-#include "wrm_standard_model.hh"
-#include "rel_perm_model.hh"
+#include "primary_variable_field_evaluator.hh"
+#include "wrm_richards_evaluator.hh"
+#include "rel_perm_evaluator.hh"
 #include "richards_water_content.hh"
 
 #include "richards.hh"
@@ -42,7 +42,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
 
   solution_ = solution;
   SetupRichardsFlow_(S);
-  SetupPhysicalModels_(S);
+  SetupPhysicalEvaluators_(S);
 };
 
 
@@ -52,7 +52,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
 // -------------------------------------------------------------
 void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
 
-  // Require fields and models for those fields.
+  // Require fields and evaluators for those fields.
   // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
@@ -64,18 +64,18 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
 
   S->RequireField("pressure", "flow")->SetMesh(S->Mesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
-  Teuchos::RCP<PrimaryVariableFieldModel> pressure_model =
-      Teuchos::rcp(new PrimaryVariableFieldModel("pressure"));
-  S->SetFieldModel("pressure", pressure_model);
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_evaluator =
+      Teuchos::rcp(new PrimaryVariableFieldEvaluator("pressure"));
+  S->SetFieldEvaluator("pressure", pressure_evaluator);
 
-  // -- secondary variables, no model used
+  // -- secondary variables, no evaluator used
   S->RequireField("darcy_flux", "flow")->SetMesh(S->Mesh())->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("darcy_velocity", "flow")->SetMesh(S->Mesh())->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // Get data for non-field quanitites.
-  S->RequireFieldModel("cell_volume");
+  S->RequireFieldEvaluator("cell_volume");
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure", "flow");
 
@@ -132,24 +132,24 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
 }
 
 // -------------------------------------------------------------
-// Create the physical models for water content, water
+// Create the physical evaluators for water content, water
 // retention, rel perm, etc, that are specific to Richards.
 // -------------------------------------------------------------
-void Richards::SetupPhysicalModels_(const Teuchos::RCP<State>& S) {
+void Richards::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   // -- Absolute permeability.
   //       For now, we assume scalar permeability.  This will change.
   S->RequireField("permeability")->SetMesh(S->Mesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldModel("permeability");
+  S->RequireFieldEvaluator("permeability");
 
-  // -- water content, and model
+  // -- water content, and evaluator
   S->RequireField("water_content")->SetMesh(S->Mesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content model");
+  Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content evaluator");
   Teuchos::RCP<RichardsWaterContent> wc = Teuchos::rcp(new RichardsWaterContent(wc_plist));
-  S->SetFieldModel("water_content", wc);
+  S->SetFieldEvaluator("water_content", wc);
 
-  // -- Water retention models, for saturation and rel perm.
+  // -- Water retention evaluators, for saturation and rel perm.
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
   std::vector<int> num_dofs2(2,1);
@@ -160,24 +160,24 @@ void Richards::SetupPhysicalModels_(const Teuchos::RCP<State>& S) {
 
   S->RequireField("relative_permeability")->SetMesh(S->Mesh())->SetGhosted()
                     ->AddComponents(names2, locations2, num_dofs2);
-  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention model");
-  Teuchos::RCP<FlowRelations::WRMStandardModel> wrm =
-      Teuchos::rcp(new FlowRelations::WRMStandardModel(wrm_plist));
-  S->SetFieldModel("saturation_liquid", wrm);
-  S->SetFieldModel("saturation_gas", wrm);
+  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention evaluator");
+  Teuchos::RCP<FlowRelations::WRMRichardsEvaluator> wrm =
+      Teuchos::rcp(new FlowRelations::WRMRichardsEvaluator(wrm_plist));
+  S->SetFieldEvaluator("saturation_liquid", wrm);
+  S->SetFieldEvaluator("saturation_gas", wrm);
 
-  Teuchos::RCP<FlowRelations::RelPermModel> rel_perm_model =
-      Teuchos::rcp(new FlowRelations::RelPermModel(wrm_plist, wrm->get_WRM()));
-  S->SetFieldModel("relative_permeability", rel_perm_model);
+  Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
+      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRM()));
+  S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
 
   // -- Liquid density and viscosity for the transmissivity.
   S->RequireField("molar_density_liquid")->SetMesh(S->Mesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldModel("molar_density_liquid");
+  S->RequireFieldEvaluator("molar_density_liquid");
 
   S->RequireField("viscosity_liquid")->SetMesh(S->Mesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldModel("viscosity_liquid");
+  S->RequireFieldEvaluator("viscosity_liquid");
 }
 
 
@@ -213,7 +213,7 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   // -- Initialize face values as the mean of neighboring cell values.
   DeriveFaceValuesFromCellValues_(S, pres);
 
-  // Set extra fields as initialized -- these don't currently have models.
+  // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("numerical_rel_perm","flow")->PutScalar(1.0);
   S->GetField("numerical_rel_perm","flow")->set_initialized();
   S->GetField("darcy_flux", "flow")->set_initialized();
@@ -257,7 +257,7 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // update the rel perm on cells.
-  S->GetFieldModel("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
 
   // update the flux
   UpdatePermeabilityData_(S);
@@ -289,9 +289,9 @@ void Richards::state_to_solution(const Teuchos::RCP<State>& S,
 void Richards::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
   S->SetData("pressure", "flow", solution->data());
-  Teuchos::RCP<FieldModel> fm = S->GetFieldModel("pressure");
-  Teuchos::RCP<PrimaryVariableFieldModel> pri_fm =
-      Teuchos::rcp_static_cast<PrimaryVariableFieldModel>(fm);
+  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("pressure");
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pri_fm =
+      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
   pri_fm->SetFieldAsChanged();
 };
 

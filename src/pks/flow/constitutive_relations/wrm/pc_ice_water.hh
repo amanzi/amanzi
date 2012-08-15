@@ -6,8 +6,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef FLOWRELATIONS_PC_ICE_WATER_
-#define FLOWRELATIONS_PC_ICE_WATER_
+#ifndef AMANZI_FLOW_RELATIONS_PC_ICE_WATER_
+#define AMANZI_FLOW_RELATIONS_PC_ICE_WATER_
 
 #include "Teuchos_ParameterList.hpp"
 

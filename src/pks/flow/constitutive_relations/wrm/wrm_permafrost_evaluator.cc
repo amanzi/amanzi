@@ -1,19 +1,20 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  This WRM model calls saturation and rel perm using a capillary pressure p_atm - pc.
+  This WRM evaluator evaluates saturation of gas, liquid, and ice from the
+  constituents, A and B in the permafrost notes.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "wrm_permafrost_model.hh"
+#include "wrm_permafrost_evaluator.hh"
 
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-WRMPermafrostModel::WRMPermafrostModel(Teuchos::ParameterList& wrm_plist) :
+WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& wrm_plist) :
     wrm_plist_(wrm_plist) {
 
   // my keys are for saturation
@@ -31,20 +32,20 @@ WRMPermafrostModel::WRMPermafrostModel(Teuchos::ParameterList& wrm_plist) :
   dependencies_.insert(one_on_B_key_);
 }
 
-WRMPermafrostModel::WRMPermafrostModel(const WRMPermafrostModel& other) :
-    SecondaryVariablesFieldModel(other),
+WRMPermafrostEvaluator::WRMPermafrostEvaluator(const WRMPermafrostEvaluator& other) :
+    SecondaryVariablesFieldEvaluator(other),
     wrm_plist_(other.wrm_plist_),
     one_on_A_key_(other.one_on_A_key_),
     one_on_B_key_(other.one_on_B_key_),
     s_l_key_(other.s_l_key_) {}
 
-Teuchos::RCP<FieldModel>
-WRMPermafrostModel::Clone() const {
-  return Teuchos::rcp(new WRMPermafrostModel(*this));
+Teuchos::RCP<FieldEvaluator>
+WRMPermafrostEvaluator::Clone() const {
+  return Teuchos::rcp(new WRMPermafrostEvaluator(*this));
 }
 
 
-void WRMPermafrostModel::EvaluateField_(const Teuchos::Ptr<State>& S,
+void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   Teuchos::Ptr<CompositeVector> sat = results[0];
   Teuchos::Ptr<CompositeVector> sat_i = results[1];
@@ -54,7 +55,7 @@ void WRMPermafrostModel::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> one_on_B = S->GetFieldData(one_on_B_key_);
 
   // Loop over names in the target and then owned entities in that name,
-  // evaluating the model to calculate saturations.
+  // evaluating the evaluator to calculate saturations.
   for (CompositeVector::name_iterator comp=sat->begin();
        comp!=sat->end(); ++comp) {
     for (int id=0; id!=sat->size(*comp); ++id) {
@@ -67,7 +68,7 @@ void WRMPermafrostModel::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 
-void WRMPermafrostModel::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
   Teuchos::Ptr<CompositeVector> dsat = results[0];
   Teuchos::Ptr<CompositeVector> dsat_i = results[1];

@@ -14,8 +14,8 @@ documentation for details.
 UNITS: J/mol
 ------------------------------------------------------------------------- */
 
-#ifndef INTERNAL_ENERGY_WATER_VAPOR_
-#define INTERNAL_ENERGY_WATER_VAPOR_
+#ifndef AMANZI_ENERGY_RELATIONS_IE_WATER_VAPOR_
+#define AMANZI_ENERGY_RELATIONS_IE_WATER_VAPOR_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -32,6 +32,7 @@ public:
 
   double InternalEnergy(double temp, double mol_frac_gas);
   double DInternalEnergyDT(double temp, double mol_frac_gas);
+  double DInternalEnergyDomega(double temp, double mol_frac_gas);
 
 private:
   void InitializeFromPlist_();

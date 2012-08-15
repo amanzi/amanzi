@@ -18,13 +18,13 @@ Authors: Gianmarco Manzini
 
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
-#include "independent_field_model.hh"
+#include "independent_variable_field_evaluator.hh"
 
 #include "upwind_potential_difference.hh"
-#include "elevation_model.hh"
-#include "meshed_elevation_model.hh"
-#include "standalone_elevation_model.hh"
-#include "manning_conductivity_model.hh"
+#include "elevation_evaluator.hh"
+#include "meshed_elevation_evaluator.hh"
+#include "standalone_elevation_evaluator.hh"
+#include "manning_conductivity_evaluator.hh"
 
 #include "overland.hh"
 
@@ -48,7 +48,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   solution_ = solution;
   CreateMesh_(S);
 
-  // Require fields and models for those fields.
+  // Require fields and evaluators for those fields.
   // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
@@ -60,17 +60,17 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
 
   S->RequireField("overland_pressure", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  Teuchos::RCP<PrimaryVariableFieldModel> pressure_model =
-      Teuchos::rcp(new PrimaryVariableFieldModel("overland_pressure"));
-  S->SetFieldModel("overland_pressure", pressure_model);
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_evaluator =
+      Teuchos::rcp(new PrimaryVariableFieldEvaluator("overland_pressure"));
+  S->SetFieldEvaluator("overland_pressure", pressure_evaluator);
 
-  // -- owned secondary variables, no model used
+  // -- owned secondary variables, no evaluator used
   S->RequireField("overland_flux", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("overland_velocity", "overland_flow")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
 
-  // -- model for surface geometry.
+  // -- evaluator for surface geometry.
   S->RequireField("elevation")->SetMesh(S->Mesh("surface"))->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
   S->RequireField("slope_magnitude")->SetMesh(S->Mesh("surface"))
@@ -78,58 +78,58 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   S->RequireField("pres_elev")->SetMesh(S->Mesh("surface"))->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
 
-  Teuchos::RCP<FlowRelations::ElevationModel> elev_model;
+  Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
-    ASSERT(flow_plist_.isSublist("elevation model"));
-    Teuchos::ParameterList elev_plist = flow_plist_.sublist("elevation model");
-    elev_model = Teuchos::rcp(new FlowRelations::StandaloneElevationModel(elev_plist));
+    ASSERT(flow_plist_.isSublist("elevation evaluator"));
+    Teuchos::ParameterList elev_plist = flow_plist_.sublist("elevation evaluator");
+    elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
-    elev_model = Teuchos::rcp(new FlowRelations::MeshedElevationModel());
+    elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator());
   }
-  S->SetFieldModel("elevation", elev_model);
-  S->SetFieldModel("slope_magnitude", elev_model);
-  S->SetFieldModel("pres_elev", elev_model);
+  S->SetFieldEvaluator("elevation", elev_evaluator);
+  S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
+  S->SetFieldEvaluator("pres_elev", elev_evaluator);
 
-  // -- "rel perm" model
+  // -- "rel perm" evaluator
   S->RequireField("overland_conductivity")->SetMesh(S->Mesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
-  ASSERT(flow_plist_.isSublist("overland conductivity model"));
-  Teuchos::ParameterList cond_plist = flow_plist_.sublist("overland conductivity model");
-  Teuchos::RCP<FieldModel> cond_model =
-      Teuchos::rcp(new FlowRelations::ManningConductivityModel(cond_plist));
-  S->SetFieldModel("overland_conductivity", cond_model);
+  ASSERT(flow_plist_.isSublist("overland conductivity evaluator"));
+  Teuchos::ParameterList cond_plist = flow_plist_.sublist("overland conductivity evaluator");
+  Teuchos::RCP<FieldEvaluator> cond_evaluator =
+      Teuchos::rcp(new FlowRelations::ManningConductivityEvaluator(cond_plist));
+  S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
   // -- -- hack to deal with BCs of the rel perm upwinding... this will need
   // -- -- some future thought --etc
   manning_exp_ = cond_plist.get<double>("Manning exponent", 0.6666666666666667);
   slope_regularization_ = cond_plist.get<double>("slope regularization epsilon", 1.e-8);
 
-  // -- source term model
-  //  if (flow_plist_.isSublist("source model")) {
-  ASSERT(flow_plist_.isSublist("source model"));
-  Teuchos::ParameterList source_plist = flow_plist_.sublist("source model");
-  source_plist.set("model name", "overland_source");
+  // -- source term evaluator
+  //  if (flow_plist_.isSublist("source evaluator")) {
+  ASSERT(flow_plist_.isSublist("source evaluator"));
+  Teuchos::ParameterList source_plist = flow_plist_.sublist("source evaluator");
+  source_plist.set("evaluator name", "overland_source");
   is_source_term_ = true;
   S->RequireField("overland_source")->SetMesh(S->Mesh("surface"))
       ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::RCP<FieldModel> source_model =
-      Teuchos::rcp(new IndependentFieldModel(source_plist));
-  S->SetFieldModel("overland_source", source_model);
+  Teuchos::RCP<FieldEvaluator> source_evaluator =
+      Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
+  S->SetFieldEvaluator("overland_source", source_evaluator);
   //  }
 
-  // -- coupling term model
+  // -- coupling term evaluator
   if (flow_plist_.get<bool>("coupled to subsurface", false)) {
     is_coupling_term_ = true;
     S->RequireField("overland_source_from_subsurface", "overland_flow")
         ->SetMesh(S->Mesh("surface"))->SetGhosted()
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldModel("overland_coupling");
+    S->RequireFieldEvaluator("overland_coupling");
   }
 
 
-  // -- cell volume and model
+  // -- cell volume and evaluator
   S->RequireField("surface_cell_volume")->SetMesh(S->Mesh("surface"))->SetGhosted()
                                 ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldModel("surface_cell_volume");
+  S->RequireFieldEvaluator("surface_cell_volume");
 
 
   // boundary conditions
@@ -205,7 +205,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   // -- Initialize face values as the mean of neighboring cell values.
   DeriveFaceValuesFromCellValues_(S, pres);
 
-  // Set extra fields as initialized -- these don't currently have models.
+  // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_overland_conductivity","overland_flow")->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity","overland_flow")->set_initialized();
   S->GetField("overland_flux", "overland_flow")->set_initialized();
@@ -302,9 +302,9 @@ void OverlandFlow::state_to_solution(const Teuchos::RCP<State>& S,
 void OverlandFlow::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
                                      const Teuchos::RCP<State>& S) {
   S->SetData("overland_pressure", "overland_flow", solution->data());
-  Teuchos::RCP<FieldModel> fm = S->GetFieldModel("overland_pressure");
-  Teuchos::RCP<PrimaryVariableFieldModel> pri_fm =
-      Teuchos::rcp_static_cast<PrimaryVariableFieldModel>(fm);
+  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("overland_pressure");
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pri_fm =
+      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
   pri_fm->SetFieldAsChanged();
 };
 
@@ -412,10 +412,10 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  if (S->GetFieldModel("overland_conductivity")->HasFieldChanged(S.ptr(), "overland_pk")) {
+  if (S->GetFieldEvaluator("overland_conductivity")->HasFieldChanged(S.ptr(), "overland_pk")) {
     // Update the perm only if needed.
 
-    // This needs fixed to use the model, not assume a model. -- etc
+    // This needs fixed to use the evaluator, not assume a evaluator. -- etc
     Teuchos::RCP<const CompositeVector> pressure =
         S->GetFieldData("overland_pressure");
     Teuchos::RCP<const CompositeVector> slope =

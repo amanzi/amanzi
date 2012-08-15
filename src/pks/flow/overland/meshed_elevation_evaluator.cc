@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  An elevation model getting values from the volumetric mesh.
+  An elevation evaluator getting values from the volumetric mesh.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
@@ -9,24 +9,24 @@
 #include "Mesh_MSTK.hh"
 #include "Point.hh"
 
-#include "meshed_elevation_model.hh"
+#include "meshed_elevation_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-MeshedElevationModel::MeshedElevationModel() :
-    ElevationModel() {};
+MeshedElevationEvaluator::MeshedElevationEvaluator() :
+    ElevationEvaluator() {};
 
-MeshedElevationModel::MeshedElevationModel(const MeshedElevationModel& other) :
-    ElevationModel() {};
+MeshedElevationEvaluator::MeshedElevationEvaluator(const MeshedElevationEvaluator& other) :
+    ElevationEvaluator() {};
 
-Teuchos::RCP<FieldModel>
-MeshedElevationModel::Clone() const {
-  return Teuchos::rcp(new MeshedElevationModel(*this));
+Teuchos::RCP<FieldEvaluator>
+MeshedElevationEvaluator::Clone() const {
+  return Teuchos::rcp(new MeshedElevationEvaluator(*this));
 }
 
-void MeshedElevationModel::EvaluateElevationAndSlope_(const Teuchos::Ptr<State>& S,
+void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
 
   Teuchos::Ptr<CompositeVector> elev = results[0];

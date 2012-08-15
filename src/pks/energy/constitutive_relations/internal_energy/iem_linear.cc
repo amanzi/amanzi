@@ -19,7 +19,7 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-Utils::RegisteredFactory<InternalEnergyModel,IEMLinear> IEMLinear::factory_("linear");
+Utils::RegisteredFactory<IEM,IEMLinear> IEMLinear::factory_("linear");
 
 IEMLinear::IEMLinear(Teuchos::ParameterList& plist) :
     plist_(plist) {

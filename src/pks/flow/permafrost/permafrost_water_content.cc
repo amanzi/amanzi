@@ -5,9 +5,9 @@ ATS
 
 Authors: Ethan Coon (ecoon@lanl.gov)
 
-FieldModel for water content.
+FieldEvaluator for water content.
 
-Wrapping this conserved quantity as a field model makes it easier to take
+Wrapping this conserved quantity as a field evaluator makes it easier to take
 derivatives, keep updated, and the like.  The equation for this is simply:
 
 WC = phi * (s_ice * n_ice + s_liquid * n_liquid + omega_gas * s_gas * n_gas)
@@ -38,9 +38,9 @@ PermafrostWaterContent::PermafrostWaterContent(Teuchos::ParameterList& wc_plist)
 };
 
 PermafrostWaterContent::PermafrostWaterContent(const PermafrostWaterContent& other) :
-    SecondaryVariableFieldModel(other) {};
+    SecondaryVariableFieldEvaluator(other) {};
 
-Teuchos::RCP<FieldModel>
+Teuchos::RCP<FieldEvaluator>
 PermafrostWaterContent::Clone() const {
   return Teuchos::rcp(new PermafrostWaterContent(*this));
 };

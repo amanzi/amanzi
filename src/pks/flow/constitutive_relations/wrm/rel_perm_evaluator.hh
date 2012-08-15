@@ -1,32 +1,32 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  Rel perm of sat_l.
+  Rel perm( pc ( sat ) ).
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_REL_PERM_MODEL_
-#define AMANZI_FLOWRELATIONS_REL_PERM_MODEL_
+#ifndef AMANZI_FLOWRELATIONS_REL_PERM_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_REL_PERM_EVALUATOR_
 
-#include "secondary_variable_field_model.hh"
+#include "secondary_variable_field_evaluator.hh"
 #include "wrm.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class RelPermModel : public SecondaryVariableFieldModel {
+class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
   explicit
-  RelPermModel(Teuchos::ParameterList& wrm_plist);
-  RelPermModel(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm);
-  RelPermModel(const RelPermModel& other);
-  virtual Teuchos::RCP<FieldModel> Clone() const;
+  RelPermEvaluator(Teuchos::ParameterList& wrm_plist);
+  RelPermEvaluator(Teuchos::ParameterList& wrm_plist, const Teuchos::RCP<WRM>& wrm);
+  RelPermEvaluator(const RelPermEvaluator& other);
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  // Required methods from SecondaryVariableFieldModel
+  // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,

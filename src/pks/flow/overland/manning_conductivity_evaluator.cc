@@ -6,14 +6,14 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "independent_field_model.hh"
-#include "manning_conductivity_model.hh"
+#include "independent_variable_field_evaluator.hh"
+#include "manning_conductivity_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-ManningConductivityModel::ManningConductivityModel(Teuchos::ParameterList& cond_plist) :
+ManningConductivityEvaluator::ManningConductivityEvaluator(Teuchos::ParameterList& cond_plist) :
     cond_plist_(cond_plist) {
   slope_regularization_ = cond_plist_.get<double>("slope regularization epsilon", 1.e-8);
   manning_exp_ = cond_plist_.get<double>("Manning exponent", 0.6666666666666667);
@@ -27,8 +27,8 @@ ManningConductivityModel::ManningConductivityModel(Teuchos::ParameterList& cond_
 }
 
 
-ManningConductivityModel::ManningConductivityModel(const ManningConductivityModel& other) :
-    SecondaryVariableFieldModel(other),
+ManningConductivityEvaluator::ManningConductivityEvaluator(const ManningConductivityEvaluator& other) :
+    SecondaryVariableFieldEvaluator(other),
     cond_plist_(other.cond_plist_),
     slope_regularization_(other.slope_regularization_),
     pres_key_(other.pres_key_),
@@ -37,14 +37,14 @@ ManningConductivityModel::ManningConductivityModel(const ManningConductivityMode
     manning_key_(other.manning_key_) {}
 
 
-Teuchos::RCP<FieldModel>
-ManningConductivityModel::Clone() const {
-  return Teuchos::rcp(new ManningConductivityModel(*this));
+Teuchos::RCP<FieldEvaluator>
+ManningConductivityEvaluator::Clone() const {
+  return Teuchos::rcp(new ManningConductivityEvaluator(*this));
 }
 
 
-// Required methods from SecondaryVariableFieldModel
-void ManningConductivityModel::EvaluateField_(const Teuchos::Ptr<State>& S,
+// Required methods from SecondaryVariableFieldEvaluator
+void ManningConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
@@ -66,7 +66,7 @@ void ManningConductivityModel::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 
-void ManningConductivityModel::EvaluateFieldPartialDerivative_(
+void ManningConductivityEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
 
@@ -75,19 +75,19 @@ void ManningConductivityModel::EvaluateFieldPartialDerivative_(
 }
 
 
-void ManningConductivityModel::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
-  // special EnsureCompatibility to add in a model for Manning's Coef.
+void ManningConductivityEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+  // special EnsureCompatibility to add in a evaluator for Manning's Coef.
 
-  // add the model.
+  // add the evaluator.
   S->RequireField(manning_key_);
   dependencies_.insert(manning_key_);
   Teuchos::ParameterList mann_plist = cond_plist_.sublist("Manning coefficient");
-  mann_plist.set("model name", manning_key_);
-  Teuchos::RCP<FieldModel> mann_fm = Teuchos::rcp(new IndependentFieldModel(mann_plist));
-  S->SetFieldModel(manning_key_, mann_fm);
+  mann_plist.set("evaluator name", manning_key_);
+  Teuchos::RCP<FieldEvaluator> mann_fm = Teuchos::rcp(new IndependentVariableFieldEvaluator(mann_plist));
+  S->SetFieldEvaluator(manning_key_, mann_fm);
 
   // Call the base class's method.
-  SecondaryVariableFieldModel::EnsureCompatibility(S);
+  SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
 };
 
 

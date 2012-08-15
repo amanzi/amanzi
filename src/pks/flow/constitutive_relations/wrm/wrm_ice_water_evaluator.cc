@@ -1,42 +1,42 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  This WRM model calls saturation and rel perm using a capillary pressure p_atm - pc.
+  This WRM evaluator calls saturation and rel perm using a capillary pressure p_atm - pc.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "wrm_ice_water_model.hh"
+#include "wrm_ice_water_evaluator.hh"
 
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-WRMIceLiquidModel::WRMIceLiquidModel(Teuchos::ParameterList& wrm_plist) :
-    WRMModel(wrm_plist) {
+WRMIceWaterEvaluator::WRMIceWaterEvaluator(Teuchos::ParameterList& wrm_plist) :
+    WRMEvaluator(wrm_plist) {
   InitializeFromPlist_();
 }
 
-WRMIceLiquidModel::WRMIceLiquidModel(Teuchos::ParameterList& wrm_plist,
+WRMIceWaterEvaluator::WRMIceWaterEvaluator(Teuchos::ParameterList& wrm_plist,
         const Teuchos::RCP<WRM>& wrm) :
-    WRMModel(wrm_plist, wrm) {
+    WRMEvaluator(wrm_plist, wrm) {
   InitializeFromPlist_();
 }
 
-WRMIceLiquidModel::WRMIceLiquidModel(const WRMIceLiquidModel& other) :
-    WRMModel(other),
+WRMIceWaterEvaluator::WRMIceWaterEvaluator(const WRMIceWaterEvaluator& other) :
+    WRMEvaluator(other),
     temp_key_(other.temp_key_),
     dens_key_(other.dens_key_),
     calc_other_sat_(other.calc_other_sat_) {}
 
-Teuchos::RCP<FieldModel>
-WRMIceLiquidModel::Clone() const {
-  return Teuchos::rcp(new WRMIceLiquidModel(*this));
+Teuchos::RCP<FieldEvaluator>
+WRMIceWaterEvaluator::Clone() const {
+  return Teuchos::rcp(new WRMIceWaterEvaluator(*this));
 }
 
 
-void WRMIceLiquidModel::InitializeFromPlist_() {
+void WRMIceWaterEvaluator::InitializeFromPlist_() {
   // my keys are for saturation and rel perm.
   my_keys_.push_back(wrm_plist_.get<string>("saturation key", "saturation_liquid"));
 
@@ -50,18 +50,21 @@ void WRMIceLiquidModel::InitializeFromPlist_() {
   temp_key_ = wrm_plist_.get<string>("temperature key", "temperature");
   dependencies_.insert(temp_key_);
 
-  dens_key_ = wrm_plist_.get<string>("density key", "molar_density_liquid");
-  dependencies_.insert(dens_key_);
-
-  // get the physical model for P_{c-il}(T)
-  ASSERT(wrm_plist_.isSublist("capillary pressure of ice-liquid"));
-  Teuchos::ParameterList pc_plist = wrm_plist_.sublist("capillary pressure of ice-liquid");
+  // get the physical evaluator for P_{c-il}(T)
+  ASSERT(wrm_plist_.isSublist("capillary pressure of ice-water"));
+  Teuchos::ParameterList pc_plist = wrm_plist_.sublist("capillary pressure of ice-water");
   pc_ = Teuchos::rcp(new PCIceWater(pc_plist));
 
+  if (pc_->IsMolarBasis()) {
+    dens_key_ = wrm_plist_.get<std::string>("molar density key", "molar_density_liquid");
+  } else {
+    dens_key_ = wrm_plist_.get<std::string>("mass density key", "mass_density_liquid");
+  }
+  dependencies_.insert(dens_key_);
 }
 
 
-void WRMIceLiquidModel::EvaluateField_(const Teuchos::Ptr<State>& S,
+void WRMIceWaterEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   Teuchos::Ptr<CompositeVector> sat = results[0];
 
@@ -80,7 +83,7 @@ void WRMIceLiquidModel::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 
-void WRMIceLiquidModel::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void WRMIceWaterEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
   Teuchos::Ptr<CompositeVector> dsat = results[0];
 

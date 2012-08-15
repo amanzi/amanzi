@@ -1,26 +1,26 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  The elevation model gets the surface elevation, slope, and updates pres + elev.
+  The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_ELEVATION_MODEL_
-#define AMANZI_FLOWRELATIONS_ELEVATION_MODEL_
+#ifndef AMANZI_FLOWRELATIONS_ELEVATION_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_ELEVATION_EVALUATOR_
 
-#include "secondary_variables_field_model.hh"
+#include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class ElevationModel : public SecondaryVariablesFieldModel {
+class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
 
  public:
-  ElevationModel();
+  ElevationEvaluator();
 
-  // Required methods from SecondaryVariableFieldModel
+  // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const std::vector<Teuchos::Ptr<CompositeVector> >& results);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,

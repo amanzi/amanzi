@@ -12,9 +12,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/pc_rel
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
-add_library(pk_flow_permafrost permafrost_pk.cc
-  permafrost_water_content.cc
-  wrm_permafrost_model.cc wrm_ice_water_model.cc)
+add_library(pk_flow_permafrost permafrost_pk.cc permafrost_water_content.cc)
 
 # shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
 #WHOLE_ARCHIVE(flow_relations_eos)

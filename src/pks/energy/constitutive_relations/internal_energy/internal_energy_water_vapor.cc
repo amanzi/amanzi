@@ -34,6 +34,11 @@ double InternalEnergyWaterVapor::DInternalEnergyDT(double temp, double mol_frac_
   return (1.0 + 0.622*mol_frac_gas) * Cv_air_;
 };
 
+double InternalEnergyWaterVapor::DInternalEnergyDomega(double temp, double mol_frac_gas) {
+  // evaluated at constant mol_frac gas for now?
+  return heat_vaporization_ + 0.622 * Cv_air_ * (temp - 273.15);
+};
+
 void InternalEnergyWaterVapor::InitializeFromPlist_() {
   molar_basis_ = plist_.get<bool>("molar-basis (otherwise, mass-basis)", true);
   Cv_air_ = plist_.get<double>("heat capacity of air [J/(mol-K)]", 13.0);

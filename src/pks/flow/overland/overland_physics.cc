@@ -74,9 +74,9 @@ void OverlandFlow::AddLoadValue_(const Teuchos::RCP<CompositeVector>& g) {
       S_inter_->GetFieldData("surface_cell_volume");
 
   if (is_source_term_) {
-    S_next_->GetFieldModel("overland_source")
+    S_next_->GetFieldEvaluator("overland_source")
         ->HasFieldChanged(S_next_.ptr(), "overland_pk");
-    S_inter_->GetFieldModel("overland_source")
+    S_inter_->GetFieldEvaluator("overland_source")
         ->HasFieldChanged(S_inter_.ptr(), "overland_pk");
 
     Teuchos::RCP <const CompositeVector> source0 =
@@ -92,7 +92,7 @@ void OverlandFlow::AddLoadValue_(const Teuchos::RCP<CompositeVector>& g) {
   }
 
   if (is_coupling_term_) {
-    S_next_->GetFieldModel("overland_coupling")
+    S_next_->GetFieldEvaluator("overland_coupling")
         ->HasFieldChanged(S_next_.ptr(), "overland_pk");
 
     Teuchos::RCP <const CompositeVector> source1 =

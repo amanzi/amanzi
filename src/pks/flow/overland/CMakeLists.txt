@@ -15,8 +15,8 @@ add_definitions("-DMSTK_HAVE_MPI")
 
 add_library(pk_flow_overland
         overland.cc overland_ti.cc overland_physics.cc
-        elevation_model.cc standalone_elevation_model.cc meshed_elevation_model.cc
-        manning_conductivity_model.cc )
+        elevation_evaluator.cc standalone_elevation_evaluator.cc meshed_elevation_evaluator.cc
+        manning_conductivity_evaluator.cc )
 
 # shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
 WHOLE_ARCHIVE(flow_relations_eos)
