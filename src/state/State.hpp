@@ -200,8 +200,16 @@ class State : public Teuchos::VerboseObject<State> {
     return primary_activity_coeff_;
   }
 
+  void set_primary_activity_coeff(const Epetra_MultiVector& primary_activity_coeff ) {
+    *primary_activity_coeff_ = primary_activity_coeff;
+  }
+
   Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff() const {
     return secondary_activity_coeff_;
+  }
+
+  void set_secondary_activity_coeff(const Epetra_MultiVector& secondary_activity_coeff ) {
+    *secondary_activity_coeff_ = secondary_activity_coeff;
   }
 
   int number_of_minerals(void) const {
@@ -270,10 +278,19 @@ class State : public Teuchos::VerboseObject<State> {
   Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc() const {
     return ion_exchange_ref_cation_conc_;
   }
+  
+  void set_ion_exchange_ref_cation_conc(const Epetra_MultiVector& ion_exchange_ref_cation_conc) {
+    *ion_exchange_ref_cation_conc_ = ion_exchange_ref_cation_conc;
+  }  
+
 
   Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc() const {
     return surface_complex_free_site_conc_;
-  }  
+  }
+
+  void set_surface_complex_free_site_conc(const Epetra_MultiVector& surface_complex_free_site_conc) {
+    *surface_complex_free_site_conc_ = surface_complex_free_site_conc;
+  }
 
   int number_of_sorption_sites(void) const {
     return number_of_sorption_sites_;
@@ -303,12 +320,32 @@ class State : public Teuchos::VerboseObject<State> {
     return isotherm_kd_;
   }
 
+  void set_isotherm_kd (const Epetra_MultiVector& isotherm_kd ) {
+    *isotherm_kd_ = isotherm_kd;
+  }
+
   Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n() const {
     return isotherm_freundlich_n_;
   }
 
+  void set_isotherm_freundlich_n (const Epetra_MultiVector& isotherm_freundlich_n ) {
+    *isotherm_freundlich_n_ = isotherm_freundlich_n;
+  }  
+
   Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b() const {
     return isotherm_langmuir_b_;
+  }
+
+  void set_isotherm_langmuir_b (const Epetra_MultiVector& isotherm_langmuir_b ) {
+    *isotherm_langmuir_b_ = isotherm_langmuir_b;
+  }
+
+  void set_specific_storage (const Epetra_Vector& spc_storage ) {
+    *specific_storage = spc_storage;
+  }
+  
+  void set_specific_yield (const Epetra_Vector& spc_yield ) {
+    *specific_yield = spc_yield;
   }
 
  private:
