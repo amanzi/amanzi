@@ -1,11 +1,15 @@
 #include <iostream>
+#include <fstream>
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
+#include "amanzi_unstructured_grid_simulation_driver.hpp"
+
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+// #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "XMLParameterListWriter.hpp"
 
 #include "MeshFactory.hh"
 #include "State.hpp"
@@ -18,10 +22,10 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
-#include "amanzi_unstructured_grid_simulation_driver.hpp"
 #include "InputParserIS.hh"
 
 #include "TimerManager.hh"
+
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
@@ -78,10 +82,19 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     std::string new_extension("_native_v2.xml");
     size_t pos = xmlFileName.find(".xml");
     xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
-    if (comm->MyPID() == 0)
+    if (comm->MyPID() == 0) {
         printf("Amanzi: writing the translated parameter list to file %s.\n", xmlFileName.c_str());
+    
+	
+	Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+	Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
 
-    Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
+	ofstream xmlfile;
+	xmlfile.open(xmlFileName.c_str());
+	xmlfile << XMLobj;
+    }
+
+    //Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
   }
 
 
