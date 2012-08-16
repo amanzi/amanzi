@@ -4,6 +4,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_ArrayView.hpp"
 
 namespace Teuchos
 {
@@ -19,6 +20,25 @@ namespace Teuchos
     }
   };
 
+  inline std::string Amanzi_toString(const Teuchos::Array<double>& a) {
+    std::ostringstream ss;
+    
+    ss.setf (std::ios::scientific);
+    ss.precision (17);
+
+    ss << "{";
+    
+    for (int i=0; i < a.size(); ++i) {
+      ss << a[i];
+      if (i < a.size()-1) ss << ", ";
+    }
+    ss << "}";
+    
+    return ss.str();
+  }
+    
+
+  
   class  Amanzi_XMLParameterListWriter
   {
   public:

@@ -95,7 +95,7 @@ XMLObject Amanzi_XMLParameterListWriter::toXML(const ParameterEntry& entry) cons
       const Array<double>
         &a = any_cast<Array<double> >(entry.getAny(false));
       type = "Array double";
-      value = a.toString();
+      value = Amanzi_toString(a);
     }
   else if (entry.isType<Array<std::string> >())
     {
