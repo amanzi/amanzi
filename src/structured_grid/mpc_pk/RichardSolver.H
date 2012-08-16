@@ -5,15 +5,17 @@
 #include <PMAmr.H>
 #include <MFTower.H>
 
+class RichardNLSdata;
+
 class RichardSolver
 {
 public:
   RichardSolver(PMAmr& pm_amr);
   void ResetRhoSat();
   void SetTime(Real time);
-  Real Time() const;
+  Real GetTime() const;
   void SetDt(Real dt);
-  Real Dt() const;
+  Real GetDt() const;
   MFTower& GetRhoSatN() {return *RhoSatOld;}
   MFTower& GetRhoSatNp1() {return *RhoSatNew;}
   MFTower& GetLambda() {return *Lambda;}
@@ -27,6 +29,7 @@ public:
   Vec& GetPressureV() {return SolnV;}
   MFTower& GetResidual() {return *Rhs;}
   Vec& GetResidualV() {return RhsV;}
+  Vec& GetTrialResV() {return GV;}
   Vec& GetPCapParamsV() {return PCapParamsV;}
   PArray<MFTower>& GetDarcyVelocity() {return DarcyVelocity;}
   PArray<MFTower>& GetRichardCoefs() {return RichardCoefs;}
@@ -59,6 +62,12 @@ public:
 		 Real dt);
 
   static void SetTheRichardSolver(RichardSolver* ptr);
+
+  int Solve(Real            time,
+            Real            dt,
+	    int             timestep,
+            RichardNLSdata& nl_data);
+    
 
 protected:
   void BuildOpSkel(Mat& J);
@@ -115,7 +124,8 @@ protected:
   MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *PStar, *RhoSatStar, *AlphaStar, *KappaCC;
   PArray<MFTower> Kappa, DarcyVelocity, RichardCoefs;
 
-  Vec RhsV, SolnV, PCapParamsV;
+  Vec RhsV, SolnV, PCapParamsV, GV;
+  Mat Jac;
 
   Array<Real> gravity;
   Array<Real> density;

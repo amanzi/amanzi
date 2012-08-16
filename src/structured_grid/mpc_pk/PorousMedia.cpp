@@ -1670,6 +1670,30 @@ PorousMedia::BuildInitNLS()
 
 #include <RichardSolver.H>
 
+static std::map<int,std::string> PETSc_Reasons;
+static std::string
+GetPETScReason(int flag) 
+{
+  PETSc_Reasons[2] = "SNES_CONVERGED_FNORM_ABS     ";
+  PETSc_Reasons[3] = "SNES_CONVERGED_FNORM_RELATIVE"; // ||F|| < atol 
+  PETSc_Reasons[4] = "SNES_CONVERGED_SNORM_RELATIVE"; // Newton computed step size small; || delta x || < stol 
+  PETSc_Reasons[5] = "SNES_CONVERGED_ITS           "; // maximum iterations reached 
+  PETSc_Reasons[7] = "SNES_CONVERGED_TR_DELTA      ";
+  PETSc_Reasons[-1] = "SNES_DIVERGED_FUNCTION_DOMAIN"; // the new x location passed the function is not in the domain of F
+  PETSc_Reasons[-2] = "SNES_DIVERGED_FUNCTION_COUNT ";
+  PETSc_Reasons[-3] = "SNES_DIVERGED_LINEAR_SOLVE   "; // the linear solve failed
+  PETSc_Reasons[-4] = "SNES_DIVERGED_FNORM_NAN      ";
+  PETSc_Reasons[-5] = "SNES_DIVERGED_MAX_IT         ";
+  PETSc_Reasons[-6] = "SNES_DIVERGED_LINE_SEARCH    "; // the line search failed 
+  PETSc_Reasons[-7] = "SNES_DIVERGED_INNER          "; // inner solve failed
+  PETSc_Reasons[-8] = "SNES_DIVERGED_LOCAL_MIN      "; // || J^T b || is small, implies converged to local minimum of F()
+  PETSc_Reasons[0]  = "SNES_CONVERGED_ITERATING     ";
+  if (PETSc_Reasons.find(flag)==PETSc_Reasons.end()) {
+    BoxLib::Abort("Unknown PETSc return flag");
+  }
+  return PETSc_Reasons[flag];
+}
+
 void
 PorousMedia::richard_init_to_steady()
 {
@@ -1697,6 +1721,7 @@ PorousMedia::richard_init_to_steady()
 		initial_iter = 1;
                 
                 Real cur_time = state[State_Type].curTime();
+                Real prev_time = state[State_Type].prevTime();
                 int  finest_level = parent->finestLevel();
                 Array<Real> dt_save(finest_level+1);
                 Array<int> nc_save(finest_level+1);
@@ -1740,7 +1765,9 @@ PorousMedia::richard_init_to_steady()
                 int total_num_Newton_iterations = 0;
                 int total_rejected_Newton_steps = 0;
                 while (continue_iterations)
-                {
+		{
+
+		  // Advance the state data structures
 		  for (int lev=0;lev<= finest_level;lev++)
 		    {
 		      PorousMedia& pm = getLevel(lev);
@@ -1748,6 +1775,19 @@ PorousMedia::richard_init_to_steady()
 			{
 			  pm.state[i].allocOldData();
 			  pm.state[i].swapTimeLevels(dt);
+			}
+		    }
+		  // FIXME:
+		  // If execution mode is Initialize To Steady, time increments as we evolve here.
+		  // If mode is Transient, the loop here does not advance time
+		  cur_time = state[Press_Type].curTime();
+		  prev_time = state[Press_Type].prevTime();
+
+		  for (int lev=0;lev<= finest_level;lev++)
+		    {
+		      PorousMedia& pm = getLevel(lev);
+		      for (int i = 0; i < num_state_type; i++)
+			{
 			  MultiFab& od = pm.get_old_data(i);
 			  MultiFab& nd = pm.get_new_data(i);
 			  MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next time step
@@ -1769,26 +1809,40 @@ PorousMedia::richard_init_to_steady()
 
                     if (do_multilevel_full) {
                         nld.ResetCounters();
-                        nld.ResetJacobianCounter();	// Save the initial state 
+                        nld.ResetJacobianCounter();	
+
+			// Save the initial state 
 			for (int lev=0;lev<= finest_level;lev++)
 			  {
 			    PorousMedia&    fine_lev   = getLevel(lev);
 			    if (do_richard_sat_solve)
 			      {
 				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
-				//MultiFab& S_lev = fine_lev.get_old_data(State_Type);
 				MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
 			      }
 			    else
 			      {
 				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
-                                //MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
 				MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
 			      }
 			  }
+
 			if (steady_use_PETSc_snes) 
 			  {
-			    ret = richard_PETSc_pressure_solve(dt,*rs,nld);
+ 			      int retCode = rs->Solve(t+dt, dt, k, nld);
+                              if (retCode >= 0) {
+                                  ret = RichardNLSdata::RICHARD_SUCCESS;
+                              } 
+                              else {
+                                  if (ret == -3) {
+                                      ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
+                                  }
+                                  else {
+                                      ret = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+                                      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+                                          std::cout << "     **************** Newton failed: " << GetPETScReason(retCode) << '\n';
+                                  }
+                              }
 			  }
 			else
 			  {
@@ -1826,6 +1880,12 @@ PorousMedia::richard_init_to_steady()
 			for (int lev=0;lev<= finest_level;lev++)
 			  {
 			    PorousMedia&    fine_lev   = getLevel(lev);
+
+			    for (int k = 0; k < num_state_type; k++)
+			      {
+				fine_lev.state[k].reset();
+			      }
+
 			    if (do_richard_sat_solve)
 			      {
 				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
@@ -2306,15 +2366,19 @@ PorousMedia::advance (Real time,
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::advance()");
   if (do_multilevel_full) 
   {
-      if (level == 0)
+      if (level == 0) {
+          if (verbose > 1 && ParallelDescriptor::IOProcessor())
+          {
+              std::cout << "Advancing all levels:"
+                        << " starting time = " << time
+                        << " with dt = "               << dt << '\n';
+          }
           multilevel_advance(time,dt,iteration,ncycle);
-      else
-      if (verbose>2 && ParallelDescriptor::IOProcessor())
-	std::cout << " Doing multilevel solve : skipping level advance.\n";
+      }
   }
   else
   {
-    if (verbose > 2 && ParallelDescriptor::IOProcessor())
+    if (verbose > 1 && ParallelDescriptor::IOProcessor())
       {
 	std::cout << "Advancing grids at level " << level
 		  << " : starting time = "       << time
@@ -2504,7 +2568,9 @@ PorousMedia::multilevel_advance (Real time,
   }
 #ifdef MG_USE_FBOXLIB
   if (model == model_list["richard"]) 
-    {
+  {
+      if (verbose>2 && do_chem && ParallelDescriptor::IOProcessor())
+          std::cout << "... advancing full dt for flow and transport\n";
       advance_multilevel_richard(time,dt);
     }
 #endif
@@ -2947,6 +3013,11 @@ PorousMedia::advance_multilevel_richard (Real time,
 	  {
 	    nld.ResetCounters();
 	    nld.ResetJacobianCounter();
+
+	    if (verbose > 2 && ParallelDescriptor::IOProcessor())
+	      std::cout << "Attempting multi-level flow advance: Inner Iter " << iter++ 
+			<< " Time Step: " << dt_iter  << std::endl;
+
 	    ret = richard_composite_update(dt_iter,nld);
 	    bool cont = nld.AdjustDt(dt_iter,ret,dt_new); 
 	    if (ret == RichardNLSdata::RICHARD_SUCCESS || dt_new <= t_eps || iter > max_iter)
@@ -2957,7 +3028,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 	    if (verbose > 2 && ParallelDescriptor::IOProcessor())
 	      std::cout << "MULTILEVEL ADVANCE INNER STEP: Iter " << iter++ 
 			<< " Solver Status: " << ret 
-			<< " Time Step: " << dt_iter  << std::endl;
+			<< " New Time Step: " << dt_iter  << std::endl;
 	  }
 
 	if (ret == RichardNLSdata::RICHARD_SUCCESS) 
@@ -5963,7 +6034,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   if (itr_nwt >= max_itr_nwt) {
       retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
       if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
-          std::cout << "     **************** Newton failed: too many iterations (max = " << max_itr_nwt << '\n'; 
+          std::cout << "     **************** Newton failed in richard_scalar_update: too many iterations (max = " << max_itr_nwt << '\n'; 
   }
 
   MultiFab** fluxSC;
@@ -6200,7 +6271,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
   if (nl_data.NLIterationsTaken() >= nl_data.MaxNLIterations()) {
       retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
       if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
-          std::cout << "     **************** Newton failed: too many iterations (max = "
+          std::cout << "     **************** Newton failed in richard_composite_update: too many iterations (max = "
                     << nl_data.MaxNLIterations() << ")\n"; 
   }
 
@@ -6238,113 +6309,6 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 
   return retVal;
 }
-
-#ifdef BL_USE_PETSC
-
-static std::map<int,std::string> PETSc_Reasons;
-static std::string
-GetPETScReason(int flag) 
-{
-  PETSc_Reasons[2] = "SNES_CONVERGED_FNORM_ABS     ";
-  PETSc_Reasons[3] = "SNES_CONVERGED_FNORM_RELATIVE"; // ||F|| < atol 
-  PETSc_Reasons[4] = "SNES_CONVERGED_SNORM_RELATIVE"; // Newton computed step size small; || delta x || < stol 
-  PETSc_Reasons[5] = "SNES_CONVERGED_ITS           "; // maximum iterations reached 
-  PETSc_Reasons[7] = "SNES_CONVERGED_TR_DELTA      ";
-  PETSc_Reasons[-1] = "SNES_DIVERGED_FUNCTION_DOMAIN"; // the new x location passed the function is not in the domain of F
-  PETSc_Reasons[-2] = "SNES_DIVERGED_FUNCTION_COUNT ";
-  PETSc_Reasons[-3] = "SNES_DIVERGED_LINEAR_SOLVE   "; // the linear solve failed
-  PETSc_Reasons[-4] = "SNES_DIVERGED_FNORM_NAN      ";
-  PETSc_Reasons[-5] = "SNES_DIVERGED_MAX_IT         ";
-  PETSc_Reasons[-6] = "SNES_DIVERGED_LINE_SEARCH    "; // the line search failed 
-  PETSc_Reasons[-7] = "SNES_DIVERGED_INNER          "; // inner solve failed
-  PETSc_Reasons[-8] = "SNES_DIVERGED_LOCAL_MIN      "; // || J^T b || is small, implies converged to local minimum of F()
-  PETSc_Reasons[0]  = "SNES_CONVERGED_ITERATING     ";
-  if (PETSc_Reasons.find(flag)==PETSc_Reasons.end()) {
-    BoxLib::Abort("Unknown PETSc return flag");
-  }
-  return PETSc_Reasons[flag];
-}
-
-RichardNLSdata::Reason
-PorousMedia::richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNLSdata& nl_data)
-{
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_composite_update()");
-  BL_ASSERT(have_capillary == 1);
-
-  int  maxit = nl_data.MaxNLIterations();
-  int maxf = 10000;
-  Real atol = 1e-3; 
-  Real rtol = 1e-8;
-  Real stol = 1e-15; // FIXME: Better numbers for this??
-
-  int nc = 0;
-  const BCRec& bc = get_desc_lst()[Press_Type].getBC(nc);
-  Real cur_time = state[State_Type].curTime();
-
-  MFTower& RhsMFT = rs.GetResidual();
-  MFTower& SolnMFT = rs.GetPressure();
-  Vec& RhsV = rs.GetResidualV();
-  Vec& SolnV = rs.GetPressureV();
-
-  // Copy from MFTowers in state to Vec structures
-  PetscErrorCode ierr;
-  Layout& layout = PMAmr::GetLayout();
-  ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
-  ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
-
-  rs.SetTime(cur_time);
-  rs.SetDt(dt);
-  
-  SNES& snes = rs.GetSNES();
-  ierr = SNESSetTolerances(snes,atol,rtol,stol,maxit,maxf);CHKPETSC(ierr);
-  ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
-
-  RichardSolver::SetTheRichardSolver(&rs);
-  ierr = SNESSolve(snes,PETSC_NULL,SolnV);CHKPETSC(ierr);
-  RichardSolver::SetTheRichardSolver(0);
-
-  int iters;
-  ierr = SNESGetIterationNumber(snes,&iters);CHKPETSC(ierr);
-  nl_data.SetNLIterationsTaken(iters);
-
-  int nfuncs;
-  ierr = SNESGetNumberFunctionEvals(snes,&nfuncs);CHKPETSC(ierr);
-
-  SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason(snes,&reason);
-
-  std::string reasonStr = GetPETScReason(reason);
-  RichardNLSdata::Reason retVal = RichardNLSdata::RICHARD_SUCCESS;
-  if (reason<0) {
-    if (reason==-3) {
-      retVal = RichardNLSdata::RICHARD_LINEAR_FAIL;
-    }
-    else {
-      retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
-      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
-          std::cout << "     **************** Newton failed: " << reasonStr << '\n';
-    }
-  }
-
-  if (retVal != RichardNLSdata::RICHARD_SUCCESS) {
-      return retVal;
-  }
-
-  // Copy solution from Vec back into state
-  ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
-
-  Real fnorm;
-  ierr = SNESGetFunctionNorm(snes,&fnorm); CHKPETSC(ierr);
-
-  if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor()) {
-      std::cout << "     Newton converged in " << nl_data.NLIterationsTaken() << " iterations (max = "
-                << nl_data.MaxNLIterations() << ") with err: " 
-                << fnorm << " (atol = " << atol << ")\n";
-  }
-
-  return retVal;
-}
-#endif
 
 #endif
 
@@ -7472,7 +7436,7 @@ PorousMedia::post_timestep (int crse_iteration)
 
   const int finest_level = parent->finestLevel();
 
-  if (level < finest_level)
+  if (!(do_multilevel_full)  &&  level < finest_level)
     {
       //avgDown();
       
@@ -7498,7 +7462,7 @@ PorousMedia::post_timestep (int crse_iteration)
   //
   // Print final solutions
   //
-  if (level == 0)
+  if (level == 0 && verbose > 3)
     {      
       for (int lev = 0; lev <= finest_level; lev++)
 	{
@@ -9343,7 +9307,7 @@ PorousMedia::richard_sync ()
 
   if (err_nwt > max_err_nwt) {
       retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
-      std::cout << "     **************** Newton failed: too many iterations\n"; 
+      std::cout << "     **************** Newton failed in richard_sync: too many iterations\n"; 
   }
 
   if (retVal == RichardNLSdata::RICHARD_SUCCESS)

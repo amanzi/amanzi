@@ -184,11 +184,6 @@
       integer i, j, n
 
 c     On input, Res contains Div(DarcyVel)
-
-c      print *,'in res:   RSn ',RSn(25,62,1)
-c      print *,'in res: RSnp1 ',RSnp1(25,62,1)
-c      print *,'in res:  DivU ',Res(25,62,1)
-
       do n=1,nc
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
@@ -197,10 +192,6 @@ c      print *,'in res:  DivU ',Res(25,62,1)
             enddo
          enddo
       enddo
-
-c      print *,'in res:  Res ',Res(25,62,1)
-c      print *
-
       end
 
       subroutine FORT_RS_PDOTALT(Res,DIMS(Res),RSn,DIMS(RSn),
@@ -230,12 +221,6 @@ c      print *
       integer i, j, n
 
 c     On input, Res contains Div(DarcyVel)
-c      print *,'in res_alt:    RSn ',RSn(25,62,1)
-c      print *,'in res_alt: RSstar ',RSstar(25,62,1)
-c      print *,'in res_alt:  Pstar ',Pstar(25,62,1)
-c      print *,'in res_alt:   Pnp1 ',Pnp1(25,62,1)
-c      print *,'in res_alt:   DivU ',Res(25,62,1)
-
       do n=1,nc
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
@@ -246,8 +231,4 @@ c      print *,'in res_alt:   DivU ',Res(25,62,1)
             enddo
          enddo
       enddo
-
-c      print *,'in res_alt:    Res ',Res(25,62,1)
-c      print *
-
       end
