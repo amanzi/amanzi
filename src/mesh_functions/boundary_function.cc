@@ -33,7 +33,7 @@ void BoundaryFunction::Compute(double t)
 
 
 /* ****************************************************************
-* Populates internal array with function values.
+* Populates internal array with function values. 
 **************************************************************** */
 void BoundaryFunction::Define(const std::vector<std::string> &regions,
                               const Teuchos::RCP<const Function> &f)
@@ -44,7 +44,7 @@ void BoundaryFunction::Define(const std::vector<std::string> &regions,
   for (std::vector<std::string>::const_iterator r = regions.begin(); r != regions.end(); ++r) {
     if ((*mesh_).valid_set_name(*r, AmanziMesh::FACE)) {
       AmanziMesh::Entity_ID_List face_list;
-      (*mesh_).get_set_entities(*r, AmanziMesh::FACE, AmanziMesh::USED, &face_list);
+      (*mesh_).get_set_entities(*r, AmanziMesh::FACE, AmanziMesh::OWNED, &face_list);
       this_domain.insert(face_list.begin(), face_list.end());
     } else {
       Errors::Message m;

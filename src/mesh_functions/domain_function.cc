@@ -28,7 +28,7 @@ void DomainFunction::Define(const std::vector<std::string>& regions,
   for (std::vector<std::string>::const_iterator r = regions.begin(); r != regions.end(); ++r) {
     if ((*mesh_).valid_set_name(*r, AmanziMesh::CELL)) {
       AmanziMesh::Entity_ID_List cell_list;
-      (*mesh_).get_set_entities(*r, AmanziMesh::CELL, AmanziMesh::USED, &cell_list);
+      (*mesh_).get_set_entities(*r, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_list);
       this_domain.insert(cell_list.begin(), cell_list.end());
     } else {
       Errors::Message m;

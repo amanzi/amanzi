@@ -153,9 +153,8 @@ void Darcy_PK::InitPK()
   ProcessParameterList();
 
   // Process boundary data
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
-  bc_values.resize(nfaces, 0.0);
+  bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
+  bc_values.resize(nfaces_wghost, 0.0);
 
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
