@@ -10,7 +10,23 @@ class RichardNLSdata;
 class RichardSolver
 {
 public:
-  RichardSolver(PMAmr& pm_amr);
+  struct RSParams
+  {
+    RSParams();
+    bool use_fd_jac; // Use matrix-free or finite-difference Jacobian
+    bool use_dense_Jacobian; // Use dense storage for Jacobian
+    int upwind_krel; // Upwind Krel based on sign of Darcy forcing
+    int pressure_maxorder; // Polynomial order of boundary condition extrapolation
+    Real errfd; // Scale of perturbuation for fd Jacobian
+    int max_ls_iterations; // Max line search attempts
+    Real min_ls_factor; // Minimum allowable line search scaling parameter
+    Real ls_acceptance_factor; // Maximun allowable reduction of residual in line search
+    Real ls_reduction_factor; // Scale to reduce line search scaling parameter for each try
+    int monitor_line_search; // Write status information for line search
+  };
+
+  RichardSolver(PMAmr&          pm_amr,
+		const RSParams& params);
   void ResetRhoSat();
   void SetTime(Real time);
   Real GetTime() const;
@@ -42,6 +58,8 @@ public:
   const Array<BoxArray>& GridArray() const {return PMAmr::GetLayout().GridArray();}
   const Array<Geometry>& GeomArray() const {return PMAmr::GetLayout().GeomArray();}
   const Array<IntVect>& RefRatio() const {return PMAmr::GetLayout().RefRatio();}
+  const RichardSolver::RSParams& Parameters() {return params;}
+
   void DivU(MFTower& divu,
 	    MFTower& rhoSat,
 	    MFTower& pressure,
@@ -112,6 +130,7 @@ protected:
 			 Real             time);
   
   PMAmr& pm_amr;
+  RSParams params;
   PArray<PorousMedia> pm;
   MFTFillPatch* mftfp;
 

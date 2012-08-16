@@ -5,30 +5,36 @@
 #include <Utility.H>
 
 
-#define BUILD_DENSE_J 1
-#undef BUILD_DENSE_J
 #undef PETSC_3_2
 #define PETSC_3_2 1
 
-static bool write_matrix = false;
+static bool use_fd_jac_DEF = true;
+static bool use_dense_Jacobian_DEF = false;
+static int upwind_krel_DEF = 0;
+static int pressure_maxorder_DEF = 4;
+static Real errfd_DEF = 1.e-8;
+static int max_ls_iterations_DEF = 10;
+static Real min_ls_factor_DEF = 1.e-8;
+static Real ls_acceptance_factor_DEF = 1.4;
+static Real ls_reduction_factor_DEF = 0.1;
+static int monitor_line_search_DEF = 0;
 
-// FIXME: Should be user-settable at runtime
-static bool use_fd_jac = true;
-static int upwind_krel = 0;
-static int pressure_maxorder = 4;
-static Real errfd = 1.e-8;
 
-#if defined(BUILD_DENSE_J)
-static int max_number_nonzero_J_cols = 2048;
-#else
-static int max_number_nonzero_J_cols = 1 + (pressure_maxorder-1)*(2*BL_SPACEDIM); // 3.3 seems to need this
-#endif
+RichardSolver::RSParams::RSParams()
+{
+  // Set default values for all parameters
+  use_fd_jac = use_fd_jac_DEF;
+  use_dense_Jacobian = use_dense_Jacobian_DEF;
+  upwind_krel = upwind_krel_DEF;
+  pressure_maxorder = pressure_maxorder_DEF;
+  errfd = errfd_DEF;
+  max_ls_iterations = max_ls_iterations_DEF;
+  min_ls_factor = min_ls_factor_DEF;
+  ls_acceptance_factor = ls_acceptance_factor_DEF;
+  ls_reduction_factor = ls_reduction_factor_DEF;
+  monitor_line_search = monitor_line_search_DEF;
+}
 
-static int richard_max_ls_iterations = 10;
-static Real richard_min_ls_factor = 1.e-8;
-static Real richard_ls_acceptance_factor = 1.4;
-static Real richard_ls_reduction_factor = 0.1;
-static int richard_monitor_line_search = 0;
 static RichardSolver* static_rs_ptr = 0;
 
 void
@@ -53,8 +59,10 @@ struct CheckCtx
 };
 
 
-RichardSolver::RichardSolver(PMAmr& _pm_amr)
-  : pm_amr(_pm_amr)
+RichardSolver::RichardSolver(PMAmr&          _pm_amr,
+			     const RSParams& _params)
+  : pm_amr(_pm_amr),
+    params(_params)
 {
   mftfp = new MFTFillPatch(PMAmr::GetLayout());
   nLevs = pm_amr.finestLevel() + 1;
@@ -126,16 +134,16 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = VecDuplicate(RhsV,&GV); CHKPETSC(ierr);
 
   const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
-  mftfp->BuildStencil(pressure_bc, pressure_maxorder);
+  mftfp->BuildStencil(pressure_bc, params.pressure_maxorder);
 
   gravity.resize(BL_SPACEDIM,0);
   gravity[BL_SPACEDIM-1] = PorousMedia::getGravity();
   density = PorousMedia::Density();
-  
-  int d_nz = 1 + 2*BL_SPACEDIM; // Estmated number of nonzero local columns of J
-  int o_nz = 0; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
 
   Mat Jac, JacMF;
+  // Estmated number of nonzero local columns of J
+  int d_nz = (params.use_dense_Jacobian ? N : 1 + (params.pressure_maxorder-1)*(2*BL_SPACEDIM)); 
+  int o_nz = 0; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
 
 #if defined(PETSC_3_2)
   ierr = MatCreateMPIAIJ(comm, n, n, N, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &Jac); CHKPETSC(ierr);
@@ -143,17 +151,17 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = MatCreate(comm, &Jac); CHKPETSC(ierr);
   ierr = MatSetSizes(Jac,n,n,N,N);  CHKPETSC(ierr);
   ierr = MatSetFromOptions(Jac); CHKPETSC(ierr);
-  d_nz = max_number_nonzero_J_cols;
   ierr = MatSeqAIJSetPreallocation(Jac, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
   ierr = MatMPIAIJSetPreallocation(Jac, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
 #endif  
+
   BuildOpSkel(Jac);
   
   matfdcoloring = 0;
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
   ierr = SNESSetFunction(snes,RhsV,RichardRes_DpDt,(void*)(this)); CHKPETSC(ierr);
 
-  if (use_fd_jac) {
+  if (params.use_fd_jac) {
     ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
     ierr = MatFDColoringSetFunction(matfdcoloring,
@@ -161,7 +169,7 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
 				    (void*)(this)); CHKPETSC(ierr);
     
     ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
-    ierr = MatFDColoringSetParameters(matfdcoloring,errfd,PETSC_DEFAULT);CHKPETSC(ierr);
+    ierr = MatFDColoringSetParameters(matfdcoloring,params.errfd,PETSC_DEFAULT);CHKPETSC(ierr);
     ierr = SNESSetJacobian(snes,Jac,Jac,RichardComputeJacobianColor,matfdcoloring);CHKPETSC(ierr);
   }
   else {
@@ -169,27 +177,6 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   }
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
 
-#if defined(PETSC_3_2)
-  ierr = SNESLineSearchSetPostCheck(snes,PostCheck,(void *)(this));CHKPETSC(ierr);  
-#else
-  ierr = SNESGetSNESLineSearch(snes, &ls);CHKPETSC(ierr);
-
-  Vec X, Y, F, W, G;
-  ierr = VecDuplicate(RhsV,&X); CHKPETSC(ierr);
-  ierr = VecDuplicate(RhsV,&Y); CHKPETSC(ierr);
-  ierr = VecDuplicate(RhsV,&F); CHKPETSC(ierr);
-  ierr = VecDuplicate(RhsV,&W); CHKPETSC(ierr);
-  ierr = VecDuplicate(RhsV,&G); CHKPETSC(ierr);
-
-  ierr = VecSet(G,2);
-  PetscReal *gnorm;
-  ierr=VecNorm(G,NORM_2,gnorm);CHKPETSC(ierr);
-
-  ierr = SNESLineSearchSetVecs(ls,X,F,Y,W,G);
-  ierr = SNESLineSearchSetType(ls, SNESLINESEARCHSHELL);CHKPETSC(ierr);
-  ierr = SNESLineSearchShellSetUserFunc(ls,FormLineSearch,(void*)(this));CHKPETSC(ierr);
-#endif
-  
   // TODO: Add deletes/destroys for all structures allocated/created here
 
 }
@@ -536,21 +523,24 @@ RichardSolver::BuildOpSkel(Mat& J)
 		}
 	      }
 
-#if defined(BUILD_DENSE_J)
-	      int num_cols = layout.NumberOfGlobalNodeIds();
-	      cols.resize(num_cols);
-	      vals.resize(num_cols,0);
-	      int cnt = 0;
-              for (int i=0; i<num_cols; ++i) cols[i] = i;
-#else
-	      int num_cols = neighbors.size();
-	      cols.resize(num_cols);
-	      vals.resize(num_cols,0);
-	      int cnt = 0;
-	      for (std::set<int>::const_iterator it=neighbors.begin(), End=neighbors.end(); it!=End; ++it) {
-		cols[cnt++] = *it;
-	      }
-#endif
+	      int num_cols = -1;
+	      if (params.use_dense_Jacobian) 
+		{
+		  num_cols = layout.NumberOfGlobalNodeIds();
+		  cols.resize(num_cols);
+		  vals.resize(num_cols,0);
+		  for (int i=0; i<num_cols; ++i) cols[i] = i;
+		}
+	      else
+		{
+		  num_cols = neighbors.size();
+		  cols.resize(num_cols);
+		  vals.resize(num_cols,0);
+		  int cnt = 0;
+		  for (std::set<int>::const_iterator it=neighbors.begin(), End=neighbors.end(); it!=End; ++it) {
+		    cols[cnt++] = *it;
+		  }
+		}
 	      ierr = MatSetValues(J,num_rows,rows,num_cols,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
 	    }
 	  }
@@ -589,7 +579,8 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
                 FORT_RS_CTE_UPW(efab.dataPtr(), ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
 				cfab.dataPtr(), ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
 				sgnfab.dataPtr(),ARLIM(sgnfab.loVect()), ARLIM(sgnfab.hiVect()),
-				vccbox.loVect(), vccbox.hiVect(), &d, &nComp, &dir_bc_lo, &dir_bc_hi, &upwind_krel);
+				vccbox.loVect(), vccbox.hiVect(), &d, &nComp, &dir_bc_lo, &dir_bc_hi,
+				&params.upwind_krel);
             }
         }
     }
@@ -1180,6 +1171,7 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     CheckCtx* check_ctx = (CheckCtx*)ctx;
     RichardSolver* rs = check_ctx->rs;
     RichardNLSdata* nld = check_ctx->nld;
+    const RichardSolver::RSParams& rsp = rs->Parameters();
 
     if (rs==0) {
         BoxLib::Abort("Context cast failed in PostCheck");
@@ -1202,18 +1194,18 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     (*func)(snes,w,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);    
     
-    bool norm_acceptable = gnorm < fnorm * richard_ls_acceptance_factor;
+    bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
     int ls_iterations = 0;
     Real ls_factor = 1;
     bool finished = norm_acceptable 
-        || ls_iterations > richard_max_ls_iterations
-        || ls_factor <= richard_min_ls_factor;
+        || ls_iterations > rsp.max_ls_iterations
+        || ls_factor <= rsp.min_ls_factor;
     
     while (!finished) 
     {
-        ls_factor *= richard_ls_reduction_factor;
-        if (ls_factor < richard_min_ls_factor) {
-            ls_factor = richard_min_ls_factor;
+        ls_factor *= rsp.ls_reduction_factor;
+        if (ls_factor < rsp.min_ls_factor) {
+            ls_factor = rsp.min_ls_factor;
         }
         PetscReal mone = -1;
         ierr=VecWAXPY(w,mone*ls_factor,y,x); /* w = -y + x */
@@ -1221,10 +1213,10 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         
         (*func)(snes,w,G,fctx);
         ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
-        norm_acceptable = gnorm < fnorm * richard_ls_acceptance_factor;
+        norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
         
         if (ls_factor < 1 
-            && richard_monitor_line_search 
+            && rsp.monitor_line_search 
             && ParallelDescriptor::IOProcessor())
 	{
             std::cout << tag << tag_ls
@@ -1235,23 +1227,23 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
 	}
         
         finished = norm_acceptable 
-            || ls_iterations > richard_max_ls_iterations
-            || ls_factor <= richard_min_ls_factor;      
+            || ls_iterations > rsp.max_ls_iterations
+            || ls_factor <= rsp.min_ls_factor;      
         ls_iterations++;
     }
     
-    if (ls_iterations > richard_max_ls_iterations) 
+    if (ls_iterations > rsp.max_ls_iterations) 
     {
         std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
         ierr = PETSC_TRUE;
-        if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+        if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
     }
-    else if (ls_factor <= richard_min_ls_factor) {
+    else if (ls_factor <= rsp.min_ls_factor) {
         std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
         ierr = PETSC_TRUE;
-        if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+        if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
     }
@@ -1260,7 +1252,7 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
 
         if (ls_factor == 1) {
             std::string reason = "Full linear step accepted";
-            if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+            if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
                 std::cout << tag << tag_ls << reason << std::endl;
             }
         }

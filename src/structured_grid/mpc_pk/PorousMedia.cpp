@@ -1759,7 +1759,17 @@ PorousMedia::richard_init_to_steady()
 
 		RichardSolver* rs = 0;
                 if (steady_use_PETSc_snes) {
-                    rs = new RichardSolver(*(PMParent()));
+		  RichardSolver::RSParams rsparams;
+		  rsparams.max_ls_iterations = richard_max_ls_iterations;
+		  rsparams.min_ls_factor = richard_min_ls_factor;
+		  rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
+		  rsparams.ls_reduction_factor = richard_ls_reduction_factor;
+		  rsparams.monitor_line_search = richard_monitor_line_search;
+		  
+		  // FIXME: Still should gather/pass the following options, if default values not ok
+		  // use_fd_jac, use_dense_Jacobian, upwind_krel, pressure_maxorder, errfd
+
+		  rs = new RichardSolver(*(PMParent()),rsparams);
                 }
 
                 int total_num_Newton_iterations = 0;

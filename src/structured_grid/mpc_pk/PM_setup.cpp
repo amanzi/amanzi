@@ -1531,9 +1531,13 @@ void PorousMedia::read_prob()
   pb.query("steady_use_PETSc_snes",steady_use_PETSc_snes);
   pb.query("steady_abort_on_psuedo_timestep_failure",steady_abort_on_psuedo_timestep_failure);
 
+  pb.query("richard_max_ls_iterations",richard_max_ls_iterations);
+  pb.query("richard_min_ls_factor",richard_min_ls_factor);
+  pb.query("richard_ls_acceptance_factor",richard_ls_acceptance_factor);
+  pb.query("richard_ls_reduction_factor",richard_ls_reduction_factor);
   pb.query("richard_monitor_linear_solve",richard_monitor_linear_solve);
   pb.query("richard_monitor_line_search",richard_monitor_line_search);
-  
+
   // Get timestepping parameters.
   pb.get("cfl",cfl);
   pb.query("init_shrink",init_shrink);
