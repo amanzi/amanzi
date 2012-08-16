@@ -32,7 +32,7 @@
 
   <ParameterList name="Execution Control">
     <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00000"/> -->
-    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00000"/> -->
+    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="ml_chk00000"/> -->
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
@@ -40,6 +40,7 @@
       <ParameterList name="Transient">
         <Parameter name="Start" type="double" value="0"/>
         <Parameter name="End" type="double" value="315360000"/>
+        <Parameter name="End" type="double" value="415576000000000"/>
         <Parameter name="Initial Time Step" type="double" value="1.e7"/>
 	<Parameter name="Maximum Time Step Size" type="double" value="1e8"/>
 	<Parameter name="Maximum Cycle Number" type="int" value="0"/>
@@ -59,14 +60,12 @@
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
           <Parameter name="do_richard_sat_solve" type="int" value="0"/>
 
-          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
+          <Parameter name="richard_init_to_steady_verbose" type="int" value="3"/>
           <Parameter name="steady_limit_iterations" type="int" value="100"/>
-          <Parameter name="steady_max_iterations" type="int" value="60"/>
+          <Parameter name="steady_max_iterations" type="int" value="30"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
-          <Parameter name="steady_min_iterations" type="int" value="6"/>
+          <Parameter name="steady_min_iterations" type="int" value="50"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="10"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="100"/>
           <Parameter name="steady_min_iterations_2" type="int" value="1"/>
           <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
@@ -77,24 +76,24 @@
           <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
           <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
           <Parameter name="steady_init_time_step" type="double" value="9.467e5"/>
-          <Parameter name="steady_init_time_step" type="double" value="1.e7"/>
-          <Parameter name="steady_max_time_steps" type="int" value="200"/>
+          <Parameter name="steady_init_time_step" type="double" value="1.e4"/>
+          <Parameter name="steady_max_time_steps" type="int" value="100"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e14"/>
-          <Parameter name="steady_die_on_failed_timestep" type="int" value="0"/>
-          <Parameter name="steady_use_PETSc_snes" type="bool" value="false"/>
+          <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
+          <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
 
-          <Parameter name="richard_solver_verbose" type="int" value="1"/>
+          <Parameter name="richard_solver_verbose" type="int" value="3"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="0"/>
-          <Parameter name="verbose" type="double" value="2"/>
+          <Parameter name="v" type="double" value="3"/>
 
         </ParameterList>
       </ParameterList>
@@ -143,25 +142,31 @@
     <ParameterList name="SoilLower">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{0,0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{12,12}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{12,8.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SoilUpper">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0,18}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0,12.5}"/>
         <Parameter name="High Coordinate" type="Array double" value="{12,24}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="SoilLeft">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0,8.5}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{5.5,12.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SoilRight">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{3,12}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{12,18}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{6.5,8.5}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{12,12.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Tank">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0,12}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{3,18}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{5.5,8.5}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{6.5,12.5}"/>
       </ParameterList>
     </ParameterList>
 
@@ -202,7 +207,7 @@
         <Parameter name="m" type="double" value="0.291"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
-      <Parameter name="Assigned Regions" type="Array string" value="{SoilLower, SoilUpper, SoilRight}"/>
+      <Parameter name="Assigned Regions" type="Array string" value="{SoilLower, SoilUpper, SoilLeft, SoilRight}"/>
     </ParameterList>
 
     <ParameterList name="Concrete">

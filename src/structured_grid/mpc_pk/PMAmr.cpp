@@ -126,6 +126,15 @@ PMAmr::coarseTimeStep (Real stop_time)
                                   stop_time,
                                   post_regrid_flag);
     }
+    else if (PorousMedia::DtInit() > 0) 
+    {
+        int n_factor = 1;
+        for (int i = 0; i <= max_level; i++)
+        {
+            n_factor   *= n_cycle[i];
+            dt_level[i] = PorousMedia::DtInit()/( (Real)n_factor );
+        }
+    }
 
 
     if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())

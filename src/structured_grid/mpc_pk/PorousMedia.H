@@ -587,9 +587,6 @@ public:
   void diff_capillary_update   (Real dt,
 				int  corrector,
 				MultiFab* u_mac = 0);
-#ifdef BL_USE_PETSC
-  RichardNLSdata::Reason richard_PETSc_pressure_solve (Real dt, RichardSolver& rs, RichardNLSdata& nl_data);
-#endif
 
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
@@ -1010,6 +1007,8 @@ public:
 
   void set_vel_from_bcs(Real      time,
 			MultiFab* vel);
+
+  static Real DtInit() {return dt_init;}
 
 protected:
 
