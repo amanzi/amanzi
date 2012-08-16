@@ -116,7 +116,7 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{2, 2, 2, 2}"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{4, 4, 4, 4}"/>
         <Parameter name="Regrid Interval" type="Array int" value="{2}"/>

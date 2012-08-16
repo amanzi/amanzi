@@ -13,8 +13,9 @@
 static bool write_matrix = false;
 
 // FIXME: Should be user-settable at runtime
+static bool use_fd_jac = true;
+static int upwind_krel = 0;
 static int pressure_maxorder = 4;
-//static Real errfd = 1.e-10;
 static Real errfd = 1.e-8;
 
 #if defined(BUILD_DENSE_J)
@@ -25,221 +26,9 @@ static int max_number_nonzero_J_cols = 1 + (pressure_maxorder-1)*(2*BL_SPACEDIM)
 
 static int richard_max_ls_iterations = 10;
 static Real richard_min_ls_factor = 1.e-8;
-//static Real richard_ls_acceptance_factor = 1.4;
-static Real richard_ls_acceptance_factor = 1.1;
+static Real richard_ls_acceptance_factor = 1.4;
 static Real richard_ls_reduction_factor = 0.1;
 static int richard_monitor_line_search = 0;
-
-PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
-{
-    PetscErrorCode ierr; 
-    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
-    if (!rs) {
-        BoxLib::Abort("Bad cast in RichardRes_DpDt");
-    }
-    Layout& layout = PMAmr::GetLayout();
-    MFTower& xMFT = rs->GetPressure();
-    MFTower& fMFT = rs->GetResidual();
-
-    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
-    ierr = layout.VecToMFTower(fMFT,f,0); CHKPETSC(ierr);
-
-    Real time = rs->GetTime();
-    Real dt = rs->GetDt();
-    rs->DpDtResidual(fMFT,xMFT,time,dt);
-
-    ierr = layout.MFTowerToVec(x,xMFT,0); CHKPETSC(ierr);
-    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
-
-    return 0;
-}
-
-PetscErrorCode RichardRes_DpDt_Alt(SNES snes,Vec x,Vec f,void *dummy)
-{
-    PetscErrorCode ierr; 
-    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
-    if (!rs) {
-        BoxLib::Abort("Bad cast in RichardRes_DpDt");
-    }
-    Layout& layout = PMAmr::GetLayout();
-    MFTower& xMFT = rs->GetPressure();
-    MFTower& fMFT = rs->GetResidual();
-
-    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
-    ierr = layout.VecToMFTower(fMFT,f,0); CHKPETSC(ierr);
-
-    Real time = rs->GetTime();
-    Real dt = rs->GetDt();
-    rs->DpDtResidual_Alt(fMFT,xMFT,time,dt);
-
-    ierr = layout.MFTowerToVec(x,xMFT,0); CHKPETSC(ierr);
-    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
-
-    return 0;
-}
-
-#if defined(PETSC_3_2)
-
-struct CheckCtx
-{
-    RichardSolver* rs;
-    RichardNLSdata* nld;
-};
-
-PetscErrorCode RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy)
-{
-  PetscErrorCode ierr;
-  RichardSolver* rs = static_cast<RichardSolver*>(dummy);
-  if (!rs) {
-    BoxLib::Abort("Bad cast in RichardJacFromPM");
-  }
-  Layout& layout = PMAmr::GetLayout();
-  MFTower& xMFT = rs->GetPressure();
-  
-  ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
-  Real dt = rs->GetDt();
-  rs->CreateJac(*jacpre,xMFT,dt);
-  if (*jac != *jacpre) {
-    ierr = MatAssemblyBegin(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-    ierr = MatAssemblyEnd(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-  }
-  PetscFunctionReturn(0);
-} 
-
-/*
-   PostCheck - User-defined routine that checks the validity of
-   candidate steps of a line search method.  Set by SNESLineSearchSetPostCheck().
-   In:
-   snes 	- nonlinear context
-   checkctx 	- optional user-defined context for use by step checking routine
-   x     	- previous iterate
-   y 	        - new search direction and length
-   w 	        - current candidate iterate
-   
-   Out:
-   y            - search direction (possibly changed)
-   w            - current iterate (possibly modified)
-   changed_y 	- indicates search direction was changed by this routine
-   changed_w 	- indicates current iterate was changed by this routine 
-
- */
-PetscErrorCode PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
-{
-    std::string tag = "       Newton step: ";
-    std::string tag_ls = "  line-search:  ";
-    CheckCtx* check_ctx = (CheckCtx*)ctx;
-    RichardSolver* rs = check_ctx->rs;
-    RichardNLSdata* nld = check_ctx->nld;
-
-    if (rs==0) {
-        BoxLib::Abort("Context cast failed in PostCheck");
-    }
-
-    PetscErrorCode ierr;
-    PetscReal fnorm, xnorm, ynorm, gnorm;
-
-    PetscErrorCode (*func)(SNES,Vec,Vec,void*);
-    void *fctx;
-
-    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
-
-    Vec& F = rs->GetResidualV();
-    Vec& G = rs->GetTrialResV();
-    
-    (*func)(snes,x,F,fctx);
-    ierr = VecNorm(F,NORM_2,&fnorm);
-
-    (*func)(snes,w,G,fctx);
-    ierr = VecNorm(G,NORM_2,&gnorm);    
-    
-    bool norm_acceptable = gnorm < fnorm * richard_ls_acceptance_factor;
-    int ls_iterations = 0;
-    Real ls_factor = 1;
-    bool finished = norm_acceptable 
-        || ls_iterations > richard_max_ls_iterations
-        || ls_factor <= richard_min_ls_factor;
-    
-    while (!finished) 
-    {
-        ls_factor *= richard_ls_reduction_factor;
-        if (ls_factor < richard_min_ls_factor) {
-            ls_factor = richard_min_ls_factor;
-        }
-        PetscReal mone = -1;
-        ierr=VecWAXPY(w,mone*ls_factor,y,x); /* w = -y + x */
-        *changed_w = PETSC_TRUE;
-        
-        (*func)(snes,w,G,fctx);
-        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
-        norm_acceptable = gnorm < fnorm * richard_ls_acceptance_factor;
-        
-        if (ls_factor < 1 
-            && richard_monitor_line_search 
-            && ParallelDescriptor::IOProcessor())
-	{
-            std::cout << tag << tag_ls
-                      << "iter=" << ls_iterations
-                      << ", step length=" << ls_factor
-                      << ", init residual norm=" << fnorm
-                      << ", new residual norm=" << gnorm << '\n';
-	}
-        
-        finished = norm_acceptable 
-            || ls_iterations > richard_max_ls_iterations
-            || ls_factor <= richard_min_ls_factor;      
-        ls_iterations++;
-    }
-    
-    if (ls_iterations > richard_max_ls_iterations) 
-    {
-        std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
-        ierr = PETSC_TRUE;
-        if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
-            std::cout << tag << tag_ls << reason << std::endl;
-        }
-    }
-    else if (ls_factor <= richard_min_ls_factor) {
-        std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
-        ierr = PETSC_TRUE;
-        if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
-            std::cout << tag << tag_ls << reason << std::endl;
-        }
-    }
-    else {
-        ierr = PETSC_FALSE;
-
-        if (ls_factor == 1) {
-            std::string reason = "Full linear step accepted";
-            if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
-                std::cout << tag << tag_ls << reason << std::endl;
-            }
-        }
-        else {
-            // Set update to the one actually used
-            ierr=VecScale(y,ls_factor);
-            *changed_y = PETSC_TRUE;
-        }
-
-        int iters = nld->NLIterationsTaken() + 1;
-#if 0
-        Real dt = rs->GetDt();
-        Real epsilon = std::max(1.e-13,3.e-7/dt);
-        PetscErrorCode ierr1 = MatFDColoringSetParameters(rs->GetMatFDColoring(),epsilon,PETSC_DEFAULT);        
-        ierr1 = VecNorm(y,NORM_2,&ynorm);
-
-        std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
-#endif
-
-        // Copy current res into mftower, write levels
-        MFTower& fMFT = rs->GetResidual();
-	fMFT.Write(BoxLib::Concatenate("JUNK/Res_",iters,2));
-        nld->SetNLIterationsTaken(iters);
-    }
-    return ierr;
-}
-
-#endif
-
 static RichardSolver* static_rs_ptr = 0;
 
 void
@@ -248,309 +37,21 @@ RichardSolver::SetTheRichardSolver(RichardSolver* ptr)
     static_rs_ptr = ptr;
 }
 
+// Forward declaration of local helper functions
+static void MatSqueeze(Mat& J);
+PetscErrorCode RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx);
+PetscErrorCode RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx);
+PetscErrorCode PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w);
+PetscErrorCode RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy);
+PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy);
+PetscErrorCode RichardRes_DpDt_Alt(SNES snes,Vec x,Vec f,void *dummy);
 
-#if defined(PETSC_3_2)
-#include <private/matimpl.h>
-#else
-#include <petsc-private/matimpl.h> 
-#endif
-
-PetscErrorCode  RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
+struct CheckCtx
 {
-  PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
-  PetscErrorCode ierr;
-  PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
-  PetscScalar    dx,*y,*xx,*w3_array;
-  PetscScalar    *vscale_array, *sigma_array;
-  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
-  Vec            w1=coloring->w1,w2=coloring->w2,w3;
-  void           *fctx = coloring->fctx;
-  PetscBool      flg = PETSC_FALSE;
-  PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
-  Vec            x1_tmp;
+    RichardSolver* rs;
+    RichardNLSdata* nld;
+};
 
-  PetscFunctionBegin;    
-  PetscValidHeaderSpecific(J,MAT_CLASSID,1);
-  PetscValidHeaderSpecific(coloring,MAT_FDCOLORING_CLASSID,2);
-  PetscValidHeaderSpecific(x1,VEC_CLASSID,3);
-  if (!f) SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_WRONGSTATE,"Must call MatFDColoringSetFunction()");
-
-  ierr = PetscLogEventBegin(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
-  ierr = MatSetUnfactored(J);CHKPETSC(ierr);
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_fd_coloring_dont_rezero",&flg,PETSC_NULL);CHKPETSC(ierr);
-  if (flg) {
-    ierr = PetscInfo(coloring,"Not calling MatZeroEntries()\n");CHKPETSC(ierr);
-  } else {
-    PetscBool  assembled;
-    ierr = MatAssembled(J,&assembled);CHKPETSC(ierr);
-    if (assembled) {
-      ierr = MatZeroEntries(J);CHKPETSC(ierr);
-    }
-  }
-
-  x1_tmp = x1; 
-  if (!coloring->vscale){ 
-    ierr = VecDuplicate(x1_tmp,&coloring->vscale);CHKPETSC(ierr);
-  }
-    
-  /*
-    This is a horrible, horrible, hack. See DMMGComputeJacobian_Multigrid() it inproperly sets
-    coloring->F for the coarser grids from the finest
-  */
-  if (coloring->F) {
-    ierr = VecGetLocalSize(coloring->F,&m1);CHKPETSC(ierr);
-    ierr = VecGetLocalSize(w1,&m2);CHKPETSC(ierr);
-    if (m1 != m2) {  
-      coloring->F = 0; 
-      }    
-    }   
-
-
-  RichardSolver* rs = static_rs_ptr;
-  BL_ASSERT(rs);
-  
-  Layout& layout = PMAmr::GetLayout();
-  int nLevs = layout.NumLevels();
-  PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
-  for (int lev=0; lev<nLevs; ++lev) {
-      pcap_params.set(lev, rs->GetPMlevel(lev).PCapParams());
-  }
-  MFTower PCapParamsMFT(layout,pcap_params);
-  Vec& SigmaV = rs->GetPCapParamsV();
-  ierr = layout.MFTowerToVec(SigmaV,PCapParamsMFT,2); CHKPETSC(ierr);
-  ierr = VecGetOwnershipRange(w1,&start,&end);CHKPETSC(ierr); /* OwnershipRange is used by ghosted x! */
-      
-  /* Set w1 = F(x1) */
-  if (coloring->F) {
-    w1          = coloring->F; /* use already computed value of function */
-    coloring->F = 0; 
-  } else {
-    ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-    ierr = (*f)(sctx,x1_tmp,w1,fctx);CHKPETSC(ierr);
-    ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-  }
-      
-  if (!coloring->w3) {
-    ierr = VecDuplicate(x1_tmp,&coloring->w3);CHKPETSC(ierr);
-    ierr = PetscLogObjectParent(coloring,coloring->w3);CHKPETSC(ierr);
-  }
-  w3 = coloring->w3;
-
-    /* Compute all the local scale factors, including ghost points */
-  ierr = VecGetLocalSize(x1_tmp,&N);CHKPETSC(ierr);
-  ierr = VecGetArray(x1_tmp,&xx);CHKPETSC(ierr);
-  ierr = VecGetArray(SigmaV,&sigma_array);CHKPETSC(ierr);
-  ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  if (ctype == IS_COLORING_GHOSTED){
-    col_start = 0; col_end = N;
-  } else if (ctype == IS_COLORING_GLOBAL){
-    xx = xx - start;
-    sigma_array = sigma_array - start;
-    vscale_array = vscale_array - start;
-    col_start = start; col_end = N + start;
-  }
-  for (col=col_start; col<col_end; col++) { 
-      vscale_array[col] = (PetscScalar)sigma_array[col] / epsilon;
-  } 
-  if (ctype == IS_COLORING_GLOBAL)  vscale_array = vscale_array + start;      
-  ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  ierr = VecRestoreArray(SigmaV,&sigma_array);CHKPETSC(ierr);
-
-  if (ctype == IS_COLORING_GLOBAL){
-      ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
-      ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
-  }
-  
-  if (coloring->vscaleforrow) {
-    vscaleforrow = coloring->vscaleforrow;
-  } else SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_NULL,"Null Object: coloring->vscaleforrow");
-
-  /*
-    Loop over each color
-  */
-  ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  for (k=0; k<coloring->ncolors; k++) { 
-    coloring->currentcolor = k;
-    ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
-    ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;
-    /*
-      Loop over each column associated with color 
-      adding the perturbation to the vector w3.
-    */
-    for (l=0; l<coloring->ncolumns[k]; l++) {
-      col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
-      w3_array[col] += 1/vscale_array[col];
-    } 
-    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
-    ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
-
-    /*
-      Evaluate function at w3 = x1 + dx (here dx is a vector of perturbations)
-                           w2 = F(x1 + dx) - F(x1)
-    */
-    ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-    ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-    ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-    ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-        
-    /*
-      Loop over rows of vector, putting results into Jacobian matrix
-    */
-    ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
-    for (l=0; l<coloring->nrows[k]; l++) {
-      row    = coloring->rows[k][l];             /* local row index */
-      col    = coloring->columnsforrow[k][l];    /* global column index */
-      y[row] *= vscale_array[vscaleforrow[k][l]];
-      srow   = row + start;
-      ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
-    }
-    ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
-  } /* endof for each color */
-  if (ctype == IS_COLORING_GLOBAL) xx = xx + start; 
-  ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  ierr = VecRestoreArray(x1_tmp,&xx);CHKPETSC(ierr);
-   
-  coloring->currentcolor = -1;
-  ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-  ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-  ierr = PetscLogEventEnd(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
-
-  flg  = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
-  if (flg) {
-    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULL);CHKPETSC(ierr);
-  }
-
-  if (write_matrix) {
-      PetscViewer viewer;
-#if defined(BUILD_DENSE_J)
-      std::cout << "Writing/checking dense matrix" << std::endl;
-
-      std::string fname = "junk_dense.bin";
-      
-      std::string oname = "junk_sparse.bin";
-      PetscViewerBinaryOpen(PETSC_COMM_WORLD,oname.c_str(),FILE_MODE_READ,&viewer);
-      Mat A;
-      MatCreate(PETSC_COMM_WORLD,&A);
-      MatSetType(A,MATSEQAIJ);
-      MatLoad(A,viewer);
-      PetscViewerDestroy(&viewer);
-
-      int rstart, rend;
-      ierr = MatGetOwnershipRange(J,&rstart,&rend);CHKPETSC(ierr);
-      int nrows = 0;
-      int Jncols, Ancols;
-      const PetscInt *Jcols, *Acols;
-      const PetscScalar *Jvals, *Avals;
-      PetscReal dtol = 1.e-20;
-      for (int row=rstart; row<rend; row++){
-          ierr = MatGetRow(J,row,&Jncols,&Jcols,&Jvals);CHKPETSC(ierr);
-          ierr = MatGetRow(A,row,&Ancols,&Acols,&Avals);CHKPETSC(ierr);
-          for (int j=0; j<Jncols; j++){
-              PetscScalar Jval = Jvals[j];
-              int Aptr = -1;
-              for (int jj=0; jj<Ancols; ++jj) {
-                  if (Acols[jj] == Jcols[j]) {
-                      Aptr = jj;
-                  }
-              }
-              if (Aptr<0 && std::abs(Jval)>dtol) {
-                  std::cout << "Row: " << row << " missing col: " << Jcols[j] << std::endl;
-              }
-              else {
-                  PetscScalar Aval = Avals[Aptr];
-                  if (std::abs(Jval-Aval) >= dtol) {
-                      std::cout << "Row: " << row << " missing col: " << Jcols[j] 
-                                << " vals: " << Jval  << " " << Aval << std::endl;
-                  }
-                  else {
-                      std::cout << "Row: " << row << " col: " << Jcols[j] << " diff: " 
-                                << Jval - Aval << " mag: " << std::abs(Jval) << std::endl;
-                  }
-              }
-          }
-          ierr = MatRestoreRow(J,row,&Jncols,&Jcols,&Jvals);CHKPETSC(ierr);
-          ierr = MatRestoreRow(A,row,&Ancols,&Acols,&Avals);CHKPETSC(ierr);
-      }
-#else
-      std::cout << "Writing sparse matrix" << std::endl;
-      std::string fname = "junk_sparse.bin";
-#endif
-      PetscViewerBinaryOpen(PETSC_COMM_WORLD,fname.c_str(),FILE_MODE_WRITE,&viewer);
-      MatView(J,viewer);
-      PetscViewerDestroy(&viewer);
-
-      BoxLib::Abort();
-  }
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx)
-{
-  MatFDColoring  color = (MatFDColoring) ctx;
-  PetscErrorCode ierr;
-  Vec            f;
-  PetscErrorCode (*ff)(void),(*fd)(void);
-
-  PetscFunctionBegin;
-  PetscValidHeaderSpecific(color,MAT_FDCOLORING_CLASSID,6);
-  *flag = SAME_NONZERO_PATTERN;
-  ierr  = SNESGetFunction(snes,&f,(PetscErrorCode (**)(SNES,Vec,Vec,void*))&ff,0);CHKPETSC(ierr);
-  ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULL);CHKPETSC(ierr);
-  if (fd == ff) { /* reuse function value computed in SNES */
-    ierr  = MatFDColoringSetF(color,f);CHKPETSC(ierr);
-  }
-  ierr  = RichardMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
-  if (*J != *B) {
-    ierr = MatAssemblyBegin(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-    ierr = MatAssemblyEnd(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-  }
-  PetscFunctionReturn(0);
-}
-
-
-static void
-MatSqueeze(Mat& J) {
-
-  PetscErrorCode ierr;
-  Mat A;
-  MatCreate(PETSC_COMM_WORLD,&A);
-  MatSetType(A,MATSEQAIJ);
-  Layout& layout = PMAmr::GetLayout();
-  int n = layout.NumberOfLocalNodeIds();
-  int N = layout.NumberOfGlobalNodeIds();
-
-  ierr = MatSetSizes(A,n,n,N,N);  CHKPETSC(ierr);
-  
-  int rstart, rend;
-  ierr = MatGetOwnershipRange(J,&rstart,&rend);CHKPETSC(ierr);
-  int nrows = 0;
-  int Jncols, Ancols;
-  const PetscInt *Jcols;
-  const PetscScalar *Jvals;
-  PetscReal dtol = 1.e-20;
-  for (int row=rstart; row<rend; row++){
-    Array<PetscInt> Acols(0);
-    Array<PetscReal> Avals(0);
-    ierr = MatGetRow(J,row,&Jncols,&Jcols,&Jvals);CHKPETSC(ierr);
-    for (int j=0; j<Jncols; j++){
-      PetscScalar Jval = Jvals[j];
-      if (std::abs(Jval) > dtol) {
-	Acols.push_back(Jcols[j]);
-	Avals.push_back(Jval);
-      }
-    }
-    BL_ASSERT(Acols.size()>0 && Acols.size()==Avals.size());
-    int one = 1;
-    ierr = MatSetValues(A,one,&row,Avals.size(),Acols.dataPtr(),Avals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
-    ierr = MatRestoreRow(J,row,&Jncols,&Jcols,&Jvals);CHKPETSC(ierr);
-  }
-  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
-  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
-
-  MatView(A,PETSC_VIEWER_STDOUT_SELF);
-}
 
 RichardSolver::RichardSolver(PMAmr& _pm_amr)
   : pm_amr(_pm_amr)
@@ -565,11 +66,13 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   Layout& layout = PMAmr::GetLayout();
   BL_ASSERT(nLevs == layout.NumLevels());
 
+  // These will be set prior to each solve call in order to support the case that
+  // the unlying multifabs get changed between repeated calls to this solver (AMR
+  // typically advances the state data by swapping the underlying pointers).
   RhoSatOld = 0;
   RhoSatNew = 0;
   Pnew = 0;
 
-  // ResetRhoSat();
   PArray<MultiFab> lambda(nLevs,PArrayNoManage);
   PArray<MultiFab> kappacc(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
@@ -650,7 +153,6 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
   ierr = SNESSetFunction(snes,RhsV,RichardRes_DpDt,(void*)(this)); CHKPETSC(ierr);
 
-  bool use_fd_jac = false;
   if (use_fd_jac) {
     ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
@@ -1087,7 +589,7 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
                 FORT_RS_CTE_UPW(efab.dataPtr(), ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
 				cfab.dataPtr(), ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
 				sgnfab.dataPtr(),ARLIM(sgnfab.loVect()), ARLIM(sgnfab.hiVect()),
-				vccbox.loVect(), vccbox.hiVect(), &d, &nComp, &dir_bc_lo, &dir_bc_hi);
+				vccbox.loVect(), vccbox.hiVect(), &d, &nComp, &dir_bc_lo, &dir_bc_hi, &upwind_krel);
             }
         }
     }
@@ -1579,3 +1081,457 @@ void RichardSolver::CreateJac(Mat& J,
   ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
 }
+
+PetscErrorCode 
+RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
+{
+    PetscErrorCode ierr; 
+    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+    if (!rs) {
+        BoxLib::Abort("Bad cast in RichardRes_DpDt");
+    }
+    Layout& layout = PMAmr::GetLayout();
+    MFTower& xMFT = rs->GetPressure();
+    MFTower& fMFT = rs->GetResidual();
+
+    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+    ierr = layout.VecToMFTower(fMFT,f,0); CHKPETSC(ierr);
+
+    Real time = rs->GetTime();
+    Real dt = rs->GetDt();
+    rs->DpDtResidual(fMFT,xMFT,time,dt);
+
+    ierr = layout.MFTowerToVec(x,xMFT,0); CHKPETSC(ierr);
+    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+
+    return 0;
+}
+
+PetscErrorCode 
+RichardRes_DpDt_Alt(SNES snes,Vec x,Vec f,void *dummy)
+{
+    PetscErrorCode ierr; 
+    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+    if (!rs) {
+        BoxLib::Abort("Bad cast in RichardRes_DpDt");
+    }
+    Layout& layout = PMAmr::GetLayout();
+    MFTower& xMFT = rs->GetPressure();
+    MFTower& fMFT = rs->GetResidual();
+
+    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+    ierr = layout.VecToMFTower(fMFT,f,0); CHKPETSC(ierr);
+
+    Real time = rs->GetTime();
+    Real dt = rs->GetDt();
+    rs->DpDtResidual_Alt(fMFT,xMFT,time,dt);
+
+    ierr = layout.MFTowerToVec(x,xMFT,0); CHKPETSC(ierr);
+    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+
+    return 0;
+}
+
+#if defined(PETSC_3_2)
+
+PetscErrorCode 
+RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy)
+{
+  PetscErrorCode ierr;
+  RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+  if (!rs) {
+    BoxLib::Abort("Bad cast in RichardJacFromPM");
+  }
+  Layout& layout = PMAmr::GetLayout();
+  MFTower& xMFT = rs->GetPressure();
+  
+  ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+  Real dt = rs->GetDt();
+  rs->CreateJac(*jacpre,xMFT,dt);
+  if (*jac != *jacpre) {
+    ierr = MatAssemblyBegin(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+    ierr = MatAssemblyEnd(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  }
+  PetscFunctionReturn(0);
+} 
+
+/*
+   PostCheck - User-defined routine that checks the validity of
+   candidate steps of a line search method.  Set by SNESLineSearchSetPostCheck().
+   In:
+   snes 	- nonlinear context
+   checkctx 	- optional user-defined context for use by step checking routine
+   x     	- previous iterate
+   y 	        - new search direction and length
+   w 	        - current candidate iterate
+   
+   Out:
+   y            - search direction (possibly changed)
+   w            - current iterate (possibly modified)
+   changed_y 	- indicates search direction was changed by this routine
+   changed_w 	- indicates current iterate was changed by this routine 
+
+ */
+PetscErrorCode 
+PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
+{
+    std::string tag = "       Newton step: ";
+    std::string tag_ls = "  line-search:  ";
+    CheckCtx* check_ctx = (CheckCtx*)ctx;
+    RichardSolver* rs = check_ctx->rs;
+    RichardNLSdata* nld = check_ctx->nld;
+
+    if (rs==0) {
+        BoxLib::Abort("Context cast failed in PostCheck");
+    }
+
+    PetscErrorCode ierr;
+    PetscReal fnorm, xnorm, ynorm, gnorm;
+
+    PetscErrorCode (*func)(SNES,Vec,Vec,void*);
+    void *fctx;
+
+    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+
+    Vec& F = rs->GetResidualV();
+    Vec& G = rs->GetTrialResV();
+    
+    (*func)(snes,x,F,fctx);
+    ierr = VecNorm(F,NORM_2,&fnorm);
+
+    (*func)(snes,w,G,fctx);
+    ierr = VecNorm(G,NORM_2,&gnorm);    
+    
+    bool norm_acceptable = gnorm < fnorm * richard_ls_acceptance_factor;
+    int ls_iterations = 0;
+    Real ls_factor = 1;
+    bool finished = norm_acceptable 
+        || ls_iterations > richard_max_ls_iterations
+        || ls_factor <= richard_min_ls_factor;
+    
+    while (!finished) 
+    {
+        ls_factor *= richard_ls_reduction_factor;
+        if (ls_factor < richard_min_ls_factor) {
+            ls_factor = richard_min_ls_factor;
+        }
+        PetscReal mone = -1;
+        ierr=VecWAXPY(w,mone*ls_factor,y,x); /* w = -y + x */
+        *changed_w = PETSC_TRUE;
+        
+        (*func)(snes,w,G,fctx);
+        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
+        norm_acceptable = gnorm < fnorm * richard_ls_acceptance_factor;
+        
+        if (ls_factor < 1 
+            && richard_monitor_line_search 
+            && ParallelDescriptor::IOProcessor())
+	{
+            std::cout << tag << tag_ls
+                      << "iter=" << ls_iterations
+                      << ", step length=" << ls_factor
+                      << ", init residual norm=" << fnorm
+                      << ", new residual norm=" << gnorm << '\n';
+	}
+        
+        finished = norm_acceptable 
+            || ls_iterations > richard_max_ls_iterations
+            || ls_factor <= richard_min_ls_factor;      
+        ls_iterations++;
+    }
+    
+    if (ls_iterations > richard_max_ls_iterations) 
+    {
+        std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
+        ierr = PETSC_TRUE;
+        if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+            std::cout << tag << tag_ls << reason << std::endl;
+        }
+    }
+    else if (ls_factor <= richard_min_ls_factor) {
+        std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
+        ierr = PETSC_TRUE;
+        if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+            std::cout << tag << tag_ls << reason << std::endl;
+        }
+    }
+    else {
+        ierr = PETSC_FALSE;
+
+        if (ls_factor == 1) {
+            std::string reason = "Full linear step accepted";
+            if (ParallelDescriptor::IOProcessor() && richard_monitor_line_search) {
+                std::cout << tag << tag_ls << reason << std::endl;
+            }
+        }
+        else {
+            // Set update to the one actually used
+            ierr=VecScale(y,ls_factor);
+            *changed_y = PETSC_TRUE;
+        }
+
+        int iters = nld->NLIterationsTaken() + 1;
+#if 0
+        Real dt = rs->GetDt();
+        Real epsilon = std::max(1.e-13,3.e-7/dt);
+        PetscErrorCode ierr1 = MatFDColoringSetParameters(rs->GetMatFDColoring(),epsilon,PETSC_DEFAULT);        
+        ierr1 = VecNorm(y,NORM_2,&ynorm);
+
+        std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
+#endif
+
+        // Copy current res into mftower, write levels
+        MFTower& fMFT = rs->GetResidual();
+	fMFT.Write(BoxLib::Concatenate("JUNK/Res_",iters,2));
+        nld->SetNLIterationsTaken(iters);
+    }
+    return ierr;
+}
+
+#endif
+
+
+#if defined(PETSC_3_2)
+#include <private/matimpl.h>
+#else
+#include <petsc-private/matimpl.h> 
+#endif
+
+PetscErrorCode  
+RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
+{
+  PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
+  PetscErrorCode ierr;
+  PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
+  PetscScalar    dx,*y,*xx,*w3_array;
+  PetscScalar    *vscale_array, *sigma_array;
+  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
+  Vec            w1=coloring->w1,w2=coloring->w2,w3;
+  void           *fctx = coloring->fctx;
+  PetscBool      flg = PETSC_FALSE;
+  PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
+  Vec            x1_tmp;
+
+  PetscFunctionBegin;    
+  PetscValidHeaderSpecific(J,MAT_CLASSID,1);
+  PetscValidHeaderSpecific(coloring,MAT_FDCOLORING_CLASSID,2);
+  PetscValidHeaderSpecific(x1,VEC_CLASSID,3);
+  if (!f) SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_WRONGSTATE,"Must call MatFDColoringSetFunction()");
+
+  ierr = PetscLogEventBegin(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
+  ierr = MatSetUnfactored(J);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_fd_coloring_dont_rezero",&flg,PETSC_NULL);CHKPETSC(ierr);
+  if (flg) {
+    ierr = PetscInfo(coloring,"Not calling MatZeroEntries()\n");CHKPETSC(ierr);
+  } else {
+    PetscBool  assembled;
+    ierr = MatAssembled(J,&assembled);CHKPETSC(ierr);
+    if (assembled) {
+      ierr = MatZeroEntries(J);CHKPETSC(ierr);
+    }
+  }
+
+  x1_tmp = x1; 
+  if (!coloring->vscale){ 
+    ierr = VecDuplicate(x1_tmp,&coloring->vscale);CHKPETSC(ierr);
+  }
+    
+  /*
+    This is a horrible, horrible, hack. See DMMGComputeJacobian_Multigrid() it inproperly sets
+    coloring->F for the coarser grids from the finest
+  */
+  if (coloring->F) {
+    ierr = VecGetLocalSize(coloring->F,&m1);CHKPETSC(ierr);
+    ierr = VecGetLocalSize(w1,&m2);CHKPETSC(ierr);
+    if (m1 != m2) {  
+      coloring->F = 0; 
+      }    
+    }   
+
+
+  RichardSolver* rs = static_rs_ptr;
+  BL_ASSERT(rs);
+  
+  Layout& layout = PMAmr::GetLayout();
+  int nLevs = layout.NumLevels();
+  PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
+  for (int lev=0; lev<nLevs; ++lev) {
+      pcap_params.set(lev, rs->GetPMlevel(lev).PCapParams());
+  }
+  MFTower PCapParamsMFT(layout,pcap_params);
+  Vec& SigmaV = rs->GetPCapParamsV();
+  ierr = layout.MFTowerToVec(SigmaV,PCapParamsMFT,2); CHKPETSC(ierr);
+  ierr = VecGetOwnershipRange(w1,&start,&end);CHKPETSC(ierr); /* OwnershipRange is used by ghosted x! */
+      
+  /* Set w1 = F(x1) */
+  if (coloring->F) {
+    w1          = coloring->F; /* use already computed value of function */
+    coloring->F = 0; 
+  } else {
+    ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+    ierr = (*f)(sctx,x1_tmp,w1,fctx);CHKPETSC(ierr);
+    ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+  }
+      
+  if (!coloring->w3) {
+    ierr = VecDuplicate(x1_tmp,&coloring->w3);CHKPETSC(ierr);
+    ierr = PetscLogObjectParent(coloring,coloring->w3);CHKPETSC(ierr);
+  }
+  w3 = coloring->w3;
+
+    /* Compute all the local scale factors, including ghost points */
+  ierr = VecGetLocalSize(x1_tmp,&N);CHKPETSC(ierr);
+  ierr = VecGetArray(x1_tmp,&xx);CHKPETSC(ierr);
+  ierr = VecGetArray(SigmaV,&sigma_array);CHKPETSC(ierr);
+  ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+  if (ctype == IS_COLORING_GHOSTED){
+    col_start = 0; col_end = N;
+  } else if (ctype == IS_COLORING_GLOBAL){
+    xx = xx - start;
+    sigma_array = sigma_array - start;
+    vscale_array = vscale_array - start;
+    col_start = start; col_end = N + start;
+  }
+  for (col=col_start; col<col_end; col++) { 
+      vscale_array[col] = (PetscScalar)sigma_array[col] / epsilon;
+  } 
+  if (ctype == IS_COLORING_GLOBAL)  vscale_array = vscale_array + start;      
+  ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+  ierr = VecRestoreArray(SigmaV,&sigma_array);CHKPETSC(ierr);
+
+  if (ctype == IS_COLORING_GLOBAL){
+      ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+      ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+  }
+  
+  if (coloring->vscaleforrow) {
+    vscaleforrow = coloring->vscaleforrow;
+  } else SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_NULL,"Null Object: coloring->vscaleforrow");
+
+  /*
+    Loop over each color
+  */
+  ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+  for (k=0; k<coloring->ncolors; k++) { 
+    coloring->currentcolor = k;
+    ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
+    ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
+    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;
+    /*
+      Loop over each column associated with color 
+      adding the perturbation to the vector w3.
+    */
+    for (l=0; l<coloring->ncolumns[k]; l++) {
+      col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
+      w3_array[col] += 1/vscale_array[col];
+    } 
+    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
+    ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+
+    /*
+      Evaluate function at w3 = x1 + dx (here dx is a vector of perturbations)
+                           w2 = F(x1 + dx) - F(x1)
+    */
+    ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+    ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+    ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+    ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+        
+    /*
+      Loop over rows of vector, putting results into Jacobian matrix
+    */
+    ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
+    for (l=0; l<coloring->nrows[k]; l++) {
+      row    = coloring->rows[k][l];             /* local row index */
+      col    = coloring->columnsforrow[k][l];    /* global column index */
+      y[row] *= vscale_array[vscaleforrow[k][l]];
+      srow   = row + start;
+      ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+    }
+    ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
+  } /* endof for each color */
+  if (ctype == IS_COLORING_GLOBAL) xx = xx + start; 
+  ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+  ierr = VecRestoreArray(x1_tmp,&xx);CHKPETSC(ierr);
+   
+  coloring->currentcolor = -1;
+  ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  ierr = PetscLogEventEnd(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
+
+  flg  = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
+  if (flg) {
+    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULL);CHKPETSC(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode 
+RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx)
+{
+  MatFDColoring  color = (MatFDColoring) ctx;
+  PetscErrorCode ierr;
+  Vec            f;
+  PetscErrorCode (*ff)(void),(*fd)(void);
+
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(color,MAT_FDCOLORING_CLASSID,6);
+  *flag = SAME_NONZERO_PATTERN;
+  ierr  = SNESGetFunction(snes,&f,(PetscErrorCode (**)(SNES,Vec,Vec,void*))&ff,0);CHKPETSC(ierr);
+  ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULL);CHKPETSC(ierr);
+  if (fd == ff) { /* reuse function value computed in SNES */
+    ierr  = MatFDColoringSetF(color,f);CHKPETSC(ierr);
+  }
+  ierr  = RichardMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+  if (*J != *B) {
+    ierr = MatAssemblyBegin(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+    ierr = MatAssemblyEnd(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+
+
+static void
+MatSqueeze(Mat& J) 
+{
+  PetscErrorCode ierr;
+  Mat A;
+  MatCreate(PETSC_COMM_WORLD,&A);
+  MatSetType(A,MATSEQAIJ);
+  Layout& layout = PMAmr::GetLayout();
+  int n = layout.NumberOfLocalNodeIds();
+  int N = layout.NumberOfGlobalNodeIds();
+
+  ierr = MatSetSizes(A,n,n,N,N);  CHKPETSC(ierr);
+  
+  int rstart, rend;
+  ierr = MatGetOwnershipRange(J,&rstart,&rend);CHKPETSC(ierr);
+  int nrows = 0;
+  int Jncols, Ancols;
+  const PetscInt *Jcols;
+  const PetscScalar *Jvals;
+  PetscReal dtol = 1.e-20;
+  for (int row=rstart; row<rend; row++){
+    Array<PetscInt> Acols(0);
+    Array<PetscReal> Avals(0);
+    ierr = MatGetRow(J,row,&Jncols,&Jcols,&Jvals);CHKPETSC(ierr);
+    for (int j=0; j<Jncols; j++){
+      PetscScalar Jval = Jvals[j];
+      if (std::abs(Jval) > dtol) {
+	Acols.push_back(Jcols[j]);
+	Avals.push_back(Jval);
+      }
+    }
+    BL_ASSERT(Acols.size()>0 && Acols.size()==Avals.size());
+    int one = 1;
+    ierr = MatSetValues(A,one,&row,Avals.size(),Acols.dataPtr(),Avals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+    ierr = MatRestoreRow(J,row,&Jncols,&Jcols,&Jvals);CHKPETSC(ierr);
+  }
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+
+  MatView(A,PETSC_VIEWER_STDOUT_SELF);
+}
+

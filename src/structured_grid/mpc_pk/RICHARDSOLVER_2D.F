@@ -73,7 +73,7 @@
       end     
 
       subroutine FORT_RS_CTE_UPW(coef,DIMS(coef),
-     &     lam,DIMS(lam),vel,DIMS(vel),lo,hi,dir,nc,dirbclo,dirbchi)
+     &     lam,DIMS(lam),vel,DIMS(vel),lo,hi,dir,nc,dirbclo,dirbchi,do_upwind)
       implicit none      
       integer DIMDEC(coef)
       integer DIMDEC(lam)
@@ -83,13 +83,9 @@
       REAL_T  lam(DIMV(lam),0:nc-1)
       REAL_T  vel(DIMV(vel))
       REAL_T  mult
-      integer dir, nc, dirbclo, dirbchi
+      integer dir, nc, dirbclo, dirbchi, do_upwind
+      integer i, j, n
 
-      REAL_T thresh
-      integer i, j, n, do_upwind
-
-      do_upwind = 1
-      thresh = 1.d-14
       if (dir.eq.0) then
          if (do_upwind.eq.1) then
             do n=0,nc-1

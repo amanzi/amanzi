@@ -48,7 +48,7 @@ extern "C"
 			const Real* sgn, ARLIM_P(slo), ARLIM_P(shi),
 			const int*  ccvlo, const int*  ccvhi, 
 			const int* dir, const int* nc,
-                        const int* bclo, const int* bchi);
+                        const int* bclo, const int* bchi, const int* do_upwind);
 
   void FORT_RS_PDOTRES (Real* res,      ARLIM_P(rlo),  ARLIM_P(rhi),
 			const Real* sn, ARLIM_P(snlo), ARLIM_P(snhi),
