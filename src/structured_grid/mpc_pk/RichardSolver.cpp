@@ -650,7 +650,7 @@ RichardSolver::RichardSolver(PMAmr& _pm_amr)
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
   ierr = SNESSetFunction(snes,RhsV,RichardRes_DpDt,(void*)(this)); CHKPETSC(ierr);
 
-  bool use_fd_jac = true;
+  bool use_fd_jac = false;
   if (use_fd_jac) {
     ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
@@ -719,9 +719,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   SetDt(delta_t);
   
   ierr = SNESSetTolerances(snes,atol,rtol,stol,maxit,maxf);CHKPETSC(ierr);
-  ierr = MatFDColoringSetFunction(GetMatFDColoring(),
-				  (PetscErrorCode (*)(void))RichardRes_DpDt,
-				  (void*)(this)); CHKPETSC(ierr);
 
   CheckCtx check_ctx;
   check_ctx.rs = this;

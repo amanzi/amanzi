@@ -116,11 +116,12 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="4"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
         <Parameter name="Refinement Ratio" type="Array int" value="{2, 2, 2, 2}"/>
+        <Parameter name="Refinement Ratio" type="Array int" value="{4, 4, 4, 4}"/>
         <Parameter name="Regrid Interval" type="Array int" value="{2}"/>
         <Parameter name="Blocking Factor" type="Array int" value="{2, 2, 2, 2}"/>
-        <Parameter name="Maximum Grid Size" type="Array int" value="{128, 128, 128, 128}"/>
+        <Parameter name="Maximum Grid Size" type="Array int" value="{128, 128, 128, 256}"/>
         <Parameter name="Numbers Error Buffer Cells" type="Array int" value="{1, 1, 1, 1}"/>
         
         <Parameter name="Refinement Indicators" type="Array string" value="{Tank ref}"/>
@@ -211,34 +212,34 @@
     </ParameterList>
 
     <ParameterList name="Concrete">
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.38"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="5.13e-13"/>
-        <Parameter name="Vertical" type="double" value="2.87e-13"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="3.02e-4"/>
-        <Parameter name="Sr" type="double" value="0.354"/>
-        <Parameter name="m" type="double" value="0.291"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-      </ParameterList>
-      <Parameter name="Assigned Regions" type="Array string" value="{Tank}"/>
       <!-- <ParameterList name="Porosity: Uniform"> -->
-      <!--   <Parameter name="Value" type="double" value="0.168"/> -->
+      <!--   <Parameter name="Value" type="double" value="0.38"/> -->
       <!-- </ParameterList> -->
       <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="Horizontal" type="double" value="3.49e-17"/> -->
-      <!--   <Parameter name="Vertical" type="double" value="3.49e-17"/> -->
+      <!--   <Parameter name="Horizontal" type="double" value="5.13e-13"/> -->
+      <!--   <Parameter name="Vertical" type="double" value="2.87e-13"/> -->
       <!-- </ParameterList> -->
       <!-- <ParameterList name="Capillary Pressure: van Genuchten"> -->
-      <!--   <Parameter name="alpha" type="double" value="2.130e-8"/> -->
-      <!--   <Parameter name="Sr" type="double" value="0.0"/> -->
-      <!--   <Parameter name="m" type="double" value="0.485"/> -->
+      <!--   <Parameter name="alpha" type="double" value="3.02e-4"/> -->
+      <!--   <Parameter name="Sr" type="double" value="0.354"/> -->
+      <!--   <Parameter name="m" type="double" value="0.291"/> -->
       <!--   <Parameter name="Relative Permeability" type="string" value="Mualem"/> -->
       <!-- </ParameterList> -->
       <!-- <Parameter name="Assigned Regions" type="Array string" value="{Tank}"/> -->
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="0.168"/>
+      </ParameterList>
+      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+        <Parameter name="Horizontal" type="double" value="3.49e-17"/>
+        <Parameter name="Vertical" type="double" value="3.49e-17"/>
+      </ParameterList>
+      <ParameterList name="Capillary Pressure: van Genuchten">
+        <Parameter name="alpha" type="double" value="2.130e-8"/>
+        <Parameter name="Sr" type="double" value="0.0"/>
+        <Parameter name="m" type="double" value="0.485"/>
+        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+      </ParameterList>
+      <Parameter name="Assigned Regions" type="Array string" value="{Tank}"/>
       
     </ParameterList>
     

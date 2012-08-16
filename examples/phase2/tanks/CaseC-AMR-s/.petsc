@@ -24,14 +24,14 @@
 #-mat_coloring_view
 #-snes_view
 -snes_monitor
-#-snes_type tr
+-snes_type tr
 -snes_ls basic
 -snes_ls_monitor
 #-on_error_attach_debugger
 -snes_max_it 10
 #-pc_factor_nonzeros_along_diagonal
-#-pc_factor_reuse_fill
-#-ksp_diagonal_scale
+-pc_factor_reuse_fill
+-ksp_diagonal_scale
 #-ksp_monitor_true_residual
 -snes_converged_reason
 #-snes_error_if_not_converged
