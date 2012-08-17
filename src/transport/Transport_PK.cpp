@@ -193,27 +193,37 @@ double Transport_PK::CalculateTransportDt()
   const Epetra_Vector& phi = TS->ref_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
+  int cmin_dT = 0;
   for (c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
     if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * std::min<double>(ws_prev[c], ws[c]) / outflux;
-    dT = std::min(dT, dT_cell);
+    if (dT_cell < dT) {
+      dT = dT_cell;
+      cmin_dT = c;
+    }
   }
   if (spatial_disc_order == 2) dT /= 2;
 
-
+  // communicate global time step
+  double dT_tmp = dT;
 #ifdef HAVE_MPI
-  double dT_global;
   const Epetra_Comm& comm = ws_prev.Comm();
-
-  comm.MinAll(&dT, &dT_global, 1);
-  dT = dT_global;
+  comm.MinAll(&dT_tmp, &dT, 1);
 #endif
 
   // incorporate developers and CFL constraints
   dT = std::min(dT, dT_debug);
-
   dT *= cfl_;
 
+  // print optional diagnostics
+  if (fabs(dT_tmp * cfl_ - dT) < 1e-6 * dT && verbosity >= TRANSPORT_VERBOSITY_HIGH) {
+    const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dT);
+    printf("Transport PK: cell with the smallest dT: %6d  at (%9.6f, %9.6f", cmin_dT, p[0], p[1]);
+    if (p.dim() == 3) 
+      printf(", %9.6f)\n", p[3]);
+    else
+      printf(")\n"); 
+  }
   return dT;
 }
 

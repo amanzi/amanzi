@@ -83,18 +83,16 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     size_t pos = xmlFileName.find(".xml");
     xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
     if (comm->MyPID() == 0) {
-        printf("Amanzi: writing the translated parameter list to file %s.\n", xmlFileName.c_str());
-    
-	
-	Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-	Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
+      printf("Amanzi: writing the translated parameter list to file %s...\n", xmlFileName.c_str());
 
-	ofstream xmlfile;
-	xmlfile.open(xmlFileName.c_str());
-	xmlfile << XMLobj;
+      Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+      Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
+
+      ofstream xmlfile;
+      xmlfile.open(xmlFileName.c_str());
+      xmlfile << XMLobj;
     }
-
-    //Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
+    // Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
   }
 
 
