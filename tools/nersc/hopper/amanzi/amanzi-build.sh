@@ -211,23 +211,23 @@ production_binary_name()
     branch="`mercurial_branch $source_dir`"
     echo "amanzi_${id}_${branch}"
 }
-load_prg_env()
-{
-    compiler_loaded=false
-    if [[ $PE_ENV ]]; then
-	compiler_loaded=`echo $PE_ENV | tr "[A-Z]" "[a-z]"`
-    fi
-
-    if [[ $compiler_loaded ]]; then
-	echo "Unloading ${compiler_loaded}"
-	module unload PrgEnv-${compiler_loaded}
-    fi
-
-    echo "Loading PrgEnv-$1"
-    #module use ${ASCEM_MODULESHOME}
-    #module load AmanziEnv-$1
-    module load PrgEnv-$1
-}
+#LPRITCHload_prg_env()
+#LPRITCH{
+#LPRITCH    compiler_loaded=false
+#LPRITCH    if [[ $PE_ENV ]]; then
+#LPRITCH	compiler_loaded=`echo $PE_ENV | tr "[A-Z]" "[a-z]"`
+#LPRITCH    fi
+#LPRITCH
+#LPRITCH    if [[ $compiler_loaded ]]; then
+#LPRITCH	echo "Unloading ${compiler_loaded}"
+#LPRITCH	module unload PrgEnv-${compiler_loaded}
+#LPRITCH    fi
+#LPRITCH
+#LPRITCH    echo "Loading PrgEnv-$1"
+#LPRITCH    #module use ${ASCEM_MODULESHOME}
+#LPRITCH    #module load AmanziEnv-$1
+#LPRITCH    module load PrgEnv-$1
+#LPRITCH}
 default_init_file()
 {
     mpi_version="`get_mpi_version`"
@@ -382,11 +382,7 @@ if [ ${batch_build} == "TRUE" ]; then
 fi
 
 # Load modules
-module unload cmake
-module load cmake/2.8.7
-module unload mercurial
-module load mercurial/1.8.1
-load_prg_env ${prg_env}
+. $ASCEM_HOME/modules/init/ascem.bashrc ${prg_env}
 
 # Define the init file 
 if [ -z $init_file ]; then
