@@ -30,12 +30,14 @@ class RadioactiveDecay {
   // update forward and reverse effective reaction rates
   void UpdateRate(const std::vector<double> total,
                   const std::vector<double> total_sorbed,
-                  const double por_sat_den_vol,
-                  const double volume);
+                  const double porosity,
+                  const double saturation,
+                  const double bulk_volume);
   void AddContributionToResidual(std::vector<double> *residual);
   void AddContributionToJacobian(const MatrixBlock& dtotal,
                                  const MatrixBlock& dtotal_sorbed,
-                                 const double por_sat_den_vol,
+                                 const double porosity,
+                                 const double saturation,
                                  const double bulk_volume,
                                  MatrixBlock* J);
   void display(void) const;

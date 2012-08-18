@@ -105,7 +105,8 @@ void SetupTextOutput(const SimulationParameters& simulation_params,
 
 void WriteTextOutputHeader(std::fstream* text_output,
                            const char time_units,
-                           const std::vector<std::string>& names);
+                           const std::vector<std::string>& names,
+                           const bool using_sorption);
 
 void WriteTextOutput(std::fstream* text_output,
                      const double time,

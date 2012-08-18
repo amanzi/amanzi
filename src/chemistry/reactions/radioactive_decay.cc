@@ -115,14 +115,16 @@ void RadioactiveDecay::ConvertHalfLifeToRateConstant(void) {
 // temporary location for member functions
 void RadioactiveDecay::UpdateRate(const std::vector<double> total,
                                   const std::vector<double> total_sorbed,
-                                  const double por_sat_den_vol,
+                                  const double porosity,
+                                  const double saturation,
                                   const double bulk_volume) {
   // NOTE: we are working on the totals, not free ion!
   // need total moles of the decaying species:
   //    total * volume_h2o + total_sorbed * volume_bulk
-  rate_ = por_sat_den_vol * total.at(parent_id());
+  double volume_h2o = porosity * saturation * bulk_volume * 1000.0; // [L]
+  rate_ = volume_h2o * total.at(parent_id());
   if (total_sorbed.size() > 0) {
-    rate_ += bulk_volume + total_sorbed.at(parent_id());
+    rate_ += bulk_volume * total_sorbed.at(parent_id());
   }
   rate_ *= rate_constant();
 }  // end UpdateRate()
@@ -139,9 +141,11 @@ void RadioactiveDecay::AddContributionToResidual(std::vector<double> *residual) 
 
 void RadioactiveDecay::AddContributionToJacobian(
     const MatrixBlock& dtotal, const MatrixBlock& dtotal_sorbed,
-    const double por_sat_den_vol, const double bulk_volume,
+    const double porosity, const double saturation, const double bulk_volume,
     MatrixBlock* J) {
 
+  // NOTE: operating on total [moles/L] not free [moles/kg]
+  double volume_h2o = porosity * saturation * bulk_volume * 1000.0; // [L]
   // taking derivative of contribution to residual in row i with respect
   // to species in column j
 
@@ -150,11 +154,11 @@ void RadioactiveDecay::AddContributionToJacobian(
     int icomp = species_ids_.at(i);
     // row loop
     for (int j = 0; j < J->size(); ++j) {
-      double tempd = dtotal.GetValue(icomp, j) * por_sat_den_vol;
+      double tempd = dtotal.GetValue(icomp, j) * volume_h2o;
       if (dtotal_sorbed.size() > 0) {
         tempd += dtotal_sorbed.GetValue(icomp, j) * bulk_volume;
       }
-      tempd *= -rate() * stoichiometry_.at(i);
+      tempd *= -rate_constant() * stoichiometry_.at(i);
       J->AddValue(icomp, j, tempd);
     }
   }  // end columns

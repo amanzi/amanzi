@@ -1,0 +1,32 @@
+# pflotran database preprocessing :
+#        date : 20120814e   162510.983
+#       input : ABC_decay_linear_sorption.in
+
+<Primary Species
+A(aq)  ;   0.00 ;   0.00 ;   0.00
+B(aq)  ;   0.00 ;   0.00 ;   0.00
+C(aq)  ;   0.00 ;   0.00 ;   0.00
+
+<Aqueous Equilibrium Complexes
+
+<Radioactive Decay
+  A(aq) --> 1.00 B(aq) ; half_life 12.5 years
+  B(aq) --> 1.00 C(aq) ; half_life 25.0 years
+  C(aq) -->            ; half_life 5.0 years
+
+<Minerals
+
+<Mineral Kinetics
+
+<Ion Exchange Sites
+
+<Ion Exchange Complexes
+
+<Surface Complex Sites
+
+<Surface Complexes
+
+<Isotherms
+A(aq) ; linear ;   250.0
+B(aq) ; linear ;   0.00000E+00
+C(aq) ; linear ;   62.5

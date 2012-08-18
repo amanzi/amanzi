@@ -157,7 +157,10 @@ int main(int argc, char** argv) {
       if (simulation_params.verbosity >= ac::kTerse) {
         chem->DisplayResults();
       }
-
+      bool using_sorption = false;
+      if (components.total_sorbed.size() > 0) {
+        using_sorption = true;
+      }
       if (simulation_params.num_time_steps != 0) {
         message.str("");
         message << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
@@ -169,7 +172,7 @@ int main(int argc, char** argv) {
                                   simulation_params.display_free_columns);
         std::vector<std::string> names;
         chem->GetPrimaryNames(&names);
-        WriteTextOutputHeader(&text_output, time_units, names);
+        WriteTextOutputHeader(&text_output, time_units, names, using_sorption);
         WriteTextOutput(&text_output, 0.0, components);
 
         // parameters.max_iterations = 2;
@@ -642,12 +645,19 @@ void SetupTextOutput(const SimulationParameters& simulation_params,
 }  // end SetupTextOutput()
 
 void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
-                           const std::vector<std::string>& names) {
+                           const std::vector<std::string>& names,
+                           const bool using_sorption) {
   if (text_output->is_open()) {
     *text_output << "# Time(" << time_units << ")";
     for (std::vector<std::string>::const_iterator name = names.begin();
          name != names.end(); ++name) {
       *text_output <<  " , " << *name;
+    }
+    if (using_sorption) {
+      for (std::vector<std::string>::const_iterator name = names.begin();
+           name != names.end(); ++name) {
+        *text_output <<  " , " << *name << "_sorbed";
+      }
     }
     *text_output << std::endl;
   }
@@ -660,6 +670,9 @@ void WriteTextOutput(std::fstream* text_output, const double time,
     *text_output << std::scientific << std::setprecision(6) << std::setw(15) << time;
     for (int i = 0; i < components.total.size(); ++i) {
       *text_output << seperator << components.total.at(i);
+    }
+    for (int i = 0; i < components.total_sorbed.size(); ++i) {
+      *text_output << seperator << components.total_sorbed.at(i);
     }
     *text_output << std::endl;
   }
