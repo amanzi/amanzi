@@ -927,7 +927,6 @@ PorousMedia::initData ()
     const Real* dx       = geom.CellSize();
     MultiFab&   S_new    = get_new_data(State_Type);
     MultiFab&   P_new    = get_new_data(Press_Type);
-    MultiFab&   U_new    = get_new_data(  Vel_Type);
     MultiFab&   U_vcr    = get_new_data(  Vcr_Type);
     
     const Real  cur_time = state[State_Type].curTime();
@@ -1264,7 +1263,6 @@ PorousMedia::initData ()
       }
     }
 
-    U_new.setVal(0.);
     U_vcr.setVal(0.);
     if (have_capillary) calcCapillary(cur_time);
     //
@@ -1283,15 +1281,9 @@ PorousMedia::initData ()
       }
     else
       {
-	if (model == model_list["richard"])
-	  {
-	    // NOTE: Done in post_init_state by p-solver
-	    //compute_vel_phase(u_mac_curr,0,cur_time);
-	  }
-	else 
+	if (model != model_list["richard"])
 	  {
 	    mac_project(u_mac_curr,rhs_RhoD,cur_time);
-	    umac_edge_to_cen(u_mac_curr, Vel_Type); 
 	  }
 
       }
@@ -2015,7 +2007,6 @@ PorousMedia::init (AmrLevel& old)
 
   MultiFab&     S_new     = get_new_data(State_Type);
   MultiFab&     P_new     = get_new_data(Press_Type);
-  MultiFab&     U_new     = get_new_data(  Vel_Type);
   MultiFab&     U_cor     = get_new_data(  Vcr_Type);
 
   U_cor.setVal(0.);
@@ -2071,12 +2062,6 @@ PorousMedia::init (AmrLevel& old)
   //
   // Get best cell-centered velocity data: from old.
   //
-  for (FillPatchIterator fpi(old,U_new,0,cur_time,Vel_Type,0,BL_SPACEDIM);
-       fpi.isValid();
-       ++fpi)
-    {
-      U_new[fpi.index()].copy(fpi());
-    }
 
 #ifdef AMANZI
   if (do_chem>0)
@@ -2103,7 +2088,6 @@ PorousMedia::init ()
     
   MultiFab& S_new = get_new_data(State_Type);
   MultiFab& P_new = get_new_data(Press_Type);
-  MultiFab& U_new = get_new_data(  Vel_Type);
   MultiFab& U_cor = get_new_data(  Vcr_Type);
    
   const Array<Real>& dt_amr = parent->dtLevel();
@@ -2142,7 +2126,6 @@ PorousMedia::init ()
       }
   }
   FillCoarsePatch(P_new,0,cur_time,Press_Type,0,1);
-  FillCoarsePatch(U_new,0,cur_time,  Vel_Type,0,BL_SPACEDIM);
   U_cor.setVal(0.);
 
 #ifdef AMANZI
@@ -2745,9 +2728,6 @@ PorousMedia::advance_incompressible (Real time,
 	}
 
       predictDT(u_macG_prev);
-
-      umac_edge_to_cen(u_mac_prev,Vel_Type);
-
     }
 
   else
@@ -2816,8 +2796,6 @@ PorousMedia::advance_incompressible (Real time,
 	}
 
       mac_projector->contribute_to_mac_reg(level,u_mac_nph);
-    
-      umac_edge_to_cen(u_mac_nph,Vel_Type);
 
       // Re-advect component equations 
       corrector = 1;
@@ -2836,9 +2814,6 @@ PorousMedia::advance_incompressible (Real time,
 
       // predict the next time step.  
       predictDT(u_macG_curr);
-
-      // hack to see water pahse velocity
-      // umac_edge_to_cen(u_macG_trac,Vel_Type);
 
       delete [] u_mac_nph;
       delete [] u_macG_nph;
@@ -2893,9 +2868,6 @@ PorousMedia::advance_simple (Real time,
 
   for (int dir = 0; dir < BL_SPACEDIM; dir++)
     u_mac_curr[dir].copy(u_mac_prev[dir]);
-
-  umac_edge_to_cen(u_mac_curr,Vel_Type);
- 
 }
 
 #ifdef MG_USE_FBOXLIB
@@ -2933,7 +2905,6 @@ PorousMedia::advance_richard (Real time,
       create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac); 
   }
 
-  umac_edge_to_cen(u_mac_curr,Vel_Type); 
   if (do_tracer_transport && ntracers > 0)
     {
       int ltracer = ncomps+ntracers-1;
@@ -3064,8 +3035,6 @@ PorousMedia::advance_multilevel_richard (Real time,
 		    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
 					 fine_lev.u_macG_trac); 
 		  }
-		fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
-
 		
 		if (do_tracer_transport && ntracers > 0)
 		  {
@@ -3170,8 +3139,6 @@ PorousMedia::advance_multilevel_saturated (Real time,
 				       fine_lev.u_macG_trac); 
 	  }
 	
-	fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
-
 	if (do_tracer_transport && ntracers > 0)
 	  {
 	    int ltracer = ncomps+ntracers-1;
@@ -8844,11 +8811,6 @@ PorousMedia::mac_sync ()
 				  advectionType, prev_time, dt,
 				  ncomps,be_cn_theta);
   //
-  // average onto cell center
-  //
-  umac_edge_to_cen(u_corr,Vcr_Type);
-
-  //
   // The following used to be done in mac_sync_compute.  Ssync is
   //   the source for a rate of change to rock_phi*S over the time step, so
   //   Ssync*dt is the source to the actual sync amount.
@@ -9490,13 +9452,6 @@ PorousMedia::avgDown ()
   MultiFab& P_crse = get_new_data(Press_Type);
   MultiFab& P_fine = fine_lev.get_new_data(Press_Type);
   avgDown(grids,fgrids,P_crse,P_fine,volume,fvolume,level,level+1,0,1,fine_ratio);
-
-  //
-  // Average down the cell-centered velocity at the new time.
-  //
-  //MultiFab& U_crse = get_new_data(Vel_Type);
-  //MultiFab& U_fine = fine_lev.get_new_data(Vel_Type);
-  //avgDown(grids,fgrids,U_crse,U_fine,volume,fvolume,level,level+1,0,BL_SPACEDIM,fine_ratio);
 
   if (do_reflux && u_macG_curr != 0)
     SyncEAvgDown(u_macG_curr,level,fine_lev.u_macG_curr,level+1);
@@ -11372,9 +11327,9 @@ PorousMedia::derive (const std::string& name,
 
         BL_ASSERT(dir < BL_SPACEDIM);
         if (model == model_list["richard"] || model == model_list["steady-saturated"]) {
-            umac_edge_to_cen(u_mac_curr,Vel_Type); 
-            int ncomp = 1;
-            MultiFab::Copy(mf,get_new_data(Vel_Type),dir,dcomp,ncomp,0);
+	  MultiFab tmf(grids,BL_SPACEDIM,0);
+	  umac_edge_to_cen(u_mac_curr,tmf); 
+	  MultiFab::Copy(mf,tmf,dir,0,1,0);
         }
         else {
 	  BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "+model).c_str());
@@ -12063,18 +12018,17 @@ PorousMedia::check_minmax(MultiFab* u_mac)
 }
 
 void
-PorousMedia::umac_edge_to_cen(MultiFab* u_mac, int idx_type)
+PorousMedia::umac_edge_to_cen(MultiFab* u_mac, MultiFab& U_cc)
 {
   // average velocity onto cell center
-  MultiFab&  U_cor  = get_new_data(idx_type);
-  for (MFIter mfi(U_cor); mfi.isValid(); ++mfi)
+  for (MFIter mfi(U_cc); mfi.isValid(); ++mfi)
     {
       const int* lo     = mfi.validbox().loVect();
       const int* hi     = mfi.validbox().hiVect();
     
-      const int* u_lo   = U_cor[mfi].loVect();
-      const int* u_hi   = U_cor[mfi].hiVect();
-      const Real* udat  = U_cor[mfi].dataPtr();
+      const int* u_lo   = U_cc[mfi].loVect();
+      const int* u_hi   = U_cc[mfi].hiVect();
+      const Real* udat  = U_cc[mfi].dataPtr();
 	  
       const int* um_lo  = (u_mac[0])[mfi].loVect();
       const int* um_hi  = (u_mac[0])[mfi].hiVect();

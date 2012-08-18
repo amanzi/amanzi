@@ -812,21 +812,6 @@ PorousMedia::variableSetUp ()
   //
   // **************  DEFINE VELOCITY VARIABLES  ********************
 
-  desc_lst.addDescriptor(Vel_Type,IndexType::TheCellType(),
-			 StateDescriptor::Point,1,BL_SPACEDIM,
-			 &cell_cons_interp);
-  set_x_vel_bc(bc,phys_bc);
-  desc_lst.setComponent(Vel_Type,Xvel,"x_velocity",
-			bc,BndryFunc(FORT_XVELFILL));
-  set_y_vel_bc(bc,phys_bc);
-  desc_lst.setComponent(Vel_Type,Yvel,"y_velocity",
-			bc,BndryFunc(FORT_YVELFILL));
-#if (BL_SPACEDIM == 3)
-  set_z_vel_bc(bc,phys_bc);
-  desc_lst.setComponent(Vel_Type,Zvel,"z_velocity",
-			bc,BndryFunc(FORT_ZVELFILL));
-#endif
-
   desc_lst.addDescriptor(Vcr_Type,IndexType::TheCellType(),
 			 StateDescriptor::Point,1,BL_SPACEDIM,
 			 &cell_cons_interp);

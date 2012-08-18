@@ -35,7 +35,7 @@ class RichardSolver;
 #include "beaker.hh"
 #endif
 
-enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type};
+enum StateType {State_Type=0, Press_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type};
 
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
@@ -896,7 +896,7 @@ public:
 			     int              nComp);
 
   void umac_edge_to_cen(MultiFab* u_mac, 
-			int       idx_type);
+			MultiFab& U_cc);
 
   void umac_cpy_edge_to_cen(MultiFab* u_mac, 
 			    int       idx_type,
