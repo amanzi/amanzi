@@ -41,9 +41,9 @@
         <Parameter name="Start" type="double" value="0"/>
         <Parameter name="End" type="double" value="315360000"/>
         <Parameter name="End" type="double" value="415576000000000"/>
-        <Parameter name="Initial Time Step" type="double" value="1.e7"/>
-	<Parameter name="Maximum Time Step Size" type="double" value="1e8"/>
-	<Parameter name="Maximum Cycle Number" type="int" value="0"/>
+        <Parameter name="Initial Time Step" type="double" value="1.e8"/>
+	<Parameter name="Maximum Time Step Size" type="double" value="1e14"/>
+	<Parameter name="Maximum Cycle Number" type="int" value="10"/>
         <Parameter name="Maximum Time Step Change" type="double" value="1."/>
         <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/>
       </ParameterList>
@@ -73,11 +73,9 @@
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="2"/>
           <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.1"/>
           <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.01"/>
-          <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-12"/>
-          <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/>
-          <Parameter name="steady_init_time_step" type="double" value="9.467e5"/>
           <Parameter name="steady_init_time_step" type="double" value="1.e4"/>
-          <Parameter name="steady_max_time_steps" type="int" value="100"/>
+          <Parameter name="steady_max_time_steps" type="int" value="1000"/>
+          <Parameter name="steady_max_time_step_size" type="double" value="1.e20"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
@@ -85,6 +83,11 @@
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e14"/>
           <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
           <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
+          <Parameter name="steady_abs_update_tolerance" type="double" value="1.e-10"/>
+          <Parameter name="steady_rel_update_tolerance" type="double" value="-1"/>
+          <Parameter name="steady_abs_tolerance" type="double" value="1.e-9"/>
+          <Parameter name="steady_rel_tolerance" type="double" value="1.e-10"/>
+          <Parameter name="steady_limit_function_evals" type="int" value="100000000"/>
 
           <Parameter name="richard_solver_verbose" type="int" value="3"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
@@ -93,6 +96,11 @@
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="0"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-6"/>
+          <Parameter name="richard_use_fd_jac" type="int" value="1"/>
+          <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
+          <Parameter name="richard_upwind_krel" type="int" value="1"/>
+          <Parameter name="richard_pressure_maxorder" type="int" value="4"/>
           <Parameter name="v" type="double" value="3"/>
 
         </ParameterList>

@@ -2947,6 +2947,27 @@ PorousMedia::advance_multilevel_richard (Real time,
     if (!pm_amr) 
       BoxLib::Abort("Bad cast in PorousMedia::advance_multilevel_richard");
     RichardNLSdata nld(0,nlevs,pm_amr);
+    RichardSolver* rs = 0;
+    if (steady_use_PETSc_snes) {
+      RichardSolver::RSParams rsparams;
+      rsparams.max_ls_iterations = richard_max_ls_iterations;
+      rsparams.min_ls_factor = richard_min_ls_factor;
+      rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
+      rsparams.ls_reduction_factor = richard_ls_reduction_factor;
+      rsparams.monitor_line_search = richard_monitor_line_search;
+      rsparams.errfd = richard_perturbation_scale_for_J;
+      rsparams.maxit = steady_limit_iterations;
+      rsparams.maxf = steady_limit_function_evals;
+      rsparams.atol = steady_abs_tolerance;
+      rsparams.rtol = steady_rel_tolerance;
+      rsparams.stol = steady_abs_update_tolerance;
+      rsparams.use_fd_jac = richard_use_fd_jac;
+      rsparams.use_dense_Jacobian = richard_use_dense_Jacobian;
+      rsparams.upwind_krel = richard_upwind_krel;
+      rsparams.pressure_maxorder = richard_pressure_maxorder;
+      
+      rs = new RichardSolver(*(PMParent()),rsparams);
+    }
     
     Real cur_time = time;
     Array<Real> dt_save(nlevs);
@@ -2963,7 +2984,7 @@ PorousMedia::advance_multilevel_richard (Real time,
     
     Real dt_iter = dt;
     Real t_max = time+dt;
-    int  k_max = 10;
+    int  k_max = steady_max_time_steps;
     Real t_eps = 1.e-8*dt_iter;
 
     Real t = time;
@@ -2976,8 +2997,8 @@ PorousMedia::advance_multilevel_richard (Real time,
     while(continue_subtimestep) 
       {
 	// Solve the richard equation for the given time step.  
-	// Try with increasing smaller timestep if it fails.
-	// Save the initial state 
+	// Try with progressively smaller timestep if it fails.
+	// Save the initial state to enable retry
 	for (int lev=0;lev<nlevs;lev++)
 	  {
 	    PorousMedia&    fine_lev   = getLevel(lev);
@@ -3005,7 +3026,28 @@ PorousMedia::advance_multilevel_richard (Real time,
 	      std::cout << "Attempting multi-level flow advance: Inner Iter " << iter++ 
 			<< " Time Step: " << dt_iter  << std::endl;
 
-	    ret = richard_composite_update(dt_iter,nld);
+	    if (steady_use_PETSc_snes) 
+	      {
+		int retCode = rs->Solve(t+dt, dt, k, nld);
+		if (retCode >= 0) {
+		  ret = RichardNLSdata::RICHARD_SUCCESS;
+		} 
+		else {
+		  if (ret == -3) {
+		    ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
+		  }
+		  else {
+		    ret = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+		    if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+		      std::cout << "     **************** Newton failed: " << GetPETScReason(retCode) << '\n';
+		  }
+		}
+	      }
+	    else
+	      {
+		ret = richard_composite_update(dt_iter,nld);
+	      }
+
 	    bool cont = nld.AdjustDt(dt_iter,ret,dt_new); 
 	    if (ret == RichardNLSdata::RICHARD_SUCCESS || dt_new <= t_eps || iter > max_iter)
 	      continue_iterations = false;
@@ -3023,7 +3065,9 @@ PorousMedia::advance_multilevel_richard (Real time,
 	    for (int lev=0; lev<nlevs; lev++)
 	      {
 		PorousMedia&    fine_lev   = getLevel(lev);  
-		fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,t_max);
+
+		// This is now done in the solvers
+		//fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,t_max);
 		
 		if (lev == 0) 
 		  fine_lev.create_umac_grown(fine_lev.u_mac_curr,
@@ -3107,7 +3151,8 @@ PorousMedia::advance_multilevel_saturated (Real time,
     int finest_level = parent->finestLevel();
     int nlevs = finest_level + 1;
     
-    Real cur_time = time;
+    Real prev_time = time;
+    Real cur_time = time + dt;
     Array<Real> dt_save(nlevs);
     Array<int> nc_save(nlevs);
     int n_factor;
