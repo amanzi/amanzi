@@ -3026,6 +3026,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 	      std::cout << "Attempting multi-level flow advance: Inner Iter " << iter++ 
 			<< " Time Step: " << dt_iter  << std::endl;
 
+#if 0
 	    if (steady_use_PETSc_snes) 
 	      {
 		int retCode = rs->Solve(t+dt, dt, k, nld);
@@ -3044,6 +3045,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 		}
 	      }
 	    else
+#endif
 	      {
 		ret = richard_composite_update(dt_iter,nld);
 	      }
