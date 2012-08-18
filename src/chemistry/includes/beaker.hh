@@ -295,6 +295,13 @@ class Beaker {
   // calculates product of porosity,saturation,water_density[kg/m^3],volume
   void update_por_sat_den_vol(void);
 
+  void set_use_log_formulation(const bool value) {
+    use_log_formulation_ = value;
+  }
+
+  bool use_log_formulation(void) const {
+    return use_log_formulation_;
+  }
 
  private:
 
@@ -337,7 +344,7 @@ class Beaker {
   void CalculateJacobian(void);
 
   // utilities for updating solution, convergence checks
-  void UpdateMolalitiesWithTruncation(double max_change);
+  void UpdateMolalitiesWithTruncation(const double max_change);
   void CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_index);
   void ValidateSolution(void);
 
@@ -426,6 +433,8 @@ class Beaker {
   static const double volume_default_;
 
   LUSolver lu_solver_;
+
+  bool use_log_formulation_;
   
 #ifdef GLENN
   DirectSolver* solver;
