@@ -183,8 +183,8 @@ c     On input, Res contains Div(DarcyVel)
       do n=1,nc
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
-               Res(i,j,n) = Porosity(i,j)*(RSnp1(i,j,n) - RSn(i,j,n))
-     &              + rho(n)*dt*Res(i,j,n)
+               Res(i,j,n) = Porosity(i,j)*(RSnp1(i,j,n) - RSn(i,j,n))/dt
+     &              + rho(n)*Res(i,j,n)
             enddo
          enddo
       enddo
@@ -220,10 +220,10 @@ c     On input, Res contains Div(DarcyVel)
       do n=1,nc
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
-               Res(i,j,n) = Porosity(i,j)*RSstar(i,j,n) 
+               Res(i,j,n) = (Porosity(i,j)*RSstar(i,j,n) 
      &              +    Astar(i,j,n)*(Pnp1(i,j,n) - Pstar(i,j,n))
-     &              -  Porosity(i,j)*RSn(i,j,n)
-     &              + rho(n)*dt*Res(i,j,n)
+     &              -  Porosity(i,j)*RSn(i,j,n))/dt
+     &              + rho(n)*Res(i,j,n)
             enddo
          enddo
       enddo

@@ -1285,14 +1285,15 @@ PorousMedia::initData ()
       {
 	if (model == model_list["richard"])
 	  {
-	    compute_vel_phase(u_mac_curr,0,cur_time);
+	    // NOTE: Done in post_init_state by p-solver
+	    //compute_vel_phase(u_mac_curr,0,cur_time);
 	  }
 	else 
 	  {
 	    mac_project(u_mac_curr,rhs_RhoD,cur_time);
+	    umac_edge_to_cen(u_mac_curr, Vel_Type); 
 	  }
 
-	umac_edge_to_cen(u_mac_curr, Vel_Type); 
       }
     
     is_grid_changed_after_regrid = false;
@@ -1343,6 +1344,7 @@ RichardNLSdata::RichardNLSdata(int slev, int nlevs, PMAmr* _pm_amr)
     time_step_retry_factor = 0.5;
     time_step_retry_factor_2 = 0.1;
     time_step_retry_factor_f = 0.01;
+    max_time_step_size = 1.e10;
 
     num_consecutive_success = 0;
     num_consecutive_failures_1 = 0;
@@ -1374,6 +1376,8 @@ void RichardNLSdata::SetMinNewtonIterationsForDt2(int min_iter) {min_nl_iteratio
 void RichardNLSdata::SetDtIncreaseFactor(Real factor) {time_step_increase_factor=factor;}
 void RichardNLSdata::SetDtIncreaseFactor2(Real factor) {time_step_increase_factor_2=factor;}
 void RichardNLSdata::SetDtReductionFactor(Real factor) {time_step_reduction_factor=factor;}
+void RichardNLSdata::SetMaxDt(Real dt_max) {max_time_step_size=dt_max;}
+
 
 void
 RichardNLSdata::ResetCounters()
@@ -1539,7 +1543,7 @@ RichardNLSdata::AdjustDt(Real                dt,
         num_consecutive_success = 0;
         ResetJacobianCounter();
     }
-
+    dt_new = std::min(max_time_step_size,dt_new);
     return true;
 }
 
@@ -1631,6 +1635,7 @@ RichardNLSdata::AdjustDt(Real                dt,
         ResetJacobianCounter();
     }
 
+    dt_new = std::min(max_time_step_size,dt_new);
     return true;
 }
 
@@ -1665,12 +1670,14 @@ PorousMedia::BuildInitNLS()
     nld.SetConsecutiveErrIncreaseDtReduction(steady_consecutive_increase_reduction_factor);
     
     nld.SetMaxConsecutiveSuccess(steady_max_num_consecutive_success);
+
+    nld.SetMaxDt(steady_max_time_step_size);
     return nld;
 }
 
 #include <RichardSolver.H>
 
-static std::map<int,std::string> PETSc_Reasons;
+std::map<int,std::string> PETSc_Reasons;
 static std::string
 GetPETScReason(int flag) 
 {
@@ -1765,9 +1772,16 @@ PorousMedia::richard_init_to_steady()
 		  rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
 		  rsparams.ls_reduction_factor = richard_ls_reduction_factor;
 		  rsparams.monitor_line_search = richard_monitor_line_search;
-		  
-		  // FIXME: Still should gather/pass the following options, if default values not ok
-		  // use_fd_jac, use_dense_Jacobian, upwind_krel, pressure_maxorder, errfd
+		  rsparams.errfd = richard_perturbation_scale_for_J;
+		  rsparams.maxit = steady_limit_iterations;
+		  rsparams.maxf = steady_limit_function_evals;
+		  rsparams.atol = steady_abs_tolerance;
+		  rsparams.rtol = steady_rel_tolerance;
+		  rsparams.stol = steady_abs_update_tolerance;
+		  rsparams.use_fd_jac = richard_use_fd_jac;
+		  rsparams.use_dense_Jacobian = richard_use_dense_Jacobian;
+		  rsparams.upwind_krel = richard_upwind_krel;
+		  rsparams.pressure_maxorder = richard_pressure_maxorder;
 
 		  rs = new RichardSolver(*(PMParent()),rsparams);
                 }
@@ -1809,7 +1823,7 @@ PorousMedia::richard_init_to_steady()
 		  }
 
 		  MultiFab& S_new = get_new_data(State_Type);
-		  MultiFab::Copy(tmp,S_new,nc,0,1,0);
+		  MultiFab::Copy(tmp,get_new_data(Press_Type),nc,0,1,0);
 		  tmp.mult(-1.0);
 
 		  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
@@ -1869,7 +1883,7 @@ PorousMedia::richard_init_to_steady()
                     if (ret == RichardNLSdata::RICHARD_SUCCESS)
                     {
                         prev_abs_err = abs_err;
-                        MultiFab::Add(tmp,S_new,nc,0,1,0);
+                        MultiFab::Add(tmp,get_new_data(Press_Type),nc,0,1,0);
                         abs_err = tmp.norm2(0);
                         if (first){
                             init_abs_err = abs_err;
@@ -1916,8 +1930,9 @@ PorousMedia::richard_init_to_steady()
                     {
                         k++;
                         t += dt;
-                        solved = ((abs_err <= steady_tolerance) || ((rel_err>0)  && (rel_err <= steady_tolerance)) );
-                        continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
+                        solved = ((abs_err <= steady_abs_update_tolerance) 
+				  || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+                        continue_iterations = cont && (!solved)  &&  (k < k_max)  &&  (t < t_max);
                         if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
                             std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken();
                             if ( std::abs(dt - dt_new) > t_eps) {
@@ -1977,15 +1992,6 @@ PorousMedia::richard_init_to_steady()
                 {
 		  getLevel(k).setTimeLevel(cur_time,dt_save[k],dt_save[k]);
                 }
-
-                // Fix up pressure field
-                FillStateBndry(cur_time,State_Type,0,ncomps);
-                calcCapillary(cur_time);
-                MultiFab& P_new = get_new_data(Press_Type);
-                MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
-                P_new.mult(-1.0,1);
-                calcLambda(cur_time);
-                compute_vel_phase(u_mac_curr,0,cur_time);
             }
         }
     }
@@ -10268,7 +10274,6 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			  &do_upwind);
       else
 	{
-	  Real deps = 1.e-8;
 	  if (do_richard_sat_solve)
 	    FORT_RICHARD_NJAC(ndat,   ARLIM(n_lo), ARLIM(n_hi),
 			      dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
@@ -10294,10 +10299,9 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			      cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
 			      lo, hi, domlo, domhi, dx, bc.dataPtr(), 
 			      rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
-			      &deps, &do_upwind);
+			      &richard_perturbation_scale_for_J, &do_upwind);
 	  else
 	    {
-	      deps = 1.e-8;
 	      FORT_RICHARD_NJAC2(dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
 				 dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
 #if(BL_SPACEDIM==3)
@@ -10321,7 +10325,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 				 cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
 				 lo, hi, domlo, domhi, dx, bc.dataPtr(), 
 				 rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
-				 &deps, &do_upwind);
+				 &richard_perturbation_scale_for_J, &do_upwind);
 	    }
 	}
 

@@ -143,6 +143,7 @@ struct RichardNLSdata {
   void SetDtIncreaseFactor2(Real factor);
   void SetMinNewtonIterationsForDt2(int max_iter);
   void SetDtReductionFactor(Real factor);
+  void SetMaxDt(Real dt_max);
 
   bool UpdateJacobian(int lev);
   void ResetJacobianCounter(int lev);
@@ -189,6 +190,7 @@ private:
   bool last_chance;
   Real prev_abs_err;
   bool first;
+  Real max_time_step_size;
 
   Array<PArray<MultiFab> > ktmp; // Currently maintains its own copy of this, should be fixed
   MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew;
@@ -1287,9 +1289,9 @@ protected:
   static Real steady_time_step_retry_factor_f;
   static int  steady_max_consecutive_failures_1;
   static int  steady_max_consecutive_failures_2;
-  static Real steady_tolerance;
   static Real steady_init_time_step;
-  static Real steady_max_time_steps;
+  static int  steady_max_time_steps;
+  static Real steady_max_time_step_size;
   static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
   static int  steady_max_num_consecutive_increases;
@@ -1297,6 +1299,12 @@ protected:
   static Real steady_max_psuedo_time;
   static bool steady_use_PETSc_snes;
   static bool steady_abort_on_psuedo_timestep_failure;
+  static int  steady_limit_function_evals;
+  static Real steady_abs_tolerance;
+  static Real steady_rel_tolerance;
+  static Real steady_abs_update_tolerance;
+  static Real steady_rel_update_tolerance;
+
   //
   // Newton step defaults
   //
@@ -1306,7 +1314,11 @@ protected:
   static Real richard_ls_reduction_factor;
   static int  richard_monitor_linear_solve;
   static int  richard_monitor_line_search;
-
+  static Real richard_perturbation_scale_for_J;
+  static int  richard_use_fd_jac;
+  static int  richard_use_dense_Jacobian;
+  static int  richard_upwind_krel;
+  static int  richard_pressure_maxorder;
   //
   // Number of states
   //

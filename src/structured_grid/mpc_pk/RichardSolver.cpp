@@ -10,7 +10,7 @@
 
 static bool use_fd_jac_DEF = true;
 static bool use_dense_Jacobian_DEF = false;
-static int upwind_krel_DEF = 0;
+static int upwind_krel_DEF = 1;
 static int pressure_maxorder_DEF = 4;
 static Real errfd_DEF = 1.e-8;
 static int max_ls_iterations_DEF = 10;
@@ -18,6 +18,12 @@ static Real min_ls_factor_DEF = 1.e-8;
 static Real ls_acceptance_factor_DEF = 1.4;
 static Real ls_reduction_factor_DEF = 0.1;
 static int monitor_line_search_DEF = 0;
+static int  maxit_DEF = 30;
+static int maxf_DEF = 1e8;
+static Real atol_DEF = 1e-10; 
+static Real rtol_DEF = 1e-20;
+static Real stol_DEF = 1e-12;
+
 
 
 RichardSolver::RSParams::RSParams()
@@ -175,6 +181,8 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   else {
     ierr = SNESSetJacobian(snes,Jac,Jac,RichardJacFromPM,(void*)(this));CHKPETSC(ierr);
   }
+
+  ierr = SNESSetTolerances(snes,params.atol,params.rtol,params.stol,params.maxit,params.maxf);CHKPETSC(ierr);
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
 
   // TODO: Add deletes/destroys for all structures allocated/created here
@@ -184,12 +192,6 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
 int
 RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& nl_data)
 {
-  int  maxit = nl_data.MaxNLIterations();
-  int maxf = 10000;
-  Real atol = 1e-10; 
-  Real rtol = 1e-10;
-  Real stol = 1e-10; // FIXME: Better numbers for this??
-
   int nc = 0;
   MFTower& RhsMFT = GetResidual();
   MFTower& SolnMFT = GetPressure();
@@ -206,8 +208,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   SetTime(cur_time);
   SetDt(delta_t);
-  
-  ierr = SNESSetTolerances(snes,atol,rtol,stol,maxit,maxf);CHKPETSC(ierr);
 
   CheckCtx check_ctx;
   check_ctx.rs = this;
@@ -235,13 +235,8 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   // Copy solution from Vec back into state
   ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
 
-  Real fnorm;
-  ierr = SNESGetFunctionNorm(snes,&fnorm); CHKPETSC(ierr);
-
   if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "     Newton converged in " << nl_data.NLIterationsTaken() << " iterations (max = "
-                << nl_data.MaxNLIterations() << ") with err: " 
-                << fnorm << " (atol = " << atol << ")\n";
+      std::cout << "     Newton converged in " << nl_data.NLIterationsTaken() << " iterations\n";
   }
 
   return reason;
@@ -737,10 +732,31 @@ RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
 }
 
 void 
-RichardSolver::DivU(MFTower& divu,
-		    MFTower& rhoSat,
-		    MFTower& pressure,
-		    Real     time)
+RichardSolver::UpdateDarcyVelocity(PArray<MultiFab>& pressure,
+				   Real              time)
+{
+  Layout& layout = PMAmr::GetLayout();
+  MFTower* P = new MFTower(layout,pressure);
+  UpdateDarcyVelocity(*P,time);
+  delete P;
+}
+
+void 
+RichardSolver::UpdateDarcyVelocity(MFTower& pressure,
+				   Real     time)
+{
+  ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),GetLambda(),GetKappa(),GetDensity(),GetGravity(),time);
+}
+
+void 
+RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
+				    MFTower&               pressure,
+				    MFTower&               rhoSat,
+				    MFTower&               lambda,
+				    const PArray<MFTower>& kappa,
+				    const Array<Real>&     density,
+				    const Array<Real>&     gravity,
+				    Real                   time)
 {
     // On Dirichlet boundaries, the grow cells of pressure will hold the value to apply at
     // the cell wall.  Note that since we use "calcInvPressure" to fill rho.sat, these
@@ -757,7 +773,7 @@ RichardSolver::DivU(MFTower& divu,
     for (int lev=0; lev<nLevs; ++lev) {
         pm[lev].FillStateBndry(time,Press_Type,0,1); // Set new boundary data
         pm[lev].calcInvPressure(rhoSat[lev],pressure[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
-        pm[lev].calcLambda(&(GetLambda()[lev]),rhoSat[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
+        pm[lev].calcLambda(&(lambda[lev]),rhoSat[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
     }
 
     int nComp = 1;
@@ -766,43 +782,34 @@ RichardSolver::DivU(MFTower& divu,
     for (int d=0; d<BL_SPACEDIM; ++d) {
         Real* ap = a.dataPtr(d);
         for (int n=0; n<nComp; ++n) {
-            ap[n] = GetDensity()[n] * GetGravity()[d];
+            ap[n] = density[n] * gravity[d];
         }
     }
 
     // Convert grow cells of pressure into extrapolated values so that from here on out,
     // the values are only used to compute gradients at faces.
     bool do_piecewise_constant = false;
-    //bool do_piecewise_constant = true;
     FillPatch(pressure,0,nComp,do_piecewise_constant);
 
     // Get  -(Grad(p) + rho.g)
-    CCtoECgradAdd(GetDarcyVelocity(),pressure,a);
+    CCtoECgradAdd(darcy_vel,pressure,a);
 
     // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) + rho.g)
     const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
-    CenterToEdgeUpwind(GetRichardCoefs(),
-		       GetLambda(),
-		       GetDarcyVelocity(),nComp,pressure_bc);
+    CenterToEdgeUpwind(GetRichardCoefs(),lambda,darcy_vel,nComp,pressure_bc);
 
     // Get Darcy flux = - lambda * kappa * (Grad(p) + rho.g)
     for (int d=0; d<BL_SPACEDIM; ++d) {
-        XmultYZ(GetDarcyVelocity()[d],
-		GetRichardCoefs()[d],
-		GetKappa()[d]);
+        XmultYZ(darcy_vel[d],GetRichardCoefs()[d],kappa[d]);
     }    
 
     // Overwrite fluxes at boundary with boundary conditions
-    SetInflowVelocity(GetDarcyVelocity(),time);
+    SetInflowVelocity(darcy_vel,time);
 
     // Average down fluxes
     for (int d=0; d<BL_SPACEDIM; ++d) {
-        MFTower::AverageDown(GetDarcyVelocity()[d]);
+        MFTower::AverageDown(darcy_vel[d]);
     }    
-
-    // Get the divergence of the Darcy Flux
-    MFTower::ECtoCCdiv(divu,
-		       GetDarcyVelocity());
 }
 
 Real TotalVolume()
@@ -821,10 +828,11 @@ RichardSolver::DpDtResidual(MFTower& residual,
 			    Real     time,
 			    Real     dt)
 {
-  DivU(residual,
-       GetRhoSatNp1(),
-       pressure,
-       time);
+  // Get the Darcy flux
+  UpdateDarcyVelocity(pressure,time);
+
+  // Get the divergence of the Darcy Flux
+  MFTower::ECtoCCdiv(residual,GetDarcyVelocity());
 
   const Layout& layout = PMAmr::GetLayout();
   const Array<BoxArray>& gridArray = layout.GridArray();
@@ -864,10 +872,11 @@ RichardSolver::DpDtResidual_Alt(MFTower& residual,
                                 Real     time,
                                 Real     dt)
 {
-  DivU(residual,
-       GetRhoSatNp1(),
-       pressure,
-       time);
+  // Get the Darcy flux
+  ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),GetLambda(),GetKappa(),GetDensity(),GetGravity(),time);
+
+  // Get the divergence of the Darcy Flux
+  MFTower::ECtoCCdiv(residual,GetDarcyVelocity());
 
   const Layout& layout = PMAmr::GetLayout();
   const Array<BoxArray>& gridArray = layout.GridArray();

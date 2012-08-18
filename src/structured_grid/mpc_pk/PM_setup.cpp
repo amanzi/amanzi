@@ -294,9 +294,9 @@ Real PorousMedia::steady_time_step_retry_factor_2;
 Real PorousMedia::steady_time_step_retry_factor_f;
 int  PorousMedia::steady_max_consecutive_failures_1;
 int  PorousMedia::steady_max_consecutive_failures_2;
-Real PorousMedia::steady_tolerance;
 Real PorousMedia::steady_init_time_step;
-Real PorousMedia::steady_max_time_steps;
+int  PorousMedia::steady_max_time_steps;
+Real PorousMedia::steady_max_time_step_size;
 Real PorousMedia::steady_max_psuedo_time;
 int  PorousMedia::steady_max_num_consecutive_success;
 Real PorousMedia::steady_extra_time_step_increase_factor;
@@ -304,6 +304,11 @@ int  PorousMedia::steady_max_num_consecutive_increases;
 Real PorousMedia::steady_consecutive_increase_reduction_factor;
 bool PorousMedia::steady_use_PETSc_snes;
 bool PorousMedia::steady_abort_on_psuedo_timestep_failure;
+int  PorousMedia::steady_limit_function_evals;
+Real PorousMedia::steady_abs_tolerance;
+Real PorousMedia::steady_rel_tolerance;
+Real PorousMedia::steady_abs_update_tolerance;
+Real PorousMedia::steady_rel_update_tolerance;
 
 int  PorousMedia::richard_max_ls_iterations;
 Real PorousMedia::richard_min_ls_factor;
@@ -311,6 +316,11 @@ Real PorousMedia::richard_ls_acceptance_factor;
 Real PorousMedia::richard_ls_reduction_factor;
 int  PorousMedia::richard_monitor_linear_solve;
 int  PorousMedia::richard_monitor_line_search;
+Real PorousMedia::richard_perturbation_scale_for_J;
+int  PorousMedia::richard_use_fd_jac;
+int  PorousMedia::richard_use_dense_Jacobian;
+int  PorousMedia::richard_upwind_krel;
+int  PorousMedia::richard_pressure_maxorder;
 
 static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
 namespace
@@ -568,9 +578,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_time_step_retry_factor_f = 0.01;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
   PorousMedia::steady_max_consecutive_failures_2 = 4;
-  PorousMedia::steady_tolerance = 1.e-8;
   PorousMedia::steady_init_time_step = 1.e2;
   PorousMedia::steady_max_time_steps = 8000;
+  PorousMedia::steady_max_time_step_size = 1.e12;
   PorousMedia::steady_max_psuedo_time = 1.e10;
   PorousMedia::steady_max_num_consecutive_success = 3;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
@@ -578,6 +588,11 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_consecutive_increase_reduction_factor = 0.15;
   PorousMedia::steady_use_PETSc_snes = false;
   PorousMedia::steady_abort_on_psuedo_timestep_failure = false;
+  PorousMedia::steady_limit_function_evals = 1e8;
+  PorousMedia::steady_abs_tolerance = 1.e-10;
+  PorousMedia::steady_rel_tolerance = 1.e-20;
+  PorousMedia::steady_abs_update_tolerance = 1.e-12;
+  PorousMedia::steady_rel_update_tolerance = -1;
 
   PorousMedia::richard_max_ls_iterations = 10;
   PorousMedia::richard_min_ls_factor = 1.e-8;
@@ -585,6 +600,11 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_ls_reduction_factor = 0.1;
   PorousMedia::richard_monitor_linear_solve = 0;
   PorousMedia::richard_monitor_line_search = 0;
+  PorousMedia::richard_perturbation_scale_for_J = 1.e-8;
+  PorousMedia::richard_use_fd_jac = 1;
+  PorousMedia::richard_use_dense_Jacobian = 0;
+  PorousMedia::richard_upwind_krel = 1;
+  PorousMedia::richard_pressure_maxorder = 4;
 
   PorousMedia::echo_inputs         = 0;
 }
@@ -1520,9 +1540,9 @@ void PorousMedia::read_prob()
   pb.query("steady_time_step_retry_factor_f",steady_time_step_retry_factor_f);
   pb.query("steady_max_consecutive_failures_1",steady_max_consecutive_failures_1);
   pb.query("steady_max_consecutive_failures_2",steady_max_consecutive_failures_2);
-  pb.query("steady_tolerance",steady_tolerance);
   pb.query("steady_init_time_step",steady_init_time_step);
   pb.query("steady_max_time_steps",steady_max_time_steps);
+  pb.query("steady_max_time_step_size",steady_max_time_step_size);
   pb.query("steady_max_psuedo_time",steady_max_psuedo_time);
   pb.query("steady_max_num_consecutive_success",steady_max_num_consecutive_success);
   pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
@@ -1530,6 +1550,11 @@ void PorousMedia::read_prob()
   pb.query("steady_consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
   pb.query("steady_use_PETSc_snes",steady_use_PETSc_snes);
   pb.query("steady_abort_on_psuedo_timestep_failure",steady_abort_on_psuedo_timestep_failure);
+  pb.query("steady_limit_function_evals",steady_limit_function_evals);
+  pb.query("steady_abs_tolerance",steady_abs_tolerance);
+  pb.query("steady_rel_tolerance",steady_rel_tolerance);
+  pb.query("steady_abs_update_tolerance",steady_abs_update_tolerance);
+  pb.query("steady_rel_update_tolerance",steady_rel_update_tolerance);
 
   pb.query("richard_max_ls_iterations",richard_max_ls_iterations);
   pb.query("richard_min_ls_factor",richard_min_ls_factor);
@@ -1537,6 +1562,11 @@ void PorousMedia::read_prob()
   pb.query("richard_ls_reduction_factor",richard_ls_reduction_factor);
   pb.query("richard_monitor_linear_solve",richard_monitor_linear_solve);
   pb.query("richard_monitor_line_search",richard_monitor_line_search);
+  pb.query("richard_perturbation_scale_for_J",richard_perturbation_scale_for_J);
+  pb.query("richard_use_fd_jac",richard_use_fd_jac);
+  pb.query("richard_use_dense_Jacobian",richard_use_dense_Jacobian);
+  pb.query("richard_upwind_krel",richard_upwind_krel);
+  pb.query("richard_pressure_maxorder",richard_pressure_maxorder);
 
   // Get timestepping parameters.
   pb.get("cfl",cfl);
