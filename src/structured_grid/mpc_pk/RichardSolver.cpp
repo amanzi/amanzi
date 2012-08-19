@@ -1280,11 +1280,6 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
 
         std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
 #endif
-
-        // Copy current res into mftower, write levels
-        MFTower& fMFT = rs->GetResidual();
-	fMFT.Write(BoxLib::Concatenate("JUNK/Res_",iters,2));
-        nld->SetNLIterationsTaken(iters);
     }
     return ierr;
 }
