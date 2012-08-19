@@ -28,6 +28,7 @@ public:
     void set_cumTime(Real strt_time) {cumtime = strt_time;}
   
     Real StartTime() const {return strt_time;}
+    void SetStartTime(Real time) {strt_time = time;}
 
     static Layout& GetLayout() {return layout;}
 protected:

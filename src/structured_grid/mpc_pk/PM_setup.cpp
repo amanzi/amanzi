@@ -322,6 +322,9 @@ int  PorousMedia::richard_use_dense_Jacobian;
 int  PorousMedia::richard_upwind_krel;
 int  PorousMedia::richard_pressure_maxorder;
 
+std::string PorousMedia::execution_mode;
+Real PorousMedia::switch_time;
+
 static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
 namespace
 {
@@ -563,6 +566,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
   PorousMedia::do_richard_sat_solve = false;
+  PorousMedia::execution_mode      = "transient";
+  PorousMedia::switch_time         = 0;
 
   PorousMedia::richard_solver_verbose = 1;
 
@@ -1485,6 +1490,11 @@ void PorousMedia::read_prob()
   max_step  = -1;    
   stop_time = -1.0;  
 
+  pp.query("execution_mode",execution_mode);
+  BL_ASSERT(execution_mode=="transient" || execution_mode=="steady" || execution_mode=="init_to_steady");
+  if (execution_mode=="init_to_steady") {
+    pp.get("switch_time",switch_time);
+  }
   pp.query("max_step",max_step);
   pp.query("stop_time",stop_time);
 
