@@ -33,7 +33,16 @@ namespace AmanziFlow {
 /* ******************************************************************
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC) : 
+    bc_pressure(NULL), 
+    bc_head(NULL),
+    bc_flux(NULL),
+    bc_seepage(NULL), 
+    src_sink(NULL),
+    super_map_(NULL), 
+    solver(NULL), 
+    matrix_(NULL), 
+    preconditioner_(NULL)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
   FS = FS_MPC;
