@@ -2223,9 +2223,10 @@ c
             end if
 
             uy(i,j) = uy(i,j) - kpy(i,j)*ld*(mult*(p(i,j)-p(i,j-1))/dx(2) - grav)  
+
          end do
       end do
-
+      
       end   
 
 

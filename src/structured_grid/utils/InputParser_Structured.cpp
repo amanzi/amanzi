@@ -313,13 +313,11 @@ namespace Amanzi {
             std::string transient_str = "Transient";
             std::string init_to_steady_str = "Initialize To Steady";
             const ParameterList& t_list = ec_list.sublist(tim_str);
-            if (t_list.isSublist(steady_str)) {
-                MyAbort("\"" + steady_str + "\" not yet supported" );
-                if (model_name == "single_phase") {
-                    prob_out_list.set("do_simple",2);
-                }
+	    if (model_name == "single_phase") {
+	      prob_out_list.set("do_simple",2);
             }
-            else if (t_list.isSublist(transient_str))
+            
+	    if (t_list.isSublist(transient_str))
             {
                 const ParameterList& tran_list = t_list.sublist(transient_str);
                 reqP.clear(); reqL.clear();
@@ -340,6 +338,8 @@ namespace Amanzi {
                 double change_max = -1;
                 int step_max = -1;
                 double dt_max = -1;
+
+		struc_out_list.set<std::string>("execution_mode", "transient");
 
                 for (int i=0; i<ToptP.size(); ++i) {
                     if (ToptP[i] == Init_Time_Step_str) {
@@ -387,7 +387,9 @@ namespace Amanzi {
                 const ParameterList& tran_list = t_list.sublist(init_to_steady_str);
 
                 reqP.clear(); reqL.clear();
-                std::map<std::string,double> optP;
+                std::map<std::string,double> optPd;
+                std::map<std::string,int> optPi;
+                std::map<std::string,bool> optPb;
                 std::string Start_str = "Start"; reqP.push_back(Start_str);
                 std::string Switch_str = "Switch"; reqP.push_back(Switch_str);
                 std::string End_str = "End"; reqP.push_back(End_str);
@@ -397,35 +399,61 @@ namespace Amanzi {
 		reqP.push_back(Transient_Init_Time_Step_str);
 
                 // Set defaults for optional parameters
-                std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier"; optP[Init_Time_Step_Mult_str] = -1;
+                std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier"; optPd[Init_Time_Step_Mult_str] = -1;
+                std::string Max_Step_str = "Maximum Cycle Number"; optPi[Max_Step_str] = 100000;
+		std::string Use_Picard_str = "Use Picard"; optPb[Use_Picard_str] = true; // This will be ignored
+
 
                 struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
                 struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
+                struc_out_list.set<double>("switch_time", tran_list.get<double>(Switch_str));
 		prob_out_list.set<double>(underscore("steady_max_pseudo_time"),tran_list.get<double>(Switch_str));
 		prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
 		prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
 
-                // Extract/set required parameters
-                PLoptions Topt(tran_list,reqL,reqP,true,false); 
-                for (int i=0; i<reqP.size(); ++i) {
-                    prob_out_list.set<double>(underscore(init_to_steady_str+" "+reqP[i]), tran_list.get<double>(reqP[i]));
-                }
+		struc_out_list.set<std::string>("execution_mode", "init_to_steady");
 
                 // Extract optional parameters
+                PLoptions Topt(tran_list,reqL,reqP,true,false); 
                 const Array<std::string> ToptP = Topt.OptParms();
                 for (int i=0; i<ToptP.size(); ++i) {
-                    if (optP.find(ToptP[i]) != optP.end()) {
-                        optP[ToptP[i]] = tran_list.get<double>(ToptP[i]); // replace default value
+                    if (optPd.find(ToptP[i]) != optPd.end()) {
+                        optPd[ToptP[i]] = tran_list.get<double>(ToptP[i]); // replace default value
+                    }
+                    else if (optPi.find(ToptP[i]) != optPi.end()) {
+                        optPi[ToptP[i]] = tran_list.get<int>(ToptP[i]); // replace default value
+                    }
+                    else if (optPb.find(ToptP[i]) != optPb.end()) {
+                        optPb[ToptP[i]] = tran_list.get<bool>(ToptP[i]); // replace default value
                     }
                     else {
                         MyAbort("Unrecognized option under \""+init_to_steady_str+"\": \""+ToptP[i]+"\"" );
                     }
                 }
 
-                for (std::map<std::string,double>::const_iterator it=optP.begin(); it!=optP.end(); ++it) {
-                    prob_out_list.set<double>(underscore(init_to_steady_str+" "+it->first), it->second);
+                for (std::map<std::string,double>::const_iterator it=optPd.begin(); it!=optPd.end(); ++it) {
+		  prob_out_list.set<double>(underscore(it->first), it->second);
+                }
+                for (std::map<std::string,int>::const_iterator it=optPi.begin(); it!=optPi.end(); ++it) {
+		  if (it->first==Max_Step_str) {
+		    struc_out_list.set<int>("max_step", it->second);
+		  } else {
+                    prob_out_list.set<int>(underscore(it->first), it->second);
+		  }
+                }
+                for (std::map<std::string,bool>::const_iterator it=optPb.begin(); it!=optPb.end(); ++it) {
+		  prob_out_list.set<bool>(underscore(it->first), it->second);
                 }
             }
+	    else if (t_list.isSublist(steady_str)) {
+                const ParameterList& tran_list = t_list.sublist(transient_str);
+                reqP.clear(); reqL.clear();
+                PLoptions Topt(tran_list,reqL,reqP,true,true); 
+
+		struc_out_list.set<std::string>("execution_mode", "steady");
+		prob_out_list.set<double>("stop_time",0);
+		prob_out_list.set<double>("start_time",0);
+	    }
             else {
                 std::cout << t_list << std::endl;
                 MyAbort("No recognizable value for \"" + tim_str + "\"");

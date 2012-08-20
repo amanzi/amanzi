@@ -23,6 +23,11 @@ public:
     Real ls_acceptance_factor; // Maximun allowable reduction of residual in line search
     Real ls_reduction_factor; // Scale to reduce line search scaling parameter for each try
     int monitor_line_search; // Write status information for line search
+    int  maxit; // Maximum number of Newton iterations
+    int maxf; // Maximum number of function evaluations
+    Real atol; // Absolute tolerance for norm(F)
+    Real rtol; // Relative tolerance for norm(F)
+    Real stol; // Absolute tolerance for norm(dp), dp is the Newton update
   };
 
   RichardSolver(PMAmr&          pm_amr,
@@ -60,11 +65,21 @@ public:
   const Array<IntVect>& RefRatio() const {return PMAmr::GetLayout().RefRatio();}
   const RichardSolver::RSParams& Parameters() {return params;}
 
-  void DivU(MFTower& divu,
-	    MFTower& rhoSat,
-	    MFTower& pressure,
-	    Real     time);
-  
+  void UpdateDarcyVelocity(MFTower& pressure,
+			   Real     time); // Set internal data
+
+  void UpdateDarcyVelocity(PArray<MultiFab>& pressure,
+			   Real              time); // Set internal data
+
+  void ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
+			    MFTower&               pressure,
+			    MFTower&               rhoSat,
+			    MFTower&               lambda,
+			    const PArray<MFTower>& kappa,
+			    const Array<Real>&     density,
+			    const Array<Real>&     gravity,
+			    Real                   time);
+
   void DpDtResidual(MFTower& residual,
 		    MFTower& pressure,
 		    Real     time,
