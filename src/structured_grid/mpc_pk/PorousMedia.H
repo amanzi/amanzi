@@ -1084,6 +1084,7 @@ protected:
   static ChemICMap surface_complexation_ics; // sc[rockname][sorptionsitename][property]) = val
   static ICParmPair cation_exchange_ics; // capacity[rockname] = val
   static ChemICMap solute_chem_ics; // sc[rockname][solute][property] = val
+  static ICLabelParmPair sorption_chem_ics; // sc[solute][property] = val
   static Array<Real> tInflow;
 
   typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
@@ -1091,6 +1092,7 @@ protected:
   static LabelIdx sorption_isotherm_label_map;
   static LabelIdx surface_complexation_label_map;
   static LabelIdx solute_chem_label_map;
+  static LabelIdx sorption_chem_label_map; // sc[solute][parameter] = val
   static std::map<std::string,int> cation_exchange_label_map;
 
   // Pressure

@@ -1,5 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+  <Parameter name="Dump ParmParse Table" type="string" value="amr_data/ppfile"/>
+  <Parameter name="Petsc Options File" type="string" value=".petsc"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D chemistry benchmarking problem for 2012 waste tank demo."/>
     <Parameter name="Author" type="string" value="Ben Andre"/>
@@ -12,6 +14,7 @@
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.5778463e11"/>
+        <Parameter name="End" type="double" value="0"/>
         <Parameter name="Switch" type="double" value="0.0"/>
 	<Parameter name="Steady Initial Time Step" type="double" value="31557600.0"/>
         <Parameter name="Transient Initial Time Step" type="double" value="31557600.0"/>
@@ -78,7 +81,7 @@
           <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
           <Parameter name="richard_pressure_maxorder" type="int" value="4"/>
-          <Parameter name="v" type="double" value="3"/>
+          <Parameter name="v" type="double" value="1"/>
 
         </ParameterList>
       </ParameterList>
@@ -114,6 +117,10 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Material Properties">
+
+    <Parameter name="Permeability Output File" type="string" value="amr_data/kp"/>
+    <Parameter name="Porosity Output File" type="string" value="amr_data/pp"/>
+
     <ParameterList name="Soil">
       <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
       <ParameterList name="Porosity: Uniform">

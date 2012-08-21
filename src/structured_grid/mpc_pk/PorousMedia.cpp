@@ -1249,7 +1249,37 @@ PorousMedia::initData ()
             }
         }
 
+        if (sorption_chem_ics.size()>0)
+        {
+            const Real* dx = geom.CellSize();
+            MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+            for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
+            {
+                FArrayBox& fab = AuxChem_new[mfi];
+
+                for (ICLabelParmPair::iterator it=sorption_chem_ics.begin(); it!=sorption_chem_ics.end(); ++it) 
+                {
+                    const std::string& solute_name = it->first;
+                    ICParmPair& parm_pair = it->second;                    
+                    for (ICParmPair::iterator it1=parm_pair.begin(); it1!=parm_pair.end(); ++it1) 
+                    {
+                        const std::string& parameter = it1->first;
+                        int comp = sorption_chem_label_map[solute_name][parameter];
+                        Real value = it1->second;
+                        for (int i=0; i<rocks.size(); ++i)
+                        {	  
+                            const Rock& rock = rocks[i];
+                            const PArray<Region>& rock_regions = rock.regions;
+                            for (int j=0; j<rock_regions.size(); ++j) {
+                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+
         
     if (model == model_list["richard"]) {
       calcInvPressure(S_new,P_new); // Set sat from p

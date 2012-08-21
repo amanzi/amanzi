@@ -164,11 +164,12 @@ namespace Amanzi {
           {
               SorptionIsothermData() 
                   : Kd(0), Langmuir_b(0), Freundlich_n(1) {}
+              bool IsFreundlich() const {return Freundlich_n>0;}
               double Kd, Langmuir_b, Freundlich_n;
               ParameterList BuildPL() const {
                   ParameterList pl;
                   pl.set("Kd",Kd);
-                  if (Freundlich_n>0) {
+                  if (IsFreundlich()) {
                       pl.set("Freundlich_n",Freundlich_n);
                   }
                   else {
@@ -201,10 +202,26 @@ namespace Amanzi {
               return !(sorption_sites.find(name)==sorption_sites.end());
           }
 
+          static SolidChem::SorptionIsothermData& SorptionIsotherm(const std::string& solute_name) {return sorption_isotherms[solute_name];}
+          static std::map<std::string,SolidChem::SorptionIsothermData>& SorptionIsotherm() {return sorption_isotherms;}          
+          static bool HasSorptionIsotherm(const std::string& solute)
+              {
+                  return sorption_isotherms.find(solute) != sorption_isotherms.end();
+              }
+          static bool InsertSorptionIsotherm(const std::string& soluteName, const SolidChem::SorptionIsothermData& iso) {
+              if (HasSorptionIsotherm(soluteName)) {
+                  return false;
+              }
+              else {
+                  sorption_isotherms[soluteName] = iso;
+              }
+              return true;
+          }
+
       protected:
           std::map<std::string,MineralData> minerals;
           std::map<std::string,SorptionSiteData> sorption_sites;
-          std::map<std::string,SorptionIsothermData> sorption_isotherms;
+          static std::map<std::string,SolidChem::SorptionIsothermData> sorption_isotherms; // One for all materials, indexed on solute name
       };
 
 
@@ -222,11 +239,18 @@ namespace Amanzi {
               }
               return false;
           }
+          bool HasSorptionIsoTherm(const std::string& name) const {
+              for (int i=0; i<sorption_isotherm_names.size(); ++i) {
+                  if (name==sorption_isotherm_names[i]) return true;
+              }
+              return false;
+          }
           bool HasStuff() const {
-              return mineral_names.size() || sorption_site_names.size() || has_cation_exchange;
+              return mineral_names.size() || sorption_site_names.size() || has_cation_exchange || sorption_isotherm_names.size();
           }
           Array<std::string> mineral_names;
           Array<std::string> sorption_site_names;
+          Array<std::string> sorption_isotherm_names;
           bool has_cation_exchange;
       };
 

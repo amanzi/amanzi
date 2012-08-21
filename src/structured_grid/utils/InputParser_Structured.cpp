@@ -17,6 +17,8 @@ using Teuchos::ParameterEntry;
 namespace Amanzi {
     namespace AmanziInput {
 
+        std::map<std::string,SolidChem::SorptionIsothermData> SolidChem::sorption_isotherms; // One for all materials, indexed on solute name
+
         void MyAbort(const std::string& m) {
             if (Teuchos::MPISession::getRank() == 0) {
                 std::cerr << m << std::endl;
@@ -1080,11 +1082,6 @@ namespace Amanzi {
 
             std::map<std::string,SolidChem> solid_chem;
             std::map<std::string,double> cation_exchange_capacity;
-            std::map<std::string,
-                std::map<std::string, 
-                std::map<std::string,
-                std::map<std::string,SolidChem::SorptionIsothermData> > > > p_c_s_iso;
-
             std::map<std::string,ParameterList> rsublist_mat;
             std::string kp_file="kp";
             std::string pp_file="pp";
@@ -1283,8 +1280,8 @@ namespace Amanzi {
                                                 throw std::exception();
                                             }
                                             
-                                            SolidChem::SorptionIsothermData& iso
-                                                = p_c_s_iso[label][sipLabel][sipcLabel][sipcsLabel];
+
+                                            SolidChem::SorptionIsothermData iso;
 
                                             reqP.clear();
                                             std::string Kd_str("Kd");
@@ -1321,6 +1318,17 @@ namespace Amanzi {
 							<< sipcsLabel << "\" of component \""
 							<< sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
 					      throw std::exception();
+                                            }
+
+                                            bool successfully_inserted = SolidChem::InsertSorptionIsotherm(sipcsLabel,iso);
+                                            if (!successfully_inserted) {
+                                                bool compatible = iso.IsFreundlich() ^ SolidChem::SorptionIsotherm(sipcsLabel).IsFreundlich();
+                                                if (!compatible) {
+                                                    std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
+                                                              << "\" may be specified for each solute.  Both given for \"" 
+                                                              << sipcsLabel << "\" in different materials." << std::endl;
+                                                    throw std::exception();
+                                                }
                                             }
                                         }
                                     }
@@ -1447,26 +1455,31 @@ namespace Amanzi {
                     // Must "flatten" hierarchy of phases/comps to be compatible with current Amanzi-S 
                     // in fact, tracers are listed flat requiring that there be no name clashes across phase/comp
                     ParameterList siPL;
-                    bool any_here = false;
                     StateDef::Phases& phases = state.getPhases();
+                    std::set<std::string> solutes_with_isotherms;
                     for (StateDef::Phases::iterator pit=phases.begin(); pit!=phases.end(); ++pit) {
                         const std::string& p=pit->first;
                         StateDef::CompMap& comps = state[p];
                         for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
                             const std::string& c=cit->first;
-                            const Array<std::string>& tracers = cit->second.getTracerArray();
-                            for (int i=0; i<tracers.size(); ++i) {
-                                const std::string& t=tracers[i];
-                                
-                                SolidChem::SorptionIsothermData sid = p_c_s_iso[label][p][c][t];
-                                ParameterList sitPL = sid.BuildPL();
-                                siPL.set(underscore(t),sitPL);
-                                any_here = true;
+                            const Array<std::string>& solutes = cit->second.getTracerArray();
+                            for (int i=0; i<solutes.size(); ++i) {
+                                const std::string& s=solutes[i];
+                                if (SolidChem::HasSorptionIsotherm(s)) {
+                                    SolidChem::SorptionIsothermData sid = SolidChem::SorptionIsotherm(s);
+                                    ParameterList sitPL = sid.BuildPL();
+                                    siPL.set(underscore(s),sitPL);
+                                    solutes_with_isotherms.insert(s);
+                                }
                             }
                         }
                     }
-                    if (any_here) {
+                    if (solutes_with_isotherms.size()>0) {
                         rsublist.set(underscore(isotherm_str),siPL);
+                        state.getSolid().sorption_isotherm_names.resize(solutes_with_isotherms.size());
+                        for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(), End=solutes_with_isotherms.end(); it!=End; ++it) {
+                            state.getSolid().sorption_isotherm_names.push_back(*it);
+                        }
                     }
                 }
             }
@@ -2609,8 +2622,15 @@ namespace Amanzi {
                         const std::string& name = solute_names[i];
                         user_derive_list.push_back(underscore("Total Sorbed "+name));
                         user_derive_list.push_back(underscore("Kd "+name));
-                        user_derive_list.push_back(underscore("Freundlich n "+name));
-                        user_derive_list.push_back(underscore("Langmuir b "+name));
+                        if (SolidChem::HasSorptionIsotherm(name)) {
+                            if (SolidChem::SorptionIsotherm(name).IsFreundlich()) {
+                                user_derive_list.push_back(underscore("Freundlich n "+name));
+                            }
+                            else
+                            {
+                                user_derive_list.push_back(underscore("Langmuir b "+name));
+                            }
+                        }
                         user_derive_list.push_back(underscore("Free Ion Guess "+name));
                         user_derive_list.push_back(underscore("Activity Coefficient "+name));
                     }

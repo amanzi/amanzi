@@ -163,11 +163,13 @@ PorousMedia::ChemICMap PorousMedia::mineralogy_ics;
 PorousMedia::ChemICMap PorousMedia::surface_complexation_ics;
 PorousMedia::ICParmPair PorousMedia::cation_exchange_ics;
 PorousMedia::ChemICMap PorousMedia::solute_chem_ics;
+PorousMedia::ICLabelParmPair PorousMedia::sorption_chem_ics;
 PorousMedia::LabelIdx PorousMedia::mineralogy_label_map;
 PorousMedia::LabelIdx PorousMedia::sorption_isotherm_label_map;
 PorousMedia::LabelIdx PorousMedia::surface_complexation_label_map;
 std::map<std::string,int> PorousMedia::cation_exchange_label_map;
 PorousMedia::LabelIdx PorousMedia::solute_chem_label_map;
+PorousMedia::LabelIdx PorousMedia::sorption_chem_label_map;
 
 // Pressure.
 //
@@ -502,10 +504,13 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::mineralogy_ics.clear();
   PorousMedia::surface_complexation_ics.clear();
   PorousMedia::cation_exchange_ics.clear();
+  PorousMedia::solute_chem_ics.clear();
+  PorousMedia::sorption_chem_ics.clear();
   PorousMedia::mineralogy_label_map.clear();
   PorousMedia::sorption_isotherm_label_map.clear();
   PorousMedia::surface_complexation_label_map.clear();
   PorousMedia::cation_exchange_label_map.clear();
+  PorousMedia::sorption_chem_label_map.clear();
   
 #ifdef MG_USE_FBOXLIB
   PorousMedia::richard_iter = 100;
@@ -1182,8 +1187,6 @@ PorousMedia::read_rock(int do_chem)
                 const std::string label = str+"_"+tNames[k];
                 sorption_isotherm_label_map[tNames[k]][str] = aux_chem_variables.size();
                 aux_chem_variables.push_back(label);
-		//std::cout << "****************** sorption_isotherm_ics[" << r_names[i] << "][" << tNames[k] 
-		//	  << "][" << str << "] = " << sorption_isotherm_ics[r_names[i]][tNames[k]][str] << std::endl;
 	      }
 	    }
 	  }
@@ -1288,6 +1291,26 @@ PorousMedia::read_rock(int do_chem)
 	    }
 	  }
 	}
+
+        if (using_sorption) 
+        {
+            ICParmPair sorption_chem_options; // these are domain-wide, specified per solute
+            sorption_chem_options["Total_Sorbed"] = 1.e-40;
+            for (int k=0; k<tNames.size(); ++k) {
+                for (ICParmPair::const_iterator it=sorption_chem_options.begin(); it!=sorption_chem_options.end(); ++it) {
+                    const std::string& str = it->first;
+                    const std::string prefix("tracer."+tNames[k]+".Initial_Condition."+str);
+                    ParmParse pprs(prefix.c_str());
+                    sorption_chem_ics[tNames[k]][str] = it->second; // set to default value
+                    pprs.query(str.c_str(),sorption_chem_ics[tNames[k]][str]);                      
+                    //std::cout << "****************** sorption_chem_ics[" << tNames[k] 
+                    //              << "][" << str << "] = " << sorption_chem_ics[tNames[k]][str] << std::endl;
+                    const std::string label = str+"_"+tNames[k];
+                    sorption_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
+                    aux_chem_variables.push_back(label);
+                }
+            }
+        }
     }
     
 
@@ -2579,7 +2602,6 @@ void  PorousMedia::read_chem()
       if (do_chem)
       {
 	  ICParmPair solute_chem_options;
-	  solute_chem_options["Total_Sorbed"] = 1.e-40;
 	  solute_chem_options["Free_Ion_Guess"] = 1.e-9;
 	  solute_chem_options["Activity_Coefficient"] = 1;
 	  for (int k=0; k<tNames.size(); ++k) {
@@ -2601,7 +2623,6 @@ void  PorousMedia::read_chem()
               }
 	  }
       }
-
       // TODO: add secondary species activity coefficients
 
 
