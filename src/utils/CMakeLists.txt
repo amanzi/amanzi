@@ -23,6 +23,7 @@ include(LibraryManager)
 project(ATK)
 
 include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${Teuchos_INCLUDE_DIRS})
 
 
 add_amanzi_library(atk
