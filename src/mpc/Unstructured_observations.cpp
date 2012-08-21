@@ -63,7 +63,6 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
         cycles = vcycles.toVector();
       }
 
-
       // loop over all variables listed and create an observable for each
       std::string var = observable_plist.get<string>("Variable");
       observations.insert(std::pair
@@ -163,7 +162,7 @@ bool Unstructured_observations::observation_requested(int cycle,
                                                       const std::vector<int>& cyc,
                                                       const std::vector<std::vector<int> >& isps) {
   for (int i = 0; i < cyc.size(); i++)
-    if (cyc[i],cycle) return true;
+    if (cyc[i] == cycle) return true;
   if (isps.size() > 0) {
     for (std::vector<std::vector<int> >::const_iterator i=isps.begin(); i!=isps.end(); ++i) {
       if  (cycle >= (*i)[0] && ((*i)[2] == -1 || cycle <= (*i)[2])) {
