@@ -45,6 +45,20 @@ namespace AmanziFlow {
 ****************************************************************** */
 Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
+  // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
+  bc_pressure = NULL; 
+  bc_head = NULL;
+  bc_flux = NULL;
+  bc_seepage = NULL; 
+
+  super_map_ = NULL; 
+  solver = NULL; 
+  matrix_ = NULL; 
+  preconditioner_ = NULL;
+
+  bdf2_dae = NULL;
+  bdf1_dae = NULL;
+
   Flow_PK::Init(FS_MPC);
   FS = FS_MPC;
 
@@ -106,9 +120,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 #endif
 
   // miscalleneous
-  solver = NULL;
-  bdf2_dae = NULL;
-  bdf1_dae = NULL;
   block_picard = 1;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
@@ -548,7 +559,7 @@ int Richards_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-  // predict water mass change during time step
+  // predict water mass change during time stepbdf2_d
   time = T_physics;
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);

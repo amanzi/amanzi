@@ -33,17 +33,20 @@ namespace AmanziFlow {
 /* ******************************************************************
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC) : 
-    bc_pressure(NULL), 
-    bc_head(NULL),
-    bc_flux(NULL),
-    bc_seepage(NULL), 
-    src_sink(NULL),
-    super_map_(NULL), 
-    solver(NULL), 
-    matrix_(NULL), 
-    preconditioner_(NULL)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
+  // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
+  bc_pressure = NULL; 
+  bc_head = NULL;
+  bc_flux = NULL;
+  bc_seepage = NULL; 
+  src_sink = NULL;
+
+  super_map_ = NULL; 
+  solver = NULL; 
+  matrix_ = NULL; 
+  preconditioner_ = NULL;
+
   Flow_PK::Init(FS_MPC);  // sets up default parameters
   FS = FS_MPC;
 
@@ -90,7 +93,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   for (int k = 0; k < dim; k++) gravity_[k] = (*(FS->gravity()))[k];
 
 #ifdef HAVE_MPI
-  const  Epetra_Comm& comm = mesh_->cell_map(false).Comm();
+  const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
   MyPID = comm.MyPID();
 
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
