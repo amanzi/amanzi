@@ -15,7 +15,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 // TwoPhase is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -155,8 +155,8 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   // div K_e grad u
   S_next_->GetFieldEvaluator("thermal_conductivity")
     ->HasFieldChanged(S_next_.ptr(), "energy_pk");
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S_next_->GetFieldData("thermal_conductivity", "energy");
+  Teuchos::RCP<const CompositeVector> thermal_conductivity =
+    S_next_->GetFieldData("thermal_conductivity");
 
   preconditioner_->CreateMFDstiffnessMatrices(*thermal_conductivity);
   preconditioner_->CreateMFDrhsVectors();

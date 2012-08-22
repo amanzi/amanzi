@@ -9,6 +9,7 @@
 #ifndef AMANZI_ENERGY_RELATIONS_IEM_WATER_VAPOR_EVALUATOR_
 #define AMANZI_ENERGY_RELATIONS_IEM_WATER_VAPOR_EVALUATOR_
 
+#include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 #include "iem_water_vapor.hh"
 
@@ -26,6 +27,8 @@ class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
                          const Teuchos::RCP<IEMWaterVapor>& iem);
   IEMWaterVaporEvaluator(const IEMWaterVaporEvaluator& other);
 
+  Teuchos::RCP<FieldEvaluator> Clone() const;
+
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& results);
@@ -41,6 +44,10 @@ class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
   Key mol_frac_key_;
   Teuchos::ParameterList iem_plist_;
   Teuchos::RCP<IEMWaterVapor> iem_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,IEMWaterVaporEvaluator> factory_;
+
 };
 
 } //namespace

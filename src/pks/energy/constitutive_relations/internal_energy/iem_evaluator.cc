@@ -13,6 +13,9 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
+Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> IEMEvaluator::factory_("iem");
+
+
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& iem_plist) :
     SecondaryVariableFieldEvaluator(),
     iem_plist_(iem_plist) {
@@ -81,7 +84,7 @@ void IEMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 
-void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void IEMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   ASSERT(wrt_key == temp_key_);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);

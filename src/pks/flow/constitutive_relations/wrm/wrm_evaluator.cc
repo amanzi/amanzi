@@ -16,8 +16,8 @@ namespace FlowRelations {
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& wrm_plist) :
     SecondaryVariablesFieldEvaluator(),
     wrm_plist_(wrm_plist) {
-  ASSERT(wrm_plist.isSublist("WRM parameters"));
-  Teuchos::ParameterList sublist = wrm_plist.sublist("WRM parameters");
+  ASSERT(wrm_plist_.isSublist("WRM parameters"));
+  Teuchos::ParameterList sublist = wrm_plist_.sublist("WRM parameters");
   WRMFactory fac;
   wrm_ = fac.createWRM(sublist);
 }

@@ -101,7 +101,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   Teuchos::RCP<const CompositeVector> res = u->data();
   for (int c=0; c!=res->size("cell"); ++c) {
     if (boost::math::isnan<double>((*res)("cell",c))) {
-      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
       std::cout << "Cutting time step due to NaN in cell residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -109,7 +109,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   }
   for (int f=0; f!=res->size("face"); ++f) {
     if (boost::math::isnan<double>((*res)("face",f))) {
-      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
       std::cout << "Cutting time step due to NaN in face residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -122,7 +122,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   Teuchos::RCP<const CompositeVector> Pres = Pu->data();
   for (int c=0; c!=Pres->size("cell"); ++c) {
     if (boost::math::isnan<double>((*Pres)("cell",c))) {
-      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
       std::cout << "Cutting time step due to NaN in PC'd cell residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -130,7 +130,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   }
   for (int f=0; f!=Pres->size("face"); ++f) {
     if (boost::math::isnan<double>((*Pres)("face",f))) {
-      int mypid = S_next_->Mesh("surface")->get_comm()->MyPID();
+      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
       std::cout << "Cutting time step due to NaN in PC'd face residual on proc " << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -321,11 +321,11 @@ void OverlandFlow::test_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     df->Update(-1.0, *f2, 1.0, *f1, 1.0);
     double error = enorm(f1, df);
     //
-      AmanziGeometry::Point point = S_next_->Mesh("surface")->cell_centroid(c);
+      AmanziGeometry::Point point = S_next_->GetMesh("surface")->cell_centroid(c);
       if (error > 1e-5) {
         std::cout << "Bad error at cell: " << c << std::endl;
         AmanziMesh::Entity_ID_List faces;
-        S_next_->Mesh("surface")->cell_get_faces(c, &faces);
+        S_next_->GetMesh("surface")->cell_get_faces(c, &faces);
         std::cout << "faces: " << faces[0] << ", "
             << faces[1] << ", "
             << faces[2] << ", "

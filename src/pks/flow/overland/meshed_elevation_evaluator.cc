@@ -34,12 +34,12 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 
   // Get the elevation and slope values from the domain mesh.
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->Mesh());
+      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
       // Note that static cast is safe here because we have
       // already ensured it was MSTK.
 
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface_mesh =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->Mesh("surface"));
+      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh("surface"));
                     // Note that static cast is safe here because we have
                     // already ensured it was MSTK.
 

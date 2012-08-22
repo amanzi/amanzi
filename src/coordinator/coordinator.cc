@@ -75,15 +75,13 @@ void Coordinator::initialize() {
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
   bool surface_done = false;
-  if (S_->has_mesh("surface") && S_->has_mesh("surface_3d")) {
-    Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->Mesh("surface_3d");
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->Mesh("surface");
+  if (S_->HasMesh("surface") && S_->HasMesh("surface_3d")) {
+    Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->GetMesh("surface");
 
     std::string plist_name = "Visualization surface";
     Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
-      vis_plist.set<std::string>("File Name Base","surface");
-    Teuchos::RCP<Visualization> vis =
-      Teuchos::rcp(new Visualization(vis_plist, comm_));
+    Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
     vis->CreateFiles();
     vis->set_mesh(surface);
@@ -158,7 +156,8 @@ void Coordinator::cycle_driver() {
   S_->set_cycle(0);
 
   // the time step manager coordinates all non-physical timesteps
-  TimeStepManager tsm;
+  Teuchos::Ptr<TimeStepManager> tsm = Teuchos::ptr(new TimeStepManager());
+
   // register times with the tsm
   // -- register visualization times
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -169,7 +168,7 @@ void Coordinator::cycle_driver() {
   // -- register observation times
   //if (observations_) observations_->register_with_time_step_manager(TSM);
   // -- register the final time
-  tsm.RegisterTimeEvent(t1_);
+  tsm->RegisterTimeEvent(t1_);
 
   // make observations
   //  observations_->MakeObservations(*S_);
@@ -178,7 +177,7 @@ void Coordinator::cycle_driver() {
   pk_->calculate_diagnostics(S_);
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
-    S_->WriteVis((*vis).ptr());
+    WriteVis((*vis).ptr(), S_.ptr());
   }
 
   // we need to create an intermediate state that will store the updated
@@ -209,7 +208,7 @@ void Coordinator::cycle_driver() {
     }
 
     // ask the step manager if this step is ok
-    dt = tsm.TimeStep(S_->time(), dt);
+    dt = tsm->TimeStep(S_->time(), dt);
 
     if (comm_->MyPID() == 0) {
       std::cout << "Cycle = " << S_->cycle();
@@ -244,11 +243,11 @@ void Coordinator::cycle_driver() {
       for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
            vis!=visualization_.end(); ++vis) {
         if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
-          S_next_->WriteVis((*vis).ptr());
+          WriteVis((*vis).ptr(), S_next_.ptr());
         }
       }
 
-      S_next_->WriteCheckpoint(checkpoint_);
+      WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
 
       // write restart dump if requested
       // restart->dump_state(*S_next_);
@@ -269,10 +268,10 @@ void Coordinator::cycle_driver() {
 
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
-    S_next_->WriteVis((*vis).ptr());
+    WriteVis((*vis).ptr(), S_next_.ptr());
   }
 
-  S_next_->WriteCheckpoint(checkpoint_, true);
+  WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
 
   // dump observations
   //  output_observations_.print(std::cout);

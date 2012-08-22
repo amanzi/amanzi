@@ -47,7 +47,8 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& eos_plist) :
   std::size_t end = a_key_.find_first_of("_");
   std::string domain_name = a_key_.substr(0,end);
   if (domain_name == std::string("density") ||
-      domain_name == std::string("molar")) {
+      domain_name == std::string("molar") ||
+      domain_name == std::string("mass")) {
     domain_name = std::string("");
   } else {
     domain_name = domain_name+std::string("_");

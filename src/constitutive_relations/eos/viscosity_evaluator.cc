@@ -21,7 +21,7 @@ ViscosityEvaluator::ViscosityEvaluator(
     visc_plist_(visc_plist) {
 
   // my keys
-  my_key_ = visc_plist_.get<std::string>("molar fraction of water key");
+  my_key_ = visc_plist_.get<std::string>("viscosity key", "viscosity_liquid");
 
   // Set up my dependencies.
   std::size_t end = my_key_.find_first_of("_");

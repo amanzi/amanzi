@@ -17,7 +17,7 @@ namespace Amanzi {
 namespace Relations {
 
 // registry of method
-Utils::RegisteredFactory<ViscosityRelation,ViscosityWater> ViscosityWater::factory_("viscosity of liquid water");
+Utils::RegisteredFactory<ViscosityRelation,ViscosityWater> ViscosityWater::factory_("liquid water");
 
 ViscosityWater::ViscosityWater(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist),

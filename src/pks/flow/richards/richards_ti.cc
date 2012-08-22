@@ -17,7 +17,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 // Richards is a BDFFnBase
 // -----------------------------------------------------------------------------

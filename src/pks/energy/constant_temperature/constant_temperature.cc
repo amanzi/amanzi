@@ -41,13 +41,13 @@ ConstantTemperature::ConstantTemperature(Teuchos::ParameterList& energy_plist,
 
   // Set up the data structure.
   // Since there is only one field, we'll do this manually.
-  factory->SetMesh(S->Mesh());
+  factory->SetMesh(S->GetMesh());
   factory->SetComponent("cell", AmanziMesh::CELL, 1);
   factory->SetGhosted(true);
 
   // Note that this the above lines are equivalent to the fancier/more concise
   // version:
-  //  S->RequireField("temperature", "energy")->SetMesh(S->Mesh())->
+  //  S->RequireField("temperature", "energy")->SetMesh(S->GetMesh())->
   //            SetComponent("cell", AmanziMesh::CELL, 1)->SetGhosted(true);
 
   S->GetField("temperature","energy")->set_io_vis(true);

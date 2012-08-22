@@ -19,7 +19,7 @@ template<> Utils::Factory<ThermalConductivityTwoPhase>::map_type* Utils::Factory
 
 // method for instantiating implementations
 Teuchos::RCP<ThermalConductivityTwoPhase> ThermalConductivityTwoPhaseFactory::createThermalConductivityModel(Teuchos::ParameterList& plist) {
-  std::string tc_typename = plist.get<std::string>("Thermal Conductivity Type");
+  std::string tc_typename = plist.get<std::string>("thermal conductivity type");
   return Teuchos::rcp(CreateInstance(tc_typename, plist));
 };
 
