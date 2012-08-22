@@ -1780,17 +1780,14 @@ void output_boundary_conditions( Teuchos::ParameterList* plist ){
         
         if ( plist->isSublist("Flow") ) {
                flow_list =  plist->sublist("Flow");
-               std::cout<<"There is flow sublist\n";
                
                Teuchos::ParameterList richards_list;
                if ( flow_list.isSublist("Richards Problem") ){
                        richards_list = flow_list.sublist("Richards Problem");
-                       std::cout<<"There is richards sublist\n";
                        
                        Teuchos::ParameterList bc_list;
                        if ( richards_list.isSublist("boundary conditions") ){
                                bc_list = richards_list.sublist("boundary conditions");
-                               std::cout<<"There is bc_list\n";
                        }
                        
                        Teuchos::ParameterList mass_flux_list, pressure_list, seepage_list, head_list;
@@ -1803,8 +1800,6 @@ void output_boundary_conditions( Teuchos::ParameterList* plist ){
                                                 
                                                 std::stringstream ss;
                                                 ss << "BCmassflux" << bc_counter++;
-                                                
-                                                std::cout<< "massflux "<<bc_counter<<"\n";
                                                 
                                                 Teuchos::ParameterList& f_tab = (bc.sublist("outward mass flux")).sublist("function-tabular");
                                                 
@@ -1842,7 +1837,6 @@ void output_boundary_conditions( Teuchos::ParameterList* plist ){
                                                 
                                                 ofile << "# "<<"time "<< "flux"<<std::endl;
                                                 for (int i=0; i < np; i++){
-                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
                                                         ofile <<times_plot[i] << " " << values_plot[i] << std::endl;
                                                 }
                                                 
@@ -1898,7 +1892,6 @@ void output_boundary_conditions( Teuchos::ParameterList* plist ){
                                                 
                                                 ofile << "# time "<<"pressure"<<std::endl;
                                                 for (int i=0; i < np; i++){
-                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
                                                         ofile << times_plot[i] << " " << values_plot[i] << std::endl;
                                                 }
                                                 
@@ -1954,7 +1947,6 @@ void output_boundary_conditions( Teuchos::ParameterList* plist ){
                                                 
                                                 ofile << "# time "<<"flux"<<std::endl;
                                                 for (int i=0; i < np; i++){
-                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
                                                         ofile << times_plot[i] << " " << values_plot[i] << std::endl;
                                                 }
                                                 
@@ -2010,7 +2002,6 @@ void output_boundary_conditions( Teuchos::ParameterList* plist ){
                                                 
                                                 ofile << "# time "<<"head"<<std::endl;
                                                 for (int i=0; i < np; i++){
-                                                        std::cout << "times "<<times_plot[i] << " " << values_plot[i] << std::endl;
                                                         ofile << times_plot[i] << " " << values_plot[i] << std::endl;
                                                 }
                                                 
