@@ -2984,21 +2984,26 @@ namespace Amanzi {
 	      for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {                
                 std::string label = olist.name(i);
                 const ParameterEntry& entry = olist.getEntry(label);
+
                 if (entry.isList()) {
 		  std::string _label = underscore(label);
 		  const ParameterList& rslist = olist.sublist(label);
 		  std::string functional = rslist.get<std::string>("Functional");
 		  std::string region_name = rslist.get<std::string>("Region");
+		  const std::string& variable = rslist.get<std::string>("Variable");
+
 		  if (functional == "Observation Data: Integral") {
 		    sublist.set("obs_type","integral");
 		  }
-		  else if (functional == "Observation Data: Point")
-                    {
-		      sublist.set("obs_type","point_sample");
+		  else if (functional == "Observation Data: Point") {
+                      sublist.set("obs_type","point_sample");
+
+                      // Check our list of regions to ensure it exists and is the correct type
 		      const ParameterList& lregion = 
-			parameter_list.sublist("Regions").sublist(region_name);
+                          parameter_list.sublist("Regions").sublist(region_name);
+
 		      if (!lregion.isSublist("Region: Point"))
-                        {
+                      {
 			  std::cerr << label << " is a point observation and "
 				    << region_name << " is not a point region.\n";
 			  throw std::exception();
@@ -3006,17 +3011,32 @@ namespace Amanzi {
                     }
 		  sublist.set("region",region_name);
 
-		  const std::string& timeMacro = rslist.get<std::string>("Time Macro");
-		  if (time_macros.find(timeMacro) == time_macros.end()) {
-		    std::cerr << "Unrecognized time macro: \"" << timeMacro
-			      << "\" for observation data: \"" << label << "\"" << std::endl;
-		    throw std::exception();                        
+                  std::string Time_Macro_str = "Time Macro";
+                  std::string Cycle_Macro_str = "Cycle Macro";
+                  if (rslist.isParameter(Time_Macro_str)) {
+                      const std::string& timeMacro = rslist.get<std::string>(Time_Macro_str);
+                      if (time_macros.find(timeMacro) == time_macros.end()) {
+                          std::cerr << "Unrecognized time macro: \"" << timeMacro
+                                    << "\" for observation data: \"" << label << "\"" << std::endl;
+                          throw std::exception();                        
+                      }
+                      sublist.set("time_macro",timeMacro);
+                  }
+		  else if (rslist.isParameter(Cycle_Macro_str)) {
+                      const std::string& cycleMacro = rslist.get<std::string>(Cycle_Macro_str);
+                      if (cycle_macros.find(cycleMacro) == cycle_macros.end()) {
+                          std::cerr << "Unrecognized cycle macro: \"" << cycleMacro
+                                    << "\" for observation data: \"" << label << "\"" << std::endl;
+                          throw std::exception();                        
+                      }
+                      sublist.set("cycle_macro",cycleMacro);
 		  }
-		  else {
-		    sublist.set("time_macro",timeMacro);
-		  }
+                  else {
+                      std::cerr << "Must specify either time or cycle macro forobservation data: \"" 
+                                << label << "\"" << std::endl;
+                      throw std::exception();                 
+                  }
 	  
-		  const std::string& variable = rslist.get<std::string>("Variable");
 		  std::string _variable = underscore(variable);
 		  bool found = false;
 		  for (int k=0; k<user_derive_list.size() && !found; ++k) {
@@ -3042,6 +3062,7 @@ namespace Amanzi {
 		  }
                 }
 	      }
+	      obs_list.set("output_file",obs_file);
 	      obs_list.set("observation",arrayobs);
 	    }
 	}

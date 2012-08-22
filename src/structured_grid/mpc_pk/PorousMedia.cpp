@@ -3411,6 +3411,8 @@ PorousMedia::advance_multilevel_saturated (Real time,
             }
 	  }
       }
+    PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
+    p->set_cumTime(time+dt);
   }
 }
 

@@ -2476,6 +2476,8 @@ void PorousMedia::read_observation()
   
   // determine number of observation
   int n_obs = pp.countval("observation");
+  std::map<std::string,EventCoord::Event*>::const_iterator eit;
+
   if (n_obs > 0)
   {
       observations.resize(n_obs,PArrayManage);
@@ -2496,9 +2498,39 @@ void PorousMedia::read_observation()
           Array<std::string> region_names(1); ppr.get("region",region_names[0]);
           const PArray<Region> obs_regions = build_region_PArray(region_names);
           
-          std::string obs_time_macro; ppr.get("time_macro",obs_time_macro);
+          std::string obs_time_macro, obs_cycle_macro;
+          ppr.query("cycle_macro",obs_cycle_macro);
+          ppr.query("time_macro",obs_time_macro);
 
-          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,obs_time_macro));
+          std::string event_label;
+          if (ppr.countval("cycle_macro")>0) {
+              eit = defined_events.find(obs_cycle_macro);
+              if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+                  event_label = eit->first;
+                  event_coord.Register(event_label,eit->second);
+              }
+              else {
+                  std::string m = "obs_cycle_macro unrecognized \"" + obs_cycle_macro + "\"";
+                  BoxLib::Abort(m.c_str());
+              } 
+          }
+          else if (ppr.countval("time_macro")>0) {
+              eit = defined_events.find(obs_time_macro);
+              if (eit != defined_events.end()  && eit->second->IsTime() ) {
+                  event_label = eit->first;
+                  event_coord.Register(event_label,eit->second);
+              }
+              else {
+                  std::string m = "obs_time_macro unrecognized \"" + obs_time_macro + "\"";
+                  BoxLib::Abort(m.c_str());
+              } 
+          }
+          else {
+              std::string m = "Must define either time or cycle macro for observation \"" + obs_names[i] + "\"";
+              BoxLib::Abort(m.c_str());
+          }
+
+          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,event_label));
 	}
       
       // filename for output
@@ -2510,8 +2542,6 @@ void PorousMedia::read_observation()
   ppa.queryarr("vis_time_macros",vis_time_macros,0,ppa.countval("vis_time_macros"));
   ppa.queryarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
   ppa.queryarr("chk_time_macros",chk_time_macros,0,ppa.countval("chk_time_macros"));
-
-  std::map<std::string,EventCoord::Event*>::const_iterator eit;
 
   for (int i=0; i<vis_cycle_macros.size(); ++i)
   {
