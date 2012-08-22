@@ -33,8 +33,6 @@ public:
     static Layout& GetLayout() {return layout;}
 protected:
     static Layout layout;
-
-protected:
     static EventCoord event_coord;
     static void CleanupStatics ();
 
@@ -46,6 +44,8 @@ private:
     PMAmr& operator= (const PMAmr& rhs);
 
     Real strt_time;
+
+    static Real dt_previous;
 };
 
 #endif /*_PMAmr_H_*/

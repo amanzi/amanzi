@@ -194,9 +194,11 @@ Real  PorousMedia::temperature;
 int  PorousMedia::verbose;
 Real PorousMedia::cfl;
 Real PorousMedia::init_shrink;
-Real PorousMedia::change_max;
+Real PorousMedia::dt_grow_max;
+Real PorousMedia::dt_shrink_max;
 Real PorousMedia::fixed_dt;
-Real PorousMedia::richard_max_dt;
+Real PorousMedia::steady_richard_max_dt;
+Real PorousMedia::transient_richard_max_dt;
 Real PorousMedia::dt_cutoff;
 Real PorousMedia::gravity;
 int  PorousMedia::initial_step;
@@ -277,6 +279,7 @@ int  PorousMedia::n_pressure_interval;
 int  PorousMedia::it_pressure;
 bool PorousMedia::do_any_diffuse;
 int  PorousMedia::do_cpl_advect;
+Real PorousMedia::ic_chem_relax_dt;
 
 int  PorousMedia::richard_solver_verbose;
 //
@@ -524,9 +527,11 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::cfl          = 0.8;
   PorousMedia::init_shrink  = 1.0;
   PorousMedia::dt_init      = -1.0; // Ignore if < 0
-  PorousMedia::change_max   = 1.1;
+  PorousMedia::dt_grow_max  = -1;
+  PorousMedia::dt_shrink_max  = -1;
   PorousMedia::fixed_dt     = -1.0;
-  PorousMedia::richard_max_dt = 5.e5;
+  PorousMedia::steady_richard_max_dt = -1; // Ignore if < 0
+  PorousMedia::transient_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::dt_cutoff    = 0.0;
   PorousMedia::gravity      = 9.70297e-5; // 9.81/1.01e5
   PorousMedia::initial_step = false;
@@ -573,6 +578,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_richard_sat_solve = false;
   PorousMedia::execution_mode      = "transient";
   PorousMedia::switch_time         = 0;
+  PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
 
   PorousMedia::richard_solver_verbose = 1;
 
@@ -1591,9 +1597,11 @@ void PorousMedia::read_prob()
   pb.query("init_shrink",init_shrink);
   pb.query("dt_init",dt_init);
   pb.query("dt_cutoff",dt_cutoff);
-  pb.query("change_max",change_max);
+  pb.query("dt_grow_max",dt_grow_max);
+  pb.query("dt_shrink_max",dt_shrink_max);
   pb.query("fixed_dt",fixed_dt);
-  pb.query("max_dt",richard_max_dt);
+  pb.query("steady_richard_max_dt",steady_richard_max_dt);
+  pb.query("transient_richard_max_dt",transient_richard_max_dt);
   pb.query("sum_interval",sum_interval);
 
   // Gravity are specified as m/s^2 in the input file
@@ -2561,6 +2569,7 @@ void  PorousMedia::read_chem()
   pp.query("do_chem",do_chem);
   pp.query("do_full_strang",do_full_strang);
   pp.query("n_chem_interval",n_chem_interval);
+  pp.query("ic_chem_relax_dt",ic_chem_relax_dt);
   if (n_chem_interval > 0) 
     {
       do_full_strang = 0;
@@ -2643,10 +2652,6 @@ void  PorousMedia::read_chem()
       
       for (int ithread = 0; ithread < tnum; ithread++)
         {
-	  if (ParallelDescriptor::IOProcessor() && ithread == 0) {
-	    BoxLib::Warning("PM_setup::read_chem: Translate ntracers, nminerals, nsorption_sites, etc into amanzi chem parlance");
-	  }
-	  
 	  chemSolve.set(ithread, new amanzi::chemistry::SimpleThermoDatabase());
 	  
 	  parameters[ithread] = chemSolve[ithread].GetDefaultParameters();

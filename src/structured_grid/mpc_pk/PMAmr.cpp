@@ -4,11 +4,13 @@
 
 EventCoord PMAmr::event_coord;
 Layout PMAmr::layout;
+Real PMAmr::dt_previous = -1;
 
 void
 PMAmr::CleanupStatics ()
 {
     layout.Clear();
+    dt_previous = -1;
 }
 
 
@@ -114,7 +116,16 @@ PMAmr::coarseTimeStep (Real stop_time)
     //
     // Compute new dt.
     //
-    if (level_steps[0] > 0)
+    if (level_steps[0] <= 0 && PorousMedia::DtInit() > 0) 
+    {
+        int n_factor = 1;
+        for (int i = 0; i <= max_level; i++)
+        {
+            n_factor   *= n_cycle[i];
+            dt_level[i] = PorousMedia::DtInit()/( (Real)n_factor );
+        }
+    }
+    else 
     {
         int post_regrid_flag = 0;
         amr_level[0].computeNewDt(finest_level,
@@ -125,14 +136,11 @@ PMAmr::coarseTimeStep (Real stop_time)
                                   dt_level,
                                   stop_time,
                                   post_regrid_flag);
-    }
-    else if (PorousMedia::DtInit() > 0) 
-    {
-        int n_factor = 1;
-        for (int i = 0; i <= max_level; i++)
-        {
-            n_factor   *= n_cycle[i];
-            dt_level[i] = PorousMedia::DtInit()/( (Real)n_factor );
+        if (dt_previous > 0) {
+            dt_level[0] = dt_previous;
+            for (int lev = 1; lev <= finest_level; lev++) {
+                dt_level[lev] = dt_level[lev-1]/Real(MaxRefRatio(lev-1));
+            }
         }
     }
 
@@ -146,7 +154,11 @@ PMAmr::coarseTimeStep (Real stop_time)
     Array<int> observations_to_process;
     Real dt_red = process_events(write_plot,write_check,observations_to_process,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
+
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
+        Real drastic_dt_change_for_event = 1.e-4;
+        dt_previous = (dt_red < drastic_dt_change_for_event * dt_level[0]  ?  dt_level[0]  :  -1);
+
         Array<Real> dt_new(finest_level+1,dt_red);
         for (int lev = 1; lev <= finest_level; lev++) {
             dt_new[lev] = dt_new[lev-1]/Real(MaxRefRatio(lev-1));

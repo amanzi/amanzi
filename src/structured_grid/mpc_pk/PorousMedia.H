@@ -1212,9 +1212,11 @@ protected:
   //
   static Real init_shrink;   // reduction factor of first esimated timestep
   static Real cfl;           // desired maximum cfl
-  static Real change_max;    // maximum change in dt over a timestep
+  static Real dt_grow_max;    // maximum change in dt over a timestep
+  static Real dt_shrink_max;    // maximum change in dt over a timestep
   static Real fixed_dt;      // set > 0 to specify dt
-  static Real richard_max_dt; // define maximum time step for the richard solver
+  static Real steady_richard_max_dt; // define maximum time step for the steady richard solver
+  static Real transient_richard_max_dt; // define maximum time step for the transient richard solver
   static int  initial_iter;  // flag for initial pressure iterations
   static int  initial_step;  // flag for initial iterations
   static Real dt_cutoff;     // minimum dt allowed
@@ -1273,6 +1275,7 @@ protected:
   static bool do_richard_sat_solve;
   static std::string execution_mode;
   static Real switch_time;
+  static Real ic_chem_relax_dt;
 
   static int  richard_solver_verbose;
 

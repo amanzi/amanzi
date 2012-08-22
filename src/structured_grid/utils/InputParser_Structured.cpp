@@ -326,7 +326,8 @@ namespace Amanzi {
                 std::string Start_str = "Start"; reqP.push_back(Start_str);
                 std::string End_str = "End"; reqP.push_back(End_str);
                 std::string Init_Time_Step_str = "Initial Time Step";
-                std::string Time_Step_Change_Max_str = "Maximum Time Step Change";
+                std::string Time_Step_Grow_Max_str = "Maximum Time Step Grow";
+                std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink";
                 std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier";
                 std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
                 std::string Max_Step_str = "Maximum Cycle Number";
@@ -337,7 +338,8 @@ namespace Amanzi {
                 struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
                 double dt_init = -1;
                 double dt_init_mult = -1;
-                double change_max = -1;
+                double dt_grow_max = -1;
+                double dt_shrink_max = -1;
                 int step_max = -1;
                 double dt_max = -1;
 
@@ -347,8 +349,11 @@ namespace Amanzi {
                     if (ToptP[i] == Init_Time_Step_str) {
                         dt_init = tran_list.get<double>(Init_Time_Step_str);
                     }
-                    else if (ToptP[i] == Time_Step_Change_Max_str) {
-                        change_max = tran_list.get<double>(Time_Step_Change_Max_str);
+                    else if (ToptP[i] == Time_Step_Shrink_Max_str) {
+                        dt_shrink_max = tran_list.get<double>(Time_Step_Shrink_Max_str);
+                    }
+                    else if (ToptP[i] == Time_Step_Grow_Max_str) {
+                        dt_grow_max = tran_list.get<double>(Time_Step_Grow_Max_str);
                     }
                     else if (ToptP[i] == Init_Time_Step_Mult_str) {
                         dt_init_mult = tran_list.get<double>(Init_Time_Step_Mult_str);
@@ -372,8 +377,12 @@ namespace Amanzi {
                     prob_out_list.set<double>("init_shrink", dt_init_mult);
                 } 
 
-                if (change_max > 0) {                        
-                    prob_out_list.set<double>("change_max", change_max);
+                if (dt_shrink_max > 0) {                        
+                    prob_out_list.set<double>("dt_shrink_max", dt_shrink_max);
+                }
+
+                if (dt_grow_max > 0) {                        
+                    prob_out_list.set<double>("dt_grow_max", dt_grow_max);
                 }
 
                 if (step_max>=0) {
@@ -404,6 +413,14 @@ namespace Amanzi {
                 std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier"; optPd[Init_Time_Step_Mult_str] = -1;
                 std::string Max_Step_str = "Maximum Cycle Number"; optPi[Max_Step_str] = 100000;
 		std::string Use_Picard_str = "Use Picard"; optPb[Use_Picard_str] = true; // This will be ignored
+                std::string Steady_Max_Time_Step_Size_str = "Steady Maximum Time Step Size";
+                optPd[Steady_Max_Time_Step_Size_str] = -1; // <0 means inactive
+                std::string Transient_Max_Time_Step_Size_str = "Transient Maximum Time Step Size";
+                optPd[Transient_Max_Time_Step_Size_str] = -1; // <0 means inactive
+                std::string Time_Step_Grow_Max_str = "Maximum Time Step Grow";
+                optPd[Time_Step_Grow_Max_str] = -1; // <0 means inactive
+                std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink";
+                optPd[Time_Step_Shrink_Max_str] = -1; // <0 means inactive
 
 
                 struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
@@ -434,7 +451,17 @@ namespace Amanzi {
                 }
 
                 for (std::map<std::string,double>::const_iterator it=optPd.begin(); it!=optPd.end(); ++it) {
-		  prob_out_list.set<double>(underscore(it->first), it->second);
+                    if (it->first==Time_Step_Grow_Max_str) {
+                        prob_out_list.set<double>("dt_grow_max", it->second);
+                    } else if (it->first==Time_Step_Shrink_Max_str) {
+                        prob_out_list.set<double>("dt_shrink_max", it->second);
+                    } else if (it->first==Steady_Max_Time_Step_Size_str) {
+                        prob_out_list.set<double>("steady_richard_max_dt", it->second);
+                    } else if (it->first==Transient_Max_Time_Step_Size_str) {
+                        prob_out_list.set<double>("transient_richard_max_dt", it->second);
+                    } else {
+                        prob_out_list.set<double>(underscore(it->first), it->second);
+                    }
                 }
                 for (std::map<std::string,int>::const_iterator it=optPi.begin(); it!=optPi.end(); ++it) {
 		  if (it->first==Max_Step_str) {
