@@ -8,6 +8,7 @@ Teuchos::ParameterList translate (Teuchos::ParameterList* plist, int numproc);
 
 Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::ParameterList* plist );
 Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist );
+Teuchos::Array<int> get_Cycle_Macro_Values ( const std::string& macro_name, Teuchos::ParameterList* plist );
 Teuchos::Array<std::string> get_Variable_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist );
 void init_global_info( Teuchos::ParameterList* plist );
 

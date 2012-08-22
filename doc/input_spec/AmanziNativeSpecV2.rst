@@ -834,6 +834,7 @@ Example:
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>
       <Parameter name="Variable" type="string" value="Volumetric water content"/>
       <Parameter name="times" type="Array doulbe" value="{100000.0, 200000.0}"/>
+      <Parameter name="cycles" type="Array int" value="{100000, 200000, 400000, 500000}"/>
       <ParameterList name="time start period stop">
          <ParameterList name="some name">
 	    <Parameter name="start period stop" type="Array double" value="{0.0, 1000.0, 100000}"/>
@@ -842,6 +843,14 @@ Example:
 	    <Parameter name="start period stop" type="Array double" value="{200000.0, 2000.0, -1.0}"/>
 	 </ParameterList>
       </ParameterList>
+      <ParameterList name="cycle start period stop">
+         <ParameterList name="some name">
+	    <Parameter name="start period stop" type="Array int" value="{0, 100, -1}"/>
+         </ParameterList>
+         <ParameterList name="some other name">
+	    <Parameter name="start period stop" type="Array int" value="{0, 51, 299999}"/>
+         </ParameterList>	 
+      </ParameterList>      
     </ParameterList>
   </ParameterList>
 
