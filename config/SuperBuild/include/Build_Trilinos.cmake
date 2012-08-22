@@ -191,10 +191,35 @@ endif()
 
 set(Trilinos_PATCH_COMMAND)
 if (ENABLE_Trilinos_Patch)
-  configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
-               ${Trilinos_prefix_dir}/trilinos-patch-step.sh
-               @ONLY)
-  set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
+    set(Trilinos_patch_file)
+    # Set the patch file name
+    if(CMAKE_CXX_COMPILER_VERSION)
+      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        if ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.6" )
+          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
+                              " for version ${CMAKE_CXX_COMPILER_VERSION}.")
+        elseif( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" )
+          set(Trilnos_patch_file trilinos-${Trilinos_VERSION}-46.patch)
+        elseif ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.8" )
+          set(Trilnos_patch_file trilinos-${Trilinos_VERSION}-47.patch)
+        else()
+          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
+                             " for version ${CMAKE_CXX_COMPILER_VERSION}.")
+        endif()
+      endif()
+    endif()
+
+    if(Trilinos_patch_file)
+       configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
+                      ${Trilinos_prefix_dir}/trilinos-patch-step.sh
+                      @ONLY)
+       set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
+    else()
+       message(WARNING "ENABLE_Trilinos_Patch is ON but no patch file found for "
+	               "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} "
+		       "Will not patch Trilinos.")
+    endif()		   
+   		   
 endif()  
 #print_variable(Trilinos_PATCH_COMMAND)
 
