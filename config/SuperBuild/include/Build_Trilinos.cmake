@@ -172,7 +172,7 @@ set(Trilinos_CMAKE_ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
                    ${Amanzi_CMAKE_CXX_COMPILER_ARGS})
-print_variable(Trilinos_CMAKE_LANG_ARGS)
+#print_variable(Trilinos_CMAKE_LANG_ARGS)
 
 #  --- Define the Trilinos patch step
 
@@ -199,9 +199,9 @@ if (ENABLE_Trilinos_Patch)
           message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
                               " for version ${CMAKE_CXX_COMPILER_VERSION}.")
         elseif( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" )
-          set(Trilnos_patch_file trilinos-${Trilinos_VERSION}-46.patch)
+          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc46.patch)
         elseif ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.8" )
-          set(Trilnos_patch_file trilinos-${Trilinos_VERSION}-47.patch)
+          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc47.patch)
         else()
           message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
                              " for version ${CMAKE_CXX_COMPILER_VERSION}.")
@@ -209,6 +209,7 @@ if (ENABLE_Trilinos_Patch)
       endif()
     endif()
 
+    #print_variable(Trilinos_patch_file)
     if(Trilinos_patch_file)
        configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                       ${Trilinos_prefix_dir}/trilinos-patch-step.sh
