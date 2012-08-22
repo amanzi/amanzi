@@ -50,6 +50,7 @@ set(CGNS_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CGNS installation prefix")
 set(BOOST_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "Boost installation prefix")
 set(Boost_USE_STATIC_LIBS TRUE CACHE BOOL "Use only static Boost libraries")
 set(Boost_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for Boost libraries in system paths")
+set(Boost_NO_BOOST_CMAKE  TRUE CACHE BOOL "Prevent FindBoost from looking for a Boost CMake config file")  
 
 # HDF5  
 set(HDF5_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "HDF5 installation prefix")
