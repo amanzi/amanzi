@@ -44,6 +44,9 @@ protected:
   Teuchos::ParameterList eos_plist_;
   Teuchos::RCP<EOS> gas_eos_;
 
+ private:
+  static Utils::RegisteredFactory<EOS,EOSVaporInGas> factory_;
+
 };
 
 } // namespace

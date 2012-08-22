@@ -20,7 +20,7 @@ template<> Utils::Factory<IEM>::map_type* Utils::Factory<IEM>::map_;
 
 // method for instantiating IEM implementations
 Teuchos::RCP<IEM> IEMFactory::createIEM(Teuchos::ParameterList& plist) {
-  std::string iem_typename = plist.get<std::string>("Internal Energy Model Type");
+  std::string iem_typename = plist.get<std::string>("IEM type");
   return Teuchos::rcp(CreateInstance(iem_typename, plist));
 };
 

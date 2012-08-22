@@ -57,12 +57,12 @@ Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
 void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   // -- Absolute permeability.
   //       For now, we assume scalar permeability.  This will change.
-  S->RequireField("permeability")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("permeability")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("permeability");
 
   // -- water content, and evaluator
-  S->RequireField("water_content")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("water_content")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content evaluator");
   Teuchos::RCP<PermafrostWaterContent> wc =
@@ -78,7 +78,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField("relative_permeability")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("relative_permeability")->SetMesh(S->GetMesh())->SetGhosted()
                     ->AddComponents(names2, locations2, num_dofs2);
 
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
@@ -127,11 +127,11 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
 
 
   // -- Liquid density and viscosity for the transmissivity.
-  S->RequireField("molar_density_liquid")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("molar_density_liquid")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("molar_density_liquid");
 
-  S->RequireField("viscosity_liquid")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("viscosity_liquid")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("viscosity_liquid");
 }

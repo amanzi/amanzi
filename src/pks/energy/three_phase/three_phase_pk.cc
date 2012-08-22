@@ -38,7 +38,7 @@ ThreePhase::ThreePhase(Teuchos::ParameterList& plist,
 void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
-  S->RequireField("energy")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("energy")->SetMesh(S->GetMesh())->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList ee_plist = energy_plist_.sublist("energy evaluator");
   ee_plist.set("energy key", "energy");
@@ -47,7 +47,7 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator("energy", ee);
 
   // -- advection of enthalpy
-  S->RequireField("enthalpy_liquid")->SetMesh(S->Mesh())
+  S->RequireField("enthalpy_liquid")->SetMesh(S->GetMesh())
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList enth_plist = energy_plist_.sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", "enthalpy_liquid");
@@ -56,7 +56,7 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator("enthalpy_liquid", enth);
 
   // -- thermal conductivity
-  S->RequireField("thermal_conductivity")->SetMesh(S->Mesh())
+  S->RequireField("thermal_conductivity")->SetMesh(S->GetMesh())
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
     energy_plist_.sublist("thermal conductivity model");

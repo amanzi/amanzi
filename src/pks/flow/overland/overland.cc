@@ -58,24 +58,24 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField("overland_pressure", "overland_flow")->SetMesh(S->Mesh("surface"))
+  S->RequireField("overland_pressure", "overland_flow")->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_evaluator =
       Teuchos::rcp(new PrimaryVariableFieldEvaluator("overland_pressure"));
   S->SetFieldEvaluator("overland_pressure", pressure_evaluator);
 
   // -- owned secondary variables, no evaluator used
-  S->RequireField("overland_flux", "overland_flow")->SetMesh(S->Mesh("surface"))
+  S->RequireField("overland_flux", "overland_flow")->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("overland_velocity", "overland_flow")->SetMesh(S->Mesh("surface"))
+  S->RequireField("overland_velocity", "overland_flow")->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->SetMesh(S->Mesh("surface"))->SetGhosted()
+  S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("slope_magnitude")->SetMesh(S->Mesh("surface"))
+  S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("pres_elev")->SetMesh(S->Mesh("surface"))->SetGhosted()
+  S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
@@ -91,7 +91,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   S->SetFieldEvaluator("pres_elev", elev_evaluator);
 
   // -- "rel perm" evaluator
-  S->RequireField("overland_conductivity")->SetMesh(S->Mesh("surface"))
+  S->RequireField("overland_conductivity")->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(flow_plist_.isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = flow_plist_.sublist("overland conductivity evaluator");
@@ -109,7 +109,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   Teuchos::ParameterList source_plist = flow_plist_.sublist("source evaluator");
   source_plist.set("evaluator name", "overland_source");
   is_source_term_ = true;
-  S->RequireField("overland_source")->SetMesh(S->Mesh("surface"))
+  S->RequireField("overland_source")->SetMesh(S->GetMesh("surface"))
       ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::RCP<FieldEvaluator> source_evaluator =
       Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
@@ -120,28 +120,28 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
   if (flow_plist_.get<bool>("coupled to subsurface", false)) {
     is_coupling_term_ = true;
     S->RequireField("overland_source_from_subsurface", "overland_flow")
-        ->SetMesh(S->Mesh("surface"))->SetGhosted()
+        ->SetMesh(S->GetMesh("surface"))->SetGhosted()
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator("overland_coupling");
   }
 
 
   // -- cell volume and evaluator
-  S->RequireField("surface_cell_volume")->SetMesh(S->Mesh("surface"))->SetGhosted()
+  S->RequireField("surface_cell_volume")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                                 ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("surface_cell_volume");
 
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
-  FlowBCFactory bc_factory(S->Mesh("surface"), bc_plist);
+  FlowBCFactory bc_factory(S->GetMesh("surface"), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
 
   // rel perm upwinding
   S->RequireField("upwind_overland_conductivity", "overland_flow")
-                ->SetMesh(S->Mesh("surface"))->SetGhosted()
+                ->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity","overland_flow")->set_io_vis(false);
 
@@ -151,14 +151,14 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = flow_plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->Mesh("surface")));
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->GetMesh("surface")));
   bool symmetric = false;
   matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = flow_plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh("surface")));
+  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->GetMesh("surface")));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
@@ -176,7 +176,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   dt_ = flow_plist_.get<double>("Initial time step", 1.);
 
   // initialize boundary conditions
-  int nfaces = S->Mesh("surface")->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = S->GetMesh("surface")->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -240,14 +240,14 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
 
 void OverlandFlow::CreateMesh_(const Teuchos::RCP<State>& S) {
   // Create mesh
-  if (S->Mesh()->space_dimension() == 3) {
+  if (S->GetMesh()->space_dimension() == 3) {
 
     // The domain mesh is a 3D volume mesh or a 3D surface mesh -- construct
     // the surface mesh.
 
     // -- Ensure the domain mesh is MSTK.
     Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mesh =
-      Teuchos::rcp_dynamic_cast<const AmanziMesh::Mesh_MSTK>(S->Mesh());
+      Teuchos::rcp_dynamic_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
 
     if (mesh == Teuchos::null) {
       Errors::Message message("Overland Flow PK requires surface mesh, which is currently only supported by MSTK.  Make the domain mesh an MSTK mesh.");
@@ -273,10 +273,10 @@ void OverlandFlow::CreateMesh_(const Teuchos::RCP<State>& S) {
     S->RegisterMesh("surface_3d", surface_mesh_3d);
     standalone_mode_ = false;
 
-  } else if (S->Mesh()->space_dimension() == 2) {
+  } else if (S->GetMesh()->space_dimension() == 2) {
     // The domain mesh is already a 2D mesh, so simply register it as the surface
     // mesh as well.
-    S->RegisterMesh("surface", S->Mesh());
+    S->RegisterMesh("surface", S->GetMesh());
     standalone_mode_ = true;
   } else {
     Errors::Message message("Invalid mesh dimension for overland flow.");
@@ -323,7 +323,7 @@ bool OverlandFlow::advance(double dt) {
     Teuchos::TimeMonitor timer(*steptime_);
     dt_solver = time_stepper_->time_step(h, solution_);
   } catch (Exceptions::Amanzi_exception &error) {
-    if (S_next_->Mesh("surface")->get_comm()->MyPID() == 0) {
+    if (S_next_->GetMesh("surface")->get_comm()->MyPID() == 0) {
       std::cout << "Timestepper called error: " << error.what() << std::endl;
     }
     if (error.what() == std::string("BDF time step failed") ||
@@ -472,7 +472,7 @@ void OverlandFlow::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
   int f_owned = pres->size("face");
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
-    S->Mesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
 
     int ncells = cells.size();
     double face_value = 0.0;
@@ -511,7 +511,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::RCP<State>& S) {
     int f = bc->first;
 
     cells.clear();
-    S->Mesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 
@@ -550,7 +550,7 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::RCP<State>& S)
     int f = bc->first;
 
     cells.clear();
-    S->Mesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 

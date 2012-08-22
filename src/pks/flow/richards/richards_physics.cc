@@ -77,14 +77,14 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
     for (int c=0; c!=ncells; ++c) {
       (*K_)[c](0, 0) = (*perm)("cell",c);
     }
-  } else if (ndofs == 2 && S->Mesh()->space_dimension() == 3) {
+  } else if (ndofs == 2 && S->GetMesh()->space_dimension() == 3) {
     // horizontal and vertical perms
     for (int c=0; c!=ncells; ++c) {
       (*K_)[c](0, 0) = (*perm)("cell",0,c);
       (*K_)[c](1, 1) = (*perm)("cell",0,c);
       (*K_)[c](2, 2) = (*perm)("cell",1,c);
     }
-  } else if (ndofs == S->Mesh()->space_dimension()) {
+  } else if (ndofs == S->GetMesh()->space_dimension()) {
     // diagonal tensor
     for (int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
       for (int c=0; c!=ncells; ++c) {
@@ -124,7 +124,7 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 
   int c_owned = rho->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    S->GetMesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
@@ -132,7 +132,7 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
+      const AmanziGeometry::Point& normal = S->GetMesh()->face_normal(f);
 
       double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
           * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c);
@@ -171,12 +171,12 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
 
   int c_owned = rho->size("cell");
   for (int c=0; c!=c_owned; ++c) {
-    S->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    S->GetMesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = S->Mesh()->face_normal(f);
+      const AmanziGeometry::Point& normal = S->GetMesh()->face_normal(f);
 
       if (f<f_owned && !done[f]) {
         (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal)

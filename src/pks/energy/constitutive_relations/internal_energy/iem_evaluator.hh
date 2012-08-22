@@ -9,13 +9,13 @@
 #ifndef AMANZI_ENERGY_RELATIONS_IEM_EVALUATOR_
 #define AMANZI_ENERGY_RELATIONS_IEM_EVALUATOR_
 
+#include "factory.hh"
+#include "iem.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
-
-class IEM; // forward declaration
 
 class IEMEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -42,6 +42,10 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   Key temp_key_;
   Teuchos::ParameterList iem_plist_;
   Teuchos::RCP<IEM> iem_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> factory_;
+
 };
 
 } //namespace

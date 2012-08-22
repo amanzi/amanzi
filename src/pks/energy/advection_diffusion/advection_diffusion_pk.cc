@@ -39,49 +39,49 @@ AdvectionDiffusion::AdvectionDiffusion(Teuchos::ParameterList& plist,
   names2[1] = "face";
 
   factory = S->RequireField("temperature", "energy");
-  factory->SetMesh(S->Mesh());
+  factory->SetMesh(S->GetMesh());
   factory->SetGhosted(true);
   factory->SetComponents(names2, locations2, num_dofs2);
 
   // -- thermal conductivity -- just cells
   factory = S->RequireField("thermal_conductivity", "energy");
-  factory->SetMesh(S->Mesh());
+  factory->SetMesh(S->GetMesh());
   factory->SetGhosted(true);
   factory->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // -- independent variables (not owned by this pk)
   factory = S->RequireField("darcy_flux");
-  factory->SetMesh(S->Mesh());
+  factory->SetMesh(S->GetMesh());
   factory->SetGhosted(true);
   factory->SetComponent("face", AmanziMesh::FACE, 1);
 
   factory = S->RequireField("cell_volume");
-  factory->SetMesh(S->Mesh());
+  factory->SetMesh(S->GetMesh());
   factory->SetGhosted(true);
   factory->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = energy_plist_.sublist("boundary conditions", true);
-  EnergyBCFactory bc_factory(S->Mesh(), bc_plist);
+  EnergyBCFactory bc_factory(S->GetMesh(), bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = energy_plist_.sublist("Advection");
-  advection_ = advection_factory.create(advect_plist, S->Mesh());
+  advection_ = advection_factory.create(advect_plist, S->GetMesh());
   advection_->set_num_dofs(1);
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = energy_plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->Mesh()));
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->GetMesh()));
   matrix_->SetSymmetryProperty(true);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner
   // NOTE: may want to allow these to be the same/different?
   Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh()));
+  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->GetMesh()));
   preconditioner_->SetSymmetryProperty(true);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
@@ -99,7 +99,7 @@ void AdvectionDiffusion::initialize(const Teuchos::RCP<State>& S) {
   preconditioner_->CreateMFDmassMatrices(Teuchos::null);
 
   // initialize boundary conditions
-  int nfaces = S->Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -178,7 +178,7 @@ void AdvectionDiffusion::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<Stat
   int f_owned = temp->size("face");
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
-    S->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

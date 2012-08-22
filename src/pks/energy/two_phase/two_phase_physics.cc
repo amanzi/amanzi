@@ -104,8 +104,8 @@ void TwoPhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
           const Teuchos::RCP<CompositeVector> g) {
   // update the thermal conductivity
   S->GetFieldEvaluator("thermal_conductivity")->HasFieldChanged(S.ptr(), "energy_pk");
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S->GetFieldData("thermal_conductivity", "energy");
+  Teuchos::RCP<const CompositeVector> thermal_conductivity =
+    S->GetFieldData("thermal_conductivity");
 
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(*thermal_conductivity);

@@ -62,16 +62,16 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField("pressure", "flow")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("pressure", "flow")->SetMesh(S->GetMesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_evaluator =
       Teuchos::rcp(new PrimaryVariableFieldEvaluator("pressure"));
   S->SetFieldEvaluator("pressure", pressure_evaluator);
 
   // -- secondary variables, no evaluator used
-  S->RequireField("darcy_flux", "flow")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("darcy_flux", "flow")->SetMesh(S->GetMesh())->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("darcy_velocity", "flow")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("darcy_velocity", "flow")->SetMesh(S->GetMesh())->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // Get data for non-field quanitites.
@@ -80,20 +80,20 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
   S->RequireScalar("atmospheric_pressure");
 
   // Create the absolute permeability tensor.
-  int c_owned = S->Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = S->GetMesh()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (int c=0; c!=c_owned; ++c) {
-    (*K_)[c].init(S->Mesh()->space_dimension(),1);
+    (*K_)[c].init(S->GetMesh()->space_dimension(),1);
   }
 
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = flow_plist_.sublist("boundary conditions", true);
-  FlowBCFactory bc_factory(S->Mesh(), bc_plist);
+  FlowBCFactory bc_factory(S->GetMesh(), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
 
   // Create the upwinding method
-  S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->GetMesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
   string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
@@ -119,13 +119,13 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = flow_plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->Mesh()));
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->GetMesh()));
   matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = flow_plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->Mesh()));
+  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->GetMesh()));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
@@ -138,28 +138,28 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
 void Richards::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   // -- Absolute permeability.
   //       For now, we assume scalar permeability.  This will change.
-  S->RequireField("permeability")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("permeability")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("permeability");
 
   // -- water content, and evaluator
-  S->RequireField("water_content")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("water_content")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content evaluator");
   Teuchos::RCP<RichardsWaterContent> wc = Teuchos::rcp(new RichardsWaterContent(wc_plist));
   S->SetFieldEvaluator("water_content", wc);
 
   // -- Water retention evaluators, for saturation and rel perm.
-  std::vector<AmanziMesh::Entity_kind> locations2(2);
-  std::vector<std::string> names2(2);
-  std::vector<int> num_dofs2(2,1);
-  locations2[0] = AmanziMesh::CELL;
-  locations2[1] = AmanziMesh::FACE;
-  names2[0] = "cell";
-  names2[1] = "face";
+  // std::vector<AmanziMesh::Entity_kind> locations2(2);
+  // std::vector<std::string> names2(2);
+  // std::vector<int> num_dofs2(2,1);
+  // locations2[0] = AmanziMesh::CELL;
+  // locations2[1] = AmanziMesh::FACE;
+  // names2[0] = "cell";
+  // names2[1] = "face";
 
-  S->RequireField("relative_permeability")->SetMesh(S->Mesh())->SetGhosted()
-                    ->AddComponents(names2, locations2, num_dofs2);
+  S->RequireField("relative_permeability")->SetMesh(S->GetMesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMRichardsEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMRichardsEvaluator(wrm_plist));
@@ -171,13 +171,18 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
 
   // -- Liquid density and viscosity for the transmissivity.
-  S->RequireField("molar_density_liquid")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("molar_density_liquid")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("molar_density_liquid");
 
-  S->RequireField("viscosity_liquid")->SetMesh(S->Mesh())->SetGhosted()
+  S->RequireField("viscosity_liquid")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("viscosity_liquid");
+
+  // -- liquid mass density for the gravity fluxes
+  S->RequireField("mass_density_liquid")->SetMesh(S->GetMesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("mass_density_liquid"); // simply picks up the molar density one.
 }
 
 
@@ -190,7 +195,7 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   dt_ = flow_plist_.get<double>("Initial time step", 1.);
 
   // initialize boundary conditions
-  int nfaces = S->Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -351,7 +356,10 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
   for (int f=0; f!=num_rel_perm->size("face"); ++f) {
     if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-      (*num_rel_perm)("face",f) = (*rel_perm)("face",f);
+      // just grab the cell inside's perm... this might need to be fixed eventually.
+      AmanziMesh::Entity_ID_List cells;
+      S->GetMesh()->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      (*num_rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
     }
   }
 
@@ -376,7 +384,7 @@ void Richards::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
   int f_owned = pres->size("face");
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
-    S->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;
