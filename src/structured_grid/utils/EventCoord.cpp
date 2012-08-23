@@ -125,35 +125,67 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
 }
 
 bool
-EventCoord::TimeEvent::ThisEventDue(Real time, Real dt, Real& dt_red) const
+EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
 {
     dt_red = dt;
     if (type == SPS_TIMES)
     {
-        if ( ( ( stop < 0 ) || ( time < stop ) )
-             && ( time >= start ) )
+        if ( (stop > 0  &&  t > stop)  ||  (t + dt < start) )
         {
-	Real interval_t1, interval_t2;
-	if (interval_t2!=interval_t1) 
-	  {
-	    Real desired_tpdt = start + period*(interval_t1 + 1);
-	    dt_red = desired_tpdt - time;
-	    return (dt_red > 0 && dt_red < dt);
-	  }
+            return false;
+        }
+        
+        Real teps = period * 1.e-8;
+
+        if ( ( ( stop < 0 ) || ( t + teps <= stop ) )
+             && ( t > start + teps) )
+        {
+            // Is on interval boundary
+            int told_interval = (t - start)/period;
+            Real told_boundary = start + told_interval*period;
+            Real told_overage = t - told_boundary;
+
+            // told is near boundary
+            if ( (std::abs(told_overage - period) < teps) 
+                 || (std::abs(told_overage) < teps) ) {
+                
+                if (dt > period) { // this would step over period, cut back
+                    dt_red = period;
+                    return true;
+                }
+            }
+
+            Real next_boundary = (told_interval + 1)*period;
+            if (next_boundary <= stop) {
+                dt_red =  next_boundary - t;
+                BL_ASSERT(dt_red > 0);
+                return true;
+            }
         }
     }
     else {
         for (int i=0; i<times.size(); ++i) {
-            Real eps = 1.e-6*dt;
-            if (times[i] > time  &&  times[i] <= time + dt + eps) {
-                dt_red = std::min(dt, times[i]-time);
+            Real eps;
+            if (times.size()==1) {
+                eps = times[0];
+            } else if (i>0) {
+                eps = times[i] - times[i-1];
+            } else if (i<times.size()-1) {
+                eps = times[i+1] - times[i];
+            } else {
+                BoxLib::Abort("bad logic in time event processing");
+            }
+            eps *= 1.e-8;
+
+            if (times[i] > t  &&  times[i] <= t + dt + eps) {
+                dt_red = std::min(dt, times[i]-t);
                 return true;
             }
-            if (times[i] == time) {
+            if (times[i] == t) {
                 Real max_dt = 0;
                 for (int j=0; j<times.size(); ++j) {
-                    if (time < times[j]) {
-                        max_dt = std::max(max_dt,times[j]-time);
+                    if (t < times[j]) {
+                        max_dt = std::max(max_dt,times[j]-t);
                     }
                 }
                 if (max_dt == 0) {
@@ -162,8 +194,8 @@ EventCoord::TimeEvent::ThisEventDue(Real time, Real dt, Real& dt_red) const
                 else {
                     Real min_dt = max_dt;
                     for (int j=0; j<times.size(); ++j) {
-                        if (i!=j  && time < times[j]  &&  time + dt > times[j]) {
-                            min_dt = std::min(min_dt, times[j] - time);
+                        if (i!=j  && t < times[j]  &&  t + dt > times[j]) {
+                            min_dt = std::min(min_dt, times[j] - t);
                         }
                     }
                     dt_red = std::min(dt, min_dt);
@@ -179,10 +211,10 @@ EventCoord::TimeEvent::ThisEventDue(Real time, Real dt, Real& dt_red) const
 
 
 std::pair<Real,Array<std::string> >
-EventCoord::NextEvent(Real time, Real dt, int cycle, int dcycle) const
+EventCoord::NextEvent(Real t, Real dt, int cycle, int dcycle) const
 {
     Array<std::string> events;
-    Real delta_time = -1;
+    Real delta_t = -1;
     for (std::map<std::string,Event*>::const_iterator it=cycleEvents.begin(); it!=cycleEvents.end(); ++it) {
         const std::string& name = it->first;
         const CycleEvent* event = dynamic_cast<const CycleEvent*>(it->second);
@@ -197,13 +229,14 @@ EventCoord::NextEvent(Real time, Real dt, int cycle, int dcycle) const
         const TimeEvent* event = dynamic_cast<const TimeEvent*>(it->second);
         TimeEvent::TType type = event->Type();
         Real dt_red;
-        if (event->ThisEventDue(time,dt,dt_red)) {
+
+        if (event->ThisEventDue(t,dt,dt_red)) {
             events.push_back(name);
-            delta_time = (delta_time < 0  ?  dt_red  :  std::min(delta_time, dt_red));
+            delta_t = (delta_t < 0  ?  dt_red  :  std::min(delta_t, dt_red));
         }
     }
 
-    return std::pair<Real,Array<std::string> > (delta_time,events);
+    return std::pair<Real,Array<std::string> > (delta_t,events);
 }
 
 std::ostream& operator<< (std::ostream& os, const CycleEvent& rhs)

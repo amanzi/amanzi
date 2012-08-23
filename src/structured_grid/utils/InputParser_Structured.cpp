@@ -2690,13 +2690,14 @@ namespace Amanzi {
             const ParameterList& tlist = rlist.sublist("Time Macros");
             ParameterList tmPL;
             for (ParameterList::ConstIterator i=tlist.begin(); i!=tlist.end(); ++i) {
-                std::string label = underscore(tlist.name(i));
+                std::string label = tlist.name(i);
+                std::string _label = underscore(label);
                 const ParameterList& rslist = tlist.sublist(label);
                 Array<double> times, vals;
                 
                 ParameterList tPL;
                 for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
-                    const std::string& name = rslist.name(ii);
+                    const std::string& name = underscore(rslist.name(ii));
                     
                     if (name == "Times") {
                         times = rslist.get<Array<double> >("Times");
@@ -2732,8 +2733,8 @@ namespace Amanzi {
                         tPL.set<double>("stop",vals[2]);
                     }
                     tPL.set<std::string>("type",type);
-                    tmPL.set(label,tPL);
-                    time_macros.insert(label);
+                    tmPL.set(_label,tPL);
+                    time_macros.insert(_label);
                 }
             }
             amr_list.set("time_macro",tmPL);
@@ -3014,22 +3015,22 @@ namespace Amanzi {
                   std::string Time_Macro_str = "Time Macro";
                   std::string Cycle_Macro_str = "Cycle Macro";
                   if (rslist.isParameter(Time_Macro_str)) {
-                      const std::string& timeMacro = rslist.get<std::string>(Time_Macro_str);
-                      if (time_macros.find(timeMacro) == time_macros.end()) {
-                          std::cerr << "Unrecognized time macro: \"" << timeMacro
+                      const std::string& _timeMacro = underscore(rslist.get<std::string>(Time_Macro_str));
+                      if (time_macros.find(_timeMacro) == time_macros.end()) {
+                          std::cerr << "Unrecognized time macro: \"" << AMR_to_Amanzi_label_map[_timeMacro]
                                     << "\" for observation data: \"" << label << "\"" << std::endl;
                           throw std::exception();                        
                       }
-                      sublist.set("time_macro",timeMacro);
+                      sublist.set("time_macro",_timeMacro);
                   }
 		  else if (rslist.isParameter(Cycle_Macro_str)) {
-                      const std::string& cycleMacro = rslist.get<std::string>(Cycle_Macro_str);
-                      if (cycle_macros.find(cycleMacro) == cycle_macros.end()) {
-                          std::cerr << "Unrecognized cycle macro: \"" << cycleMacro
+                      const std::string& _cycleMacro = underscore(rslist.get<std::string>(Cycle_Macro_str));
+                      if (cycle_macros.find(_cycleMacro) == cycle_macros.end()) {
+                          std::cerr << "Unrecognized cycle macro: \"" << AMR_to_Amanzi_label_map[_cycleMacro]
                                     << "\" for observation data: \"" << label << "\"" << std::endl;
                           throw std::exception();                        
                       }
-                      sublist.set("cycle_macro",cycleMacro);
+                      sublist.set("cycle_macro",_cycleMacro);
 		  }
                   else {
                       std::cerr << "Must specify either time or cycle macro forobservation data: \"" 

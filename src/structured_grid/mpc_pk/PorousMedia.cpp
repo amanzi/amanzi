@@ -2017,7 +2017,7 @@ PorousMedia::richard_init_to_steady()
 		PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
 		if (execution_mode=="init_to_steady") {
 		  p->SetStartTime(t_max);
-		  p->set_cumTime(t_max);
+		  p->SetCumTime(t_max);
 		}
 		Real time_after_init = p->StartTime();
                 parent->setDtLevel(dt_save);
@@ -2289,6 +2289,8 @@ PorousMedia::advance_setup (Real time,
     //
     // Compute lambda at cell centers
     //
+
+      // FIXME: this test is messed up!
     if (model != model_list["single-phase"] || 
 	model != model_list["single-phase-solid"]) 
       {
@@ -2302,6 +2304,8 @@ PorousMedia::advance_setup (Real time,
     //
     // Compute diffusion coefficients
     //
+
+    // FIXME: Is this appropriate for richard?
     if (variable_scal_diff)
       {
 	calcDiffusivity(time,0,ncomps);
@@ -2563,7 +2567,7 @@ PorousMedia::multilevel_advance (Real time,
       PorousMedia&    pm_lev   = getLevel(lev);
       
       pm_lev.advance_setup(time,dt,iteration,ncycle);
-      FillPatchedOldState_ok = true;
+      pm_lev.FillPatchedOldState_ok = true;
 
       MultiFab& S_new = pm_lev.get_new_data(State_Type);
       MultiFab& S_old = pm_lev.get_old_data(State_Type);
@@ -2661,7 +2665,8 @@ PorousMedia::multilevel_advance (Real time,
 		  for (int lev = 0; lev <= parent->finestLevel(); lev++)
 		    {
 		      PorousMedia&  pm_lev = getLevel(lev);
-		      pm_lev.strang_chem(time+dt,dt_chem,0);
+		      pm_lev.strang_chem(time+dt,dt_chem,0);      
+                      pm_lev.FillPatchedOldState_ok = true;
 		    }
 		  
 		  it_chem = 0;
@@ -2669,8 +2674,6 @@ PorousMedia::multilevel_advance (Real time,
 		}
 	    }	    
 	}
-      
-      FillPatchedOldState_ok = true;
     }
 
   for (int lev = parent->finestLevel(); lev >= 0; lev--)
@@ -3011,7 +3014,6 @@ PorousMedia::advance_multilevel_richard (Real time,
       rs = new RichardSolver(*(PMParent()),rsparams);
     }
     
-    Real cur_time = time;
     Array<Real> dt_save(nlevs);
     Array<int> nc_save(nlevs);
     int n_factor;
@@ -3081,7 +3083,7 @@ PorousMedia::advance_multilevel_richard (Real time,
 	      }
 	  }
 
-	continue_iterations = true;
+	continue_iterations = (dt_iter > t_eps);
 	int iter = 0;
 	int total_num_Newton_iterations = 0;
 	int total_rejected_Newton_steps = 0;
@@ -3291,8 +3293,8 @@ PorousMedia::advance_multilevel_saturated (Real time,
   // 
   // Time stepping for saturated flow with subcycling
   //
-
-  if (level == 0) {
+  if (level == 0  &&  do_tracer_transport && ntracers > 0)
+  {
     int finest_level = parent->finestLevel();
     int nlevs = finest_level + 1;
     
@@ -3323,97 +3325,98 @@ PorousMedia::advance_multilevel_saturated (Real time,
 				       fine_lev.u_macG_trac); 
 	  }
 	
-	if (do_tracer_transport && ntracers > 0)
-	  {
-	    int ltracer = ncomps+ntracers-1;
-	    
-	    bool cont_tracer_advection = true;
-	    Real t_tracer = time;
-	    
-	    fine_lev.predictDT(fine_lev.u_macG_trac); // updates dt_eig
-            Real dt_sub = dt_eig;
-            Real t_eps = 1.e-8*dt_sub;
-
-	    MultiFab& S_new = fine_lev.get_new_data(State_Type);
-	    MultiFab& S_old = fine_lev.get_old_data(State_Type);
-	    MultiFab Stmp(grids,1,1); 
-	    for (int i=ncomps;i<=ltracer;i++)
-	      {
-		MultiFab::Copy(Stmp,S_old,i,0,1,1);
-		MultiFab::Multiply(Stmp,S_old,0,0,1,1);
-		Stmp.divide(S_new,0,1,1);
-		MultiFab::Copy(S_old,Stmp,0,i,1,1);
-	      }
-	    MultiFab::Copy(S_old,S_new,0,0,1,1);
-
-            int num_transport_subcycles = 0;
-            std::map<int,MultiFab*> saved_states;
-	    while (cont_tracer_advection)
-	      {
-                  if (num_transport_subcycles > 0) {
-                      for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
-                      {
-                          const MultiFab& old = get_old_data(*it);                          
-                          saved_states[*it] = new MultiFab(old.boxArray(), old.nComp(), old.nGrow());
-                          MultiFab::Copy(*saved_states[*it],old,0,0,old.nComp(),old.nGrow());
-                      }
-                  }
-
-                  fine_lev.setTimeLevel(t_tracer+dt_sub,dt_sub,dt_sub);
-                  fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_sub,ncomps,ltracer,true);
-                  t_tracer += dt_sub;
-
-                  if (std::abs(time + dt - t_tracer) < t_eps) {
-                      t_tracer = time + dt;
-                  }
-
-                  if (t_tracer < time + dt)
-		  {
-
-                      // Advance the state data structures
-                      for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
-                      {
-                          fine_lev.state[*it].allocOldData();
-                          fine_lev.state[*it].swapTimeLevels(dt_sub);
-                      }
-
-                      dt_sub = std::min(dt_eig,time + dt - t_tracer);
-                      BL_ASSERT(dt_sub > 0);
-                      MultiFab& S_new = fine_lev.get_new_data(State_Type);
-                      MultiFab& S_old = fine_lev.get_old_data(State_Type);
-                      MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
-
-		  }
-                  else {
-                      cont_tracer_advection = false;
-                  }
-                  num_transport_subcycles++;
-
-	      }
-            if (num_transport_subcycles > 1) {
+        int ltracer = ncomps+ntracers-1;
+	
+        bool cont_tracer_advection = true;
+        Real t_tracer = time;
+	
+        fine_lev.predictDT(fine_lev.u_macG_trac); // updates dt_eig
+        Real dt_sub = std::min(dt_eig,dt);
+        Real t_eps = 1.e-8*dt_sub;
+        
+        MultiFab& S_new = fine_lev.get_new_data(State_Type);
+        MultiFab& S_old = fine_lev.get_old_data(State_Type);
+        MultiFab Stmp(grids,1,1); 
+        for (int i=ncomps;i<=ltracer;i++)
+        {
+            MultiFab::Copy(Stmp,S_old,i,0,1,1);
+            MultiFab::Multiply(Stmp,S_old,0,0,1,1);
+            Stmp.divide(S_new,0,1,1);
+            MultiFab::Copy(S_old,Stmp,0,i,1,1);
+        }
+        MultiFab::Copy(S_old,S_new,0,0,1,1);
+        
+        int num_transport_subcycles = 0;
+        std::map<int,MultiFab*> saved_states;
+        while (cont_tracer_advection)
+        {
+            if (num_transport_subcycles > 0) {
                 for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
                 {
-                    MultiFab& old = get_old_data(*it);                          
-                    MultiFab::Copy(old,*saved_states[*it],0,0,old.nComp(),old.nGrow());
-                    delete saved_states[*it];
+                    const MultiFab& old = fine_lev.get_old_data(*it);                          
+                    saved_states[*it] = new MultiFab(old.boxArray(), old.nComp(), old.nGrow());
+                    MultiFab::Copy(*saved_states[*it],old,0,0,old.nComp(),old.nGrow());
                 }
-                
-		if (verbose > 0 &&  ParallelDescriptor::IOProcessor())
-                    std::cout << "MULTILEVEL ADVANCE TRANSPORT: # SUBCYCLES: "
-                              << num_transport_subcycles << std::endl;
-                
+            }
+
+
+            PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
+            p->SetCumTime(t_tracer);
+
+            fine_lev.setTimeLevel(t_tracer+dt_sub,dt_sub,dt_sub);
+            fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_sub,ncomps,ltracer,true);
+            t_tracer += dt_sub;
+            
+            if (std::abs(time + dt - t_tracer) < t_eps) {
+                t_tracer = time + dt;
             }
             
-            // Bring all states up to current time, and reinstate original dt info
+            if (t_tracer < time + dt)
+            {
+                
+                // Advance the state data structures
+                for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
+                {
+                    fine_lev.state[*it].allocOldData();
+                    fine_lev.state[*it].swapTimeLevels(dt_sub);
+                }
+                
+                dt_sub = std::min(dt_eig,time + dt - t_tracer);
+                BL_ASSERT(dt_sub > 0);
+                MultiFab& S_new = fine_lev.get_new_data(State_Type);
+                MultiFab& S_old = fine_lev.get_old_data(State_Type);
+                MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
+                
+            }
+            else {
+                cont_tracer_advection = false;
+            }
+            num_transport_subcycles++;
+            
+        }
+        if (num_transport_subcycles > 1) {
             for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
             {
-                fine_lev.state[*it].setTimeLevel(time+dt,dt,dt);
+                MultiFab& old = get_old_data(*it);                          
+                MultiFab::Copy(old,*saved_states[*it],0,0,old.nComp(),old.nGrow());
+                delete saved_states[*it];
             }
-	  }
+            
+            if (verbose > 0 &&  ParallelDescriptor::IOProcessor())
+                std::cout << "MULTILEVEL ADVANCE TRANSPORT: # SUBCYCLES: "
+                          << num_transport_subcycles << std::endl;
+            
+        }
+        
+        // Bring all states up to current time, and reinstate original dt info
+        for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
+        {
+            fine_lev.state[*it].setTimeLevel(time+dt,dt,dt);
+        }
       }
-    PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
-    p->set_cumTime(time+dt);
   }
+  PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
+  p->SetCumTime(time); // reset to start of subcycled time period
 }
 
 void
