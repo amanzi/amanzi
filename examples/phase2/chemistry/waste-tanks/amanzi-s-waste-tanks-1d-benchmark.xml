@@ -95,7 +95,7 @@
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
       <Parameter name="Domain Low Corner" type="Array double" value="{0,0}"/>
-      <Parameter name="Domain High Corner" type="Array double" value="{1,2}"/>
+      <Parameter name="Domain High Corner" type="Array double" value="{100,2}"/>
       <Parameter name="Number of Cells" type="Array int" value="{100,2}"/>
     </ParameterList>
   </ParameterList>
@@ -376,7 +376,7 @@
     <ParameterList name="Observation Data">
       <Parameter name="Observation Output Filename" type="string" value="radioactive-decay-sorbed-obs.txt"/>
       <ParameterList name="Pu_238 West Well">
-	<Parameter name="Region" type="string" value="West_Well"/>
+	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous Pu_238 Concentration"/>
 	<Parameter name="Time Macro" type="string" value="Every_year"/>

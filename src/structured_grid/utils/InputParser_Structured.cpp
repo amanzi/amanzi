@@ -2987,8 +2987,10 @@ namespace Amanzi {
 		  std::string _label = underscore(label);
 		  const ParameterList& rslist = olist.sublist(label);
 		  std::string functional = rslist.get<std::string>("Functional");
-		  std::string region_name = rslist.get<std::string>("Region");
+		  const std::string& region_name = rslist.get<std::string>("Region");
+		  std::string _region_name = underscore(region_name);
 		  const std::string& variable = rslist.get<std::string>("Variable");
+		  std::string _variable = underscore(variable);
 
 		  if (functional == "Observation Data: Integral") {
 		    sublist.set("obs_type","integral");
@@ -3007,7 +3009,7 @@ namespace Amanzi {
 			  throw std::exception();
                         }
                     }
-		  sublist.set("region",region_name);
+		  sublist.set("region",_region_name);
 
                   std::string Time_Macro_str = "Time Macro";
                   std::string Cycle_Macro_str = "Cycle Macro";
@@ -3035,7 +3037,6 @@ namespace Amanzi {
                       throw std::exception();                 
                   }
 	  
-		  std::string _variable = underscore(variable);
 		  bool found = false;
 		  for (int k=0; k<user_derive_list.size() && !found; ++k) {
 		    if (_variable == user_derive_list[k]) {
