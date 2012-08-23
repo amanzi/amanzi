@@ -156,9 +156,7 @@ PMAmr::coarseTimeStep (Real stop_time)
                                  cumtime, dt_level[0], level_steps[0], 1);
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
-        Real drastic_dt_change_for_event = 1.e-4;
-        dt_previous = (dt_red < drastic_dt_change_for_event * dt_level[0]  ?  dt_level[0]  :  -1);
-
+        dt_previous = dt_level[0];
         Array<Real> dt_new(finest_level+1,dt_red);
         for (int lev = 1; lev <= finest_level; lev++) {
             dt_new[lev] = dt_new[lev-1]/Real(MaxRefRatio(lev-1));

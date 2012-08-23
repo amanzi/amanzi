@@ -129,7 +129,6 @@ Observation::process(Real t_old,
             times.push_back(t_old + dt_red);
             Real eta = std::min(1.,std::max(0.,dt_red/(t_new-t_old)));
             vals[times.size()-1] = (val_old*(1 - eta) + val_new*eta);
-            std::cout << event_label << "  ********* to,tn,iter,val: " << t_old << "," << t_new << "," << iter << "," << vals[times.size()-1] << std::endl;
         }
     }
   val_old = val_new;

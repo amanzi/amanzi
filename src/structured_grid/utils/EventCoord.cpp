@@ -156,32 +156,35 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
             }
 
             Real next_boundary = (told_interval + 1)*period;
-            if (next_boundary <= stop) {
-                dt_red =  next_boundary - t;
-                BL_ASSERT(dt_red > 0);
-                return true;
+
+            if (stop < 0  ||  next_boundary <= stop) {
+                dt_red = std::min(dt, next_boundary - t);
+                if (dt_red < dt) {
+                    BL_ASSERT(dt_red > 0);
+                    return true;
+                }
             }
         }
     }
     else {
         for (int i=0; i<times.size(); ++i) {
-            Real eps;
+            Real teps;
             if (times.size()==1) {
-                eps = times[0];
+                teps = times[0];
             } else if (i>0) {
-                eps = times[i] - times[i-1];
+                teps = times[i] - times[i-1];
             } else if (i<times.size()-1) {
-                eps = times[i+1] - times[i];
+                teps = times[i+1] - times[i];
             } else {
                 BoxLib::Abort("bad logic in time event processing");
             }
-            eps *= 1.e-8;
+            teps *= 1.e-8;
 
-            if (times[i] > t  &&  times[i] <= t + dt + eps) {
+            if (times[i] > t  &&  times[i] <= t + dt + teps) {
                 dt_red = std::min(dt, times[i]-t);
                 return true;
             }
-            if (times[i] == t) {
+            if (std::abs(times[i] - t) < teps) {
                 Real max_dt = 0;
                 for (int j=0; j<times.size(); ++j) {
                     if (t < times[j]) {

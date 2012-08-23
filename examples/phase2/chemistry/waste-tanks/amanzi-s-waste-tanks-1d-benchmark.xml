@@ -15,6 +15,7 @@
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.5778463e11"/>
         <Parameter name="End" type="double" value="1.5778463e8"/>
+        <Parameter name="End" type="double" value="3.5778463e8"/>
         <Parameter name="Switch" type="double" value="0.0"/>
 	<Parameter name="Steady Initial Time Step" type="double" value="31557600.0"/>
         <Parameter name="Transient Initial Time Step" type="double" value="31557600.0"/>
