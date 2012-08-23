@@ -7647,7 +7647,87 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
 int
 PorousMedia::okToContinue ()
 {
-  return (level > 0) ? true : (parent->dtLevel(0) > dt_cutoff);
+    bool ret = true;
+    std::string reason_for_stopping;
+    bool successfully_completed = false;
+
+    if (level == 0) {
+        if (parent->dtLevel(0) <= dt_cutoff) {
+            ret = false; reason_for_stopping = "Dt at level 0 too small";
+        }
+
+        if (parent->levelSteps(0) >= max_step) {
+            ret = false; reason_for_stopping = "Hit maximum allowed time steps";
+            successfully_completed = true;
+        }
+
+        if (parent->cumTime() >= stop_time) {
+            ret = false; reason_for_stopping = "Hit maximum allowed time";
+            successfully_completed = true;
+        }
+
+        if (!ret) {
+            //
+            // Print final solutions
+            //
+            if (verbose > 3)
+            {      
+                for (int lev = 0; lev <= parent->finestLevel(); lev++)
+                {
+                    if (verbose>2 && ParallelDescriptor::IOProcessor())
+                        std::cout << "Final solutions at level = " 
+                                  << lev << '\n';
+                    
+                    getLevel(lev).check_minmax(); 
+                    
+                }
+            }
+            
+            //
+            // Compute observations
+            //
+            Observation::setAmrPtr(parent);
+            if (successfully_completed  &&  ParallelDescriptor::IOProcessor()) 
+            {
+                if (verbose>1)
+                {
+                    for (int i=0; i<observations.size(); ++i)
+                    {
+                        const std::map<int,Real> vals = observations[i].vals;
+                        for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
+                        {
+                            int j = it->first;
+                            std::cout << i << " " << observations[i].name << " " 
+                                      << j << " " << observations[i].times[j] << " "
+                                      << it->second << std::endl;
+                        }
+                    }
+                }
+      
+                std::ofstream out;
+                out.open(obs_outputfile.c_str(),std::ios::out);
+                out.precision(16);
+                out.setf(std::ios::scientific);
+                for (int i=0; i<observations.size(); ++i)
+                {
+                    const std::map<int,Real>& vals = observations[i].vals;
+                    for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
+                    {
+                        int j = it->first;
+                        out << i << " " << observations[i].name << " " 
+                            << j << " "  << observations[i].times[j] << " "
+                            << it->second << std::endl;
+                    }
+                }
+                out.close();
+            }
+        }
+    }
+    
+    if (!ret && ParallelDescriptor::IOProcessor()) {
+        std::cout << "Stopping simulation: " << reason_for_stopping << std::endl;
+    }
+    return ret;
 }
 
 //
@@ -7693,25 +7773,9 @@ PorousMedia::post_timestep (int crse_iteration)
       parent->levelSteps(0)%sum_interval == 0)
     sum_integrated_quantities();
     
-  //
-  // Print final solutions
-  //
-  if (level == 0 && verbose > 3)
-    {      
-      for (int lev = 0; lev <= finest_level; lev++)
-	{
-	  if (verbose>2 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Final solutions at level = " 
-		      << lev << '\n';
+  old_intersect_new          = grids;
+  is_first_step_after_regrid = false;
 
-	  getLevel(lev).check_minmax(); 
-
-	}
-    }
-
-  //
-  // Compute observations
-  //
   if (level == 0)
     {
       Observation::setAmrPtr(parent);
@@ -7721,45 +7785,6 @@ PorousMedia::post_timestep (int crse_iteration)
           observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 
-  if  ( (parent->cumTime() >=  stop_time || 
-         parent->levelSteps(0) >= max_step)
-        && ParallelDescriptor::IOProcessor())
-  {
-      if (verbose>1)
-	{
-	  for (int i=0; i<observations.size(); ++i)
-	    {
-                const std::map<int,Real> vals = observations[i].vals;
-                for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
-                {
-                    int j = it->first;
-                    std::cout << i << " " << observations[i].name << " " 
-                              << j << " " << observations[i].times[j] << " "
-                              << it->second << std::endl;
-                }
-            }
-	}
-      
-      std::ofstream out;
-      out.open(obs_outputfile.c_str(),std::ios::out);
-      out.precision(16);
-      out.setf(std::ios::scientific);
-      for (int i=0; i<observations.size(); ++i)
-      {
-          const std::map<int,Real>& vals = observations[i].vals;
-          for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
-          {
-              int j = it->first;
-              out << i << " " << observations[i].name << " " 
-                  << j << " "  << observations[i].times[j] << " "
-                  << it->second << std::endl;
-          }
-      }
-      out.close();
-    }
-
-  old_intersect_new          = grids;
-  is_first_step_after_regrid = false;
 
 }
 
