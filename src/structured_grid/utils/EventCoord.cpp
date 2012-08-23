@@ -148,11 +148,22 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
             // told is near boundary
             if ( (std::abs(told_overage - period) < teps) 
                  || (std::abs(told_overage) < teps) ) {
-                
+
                 if (dt > period) { // this would step over period, cut back
                     dt_red = period;
                     return true;
                 }
+            }
+
+            int tnew_interval = (t + dt - start)/period;
+            Real tnew_boundary = start + tnew_interval*period;
+            Real tnew_overage = t + dt - told_boundary;
+
+
+            // tnew is near boundary
+            if ( (std::abs(tnew_overage - period) < teps) 
+                 || (std::abs(tnew_overage) < teps) ) {
+                return true;
             }
 
             Real next_boundary = (told_interval + 1)*period;

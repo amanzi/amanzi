@@ -362,9 +362,6 @@
       <ParameterList name="Every_10_years">
 	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 315569260.0, -1}"/>
       </ParameterList>
-      <ParameterList name="Marc">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 6.e7, -1}"/>
-      </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="amr_data/radioactive-decay-sorbed"/>
@@ -384,7 +381,6 @@
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous Pu_238 Concentration"/>
 	<Parameter name="Time Macro" type="string" value="Every_year"/>
-	<Parameter name="Time Macro" type="string" value="Marc"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
