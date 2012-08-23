@@ -38,6 +38,7 @@ process_events(bool& write_plotfile_after_step,
     write_plotfile_after_step = false;
     write_checkpoint_after_step = false;
     Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
+    Array<std::string>& vis_time_macros = PorousMedia::vis_time_macros;
     Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
 
     Real dt_new = dt;
@@ -63,6 +64,12 @@ process_events(bool& write_plotfile_after_step,
 
             for (int k=0; k<vis_cycle_macros.size(); ++k) {
                 if (eventList[j] == vis_cycle_macros[k]) {
+                    write_plotfile_after_step = true;
+                }
+            }
+
+            for (int k=0; k<vis_time_macros.size(); ++k) {
+                if (eventList[j] == vis_time_macros[k]) {
                     write_plotfile_after_step = true;
                 }
             }

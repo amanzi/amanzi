@@ -7691,6 +7691,7 @@ PorousMedia::okToContinue ()
             {
                 if (verbose>1)
                 {
+                    std::cout << "Computed observations:\n";
                     for (int i=0; i<observations.size(); ++i)
                     {
                         const std::map<int,Real> vals = observations[i].vals;
@@ -7702,6 +7703,8 @@ PorousMedia::okToContinue ()
                                       << it->second << std::endl;
                         }
                     }
+                    std::cout << "\n";
+
                 }
       
                 std::ofstream out;
