@@ -6,7 +6,7 @@
 //TODO(barker): add error handling where appropriate
 //TODO(barker): clean up formating
 
-namespace Amanzi {
+namespace Amanzi  {
   
 
 HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm)

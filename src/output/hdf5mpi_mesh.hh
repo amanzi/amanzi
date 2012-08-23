@@ -19,7 +19,7 @@
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
 
-extern "C" {
+extern "C"  {
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #include "parallelIO.h"

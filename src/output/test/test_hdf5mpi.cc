@@ -3,7 +3,7 @@
 #if HAVE_STK_MESH
 #include "Mesh_STK.hh"
 #endif
-TEST(HDF5_MPI) {
+TEST(HDF5_MPI)  {
   
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
