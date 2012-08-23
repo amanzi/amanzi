@@ -163,8 +163,9 @@ namespace Amanzi {
           struct SorptionIsothermData
           {
               SorptionIsothermData() 
-                  : Kd(0), Langmuir_b(0), Freundlich_n(1) {}
+                  : Kd(0), Langmuir_b(-1.0), Freundlich_n(-1.0) {}
               bool IsFreundlich() const {return Freundlich_n>0;}
+              bool IsLangmuir() const {return Langmuir_b>0;}
               double Kd, Langmuir_b, Freundlich_n;
               ParameterList BuildPL() const {
                   ParameterList pl;
@@ -172,7 +173,7 @@ namespace Amanzi {
                   if (IsFreundlich()) {
                       pl.set("Freundlich_n",Freundlich_n);
                   }
-                  else {
+                  else if (IsLangmuir()) {
                       pl.set("Langmuir_b",Langmuir_b);
                   }
                   return pl;
@@ -248,6 +249,12 @@ namespace Amanzi {
           bool HasStuff() const {
               return mineral_names.size() || sorption_site_names.size() || has_cation_exchange || sorption_isotherm_names.size();
           }
+
+          bool UsingSorption() const {
+              return sorption_site_names.size() || has_cation_exchange || sorption_isotherm_names.size();
+
+          }
+
           Array<std::string> mineral_names;
           Array<std::string> sorption_site_names;
           Array<std::string> sorption_isotherm_names;

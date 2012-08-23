@@ -1324,12 +1324,12 @@ namespace Amanzi {
                                                 }
                                                 else if (siLabels[N] == Lb_str) {
                                                     iso.Langmuir_b = sipcsSL.get<double>(siLabels[N]);
-                                                    iso.Freundlich_n = 0;
+                                                    iso.Freundlich_n = -1.0;
 						    n_found = true;
                                                 }
                                                 else if (siLabels[N] == Fn_str) {
                                                     iso.Freundlich_n = sipcsSL.get<double>(siLabels[N]);
-                                                    iso.Langmuir_b = 0;
+                                                    iso.Langmuir_b = -1.0;
 						    b_found = true;
                                                 }
                                                 else {
@@ -2647,13 +2647,15 @@ namespace Amanzi {
                     const Array<std::string>& solute_names = struc_list.sublist("tracer").get<Array<std::string> >("tracers");
                     for (int i=0; i<solute_names.size(); ++i) {
                         const std::string& name = solute_names[i];
-                        user_derive_list.push_back(underscore("Total Sorbed "+name));
-                        user_derive_list.push_back(underscore("Kd "+name));
+                        if (state.getSolid().UsingSorption()) {
+                            user_derive_list.push_back(underscore("Total Sorbed "+name));
+                        }
                         if (SolidChem::HasSorptionIsotherm(name)) {
+                            user_derive_list.push_back(underscore("Kd "+name));
                             if (SolidChem::SorptionIsotherm(name).IsFreundlich()) {
                                 user_derive_list.push_back(underscore("Freundlich n "+name));
                             }
-                            else
+                            else if (SolidChem::SorptionIsotherm(name).IsLangmuir()) 
                             {
                                 user_derive_list.push_back(underscore("Langmuir b "+name));
                             }
