@@ -112,7 +112,8 @@
     </ParameterList>
     <ParameterList name="East Well">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array double" value="{1.0,0.5,0.5}"/>
+        <Parameter name="Coordinate" type="Array double" value="{1.0,0.5}"/>
+        <Parameter name="Coordinate" type="Array double" value="{100.0,0.5}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
