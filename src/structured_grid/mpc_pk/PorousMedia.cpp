@@ -11632,7 +11632,7 @@ PorousMedia::derive (const std::string& name,
     if (not_found_yet) {
 
         for (int n=0; n<ntracers && not_found_yet; ++n) {
-            std::string tname = "Aqueous_" + tNames[n] + "_Concentration";
+            std::string tname = tNames[n] + "_Aqueous_Concentration";
             if (name==tname) {
                 AmrLevel::derive(tNames[n],time,mf,dcomp);
                 not_found_yet = false;

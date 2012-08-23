@@ -133,22 +133,22 @@
       <ParameterList name="Sorption Isotherms">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-	    <ParameterList name="Pu_238">
+	    <ParameterList name="Pu 238">
 	      <Parameter name="Kd" type="double" value="405616.5736"/>
 	    </ParameterList>
-	    <ParameterList name="U_234">
+	    <ParameterList name="U 234">
 	      <Parameter name="Kd" type="double" value="279735.568"/>
 	    </ParameterList>
-	    <ParameterList name="Th_230">
+	    <ParameterList name="Th 230">
 	      <Parameter name="Kd" type="double" value="1258810.056"/>
 	    </ParameterList>
-	    <ParameterList name="Ra_226">
+	    <ParameterList name="Ra 226">
 	      <Parameter name="Kd" type="double" value="34966.946"/>
 	    </ParameterList>
-	    <ParameterList name="Pb_210">
+	    <ParameterList name="Pb 210">
 	      <Parameter name="Kd" type="double" value="2797355.68"/>
 	    </ParameterList>
-	    <ParameterList name="Tc_99">
+	    <ParameterList name="Tc 99">
 	      <Parameter name="Kd" type="double" value="839.206704"/>
 	    </ParameterList>
 	  </ParameterList>
@@ -168,7 +168,7 @@
       </ParameterList>
       <ParameterList name="Phase Components">
         <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array string" value="{Pu_238, U_234, Th_230, Ra_226, Pb_210, Tc_99}"/>
+          <Parameter name="Component Solutes" type="Array string" value="{Pu 238, U 234, Th 230, Ra 226, Pb 210, Tc 99}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -183,42 +183,42 @@
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-            <ParameterList name="Pu_238">
+            <ParameterList name="Pu 238">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
-            <ParameterList name="U_234">
+            <ParameterList name="U 234">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
-            <ParameterList name="Th_230">
+            <ParameterList name="Th 230">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
-            <ParameterList name="Ra_226">
+            <ParameterList name="Ra 226">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
-            <ParameterList name="Pb_210">
+            <ParameterList name="Pb 210">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
-            <ParameterList name="Tc_99">
+            <ParameterList name="Tc 99">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
@@ -241,7 +241,7 @@
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-            <ParameterList name="Pu_238">
+            <ParameterList name="Pu 238">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
@@ -249,7 +249,7 @@
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="U_234">
+            <ParameterList name="U 234">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
@@ -257,7 +257,7 @@
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Th_230">
+            <ParameterList name="Th 230">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
@@ -265,7 +265,7 @@
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Ra_226">
+            <ParameterList name="Ra 226">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
@@ -273,7 +273,7 @@
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Pb_210">
+            <ParameterList name="Pb 210">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
@@ -281,7 +281,7 @@
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Tc_99">
+            <ParameterList name="Tc 99">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
@@ -303,32 +303,32 @@
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
-            <ParameterList name="Pu_238">
+            <ParameterList name="Pu 238">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="U_234">
+            <ParameterList name="U 234">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Th_230">
+            <ParameterList name="Th 230">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Ra_226">
+            <ParameterList name="Ra 226">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Pb_210">
+            <ParameterList name="Pb 210">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
-            <ParameterList name="Tc_99">
+            <ParameterList name="Tc 99">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
@@ -341,46 +341,46 @@
   <ParameterList name="Output">
     <Parameter name="File Name Digits" type="int" value="7"/>
     <ParameterList name="Cycle Macros">
-      <ParameterList name="Every_1_steps">
+      <ParameterList name="Every 1 steps">
         <Parameter name="Start_Period_Stop" type="Array int" value="{0,1,-1}"/>
       </ParameterList>
-      <ParameterList name="Every_10_steps">
+      <ParameterList name="Every 10 steps">
         <Parameter name="Start_Period_Stop" type="Array int" value="{0,10,-1}"/>
       </ParameterList>
-      <ParameterList name="Every_100_steps">
+      <ParameterList name="Every 100 steps">
         <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
       </ParameterList>
-      <ParameterList name="Every_1000_steps">
+      <ParameterList name="Every 1000 steps">
         <Parameter name="Start_Period_Stop" type="Array int" value="{0,1000,-1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Time Macros">
-      <ParameterList name="Every_0.05_year">
+      <ParameterList name="Every 0.05 year">
 	<Parameter name="Start_Period_Stop" type="Array double" value="{0., 1.5768e6, -1}"/>
       </ParameterList>
-      <ParameterList name="Every_year">
+      <ParameterList name="Every year">
 	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 31556926.0, -1}"/>
       </ParameterList>
-      <ParameterList name="Every_10_years">
+      <ParameterList name="Every 10 years">
 	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 315569260.0, -1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="amr_data/radioactive-decay-sorbed"/>
-      <Parameter name="Time Macros" type="Array string" value="{Every_year}"/>
+      <Parameter name="Time Macros" type="Array string" value="{Every year}"/>
     </ParameterList>
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="amr_data/chk"/>
-      <Parameter name="Cycle Macros" type="Array string" value="{Every_100_steps}"/>
+      <Parameter name="Cycle Macros" type="Array string" value="{Every 100 steps}"/>
     </ParameterList>
 
     <ParameterList name="Observation Data">
       <Parameter name="Observation Output Filename" type="string" value="radioactive-decay-sorbed-obs.txt"/>
-      <ParameterList name="Pu_238 West Well">
+      <ParameterList name="Pu 238 West Well">
 	<Parameter name="Region" type="string" value="East Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
-	<Parameter name="Variable" type="string" value="Aqueous Pu_238 Concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every_year"/>
+	<Parameter name="Variable" type="string" value="Pu 238 Aqueous Concentration"/>
+	<Parameter name="Time Macro" type="string" value="Every year"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

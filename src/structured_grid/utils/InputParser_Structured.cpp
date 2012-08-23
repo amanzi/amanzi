@@ -2638,7 +2638,7 @@ namespace Amanzi {
                 const Array<std::string>& solute_names = struc_list.sublist("tracer").get<Array<std::string> >("tracers");
                 for (int i=0; i<solute_names.size(); ++i) {
                     const std::string& name = solute_names[i];
-                    user_derive_list.push_back(underscore("Aqueous "+name+" Concentration"));
+                    user_derive_list.push_back(underscore(name+" Aqueous Concentration"));
                 }
             }
             
@@ -3044,7 +3044,17 @@ namespace Amanzi {
 		    }
 		  }
 		  if (!found) {
+                      std::cerr << "Available derived variables: ";
+                      for (int k=0; k<user_derive_list.size(); ++k) {
+                          std::cerr << "\"" << AMR_to_Amanzi_label_map[user_derive_list[k]] << "\"";
+                          if (k<=user_derive_list.size()-2) {
+                              std::cout << ", ";
+                          }
+                      }
+                      std::cerr << std::endl;
 		    MyAbort(variable + " is not a valid derive variable name");
+
+
 		  }
 
 		  sublist.set<std::string>("field",_variable);
