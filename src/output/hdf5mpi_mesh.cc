@@ -230,10 +230,195 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
     ctype_ = mesh_maps.cell_get_type(0); 
     cname_ = "Mixed"; //AmanziMesh::Data::type_to_name(ctype_);
     xmfFilename = filename + ".xmf";
+    xdmfMeshFilename_ = xmfFilename;
     createXdmfMesh_(xmfFilename);
   }
 
 }
+
+void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps, 
+		               const Epetra_Vector &RegList, std::string regname)
+{
+  hid_t file, group, dataspace, dataset;
+  herr_t status;
+  char* tmpName;
+  double *data;
+  int err, reglen, found, globaldims[2], localdims[2];
+
+  // Write out RegList to HDF5 file
+  // Build HDF5 path name
+  std::stringstream h5path;
+  h5path << "Mesh/" << regname;
+  std::stringstream h5loc;
+  h5loc << H5MeshFilename() << ":/" << h5path.str();
+  tmpName = new char [h5path.str().size()+1];
+  strcpy(tmpName,h5path.str().c_str());
+
+  // Extract data to write
+  err = RegList.ExtractView(&data);
+  globaldims[0] = RegList.GlobalLength();
+  globaldims[1] = 1;
+  localdims[0] = RegList.MyLength();
+  localdims[1] = 1;
+
+  int idata[RegList.GlobalLength()];
+  for(int i=0; i<RegList.MyLength(); i++) {
+    idata[i] = (int)data[i];
+  }
+
+  // open and write to file
+  file = parallelIO_open_file(H5MeshFilename_.c_str(), &IOgroup_,
+                              FILE_READWRITE);
+  if (file < 0) {
+    Errors::Message message("HDF5_MPI::writeMeshRegion - error opening data file to write mesh region");
+    Exceptions::amanzi_throw(message);
+  }
+
+  parallelIO_write_dataset(idata, PIO_INTEGER, 2, globaldims, localdims, file, tmpName,
+                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
+
+  // Create subset connectivity dataset
+ 
+  // nodes are written to h5 out of order, need info to map id to order in output
+  const Epetra_Map &nmap = mesh_maps.node_map(false);
+  int nnodes_local = nmap.NumMyElements();
+  int nnodes_global = nmap.NumGlobalElements();
+  const Epetra_Map &ngmap = mesh_maps.node_map(true);
+  int nnodes(nnodes_local);
+  std::vector<int> nnodesAll(viz_comm_.NumProc(),0);
+  viz_comm_.GatherAll(&nnodes, &nnodesAll[0], 1);
+  int start(0);
+  std::vector<int> startAll(viz_comm_.NumProc(),0);
+  for (int i = 0; i < viz_comm_.MyPID(); i++){
+    start += nnodesAll[i];
+  }
+  viz_comm_.GatherAll(&start, &startAll[0],1);
+  
+  std::vector<int> gid(nnodes_global);
+  std::vector<int> pid(nnodes_global);
+  std::vector<int> lid(nnodes_global);
+  for (int i=0; i<nnodes_global; i++) {
+    gid[i] = ngmap.GID(i);
+  }
+  nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
+
+  // get connectivity on this processor
+  std::vector<int> local_conn;
+  std::vector<int> local_ids;
+  const Epetra_Map &cmap = mesh_maps.cell_map(false);
+  int ncells_local(cmap.NumMyElements());
+  int id;
+  AmanziMesh::Entity_ID_List nodeids;
+  AmanziMesh::Cell_type type;
+  for (int i=0; i<ncells_local; i++) {
+    id = cmap.GID(i);
+    for (int j=0; j<RegList.GlobalLength(); j++) {
+      if (id == RegList[j]) {
+	local_ids.push_back(i);
+	mesh_maps.cell_get_nodes(i,&nodeids);
+	type = mesh_maps.cell_get_type(i);
+	local_conn.push_back(getCellTypeID_(type));
+	if (getCellTypeID_(type) == 3) {
+	  local_conn.push_back(nodeids.size());
+	}
+	for (int k=0; k<nodeids.size(); k++) {
+	  if (nmap.MyLID(nodeids[k])) {
+	    local_conn.push_back(nodeids[k] + startAll[viz_comm_.MyPID()]);
+	  } else {
+	    local_conn.push_back(lid[nodeids[k]] + startAll[pid[nodeids[k]]]);
+	  }
+	}
+      }
+    }
+  }
+  
+  // determine length of connectivity globally
+  int local_len(local_conn.size());
+  std::vector<int> global_len(viz_comm_.NumProc(),0);
+  viz_comm_.GatherAll(&local_len, &global_len[0],1);
+  int total_len(0);
+  for (int i=0; i<viz_comm_.NumProc(); i++) {
+    total_len += global_len[i];
+  }
+
+  // write out new connectivity to HDF5 file
+  globaldims[0] = total_len;
+  globaldims[1] = 1;
+  localdims[0] = local_len;
+  localdims[1] = 1;
+  std::stringstream ch5path;
+  h5path << "_MixedElements";
+  h5loc << "_MixedElements" ;
+  tmpName = new char [h5path.str().size()+1];
+  strcpy(tmpName,h5path.str().c_str());
+  parallelIO_write_dataset(&local_conn[0], PIO_INTEGER, 2, globaldims, localdims, file, tmpName,
+                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
+  parallelIO_close_file(file, &IOgroup_);
+
+  // find Grid node
+  Teuchos::XMLObject gridnode, xmlnode, tmp;
+  /*
+  gridnode = findMeshNode_(xmlMesh_);
+  if (!gridnode.hasAttribute("CollectionType")) {
+    gridnode.addAttribute("GridType", "Collection");
+    gridnode.addAttribute("CollectionType", "Spatial");
+  }
+  */
+  for (int i = 0; i < xmlMesh_.numChildren(); i++) {
+    if (xmlMesh_.getChild(i).getTag() == "Domain") {
+      xmlnode = xmlMesh_.getChild(i);
+    }
+  }
+
+  // add Whole Mesh grid
+  /*
+  found = 0;
+  for (int i=0; i<gridnode.numChildren(); i++) {
+    tmp = gridnode.getChild(i);
+    if (tmp.getTag() == "Grid" && tmp.hasAttribute("Name")){
+      if (tmp.getAttribute("Name") == "WholeMesh")
+	found = 1;
+    }
+  }
+  Teuchos::XMLObject topoRef("Topology");
+  topoRef.addAttribute("Reference","//Topology[@Name='mixedtopo']");
+  Teuchos::XMLObject geoRef("Geometry");
+  geoRef.addAttribute("Reference","//Geometry[@Name='geo']");
+  if (!found) {
+    Teuchos::XMLObject WholeMesh("Grid");
+    WholeMesh.addAttribute("Name","WholeMesh");
+    WholeMesh.addChild(topoRef);
+    WholeMesh.addChild(geoRef);
+    gridnode.addChild(WholeMesh);
+  }
+  */
+ 
+  // add region grid
+  Teuchos::XMLObject geoRef("Geometry");
+  geoRef.addAttribute("Reference","//Geometry[@Name='geo']");
+  Teuchos::XMLObject RegionMesh("Grid");
+  RegionMesh.addAttribute("Name",regname);
+  RegionMesh.addChild(geoRef);
+  Teuchos::XMLObject topo("Topology");
+  topo.addAttribute("Name",regname);
+  topo.addInt("NumberOfElements",local_ids.size());
+  topo.addAttribute("TopologyType","Mixed");
+  Teuchos::XMLObject dataItem("DataItem");
+  dataItem.addAttribute("DataType","Int");
+  dataItem.addInt("Dimensions",total_len);
+  dataItem.addAttribute("Format","HDF");
+  dataItem.addContent(h5loc.str());
+  topo.addChild(dataItem);
+  RegionMesh.addChild(topo);
+  xmlnode.addChild(RegionMesh);
+  
+  // write xmf
+  std::ofstream of(xdmfMeshFilename_.c_str());
+  of << HDF5_MPI::xdmfHeader_ << xmlMesh_ << endl;
+  of.close();
+
+}
+
 
 void HDF5_MPI::createDataFile(std::string soln_filename) {
 
@@ -688,7 +873,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
     Exceptions::amanzi_throw(message);
   }
 
-  if (TrackXdmf()){
+  if (TrackXdmf() && (loc != "NONE")){
     h5path << "/" << Iteration();
   }
   
@@ -700,7 +885,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
   parallelIO_close_file(file, &IOgroup_);
 
   // TODO(barker): add error handling: can't write
-  if (TrackXdmf() ) {
+  if (TrackXdmf() && (loc != "NONE")) {
     // write the time value as an attribute to this dataset
     writeAttrReal(Time(), "Time", h5path.str());
     if (viz_comm_.MyPID() == 0) {
@@ -789,6 +974,9 @@ void HDF5_MPI::createXdmfMesh_(const std::string xmfFilename) {
   std::ofstream of(xmfFilename.c_str());
   of << HDF5_MPI::xdmfHeader_ << mesh << endl;
   of.close();
+
+  // store Mesh XMLObject
+  xmlMesh_ = mesh;
 }
 
 
@@ -1000,7 +1188,7 @@ std::string HDF5_MPI::stripFilename_(std::string filename)  {
 }
   
 std::string HDF5_MPI::xdmfHeader_ =
-         "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
+         "<?xml version=\"2.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
   
 } // close namespace Amanzi
 

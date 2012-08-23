@@ -52,12 +52,29 @@ TEST(HDF5_MPI) {
   fake_pressure = Teuchos::rcp(new Epetra_Vector(Mesh.cell_map(false)));
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
 
+  // Setup up mesh region
+  Epetra_Map regMap(3, 0, *comm);
+  double region_cells[] = {0,2,4};
+  double region_cells2[] = {4,5,7};
+  int region_index_list[] = {0,1,2};
+  Teuchos::RCP<Epetra_Vector> mesh_region1, mesh_region2;
+  mesh_region1 = Teuchos::rcp(new Epetra_Vector(regMap,false));
+  mesh_region1->ReplaceGlobalValues(3, region_cells, region_index_list);
+  std::string region_name1, region_name2;
+  region_name1 = "Region1";
+  mesh_region2 = Teuchos::rcp(new Epetra_Vector(regMap,false));
+  mesh_region2->ReplaceGlobalValues(3, region_cells2, region_index_list);
+  region_name2 = "Region2";
+
   // Write a file which contains both mesh and data.
   Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*comm);
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Mesh, hdf5_meshfile);
   viz_output->createDataFile(hdf5_datafile1);
+  viz_output->writeMeshRegion(Mesh, *mesh_region1, region_name1);
+  viz_output->writeMeshRegion(Mesh, *mesh_region2, region_name2);
   
+  // Create restart file
   Amanzi::HDF5_MPI *restart_output = new Amanzi::HDF5_MPI(*comm);
   restart_output->setTrackXdmf(false);
   restart_output->createDataFile(hdf5_datafile2);
