@@ -106,12 +106,46 @@ const Event& EventCoord::operator[] (const std::string& label) const
 bool
 EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
 {
+    int dCycle_red = dCycle;
+
     if (type == SPS_CYCLES)
     {
-        if ( ( ( stop < 0 ) || ( cycle + dCycle < stop ) )
-             && ( cycle + dCycle >= start ) )
+        if ( (stop > 0  &&  cycle > stop)  ||  (cycle < start) )
         {
-            return ( (period==1) || ((cycle-start+dCycle)%period == 0) );
+            return false;
+        }
+        
+        if ( ( ( stop < 0 ) || ( cycle <= stop ) )
+             && ( cycle >= start) )
+        {
+            // Is on interval boundary
+            int cold_interval = (cycle - start)/period;
+            int cold_boundary = start + cold_interval*period;
+            int cold_overage = cycle - cold_boundary;
+
+            // cold is on boundary
+            if ( cold_overage == 0 ) {
+                return true;
+            }
+
+            int cnew_interval = (cycle + dCycle - start)/period;
+            int cnew_boundary = start + cnew_interval*period;
+            int cnew_overage = cycle + dCycle - cnew_boundary;
+
+            // cnew is on boundary
+            if ( cnew_overage == 0 ) {
+                return true;
+            }
+
+            int next_boundary = (cold_interval + 1)*period;
+
+            if (stop < 0  ||  next_boundary <= stop) {
+                dCycle_red = std::min(dCycle, next_boundary - cycle);
+                if (dCycle_red < dCycle) {
+                    BL_ASSERT(dCycle_red > 0);
+                    return true;
+                }
+            }
         }
     }
     else {
@@ -130,7 +164,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
     dt_red = dt;
     if (type == SPS_TIMES)
     {
-        if ( (stop > 0  &&  t > stop)  ||  (t + dt < start) )
+        if ( (stop > 0  &&  t > stop)  ||  (t < start) )
         {
             return false;
         }
@@ -138,7 +172,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
         Real teps = period * 1.e-8;
 
         if ( ( ( stop < 0 ) || ( t + teps <= stop ) )
-             && ( t > start + teps) )
+             && ( t >= start - teps) )
         {
             // Is on interval boundary
             int told_interval = (t - start)/period;
@@ -157,7 +191,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
 
             int tnew_interval = (t + dt - start)/period;
             Real tnew_boundary = start + tnew_interval*period;
-            Real tnew_overage = t + dt - told_boundary;
+            Real tnew_overage = t + dt - tnew_boundary;
 
 
             // tnew is near boundary

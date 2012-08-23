@@ -28,7 +28,7 @@ PMAmr::PMAmr()
 PMAmr::~PMAmr()
 {}
 
-Real
+static Real
 process_events(bool& write_plotfile_after_step,
                bool& write_checkpoint_after_step,
                Array<int>& observations_after_step,
