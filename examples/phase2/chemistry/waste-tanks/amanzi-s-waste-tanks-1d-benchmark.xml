@@ -338,20 +338,21 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Output">
-      <ParameterList name="Cycle Macros">
-        <ParameterList name="Every_1_steps">
-          <Parameter name="Start_Period_Stop" type="Array int" value="{0,1,-1}"/>
-        </ParameterList>
-        <ParameterList name="Every_10_steps">
-          <Parameter name="Start_Period_Stop" type="Array int" value="{0,10,-1}"/>
-        </ParameterList>
-        <ParameterList name="Every_100_steps">
-          <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
-        </ParameterList>
-        <ParameterList name="Every_1000_steps">
-          <Parameter name="Start_Period_Stop" type="Array int" value="{0,1000,-1}"/>
-        </ParameterList>
+    <Parameter name="File Name Digits" type="int" value="7"/>
+    <ParameterList name="Cycle Macros">
+      <ParameterList name="Every_1_steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,1,-1}"/>
       </ParameterList>
+      <ParameterList name="Every_10_steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,10,-1}"/>
+      </ParameterList>
+      <ParameterList name="Every_100_steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
+      </ParameterList>
+      <ParameterList name="Every_1000_steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,1000,-1}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Time Macros">
       <ParameterList name="Every_0.05_year">
 	<Parameter name="Start_Period_Stop" type="Array double" value="{0., 1.5768e6, -1}"/>
@@ -365,12 +366,10 @@
     </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="amr_data/radioactive-decay-sorbed"/>
-      <Parameter name="File Name Digits" type="int" value="7"/>
       <Parameter name="Time Macros" type="Array string" value="{Every_year}"/>
     </ParameterList>
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="amr_data/chk"/>
-      <Parameter name="File Name Digits" type="int" value="5"/>
       <Parameter name="Cycle Macros" type="Array string" value="{Every_100_steps}"/>
     </ParameterList>
 

@@ -2814,7 +2814,6 @@ namespace Amanzi {
             const std::string vis_var_str = "Variables";
             const std::string vis_cycle_str = "Cycle Macros";
             const std::string vis_time_str = "Time Macros";
-            const std::string vis_digits_str = "File Name Digits";
             bool vis_vars_set = false;
             Array<std::string> visNames, vis_cMacroNames, vis_tMacroNames;
             int vis_digits = 5;
@@ -2891,12 +2890,6 @@ namespace Amanzi {
                             }
                         }
                     }
-                    else if (name == vis_digits_str) {
-                        vis_digits = vlist.get<int>(vis_digits_str);
-                        if (vis_digits<=0) {
-                            MyAbort("\""+vis_data_str+"\" -> \""+vis_digits_str+"\" must be > 0");
-                        }
-                    }
                     else {
                         MyAbort("Unrecognized entry in \""+vis_data_str+"\" parameter list: \""+name+"\"");
                     }
@@ -2916,7 +2909,6 @@ namespace Amanzi {
             amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
             amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
             amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
-            amr_list.set<int>("plot_digits",vis_digits);
             amr_list.set<std::string>("plot_file",vis_file);
 
 
@@ -2926,7 +2918,6 @@ namespace Amanzi {
             const std::string chk_cycle_str = "Cycle Macros";
             const std::string chk_digits_str = "File Name Digits";
             bool cycle_macro_set = false;
-            int chk_digits = 5;
             std::string chk_file = "chk";
             Array<std::string> chk_cMacroNames;
             if (rlist.isSublist(chk_data_str)) {                
@@ -2958,20 +2949,24 @@ namespace Amanzi {
                             }
                         }
                     }
-                    else if (name == chk_digits_str) {
-                        chk_digits = clist.get<int>(chk_digits_str);
-                        if (chk_digits<=0) {
-                            MyAbort("\""+chk_data_str+"\" -> \""+chk_digits_str+"\" must be > 0");
-                        }
-                    }
                     else {
                         MyAbort("Unrecognized entry in \""+chk_data_str+"\" parameter list: \""+name+"\"");
                     }
                 }
             }
             amr_list.set<Array<std::string> >("chk_cycle_macros",chk_cMacroNames);
-            amr_list.set<int>("chk_digits",chk_digits);
             amr_list.set<std::string>("check_file",chk_file);
+
+            const std::string file_name_digits_str = "File Name Digits";
+            int file_name_digits = 5;
+            if (rlist.isParameter(file_name_digits_str)) {
+                file_name_digits = rlist.get<int>(file_name_digits_str);
+                if (file_name_digits<=0) {
+                    MyAbort("Output -> \""+file_name_digits_str+"\" must be > 0");
+                }
+            }
+            amr_list.set<int>("file_name_digits",file_name_digits);
+
 
         
             // observation
