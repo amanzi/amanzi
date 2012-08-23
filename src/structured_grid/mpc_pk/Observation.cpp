@@ -151,7 +151,6 @@ Index (const pointRegion& region,
            iv[2]=floor((region.coor[2]-geom.ProbLo(2))/geom.CellSize(2)););
 
     iv += geom.Domain().smallEnd();
-
     return iv;
 }
 
@@ -196,6 +195,12 @@ Observation::point_sample (Real time)
       ParallelDescriptor::ReduceIntMax(proc_with_data);
   }
 
+  if (proc_with_data<0) {
+      if (ParallelDescriptor::IOProcessor()) {
+          std::cout << region << std::endl;
+      }
+      BoxLib::Abort("Nobody claimed ownership of the observation pt");
+  }
   ParallelDescriptor::Bcast(&value,1,proc_with_data);
   return value;
 }
