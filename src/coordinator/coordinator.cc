@@ -72,6 +72,9 @@ void Coordinator::initialize() {
   // Initialize the state (initializes all dependent variables).
   S_->Initialize();
 
+  // commit the initial conditions.
+  pk_->commit_state(0., S_);
+
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
   bool surface_done = false;
