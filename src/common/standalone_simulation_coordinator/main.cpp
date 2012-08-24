@@ -116,7 +116,14 @@ int main(int argc, char *argv[]) {
 
     // print out observation file in ASCII format 
     Teuchos::ParameterList obs_list;
-    if (driver_parameter_list.get<bool>("Native Unstructured Input",true)) {
+
+    bool is_native_unstructured = false;
+    std::string nui_str = "Native Unstructured Input";
+    if (driver_parameter_list.isParameter(nui_str)) {
+        is_native_unstructured = driver_parameter_list.get<bool>(nui_str);
+    }
+
+    if (is_native_unstructured) {
       obs_list = driver_parameter_list.sublist("Observation Data");
     } else {
       obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
@@ -139,16 +146,12 @@ int main(int argc, char *argv[]) {
 
 	for (Teuchos::ParameterList::ConstIterator i=obs_list.begin(); i!=obs_list.end(); ++i) {
 	  std::string label  = obs_list.name(i);
-	  std::string _label = label;
-#ifdef ENABLE_Structured
-	  if (framework=="Structured") _label = Amanzi::AmanziInput::underscore(label);
-#endif
 	  const Teuchos::ParameterEntry& entry = obs_list.getEntry(label);
 	  if (entry.isList()) {
             const Teuchos::ParameterList& ind_obs_list = obs_list.sublist(label);
-            for (int j = 0; j < output_observations[_label].size(); j++) {
+            for (int j = 0; j < output_observations[label].size(); j++) {
 
-              if (output_observations[_label][j].is_valid) {
+              if (output_observations[label][j].is_valid) {
                   if (!out.good()) {
                       std::cout << "PROBLEM BEFORE" << endl;
                   }
@@ -156,8 +159,8 @@ int main(int argc, char *argv[]) {
                     << ind_obs_list.get<std::string>("Region") << ", "
                     << ind_obs_list.get<std::string>("Functional") << ", "
                     << ind_obs_list.get<std::string>("Variable") << ", "
-                    << output_observations[_label][j].time << ", "
-                      << output_observations[_label][j].value << '\n';
+                    << output_observations[label][j].time << ", "
+                      << output_observations[label][j].value << '\n';
                   if (!out.good()) {
                       std::cout << "PROBLEM AFTER" << endl;
                   }

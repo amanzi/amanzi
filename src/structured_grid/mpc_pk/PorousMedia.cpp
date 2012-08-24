@@ -7702,15 +7702,15 @@ PorousMedia::okToContinue ()
                         {
                             int j = it->first;
                             std::string& name = AMR_to_Amanzi_label_map[observations[i].name];
-                            std::cout << i << " \"" << name << "\" " 
-                                      << j << " " << observations[i].times[j] << " "
+                            std::cout << i << ", " << name << ", " 
+                                      << j << ", " << observations[i].times[j] << ", "
                                       << it->second << std::endl;
                         }
                     }
                     std::cout << "\n";
 
                 }
-      
+#if 0  // Done in driver now      
                 std::ofstream out;
                 out.open(obs_outputfile.c_str(),std::ios::out);
                 out.precision(16);
@@ -7722,12 +7722,13 @@ PorousMedia::okToContinue ()
                     {
                         int j = it->first;
                         std::string& name = AMR_to_Amanzi_label_map[observations[i].name];
-                        out << i << " \"" << name << "\" " 
-                            << j << " "  << observations[i].times[j] << " "
+                        out << i << ", " << name << ", " 
+                            << j << ", "  << observations[i].times[j] << ", "
                             << it->second << std::endl;
                     }
                 }
                 out.close();
+#endif
             }
         }
     }

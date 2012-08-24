@@ -6,7 +6,7 @@
 
 #include "ParmParseHelpers.H"
 
-using Amanzi::AmanziInput::AMR_to_Amanzi_label_map;
+static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
 void
 Structured_observations(const PArray<Observation>& observation_array,
