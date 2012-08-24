@@ -17,6 +17,9 @@ using Teuchos::ParameterEntry;
 namespace Amanzi {
     namespace AmanziInput {
 
+        std::map<std::string,std::string> GlobalData::AMR_to_Amanzi_label_map;
+        std::map<std::string,std::string>& AMR_to_Amanzi_label_map = AMRToAmanziLabelMap();
+
         std::map<std::string,SolidChem::SorptionIsothermData> SolidChem::sorption_isotherms; // One for all materials, indexed on solute name
 
         void MyAbort(const std::string& m) {
@@ -35,8 +38,6 @@ namespace Amanzi {
                 throw std::exception();
             }
         }
-
-        static std::map<std::string,std::string> AMR_to_Amanzi_label_map;
 
         double atmToMKS = 101325;
 
@@ -3118,6 +3119,7 @@ namespace Amanzi {
             if (parameter_list.isParameter(dump_str)) {
                 struc_list.set<std::string>("dump_parmparse_table",parameter_list.get<std::string>(dump_str));
             }
+
             return struc_list;
         }
 

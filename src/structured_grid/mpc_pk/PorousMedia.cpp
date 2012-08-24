@@ -14,6 +14,9 @@
 #include <AmrData.H>
 #include <time.h> 
 #include <PMAmr.H>
+#include "PMAMR_Labels.H"
+
+std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
 #include <Godunov.H>
 #include <PorousMedia.H>
@@ -7698,7 +7701,8 @@ PorousMedia::okToContinue ()
                         for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
                         {
                             int j = it->first;
-                            std::cout << i << " " << observations[i].name << " " 
+                            std::string& name = AMR_to_Amanzi_label_map[observations[i].name];
+                            std::cout << i << " \"" << name << "\" " 
                                       << j << " " << observations[i].times[j] << " "
                                       << it->second << std::endl;
                         }
@@ -7717,7 +7721,8 @@ PorousMedia::okToContinue ()
                     for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
                     {
                         int j = it->first;
-                        out << i << " " << observations[i].name << " " 
+                        std::string& name = AMR_to_Amanzi_label_map[observations[i].name];
+                        out << i << " \"" << name << "\" " 
                             << j << " "  << observations[i].times[j] << " "
                             << it->second << std::endl;
                     }

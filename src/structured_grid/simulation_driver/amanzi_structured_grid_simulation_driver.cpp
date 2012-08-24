@@ -1,9 +1,12 @@
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
 #include "PMAmr.H"
+#include "PMAMR_Labels.H"
 #include "PorousMedia.H"
 
 #include "ParmParseHelpers.H"
+
+using Amanzi::AmanziInput::AMR_to_Amanzi_label_map;
 
 void
 Structured_observations(const PArray<Observation>& observation_array,
@@ -11,7 +14,7 @@ Structured_observations(const PArray<Observation>& observation_array,
 {
   for (int i=0; i<observation_array.size(); ++i)
     {
-      std::string label = observation_array[i].name;
+      std::string label = AMR_to_Amanzi_label_map[observation_array[i].name];
       int ntimes = observation_array[i].times.size();
       std::vector<Amanzi::ObservationData::DataTriple> dt(ntimes);
       const std::map<int, Real> vals = observation_array[i].vals;
