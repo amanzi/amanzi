@@ -65,8 +65,7 @@ class Flow_PK : public BDF2::fnBase {
 
   void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
-  double WaterVolumeChangePerSecond(std::vector<int>& bc_markers, 
-                                    Epetra_Vector& darcy_flux);
+  double WaterVolumeChangePerSecond(std::vector<int>& bc_markers, Epetra_Vector& darcy_flux);
 
   // gravity members
   void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,

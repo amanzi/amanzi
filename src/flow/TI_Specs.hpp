@@ -26,6 +26,7 @@ class TI_Specs {
     num_itrs = max_itrs = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
     dTfactor = 1.0;
+    atol = rtol = 1e-3;
     residual_tol = 0.0;
     initialize_with_darcy = false;
     clip_saturation = 0.6;
@@ -38,7 +39,7 @@ class TI_Specs {
   int num_itrs, max_itrs;
 
   double T0, T1, dT0, dTmax, dTfactor;
-  double residual_tol; 
+  double atol, rtol, residual_tol; 
 
   bool initialize_with_darcy;  // initialization options
   double clip_saturation;

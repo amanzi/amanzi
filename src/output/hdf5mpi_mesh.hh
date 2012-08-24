@@ -19,7 +19,7 @@
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
 
-extern "C" {
+extern "C"  {
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #include "parallelIO.h"
@@ -71,6 +71,8 @@ class HDF5_MPI {
 
   // Output mesh data to filename.h5 and filename.xmf
   void createMeshFile(const AmanziMesh::Mesh &mesh_Maps, std::string filename);
+  void writeMeshRegion(const AmanziMesh::Mesh &mesh_Maps, 
+		       const Epetra_Vector &RegList, std::string regname);
   //void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
 
   // Create h5 file for data output, create accompanying Xdmf files for Visit
@@ -149,6 +151,7 @@ class HDF5_MPI {
 
   // XMLObjects for Xdmf output
   Teuchos::XMLObject xmlVisit_;
+  Teuchos::XMLObject xmlMesh_;
   Teuchos::XMLObject xmlStep_;
 
   // Filenames
@@ -156,6 +159,7 @@ class HDF5_MPI {
   std::string H5DataFilename_;
   std::string xdmfVisitFilename_;
   std::string xdmfStepFilename_;
+  std::string xdmfMeshFilename_;
 
   // Simulation/Mesh Info
   int NumNodes_;

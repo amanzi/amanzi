@@ -126,25 +126,88 @@ void Amanzi::Restart::dump_state(State& S, bool force)
       restart_output->writeAttrInt(S.number_of_sorption_sites(),"Number of sorption sites");
       restart_output->writeAttrInt(static_cast<int>(S.use_sorption_isotherms()),
                                    "Use Sorption Isotherms");
+
+      for (int i=0; i<S.get_number_of_components(); i++) {
+	std::stringstream name;
+	name << "free ion concentrations " << i;
+	restart_output->writeDataReal(*(*S.free_ion_concentrations())(i),name.str());
+      }
+      for (int i=0; i<S.get_number_of_components(); i++) {
+	std::stringstream name;
+	name << "primary activity coeff " << i;
+	restart_output->writeDataReal(*(*S.primary_activity_coeff())(i),name.str());
+      }
+
+      if ( ! S.secondary_activity_coeff().is_null() ) {
+	for (int i=0; i<S.secondary_activity_coeff()->NumVectors(); i++) {
+	  std::stringstream name;
+	  name << "secondary activity coeff " << i;
+	  restart_output->writeDataReal(*(*S.secondary_activity_coeff())(i),name.str());
+	}
+      }
+
       for (int m = 0; m < S.number_of_minerals(); ++m) {
-        // TODO: need to dump the list of mineral names instead of
-        // this "Mineral N".... ticket #668
-        std::stringstream dummy;
-        dummy << "Mineral " << m;
-        restart_output->writeAttrString(S.mineral_names().at(m), dummy.str());
-        std::string name = S.mineral_names().at(m) + " volume fraction";
-        restart_output->writeDataReal(*(*S.mineral_volume_fractions())(m),
-                                      name);
-        name = S.mineral_names().at(m) + " specific surface area";
-        restart_output->writeDataReal(*(*S.mineral_specific_surface_area())(m),
-                                      name);
+        std::stringstream name;
+        name << "mineral volume fractions " << m;
+        restart_output->writeDataReal(*(*S.mineral_volume_fractions())(m), name.str());
       }
-
+      for (int m = 0; m < S.number_of_minerals(); ++m) {
+	std::stringstream name;
+	name << "mineral specific surface area " << m;
+        restart_output->writeDataReal(*(*S.mineral_specific_surface_area())(m), name.str());
+      }
+      if (S.using_sorption()) {
+	for (int i=0; i<S.get_number_of_components(); i++) {
+	  std::stringstream name;
+	  name << "total sorbed " << i;
+	  restart_output->writeDataReal(*(*S.total_sorbed())(i),name.str());
+	}      
+      }
       if (S.use_sorption_isotherms()) {
-
+	for (int i=0; i<S.number_of_sorption_sites(); i++) {
+	  std::stringstream name;
+	  name << "sorption sites " << i;
+	  restart_output->writeDataReal(*(*S.sorption_sites())(i),name.str());
+	}
+      
+	for (int i=0; i<S.number_of_sorption_sites(); i++) {
+	  std::stringstream name;
+	  name << "surface complex free site conc " << i;
+	  restart_output->writeDataReal(*(*S.surface_complex_free_site_conc())(i),name.str());
+	}
       }
-
-      // TODO: dump additional ion exchange site, sorption sites, etc.
+      for (int i=0; i<S.number_of_ion_exchange_sites(); i++) {
+	std::stringstream name;
+	name << "ion exchange sites " << i;
+	restart_output->writeDataReal(*(*S.ion_exchange_sites())(i),name.str());
+      }
+      for (int i=0; i<S.number_of_ion_exchange_sites(); i++) {
+	std::stringstream name;
+	name << "ion exchange ref cation conc " << i;
+	restart_output->writeDataReal(*(*S.ion_exchange_ref_cation_conc())(i),name.str());
+      }
+      if (S.use_sorption_isotherms()) {
+	for (int i=0; i<S.get_number_of_components(); i++) {
+	  std::stringstream name;
+	  name << "isotherm kd " << i;
+	  restart_output->writeDataReal(*(*S.isotherm_kd())(i),name.str());
+	}      
+	for (int i=0; i<S.get_number_of_components(); i++) {
+	  std::stringstream name;
+	  name << "isotherm freundlich n " << i;
+	  restart_output->writeDataReal(*(*S.isotherm_freundlich_n())(i),name.str());
+	}
+	for (int i=0; i<S.get_number_of_components(); i++) {
+	  std::stringstream name;
+	  name << "isotherm langmuir b " << i;
+	  restart_output->writeDataReal(*(*S.isotherm_langmuir_b())(i),name.str());
+	}
+      }
+     
+      restart_output->writeDataReal(*S.get_specific_storage(),"specific storage");
+      restart_output->writeDataReal(*S.get_specific_yield(),"specific yield");
+      
+      
     }
   }
 }
@@ -261,37 +324,164 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
       restart_input->readData(*(*cell_multivector)(i),tcc_name.str()); 
     }
   S.set_total_component_concentration(*cell_multivector);
-  delete cell_multivector;        
+  delete cell_multivector; 
 
-  // TODO: switch to using mineral names instead of mineral N, ticket #668.
-  std::vector<std::string> mineral_names;
-  mineral_names.clear();
-  for (int m = 0; m < S.number_of_minerals(); ++m) {
-    std::stringstream dummy;
-    dummy << "Mineral " << m;
-    std::string name;
-    restart_output->readAttrString(name, dummy.str());
-    mineral_names.push_back(name);
-  }
-  S.set_mineral_names(mineral_names);
   
-  // TODO: loop through and read the mineral data
-  for (int m = 0; m < S.number_of_minerals(); ++m) {
-    std::string name = S.mineral_names().at(m) + " volume fraction";
-    restart_output->readData(*(*S.mineral_volume_fractions())(m),
-                                 name);
-    name = S.mineral_names().at(m) + " specific surface area";
-    restart_output->readData(*(*S.mineral_specific_surface_area())(m),
-                                  name);
-  }
-  restart_input->readAttrInt(idummy, "Use Sorption Isotherms");
-  S.set_use_sorption_isotherms(static_cast<bool>(idummy));
-  if (S.use_sorption_isotherms()) {
-    for (int s = 0; s < S.get_number_of_components(); ++s) {
 
-    }
+
+  cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					     S.get_number_of_components());
+  for (int i=0; i< S.get_number_of_components(); i++) {
+    std::stringstream name;
+    name << "free ion concentrations " << i;
+    restart_input->readData(*(*cell_multivector)(i),name.str()); 
   }
-  // TODO: read additional ion exchange site, sorption sites, etc.
+  S.set_free_ion_concentrations(*cell_multivector);
+  delete cell_multivector;   
+
+  cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					     S.get_number_of_components());
+  for (int i=0; i< S.get_number_of_components(); i++) {
+    std::stringstream name;
+    name << "primary activity coeff " << i;
+    restart_input->readData(*(*cell_multivector)(i),name.str()); 
+  }
+  S.set_primary_activity_coeff(*cell_multivector);
+  delete cell_multivector;
+
+  if ( ! S.secondary_activity_coeff().is_null() ) {
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.secondary_activity_coeff()->NumVectors());
+    for (int i=0; i< S.secondary_activity_coeff()->NumVectors(); i++) {
+      std::stringstream name;
+      name << "secondary activity coeff " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    }
+    S.set_secondary_activity_coeff(*cell_multivector);
+    delete cell_multivector;
+  }
+
+  if (S.number_of_minerals() > 0) {
+    
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.number_of_minerals());
+    for (int i=0; i< S.number_of_minerals(); i++) {
+      std::stringstream name;
+      name << "mineral volume fractions " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    }
+    S.set_mineral_volume_fractions(*cell_multivector);
+    delete cell_multivector;  
+
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.number_of_minerals());
+    for (int i=0; i< S.number_of_minerals(); i++) {
+      std::stringstream name;
+      name << "mineral specific surface area " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    }
+    S.set_mineral_specific_surface_area(*cell_multivector);
+    delete cell_multivector;      
+  }
+
+  if (S.using_sorption()) {
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.get_number_of_components());
+    for (int i=0; i< S.get_number_of_components(); i++) {
+      std::stringstream name;
+      name << "total sorbed " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    }
+    S.set_total_sorbed(*cell_multivector);
+    delete cell_multivector;      
+  }
+
+  if (S.use_sorption_isotherms()) {
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.number_of_sorption_sites());
+    for (int i=0; i< S.number_of_sorption_sites(); i++) {
+      std::stringstream name;
+      name << "sorption sites " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    }
+    S.set_sorption_sites(*cell_multivector);
+    delete cell_multivector;      
+
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.number_of_sorption_sites());
+    for (int i=0; i< S.number_of_sorption_sites(); i++) {
+      std::stringstream name;
+      name << "surface complex free site conc " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    }
+    S.set_surface_complex_free_site_conc(*cell_multivector);
+    delete cell_multivector;
+  }  
+
+  if (S.number_of_ion_exchange_sites() > 0) {
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.number_of_ion_exchange_sites());
+    for (int i=0; i< S.number_of_ion_exchange_sites(); i++) {
+      std::stringstream name;
+      name << "ion exchange sites " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str());
+    }
+    S.set_ion_exchange_sites(*cell_multivector);
+    delete cell_multivector;    
+    
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.number_of_ion_exchange_sites());
+    for (int i=0; i< S.number_of_ion_exchange_sites(); i++) {
+      std::stringstream name;
+      name << "ion exchange ref cation conc " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str());
+    }
+    S.set_ion_exchange_ref_cation_conc(*cell_multivector);
+    delete cell_multivector;      
+  }
+  
+  if (S.use_sorption_isotherms()) {
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.get_number_of_components());
+    for (int i=0; i< S.get_number_of_components(); i++) {
+      std::stringstream name;
+      name << "isotherm kd " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str());
+    }
+    S.set_isotherm_kd(*cell_multivector);
+    delete cell_multivector;       
+
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.get_number_of_components());
+    for (int i=0; i< S.get_number_of_components(); i++) {
+      std::stringstream name;
+      name << "isotherm freundlich n " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str());
+    }
+    S.set_isotherm_freundlich_n(*cell_multivector);
+    delete cell_multivector;       
+
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.get_number_of_components());
+    for (int i=0; i< S.get_number_of_components(); i++) {
+      std::stringstream name;
+      name << "isotherm langmuir b " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str());
+    }
+    S.set_isotherm_langmuir_b(*cell_multivector);
+    delete cell_multivector;       
+  }
+
+  cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
+  restart_input->readData(*cell_vector,"specific storage");
+  S.set_specific_storage(*cell_vector);
+  delete cell_vector;    
+
+  cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
+  restart_input->readData(*cell_vector,"specific yield");
+  S.set_specific_yield(*cell_vector);
+  delete cell_vector;    
+ 
 
   delete restart_input;
 

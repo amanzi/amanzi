@@ -70,6 +70,7 @@ set(CGNS_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CGNS installation prefix")
 set(BOOST_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "Boost installation prefix")
 set(Boost_USE_STATIC_LIBS TRUE CACHE BOOL "Use only static Boost libraries")
 set(Boost_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for Boost libraries in system paths")
+set(Boost_NO_BOOST_CMAKE  TRUE CACHE BOOL "Prevent FindBoost from looking for a Boost CMake config file")  
 
 # HDF5  
 set(HDF5_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "HDF5 installation prefix")
@@ -91,5 +92,9 @@ set(MSTK_LIBRARY_DIR @MSTK_LIBRARY_DIR@ CACHE PATH "MSTK include installation pa
 # MOAB
 set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
 
-# Trilinos  
+# PETSc
+set(ENABLE_PETSC @ENABLE_PETSC@ CACHE BOOL "Build PETSc interfaces")
+set(PETSC_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "PETSc installation prefix")
+
+# Trilinos
 set(Trilinos_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")

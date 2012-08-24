@@ -231,6 +231,7 @@ if (ENABLE_Structured)
   set_feature_info(CCSE
                    "CCSE BoxLib softare library required for structured grid")
 endif()
+
 ##############################################################################
 ############################ Option Processing ###############################
 ##############################################################################
@@ -356,3 +357,24 @@ option(ENABLE_OpenMP "Build Amanzi executables with OpenMP" OFF)
 if (ENABLE_OpenMP)
     find_package(OpenMP)
 endif()
+
+##############################################################################
+# PETSc - http://www.mcs.anl.gov/petsc
+##############################################################################
+
+option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" FALSE)
+if ( ENABLE_Structured AND  ENABLE_PETSC )
+  find_package(PETSc)
+  if ( NOT PETSC_FOUND )
+    message(WARNING "Failed to locate PETSc")
+  else()
+    message(STATUS "PETSc Package information")
+    message(STATUS "\tPETSC_VERSION       =${PETSC_VERSION}")
+    message(STATUS "\tPETSC_INCLUDE_DIR   =${PETSC_INCLUDE_DIR}")
+    message(STATUS "\tPETSC_INCLUDE_DIRS  =${PETSC_INCLUDE_DIRS}")
+    message(STATUS "\tPETSC_LIBRARY       =${PETSC_LIBRARY}")
+    message(STATUS "\tPETSC_LIBRARIES     =${PETSC_LIBRARIES}")
+  endif()
+endif()
+
+

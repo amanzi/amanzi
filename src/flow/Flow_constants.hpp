@@ -18,10 +18,9 @@ namespace AmanziFlow {
 
 const int FLOW_STATUS_NULL = 0;  // used for internal debuging
 const int FLOW_STATUS_INIT = 2;
-const int FLOW_STATUS_STEADY_STATE_INIT = 4;
-const int FLOW_STATUS_STEADY_STATE_COMPLETE = 6;
-const int FLOW_STATUS_TRANSIENT_STATE_INIT = 8;
-const int FLOW_STATUS_TRANSIENT_STATE_COMPLETE = 10;
+const int FLOW_STATUS_INITIAL_GUESS = 4;
+const int FLOW_STATUS_STEADY_STATE = 4;
+const int FLOW_STATUS_TRANSIENT_STATE = 8;
 
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
@@ -60,6 +59,12 @@ const double FLOW_TI_ABSOLUTE_TOLERANCE = 1.0;  // defaults for time integration
 const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
 const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
 const int FLOW_TI_MAX_ITERATIONS = 400;
+
+const int FLOW_DT_ADAPTIVE = 1;
+const double FLOW_DT_ADAPTIVE_INCREASE = 4.0;
+const double FLOW_DT_ADAPTIVE_REDUCTION = 0.1;
+const double FLOW_DT_ADAPTIVE_SAFETY_FACTOR = 0.9;
+const double FLOW_DT_ADAPTIVE_ERROR_TOLERANCE = 1e-10;
 
 const int FLOW_SOURCE_DISTRIBUTION_NONE = 0;
 const int FLOW_SOURCE_DISTRIBUTION_VOLUME = 1;

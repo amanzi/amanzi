@@ -1,6 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
-License: BSD
+This is the flow component of the Amanzi code.
+
+ 
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Authors: Neil Carlson (version 1) 
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
@@ -29,6 +35,18 @@ namespace AmanziFlow {
 ****************************************************************** */
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
+  // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
+  bc_pressure = NULL; 
+  bc_head = NULL;
+  bc_flux = NULL;
+  bc_seepage = NULL; 
+  src_sink = NULL;
+
+  super_map_ = NULL; 
+  solver = NULL; 
+  matrix_ = NULL; 
+  preconditioner_ = NULL;
+
   Flow_PK::Init(FS_MPC);  // sets up default parameters
   FS = FS_MPC;
 
@@ -75,7 +93,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   for (int k = 0; k < dim; k++) gravity_[k] = (*(FS->gravity()))[k];
 
 #ifdef HAVE_MPI
-  const  Epetra_Comm& comm = mesh_->cell_map(false).Comm();
+  const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
   MyPID = comm.MyPID();
 
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
@@ -133,6 +151,11 @@ void Darcy_PK::InitPK()
   solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
   solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
 
+  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+  pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
+  pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
+  
+  // Create algebraic solver
   solver = new AztecOO;
   solver->SetUserOperator(matrix_);
   solver->SetPrecOperator(preconditioner_);
@@ -142,9 +165,8 @@ void Darcy_PK::InitPK()
   ProcessParameterList();
 
   // Process boundary data
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
-  bc_values.resize(nfaces, 0.0);
+  bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
+  bc_values.resize(nfaces_wghost, 0.0);
 
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
@@ -173,6 +195,11 @@ void Darcy_PK::InitPK()
   // Preconditioner
   Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
   preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
+
+  // Allocate memory for wells
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  }
 
   flow_status_ = FLOW_STATUS_INIT;
 };
@@ -236,7 +263,12 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
     std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
   }
 
-  flow_status_ = FLOW_STATUS_STEADY_STATE_INIT;
+  // Well modeling
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
+  flow_status_ = FLOW_STATUS_STEADY_STATE;
 }
 
 
@@ -264,7 +296,12 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_INIT;
+  // Well modeling
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
 
 
@@ -310,8 +347,6 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
     std::cout << "Darcy solver performed " << num_itrs_sss << " iterations." << std::endl
               << "Norm of true residual = " << residual_sss << std::endl;
   }
-
-  flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
 }
 
 
@@ -340,7 +375,7 @@ int Darcy_PK::Advance(double dT_MPC)
     } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
       src_sink->ComputeDistribute(time);
     } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Krel_cells->Values());  // incomplete since Krel=1 but K is a tensor
+      src_sink->ComputeDistribute(time, Kxy->Values());
     } 
   }
 
@@ -366,6 +401,7 @@ int Darcy_PK::Advance(double dT_MPC)
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
+  *pdot_cells = *solution_cells;
 
   solver->Iterate(max_itrs_sss, convergence_tol_sss);
   num_itrs_trs++;
@@ -376,8 +412,21 @@ int Darcy_PK::Advance(double dT_MPC)
     std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
-  dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE_COMPLETE;
+  // calculate time derivative and 2nd-order solution approximation
+  for (int c = 0; c < ncells_owned; c++) {
+    double p_prev = (*pdot_cells)[c];
+    (*pdot_cells)[c] = ((*solution)[c] - p_prev) / dT; 
+    (*solution)[c] = p_prev + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+  }
+
+  // estimate time multiplier
+  if (dT_method_ == FLOW_DT_ADAPTIVE) {
+    double dTfactor;
+    ErrorEstimate(&dTfactor);
+    dT_desirable_ = std::min<double>(dT_desirable_ * dTfactor, ti_specs_sss.dTmax);
+  } else {
+    dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
+  }
   return 0;
 }
 
@@ -397,6 +446,9 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
+
+  // update time derivative
+  *pdot_cells_prev = *pdot_cells;
 
   // DEBUG
   // WriteGMVfile(FS_MPC);
@@ -420,6 +472,19 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
       for (int i = 0; i < dim-1; i++) K[c](i, i) = horizontal_permeability[c];
       K[c](dim-1, dim-1) = vertical_permeability[c];
     }
+  }
+}
+
+
+/* ******************************************************************
+*  Calculate inner product e^T K e in each cell.                                               
+****************************************************************** */
+void Darcy_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)
+{
+  for (int c = 0; c < K.size(); c++) {
+    Kxy[c] = 0.0;
+    for (int i = 0; i < dim; i++) Kxy[c] += K[c](i, i);
+    Kxy[c] /= dim;
   }
 }
 

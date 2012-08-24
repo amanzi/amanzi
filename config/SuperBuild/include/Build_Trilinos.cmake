@@ -177,8 +177,6 @@ print_variable(Trilinos_CMAKE_LANG_ARGS)
 #  --- Define the Trilinos patch step
 
 # Trilinos needs a patch for GNU versions > 4.6
-set(Trilinos_PATCH_COMMAND)
-option(ENABLE_Trilinos_Patch "Enable the patch step for the Trilinos build" OFF)
 if ( CMAKE_CXX_COMPILER_VERSION )
   if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
     if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
@@ -193,10 +191,36 @@ endif()
 
 set(Trilinos_PATCH_COMMAND)
 if (ENABLE_Trilinos_Patch)
-  configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
-               ${Trilinos_prefix_dir}/trilinos-patch-step.sh
-               @ONLY)
-  set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
+    set(Trilinos_patch_file)
+    # Set the patch file name
+    if(CMAKE_CXX_COMPILER_VERSION)
+      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        if ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.6" )
+          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
+                              " for version ${CMAKE_CXX_COMPILER_VERSION}.")
+        elseif( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" )
+          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc46.patch)
+        elseif ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.8" )
+          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc47.patch)
+        else()
+          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
+                             " for version ${CMAKE_CXX_COMPILER_VERSION}.")
+        endif()
+      endif()
+    endif()
+
+    #print_variable(Trilinos_patch_file)
+    if(Trilinos_patch_file)
+       configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
+                      ${Trilinos_prefix_dir}/trilinos-patch-step.sh
+                      @ONLY)
+       set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
+    else()
+       message(WARNING "ENABLE_Trilinos_Patch is ON but no patch file found for "
+	               "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} "
+		       "Will not patch Trilinos.")
+    endif()		   
+   		   
 endif()  
 #print_variable(Trilinos_PATCH_COMMAND)
 

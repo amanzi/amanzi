@@ -363,10 +363,11 @@ nonlinear solvers during steady state time integration. Here is an example:
      <Parameter name="time integration method" type="string" value="BDF1"/>
      <Parameter name="initialize with darcy" type="string" value="yes"/>
      <Parameter name="clipping saturation value" type="double" value="0.98"/>
-     <Parameter name="preconditoner" type="string" value="Trilinos ML">
-     <Parameter name="linear solver" type="string" value="AztecOO GMRES">
-     <Parameter name="error control options" type="Array string" value="{pressure, saturation}">
- 
+     <Parameter name="preconditoner" type="string" value="Trilinos ML"/>
+     <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
+     <Parameter name="error control options" type="Array string" value="{pressure, saturation}"/>
+     <Parameter name="time stepping strategy" type="string" value="adaptive"/>
+
      <ParameterList name="nonlinear solver BDF1">
       ...
      </ParameterList>
@@ -375,7 +376,7 @@ nonlinear solvers during steady state time integration. Here is an example:
 The parameters used here are
 
 * `"time integration method`" [string] defines a time integration method.
-  The available options are `"BDF1`", `"BDF2`", and `"Picard`".
+  The available options are `"BDF1`", `"BDF2`", `"Picard`", and `"backward Euler`".
 
 * `"initialize with darcy`" [string] solves the fully saturated problem with the 
   boundary continious avaluated at time T=0. The solution defines a new pressure
@@ -398,6 +399,13 @@ The parameters used here are
   The other two error are compared with 1. 
   The option `"pressure`" is always active during steady-state time integration.
   The option  `"saturation`" is always active during transient time integration.
+
+* `"time stepping strategy`" [string] allows one to define an adaptive time step increment 
+  through an error estimator. The only available option is `"adaptive`". It is supported
+  for the Darcy flow only. 
+  The error estimator can be controled via two parameters in the list `"time integration method`" 
+  called `"absolute error tolerance`" and `"relative error tolerance`". The default values
+  for these parameters are 0.001. 
 
 
 Transient Time Integratior
@@ -826,6 +834,7 @@ Example:
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>
       <Parameter name="Variable" type="string" value="Volumetric water content"/>
       <Parameter name="times" type="Array doulbe" value="{100000.0, 200000.0}"/>
+      <Parameter name="cycles" type="Array int" value="{100000, 200000, 400000, 500000}"/>
       <ParameterList name="time start period stop">
          <ParameterList name="some name">
 	    <Parameter name="start period stop" type="Array double" value="{0.0, 1000.0, 100000}"/>
@@ -834,6 +843,14 @@ Example:
 	    <Parameter name="start period stop" type="Array double" value="{200000.0, 2000.0, -1.0}"/>
 	 </ParameterList>
       </ParameterList>
+      <ParameterList name="cycle start period stop">
+         <ParameterList name="some name">
+	    <Parameter name="start period stop" type="Array int" value="{0, 100, -1}"/>
+         </ParameterList>
+         <ParameterList name="some other name">
+	    <Parameter name="start period stop" type="Array int" value="{0, 51, 299999}"/>
+         </ParameterList>	 
+      </ParameterList>      
     </ParameterList>
   </ParameterList>
 

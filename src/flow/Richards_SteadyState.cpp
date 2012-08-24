@@ -41,7 +41,6 @@ int Richards_PK::AdvanceToSteadyState()
   DeriveSaturationFromPressure(*solution_cells, ws);
   ws_prev = ws;
 
-  if (ierr == 0) flow_status_ = FLOW_STATUS_STEADY_STATE_COMPLETE;
   return ierr;
 }
 
@@ -86,7 +85,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
     if (last_step && dT < 1e-3) break;
   }
 
-  ti_specs_sss_.num_itrs = itrs;
+  ti_specs.num_itrs = itrs;
   return 0;
 }
 
@@ -131,7 +130,7 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
     if (last_step && dT < 1e-3) break;
   }
 
-  ti_specs_sss_.num_itrs = itrs;
+  ti_specs.num_itrs = itrs;
   return 0;
 }
 
@@ -233,7 +232,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     itrs++;
   }
 
-  ti_specs_sss_.num_itrs = itrs;
+  ti_specs.num_itrs = itrs;
   return 0;
 }
 
@@ -257,6 +256,11 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const E
     double umax = std::max(fabs(unew[c]), fabs(uold[c]));
     if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
   }
+
+#ifdef HAVE_MPI
+  double relaxation_tmp = relaxation;
+  mesh_->get_comm()->MinAll(&relaxation_tmp, &relaxation, 1);  // find the global minimum
+#endif
 
   return relaxation;
 }
