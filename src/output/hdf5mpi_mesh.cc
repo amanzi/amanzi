@@ -6,7 +6,7 @@
 //TODO(barker): add error handling where appropriate
 //TODO(barker): clean up formating
 
-namespace Amanzi  {
+namespace Amanzi {
   
 
 HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm)
@@ -302,6 +302,8 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
   }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
+  std::vector<double> global_RegList(RegList.GlobalLength(),0);
+  viz_comm_.GatherAll(data, &global_RegList[0],RegList.MyLength()); 
   // get connectivity on this processor
   std::vector<int> local_conn;
   std::vector<int> local_ids;
@@ -313,7 +315,7 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
   for (int i=0; i<ncells_local; i++) {
     id = cmap.GID(i);
     for (int j=0; j<RegList.GlobalLength(); j++) {
-      if (id == RegList[j]) {
+      if (id == global_RegList[j]) {
 	local_ids.push_back(i);
 	mesh_maps.cell_get_nodes(i,&nodeids);
 	type = mesh_maps.cell_get_type(i);
@@ -334,11 +336,16 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
   
   // determine length of connectivity globally
   int local_len(local_conn.size());
+  int local_cnt(local_ids.size());
   std::vector<int> global_len(viz_comm_.NumProc(),0);
+  std::vector<int> global_ids(viz_comm_.NumProc(),0);
   viz_comm_.GatherAll(&local_len, &global_len[0],1);
+  viz_comm_.GatherAll(&local_cnt, &global_ids[0],1);
   int total_len(0);
+  int total_ids(0);
   for (int i=0; i<viz_comm_.NumProc(); i++) {
     total_len += global_len[i];
+    total_ids += global_ids[i];
   }
 
   // write out new connectivity to HDF5 file
@@ -356,66 +363,38 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
   parallelIO_close_file(file, &IOgroup_);
 
   // find Grid node
-  Teuchos::XMLObject gridnode, xmlnode, tmp;
-  /*
-  gridnode = findMeshNode_(xmlMesh_);
-  if (!gridnode.hasAttribute("CollectionType")) {
-    gridnode.addAttribute("GridType", "Collection");
-    gridnode.addAttribute("CollectionType", "Spatial");
-  }
-  */
-  for (int i = 0; i < xmlMesh_.numChildren(); i++) {
-    if (xmlMesh_.getChild(i).getTag() == "Domain") {
-      xmlnode = xmlMesh_.getChild(i);
+  if (viz_comm_.MyPID() == 0) {
+    Teuchos::XMLObject gridnode, xmlnode, tmp;
+    for (int i = 0; i < xmlMesh_.numChildren(); i++) {
+      if (xmlMesh_.getChild(i).getTag() == "Domain") {
+        xmlnode = xmlMesh_.getChild(i);
+      }
     }
-  }
 
-  // add Whole Mesh grid
-  /*
-  found = 0;
-  for (int i=0; i<gridnode.numChildren(); i++) {
-    tmp = gridnode.getChild(i);
-    if (tmp.getTag() == "Grid" && tmp.hasAttribute("Name")){
-      if (tmp.getAttribute("Name") == "WholeMesh")
-	found = 1;
-    }
-  }
-  Teuchos::XMLObject topoRef("Topology");
-  topoRef.addAttribute("Reference","//Topology[@Name='mixedtopo']");
-  Teuchos::XMLObject geoRef("Geometry");
-  geoRef.addAttribute("Reference","//Geometry[@Name='geo']");
-  if (!found) {
-    Teuchos::XMLObject WholeMesh("Grid");
-    WholeMesh.addAttribute("Name","WholeMesh");
-    WholeMesh.addChild(topoRef);
-    WholeMesh.addChild(geoRef);
-    gridnode.addChild(WholeMesh);
-  }
-  */
- 
-  // add region grid
-  Teuchos::XMLObject geoRef("Geometry");
-  geoRef.addAttribute("Reference","//Geometry[@Name='geo']");
-  Teuchos::XMLObject RegionMesh("Grid");
-  RegionMesh.addAttribute("Name",regname);
-  RegionMesh.addChild(geoRef);
-  Teuchos::XMLObject topo("Topology");
-  topo.addAttribute("Name",regname);
-  topo.addInt("NumberOfElements",local_ids.size());
-  topo.addAttribute("TopologyType","Mixed");
-  Teuchos::XMLObject dataItem("DataItem");
-  dataItem.addAttribute("DataType","Int");
-  dataItem.addInt("Dimensions",total_len);
-  dataItem.addAttribute("Format","HDF");
-  dataItem.addContent(h5loc.str());
-  topo.addChild(dataItem);
-  RegionMesh.addChild(topo);
-  xmlnode.addChild(RegionMesh);
+    // add region grid
+    Teuchos::XMLObject geoRef("Geometry");
+    geoRef.addAttribute("Reference","//Geometry[@Name='geo']");
+    Teuchos::XMLObject RegionMesh("Grid");
+    RegionMesh.addAttribute("Name",regname);
+    RegionMesh.addChild(geoRef);
+    Teuchos::XMLObject topo("Topology");
+    topo.addAttribute("Name",regname);
+    topo.addInt("NumberOfElements",total_ids);
+    topo.addAttribute("TopologyType","Mixed");
+    Teuchos::XMLObject dataItem("DataItem");
+    dataItem.addAttribute("DataType","Int");
+    dataItem.addInt("Dimensions",total_len);
+    dataItem.addAttribute("Format","HDF");
+    dataItem.addContent(h5loc.str());
+    topo.addChild(dataItem);
+    RegionMesh.addChild(topo);
+    xmlnode.addChild(RegionMesh);
   
-  // write xmf
-  std::ofstream of(xdmfMeshFilename_.c_str());
-  of << HDF5_MPI::xdmfHeader_ << xmlMesh_ << endl;
-  of.close();
+    // write xmf
+    std::ofstream of(xdmfMeshFilename_.c_str());
+    of << HDF5_MPI::xdmfHeader_ << xmlMesh_ << endl;
+    of.close();
+  }
 
 }
 

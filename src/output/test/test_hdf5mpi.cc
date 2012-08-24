@@ -3,7 +3,7 @@
 #if HAVE_STK_MESH
 #include "Mesh_STK.hh"
 #endif
-TEST(HDF5_MPI)  {
+TEST(HDF5_MPI) {
   
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -18,7 +18,7 @@ TEST(HDF5_MPI)  {
   //Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
   //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1,
   //                                        1, comm));
-  Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm);
+  Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 16, 1, 1, comm);
 
   unsigned int num_nodes = Mesh.num_entities(Amanzi::AmanziMesh::NODE, 
                                                 Amanzi::AmanziMesh::OWNED);
@@ -53,17 +53,17 @@ TEST(HDF5_MPI)  {
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
 
   // Setup up mesh region
-  Epetra_Map regMap(3, 0, *comm);
-  double region_cells[] = {0,2,4};
-  double region_cells2[] = {4,5,7};
-  int region_index_list[] = {0,1,2};
+  Epetra_Map regMap (6, 0, *comm);
+  double region_cells[] = {0,1,2,4,5,6};
+  double region_cells2[] = {6,10,11,12,13,14};
+  int region_index_list[] = {0,1,2,3,4,5};
   Teuchos::RCP<Epetra_Vector> mesh_region1, mesh_region2;
   mesh_region1 = Teuchos::rcp(new Epetra_Vector(regMap,false));
-  mesh_region1->ReplaceGlobalValues(3, region_cells, region_index_list);
+  mesh_region1->ReplaceGlobalValues(6, region_cells, region_index_list);
   std::string region_name1, region_name2;
   region_name1 = "Region1";
   mesh_region2 = Teuchos::rcp(new Epetra_Vector(regMap,false));
-  mesh_region2->ReplaceGlobalValues(3, region_cells2, region_index_list);
+  mesh_region2->ReplaceGlobalValues(6, region_cells2, region_index_list);
   region_name2 = "Region2";
 
   // Write a file which contains both mesh and data.
