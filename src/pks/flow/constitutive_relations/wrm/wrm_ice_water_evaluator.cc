@@ -29,7 +29,8 @@ WRMIceWaterEvaluator::WRMIceWaterEvaluator(const WRMIceWaterEvaluator& other) :
     WRMEvaluator(other),
     temp_key_(other.temp_key_),
     dens_key_(other.dens_key_),
-    calc_other_sat_(other.calc_other_sat_) {}
+    calc_other_sat_(other.calc_other_sat_),
+    pc_(other.pc_) {}
 
 Teuchos::RCP<FieldEvaluator>
 WRMIceWaterEvaluator::Clone() const {

@@ -29,16 +29,16 @@ Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
 };
 
 void Coordinator::coordinator_init() {
-  coordinator_plist_ = parameter_list_.sublist("Coordinator");
+  coordinator_plist_ = parameter_list_.sublist("coordinator");
   read_parameter_list();
 
   // create the state object
-  Teuchos::ParameterList state_plist = parameter_list_.sublist("State");
+  Teuchos::ParameterList state_plist = parameter_list_.sublist("state");
   S_ = Teuchos::rcp(new State(state_plist));
   S_->RegisterDomainMesh(mesh_);
 
   // checkpointing for the state
-  Teuchos::ParameterList chkp_plist = parameter_list_.sublist("Checkpoint");
+  Teuchos::ParameterList chkp_plist = parameter_list_.sublist("checkpoint");
   checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
 
   // create the top level PK
@@ -82,7 +82,7 @@ void Coordinator::initialize() {
     Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->GetMesh("surface");
 
-    std::string plist_name = "Visualization surface";
+    std::string plist_name = "visualization surface";
     Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
     Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
@@ -99,9 +99,9 @@ void Coordinator::initialize() {
     } else if ((mesh->first == "surface") && surface_done) {
       // pass
     } else {
-      std::string plist_name = "Visualization "+mesh->first;
+      std::string plist_name = "visualization "+mesh->first;
       Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
-      vis_plist.set<std::string>("File Name Base",mesh->first);
+      vis_plist.set<std::string>("file name base",mesh->first);
       Teuchos::RCP<Visualization> vis =
         Teuchos::rcp(new Visualization(vis_plist, comm_));
       vis->set_mesh(mesh->second);
@@ -112,10 +112,10 @@ void Coordinator::initialize() {
 }
 
 void Coordinator::read_parameter_list() {
-  t0_ = coordinator_plist_.get<double>("Start Time");
-  t1_ = coordinator_plist_.get<double>("End Time");
-  string t0_units = coordinator_plist_.get<string>("Start Time Units", "s");
-  string t1_units = coordinator_plist_.get<string>("End Time Units", "s");
+  t0_ = coordinator_plist_.get<double>("start time");
+  t1_ = coordinator_plist_.get<double>("end time");
+  string t0_units = coordinator_plist_.get<string>("start time units", "s");
+  string t1_units = coordinator_plist_.get<string>("end time units", "s");
 
   if (t0_units == "s") {
     // internal units in s
@@ -139,9 +139,9 @@ void Coordinator::read_parameter_list() {
     Exceptions::amanzi_throw(message);
   }
 
-  max_dt_ = coordinator_plist_.get<double>("Max Time Step Size", 1.0e99);
-  min_dt_ = coordinator_plist_.get<double>("Min Time Step Size", 1.0e-12);
-  end_cycle_ = coordinator_plist_.get<int>("End Cycle",-1);
+  max_dt_ = coordinator_plist_.get<double>("max time step size", 1.0e99);
+  min_dt_ = coordinator_plist_.get<double>("min time step size", 1.0e-12);
+  end_cycle_ = coordinator_plist_.get<int>("end cycle",-1);
 }
 
 
@@ -187,10 +187,12 @@ void Coordinator::cycle_driver() {
   // solution until we know it has succeeded
   S_next_ = Teuchos::rcp(new State(*S_));
   *S_next_ = *S_;
+  S_inter_ = Teuchos::rcp(new State(*S_));
+  *S_inter_ = *S_;
 
   // set the states in the PKs
-  Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
-  pk_->set_states(cS, S_, S_next_); // note this does not allow subcycling
+  //Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
+  pk_->set_states(S_, S_inter_, S_next_); // note this does not allow subcycling
 
   // iterate process kernels
   double dt;
@@ -250,13 +252,16 @@ void Coordinator::cycle_driver() {
         }
       }
 
-      WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
+      if (checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
+        WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
+      }
 
       // write restart dump if requested
       // restart->dump_state(*S_next_);
 
       // we're done with this time step, copy the state
       *S_ = *S_next_;
+      *S_inter_ = *S_next_;
     } else {
       // Failed the timestep.  The timestep sizes have been updated, so we can
       // try again.

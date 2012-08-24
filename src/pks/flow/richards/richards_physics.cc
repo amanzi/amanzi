@@ -28,6 +28,12 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   UpdatePermeabilityData_(S);
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData("numerical_rel_perm", "flow");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+
+  // std::cout << "REL PERM:" << std::endl;
+  // rel_perm->Print(std::cout);
+  // std::cout << "PRESSURE:" << std::endl;
+  // pres->Print(std::cout);
 
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(*rel_perm);
@@ -37,7 +43,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+
   matrix_->ComputeNegativeResidual(*pres, g);
 };
 
