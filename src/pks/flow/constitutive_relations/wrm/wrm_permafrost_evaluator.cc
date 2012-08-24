@@ -59,10 +59,10 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   for (CompositeVector::name_iterator comp=sat->begin();
        comp!=sat->end(); ++comp) {
     for (int id=0; id!=sat->size(*comp); ++id) {
-      double s_l = 1.0 / ((*one_on_A)(*comp, id) + (*one_on_B)(*comp, id) - 1.0);
+      double s_l = 1.0 / (1.0/(*one_on_A)(*comp, id) + 1.0/(*one_on_B)(*comp, id) - 1.0);
       (*sat)(*comp, id) = s_l;
-      (*sat_i)(*comp, id) = s_l * ( (*one_on_A)(*comp, id) - 1.0);
-      (*sat_g)(*comp, id) = s_l * ( (*one_on_B)(*comp, id) - 1.0);
+      (*sat_i)(*comp, id) = s_l * ( 1.0/(*one_on_A)(*comp, id) - 1.0);
+      (*sat_g)(*comp, id) = s_l * ( 1.0/(*one_on_B)(*comp, id) - 1.0);
     }
   }
 }

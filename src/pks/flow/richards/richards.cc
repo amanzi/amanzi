@@ -150,14 +150,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator("water_content", wc);
 
   // -- Water retention evaluators, for saturation and rel perm.
-  // std::vector<AmanziMesh::Entity_kind> locations2(2);
-  // std::vector<std::string> names2(2);
-  // std::vector<int> num_dofs2(2,1);
-  // locations2[0] = AmanziMesh::CELL;
-  // locations2[1] = AmanziMesh::FACE;
-  // names2[0] = "cell";
-  // names2[1] = "face";
-
   S->RequireField("relative_permeability")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention evaluator");
@@ -210,12 +202,12 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 
   // -- Calculate the IC.
   Teuchos::ParameterList ic_plist = flow_plist_.sublist("initial condition");
-  Teuchos::RCP<CompositeVector> pres = S->GetFieldData("pressure", "flow");
-  Teuchos::RCP<Functions::CompositeVectorFunction> ic =
-      Functions::CreateCompositeVectorFunction(ic_plist, *pres);
-  ic->Compute(S->time(), pres.ptr());
+  Teuchos::RCP<Field> pres_field = S->GetField("pressure", "flow");
+  pres_field->Initialize(ic_plist);
+
 
   // -- Initialize face values as the mean of neighboring cell values.
+  Teuchos::RCP<CompositeVector> pres = S->GetFieldData("pressure", "flow");
   DeriveFaceValuesFromCellValues_(S, pres);
 
   // Set extra fields as initialized -- these don't currently have evaluators.
@@ -233,13 +225,13 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
 
   // initialize the timesteppper
   solution_->set_data(pres);
-  atol_ = flow_plist_.get<double>("Absolute error tolerance",1.0);
-  rtol_ = flow_plist_.get<double>("Relative error tolerance",1.0);
+  atol_ = flow_plist_.get<double>("absolute error tolerance",1.0);
+  rtol_ = flow_plist_.get<double>("relative error tolerance",1.0);
 
-  if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
+  if (!flow_plist_.get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
-      Teuchos::rcp(new Teuchos::ParameterList(flow_plist_.sublist("Time integrator")));
+      Teuchos::rcp(new Teuchos::ParameterList(flow_plist_.sublist("time integrator")));
     time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf1_plist_p, solution_));
     time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
@@ -312,10 +304,13 @@ bool Richards::advance(double dt) {
   try {
     dt_ = time_stepper_->time_step(h, solution_);
   } catch (Exceptions::Amanzi_exception &error) {
-    std::cout << "Timestepper called error: " << error.what() << std::endl;
-    if (error.what() == std::string("BDF time step failed")) {
+    if (S_next_->GetMesh()->get_comm()->MyPID() == 0) {
+      std::cout << "Timestepper called error: " << error.what() << std::endl;
+    }
+    if (error.what() == std::string("BDF time step failed") ||
+        error.what() == std::string("Cut time step")) {
       // try cutting the timestep
-      dt_ = dt_*time_step_reduction_factor_;
+      dt_ = h*time_step_reduction_factor_;
       return true;
     } else {
       throw error;
@@ -348,11 +343,15 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
+  //  std::cout << "REL PERM:" << std::endl;
+  //  rel_perm->Print(std::cout);
+
   // get the upwinding done
   upwinding_->Update(S.ptr());
 
   // patch up the BCs
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
+  //  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
   for (int f=0; f!=num_rel_perm->size("face"); ++f) {
     if (bc_markers_[f] != Operators::MFD_BC_NULL) {
@@ -364,6 +363,8 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   }
 
   // scale cells by n/visc
+  S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
   Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
   Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
   int ncells = num_rel_perm->size("cell");

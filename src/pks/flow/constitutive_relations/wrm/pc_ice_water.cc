@@ -35,15 +35,15 @@ double PCIceWater::DCapillaryPressureDRho(double T, double dens) {
 
 
 void PCIceWater::InitializeFromPlist_() {
-  sigma_ice_liq_ = pc_plist_.get<double>("Interfacial tension ice-water", 33.1);
-  sigma_gas_liq_ = pc_plist_.get<double>("Interfacial tension air-water", 72.7);
-  T0_ = pc_plist_.get<double>("Heat of fusion reference temperature [K]", 273.15);
+  sigma_ice_liq_ = pc_plist_.get<double>("interfacial tension ice-water", 33.1);
+  sigma_gas_liq_ = pc_plist_.get<double>("interfacial tension air-water", 72.7);
+  T0_ = pc_plist_.get<double>("heat of fusion reference temperature [K]", 273.15);
 
-  if (pc_plist_.isParameter("Heat of fusion of water [J/mol]")) {
-    heat_fusion_ = pc_plist_.get<double>("Heat of fusion of water [J/mol]");
+  if (pc_plist_.isParameter("heat of fusion of water [J/mol]")) {
+    heat_fusion_ = pc_plist_.get<double>("heat of fusion of water [J/mol]");
     molar_basis_ = true;
   } else {
-    heat_fusion_ = pc_plist_.get<double>("Heat of fusion of water [J/kg]", 3.34e5);
+    heat_fusion_ = pc_plist_.get<double>("heat of fusion of water [J/kg]", 3.34e5);
     molar_basis_ = false;
   }
 

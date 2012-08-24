@@ -48,7 +48,7 @@ StrongMPC::StrongMPC(Teuchos::ParameterList &mpc_plist, const Teuchos::RCP<State
 
       // get the list and set a flag so the PK knows it is strongly coupled
       Teuchos::ParameterList pk_list = pks_list.sublist(name_i);
-      pk_list.set<bool>("Strongly Coupled PK", true);
+      pk_list.set<bool>("strongly coupled PK", true);
 
       // instantiate the PK
       Teuchos::RCP<PK> pk = pk_factory.CreatePK(pk_list, S, pk_soln);
@@ -71,7 +71,7 @@ StrongMPC::StrongMPC(Teuchos::ParameterList &mpc_plist, const Teuchos::RCP<State
 
         // get the list and set a flag so the PK knows it is strongly coupled
         Teuchos::ParameterList pk_list = pks_list.sublist(name_i);
-        pk_list.set<bool>("Strongly Coupled PK", true);
+        pk_list.set<bool>("strongly coupled PK", true);
 
         // instantiate the PK
         Teuchos::RCP<PK> pk = pk_factory.CreatePK(pk_list, S, pk_soln);
@@ -88,12 +88,12 @@ void StrongMPC::initialize(const Teuchos::RCP<State>& S) {
   MPC::initialize(S);
 
   // Initialize the time integration scheme for the coupled problem.
-  atol_ = mpc_plist_.get<double>("Absolute error tolerance",1e-5);
-  rtol_ = mpc_plist_.get<double>("Relative error tolerance",1e-5);
+  atol_ = mpc_plist_.get<double>("absolute error tolerance",1e-5);
+  rtol_ = mpc_plist_.get<double>("relative error tolerance",1e-5);
 
   // Instantiate time stepper.
   Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
-    Teuchos::rcp(new Teuchos::ParameterList(mpc_plist_.sublist("Time integrator")));
+    Teuchos::rcp(new Teuchos::ParameterList(mpc_plist_.sublist("time integrator")));
   time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf1_plist_p, solution_));
   time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
@@ -120,10 +120,13 @@ bool StrongMPC::advance(double dt) {
   try {
     dt_ = time_stepper_->time_step(h, solution_);
   } catch (Exceptions::Amanzi_exception &error) {
-    std::cout << "Timestepper called error: " << error.what() << std::endl;
-    if (error.what() == std::string("BDF time step failed")) {
+    if (S_next_->GetMesh()->get_comm()->MyPID() == 0) {
+      std::cout << "Timestepper called error: " << error.what() << std::endl;
+    }
+    if (error.what() == std::string("BDF time step failed") ||
+        error.what() == std::string("Cut time step")) {
       // try cutting the timestep
-      dt_ = dt_*time_step_reduction_factor_;
+      dt_ = h*time_step_reduction_factor_;
       return true;
     } else {
       throw error;
@@ -207,7 +210,6 @@ void StrongMPC::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector
 // For a Strong MPC, the enorm is just the max of the sub PKs enorms.
 double StrongMPC::enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du){
   double norm = 0.0;
-  std::cout << "Norm:" << std::endl;
 
   // loop over sub-PKs
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
@@ -229,10 +231,8 @@ double StrongMPC::enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tre
 
     // norm is the max of the sub-PK norms
     double tmp_norm = (*pk)->enorm(pk_u, pk_du);
-    std::cout << "  " << (*pk)->name() << ": " << tmp_norm << std::endl;
     norm = std::max(norm, tmp_norm);
   }
-  std::cout << "  TOTAL:" << norm << std::endl;
   return norm;
 };
 

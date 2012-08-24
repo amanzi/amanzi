@@ -70,16 +70,8 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator("water_content", wc);
 
   // -- Water retention evaluators, for saturation and rel perm.
-  std::vector<AmanziMesh::Entity_kind> locations2(2);
-  std::vector<std::string> names2(2);
-  std::vector<int> num_dofs2(2,1);
-  locations2[0] = AmanziMesh::CELL;
-  locations2[1] = AmanziMesh::FACE;
-  names2[0] = "cell";
-  names2[1] = "face";
-
   S->RequireField("relative_permeability")->SetMesh(S->GetMesh())->SetGhosted()
-                    ->AddComponents(names2, locations2, num_dofs2);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
 
@@ -112,7 +104,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator(Akey, wrm_A);
 
   // Evaluator 2.  Constructed using the same underlying vanGenuchten evaluator as evaluator 1.
-  Teuchos::ParameterList Bplist;
+  Teuchos::ParameterList Bplist = flow_plist_.sublist("ice-water retention evaluator");
   std::string Bkey = wrm_plist.get<string>("1/B key", "wrm_permafrost_one_on_B");
   Bplist.set("saturation key", Bkey);
   Bplist.set("calculate minor saturation", false);
@@ -134,6 +126,11 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->RequireField("viscosity_liquid")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("viscosity_liquid");
+
+  // -- liquid mass density for the gravity fluxes
+  S->RequireField("mass_density_liquid")->SetMesh(S->GetMesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("mass_density_liquid"); // simply picks up the molar density one.
 }
 
 } // namespace

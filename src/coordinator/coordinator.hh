@@ -52,6 +52,7 @@ private:
 
   // states
   Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> S_inter_;
   Teuchos::RCP<State> S_next_;
   Teuchos::RCP<TreeVector> soln_;
 

@@ -138,7 +138,7 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
 // -------------------------------------------------------------
 void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
   // initial timestep size
-  dt_ = energy_plist_.get<double>("Initial time step", 1.);
+  dt_ = energy_plist_.get<double>("initial time step", 1.);
 
   // initialize boundary conditions
   int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -172,23 +172,22 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
 
   // -- Calculate the IC.
   Teuchos::ParameterList ic_plist = energy_plist_.sublist("initial condition");
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-  Teuchos::RCP<Functions::CompositeVectorFunction> ic =
-      Functions::CreateCompositeVectorFunction(ic_plist, *temp);
-  ic->Compute(S->time(), temp.ptr());
+  Teuchos::RCP<Field> temp_field = S->GetField("temperature", "energy");
+  temp_field->Initialize(ic_plist);
 
   // update face temperatures as a hint?
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
   DeriveFaceValuesFromCellValues_(S, temp);
 
   // initialize the timesteppper
   solution_->set_data(temp);
-  atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
-  rtol_ = energy_plist_.get<double>("Relative error tolerance",1.0);
+  atol_ = energy_plist_.get<double>("absolute error tolerance",1.0);
+  rtol_ = energy_plist_.get<double>("relative error tolerance",1.0);
 
-  if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
+  if (!energy_plist_.get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
-      Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
+      Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("time integrator")));
     time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf1_plist_p, solution_));
     time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
 
@@ -242,17 +241,21 @@ bool TwoPhase::advance(double dt) {
 
   // take a bdf timestep
   double h = dt;
-  //  try {
+   try {
     dt_ = time_stepper_->time_step(h, solution_);
-  // } catch (Exceptions::Amanzi_exception &error) {
-  //   if (error.what() == std::string("BDF time step failed")) {
-  //     // try cutting the timestep
-  //     dt_ = dt_*time_step_reduction_factor_;
-  //     return true;
-  //   } else {
-  //     throw error;
-  //   }
-  // }
+   } catch (Exceptions::Amanzi_exception &error) {
+    if (S_next_->GetMesh()->get_comm()->MyPID() == 0) {
+      std::cout << "Timestepper called error: " << error.what() << std::endl;
+    }
+    if (error.what() == std::string("BDF time step failed") ||
+        error.what() == std::string("Cut time step")) {
+      // try cutting the timestep
+      dt_ = h*time_step_reduction_factor_;
+      return true;
+    } else {
+      throw error;
+    }
+  }
 
   // commit the step as successful
   time_stepper_->commit_solution(h, solution_);
