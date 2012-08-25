@@ -4,13 +4,25 @@
 
 EventCoord PMAmr::event_coord;
 Layout PMAmr::layout;
-Real PMAmr::dt_previous = -1;
+
+namespace
+{
+    //
+    // These are all ParmParse'd in.  Set defaults in Initialize block below!!!
+    //
+    bool pmamr_initialized = false;
+    int  regrid_on_restart;
+    int  use_efficient_regrid;
+    int  compute_new_dt_on_regrid;
+    int  plotfile_on_restart;
+}
+
 
 void
 PMAmr::CleanupStatics ()
 {
+    pmamr_initialized = false;
     layout.Clear();
-    dt_previous = -1;
 }
 
 
@@ -18,11 +30,19 @@ static bool initialized = false;
 PMAmr::PMAmr()
     : Amr()
 {
-    if (!initialized) {
+    if (!pmamr_initialized) {
+        regrid_on_restart        = 0;
+        use_efficient_regrid     = 0;
+        plotfile_on_restart      = 0;
+        compute_new_dt_on_regrid = 0;
+
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
-        initialized = true;
+        pmamr_initialized = true;
     }
     layout.SetParent(this);
+
+    dt0_before_event_cut = -1;
+    dt0_from_previous_advance = -1;
 }
 
 PMAmr::~PMAmr()
@@ -116,6 +136,190 @@ PMAmr::init (Real strt_time_,
 }
 
 void
+PMAmr::pm_timeStep (int  level,
+                    Real time,
+                    int  iteration,
+                    int  niter,
+                    Real stop_time)
+{
+    //
+    // Allow regridding of level 0 calculation on restart.
+    //
+    if (finest_level == 0 && Amr::RegridOnRestart())
+    {
+        regrid_on_restart = 0;
+        //
+        // Coarsening before we split the grids ensures that each resulting
+        // grid will have an even number of cells in each direction.
+        //
+        BoxArray lev0(BoxLib::coarsen(geom[0].Domain(),2));
+        //
+        // Now split up into list of grids within max_grid_size[0] limit.
+        //
+        lev0.maxSize(max_grid_size[0]/2);
+        //
+        // Now refine these boxes back to level 0.
+        //
+        lev0.refine(2);
+
+        //
+        // If use_efficient_regrid flag is set, then test to see whether we in fact 
+        //    have just changed the level 0 grids. If not, then don't do anything more here.
+        //
+        if ( !( (use_efficient_regrid == 1) && (lev0 == amr_level[0].boxArray()) ) ) 
+        {
+            //
+            // Construct skeleton of new level.
+            //
+            AmrLevel* a = (*levelbld)(*this,0,geom[0],lev0,cumtime);
+
+            a->init(amr_level[0]);
+            amr_level.clear(0);
+            amr_level.set(0,a);
+
+            amr_level[0].post_regrid(0,0);
+
+            if (ParallelDescriptor::IOProcessor())
+            {
+               if (verbose > 1)
+               {
+                  printGridInfo(std::cout,0,finest_level);
+               }
+               else if (verbose > 0)
+               {
+                  printGridSummary(std::cout,0,finest_level);
+               }
+            }
+
+            if (record_grid_info && ParallelDescriptor::IOProcessor())
+                printGridInfo(gridlog,0,finest_level);
+        }
+        else
+        {
+            if (verbose > 0 && ParallelDescriptor::IOProcessor())
+                std::cout << "Regridding at level 0 but grids unchanged " << std::endl;
+        }
+    }
+    else
+    {
+        int lev_top = std::min(finest_level, max_level-1);
+
+        for (int i = level; i <= lev_top; i++)
+        {
+            const int old_finest = finest_level;
+
+            if (level_count[i] >= regrid_int[i] && amr_level[i].okToRegrid())
+            {
+                regrid(i,time);
+
+                //
+                // Compute new dt after regrid if at level 0 and compute_new_dt_on_regrid.
+                //
+                if ( compute_new_dt_on_regrid && (i == 0) )
+                {
+                    int post_regrid_flag = 1;
+                    amr_level[0].computeNewDt(finest_level,
+                                              sub_cycle,
+                                              n_cycle,
+                                              ref_ratio,
+                                              dt_min,
+                                              dt_level,
+                                              stop_time, 
+                                              post_regrid_flag);
+                }
+
+                for (int k = i; k <= finest_level; k++)
+                    level_count[k] = 0;
+
+                if (old_finest < finest_level)
+                {
+                    //
+                    // The new levels will not have valid time steps
+                    // and iteration counts.
+                    //
+                    for (int k = old_finest+1; k <= finest_level; k++)
+                    {
+                        const int fact = sub_cycle ? MaxRefRatio(k-1) : 1;
+                        dt_level[k]    = dt_level[k-1]/Real(fact);
+                        n_cycle[k]     = fact;
+                    }
+                }
+            }
+            if (old_finest > finest_level)
+                lev_top = std::min(finest_level, max_level-1);
+        }
+    }
+    //
+    // Check to see if should write plotfile.
+    // This routine is here so it is done after the restart regrid.
+    //
+    if (plotfile_on_restart && !(restart_file.empty()) )
+    {
+	plotfile_on_restart = 0;
+	writePlotFile(plot_file_root,level_steps[0]);
+    }
+    //
+    // Advance grids at this level.
+    //
+    if (verbose > 0 && ParallelDescriptor::IOProcessor())
+    {
+        std::cout << "ADVANCE grids at level "
+                  << level
+                  << " with dt = "
+                  << dt_level[level]
+                  << std::endl;
+    }
+    Real dt_new = amr_level[level].advance(time,dt_level[level],iteration,niter);
+
+    if (level==0) {
+        dt0_from_previous_advance = dt_new;
+    }
+
+    dt_min[level] = iteration == 1 ? dt_new : std::min(dt_min[level],dt_new);
+
+    level_steps[level]++;
+    level_count[level]++;
+
+    if (verbose > 0 && ParallelDescriptor::IOProcessor())
+    {
+        std::cout << "Advanced "
+                  << amr_level[level].countCells()
+                  << " cells at level "
+                  << level
+                  << std::endl;
+    }
+
+#ifdef USE_STATIONDATA
+    station.report(time+dt_level[level],level,amr_level[level]);
+#endif
+
+#ifdef USE_SLABSTAT
+    AmrLevel::get_slabstat_lst().update(amr_level[level],time,dt_level[level]);
+#endif
+    //
+    // Advance grids at higher level.
+    //
+    if (level < finest_level)
+    {
+        const int lev_fine = level+1;
+
+        if (sub_cycle)
+        {
+            const int ncycle = n_cycle[lev_fine];
+
+            for (int i = 1; i <= ncycle; i++)
+                pm_timeStep(lev_fine,time+(i-1)*dt_level[lev_fine],i,ncycle,stop_time);
+        }
+        else
+        {
+            pm_timeStep(lev_fine,time,1,1,stop_time);
+        }
+    }
+
+    amr_level[level].post_timestep(iteration);
+}
+
+void
 PMAmr::coarseTimeStep (Real stop_time)
 {
     const Real run_strt = ParallelDescriptor::second() ;    
@@ -143,12 +347,16 @@ PMAmr::coarseTimeStep (Real stop_time)
                                   dt_level,
                                   stop_time,
                                   post_regrid_flag);
-        if (dt_previous > 0) {
-            dt_level[0] = dt_previous;
+
+#if 0
+        if (dt0_before_event_cut > 0) {
+            dt_level[0] = dt0_before_event_cut;
             for (int lev = 1; lev <= finest_level; lev++) {
                 dt_level[lev] = dt_level[lev-1]/Real(MaxRefRatio(lev-1));
             }
+            setDtLevel(dt_level);
         }
+#endif
     }
 
 
@@ -163,7 +371,7 @@ PMAmr::coarseTimeStep (Real stop_time)
                                  cumtime, dt_level[0], level_steps[0], 1);
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
-        dt_previous = dt_level[0];
+        dt0_before_event_cut = dt_level[0];
         Array<Real> dt_new(finest_level+1,dt_red);
         for (int lev = 1; lev <= finest_level; lev++) {
             dt_new[lev] = dt_new[lev-1]/Real(MaxRefRatio(lev-1));
@@ -172,7 +380,7 @@ PMAmr::coarseTimeStep (Real stop_time)
     }
 
     // Do time step
-    timeStep(0,cumtime,1,1,stop_time);
+    pm_timeStep(0,cumtime,1,1,stop_time);
 
     cumtime += dt_level[0];
 

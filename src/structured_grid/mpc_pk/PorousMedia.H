@@ -371,7 +371,7 @@ public:
 			int  iteration,
 			int  ncycle);
 
-  void multilevel_advance (Real time,
+  Real multilevel_advance (Real time,
 			   Real dt,
 			   int  iteration,
 			   int  ncycle);
@@ -386,7 +386,7 @@ public:
   void advance_richard  (Real time,
 			 Real dt); 
  
-  void advance_multilevel_richard  (Real time,
+  Real advance_multilevel_richard  (Real time,
 				    Real dt);
 #endif
   void advance_multilevel_saturated (Real time,
@@ -1251,7 +1251,9 @@ protected:
   // Chemistry parameters 
   //
   static int  do_chem;
-  static int  do_tracer_transport;
+  static bool do_tracer_transport; // Does the user want to transport tracers
+  static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized
+  static int  transport_tracers; // Should the tracers be transported now
   static int  do_full_strang;
   static int  n_chem_interval;
   static int  it_chem;
