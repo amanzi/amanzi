@@ -63,7 +63,7 @@ void AndersonAccelerationMatrix(
 
   // update the 
   v1 = krylov(index);
-  for( int n = 0; n < v1->MyLength(); n++) {
+  for (int n = 0; n < v1->MyLength(); n++) {
     double sum = 0.0;
     for( int i = 0; i < m; i++) {
       Epetra_Vector* v2 = krylov(i);

@@ -1,12 +1,18 @@
 /*
 This is the mimetic discretization component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
+Release name: aka-to.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage:  
+Usage: 
 */
 
-#ifndef __WHETSTONE_hpp__
-#define __WHETSTONE_hpp__
+#ifndef __MFD3D_HPP__
+#define __MFD3D_HPP__
 
 /*
 This is the discretization package, release alpha.
@@ -27,9 +33,6 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 
 #include "Mesh.hh"
 #include "Point.hh"
-// class Mesh;
-// class Point;
-
 
 #include "tensor.hpp"
 

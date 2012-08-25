@@ -302,6 +302,10 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   }
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
+
+  // DEBUG
+  // SolveFullySaturatedProblem(0.0, *solution);
+  // CommitState(FS); WriteGMVfile(FS); exit(0);
 }
 
 
