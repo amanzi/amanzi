@@ -61,7 +61,6 @@ class DarcyProblem {
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
     // mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, -0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm, gm));
     mesh = Teuchos::rcp(new Mesh_MSTK(meshExodus, comm, gm));
-    // mesh = Teuchos::rcp(new Mesh_MSTK("test/tetrahedra.exo", comm, gm));
 
     // MeshAudit audit(mesh);
     // audit.Verify();
@@ -121,6 +120,7 @@ class DarcyProblem {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
+      // cout << f << " " << solution_faces[f] << " exact=" << pressure_exact << endl;
       error_L2 += std::pow(solution_faces[f] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -341,6 +341,43 @@ SUITE(Darcy_PK) {
     if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << std::endl;
   }
+
+/* ******************************************************************
+* Testing the mesh of prisms and hexahedra.
+****************************************************************** */
+  TEST_FIXTURE(DarcyProblem, DDmixed) {
+    Init("test/flow_darcy_misc.xml", "test/mixed.exo");
+    if (MyPID == 0) std::cout << "\nDarcy PK on mixed mesh: Dirichlet-Dirichlet" << std::endl;
+
+    double p0 = 1.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+
+    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
+    regions[0] = string("Top side");
+    createBClist("pressure", "BC 1", regions, 0.0);
+
+    regions[0] = string("Bottom side");
+    createBClist("pressure", "BC 2", regions, 1.0);
+    DPK->ResetParameterList(dp_list);
+
+    DPK->InitPK();  // setup the problem
+    DPK->InitSteadyState(0.0, 1.0);
+    DPK->AdvanceToSteadyState();
+    DPK->CommitState(DPK->flow_state());
+
+    double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
+    CHECK(errorP < 1.0e-8);
+    double errorL = calculatePressureFaceError(p0, pressure_gradient);
+    CHECK(errorL < 1.0e-8);
+    double errorU = calculateDarcyFluxError(velocity);
+    CHECK(errorU < 1.0e-8);
+    double errorDiv = calculateDarcyDivergenceError();
+    if (MyPID == 0)
+        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
+  }
+
 }
 
 

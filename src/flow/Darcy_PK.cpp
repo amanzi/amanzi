@@ -114,7 +114,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
-  verbosity = FLOW_VERBOSITY_HIGH;
+  src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
 }
 
 
