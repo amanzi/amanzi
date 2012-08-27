@@ -333,6 +333,15 @@ if ( NOT MPI_EXEC_POSTFLAGS )
   endif()
 endif()
 
+# ############################################################################ #
+# LAPACK/BLAS Configuration 
+# ############################################################################ #
+
+# Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas
+find_package(BLAS REQUIRED)
+
+# Search for LAPACK (Linear Algebra PACKage) http://www/netlib.org/lapack
+find_package(LAPACK REQUIRED)
 
 # ############################################################################ #
 # Set common build compiler flags, build types and directories
