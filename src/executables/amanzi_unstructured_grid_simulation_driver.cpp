@@ -69,7 +69,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     } else if ( verbosity == "Extreme" ) {
       verbLevel = Teuchos::VERB_EXTREME;
     } 
-      
+
   } else {
     new_list = input_parameter_list;
   }
