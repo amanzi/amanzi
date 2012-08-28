@@ -83,6 +83,7 @@ class HDF5_MPI {
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
   void createTimestep(const double time, const int iteration);
   void endTimestep();
+  void addStaticViz(const std::string varname, const std::string loc);
 
   // Write attribute to HDF5 data file.
   void writeAttrReal(double value, const std::string attrname);
@@ -101,7 +102,9 @@ class HDF5_MPI {
   void writeCellDataReal(const Epetra_Vector &x, const std::string varname);
   void writeCellDataInt(const Epetra_Vector &x, const std::string varname);
   
-  // Write array data to HDF5 data file. Meant for Restart ONLY not Viz!
+  // Write array data to HDF5 data file. Originally intended for Restart ONLY not Viz!
+  // writes data to dataset in root group, can be used to dump static data to viz
+  // as long as varname doesn't conflict with any timestep varname
   void writeDataReal(const Epetra_Vector &x, const std::string varname);
   void writeDataInt(const Epetra_Vector &x, const std::string varname);
   
