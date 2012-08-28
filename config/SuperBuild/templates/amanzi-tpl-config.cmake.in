@@ -72,5 +72,9 @@ set(MSTK_LIBRARY_DIR @MSTK_LIBRARY_DIR@ CACHE PATH "MSTK include installation pa
 # MOAB
 set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
 
-# Trilinos  
+# PETSc
+set(ENABLE_PETSC @ENABLE_PETSC@ CACHE BOOL "Build PETSc interfaces")
+set(PETSC_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "PETSc installation prefix")
+
+# Trilinos
 set(Trilinos_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")

@@ -328,6 +328,12 @@ if ( ENABLE_HYPRE )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
 endif()
 
+# PETSc
+option(ENABLE_PETSC "Build the PETSc package" FALSE)
+if (ENABLE_PETSC)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+endif()
+
 # Trilinos  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS

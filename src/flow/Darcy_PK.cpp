@@ -114,7 +114,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
-  verbosity = FLOW_VERBOSITY_HIGH;
+  src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
 }
 
 
@@ -302,6 +302,10 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   }
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
+
+  // DEBUG
+  // SolveFullySaturatedProblem(0.0, *solution);
+  // CommitState(FS); WriteGMVfile(FS); exit(0);
 }
 
 

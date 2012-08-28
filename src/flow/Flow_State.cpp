@@ -309,11 +309,12 @@ Epetra_Vector* Flow_State::CreateFaceView(const Epetra_Vector& u) const
 
 
 /* *******************************************************************
-* DEBUG: create constant fluid density    
+* DEBUG: create constant fluid density. Since it is debug, we
+* do not verify that rho is positive.    
 ******************************************************************* */
 void Flow_State::set_fluid_density(double rho)
 {
-  *fluid_density_ = rho;  // verify that it is positive (lipnikov@lanl.gov)
+  *fluid_density_ = rho;
 }
 
 
@@ -395,7 +396,6 @@ void Flow_State::set_gravity(double g)
   (*gravity_)[dim-1] = g;
   (*gravity_)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
 }
-
 
 
 }  // namespace AmanziTransport
