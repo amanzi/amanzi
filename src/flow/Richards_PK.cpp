@@ -559,7 +559,7 @@ int Richards_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-  // predict water mass change during time stepbdf2_d
+  // predict water mass change during time step
   time = T_physics;
   if (num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);

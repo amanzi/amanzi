@@ -48,7 +48,7 @@ void BoundaryFunction::Define(const std::vector<std::string> &regions,
       this_domain.insert(face_list.begin(), face_list.end());
     } else {
       Errors::Message m;
-      m << "unknown region: \"" << r->c_str() << "\"";
+      m << "\n   unknown region name or wrong topological dimension for \"" << r->c_str() << "\"";
       Exceptions::amanzi_throw(m);
     }
   }
