@@ -23,7 +23,7 @@ system_arch=`uname -m`
 # Known compiler lists
 known_c_compilers="mpicc cc gcc icc"
 known_cxx_compilers="mpiCC mpicxx CC g++ icpc"
-known_fortran_compilers="mpif90 ftn gfortran ifort"
+known_fort_compilers="mpif90 ftn gfortran ifort"
 
 # Script directory
 bootstrap_dir=$(cd $(dirname "$0");pwd)
@@ -889,7 +889,7 @@ check_compilers
 check_tools
 
 # Change the branch
-hg_change_branch ${amanzi_branch}
+#hg_change_branch ${amanzi_branch}
 
 
 # Now build the TPLs if the config file is not defined

@@ -48,6 +48,10 @@ double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
   // sorbed_concentration [mol/m^3 bulk] = 
   //   K [kg water/mol] * activity [mol/kg water] * b [mol/m^3 bulk] /
   //     (1. + K [kg water/mol] * activity [mol/kg water])
+  //
+  // NOTE(bandre): need to be careful with the variable names
+  // here. Looking at Langmuir (1997), would lead one to expect:
+  // Csorb = K * b * activity / (1 + b * activity)
   double K_activity = K() * primarySpecies.activity(); // temporary variable
   return K_activity * b() / (1. + K_activity);
 }  // end Evaluate()

@@ -1900,7 +1900,6 @@ c           y-direction
             by(i,j,3) = (rgtmpy(2) - rgy)/dcy(2)
          end do
       end do
-
       end
 
 c ::: -----------------------------------------------------------
@@ -2224,9 +2223,10 @@ c
             end if
 
             uy(i,j) = uy(i,j) - kpy(i,j)*ld*(mult*(p(i,j)-p(i,j-1))/dx(2) - grav)  
+
          end do
       end do
-
+      
       end   
 
 
@@ -2436,12 +2436,13 @@ c ::: ------------------------------------------------------------------
 
             if (ncomps == 1) then
                gstar = -kappa(i,j)*rhoval(1)*grav
+               call FORT_FIND_INV_RFLUX(sol,vel(i,j),gstar,muval,
+     &              ncomps,l_kr_type,l_kr_coef)
             else
                gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
+               call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
+     &              ncomps,l_kr_type,l_kr_coef)
             end if
-
-            call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
-     &           ncomps,l_kr_type,l_kr_coef)
 
             sol = sol*(1.0-l_sat_res)+l_sat_res
             

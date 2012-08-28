@@ -80,6 +80,23 @@ c      end do
 
 
 c ::: -----------------------------------------------------------
+c ::: Initiate data in probdata.H for get_kr function
+c ::: -----------------------------------------------------------
+      subroutine FORT_KR_INIT(sThresh_in,use_shifted_kr_in)
+
+      implicit none
+
+#include "probdata.H"      
+
+      REAL_T sThresh_in
+      integer use_shifted_kr_in
+
+      sThresh = sThresh_in
+      use_shifted_kr = use_shifted_kr_in
+      end
+
+
+c ::: -----------------------------------------------------------
 c     Some analytical functions for kappa 
 c       0: constant
 c       1: layered
@@ -482,36 +499,76 @@ c       2 => quadratic
 c       3 => vanGenuchten
 c     Applicable only for two-phase at the moment
 c ::: -----------------------------------------------------------
-      subroutine get_kr(kr,s,rho,ncomps,kr_type,kr_coef,sres)
+      subroutine get_kr(kr,s,rho,nc,kr_type,kr_coef,sres)
 
       implicit none
 
-      integer ncomps
+#include "probdata.H" 
+
+      integer nc
       integer kr_type
-      REAL_T  kr(ncomps)
-      REAL_T  s(ncomps)
-      REAL_T  rho(ncomps)
+      REAL_T  kr(nc)
+      REAL_T  s(nc)
+      REAL_T  rho(nc)
       REAL_T  kr_coef
       REAL_T  sres
 
       integer i
       REAL_T  alpha, alpha_scale
       REAL_T  m,n,twom
-      REAL_T  sat(ncomps),satl
+      REAL_T  sat(nc),satl
 
-      call get_st(sat,s,rho,sres,ncomps)
+      REAL_T k_st, k_st1, k_sat, msat, mt, ds, dels, dels1, vgk, sa
+
+      vgk(m,sa) = sqrt(sa)*(one-(one-sa**(one/m))**m)**2.d0
+
+      call get_st(sat,s,rho,sres,nc)
 
       if (kr_type .eq. 0) then 
          kr = half
       elseif (kr_type .eq. 1) then
-         do i = 1,ncomps
+         do i = 1,nc
             kr(i) = sat(i)
          end do
       elseif (kr_type .eq. 2) then
-         do i = 1,ncomps
+         do i = 1,nc
             kr(i) = sat(i)*sat(i)
          end do
       elseif (kr_type .eq. 3) then
+
+         if (use_shifted_kr .ne. 1) then
+
+            if (sThresh .lt. 0) then
+c     The standard van Genuchten parameterization, no fits/shifts/etc
+               m = kr_coef
+               n = 1.d0/m
+               kr(1) = vgk(m,sat(1))
+            else
+c
+c     Try kr-smoothing: If se<sThresh, fit
+c     cubic Hermite polynomial matching kr(s=1), kr(s=sThresh),
+c     dkr/ds(sThresh) and setting dkr/ds(s=1) = constant
+c     
+               m = kr_coef
+               if (sat(1) .le. sThresh) then
+                  kr(1) = vgk(m,sat(1))
+               else
+                  k_st = vgk(m,sThresh)
+                  ds = (one - sThresh)*1.d-3
+                  k_st1 = vgk(m,sThresh+ds)
+                  msat = (k_st - one)/(one - sThresh)
+                  mt = -(k_st1-k_st)/ds
+                  dels = one - sat(1)
+                  dels1 = one - sThresh
+                  kr(1) = one + dels*dels * msat/dels1 + 
+     &                 dels*dels * (dels-dels1) * (mt-2*msat) 
+     &                 / (dels1*dels1)
+               endif
+               
+            endif
+
+c     Shifted eval: Georges original implementation, activated when use_shifted_kr=1
+         else
 c
 c     Van Genuchten-Gualem function
 c     - typical well-behaved value is m = 0.5, while for ASCEM:   m = .28 
@@ -519,26 +576,28 @@ c     - the gradient at s = 1 is inf.  We modify the original function by
 c       introducing a factor alpha to obtain finite gradient at s = 1.  
 c       It is then scaled to obtain kr = 1 at s = 1.
 c
-         m      = kr_coef
-         n      = 1.d0/m
-         twom   = 2.d0*m
-         alpha  = 0.97d0
-         alpha_scale = dsqrt(alpha)*(one-(one-alpha**n)**m)**2
-         kr(1) = sqrt(alpha*sat(1))*(one-(one-(alpha*sat(1))**n)**m)**2
-         kr(1) = kr(1)/alpha_scale
+            m      = kr_coef
+            n      = 1.d0/m
+            twom   = 2.d0*m
+            alpha  = 0.97d0
+            alpha_scale = dsqrt(alpha)*(one-(one-alpha**n)**m)**2
+            kr(1) = sqrt(alpha*sat(1))*(one-(one-(alpha*sat(1))**n)**m)**2
+            kr(1) = kr(1)/alpha_scale
+         endif
+
 c     # no scaling for the gas permeability function, add checks in the derivatives
 c     # to avoid blow-up
 c     # In order to write the gas permeability function in terms of s_eff, we write
 c     # the gas saturation in terms of s_eff.  This way we know that when get_kr
 c     # is called in other functions, we are using consistent saturations. 
-         satl = sat(1)*(one-sres) + sres
-
-         if (ncomps > 1) then
-            if (satl .eq. one) then
-               kr(2) = zero
-            else
-               kr(2) = ((one-satl)**third)*(one-satl**n)**twom
-            end if
+         
+         if (nc > 1) then
+c            satl = sat(1)*(one-sres) + sres
+c            if (satl .eq. one) then
+c               kr(2) = zero
+c            else
+c               kr(2) = ((one-satl)**third)*(one-satl**n)**twom
+c            end if
             kr(2) = one - kr(1)
          end if
       end if
@@ -910,9 +969,8 @@ c     given a velocity of a phase, find the corresponding saturation
       if (ncomps < 2) then
          mtmp(1) = muval(1)
          mtmp(2) = 0.018
-c         call bl_abort('FORT_FIND_INV_FLUX only works for 2-phase flow!')
+         call bl_abort('FORT_FIND_INV_FLUX only works for 2-phase flow!')
       end if
-
 
       s1 = 0
       s2 = 0

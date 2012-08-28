@@ -146,12 +146,14 @@ Index (const pointRegion& region,
 
     const Geometry& geom = amr->Geom(lev);
 
-    D_TERM(iv[0]=floor((region.coor[0]-geom.ProbLo(0))/geom.CellSize(0));,
-           iv[1]=floor((region.coor[1]-geom.ProbLo(1))/geom.CellSize(1));,
-           iv[2]=floor((region.coor[2]-geom.ProbLo(2))/geom.CellSize(2)););
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        Real eps = 1.e-8*geom.CellSize(d);
+        Real loc = std::max(geom.ProbLo(d)+eps, region.coor[d]);
+        loc = std::min(loc, geom.ProbHi(d)-eps);
 
+        iv[d] = floor(loc/geom.CellSize(d));
+    }
     iv += geom.Domain().smallEnd();
-
     return iv;
 }
 
@@ -171,10 +173,11 @@ Observation::point_sample (Real time)
 
   int proc_with_data = -1;
   Real value;
+  Array<IntVect> idxs(finest_level+1);
   for (int lev = finest_level; lev >= 0 && proc_with_data<0; lev--)
   {
       // Compute IntVect at this level of cell containing this point
-      IntVect idx = Index(*ptreg,lev,amrp);
+      idxs[lev] = Index(*ptreg,lev,amrp);
 
       // Decide if this processor owns a fab at this level containing this point
       //
@@ -187,15 +190,27 @@ Observation::point_sample (Real time)
       {
           const Box& box = mfi.validbox();
 
-          if (box.contains(idx))
+          if (box.contains(idxs[lev]))
           {
               proc_with_data = ParallelDescriptor::MyProc();
-              value = (*S_new)[mfi](idx,0);
+              value = (*S_new)[mfi](idxs[lev],0);
           }
       }
       ParallelDescriptor::ReduceIntMax(proc_with_data);
   }
 
+  if (proc_with_data<0) {
+      if (ParallelDescriptor::IOProcessor()) {
+          std::cout << region << std::endl;
+
+          for (int lev = 0; lev <= finest_level; lev++)
+          {
+              std::cout << "   maps to " << idxs[lev] << " on AMR level " << lev
+                        << " with grids: " << amrp->getLevel(lev).boxArray() << std::endl;
+          }
+      }
+      BoxLib::Abort("Nobody claimed ownership of the observation pt");
+  }
   ParallelDescriptor::Bcast(&value,1,proc_with_data);
   return value;
 }

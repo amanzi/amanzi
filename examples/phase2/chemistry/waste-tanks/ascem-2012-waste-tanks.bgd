@@ -1,21 +1,24 @@
-# pflotran database preprocessing :
-#        date : 20120321e   192633.583
-#       input : ascem-2012-waste-tanks-1d.in
+# Input file for ASCEM 2012 waste tank demo
+
+# Isotherm parameters are for Greg's sand
 
 <Primary Species
+# name  ;  debye-huckel ; charge ; GMW
 Pu_238  ;   1.00 ;   0.00 ; 238.00
-U_234  ;   1.00 ;   0.00 ; 234.00
+U_234   ;   1.00 ;   0.00 ; 234.00
 Th_230  ;   1.00 ;   0.00 ; 230.00
 Ra_226  ;   1.00 ;   0.00 ; 226.00
 Pb_210  ;   1.00 ;   0.00 ; 210.00
+Tc_99   ;   1.00 ;   0.00 ;  99.00
 
-<Aqueous Equilibrium Complexes
-
-<General Kinetics
-  1.00 Pu_238 <->   1.00 U_234 ;   1.00 Pu_238 ;   2.50000E-10 ;   1.00 U_234 ;   0.00000E+00
-  1.00 U_234 <->   1.00 Th_230 ;   1.00 U_234 ;   8.90000E-14 ;   1.00 Th_230 ;   0.00000E+00
-  1.00 Th_230 <->   1.00 Ra_226 ;   1.00 Th_230 ;   2.90000E-13 ;   1.00 Ra_226 ;   0.00000E+00
-  1.00 Ra_226 <->   1.00 Pb_210 ;   1.00 Ra_226 ;   1.40000E-11 ;   1.00 Pb_210 ;   0.00000E+00
+<Radioactive Decay
+# parent --> (coeff progeny ...) ; half_life XXX units
+  Pu_238 -->   1.0 U_234  ; half_life 87.7 years
+  U_234  -->   1.0 Th_230 ; half_life 2.45e5 years
+  Th_230 -->   1.0 Ra_226 ; half_life 7.54e4 years
+  Ra_226 -->   1.0 Pb_210 ; half_life 1.6e3 years
+  Pb_210 -->              ; half_life 22.2 years
+  Tc_99  -->              ; half_life 2.111e5 years
 
 <Minerals
 
@@ -30,8 +33,14 @@ Pb_210  ;   1.00 ;   0.00 ; 210.00
 <Surface Complexes
 
 <Isotherms
-Pu_238 ; linear ;   2.00000E+07
-U_234 ; linear ;   5.00000E+06
-Th_230 ; linear ;   1.00000E+07
-Ra_226 ; linear ;   2.00000E+05
-Pb_210 ; linear ;   1.00000E+06
+# name ; linear ; KD [kg_h2o/m^3 bulk]
+Pu_238 ; linear ;   405616.5736
+U_234  ; linear ;   279735.568
+Th_230 ; linear ;   1258810.056
+Ra_226 ; linear ;   34966.946
+Pb_210 ; linear ;   2797355.68
+Tc_99  ; linear ;   839.206704
+
+
+# name ; freundlich ; KD [kg_h2o/m^3 bulk] and n
+# name ; langmuir   ; K [L_h2o / mol] and b [mol/m^3 bulk]
