@@ -912,6 +912,8 @@ at intervals corresponding to the numerical time step values; writes are control
 
   * `"times`" an array of discrete times that at which a visualization dump shall be written.
 
+  * `"Regions`" [Array string] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
+
 Example:
 
 .. code-block:: xml

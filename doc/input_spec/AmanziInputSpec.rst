@@ -1313,6 +1313,7 @@ at intervals corresponding to the numerical time step values; writes are control
 
   * [S] `"Variables`" [Array string] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
 
+  * [U] `"Regions`" [Array string] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
 
 Example:
 
