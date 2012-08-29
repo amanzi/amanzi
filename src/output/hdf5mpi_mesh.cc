@@ -1,5 +1,6 @@
 #include "hdf5mpi_mesh.hh"
 #include <iostream>
+#include "mpi.h"
 
 //TODO(barker): clean up debugging output
 //TODO(barker): check that close file is always getting called
@@ -301,9 +302,27 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
     gid[i] = ngmap.GID(i);
   }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
-
   std::vector<double> global_RegList(RegList.GlobalLength(),0);
-  viz_comm_.GatherAll(data, &global_RegList[0],RegList.MyLength()); 
+
+  // MB: changed the call
+  // viz_comm_.GatherAll(data, &global_RegList[0],RegList.MyLength()); 
+  // to the following code (up to the comment line below with many ='s in it)
+  //
+  // first communicate the dimensions of all the local arrays that need
+  // to be collated 
+  std::vector<int> dims(viz_comm_.NumProc(),0);
+  int mydim(RegList.MyLength());
+  MPI_Allgather(&mydim,1,MPI_INT,&dims[0],1,MPI_INT,viz_comm_.Comm());
+  // now compute the offsets for where each PE's data shall be stored
+  // in the reveive buffer
+  std::vector<int> displs(viz_comm_.NumProc(),0);
+  for (int i=0; i<dims.size(); ++i) 
+    for (int j=0; j<i; ++j) 
+      displs[i] += dims[j];
+  // then communicate the data (that potentially has different length on the different processors) 
+  // using MPI_Allgatherv since there is no matching call in Epetra_Comm
+  MPI_Allgatherv(data, dims[viz_comm_.MyPID()], MPI_DOUBLE, &global_RegList[0], &dims[0], &displs[0], MPI_DOUBLE, viz_comm_.Comm());
+  // ================ end of replacement code ===========================
   // get connectivity on this processor
   std::vector<int> local_conn;
   std::vector<int> local_ids;
