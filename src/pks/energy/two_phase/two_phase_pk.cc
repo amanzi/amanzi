@@ -236,14 +236,18 @@ void TwoPhase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
 // -----------------------------------------------------------------------------
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Advance from state S to state S_next at time S.time + dt.
+// -----------------------------------------------------------------------------
 bool TwoPhase::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
   // take a bdf timestep
   double h = dt;
-   try {
-    dt_ = time_stepper_->time_step(h, solution_);
-   } catch (Exceptions::Amanzi_exception &error) {
+  double dt_solver;
+  try {
+    dt_solver = time_stepper_->time_step(h, solution_);
+  } catch (Exceptions::Amanzi_exception &error) {
     if (S_next_->GetMesh()->get_comm()->MyPID() == 0) {
       std::cout << "Timestepper called error: " << error.what() << std::endl;
     }
@@ -261,6 +265,15 @@ bool TwoPhase::advance(double dt) {
   time_stepper_->commit_solution(h, solution_);
   solution_to_state(solution_, S_next_);
   commit_state(h, S_next_);
+
+  // update the timestep size
+  if (dt_solver < dt_ && dt_solver >= h) {
+    // We took a smaller step than we recommended, and it worked fine (not
+    // suprisingly).  Likely this was due to constraints from other PKs or
+    // vis.  Do not reduce our recommendation.
+  } else {
+    dt_ = dt_solver;
+  }
 
   return false;
 };

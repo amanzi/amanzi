@@ -180,7 +180,7 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   int ncells = temp->size("cell");
   for (int c=0; c!=ncells; ++c) {
     Acc_cells[c] += (*de_dT)("cell",c) / h;
-    Fc_cells[c] += (*de_dT)("cell",c) / h * (*temp)("cell",c);
+    //    Fc_cells[c] += (*de_dT)("cell",c) / h * (*temp)("cell",c);
   }
 
   // -- assemble

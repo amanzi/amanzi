@@ -155,6 +155,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   preconditioner_->CreateMFDrhsVectors();
   AddGravityFluxes_(S_next_, preconditioner_);
 
+
   // update with accumulation terms
   // -- update the accumulation derivatives
   S_next_->GetFieldEvaluator("water_content")
@@ -166,6 +167,48 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<const CompositeVector> pres =
       S_next_->GetFieldData("pressure");
 
+
+#if DEBUG_FLAG
+  // update with accumulation terms
+  Teuchos::RCP<const double> p_atm = S_next_->GetScalarData("atmospheric_pressure");
+  Teuchos::RCP<const CompositeVector> temp = S_next_->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> poro = S_next_->GetFieldData("porosity");
+
+  Teuchos::RCP<const CompositeVector> mol_frac_gas =
+    S_next_->GetFieldData("mol_frac_gas");
+  Teuchos::RCP<const CompositeVector> n_gas = S_next_->GetFieldData("molar_density_gas");
+  Teuchos::RCP<const CompositeVector> sat_gas = S_next_->GetFieldData("saturation_gas");
+
+  Teuchos::RCP<const CompositeVector> n_liq = S_next_->GetFieldData("molar_density_liquid");
+  Teuchos::RCP<const CompositeVector> sat_liq = S_next_->GetFieldData("saturation_liquid");
+
+  Teuchos::RCP<const CompositeVector> n_ice = S_next_->GetFieldData("molar_density_ice");
+  Teuchos::RCP<const CompositeVector> sat_ice = S_next_->GetFieldData("saturation_ice");
+
+  Teuchos::RCP<const CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume");
+
+  int c = 0;
+  double p = (*pres)("cell",c);
+  double T = (*temp)("cell",c);
+  double phi = (*poro)("cell",c);
+
+  std::cout << "    p =" << p << std::endl;
+  std::cout << "    T =" << T << std::endl;
+  std::cout << "    phi =" << phi << std::endl;
+  std::cout << "    cv =" << (*cell_volume)("cell",c) << std::endl;
+  std::cout << "   res3 (0) =" << (*dwc_dp)("cell",c) / phi / (*cell_volume)("cell",c) << std::endl;
+
+  c = 99;
+  p = (*pres)("cell",c);
+  T = (*temp)("cell",c);
+  phi = (*poro)("cell",c);
+  std::cout << "    p =" << p << std::endl;
+  std::cout << "    T =" << T << std::endl;
+  std::cout << "    phi =" << phi << std::endl;
+  std::cout << "    cv =" << (*cell_volume)("cell",c) << std::endl;
+  std::cout << "   res3 (99) =" << (*dwc_dp)("cell",c) / phi / (*cell_volume)("cell",c) << std::endl;
+#endif
+
   // -- get the matrices/rhs that need updating
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
@@ -173,7 +216,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   int ncells = pres->size("cell");
   for (int c=0; c!=ncells; ++c) {
     Acc_cells[c] += (*dwc_dp)("cell",c) / h;
-    Fc_cells[c] += (*dwc_dp)("cell",c) / h * (*pres)("cell",c);
+    //    Fc_cells[c] += (*dwc_dp)("cell",c) / h * (*pres)("cell",c);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

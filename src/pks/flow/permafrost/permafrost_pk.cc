@@ -93,28 +93,28 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator("saturation_ice", wrm);
 
   // Evaluator 1.
-  Teuchos::ParameterList Aplist;
-  std::string Akey = wrm_plist.get<string>("1/A key", "wrm_permafrost_one_on_A");
-  Aplist.set("saturation key", Akey);
-  Aplist.set("calculate minor saturation", false);
-  ASSERT(wrm_plist.isSublist("WRM parameters"));
-  Aplist.set("WRM parameters", wrm_plist.sublist("WRM parameters"));
-  Teuchos::RCP<FlowRelations::WRMRichardsEvaluator> wrm_A =
-      Teuchos::rcp(new FlowRelations::WRMRichardsEvaluator(Aplist));
-  S->SetFieldEvaluator(Akey, wrm_A);
-
-  // Evaluator 2.  Constructed using the same underlying vanGenuchten evaluator as evaluator 1.
-  Teuchos::ParameterList Bplist = flow_plist_.sublist("ice-water retention evaluator");
+  Teuchos::ParameterList Bplist;
   std::string Bkey = wrm_plist.get<string>("1/B key", "wrm_permafrost_one_on_B");
   Bplist.set("saturation key", Bkey);
   Bplist.set("calculate minor saturation", false);
-  Teuchos::RCP<FlowRelations::WRMIceWaterEvaluator> wrm_B =
-      Teuchos::rcp(new FlowRelations::WRMIceWaterEvaluator(Bplist, wrm_A->get_WRMs()));
+  ASSERT(wrm_plist.isSublist("WRM parameters"));
+  Bplist.set("WRM parameters", wrm_plist.sublist("WRM parameters"));
+  Teuchos::RCP<FlowRelations::WRMRichardsEvaluator> wrm_B =
+      Teuchos::rcp(new FlowRelations::WRMRichardsEvaluator(Bplist));
   S->SetFieldEvaluator(Bkey, wrm_B);
+
+  // Evaluator 2.  Constructed using the same underlying vanGenuchten evaluator as evaluator 1.
+  Teuchos::ParameterList Aplist = flow_plist_.sublist("ice-water retention evaluator");
+  std::string Akey = wrm_plist.get<string>("1/A key", "wrm_permafrost_one_on_A");
+  Aplist.set("saturation key", Akey);
+  Aplist.set("calculate minor saturation", false);
+  Teuchos::RCP<FlowRelations::WRMIceWaterEvaluator> wrm_A =
+      Teuchos::rcp(new FlowRelations::WRMIceWaterEvaluator(Aplist, wrm_B->get_WRMs()));
+  S->SetFieldEvaluator(Akey, wrm_A);
 
   // Evaluator 4, the rel perm evaluator, also with the same underlying evaluator.
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm_A->get_WRMs()));
+      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm_B->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
 
 

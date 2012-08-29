@@ -30,8 +30,7 @@ double VaporPressureWater::SaturatedVaporPressure(double T) {
 };
 
 double VaporPressureWater::DSaturatedVaporPressureDT(double T) {
-  return 100.0*exp(ka0_ + ka_/T + (kb_ + kc_*T)*T + kd_*log(T))
-    * (-ka_/(T*T) + kb_ + kc_*T + kd_/T);
+  return SaturatedVaporPressure(T) * (-ka_/(T*T) + kb_ + 2.0*kc_*T + kd_/T);
 };
 
 
