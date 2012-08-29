@@ -503,10 +503,8 @@ void HDF5_MPI::endTimestep() {
 }
 
 void HDF5_MPI::addStaticViz(const std::string varname, const std::string loc){
-  cout << "EIB>> in Static Viz" << endl;
   if (TrackXdmf()) {
     if (viz_comm_.MyPID() == 0) {
-      cout << "  EIB>> Track and 0" << endl;
       int length(0);
       if (loc == "CELL") {
 	length = NumElems();
@@ -515,9 +513,7 @@ void HDF5_MPI::addStaticViz(const std::string varname, const std::string loc){
       } else {
 	Exceptions::amanzi_throw("Can't add viz field that isn't CELL or NODE based");
       }
-      cout << "    EIB>> got to guts" << endl;
       Teuchos::XMLObject node = findMeshNode_(xmlStep());
-      cout << "      EIB>> using: "<<varname<<" "<<loc<<" "<<length<<endl;
       node.addChild(addXdmfAttribute_(varname, loc, length, varname));
     }
   }
