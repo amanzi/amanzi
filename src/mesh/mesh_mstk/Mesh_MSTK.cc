@@ -1403,8 +1403,33 @@ void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
 
       /* base face */
 
-      MFace_ptr face0 = List_Entry(rfaces,0);
-      int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+      MFace_ptr face0;
+      int fdir0;
+
+      if (celltype == TET || celltype == HEX) {
+        face0 = List_Entry(rfaces,0);
+        fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+      }
+      else if (celltype == PRISM) { /* Find the first triangular face */
+        for (int i = 0; i < 5; i++) {
+          MFace_ptr face = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face) == 3) {
+            face0 = face;
+            fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);
+            break;
+          }
+        }
+      }
+      else if (celltype == PYRAMID) { /* Find the quad face */
+        for (int i = 0; i < 5; i++) {
+          MFace_ptr face = List_Entry(rfaces,i);
+          if (MF_Num_Edges(face) == 4) {
+            face0 = face;
+            fdir0 = MR_FaceDir_i((MRegion_ptr)cell,i);
+            break;
+          }
+        }
+      }
 
       /* Markers for faces to avoid searching */
 
