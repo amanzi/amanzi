@@ -98,7 +98,8 @@ void Amanzi::Vis::create_files(const Amanzi::AmanziMesh::Mesh& mesh)
     }
     for (Teuchos::Array<std::string>::const_iterator reg=regions.begin(); reg != regions.end(); ++reg) {
       if (!mesh.valid_set_name(*reg,Amanzi::AmanziMesh::CELL)) {
-        throw std::exception(); // fix this to be an amanzi exception
+        Errors::Message m("Amanzi::Vis::create_files... Region \"" + *reg + "\" specified in the Visualization Data list is not a valid region.");
+        Exceptions::amanzi_throw(m);
       }
       int local_region_size = mesh.get_set_size(*reg,
                                                 Amanzi::AmanziMesh::CELL,
@@ -111,13 +112,13 @@ void Amanzi::Vis::create_files(const Amanzi::AmanziMesh::Mesh& mesh)
       comm->SumAll(&local_region_size,&global_region_size,1);
       Epetra_Map region_map(global_region_size, local_region_size, 0, *comm);
       Teuchos::RCP<Epetra_Vector> mesh_region = Teuchos::rcp(new Epetra_Vector(region_map,false));
-      
-      
+
+
       int *indices = new int[local_region_size];
       for (int i=0; i<local_region_size; ++i) indices[i] = i;
       double *values = new double[local_region_size];
       for (int i=0; i<local_region_size; ++i) values[i] = mesh.cell_map(false).GID(cell_ids[i]);
-    
+
       mesh_region->ReplaceMyValues(local_region_size,values,indices);
 
       delete [] values;
