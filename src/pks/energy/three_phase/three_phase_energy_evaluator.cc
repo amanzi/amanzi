@@ -139,15 +139,15 @@ void ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
 
   } else if (wrt_key == "saturation_ice") {
     for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*n_g)("cell",c)*(*u_g)("cell",c);
+      (*result)("cell",c) = (*phi)("cell",c)*(*n_i)("cell",c)*(*u_i)("cell",c);
     }
   } else if (wrt_key == "molar_density_ice") {
     for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*s_g)("cell",c)*(*u_g)("cell",c);
+      (*result)("cell",c) = (*phi)("cell",c)*(*s_i)("cell",c)*(*u_i)("cell",c);
     }
   } else if (wrt_key == "internal_energy_ice") {
     for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*s_g)("cell",c)*(*n_g)("cell",c);
+      (*result)("cell",c) = (*phi)("cell",c)*(*s_i)("cell",c)*(*n_i)("cell",c);
     }
 
   } else if (wrt_key == "internal_energy_rock") {

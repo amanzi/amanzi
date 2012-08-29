@@ -92,6 +92,7 @@ void Coordinator::initialize() {
     S_->RemoveMesh("surface_3d");
     surface_done = true;
   }
+
   for (State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
@@ -100,6 +101,11 @@ void Coordinator::initialize() {
       // pass
     } else {
       std::string plist_name = "visualization "+mesh->first;
+      // in the case of just a domain mesh, we want to allow no name.
+      if ((mesh->first == "domain") && !parameter_list_.isSublist(plist_name)) {
+        plist_name = "visualization";
+      }
+
       Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
       vis_plist.set<std::string>("file name base",mesh->first);
       Teuchos::RCP<Visualization> vis =

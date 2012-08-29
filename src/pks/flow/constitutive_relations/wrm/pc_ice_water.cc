@@ -30,7 +30,7 @@ double PCIceWater::DCapillaryPressureDT(double T, double dens) {
 };
 
 double PCIceWater::DCapillaryPressureDRho(double T, double dens) {
-  return -gamma_ * (T0_ - T)/T0_;
+  return gamma_ * (T0_ - T)/T0_;
 };
 
 

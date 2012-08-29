@@ -48,7 +48,7 @@ void IEMQuadratic::InitializeFromPlist_() {
     molar_basis_ = true;
   }
 
-  T0_ = plist_.get<double>("Reference temperature [K]", 273.15);
+  T0_ = plist_.get<double>("reference temperature [K]", 273.15);
 };
 
 } // namespace
