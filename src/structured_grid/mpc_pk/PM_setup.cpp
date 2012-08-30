@@ -328,6 +328,7 @@ int  PorousMedia::richard_use_fd_jac;
 int  PorousMedia::richard_use_dense_Jacobian;
 int  PorousMedia::richard_upwind_krel;
 int  PorousMedia::richard_pressure_maxorder;
+bool PorousMedia::richard_scale_solution_before_solve;
 
 std::string PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
@@ -625,6 +626,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_use_dense_Jacobian = 0;
   PorousMedia::richard_upwind_krel = 1;
   PorousMedia::richard_pressure_maxorder = 4;
+  PorousMedia::richard_scale_solution_before_solve = true;
 
   PorousMedia::echo_inputs         = 0;
 }
@@ -1527,6 +1529,9 @@ void PorousMedia::read_prob()
   BL_ASSERT(execution_mode=="transient" || execution_mode=="steady" || execution_mode=="init_to_steady");
   if (execution_mode=="init_to_steady") {
     pp.get("switch_time",switch_time);
+    std::string event_name = "Switch_Time";
+    defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,switch_time));
+    PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
   }
   pp.query("max_step",max_step);
   pp.query("stop_time",stop_time);
@@ -1598,6 +1603,7 @@ void PorousMedia::read_prob()
   pb.query("richard_use_dense_Jacobian",richard_use_dense_Jacobian);
   pb.query("richard_upwind_krel",richard_upwind_krel);
   pb.query("richard_pressure_maxorder",richard_pressure_maxorder);
+  pb.query("richard_scale_solution_before_solve",richard_scale_solution_before_solve);
 
   // Get timestepping parameters.
   pb.get("cfl",cfl);

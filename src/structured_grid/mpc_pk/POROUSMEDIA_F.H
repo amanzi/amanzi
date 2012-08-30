@@ -482,7 +482,7 @@ extern "C" {
 		      const Real* wmac, ARLIM_P(wmlo), ARLIM_P(wmhi),
 #endif
 		      const Real* u   , ARLIM_P( ulo), ARLIM_P( uhi),
-		      const int* lo, const int* hi);
+		      const int* lo, const int* hi, const int* upwind_flag);
 
   void FORT_CPY_UMAC (const Real* umac, ARLIM_P(umlo), ARLIM_P(umhi),
 		      const Real* vmac, ARLIM_P(vmlo), ARLIM_P(vmhi),
