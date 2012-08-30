@@ -66,7 +66,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
       if ((flux("face",f) * dirs[n] >= flow_eps)) {
         (*face_coef)("face",f) = cell_coef("cell",c);
-      } else if (std::abs(flux("face",f)) < flow_eps) {
+      } else if (std::abs(flux("face",f) * dirs[n]) < flow_eps) {
         (*face_coef)("face",f) += cell_coef("cell",c) / 2.0;
       }
     }

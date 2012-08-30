@@ -17,7 +17,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 // Richards is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -27,10 +27,12 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
+  double h = t_new - t_old;
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
 #if DEBUG_FLAG
-  std::cout << "Richards Residual calculation:" << std::endl;
+  std::cout << "----------------------------------------------------------------" << std::endl;
+  std::cout << "Richards Residual calculation: T0 = " << t_old << " T1 = " << t_new << " H = " << h << std::endl;
   std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
   std::cout << "  p1: " << (*u)("cell",0,99) << " " << (*u)("face",0,497) << std::endl;
 #endif
@@ -117,7 +119,7 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
 
 
   //  std::cout.precision(15);
-  //  std::cout << "enorm val (cell, face): " << std::scientific << enorm_val_cell
+  //  std::cout << "Richards enorm (cell, face): " << std::scientific << enorm_val_cell
   //            << " / " << std::scientific << enorm_val_face << std::endl;
 
   double enorm_val = std::max<double>(enorm_val_cell, enorm_val_face);

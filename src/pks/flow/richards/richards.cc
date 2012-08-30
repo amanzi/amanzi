@@ -96,25 +96,30 @@ void Richards::SetupRichardsFlow_(const Teuchos::RCP<State>& S) {
   S->RequireField("numerical_rel_perm", "flow")->SetMesh(S->GetMesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm","flow")->set_io_vis(false);
-  string method_name = flow_plist_.get<string>("Relative permeability method", "Upwind with gravity");
+  string method_name = flow_plist_.get<string>("relative permeability method", "upwind with gravity");
   bool symmetric = false;
-  if (method_name == "Upwind with gravity") {
+  if (method_name == "upwind with gravity") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux("flow",
             "relative_permeability", "numerical_rel_perm", K_));
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (method_name == "Cell centered") {
+  } else if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered("flow",
             "relative_permeability", "numerical_rel_perm"));
     symmetric = true;
     Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
-  } else if (method_name == "Upwind with Darcy flux") {
+  } else if (method_name == "upwind with Darcy flux") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux("flow",
             "relative_permeability", "numerical_rel_perm", "darcy_flux"));
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (method_name == "Arithmetic mean") {
+  } else if (method_name == "arithmetic mean") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean("flow",
             "relative_permeability", "numerical_rel_perm"));
     Krel_method_ = FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Richards FLow PK has no upwinding method named: " << method_name;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
   }
 
   // operator for the diffusion terms
@@ -184,7 +189,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::RCP<State>& S) {
   // initial timestep size
-  dt_ = flow_plist_.get<double>("Initial time step", 1.);
+  dt_ = flow_plist_.get<double>("initial time step", 1.);
 
   // initialize boundary conditions
   int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -365,7 +370,7 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
   for (int f=0; f!=num_rel_perm->size("face"); ++f) {
     if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-      // just grab the cell inside's perm... this might need to be fixed eventually.
+      // just grab the cell inside's perm... this will need to be fixed eventually.
       AmanziMesh::Entity_ID_List cells;
       S->GetMesh()->face_get_cells(f, AmanziMesh::OWNED, &cells);
       (*num_rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);

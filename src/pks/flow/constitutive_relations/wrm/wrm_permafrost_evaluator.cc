@@ -14,6 +14,8 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+#define DEBUG_FLAG 0
+
 WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& wrm_plist) :
     wrm_plist_(wrm_plist) {
 
@@ -63,6 +65,15 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       (*sat)(*comp, id) = s_l;
       (*sat_i)(*comp, id) = s_l * ( 1.0/(*one_on_A)(*comp, id) - 1.0);
       (*sat_g)(*comp, id) = s_l * ( 1.0/(*one_on_B)(*comp, id) - 1.0);
+
+#if DEBUG_FLAG
+      if (id==0) {
+        std::cout << " sat_l( 0) = " << s_l << ",    sat_i( 0) = " << (*sat_i)(*comp, id) << ",    sat_g( 0) = " << (*sat_g)(*comp, id) << std::endl;
+      }
+      if (id==99) {
+        std::cout << " sat_l(99) = " << s_l << ",    sat_i(99) = " << (*sat_i)(*comp, id) << ",    sat_g(99) = " << (*sat_g)(*comp, id) << std::endl;
+      }
+#endif
     }
   }
 }
