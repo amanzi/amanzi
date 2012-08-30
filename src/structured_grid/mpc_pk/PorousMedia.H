@@ -896,12 +896,12 @@ public:
 			     int              nComp);
 
   void umac_edge_to_cen(MultiFab* u_mac, 
-			MultiFab& U_cc);
+			MultiFab& U_cc,
+                        bool      do_upwind = false);
 
   void umac_cpy_edge_to_cen(MultiFab* u_mac, 
 			    int       idx_type,
-			    int       ishift = 0);
-
+			    int       ishift);
   //
   // Boundary conditions
   //  
@@ -1328,6 +1328,7 @@ protected:
   static int  richard_use_dense_Jacobian;
   static int  richard_upwind_krel;
   static int  richard_pressure_maxorder;
+  static bool richard_scale_solution_before_solve;
   //
   // Number of states
   //

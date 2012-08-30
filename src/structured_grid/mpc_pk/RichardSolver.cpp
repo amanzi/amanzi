@@ -23,8 +23,7 @@ static int maxf_DEF = 1e8;
 static Real atol_DEF = 1e-10; 
 static Real rtol_DEF = 1e-20;
 static Real stol_DEF = 1e-12;
-
-
+static bool scale_soln_before_solve_DEF = true;
 
 RichardSolver::RSParams::RSParams()
 {
@@ -39,6 +38,12 @@ RichardSolver::RSParams::RSParams()
   ls_acceptance_factor = ls_acceptance_factor_DEF;
   ls_reduction_factor = ls_reduction_factor_DEF;
   monitor_line_search = monitor_line_search_DEF;
+  maxit = maxit_DEF;
+  maxf = maxf_DEF;
+  atol = atol_DEF;
+  rtol = rtol_DEF;
+  stol = stol_DEF;
+  scale_soln_before_solve = scale_soln_before_solve_DEF;
 }
 
 static RichardSolver* static_rs_ptr = 0;
@@ -89,10 +94,12 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   PArray<MultiFab> lambda(nLevs,PArrayNoManage);
   PArray<MultiFab> kappacc(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
-  
+  PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
+
   for (int lev=0; lev<nLevs; ++lev) {
     lambda.set(lev,pm[lev].LambdaCC_Curr());
     porosity.set(lev,pm[lev].Porosity());
+    pcap_params.set(lev,pm[lev].PCapParams());
     if (!params.use_fd_jac) {
         kappacc.set(lev,pm[lev].KappaCC());
     }
@@ -106,6 +113,7 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   }
   Lambda = new MFTower(layout,lambda);
   Porosity = new MFTower(layout,porosity);
+  PCapParams = new MFTower(layout,pcap_params);
       
   // Because kpedge has a weird boxarray, we maintain our own copy....should fix this
   ktmp.resize(BL_SPACEDIM);
@@ -131,13 +139,15 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     utmp.clear();
   }
 
+
   PetscErrorCode ierr;       
   int n = layout.NumberOfLocalNodeIds();
   int N = layout.NumberOfGlobalNodeIds();
   MPI_Comm comm = ParallelDescriptor::Communicator();
   ierr = VecCreateMPI(comm,n,N,&RhsV); CHKPETSC(ierr);
   ierr = VecDuplicate(RhsV,&SolnV); CHKPETSC(ierr);
-  ierr = VecDuplicate(RhsV,&PCapParamsV); CHKPETSC(ierr);
+  ierr = VecDuplicate(RhsV,&SolnTypV); CHKPETSC(ierr);
+  ierr = VecDuplicate(RhsV,&SolnTypInvV); CHKPETSC(ierr);
   ierr = VecDuplicate(RhsV,&GV); CHKPETSC(ierr);
 
   const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
@@ -200,7 +210,8 @@ RichardSolver::~RichardSolver()
     ierr = MatDestroy(&Jac); CHKPETSC(ierr);
 
     ierr = VecDestroy(&GV); CHKPETSC(ierr);
-    ierr = VecDestroy(&PCapParamsV); CHKPETSC(ierr);
+    ierr = VecDestroy(&SolnTypInvV); CHKPETSC(ierr);
+    ierr = VecDestroy(&SolnTypV); CHKPETSC(ierr);
     ierr = VecDestroy(&SolnV); CHKPETSC(ierr);
     ierr = VecDestroy(&RhsV); CHKPETSC(ierr);
 
@@ -215,10 +226,30 @@ RichardSolver::~RichardSolver()
 
     delete Rhs;
     delete Porosity;
+    delete PCapParams;
     delete Lambda;
     delete KappaCC;
 
     delete mftfp;
+}
+
+PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm, PetscReal dx_norm, PetscReal fnew_norm, SNESConvergedReason *reason, void *ctx)
+{
+    CheckCtx *user = (CheckCtx *) ctx;
+    PetscErrorCode ierr;
+    ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx);
+#if 0
+    if (*reason == 0) {
+        if (it != 0) // if it=0, xnew_norm=dx_norm=0 in ls.c
+        {
+            if (ParallelDescriptor::IOProcessor()) {            
+                std::cout << "                   dx_norm: " << dx_norm << std::endl;
+                std::cout << "                 fnew_norm: " << fnew_norm << std::endl;
+            }
+        }
+    }
+#endif
+    PetscFunctionReturn(ierr);
 }
 
 int
@@ -226,16 +257,24 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 {
   MFTower& RhsMFT = GetResidual();
   MFTower& SolnMFT = GetPressure();
+  MFTower& PCapParamsMFT = GetPCapParams();
 
   Vec& RhsV = GetResidualV();
   Vec& SolnV = GetPressureV();
+  Vec& SolnTypInvV = GetSolnTypInvV();
 
   // Copy from MFTowers in state to Vec structures
   PetscErrorCode ierr;
   Layout& layout = PMAmr::GetLayout();
   ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
-
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
+  ierr = layout.MFTowerToVec(SolnTypInvV,PCapParamsMFT,2); CHKPETSC(ierr); // Get "sigma" = 1/P_typ, which is in slot number 2
+
+  if (params.scale_soln_before_solve) {
+      ierr = VecPointwiseMult(SolnV,SolnV,SolnTypInvV); // Mult(w,x,y): w=x.y  -- Scale initial solution
+  }
+  ierr = VecCopy(SolnTypInvV,SolnTypV); // Copy(x,y): y <- x
+  ierr = VecReciprocal(SolnTypV); // Create vec to unscale as needed
 
   SetTime(cur_time);
   SetDt(delta_t);
@@ -244,6 +283,7 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   check_ctx.rs = this;
   check_ctx.nld = &nl_data;
   ierr = SNESLineSearchSetPostCheck(snes,PostCheck,(void *)(&check_ctx));CHKPETSC(ierr);  
+  ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULL); CHKPETSC(ierr);
 
   RichardSolver::SetTheRichardSolver(this);
   ierr = SNESSolve(snes,PETSC_NULL,SolnV);CHKPETSC(ierr);
@@ -258,6 +298,10 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(snes,&reason);
+
+  if (params.scale_soln_before_solve) {
+      ierr = VecPointwiseMult(SolnV,SolnV,GetSolnTypV()); // Unscale current candidate solution
+  }
 
   if (reason <= 0) {
       return reason;
@@ -909,14 +953,12 @@ void RichardSolver::CreateJac(Mat& J,
   BaseFab<int> nodeNums;
   PetscErrorCode ierr;
   const BCRec& theBC = pm[0].get_desc_lst()[Press_Type].getBC(0);
-  PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
   PArray<MultiFab> kr_params(nLevs,PArrayNoManage);
   
   for (int lev=0; lev<nLevs; ++lev) {
-    pcap_params.set(lev, pm[lev].PCapParams());
     kr_params.set(lev, pm[lev].KrParams());
   }
-  MFTower PCapParamsMFT(layout,pcap_params);
+  MFTower& PCapParamsMFT = GetPCapParams();
   MFTower KrParamsMFT(layout,kr_params);
 
   const Array<int>& rinflow_bc_lo = pm[0].rinflowBCLo();
@@ -1072,20 +1114,26 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     if (!rs) {
         BoxLib::Abort("Bad cast in RichardRes_DpDt");
     }
+
+    if (rs->Parameters().scale_soln_before_solve) {
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); // Unscale solution
+    }
+
     Layout& layout = PMAmr::GetLayout();
     MFTower& xMFT = rs->GetPressure();
     MFTower& fMFT = rs->GetResidual();
 
     ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
-    ierr = layout.VecToMFTower(fMFT,f,0); CHKPETSC(ierr);
 
     Real time = rs->GetTime();
     Real dt = rs->GetDt();
     rs->DpDtResidual(fMFT,xMFT,time,dt);
 
-    ierr = layout.MFTowerToVec(x,xMFT,0); CHKPETSC(ierr);
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
+    if (rs->Parameters().scale_soln_before_solve) {
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); // Reset solution scaling
+    }
     return 0;
 }
 
@@ -1238,6 +1286,7 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
 #endif
     }
+
     return ierr;
 }
 
@@ -1256,8 +1305,8 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
   PetscErrorCode ierr;
   PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
-  PetscScalar    dx,*y,*xx,*w3_array;
-  PetscScalar    *vscale_array, *sigma_array;
+  PetscScalar    dx,*y,*w3_array;
+  PetscScalar    *vscale_array, *solnTyp_array;
   PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   void           *fctx = coloring->fctx;
@@ -1304,16 +1353,6 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
 
   RichardSolver* rs = static_rs_ptr;
   BL_ASSERT(rs);
-  
-  Layout& layout = PMAmr::GetLayout();
-  int nLevs = layout.NumLevels();
-  PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
-  for (int lev=0; lev<nLevs; ++lev) {
-      pcap_params.set(lev, rs->GetPMlevel(lev).PCapParams());
-  }
-  MFTower PCapParamsMFT(layout,pcap_params);
-  Vec& SigmaV = rs->GetPCapParamsV();
-  ierr = layout.MFTowerToVec(SigmaV,PCapParamsMFT,2); CHKPETSC(ierr);
   ierr = VecGetOwnershipRange(w1,&start,&end);CHKPETSC(ierr); /* OwnershipRange is used by ghosted x! */
       
   /* Set w1 = F(x1) */
@@ -1334,23 +1373,32 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
 
     /* Compute all the local scale factors, including ghost points */
   ierr = VecGetLocalSize(x1_tmp,&N);CHKPETSC(ierr);
-  ierr = VecGetArray(x1_tmp,&xx);CHKPETSC(ierr);
-  ierr = VecGetArray(SigmaV,&sigma_array);CHKPETSC(ierr);
-  ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  if (ctype == IS_COLORING_GHOSTED){
-    col_start = 0; col_end = N;
-  } else if (ctype == IS_COLORING_GLOBAL){
-    xx = xx - start;
-    sigma_array = sigma_array - start;
-    vscale_array = vscale_array - start;
-    col_start = start; col_end = N + start;
+
+  if (rs->Parameters().scale_soln_before_solve) {
+      ierr = VecSet(coloring->vscale,1);
+      ierr = VecScale(coloring->vscale,1/epsilon);
   }
-  for (col=col_start; col<col_end; col++) { 
-      vscale_array[col] = (PetscScalar)sigma_array[col] / epsilon;
-  } 
-  if (ctype == IS_COLORING_GLOBAL)  vscale_array = vscale_array + start;      
-  ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  ierr = VecRestoreArray(SigmaV,&sigma_array);CHKPETSC(ierr);
+  else {
+      Vec& SolnTypV = rs->GetSolnTypV();
+      ierr = VecGetArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
+      ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+      if (ctype == IS_COLORING_GHOSTED){
+          col_start = 0; col_end = N;
+      } else if (ctype == IS_COLORING_GLOBAL){
+          solnTyp_array = solnTyp_array - start;
+          vscale_array = vscale_array - start;
+          col_start = start; col_end = N + start;
+      }
+      for (col=col_start; col<col_end; col++) { 
+          vscale_array[col] = (PetscScalar)(1.0 / (solnTyp_array[col] * epsilon));
+      } 
+      if (ctype == IS_COLORING_GLOBAL)  {
+          vscale_array = vscale_array + start;      
+          solnTyp_array = solnTyp_array + start;      
+      }
+      ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+      ierr = VecRestoreArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
+  }
 
   if (ctype == IS_COLORING_GLOBAL){
       ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
@@ -1364,48 +1412,104 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   /*
     Loop over each color
   */
-  ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  for (k=0; k<coloring->ncolors; k++) { 
-    coloring->currentcolor = k;
-    ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
-    ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;
-    /*
-      Loop over each column associated with color 
-      adding the perturbation to the vector w3.
-    */
-    for (l=0; l<coloring->ncolumns[k]; l++) {
-      col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
-      w3_array[col] += 1/vscale_array[col];
-    } 
-    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
-    ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+  int p = ParallelDescriptor::MyProc();
+  if (rs->Parameters().scale_soln_before_solve) {
+      //
+      // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
+      // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
+      //
+      for (k=0; k<coloring->ncolors; k++) { 
+          coloring->currentcolor = k;
 
-    /*
-      Evaluate function at w3 = x1 + dx (here dx is a vector of perturbations)
-                           w2 = F(x1 + dx) - F(x1)
-    */
-    ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-    ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-    ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-    ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-        
-    /*
-      Loop over rows of vector, putting results into Jacobian matrix
-    */
-    ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
-    for (l=0; l<coloring->nrows[k]; l++) {
-      row    = coloring->rows[k][l];             /* local row index */
-      col    = coloring->columnsforrow[k][l];    /* global column index */
-      y[row] *= vscale_array[vscaleforrow[k][l]];
-      srow   = row + start;
-      ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
-    }
-    ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
-  } /* endof for each color */
-  if (ctype == IS_COLORING_GLOBAL) xx = xx + start; 
-  ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-  ierr = VecRestoreArray(x1_tmp,&xx);CHKPETSC(ierr);
+          ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
+          ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
+          if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
+          for (l=0; l<coloring->ncolumns[k]; l++) {
+              col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
+              w3_array[col] += epsilon;
+          } 
+          if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
+          ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+          
+          // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
+          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+          
+          // Insert (w2_j / dx) into J_ij
+          PetscReal epsilon_inv = 1/epsilon;
+          ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
+          for (l=0; l<coloring->nrows[k]; l++) {
+              row    = coloring->rows[k][l];             /* local row index */
+              col    = coloring->columnsforrow[k][l];    /* global column index */
+              y[row] *= epsilon_inv;                     /* dx = epsilon */
+              srow   = row + start;                      /* global row index */
+              ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+          }
+          ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
+          
+      } /* endof for each color */
+
+  }
+  else {
+      ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+      if (ctype == IS_COLORING_GLOBAL) {
+          vscale_array = vscale_array - start;
+      }
+      
+      for (k=0; k<coloring->ncolors; k++) { 
+          coloring->currentcolor = k;
+          ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
+          ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
+          if (ctype == IS_COLORING_GLOBAL) {
+              w3_array = w3_array - start;
+          }
+          
+          /*
+            Loop over each column associated with color 
+            adding the perturbation to the vector w3.
+          */
+          for (l=0; l<coloring->ncolumns[k]; l++) {
+              col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
+              w3_array[col] += 1/vscale_array[col];
+          } 
+          if (ctype == IS_COLORING_GLOBAL) {
+              w3_array = w3_array + start;
+          }
+          ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+          
+          /*
+            Evaluate function at w3 = x1 + dx (here dx is a vector of perturbations)
+            w2 = F(x1 + dx) - F(x1)
+          */
+          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+          
+          /*
+            Loop over rows of vector, putting results into Jacobian matrix
+          */
+          
+          
+          ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
+          for (l=0; l<coloring->nrows[k]; l++) {
+              row    = coloring->rows[k][l];             /* local row index */
+              col    = coloring->columnsforrow[k][l];    /* global column index */
+              y[row] *= vscale_array[vscaleforrow[k][l]];
+              srow   = row + start;
+              ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+          }
+          ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
+                    
+      } /* endof for each color */
+      if (ctype == IS_COLORING_GLOBAL) {
+          vscale_array = vscale_array + start;
+      }
+      
+      ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+  }
    
   coloring->currentcolor = -1;
   ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);

@@ -2235,25 +2235,42 @@ c ::: ----------------------------------------------------------
 c ::: Average the edge-centered velocities to a cell-centered quantity.
 c ::: ----------------------------------------------------------
       subroutine FORT_AVG_UMAC(umac,DIMS(umac),vmac,DIMS(vmac),
-     &                         vel,DIMS(vel),lo,hi)
+     &                         vel,DIMS(vel),lo,hi,upwind_flag)
 
       integer DIMDEC(umac)
       integer DIMDEC(vmac)
       integer DIMDEC(vel)
-      integer lo(SDIM),hi(SDIM)
+      integer lo(SDIM),hi(SDIM),upwind_flag
       REAL_T umac(DIMV(umac))
       REAL_T vmac(DIMV(vmac))
       REAL_T  vel(DIMV(vel),SDIM)
 
       integer i,j
 
-      do j = lo(2),hi(2)
-        do i = lo(1),hi(1)
-          vel(i,j,1) = half * (umac(i,j) + umac(i+1,j))
-          vel(i,j,2) = half * (vmac(i,j) + vmac(i,j+1))
-        end do
-      end do
+      if (upwind_flag .eq. 0) then
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               vel(i,j,1) = half * (umac(i,j) + umac(i+1,j))
+               vel(i,j,2) = half * (vmac(i,j) + vmac(i,j+1))
+            end do
+         end do
+      else
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               if (umac(i,j) * umac(i+1,j) .le. 0.d0) then 
+                  vel(i,j,1) = half * (umac(i,j) + umac(i+1,j))
+               else
+                  vel(i,j,1) = merge(umac(i,j),umac(i+1,j),umac(i,j).gt.0.d0)
+               endif
 
+               if (vmac(i,j) * vmac(i,j+1) .le. 0.d0) then 
+                  vel(i,j,2) = half * (vmac(i,j) + vmac(i,j+1))
+               else
+                  vel(i,j,2) = merge(vmac(i,j),vmac(i,j+1),vmac(i,j).gt.0.d0)
+               endif
+            end do
+         end do
+      endif
       end
 
 c ::: -------------------------------------------------------------

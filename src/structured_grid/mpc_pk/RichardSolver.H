@@ -28,6 +28,7 @@ public:
     Real atol; // Absolute tolerance for norm(F)
     Real rtol; // Relative tolerance for norm(F)
     Real stol; // Absolute tolerance for norm(dp), dp is the Newton update
+    bool scale_soln_before_solve; // Switch, scale P by 1/sigma before solve?
   };
 
   RichardSolver(PMAmr&          pm_amr,
@@ -49,7 +50,9 @@ public:
   MFTower& GetResidual() {return *Rhs;}
   Vec& GetResidualV() {return RhsV;}
   Vec& GetTrialResV() {return GV;}
-  Vec& GetPCapParamsV() {return PCapParamsV;}
+  MFTower& GetPCapParams() {return *PCapParams;}
+  Vec& GetSolnTypV() {return SolnTypV;}
+  Vec& GetSolnTypInvV() {return SolnTypInvV;}
   PArray<MFTower>& GetDarcyVelocity() {return DarcyVelocity;}
   PArray<MFTower>& GetRichardCoefs() {return RichardCoefs;}
   const Array<Real>& GetDensity() {return density;}
@@ -148,10 +151,10 @@ protected:
 
   int nLevs;
   Array<PArray<MultiFab> > ktmp, ctmp; // Currently maintains its own copy of these, should be fixed
-  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCC;
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCC, *PCapParams;
   PArray<MFTower> Kappa, DarcyVelocity, RichardCoefs;
 
-  Vec RhsV, SolnV, PCapParamsV, GV;
+  Vec RhsV, SolnV, SolnTypV, SolnTypInvV, GV;
   Mat Jac;
 
   Array<Real> gravity;
