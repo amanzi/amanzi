@@ -135,6 +135,87 @@ PMAmr::init (Real strt_time_,
     }
 }
 
+#if 0
+class ProcessIntegrator
+{
+    ProcessIntegrator(PMAmr& pmamr);
+
+    virtual Real Integrate(Real dt0);
+    virtual bool Step(Real dt);
+    virtual void PreStepMonitor() {}
+    virtual void PostStepMonitor() {}
+    virtual void HandleFailedStep() {}
+
+    Real IntegrateLevel(int  level,
+                        Real time,
+                        int  iteration,
+                        int  niter,
+                        Real stop_time);
+
+    PArray<ProcessIntegrator> sub_process_integrators;
+    
+    PMAmr& pmamr;
+};
+
+bool
+ProcessIntegrator::Step(Real dt)
+{
+    IntegrateLevel(lev_fine,time+(i-1)*dt_level[lev_fine],i,ncycle,stop_time);
+
+    if (level < finest_level)
+    {
+        const int lev_fine = level+1;
+
+        if (sub_cycle)
+        {
+            const int ncycle = n_cycle[lev_fine];
+
+            for (int i = 1; i <= ncycle; i++)
+                IntegrateLevel(lev_fine,time+(i-1)*dt_level[lev_fine],i,ncycle,stop_time);
+        }
+        else
+        {
+            pm_timeStep(lev_fine,time,1,1,stop_time);
+        }
+    }
+
+    amr_level[level].post_timestep(iteration);
+}
+
+
+ProcessIntegrator::ProcessIntegrator(PMAmr& _pmamr)
+    : pmamr(_pmamr)
+{
+}
+
+Real 
+ProcessIntegrator::Integrate(Real dt)
+{
+    PreStepMonitor();
+    bool step_succeeded = Step(dt);
+    if (!step_succeeded) {
+        HandleFailedStep();
+    }
+    PostStepMonitor();
+}
+
+Real 
+ProcessIntegrator::IntegrateLevel(int  level,
+                                  Real time,
+                                  int  iteration,
+                                  int  niter,
+                                  Real stop_time)
+{
+    Real dt_new = amr_level[level].advance(time,dt_level[level],iteration,niter);
+
+    dt_min[level] = iteration == 1 ? dt_new : std::min(dt_min[level],dt_new);
+
+    level_steps[level]++;
+    level_count[level]++;
+
+}
+#endif
+
 void
 PMAmr::pm_timeStep (int  level,
                     Real time,
@@ -265,22 +346,37 @@ PMAmr::pm_timeStep (int  level,
     {
         std::cout << "ADVANCE grids at level "
                   << level
+                  << " at time = " 
+                  << time
                   << " with dt = "
                   << dt_level[level]
                   << std::endl;
     }
-    Real dt_new = amr_level[level].advance(time,dt_level[level],iteration,niter);
 
-    if (level==0) {
-        dt0_from_previous_advance = dt_new;
+        //Real dt_new = amr_level[level].advance(time,dt_level[level],iteration,niter);
+
+    Real dt_taken, dt_suggest;
+    bool step_ok = dynamic_cast<PorousMedia&>(amr_level[level]).ml_step_driver(time,dt_level[level],dt_taken,dt_suggest);
+
+    if (step_ok) {
+        dt_level[level] = dt_taken;
+        int fac = 1;
+        for (int lev = level+1; lev<=finest_level; ++lev) {
+            fac *= n_cycle[lev];
+            dt_level[lev] = dt_level[lev-1] * fac;
+        }
+        dt0_from_previous_advance = dt_suggest;
+    }
+    else {
+        BoxLib::Abort("Step failed");
     }
 
-    dt_min[level] = iteration == 1 ? dt_new : std::min(dt_min[level],dt_new);
+    dt_min[level] = iteration == 1 ? dt_suggest : std::min(dt_min[level],dt_suggest);
 
     level_steps[level]++;
     level_count[level]++;
 
-    if (verbose > 0 && ParallelDescriptor::IOProcessor())
+    if (verbose > 2 && ParallelDescriptor::IOProcessor())
     {
         std::cout << "Advanced "
                   << amr_level[level].countCells()
@@ -324,41 +420,15 @@ PMAmr::coarseTimeStep (Real stop_time)
 {
     const Real run_strt = ParallelDescriptor::second() ;    
     
-    //
-    // Compute new dt.
-    //
-    if (level_steps[0] <= 0 && PorousMedia::DtInit() > 0) 
-    {
-        int n_factor = 1;
-        for (int i = 0; i <= max_level; i++)
-        {
-            n_factor   *= n_cycle[i];
-            dt_level[i] = PorousMedia::DtInit()/( (Real)n_factor );
-        }
-    }
-    else 
-    {
-        int post_regrid_flag = 0;
-        amr_level[0].computeNewDt(finest_level,
-                                  sub_cycle,
-                                  n_cycle,
-                                  ref_ratio,
-                                  dt_min,
-                                  dt_level,
-                                  stop_time,
-                                  post_regrid_flag);
-
-#if 0
-        if (dt0_before_event_cut > 0) {
-            dt_level[0] = dt0_before_event_cut;
-            for (int lev = 1; lev <= finest_level; lev++) {
-                dt_level[lev] = dt_level[lev-1]/Real(MaxRefRatio(lev-1));
-            }
-            setDtLevel(dt_level);
-        }
-#endif
-    }
-
+    int post_regrid_flag = 0;
+    amr_level[0].computeNewDt(finest_level,
+                              sub_cycle,
+                              n_cycle,
+                              ref_ratio,
+                              dt_min,
+                              dt_level,
+                              stop_time,
+                              post_regrid_flag);
 
     if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())
     {
@@ -367,8 +437,32 @@ PMAmr::coarseTimeStep (Real stop_time)
 
     bool write_plot, write_check;
     Array<int> observations_to_process;
+
+    // NOTE: This is a hack to help keep dt from jumping too much.  Normally, the event processing
+    // will only detect an even during the current time step.  If one is detected, the time step
+    // is cut to hit the event.  Here, we check the current time interval, but also a guess for
+    // the next one.  If one is detected during the next interval, we split the time remaining
+    // between the two steps.  Under normal conditions, this will ensure that dt doesn't abruptly
+    // change by more than 50%, at least not due to an event detection.
+    bool look_ahead_two_steps = true;
+    Real dt2_red = -1;
+    if (look_ahead_two_steps) {
+        dt2_red = process_events(write_plot,write_check,observations_to_process,event_coord,
+                                 cumtime, 2*dt_level[0], level_steps[0] + 1, 1);
+        observations_to_process.clear();
+        write_check=false;
+        write_plot=false;
+    }
+
     Real dt_red = process_events(write_plot,write_check,observations_to_process,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
+    
+    // Note: if dt_red > 0, then dt_red == dt2_red
+    if (dt2_red > 0) {
+        if (dt_red < 0) {
+            dt_red = dt2_red / 2; // Nothing in 1 step, but something in 2
+        }
+    }
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
         dt0_before_event_cut = dt_level[0];
@@ -393,7 +487,7 @@ PMAmr::coarseTimeStep (Real stop_time)
 
         ParallelDescriptor::ReduceRealMax(run_stop,IOProc);
 
-        if (verbose>1 && ParallelDescriptor::IOProcessor())
+        if (verbose>3 && ParallelDescriptor::IOProcessor())
             std::cout << "\nCoarse TimeStep time: " << run_stop << '\n' ;
 
         long min_fab_bytes = BoxLib::total_bytes_allocated_in_fabs_hwm;
@@ -406,7 +500,7 @@ PMAmr::coarseTimeStep (Real stop_time)
         //
         BoxLib::total_bytes_allocated_in_fabs_hwm = 0;
 
-        if (verbose>1 && ParallelDescriptor::IOProcessor())
+        if (verbose>3 && ParallelDescriptor::IOProcessor())
             std::cout << "\nFAB byte spread across MPI nodes for timestep: ["
                       << min_fab_bytes << " ... " << max_fab_bytes << "]\n";
     }
@@ -415,7 +509,7 @@ PMAmr::coarseTimeStep (Real stop_time)
     {
         std::cout << "\nSTEP = "
                  << level_steps[0]
-                  << " TIME = "
+                  << " COMPLETE.  TIME = "
                   << cumtime
                   << " DT = "
                   << dt_level[0]

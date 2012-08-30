@@ -371,10 +371,11 @@ public:
 			int  iteration,
 			int  ncycle);
 
-  Real multilevel_advance (Real time,
-			   Real dt,
-			   int  iteration,
-			   int  ncycle);
+  bool multilevel_advance (Real  time,
+			   Real  dt,
+			   int   iteration,
+			   int   ncycle,
+                           Real& dt_new);
 
   void advance_incompressible  (Real time,
 				Real dt);
@@ -386,8 +387,15 @@ public:
   void advance_richard  (Real time,
 			 Real dt); 
  
-  Real advance_multilevel_richard  (Real time,
-				    Real dt);
+  bool advance_multilevel_richard  (Real  time,
+				    Real  dt,
+                                    Real& dt_new);
+
+  bool ml_step_driver(Real  time,
+                      Real  dt_try,
+                      Real& dt_taken,
+                      Real& dt_suggest);
+
 #endif
   void advance_multilevel_saturated (Real time,
 				     Real dt);
@@ -487,7 +495,8 @@ public:
 
   void advance_cleanup (Real dt,
 			int  iteration,
-			int  ncycle);
+			int  ncycle,
+                        bool do_revert = false);
   //
   // Compute divergent mac velocities, estimate best timestep
   // from t^n data, and compile cfl number.

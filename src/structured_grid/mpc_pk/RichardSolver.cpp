@@ -293,9 +293,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   ierr = SNESGetIterationNumber(snes,&iters);CHKPETSC(ierr);
   nl_data.SetNLIterationsTaken(iters);
 
-  int nfuncs;
-  ierr = SNESGetNumberFunctionEvals(snes,&nfuncs);CHKPETSC(ierr);
-
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(snes,&reason);
 
@@ -309,10 +306,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   // Copy solution from Vec back into state
   ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
-
-  if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "     Newton converged in " << nl_data.NLIterationsTaken() << " iterations\n";
-  }
 
   return reason;
 }
