@@ -40,6 +40,29 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
         Teuchos::Array<double> vtimes = observable_plist.get<Teuchos::Array<double> >("times");
         times = vtimes.toVector();
       }
+
+      std::vector<int> cycles;
+      std::vector<std::vector<int> > cycle_sps;
+
+      // get the observation cycles
+      if (observable_plist.isSublist("cycle start period stop")) {
+        Teuchos::ParameterList& csps_list = observable_plist.sublist("cycle start period stop");
+        for (Teuchos::ParameterList::ConstIterator it = csps_list.begin(); it != csps_list.end(); ++it) {
+          std::string name = it->first;
+          if (csps_list.isSublist(name)) {
+            Teuchos::ParameterList& itlist = csps_list.sublist(name);
+            if (itlist.isParameter("start period stop")) {
+              Teuchos::Array<int> csps = itlist.get<Teuchos::Array<int> >("start period stop");
+              cycle_sps.push_back(csps.toVector());
+            }
+          }
+        }
+      }
+      if (observable_plist.isParameter("cycles")) {
+        Teuchos::Array<int> vcycles = observable_plist.get<Teuchos::Array<int> >("cycles");
+        cycles = vcycles.toVector();
+      }
+
       // loop over all variables listed and create an observable for each
       std::string var = observable_plist.get<string>("Variable");
       observations.insert(std::pair
@@ -47,7 +70,7 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
                                                     Observable(var,
                                                                observable_plist.get<string>("Region"),
                                                                observable_plist.get<string>("Functional"),
-                                                               times, time_sps)));
+                                                               cycles, cycle_sps, times, time_sps)));
     }
   }
 }
@@ -68,7 +91,8 @@ void Unstructured_observations::make_observations(State& state)
     std::string label = i->first;
 
     // make sure that we need to make an observation now
-    if (observation_requested(state.get_time(), state.get_last_time(), (i->second).times, (i->second).sps)) {
+    if (observation_requested(state.get_time(), state.get_last_time(), (i->second).times, (i->second).sps) ||
+        observation_requested(state.get_cycle(), (i->second).cycles, (i->second).csps ) ) {
       // we need to make an observation for each variable in the observable
       std::string var = (i->second).variable;
 
@@ -99,10 +123,10 @@ void Unstructured_observations::make_observations(State& state)
 
 void Unstructured_observations::register_with_time_step_manager(TimeStepManager& TSM) {
   // loop over all observables
-  for (std::map<std::string, Observable>::const_iterator i = observations.begin(); 
+  for (std::map<std::string, Observable>::const_iterator i = observations.begin();
        i != observations.end(); i++) {
     if ((i->second).sps.size() > 0) {
-      for (std::vector<std::vector<double> >::const_iterator j=(i->second).sps.begin(); 
+      for (std::vector<std::vector<double> >::const_iterator j=(i->second).sps.begin();
            j!=(i->second).sps.end(); ++j) {
         if (j->size() == 3) {
           TSM.RegisterTimeEvent((*j)[0], (*j)[1], (*j)[2]);
@@ -115,22 +139,50 @@ void Unstructured_observations::register_with_time_step_manager(TimeStepManager&
   }
 }
 
-bool Unstructured_observations::observation_requested(double time, double last_time, 
-                                                      const std::vector<double>& T, 
+bool Unstructured_observations::observation_requested(double time, double last_time,
+                                                      const std::vector<double>& T,
                                                       const std::vector<std::vector<double> >& SPS) {
-  for (int i = 0; i < T.size(); i++) 
-    if (Amanzi::near_equal(T[i],time)) return true;
+  for (int i = 0; i < T.size(); i++)
+    if (Amanzi::near_equal(T[i],time)) {
+      return true;
+    }
   if (SPS.size() > 0) {
     for (std::vector<std::vector<double> >::const_iterator i=SPS.begin(); i!=SPS.end(); ++i) {
-      if  (time >= (*i)[0] && ((*i)[2] == -1.0 || time <= (*i)[2])) {
-        if (Amanzi::near_equal(time,(*i)[0])) return true;
-	double n_periods = floor((time - (*i)[0])/(*i)[1]);
-	double tmp = (*i)[0] + n_periods*(*i)[1];	
-	if (Amanzi::near_equal(time,tmp)) return true;
+      if  ( (Amanzi::near_equal(time,(*i)[0]) || time >= (*i)[0]) && 
+	    (Amanzi::near_equal((*i)[2],-1.0) || time <= (*i)[2] || Amanzi::near_equal(time,(*i)[2]) ) ) {
+        if (Amanzi::near_equal(time,(*i)[0])) {
+	  return true;
+	}
+	double n_per_tmp = (time - (*i)[0])/(*i)[1];
+        double n_periods = floor(n_per_tmp);
+	if (Amanzi::near_equal(n_periods+1.0,n_per_tmp)) n_periods += 1.0;
+        double tmp = (*i)[0] + n_periods*(*i)[1];
+	if (Amanzi::near_equal(time,tmp)) {
+	  return true;
+	}
       }
     }
   }
   return false;
 }
+
+
+bool Unstructured_observations::observation_requested(int cycle,
+                                                      const std::vector<int>& cyc,
+                                                      const std::vector<std::vector<int> >& isps) {
+  for (int i = 0; i < cyc.size(); i++)
+    if (cyc[i] == cycle) return true;
+  if (isps.size() > 0) {
+    for (std::vector<std::vector<int> >::const_iterator i=isps.begin(); i!=isps.end(); ++i) {
+      if  (cycle >= (*i)[0] && ((*i)[2] == -1 || cycle <= (*i)[2])) {
+        if (  ( cycle-(*i)[0] ) % (*i)[1] == 0 ) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+
 
 }  // namespace Amanzi

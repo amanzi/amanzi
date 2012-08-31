@@ -118,16 +118,7 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
         if ( ( ( stop < 0 ) || ( cycle <= stop ) )
              && ( cycle >= start) )
         {
-            // Is on interval boundary
             int cold_interval = (cycle - start)/period;
-            int cold_boundary = start + cold_interval*period;
-            int cold_overage = cycle - cold_boundary;
-
-            // cold is on boundary
-            if ( cold_overage == 0 ) {
-                return true;
-            }
-
             int cnew_interval = (cycle + dCycle - start)/period;
             int cnew_boundary = start + cnew_interval*period;
             int cnew_overage = cycle + dCycle - cnew_boundary;
@@ -139,9 +130,9 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
 
             int next_boundary = (cold_interval + 1)*period;
 
-            if (stop < 0  ||  next_boundary <= stop) {
+            if (next_boundary <= cycle + dCycle) {
                 dCycle_red = std::min(dCycle, next_boundary - cycle);
-                if (dCycle_red < dCycle) {
+                if (dCycle_red <= dCycle) {
                     BL_ASSERT(dCycle_red > 0);
                     return true;
                 }
@@ -150,7 +141,7 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
     }
     else {
         for (int i=0; i<cycles.size(); ++i) {
-            if (cycles[i] == cycle+1) {
+            if (cycles[i] == cycle+dCycle) {
                 return true;
             }
         }

@@ -64,6 +64,9 @@ class Darcy_PK : public Flow_PK {
   void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void UpdateSpecificYield();
 
+  void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
+  double ErrorEstimate(double* dTfactor);
+
   // linear solvers
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1;}
@@ -114,6 +117,7 @@ class Darcy_PK : public Flow_PK {
 
   int num_itrs_trs;  // Parameters for transient solver
   double dT_desirable_;
+  int dT_method_;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
@@ -121,6 +125,9 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
   Teuchos::RCP<Epetra_Vector> rhs_faces;
 
+  Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
+  Teuchos::RCP<Epetra_Vector> pdot_cells;
+ 
   BoundaryFunction* bc_pressure;  // Boundary conditions. 
   BoundaryFunction* bc_head;
   BoundaryFunction* bc_flux;
@@ -132,6 +139,7 @@ class Darcy_PK : public Flow_PK {
   int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
+  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 

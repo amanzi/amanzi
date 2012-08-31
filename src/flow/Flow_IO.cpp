@@ -41,6 +41,9 @@ void Flow_PK::ProcessSublistTimeIntegration(
     ti_specs.dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
     ti_specs.dTmax = tmp_list.get<double>("maximum time step", AmanziFlow::FLOW_MAXIMUM_DT);
 
+    ti_specs.atol = tmp_list.get<double>("absolute error tolerance", 1e-3);
+    ti_specs.rtol = tmp_list.get<double>("relative error tolerance", 1e-3);
+
   } else if (name != "none") {
     msg << "\nFlow PK: specified time integration sublist does not exist.";
     Exceptions::amanzi_throw(msg);

@@ -8,6 +8,7 @@ Teuchos::ParameterList translate (Teuchos::ParameterList* plist, int numproc);
 
 Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::ParameterList* plist );
 Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist );
+Teuchos::Array<int> get_Cycle_Macro_Values ( const std::string& macro_name, Teuchos::ParameterList* plist );
 Teuchos::Array<std::string> get_Variable_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist );
 void init_global_info( Teuchos::ParameterList* plist );
 
@@ -31,6 +32,7 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_BILU_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_HypreAMG_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
+void output_boundary_conditions( Teuchos::ParameterList* plist );
 
 static std::string phase_name;
 static std::string phase_comp_name;

@@ -75,7 +75,9 @@ Epetra_Map* Flow_PK::CreateSuperMap()
 
 
 /* ******************************************************************
-* Add a boundary marker to used faces.                                          
+* Add a boundary marker to used faces.
+* WARNING: we can skip update of ghost boundary faces, b/c they 
+* should be always owned. 
 ****************************************************************** */
 void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,

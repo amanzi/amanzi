@@ -17,13 +17,14 @@ find_package(Python)
 if ( PYTHON_FOUND )
 
   # Define the install location
-  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib(1,0,prefix='${CMAKE_INSTALL_PREFIX}'))"
+  get_filename_component(real_install_prefix ${CMAKE_INSTALL_PREFIX} REALPATH)
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib(1,0,prefix='${real_install_prefix}'))"
                   OUTPUT_VARIABLE AmanziPython_INSTALL_PREFIX
                   RESULT_VARIABLE prefix_err
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(prefix_err)
-    message(SEND_ERROR "Failed to define the python from distutils. Set to ${CMAKE_INSTALL_PREFIX}/python.")
-    set(AmanziPython_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/python)
+    message(SEND_ERROR "Failed to define the python from distutils. Set to ${real_install_prefix}/python.")
+    set(AmanziPython_INSTALL_PREFIX ${real_install_prefix}/python)
   endif()
 
   # Define the Amanzi binary install location

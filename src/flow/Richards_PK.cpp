@@ -45,6 +45,20 @@ namespace AmanziFlow {
 ****************************************************************** */
 Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
+  // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
+  bc_pressure = NULL; 
+  bc_head = NULL;
+  bc_flux = NULL;
+  bc_seepage = NULL; 
+
+  super_map_ = NULL; 
+  solver = NULL; 
+  matrix_ = NULL; 
+  preconditioner_ = NULL;
+
+  bdf2_dae = NULL;
+  bdf1_dae = NULL;
+
   Flow_PK::Init(FS_MPC);
   FS = FS_MPC;
 
@@ -106,9 +120,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 #endif
 
   // miscalleneous
-  solver = NULL;
-  bdf2_dae = NULL;
-  bdf1_dae = NULL;
   block_picard = 1;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
@@ -161,10 +172,9 @@ void Richards_PK::InitPK()
   // Get solver parameters from the flow parameter list.
   ProcessParameterList();
 
-  // Process boundary data (state may be incomplete at this moment)
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
-  bc_values.resize(nfaces, 0.0);
+  // Process boundary data
+  bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
+  bc_values.resize(nfaces_wghost, 0.0);
 
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;

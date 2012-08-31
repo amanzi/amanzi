@@ -5,6 +5,8 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+#include "InputParserIS-defaults.hh"
+
 #include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_Vector.H"
@@ -18,8 +20,6 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-
-#include "Timer.hh"
 
 
 namespace Amanzi {
@@ -70,8 +70,11 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.rtol = paramList_->get<double>("error rel tol");
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
+  state.currentpclag = state.maxpclag;
 
   state.nonlinear_solver = BDFNKA;
+  
+  max_divergence_count_ = paramList_->get<int>("max divergent interations", MAX_DIVERGENT_ITERATIONS);
 
   std::string nstype = paramList_->get<std::string>("nonlinear solver", "NKA");
   if (nstype == "NKA") {
@@ -175,6 +178,10 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
                               1.0,
                               "Relative error prefactor.",
                               &*pl);
+    setIntParameter("max divergent iterations",
+		              3,
+		    "Maximum divergent nonlinear iterations the bdf1 time iterator will tolerate",
+		              &*pl);
     setupVerboseObjectSublist(&*pl);
     validParams = pl;
   }
@@ -324,9 +331,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
   
-  Timer ttotal;
-  
-  ttotal.start();
 
   fpa->nka_restart();
 
@@ -343,6 +347,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   double du_norm(0.0), previous_du_norm(0.0);
   int divergence_count(0);
 
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
+    *out << "BDF1: preconditioner lag is " << state.currentpclag  <<std::endl;
+  }  
+
   do {
     // Check for too many nonlinear iterations.
     if (itr > state.mitr) {
@@ -355,11 +363,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // update the preconditioner if necessary
     // DEBUG: Nathan
     int errc(0);
-    if (itr%(state.maxpclag+1)==0) {
-      Timer t1;
-      t1.start();
+    if (itr%(state.currentpclag+1)==0) {
       fn.update_precon (t, u, h, errc);
-      t1.stop();
     }
  
 
@@ -375,22 +380,16 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
-    
-   
-    
+
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
     
     // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
-    
-    
 
     // compute the accellerated correction
     fpa->nka_correction(nev_du, preconditioned_f);
-    
-    
 
     // copy result into an Epetra_Vector.
     du = nev_du.getEpetraVector();  
@@ -414,6 +413,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     if (itr > 1 && du_norm > 1000.0 * previous_du_norm) {
       *out << itr << ": error (infinity norm) " << du_norm << std::endl;
       *out << "Nonlinear solver is threatening to overflow, cutting current time step." << std::endl;
+      state.currentpclag = 0;
       throw state.mitr+1;
     }
 
@@ -423,9 +423,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       ++divergence_count;
 
       // if it does not recover quickly, abort
-      if (divergence_count == 3) {
-    *out << "Nonlinear solver is starting to diverge, cutting current time step." << std::endl;
-    throw state.mitr+1;
+      if (divergence_count == max_divergence_count_) {
+	*out << "Nonlinear solver is starting to diverge, cutting current time step." << std::endl;
+	state.currentpclag = 0;
+	throw state.mitr+1;
       }
     } else {
       divergence_count = 0;
@@ -447,12 +448,14 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     if (error < state.ntol)   {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
-
-      ttotal.stop();
-
       }
 
-      if ((itr < state.minitr) || (itr > state.maxitr)) {
+      if (itr < state.minitr) {
+	state.currentpclag = std::min(state.currentpclag+1, state.maxpclag);
+	throw itr;
+      }
+      if (itr > state.maxitr) {
+	state.currentpclag = std::max(state.currentpclag-1, 0);
         throw itr;
       }
 
@@ -467,14 +470,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
 void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vector& u) {
 
-  Timer ttotal;
-  
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-
-  ttotal.start();
 
 //   u0.Print(std::cout);
 //   u.Print(std::cout);
@@ -672,9 +671,6 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 //   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
     u = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
-    ttotal.stop();
-
-//     std::cout << "nonlinear solver takes: " << ttotal << std::endl;
     write_bdf1_stepping_statistics();
 
     throw solver->getNumIterations();

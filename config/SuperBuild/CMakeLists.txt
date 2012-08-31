@@ -188,8 +188,6 @@ set(Amanzi_CMAKE_CXX_COMPILER_ARGS
      -DCMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}
      -DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
 
-print_variable(Amanzi_CMAKE_CXX_COMPILER_ARGS)
-
 # Fortran language flags    
 set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
@@ -328,6 +326,12 @@ endif()
 option(ENABLE_HYPRE "Build the HYPRE solver package" FALSE)
 if ( ENABLE_HYPRE )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
+endif()
+
+# PETSc
+option(ENABLE_PETSC "Build the PETSc package" FALSE)
+if (ENABLE_PETSC)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
 endif()
 
 # Trilinos  

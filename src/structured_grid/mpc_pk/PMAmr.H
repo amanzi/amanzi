@@ -23,6 +23,13 @@ public:
     virtual void initialInit (Real strt_time,
                               Real stop_time);
 
+    void pm_timeStep (int  level,
+                      Real time,
+                      int  iteration,
+                      int  niter,
+                      Real stop_time);
+        
+
     static EventCoord& eventCoord() {return event_coord;}
 
     void SetCumTime(Real strt_time) {cumtime = strt_time;}
@@ -32,6 +39,10 @@ public:
     void SetStartTime(Real time) {strt_time = time;}
 
     static Layout& GetLayout() {return layout;}
+
+    Real Dt0FromPreviousAdvance() const {return dt0_from_previous_advance;}
+    Real Dt0BeforeEventCut() const {return dt0_before_event_cut;}
+
 protected:
     static Layout layout;
     static EventCoord event_coord;
@@ -46,7 +57,8 @@ private:
 
     Real strt_time;
 
-    static Real dt_previous;
+    Real dt0_before_event_cut;
+    Real dt0_from_previous_advance;
 };
 
 #endif /*_PMAmr_H_*/

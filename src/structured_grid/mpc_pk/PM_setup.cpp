@@ -234,7 +234,9 @@ Array<Real> PorousMedia::visc_coef;
 //
 // Transport flame
 //
-int  PorousMedia::do_tracer_transport;
+bool PorousMedia::do_tracer_transport;
+bool PorousMedia::setup_tracer_transport;
+int  PorousMedia::transport_tracers;
 //
 // Chemistry flag.
 //
@@ -556,7 +558,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::variable_scal_diff = 1; 
 
   PorousMedia::do_chem            = 0;
-  PorousMedia::do_tracer_transport          = -1;
+  PorousMedia::do_tracer_transport = false;
+  PorousMedia::setup_tracer_transport = false;
+  PorousMedia::transport_tracers = 0;
   PorousMedia::do_full_strang     = 1;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -1544,6 +1548,9 @@ void PorousMedia::read_prob()
   pb.query("model",model);
 
   pb.query("do_tracer_transport",do_tracer_transport);
+  if (do_tracer_transport) {
+      setup_tracer_transport = true; // NOTE: May want these data structures regardless...
+  }
 
   // Verbosity
   pb.query("v",verbose);
@@ -2212,9 +2219,13 @@ void  PorousMedia::read_tracer(int do_chem)
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          if (do_chem>0  ||  do_tracer_transport == 1) {
+          if (do_chem>0  ||  do_tracer_transport) {
+              setup_tracer_transport = true;
               std::string g="Total"; ppr.query("group",g); // FIXME: is this relevant anymore?
               group_map[g].push_back(i+ncomps);
+          }
+          else {
+              setup_tracer_transport = false;
           }
 
           // Initial condition and boundary condition  
@@ -2249,7 +2260,7 @@ void  PorousMedia::read_tracer(int do_chem)
               }
           }
 
-          if (do_tracer_transport)
+          if (setup_tracer_transport)
           {
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");

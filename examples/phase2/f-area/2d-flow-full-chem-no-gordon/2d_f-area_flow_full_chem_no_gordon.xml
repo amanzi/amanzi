@@ -12,15 +12,17 @@
 
   <!-- Execution control -->
   <ParameterList name="Execution Control">
+
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="On"/> 
     <Parameter name="Chemistry Model" type="string" value="On"/>
     <Parameter name="Verbosity" type="string" value="High"/>
+
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
 	<Parameter name="Switch" type="double" value="6.16635504e+10"/> <!-- Jan 1955 -->
-	<Parameter name="End" type="double" value="6.6271e+10"/> <!-- 2100 year-->
+	<Parameter name="End" type="double" value="6.48508680e+10"/> <!-- Jan 2055 -->
    	<Parameter name="Steady Initial Time Step" type="double" value="1.0e6"/>
 	<Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
         <Parameter name="Use Picard" type="bool" value="true"/>
@@ -240,6 +242,7 @@
         <Parameter name="Sr" type="double" value="0.18"/>
         <Parameter name="m" type="double" value="0.27"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+	<!--Parameter name="krel smoothing interval" type="double" value="100.0"/-->
       </ParameterList>
       <ParameterList name="Mineralogy">
 
@@ -876,7 +879,8 @@
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array double" value="{0.0, 6.16635504e+10, 6.27365088e+10}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant,Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array double" value="{4.743e-6, 1.2648e-4, 4.743e-6}"/>  <!-- 4 [m3 m-2 yr-1] -->
+	<!-- less than 4 [m3 m-2 yr-1], mean recalculated by Haruko (8/7/12) -->
+        <Parameter name="Inward Mass Flux" type="Array double" value="{4.743e-6, 1.11e-4, 4.743e-6}"/> 
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">

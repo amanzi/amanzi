@@ -68,8 +68,7 @@ int main(int argc, char *argv[]) {
     
     Teuchos::CommandLineProcessor::EParseCommandLineReturn
       parseReturn = CLP.parse(argc, argv);
-       
-
+ 
     // read the main parameter list
     Teuchos::ParameterList driver_parameter_list;
     Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
