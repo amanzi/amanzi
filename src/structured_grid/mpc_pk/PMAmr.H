@@ -35,7 +35,7 @@ public:
     void SetCumTime(Real strt_time) {cumtime = strt_time;}
     Real GetCumTime() const {return cumtime;}
   
-    Real StartTime() const {return strt_time;}
+    Real GetStartTime() const {return strt_time;}
     void SetStartTime(Real time) {strt_time = time;}
 
     static Layout& GetLayout() {return layout;}

@@ -397,8 +397,9 @@ public:
                       Real& dt_suggest);
 
 #endif
-  void advance_multilevel_saturated (Real time,
-				     Real dt);
+  bool advance_multilevel_saturated (Real  time,
+				     Real  dt,
+				     Real& dt_new);
 
   void advance_tracer  (Real time,
 			Real dt);

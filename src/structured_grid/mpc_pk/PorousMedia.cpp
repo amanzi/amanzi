@@ -1287,6 +1287,7 @@ PorousMedia::initData ()
         }
     }
 
+    get_new_data(FuncCount_Type).setVal(1);
         
     if (model == model_list["richard"]) {
       calcInvPressure(S_new,P_new); // Set sat from p
@@ -2029,7 +2030,7 @@ PorousMedia::richard_init_to_steady()
 		  p->SetStartTime(t_max);
 		  p->SetCumTime(t_max);
 		}
-		Real time_after_init = p->StartTime();
+		Real time_after_init = p->GetStartTime();
                 parent->setDtLevel(dt_save);
                 parent->setNCycle(nc_save);
                 for (int k = 0; k <= finest_level; k++)
@@ -2284,10 +2285,8 @@ PorousMedia::advance_setup (Real time,
   //
   for (int k = 0; k < num_state_type; k++)
     {
-        if (k!=FuncCount_Type && k!=Aux_Chem_Type) {
-            state[k].allocOldData();
-            state[k].swapTimeLevels(dt);
-        }
+        state[k].allocOldData();
+        state[k].swapTimeLevels(dt);
     }
 
   if (model != model_list["steady-saturated"]) {
@@ -2621,7 +2620,7 @@ PorousMedia::multilevel_advance (Real  time,
 
   dt_new = dt;
 
-  bool success = true;
+  bool step_ok = true;
 
   if (level == 0) 
   {
@@ -2658,34 +2657,26 @@ PorousMedia::multilevel_advance (Real  time,
       {
           if (do_full_strang)
 	  {
-              if (verbose>2 && ParallelDescriptor::IOProcessor())
-                  std::cout << "... advancing 1/2 strang step for chemistry\n";
-              
-              for (int lev = 0; lev <= parent->finestLevel() && success; lev++)
+              for (int lev = 0; lev <= parent->finestLevel() && step_ok; lev++)
 	      {
                   PorousMedia& pm_lev = getLevel(lev);
                   pm_lev.strang_chem(time,dt/2,HYP_GROW);
                   // FIXME: Have no code for chem-advancing grow cells
                   //FillPatchedOldState_ok = false;
-                  success = true; // assume the best!
+                  step_ok = true; // assume the best!
 	      }
-              
-              if (verbose>2 && ParallelDescriptor::IOProcessor())
-                  std::cout << "PorousMedia::advance(): end of first 1/2 Strang step\n";
 	  }
       }
 
 #ifdef MG_USE_FBOXLIB
       if (model == model_list["richard"]) 
       {
-          if (verbose>2 && do_chem && ParallelDescriptor::IOProcessor())
-              std::cout << "... advancing full dt for flow and transport\n";
-          success = advance_multilevel_richard(time,dt,dt_new);
+          step_ok = advance_multilevel_richard(time,dt,dt_new);
       }
 #endif
       if (model == model_list["steady-saturated"])
       {
-          advance_multilevel_saturated(time,dt);
+	step_ok = advance_multilevel_saturated(time,dt,dt_new);
       }
       //
       // second half of the strang splitting
@@ -2694,28 +2685,22 @@ PorousMedia::multilevel_advance (Real  time,
       {
           if (do_full_strang)
           {
-              if (verbose>2 && ParallelDescriptor::IOProcessor())
-                  std::cout << "Second 1/2 Strang step of chemistry\n";
-              
-              for (int lev = 0; lev <= parent->finestLevel() && success; lev++)
+              for (int lev = 0; lev <= parent->finestLevel() && step_ok; lev++)
               {
                   PorousMedia&  pm_lev = getLevel(lev);
                   pm_lev.strang_chem(time+dt,dt/2.0,0);
-                  success = true; 
+                  step_ok = true; 
               }
           }
           else
           {
               if (n_chem_interval == 0)
               {
-                  if (verbose>2 && ParallelDescriptor::IOProcessor())
-                      std::cout << "... advancing full strang step for chemistry\n";
-                  
-                  for (int lev = 0; lev <= parent->finestLevel() && success; lev++)
+                  for (int lev = 0; lev <= parent->finestLevel() && step_ok; lev++)
                   {
                       PorousMedia&  pm_lev = getLevel(lev);
                       pm_lev.strang_chem(time+dt,dt,0);
-                      success = true;
+                      step_ok = true;
                   }
               }
               else
@@ -2725,15 +2710,12 @@ PorousMedia::multilevel_advance (Real  time,
                   
                   if (it_chem == n_chem_interval)
                   {
-                      if (verbose>2 && ParallelDescriptor::IOProcessor())
-                          std::cout << "... advancing full strang step for chemistry with dt ="
-                                    << dt_chem << "\n";
-                      for (int lev = 0; lev <= parent->finestLevel() && success; lev++)
+                      for (int lev = 0; lev <= parent->finestLevel() && step_ok; lev++)
                       {
                           PorousMedia&  pm_lev = getLevel(lev);
                           pm_lev.strang_chem(time+dt,dt_chem,0);      
                           pm_lev.FillPatchedOldState_ok = true;
-                          success = true;
+                          step_ok = true;
                       }
                       
                       it_chem = 0;
@@ -2743,7 +2725,7 @@ PorousMedia::multilevel_advance (Real  time,
           }
       }
       
-      if (success) 
+      if (step_ok) 
       {
           for (int lev = parent->finestLevel(); lev >= 0; lev--)
           {
@@ -2753,13 +2735,13 @@ PorousMedia::multilevel_advance (Real  time,
           }
       }
 
-      bool undo_advance_setup = !success;
+      bool undo_advance_setup = !step_ok;
       for (int lev = parent->finestLevel(); lev >= 0; lev--)
       {
           getLevel(lev).advance_cleanup(dt,iteration,ncycle,undo_advance_setup);
       }
   }
-  return success;
+  return step_ok;
 }
 
 void
@@ -3252,13 +3234,15 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
 }
 #endif
 
-void
-PorousMedia::advance_multilevel_saturated (Real time,
-					   Real dt)
+bool
+PorousMedia::advance_multilevel_saturated (Real  time,
+					   Real  dt,
+					   Real& dt_new)
 {
   // 
   // Time stepping for saturated flow with subcycling
   //
+  bool step_ok = true;
   if (level == 0  &&  transport_tracers > 0)
   {
     int finest_level = parent->finestLevel();
@@ -3272,7 +3256,8 @@ PorousMedia::advance_multilevel_saturated (Real time,
     types_advanced.insert(State_Type);
     Array<PArray<MultiFab> > saved_states;
     
-    // Subcycle each level independently
+    // Subcycle each level independently so that coarse data is available for
+    // fine grid boundary conditions
     for (int lev=0; lev<nlevs; lev++)
       {
 	PorousMedia& fine_lev = getLevel(lev);	
@@ -3293,13 +3278,6 @@ PorousMedia::advance_multilevel_saturated (Real time,
 	
         int ltracer = ncomps+ntracers-1;
 	
-        bool cont_tracer_advection = true;
-        Real t_tracer = time;
-	
-        fine_lev.predictDT(fine_lev.u_macG_trac); // updates dt_eig
-        Real dt_sub = std::min(dt_eig,dt);
-        Real t_eps = 1.e-8*dt_sub;
-        
         MultiFab& S_new = fine_lev.get_new_data(State_Type);
         MultiFab& S_old = fine_lev.get_old_data(State_Type);
         MultiFab Stmp(grids,1,1); 
@@ -3311,12 +3289,28 @@ PorousMedia::advance_multilevel_saturated (Real time,
             MultiFab::Copy(S_old,Stmp,0,i,1,1);
         }
         MultiFab::Copy(S_old,S_new,0,0,1,1);
+
+
+        fine_lev.predictDT(fine_lev.u_macG_trac); // updates dt_eig
+        int n_subcycle_transport = 0;
+	Real t_subcycle_transport = time;
+	Real tmax_subcycle_transport = time + dt;
         
-        int num_transport_subcycles = 0;
+        // Reduce dt_eig to avoid extremely small transport steps at end of subcycle interval
+        Real dt_eig_save = fine_lev.dt_eig;
+        if (dt_eig_save < dt) {
+            int num_subcycles = std::max(1,(int)(dt / fine_lev.dt_eig) + 1);
+            fine_lev.dt_eig = dt / num_subcycles;
+        }
+
+        Real dt_subcycle_transport = std::min(fine_lev.dt_eig,dt);
+        Real t_eps = 1.e-8*dt_subcycle_transport;
+
         std::map<int,MultiFab*> saved_states;
-        while (cont_tracer_advection)
+        bool continue_subcycle_transport = true;
+        while (continue_subcycle_transport)
         {
-            if (num_transport_subcycles > 0) {
+            if (n_subcycle_transport > 0) {
                 for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
                 {
                     const MultiFab& old = fine_lev.get_old_data(*it);                          
@@ -3325,55 +3319,60 @@ PorousMedia::advance_multilevel_saturated (Real time,
                 }
             }
 
-
             PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
-            p->SetCumTime(t_tracer);
+            p->SetCumTime(t_subcycle_transport);
 
-            fine_lev.setTimeLevel(t_tracer+dt_sub,dt_sub,dt_sub);
-            fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_sub,ncomps,ltracer,true);
-            t_tracer += dt_sub;
+            fine_lev.setTimeLevel(t_subcycle_transport+dt_subcycle_transport,
+				  dt_subcycle_transport,dt_subcycle_transport);
+	    
+	    if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
+	      std::cout << "  TRANSPORT: Subcycle: " << n_subcycle_transport
+			<< " TIME from " << t_subcycle_transport
+			<< " to " <<  t_subcycle_transport + dt_subcycle_transport
+			<< ", DT_SUB = " << dt_subcycle_transport  << std::endl;
+	    }
+	    
+            fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_subcycle_transport,ncomps,ltracer,true);
+            t_subcycle_transport += dt_subcycle_transport;
             
-            if (std::abs(time + dt - t_tracer) < t_eps) {
-                t_tracer = time + dt;
+            if (std::abs(tmax_subcycle_transport - t_subcycle_transport) < t_eps) {
+	      t_subcycle_transport = tmax_subcycle_transport;
             }
             
-            if (t_tracer < time + dt)
+            if (t_subcycle_transport < tmax_subcycle_transport)
             {
                 
                 // Advance the state data structures
                 for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
                 {
                     fine_lev.state[*it].allocOldData();
-                    fine_lev.state[*it].swapTimeLevels(dt_sub);
+                    fine_lev.state[*it].swapTimeLevels(dt_subcycle_transport);
                 }
                 
-                dt_sub = std::min(dt_eig,time + dt - t_tracer);
-                BL_ASSERT(dt_sub > 0);
+                dt_subcycle_transport = std::min(dt_eig,tmax_subcycle_transport - t_subcycle_transport);
+                BL_ASSERT(dt_subcycle_transport > 0);
                 MultiFab& S_new = fine_lev.get_new_data(State_Type);
                 MultiFab& S_old = fine_lev.get_old_data(State_Type);
                 MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
                 
             }
             else {
-                cont_tracer_advection = false;
+                continue_subcycle_transport = false;
             }
-            num_transport_subcycles++;
-            
+            n_subcycle_transport++;
         }
-        if (num_transport_subcycles > 1) {
+        if (n_subcycle_transport > 1) {
             for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
             {
                 MultiFab& old = get_old_data(*it);                          
                 MultiFab::Copy(old,*saved_states[*it],0,0,old.nComp(),old.nGrow());
                 delete saved_states[*it];
             }
-            
-            if (verbose > 0 &&  ParallelDescriptor::IOProcessor())
-                std::cout << "MULTILEVEL ADVANCE TRANSPORT: # SUBCYCLES: "
-                          << num_transport_subcycles << std::endl;
-            
         }
-        
+                
+        // Restore dt_eig
+        fine_lev.dt_eig = dt_eig_save;
+
         // Bring all states up to current time, and reinstate original dt info
         for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
         {
@@ -7469,7 +7468,7 @@ PorousMedia::computeNewDt (int                   finest_level,
           }
       }
 
-      if (execution_mode != "init_to_steady"  || state[State_Type].prevTime() > switch_time)
+      if (execution_mode != "init_to_steady"  || state[State_Type].prevTime() >= switch_time)
       {
           if (dt_grow_max >= 1) {
               dt_0 = std::min(dt_0, dt_grow_max * dt_level[0]);
@@ -7481,9 +7480,20 @@ PorousMedia::computeNewDt (int                   finest_level,
 
       if (execution_mode == "init_to_steady")
       {
-          // Do no thave to be too careful, since we will guarantee that switch_time will be hit exactly
-          if (std::abs(state[State_Type].prevTime()-switch_time)<dt_0)
-          {
+          // Are we at the step just after the transient mode has been activated?
+          // A little tricky with init-to-steady...
+          Real cum_time = PMParent()->GetCumTime(); // Time evolved to
+          Real start_time = PMParent()->GetStartTime(); // Time evolved started from
+
+          bool init_transient = false;
+          if (switch_time == start_time) {
+              init_transient = (cum_time == start_time);
+          }
+          else {
+              init_transient = std::abs(state[State_Type].prevTime()-switch_time)<dt_0;
+          }
+
+          if (init_transient) {
               dt_0 = dt_init;
           }
       }
@@ -8313,7 +8323,7 @@ PorousMedia::post_init_state ()
               // Compute initial velocity field
               RichardSolver rs(*pmamr,RichardSolver::RSParams());
               rs.ResetRhoSat();
-              rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->StartTime());
+              rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->GetStartTime());
           }
           else {
               int  finest_level = parent->finestLevel();
@@ -8321,7 +8331,7 @@ PorousMedia::post_init_state ()
                   PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(k));
                   BL_ASSERT(pm);
                   int nc = 0; // Component of water in state
-                  pm->compute_vel_phase(pm->u_mac_curr,nc,pmamr->StartTime());
+                  pm->compute_vel_phase(pm->u_mac_curr,nc,pmamr->GetStartTime());
               }
           }
       }
