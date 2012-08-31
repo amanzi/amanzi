@@ -1073,9 +1073,19 @@ Boundary condition functions utilize a parameterized model for time variations t
       <Parameter name="Time Functions" type="Array string" value="{Constant, Linear}"/>    
 
 
-This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
-two intervals are speicified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
-20 over the interval t=2 to t=3, and then is constant at 30 for t>3.
+This defines four time intervals: (-inf,1), [1,2), [2,3), [3,+inf).  
+
+The function f is constant over the first and last intervals, such that 
+
+- constant: f(x) = 10, for x <1, and
+- constant: f(x) = 30, for x >= 3. 
+
+The type (linear or constant) of function f over the remaining two intervals is speicified by the `"Time Functions`" parameter. 
+For a particular interval it can be either `"Linear`" or `"Constant`".
+In this example, we have 
+
+- constant: f(x) = 10, for 1<=x<2, and 
+- linear: f(x) = (30-20)*(x-2)/(3-2) + 20, for 2<=x<3.
 
 
 Example Phase Definition
