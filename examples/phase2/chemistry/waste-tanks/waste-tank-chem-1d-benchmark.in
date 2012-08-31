@@ -133,8 +133,8 @@ OBSERVATION
 :=========================== output options ===================================
 OUTPUT
   FORMAT HDF5
-  PERIODIC TIME 10 y
-  PERIODIC_OBSERVATION TIME 10 y
+  PERIODIC TIME 1 y
+  PERIODIC_OBSERVATION TIME 1 y
 /
 
 :=========================== times ============================================
@@ -148,7 +148,7 @@ TIME
 REGION all
   COORDINATES
     0.d0 0.d0 0.d0
-    100.d0 1.d0 1.d0
+    1.d0 0.01 0.01
   /
 END
 
@@ -156,7 +156,7 @@ REGION west
   FACE WEST
   COORDINATES
     0.d0 0.d0 0.d0
-    0.d0 1.d0 1.d0
+    0.d0 0.01 0.01
   /
 END
 
@@ -164,20 +164,20 @@ REGION east
   FACE EAST
   COORDINATES
     1.d0 0.d0 0.d0
-    1.d0 1.d0 1.d0
+    1.d0 0.01 0.01
   /
 END
 
 REGION well_west
-  COORDINATE 0.0d0 0.5d0 0.5d0
+  COORDINATE 0.0d0 0.005d0 0.005d0
 END
 
 REGION well_center
-  COORDINATE 0.5d0 0.5d0 0.5d0
+  COORDINATE 0.5d0 0.005d0 0.005d0
 END
 
 REGION well_east
-  COORDINATE 1.0d0 0.5d0 0.5d0
+  COORDINATE 1.0d0 0.005d0 0.005d0
 END
 
 :=========================== transport conditions =============================
