@@ -114,6 +114,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
+  verbosity = FLOW_VERBOSITY_HIGH;
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
 }
 
@@ -532,22 +533,33 @@ void Darcy_PK::UpdateSpecificYield()
 
   WhetStone::MFD3D mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
 
+  int negative_yield = 0;
   for (int c = 0; c < ncells_owned; c++) {
     if (specific_yield_wghost[c] > 0.0) {
-      mesh_->cell_get_faces(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
+      double area = 0.0;
       int nfaces = faces.size();
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         int c2 = mfd3d.cell_get_face_adj_cell(c, f);
 
-        if (specific_yield_wghost[c2] <= 0.0) {  // cell in the fully saturated layer
-          FS->ref_specific_yield()[c] *= mesh_->face_area(f);
-          break;
-        }
+        if (specific_yield_wghost[c2] <= 0.0)  // cell in the fully saturated layer
+            area -= (mesh_->face_normal(f))[dim - 1] * dirs[n];
       }
+      FS->ref_specific_yield()[c] *= area;
+      if (area < 0.0) negative_yield++;
     }
+  }
+
+  int negative_yield_tmp = negative_yield;
+  mesh_->get_comm()->MaxAll(&negative_yield_tmp, &negative_yield, 1);
+  if (negative_yield > 0) {
+    Errors::Message msg;
+    msg << "Darcy PK: configuration of the yield region leads to negative yield interfaces.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
