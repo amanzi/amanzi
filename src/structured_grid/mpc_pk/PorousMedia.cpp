@@ -1287,7 +1287,9 @@ PorousMedia::initData ()
         }
     }
 
-    get_new_data(FuncCount_Type).setVal(1);
+    if (do_chem!=0) {
+        get_new_data(FuncCount_Type).setVal(1);
+    }
         
     if (model == model_list["richard"]) {
       calcInvPressure(S_new,P_new); // Set sat from p
@@ -2409,7 +2411,7 @@ PorousMedia::ml_step_driver(Real  t,
                             Real& dt_taken,
                             Real& dt_suggest)
 {
-    bool step_ok = false;
+    bool driver_ok = false;
 
     if (level == 0) 
     {
@@ -2418,8 +2420,9 @@ PorousMedia::ml_step_driver(Real  t,
 
         Real dt_this_attempt = dt_try;
         int dt_iter = 0;
+        bool step_ok = false;
 
-        bool continue_dt_iteration = (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
+        bool continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
         while (continue_dt_iteration)
         {
             int iteration=0;
@@ -2448,9 +2451,11 @@ PorousMedia::ml_step_driver(Real  t,
 
             continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
         }
+
+        driver_ok = step_ok && dt_taken >= dt_min &&  dt_iter < max_dt_iters;
     }
 
-    return step_ok;
+    return driver_ok;
 }
 
 Real
@@ -3308,6 +3313,13 @@ PorousMedia::advance_multilevel_saturated (Real  time,
 
         std::map<int,MultiFab*> saved_states;
         bool continue_subcycle_transport = true;
+
+        if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
+            std::cout << "  TRANSPORT: "
+                      << " TIME from " << t_subcycle_transport
+                      << " to " <<  tmax_subcycle_transport << std::endl;
+        }
+
         while (continue_subcycle_transport)
         {
             if (n_subcycle_transport > 0) {
@@ -3326,7 +3338,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
 				  dt_subcycle_transport,dt_subcycle_transport);
 	    
 	    if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
-	      std::cout << "  TRANSPORT: Subcycle: " << n_subcycle_transport
+	      std::cout << "    TRANSPORT: Subcycle: " << n_subcycle_transport
 			<< " TIME from " << t_subcycle_transport
 			<< " to " <<  t_subcycle_transport + dt_subcycle_transport
 			<< ", DT_SUB = " << dt_subcycle_transport  << std::endl;
@@ -3382,6 +3394,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
   }
   PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
   p->SetCumTime(time); // reset to start of subcycled time period
+  return true;
 }
 
 void

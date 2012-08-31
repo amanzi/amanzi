@@ -28,6 +28,7 @@
         <Parameter name="Number Of AMR Levels" type="int" value="1"/>
         <Parameter name="Blocking Factor" type="Array int" value="{1}"/>
         <Parameter name="Maximum Grid Size" type="Array int" value="{100}"/>
+        <Parameter name="v" type="int" value="2"/>
       </ParameterList>
 
       <ParameterList name="Basic Algorithm Control">
