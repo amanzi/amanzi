@@ -7391,6 +7391,25 @@ PorousMedia::predictDT (MultiFab* u_macG)
     }
 }
 
+Real
+PorousMedia::GetUserInputInitDt()
+{
+    Real user_input_dt_init = -1;
+
+    if (execution_mode=="init_to_steady")
+    {
+        Real cum_time = PMParent()->GetCumTime(); // Time evolved to so far
+        Real start_time = PMParent()->GetStartTime(); // Time simulation started from
+        
+        user_input_dt_init = switch_time <= start_time ?  dt_init  :  steady_init_time_step;
+    } 
+    else 
+    {
+        user_input_dt_init = execution_mode=="transient"  ?  dt_init  :  steady_init_time_step;
+    }
+    return user_input_dt_init;        
+}
+
 void
 PorousMedia::computeNewDt (int                   finest_level,
                            int                   sub_cycle,
@@ -7423,102 +7442,106 @@ PorousMedia::computeNewDt (int                   finest_level,
   //
   // 6) Boounded growth/decrease via user input
   //
-  if (fixed_dt < 0) {
 
-      const int max_level = parent->maxLevel();
-      
-      n_cycle[0] = 1;
-      for (int i = 1; i <= max_level; i++)
-      {
-          n_cycle[i] = sub_cycle ? parent->MaxRefRatio(i-1) : 1;
-      }
-      
-      Real dt_0     = dt_level[0];
-      int  n_factor = 1;
+  bool solute_transport_limits_dt = true;
+  bool start_with_previously_suggested_dt = true;
+  bool check_for_dt_cut_by_event = true;
+  bool in_transient_period = false;
 
-      if (post_regrid_flag == 1)
-	{
-          //
-          // Limit dt's by pre-regrid dt
-          //
-          for (int i = 0; i < max_level; i++)
-	    {
-                n_factor   *= n_cycle[i];
-                dt_0 = std::min(dt_0,dt_level[i]*n_factor);
-	    }
-        }
-      else
+  Real dt_event = -1;
+  Real dt_prev_suggest = -1;
+  Real dt_eig_local = -1;
+  Real dt_init_local = -1;
+
+  Real dt_0;
+  int max_level = parent->maxLevel();
+
+  Real cum_time = PMParent()->GetCumTime(); // Time evolved to so far
+  Real start_time = PMParent()->GetStartTime(); // Time simulation started from
+
+  if (fixed_dt > 0) {
+      dt_0 = fixed_dt;
+  }
+  else
+  {
+      Real dt_0 = dt_level[0];
+      
+      if (post_regrid_flag != 1)
       {
-          // Solver-based dt
-          Real dt0_prev_adv = PMParent()->Dt0FromPreviousAdvance();
-          //std::cout << "*******   dt0_prev_adv " << dt0_prev_adv << std::endl;
-          // FIXME
-          if (dt0_prev_adv>0) {
-              dt_0 = std::max(dt_0,dt0_prev_adv);
-              //std::cout << "*******   dt_0 after dt_prev " << dt_0 << std::endl;
+          if (start_with_previously_suggested_dt) {
+              dt_prev_suggest = PMParent()->Dt0FromPreviousAdvance();
           }
-
-          Real dt0_event = PMParent()->Dt0BeforeEventCut();
-          // FIXME
-          if (dt0_event>0) {
-              dt_0 = std::max(dt0_event,dt_0);
+          
+          if (check_for_dt_cut_by_event) {
+              dt_event = PMParent()->Dt0BeforeEventCut();
           }
       }
           
       // Compute CFL stability for solutes
-      if (ntracers>0 && do_tracer_transport)
+      if (solute_transport_limits_dt && ntracers>0 && do_tracer_transport)
       {
           if (execution_mode!="init_to_steady" || (state[State_Type].curTime() >= switch_time)) {
-              Real dt0_eig;
-              n_factor = 1;
-              for (int i = 0; i <= finest_level; i++)
+              PorousMedia* pm0 = dynamic_cast<PorousMedia*>(&parent->getLevel(0));
+              dt_eig_local = pm0->estTimeStep(pm0->u_mac_curr);
+              int n_factor = 1;
+              for (int i = 1; i <= finest_level; i++)
               {
                   n_factor *= n_cycle[i];
                   PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(i));
-                  Real tmp = std::min(dt_0,getLevel(i).estTimeStep(pm->u_mac_curr) * n_factor);
-                  dt0_eig = i==0 ? tmp : std::min(tmp, dt0_eig);
+                  dt_eig_local = std::min(dt_eig_local,pm->estTimeStep(pm->u_mac_curr) * n_factor);
               }
           }
       }
 
-      if (execution_mode != "init_to_steady"  || state[State_Type].prevTime() >= switch_time)
-      {
-          if (dt_grow_max >= 1) {
-              dt_0 = std::min(dt_0, dt_grow_max * dt_level[0]);
-          }
-          if (dt_shrink_max <= 1) {
-              dt_0 = std::max(dt_0, dt_shrink_max * dt_level[0]);
-          }
+      if (cum_time == start_time) {
+          dt_init_local = GetUserInputInitDt();
       }
-
-      if (execution_mode == "init_to_steady")
-      {
-          // Are we at the step just after the transient mode has been activated?
-          // A little tricky with init-to-steady...
-          Real cum_time = PMParent()->GetCumTime(); // Time evolved to
-          Real start_time = PMParent()->GetStartTime(); // Time evolved started from
-
-          bool init_transient = false;
-          if (switch_time == start_time) {
-              init_transient = (cum_time == start_time);
-          }
-          else {
-              init_transient = std::abs(state[State_Type].prevTime()-switch_time)<dt_0;
-          }
-
-          if (init_transient) {
-              dt_0 = dt_init;
-          }
-      }
-
-      n_factor = 1;
-      for (int i = 0; i <= max_level; i++)
-      {
-          n_factor   *= n_cycle[i];
-          dt_level[i] = dt_0/( (Real)n_factor );
+      else {
+          Real transient_start = (execution_mode=="init_to_steady" ? switch_time : start_time);
+          in_transient_period = cum_time > transient_start;
       }
   }
 
+  // Now implement rules to pick dt
+  if (dt_init_local > 0) 
+  {
+      dt_0 = dt_init_local;
+  }
+  else 
+  {
+      if (start_with_previously_suggested_dt && dt_prev_suggest>0) 
+      {
+          dt_0 = dt_prev_suggest;
+      }
+      else {
+          dt_0 = dt_level[0];
+      }
+      
+      if (check_for_dt_cut_by_event && dt_event>0) {
+          dt_0 = dt_event;
+      }
+
+      if (in_transient_period) 
+      {
+          if (dt_grow_max >= 1) {
+              dt_0 = std::min(dt_0, dt_grow_max * dt_0);
+          }
+          if (dt_shrink_max <= 1) {
+              dt_0 = std::max(dt_0, dt_shrink_max * dt_0);
+          }
+      }
+
+      if (solute_transport_limits_dt && dt_eig_local>0) {
+          dt_0 = std::min(dt_0, dt_eig_local);
+      }
+  }
+
+  int n_factor = 1;
+  for (int i = 0; i <= max_level; i++)
+  {
+      n_factor   *= n_cycle[i];
+      dt_level[i] = dt_0/( (Real)n_factor );
+  }
 }
 
 void
@@ -7546,8 +7569,12 @@ PorousMedia::computeInitialDt (int                   finest_level,
       n_cycle[i] = sub_cycle ? parent->MaxRefRatio(i-1) : 1;
     }
 
-  Real dt_0;
-  if (dt_init < 0) {
+  Real cum_time = PMParent()->GetCumTime(); // Time evolved to so far
+  Real start_time = PMParent()->GetStartTime(); // Time simulation started from
+  
+  Real dt_0 = GetUserInputInitDt();
+
+  if (dt_0 < 0) {
       dt_0 = 1.0e100;
       int n_factor = 1;
       for (int i = 0; i <= finest_level; i++)
@@ -7559,22 +7586,6 @@ PorousMedia::computeInitialDt (int                   finest_level,
           dt_0        = std::min(dt_0,n_factor*dt_level[i]);
       }
   }
-  else {
-      if (execution_mode=="steady" || execution_mode=="init_to_steady") {
-          dt_0 = steady_init_time_step;
-      } else {
-          dt_0 = dt_init;
-      }
-  }
-
-  // FIXME: should be stop_time >= start_time
-  if (stop_time >= 0.0)
-    {
-      const Real eps      = 0.0001*dt_0;
-      const Real cur_time = state[State_Type].curTime();
-      if ((cur_time + dt_0) > (stop_time - eps))
-	dt_0 = stop_time - cur_time;
-    }
 
   if (init_shrink>0) 
       dt_0 *= init_shrink;
@@ -7597,28 +7608,17 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
                               Array<Real>& dt_save,
                               Real         stop_time)
 {
-  const Real strt_time    = state[State_Type].curTime();
+  const Real strt_time    = PMParent()->GetStartTime();
   const int  finest_level = parent->finestLevel();
 
   if (verbose>3 && ParallelDescriptor::IOProcessor())
     std::cout << "... computing dt at all levels in post_init_estDT\n";
 
-  Real dt_init_input = dt_init;
+  dt_init_local = GetUserInputInitDt();
 
-  if (execution_mode=="steady" || execution_mode=="init_to_steady") {
-      dt_init_input = steady_init_time_step;
-  } else {
-      dt_init_input = dt_init;
-  }
+  if (dt_init_local < 0) {
 
-  if (dt_init_input > 0) 
-  {
-      dt_init_local = dt_init_input;
-  }
-  else {
-
-      // FIXME: should be std::max(0,stop_time - start_time)
-      dt_init_local = std::abs(stop_time);
+      dt_init_local = stop_time - PMParent()->GetStartTime();
 
       // Create a temporary data structure for this solve -- this u_mac just
       //   used to compute dt.
@@ -7641,7 +7641,7 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
   }
 
   // Make something workable if stop>=start
-  if (stop_time <= 0.0)
+  if (stop_time <= PMParent()->GetStartTime())
   {
       dt_init_local = std::abs(dt_init);
   }

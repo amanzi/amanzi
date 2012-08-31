@@ -458,14 +458,14 @@ PMAmr::coarseTimeStep (Real stop_time)
                                  cumtime, dt_level[0], level_steps[0], 1);
     
     // Note: if dt_red > 0, then dt_red == dt2_red
-    if (dt2_red > 0) {
-        if (dt_red < 0) {
+    if (dt2_red > 0  &&  dt_red < 0) {
             dt_red = dt2_red / 2; // Nothing in 1 step, but something in 2
-        }
     }
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
-        dt0_before_event_cut = dt_level[0];
+        if (dt0_before_event_cut < 0) {
+            dt0_before_event_cut = dt_level[0];
+        }
         Array<Real> dt_new(finest_level+1,dt_red);
         for (int lev = 1; lev <= finest_level; lev++) {
             dt_new[lev] = dt_new[lev-1]/Real(MaxRefRatio(lev-1));

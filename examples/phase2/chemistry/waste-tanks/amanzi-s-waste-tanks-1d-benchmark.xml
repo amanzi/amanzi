@@ -1,7 +1,5 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
-  <Parameter name="Dump ParmParse Table" type="string" value="amr_data/ppfile"/>
-  <Parameter name="Petsc Options File" type="string" value=".petsc"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D chemistry benchmarking problem for 2012 waste tank demo."/>
     <Parameter name="Author" type="string" value="Ben Andre"/>
@@ -15,11 +13,8 @@
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="3.15576000e9"/>
         <Parameter name="Switch" type="double" value="0.0"/>
-	<Parameter name="Steady Initial Time Step" type="double" value="3.15576000e7"/>
         <Parameter name="Transient Initial Time Step" type="double" value="3.15576000e7"/>
       	<Parameter name="Maximum Cycle Number" type="int" value="2000000"/>
-        <Parameter name="Maximum Time Step Grow" type="double" value="1"/>
-        <Parameter name="Maximum Time Step Shrink" type="double" value="1"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="Extreme"/>
@@ -52,7 +47,6 @@
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="2"/>
           <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.1"/>
           <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.01"/>
-          <Parameter name="steady_init_time_step" type="double" value="1.e4"/>
           <Parameter name="steady_max_time_steps" type="int" value="1000"/>
           <Parameter name="steady_max_time_step_size" type="double" value="1.e20"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>

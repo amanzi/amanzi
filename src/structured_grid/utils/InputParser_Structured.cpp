@@ -406,9 +406,11 @@ namespace Amanzi {
                 std::string Switch_str = "Switch"; reqP.push_back(Switch_str);
                 std::string End_str = "End"; reqP.push_back(End_str);
                 std::string Steady_Init_Time_Step_str = "Steady Initial Time Step"; 
-		reqP.push_back(Steady_Init_Time_Step_str);
                 std::string Transient_Init_Time_Step_str = "Transient Initial Time Step"; 
-		reqP.push_back(Transient_Init_Time_Step_str);
+                if (flow_mode != "Steady State Saturated") {
+                    reqP.push_back(Transient_Init_Time_Step_str);// Can use CFL here, make these optional
+                    reqP.push_back(Steady_Init_Time_Step_str); 
+                }
 
                 // Set defaults for optional parameters
                 std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier"; optPd[Init_Time_Step_Mult_str] = -1;
@@ -422,15 +424,19 @@ namespace Amanzi {
                 optPd[Time_Step_Grow_Max_str] = -1; // <0 means inactive
                 std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink";
                 optPd[Time_Step_Shrink_Max_str] = -1; // <0 means inactive
-
+                if (flow_mode == "Steady State Saturated") {
+                    optPd[Steady_Init_Time_Step_str] = -1;
+                    optPd[Transient_Init_Time_Step_str] = -1;
+                }
 
                 struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
                 struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
                 struc_out_list.set<double>("switch_time", tran_list.get<double>(Switch_str));
 		prob_out_list.set<double>(underscore("steady_max_pseudo_time"),tran_list.get<double>(Switch_str));
-		prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
-		prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
-
+                if (flow_mode != "Steady State Saturated") {
+                    prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
+                    prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
+                }
 		struc_out_list.set<std::string>("execution_mode", "init_to_steady");
 
                 // Extract optional parameters
@@ -460,7 +466,12 @@ namespace Amanzi {
                         prob_out_list.set<double>("steady_richard_max_dt", it->second);
                     } else if (it->first==Transient_Max_Time_Step_Size_str) {
                         prob_out_list.set<double>("transient_richard_max_dt", it->second);
-                    } else {
+                    } else if (flow_mode == "Steady State Saturated"  && it->first==Transient_Init_Time_Step_str) {
+                        prob_out_list.set<double>("dt_init", it->second);
+                    } else if (flow_mode == "Steady State Saturated"  && it->first==Steady_Init_Time_Step_str) {
+                        prob_out_list.set<double>("steady_init_time_step", it->second);
+                    }
+                    else {
                         prob_out_list.set<double>(underscore(it->first), it->second);
                     }
                 }

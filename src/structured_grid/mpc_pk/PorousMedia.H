@@ -1024,7 +1024,8 @@ public:
   void set_vel_from_bcs(Real      time,
 			MultiFab* vel);
 
-  static Real DtInit() {return dt_init;}
+  Real GetUserInputInitDt();
+
 
 protected:
 
