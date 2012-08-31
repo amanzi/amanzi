@@ -5208,7 +5208,6 @@ PorousMedia::strang_chem (Real time,
   for (int i = 0; i < ntracers; ++i) {
     const std::string& name = tNames[i];
 
-    BL_ASSERT(sorption_isotherm_label_map.find(name)!=sorption_isotherm_label_map.end());
     guess_comp[i] = solute_chem_label_map[name]["Free_Ion_Guess"];
     BL_ASSERT(guess_comp[i] >= 0  &&  guess_comp[i] < nAux);
     //std::cout << "Free Ion Guess for " << name << " in comp: " << guess_comp[i] << std::endl;
@@ -5224,6 +5223,7 @@ PorousMedia::strang_chem (Real time,
     }
 
     if (nsorption_isotherms > 0) {
+      BL_ASSERT(sorption_isotherm_label_map.find(name)!=sorption_isotherm_label_map.end());
       kd_comp[i] = sorption_isotherm_label_map[name]["Kd"];
       //std::cout << "Kd for " << name << " in comp: " << kd_comp[i] << std::endl;
       BL_ASSERT(kd_comp[i] >= 0  &&  kd_comp[i] < nAux);

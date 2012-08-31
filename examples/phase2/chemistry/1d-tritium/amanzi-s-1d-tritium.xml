@@ -2,7 +2,7 @@
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
   <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
   <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="Structured grid, 1D Flow and Transport with Tritium decay"/>
+    <Parameter name="Model ID" type="string" value="Structured grid, 1D constant velocify flow and transport with tritium decay"/>
   </ParameterList>
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
@@ -17,7 +17,7 @@
         <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="Verbosity" type="string" value="Extreme"/>
+    <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Numerical Control Parameters">
 
@@ -74,9 +74,13 @@
   </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Corner" type="Array double" value="{0,0}"/>
-      <Parameter name="Domain High Corner" type="Array double" value="{100,2}"/>
-      <Parameter name="Number of Cells" type="Array int" value="{100,2}"/>
+
+
+      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0}"/>
+      <Parameter name="Domain High Corner" type="Array double" value="{100.0, 2.0}"/>
+      <Parameter name="Number of Cells" type="Array int" value="{100, 2}"/>
+
+
     </ParameterList>
   </ParameterList>
   <ParameterList name="Regions">
@@ -178,6 +182,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Output">
+    <Parameter name="File Name Digits" type="int" value="5"/>
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every_100_steps">
 	<Parameter name="Start_Period_Stop" type="Array int" value="{0., 100, -1}"/>
@@ -192,10 +197,8 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="run_data/tritium"/>
-      <Parameter name="File Name Digits" type="int" value="5"/>
+      <Parameter name="File Name Base" type="string" value="amr_data/tritium"/>
       <Parameter name="Time Macros" type="Array string" value="{Every_year}"/>
-      <Parameter name="Cycle Macros" type="Array string" value="{Every_100_steps}"/>
 <!-- 	<Parameter name="Time Macros" type="Array string" value="{Every_0.05_year}"/> -->
     </ParameterList>
   </ParameterList>
@@ -210,6 +213,4 @@
     <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
   </ParameterList> <!-- Chemistry -->
-
-<!--  <Parameter name="Dump ParmParse Table" type="string" value='tritium.parmparse'/> -->
 </ParameterList>

@@ -11,10 +11,10 @@
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="1.5778463e12"/>
+        <Parameter name="End" type="double" value="3.15576000e9"/>
         <Parameter name="Switch" type="double" value="0.0"/>
-	<Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
+	<Parameter name="Steady Initial Time Step" type="double" value="3.15576000e7"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="3.15576000e7"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="Extreme"/>
@@ -52,9 +52,9 @@
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array int" value="{100, 1, 1}"/>
           <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0,  0.0}" />
-          <Parameter name="Domain High Corner" type="Array double" value="{100.0, 1.0, 1.0}" />
+          <Parameter name="Domain High Corner" type="Array double" value="{1.0, 0.01, 0.01}" />
+          <Parameter name="Number of Cells" type="Array int" value="{100, 1, 1}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -62,35 +62,35 @@
   <ParameterList name="Regions">
     <ParameterList name="Entire Domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0, 0.02, 0.01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="West">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{0.0,1.0,1.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{0.0, 0.02, 0.01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="East">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{1.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{1.0, 0.0, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0, 0.02, 0.01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="West Well">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array double" value="{0.0,0.5,0.5}"/>
+        <Parameter name="Coordinate" type="Array double" value="{0.0, 0.005, 0.005}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Center Well">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array double" value="{0.5,0.5,0.5}"/>
+        <Parameter name="Coordinate" type="Array double" value="{0.5, 0.005, 0.005}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="East Well">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array double" value="{1.0,0.5,0.5}"/>
+        <Parameter name="Coordinate" type="Array double" value="{1.0, 0.005, 0.005}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -104,24 +104,25 @@
         <Parameter name="Value" type="double" value="1.E-12"/>
       </ParameterList>
       <ParameterList name="Sorption Isotherms">
- 	<ParameterList name="Pu_238">
-	  <Parameter name="Kd" type="double" value="405616.5736"/>
-	</ParameterList>
- 	<ParameterList name="U_234">
-	  <Parameter name="Kd" type="double" value="279735.568"/>
-	</ParameterList>
-	<ParameterList name="Th_230">
-	  <Parameter name="Kd" type="double" value="1258810.056"/>
-	</ParameterList>
-	<ParameterList name="Ra_226">
-	  <Parameter name="Kd" type="double" value="34966.946"/>
-	</ParameterList>
-	<ParameterList name="Pb_210">
-	  <Parameter name="Kd" type="double" value="2797355.68"/>
-	</ParameterList>
-	<ParameterList name="Tc_99">
-	  <Parameter name="Kd" type="double" value="839.206704"/>
-	</ParameterList>
+	    <ParameterList name="Pu_238">
+	      <Parameter name="Kd" type="double" value="461168.4"/>
+	    </ParameterList>
+	    <ParameterList name="U_234">
+	      <Parameter name="Kd" type="double" value="329406.0"/>
+	    </ParameterList>
+	    <ParameterList name="Th_230">
+	      <Parameter name="Kd" type="double" value="1482327.0"/>
+	    </ParameterList>
+	    <ParameterList name="Ra_226">
+	      <Parameter name="Kd" type="double" value="41175.75"/>
+	    </ParameterList>
+	    <ParameterList name="Pb_210">
+	      <Parameter name="Kd" type="double" value="3294060.0"/>
+	    </ParameterList>
+	    <ParameterList name="Tc_99">
+<!--	      <Parameter name="Kd" type="double" value="988.218"/> -->
+	      <Parameter name="Kd" type="double" value="0.0"/>
+	    </ParameterList> 
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -155,36 +156,42 @@
             <ParameterList name="Pu_238">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="U_234">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Th_230">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Ra_226">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Pb_210">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Tc_99">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
@@ -216,7 +223,7 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-10, 1.0e-10}"/>
+                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -224,7 +231,7 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-10, 1.0e-10}"/>
+                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -232,7 +239,7 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-10, 1.0e-10}"/>
+                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -240,7 +247,7 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
                 <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-10, 1.0e-10}"/>
+                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -302,30 +309,76 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Output">
+    <ParameterList name="Cycle Macros">
+      <ParameterList name="Every 1 steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,1,-1}"/>
+      </ParameterList>
+      <ParameterList name="Every 10 steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,10,-1}"/>
+      </ParameterList>
+      <ParameterList name="Every 100 steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
+      </ParameterList>
+      <ParameterList name="Every 1000 steps">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,1000,-1}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Time Macros">
-      <ParameterList name="Every_0.05_year">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0., 1.5768e6, -1}"/>
+      <ParameterList name="Every 0.05 year">
+	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 1577880.00, -1}"/>
       </ParameterList>
-      <ParameterList name="Every_year">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 31556926.0, -1}"/>
+      <ParameterList name="Every 0.5 year">
+	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 15778800.0, -1}"/>
       </ParameterList>
-      <ParameterList name="Every_10_years">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 315569260.0, -1}"/>
+      <ParameterList name="Every year">
+	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 31557600.0, -1}"/>
+      </ParameterList>
+      <ParameterList name="Every 10 years">
+	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 315576000.0, -1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="radioactive-decay-sorbed"/>
+      <Parameter name="File Name Base" type="string" value="unstructured_data/tank-chem"/>
+      <Parameter name="Time Macro" type="Array string" value="{Every year}"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macro" type="Array string" value="{Every_year}"/>
-<!-- 	<Parameter name="Time Macro" type="string" value="Every_0.05_year"/> -->
     </ParameterList>
     <ParameterList name="Observation Data">
-      <Parameter name="Observation Output Filename" type="string" value="radioactive-decay-sorbed-obs.txt"/>
-      <ParameterList name="Pu_238 West Well">
+      <Parameter name="Observation Output Filename" type="string" value="unstructured_observations.txt"/>
+      <ParameterList name="Pu 238 West Well">
 	<Parameter name="Region" type="string" value="West Well"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Pu_238 Aqueous concentration"/>
-	<Parameter name="Time Macro" type="string" value="Every_year"/>
+	<Parameter name="Time Macro" type="string" value="Every 10 years"/>
+      </ParameterList>
+      <ParameterList name="Pu 238 Center Well">
+	<Parameter name="Region" type="string" value="Center Well"/>
+	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
+	<Parameter name="Variable" type="string" value="Pu_238 Aqueous concentration"/>
+	<Parameter name="Time Macro" type="string" value="Every 10 years"/>
+      </ParameterList>
+      <ParameterList name="Pu 238 East Well">
+	<Parameter name="Region" type="string" value="East Well"/>
+	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
+	<Parameter name="Variable" type="string" value="Pu_238 Aqueous concentration"/>
+	<Parameter name="Time Macro" type="string" value="Every 10 years"/>
+      </ParameterList>
+      <ParameterList name="U 234 West Well">
+	<Parameter name="Region" type="string" value="West Well"/>
+	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
+	<Parameter name="Variable" type="string" value="U_234 Aqueous concentration"/>
+	<Parameter name="Time Macro" type="string" value="Every 10 years"/>
+      </ParameterList>
+      <ParameterList name="U 234 Center Well">
+	<Parameter name="Region" type="string" value="Center Well"/>
+	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
+	<Parameter name="Variable" type="string" value="U_234 Aqueous concentration"/>
+	<Parameter name="Time Macro" type="string" value="Every 10 years"/>
+      </ParameterList>
+      <ParameterList name="U 234 East Well">
+	<Parameter name="Region" type="string" value="East Well"/>
+	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
+	<Parameter name="Variable" type="string" value="U_234 Aqueous concentration"/>
+	<Parameter name="Time Macro" type="string" value="Every 10 years"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -337,6 +390,6 @@
     <Parameter name="Activity Model" type="string" value="unit" />
     <Parameter name="Tolerance" type="double" value="1.0e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
-    <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
+    <Parameter name="Max Time Step (s)" type="double" value="31557600.0"/>
   </ParameterList> <!-- Chemistry -->
 </ParameterList>

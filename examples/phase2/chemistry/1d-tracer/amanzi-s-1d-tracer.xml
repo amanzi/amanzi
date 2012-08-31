@@ -178,6 +178,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Output">
+    <Parameter name="File Name Digits" type="int" value="5"/>
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every_100_steps">
 	<Parameter name="Start_Period_Stop" type="Array int" value="{0., 100, -1}"/>
@@ -193,7 +194,6 @@
     </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="run_data/tracer"/>
-      <Parameter name="File Name Digits" type="int" value="5"/>
       <Parameter name="Time Macros" type="Array string" value="{Every_year}"/>
       <Parameter name="Cycle Macros" type="Array string" value="{Every_100_steps}"/>
 <!-- 	<Parameter name="Time Macros" type="Array string" value="{Every_0.05_year}"/> -->

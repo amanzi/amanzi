@@ -1877,7 +1877,7 @@ namespace Amanzi {
             if (do_chem) {
                 reqP.push_back(ion_name);
             }
-            PLoptions opt(fPLin,nullList,reqP,true,true);  
+            PLoptions opt(fPLin,nullList,reqP,true,false);  
             fPLout.set<double>("val",fPLin.get<double>(val_name));
             if (do_chem) {
 	        fPLout.set<double>(underscore(ion_name),fPLin.get<double>(ion_name));

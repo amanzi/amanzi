@@ -1,0 +1,253 @@
+:Description: 1-d benchmark problem for 2012 ascem waste tank demo. fixed velocity flow w/ radioactive decay and linear kd sorption
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    Pu_238
+    U_234
+    Th_230
+    Ra_226
+    Pb_210
+    Tc_99
+  /
+
+skip
+  GENERAL_REACTION
+    REACTION Pu_238 <-> U_234
+    FORWARD_RATE -2.506220e-10 : [s^-1] half life of 87.7 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION U_234 <-> Th_230
+    FORWARD_RATE -8.971246e-14 : [s^-1] half life of 245500 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION Th_230 <-> Ra_226
+    FORWARD_RATE -2.915060e-13 : [s^-1] half life of 75380 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION Ra_226 <-> Pb_210
+    FORWARD_RATE -1.373722e-11 : [s^-1] half life of 1600 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION Pb_210 <-> 
+    FORWARD_RATE -9.900700e-10 : [s^-1] half life of 22.2 y
+    BACKWARD_RATE 0.d0
+  /
+
+  GENERAL_REACTION
+    REACTION Tc_99 <-> 
+    FORWARD_RATE -1.041192e-13 : [s^-1] half life of 211100 y
+    BACKWARD_RATE 0.d0
+  /
+
+  SORPTION
+    ISOTHERM_REACTIONS
+      : Kd [kg_h2o/m^3 bulk] 
+      Pu_238
+        DISTRIBUTION_COEFFICIENT 461168.4
+      /
+      U_234
+        DISTRIBUTION_COEFFICIENT 329406.0
+      /
+      Th_230
+        DISTRIBUTION_COEFFICIENT 1482327.0
+      /
+      Ra_226
+        DISTRIBUTION_COEFFICIENT 41175.75
+      /
+      Pb_210
+        DISTRIBUTION_COEFFICIENT 3294060.0
+      /
+      Tc_99
+        DISTRIBUTION_COEFFICIENT 988.218
+      /
+    END :isotherm reactions
+  END :sorption
+noskip
+
+
+  DATABASE ascem-2012-waste-tanks.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS OFF
+  :MAX_RESIDUAL_TOLERANCE 1.0e-15
+  :OPERATOR_SPLITTING
+  OUTPUT
+    ALL
+    :TOTAL_SORBED
+  /
+
+END : chemistry
+
+:=========================== solver options ===================================
+TIMESTEPPER
+  :MAX_TS_CUTS 100
+  CFL_LIMITER 1.0
+/
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  ORIGIN 0.d0 0.d0 0.d0
+  NXYZ 100 1 1
+  BOUNDS
+    0.d0 1.d0
+    0.d0 0.01
+    0.d0 0.01
+  /
+END
+
+:=========================== flow =============================================
+: m^3/m^2/sec
+UNIFORM_VELOCITY 1.0e-8 0.d0 0.d0
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.38d0
+/
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION well_west
+/
+OBSERVATION
+  REGION well_center
+/
+OBSERVATION
+  REGION well_east
+/
+
+:=========================== output options ===================================
+OUTPUT
+  FORMAT HDF5
+  PERIODIC TIME 10 y
+  PERIODIC_OBSERVATION TIME 10 y
+/
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 100.d0 y
+  INITIAL_TIMESTEP_SIZE 1.0e-6 y
+  MAXIMUM_TIMESTEP_SIZE 1.0e2 y
+/
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION west
+  FACE WEST
+  COORDINATES
+    0.d0 0.d0 0.d0
+    0.d0 1.d0 1.d0
+  /
+END
+
+REGION east
+  FACE EAST
+  COORDINATES
+    1.d0 0.d0 0.d0
+    1.d0 1.d0 1.d0
+  /
+END
+
+REGION well_west
+  COORDINATE 0.0d0 0.5d0 0.5d0
+END
+
+REGION well_center
+  COORDINATE 0.5d0 0.5d0 0.5d0
+END
+
+REGION well_east
+  COORDINATE 1.0d0 0.5d0 0.5d0
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 initial
+  /
+END
+
+TRANSPORT_CONDITION west
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 west
+  /
+END
+
+TRANSPORT_CONDITION east
+  TYPE dirichlet_zero_gradient
+  CONSTRAINT_LIST
+    0.d0 west
+  /
+END
+
+:=========================== constraints ======================================
+CONSTRAINT initial
+  CONCENTRATIONS
+    Pu_238  1.0e-15     T
+    U_234   1.0e-15     T
+    Th_230  1.0e-15     T
+    Ra_226  1.0e-15     T
+    Pb_210  1.0e-15     T
+    Tc_99   1.0e-15     T
+  /
+END
+
+CONSTRAINT west
+  CONCENTRATIONS
+    Pu_238  1.0         T
+    U_234   1.0e-15     T
+    Th_230  1.0e-15     T
+    Ra_226  1.0e-15     T
+    Pb_210  1.0e-15     T
+    Tc_99   1.0e-15     T
+  /
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+: west boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION west
+  REGION west
+END
+
+: east boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION east
+  REGION east
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+
