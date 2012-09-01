@@ -237,17 +237,31 @@ PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm,
 {
     CheckCtx *user = (CheckCtx *) ctx;
     PetscErrorCode ierr;
+
+    PetscReal atol, rtol, stol;
+    PetscInt maxit, maxf;
+
+    static PetscReal dx_norm_0, fnew_norm_0;
+
+    ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf);
     ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx);
 #if 0
-    if (*reason == 0) {
-        if (it != 0) // if it=0, xnew_norm=dx_norm=0 in ls.c
-        {
-            if (ParallelDescriptor::IOProcessor()) {            
-                std::cout << "                   dx_norm: " << dx_norm << std::endl;
-                std::cout << "                 fnew_norm: " << fnew_norm << std::endl;
-            }
-        }
+    if (it == 1) {
+      dx_norm_0 = dx_norm;
+      fnew_norm_0 = fnew_norm;
+      if (ParallelDescriptor::IOProcessor()) {            
+	std::cout << "                   dx_norm_0: " << dx_norm_0 << std::endl;
+	std::cout << "                 fnew_norm_0: " << fnew_norm_0 << std::endl;
+      }
     }
+    if (it != 0) // if it=0, xnew_norm=dx_norm=0 in ls.c
+      {
+	if (ParallelDescriptor::IOProcessor()) {            
+	  std::cout << "                   dx_norm: " << dx_norm << ", dxre: " << dx_norm / dx_norm_0 << ", stol: " << stol << std::endl;
+	  std::cout << "                    p_norm: " << dx_norm / xnew_norm << std::endl;
+	  std::cout << "                 fnew_norm: " << fnew_norm << ", fre: " << fnew_norm / fnew_norm_0 << ", atol: " << atol << ", rtol: " << rtol << std::endl;
+	}
+      }
 #endif
     PetscFunctionReturn(ierr);
 }

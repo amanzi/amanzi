@@ -566,10 +566,10 @@ namespace Amanzi {
                 prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0;
             }
             else if (v_val == "Medium") {
-                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 1;
+                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0;
             }
             else if (v_val == "High") {
-                prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 1;
+                prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0;
             }
             else if (v_val == "Extreme") {
                 prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1;
