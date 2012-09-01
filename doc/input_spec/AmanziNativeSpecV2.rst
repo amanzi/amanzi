@@ -317,6 +317,10 @@ The remaining `"Flow`" parameters are
   only to source and sink terms. The available options are `"volume`",
   `"none`", and `"permeability`".
 
+* `"relative position of water table`" [Array string] collects regions where
+  the static head is set up with respect to the top side. For example, zero head
+  can be specified on the top of a boundary side using this array.
+
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
   Here is an example:

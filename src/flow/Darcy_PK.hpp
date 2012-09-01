@@ -64,6 +64,9 @@ class Darcy_PK : public Flow_PK {
   void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void UpdateSpecificYield();
 
+  void ProcessShiftWaterTableList();
+  void CalculateShiftWaterTable(const std::string region);
+
   void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
   double ErrorEstimate(double* dTfactor);
 
@@ -134,6 +137,7 @@ class Darcy_PK : public Flow_PK {
   BoundaryFunction* bc_seepage;
   std::vector<int> bc_markers;  // Used faces marked with boundary conditions
   std::vector<double> bc_values;
+  Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
   DomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 

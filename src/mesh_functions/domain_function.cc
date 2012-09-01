@@ -68,7 +68,6 @@ void DomainFunction::Compute(double t)
 {
   int dim = (*mesh_).space_dimension();
   double *args = new double[1+dim];
-  double *xargs = args+1;
   args[0] = t;
 
   for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
@@ -77,7 +76,7 @@ void DomainFunction::Compute(double t)
     double domain_volume = 0.0;
     for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
-      for (int i = 0; i < dim; ++i) xargs[i] = xc[i];
+      for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
       value_[*d] = (*(s->second))(args);
     }
   }
@@ -92,7 +91,6 @@ void DomainFunction::ComputeDistribute(double t)
 {
   int dim = (*mesh_).space_dimension();
   double *args = new double[1+dim];
-  double *xargs = args+1;
   args[0] = t;
 
   for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
@@ -105,7 +103,7 @@ void DomainFunction::ComputeDistribute(double t)
 
     for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
-      for (int i = 0; i < dim; ++i) xargs[i] = xc[i];
+      for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
       value_[*d] = (*(s->second))(args) / domain_volume;
     }
   }

@@ -169,13 +169,20 @@ void Darcy_PK::InitPK()
   bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces_wghost, 0.0);
 
+  ProcessShiftWaterTableList();
+
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
   time = T_physics;
-  bc_head->Compute(time);
+  bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
+  if (shift_water_table_.getRawPtr() == NULL) {
+    bc_head->Compute(time);
+  } else {
+    bc_head->ComputeShift(time, shift_water_table_->Values());
+  }
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure,
@@ -550,7 +557,7 @@ void Darcy_PK::UpdateSpecificYield()
             area -= (mesh_->face_normal(f))[dim - 1] * dirs[n];
       }
       FS->ref_specific_yield()[c] *= area;
-      if (area < 0.0) negative_yield++;
+      if (area <= 0.0) negative_yield++;
     }
   }
 
@@ -581,6 +588,48 @@ void Darcy_PK::AddTimeDerivativeSpecificYield(
     double factor = specific_yield[c] / (g * dT_prec);
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
+  }
+}
+
+
+/* ******************************************************************
+* Process parameter for special treatment of static head b.c.                                           
+****************************************************************** */
+void Darcy_PK::ProcessShiftWaterTableList()
+{
+  std::string name("relative position of water table");
+
+  if (dp_list_.isParameter(name)) {
+    std::vector<std::string> regions;
+    if (dp_list_.isType<Teuchos::Array<std::string> >(name)) {
+      regions = dp_list_.get<Teuchos::Array<std::string> >(name).toVector();
+
+      const Epetra_BlockMap& fmap = mesh_->face_map(false);
+      shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
+      
+      int nregions = regions.size();
+      for (int i = 0; i < nregions; i++) {
+        CalculateShiftWaterTable(regions[i]);
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculate distance to the top of a given surface where the water 
+* table is set up.                                               
+****************************************************************** */
+void Darcy_PK::CalculateShiftWaterTable(const std::string region) 
+{   
+cout << "processing region: " << region << endl;    
+  AmanziMesh::Entity_ID_List faces;
+  mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &faces);
+
+  int nfaces = faces.size();
+  for (int i = 0; i < nfaces; i++) {
+    int f = faces[i];
+    (*shift_water_table_)[f] = 0.0;
   }
 }
 
