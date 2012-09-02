@@ -102,7 +102,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file,
                            (char*)"Mesh/Nodes", &IOgroup_, 
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete nodes;
+  delete [] nodes;
   
   // write out node map
   ids = new int[nmap.NumMyElements()];
@@ -115,7 +115,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
                            (char*)"Mesh/NodeMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   
-  delete ids;
+  delete [] ids;
   
   // get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
@@ -202,7 +202,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(cells, PIO_INTEGER, 2, globaldims, localdims, file, 
                            (char*)"Mesh/MixedElements", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete cells;
+  delete [] cells;
   
   // write out cell map
   ids = new int[cmap.NumMyElements()];
@@ -217,7 +217,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file, 
                            (char*)"Mesh/ElementMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete ids;
+  delete [] ids;
   
   // close file
   parallelIO_close_file(file, &IOgroup_);
@@ -284,7 +284,7 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
 
   parallelIO_write_dataset(idata, PIO_INTEGER, 2, globaldims, localdims, file, tmpName,
                            &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
-  delete tmpName;
+  delete [] tmpName;
 
   // Create subset connectivity dataset
  
@@ -389,7 +389,7 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
                            &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
   parallelIO_close_file(file, &IOgroup_);
 
-  delete tmpName;
+  delete [] tmpName;
 
   // find Grid node
   if (viz_comm_.MyPID() == 0) {

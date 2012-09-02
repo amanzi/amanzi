@@ -21,11 +21,14 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
+/* ******************************************************************
+* Cannot destroy ML cleanly. Try Trilinos 10.10 (lipnikov@lanl.gov)                                        
+****************************************************************** */
 Matrix_MFD::~Matrix_MFD()
 {
   // if (MLprec->IsPreconditionerComputed()) {
-  //  MLprec->DestroyPreconditioner();
-  //  delete MLprec;
+  //   MLprec->DestroyPreconditioner();
+  //   delete MLprec;
   // }
 }
 
@@ -605,7 +608,7 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
                                      const Epetra_Import& face_importer,
                                      Epetra_Vector& darcy_mass_flux)
 {
-  Epetra_Vector* solution_faces = FS->CreateFaceView(solution);
+  Teuchos::RCP<Epetra_Vector> solution_faces = Teuchos::rcp(FS->CreateFaceView(solution));
 #ifdef HAVE_MPI
   Epetra_Vector solution_faces_wghost(mesh_->face_map(true));
   solution_faces_wghost.Import(*solution_faces, face_importer, Insert);

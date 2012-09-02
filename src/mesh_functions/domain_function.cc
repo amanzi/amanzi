@@ -41,7 +41,7 @@ void DomainFunction::Define(const std::vector<std::string>& regions,
   for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
     std::set<AmanziMesh::Entity_ID> overlap;
     std::set<AmanziMesh::Entity_ID>::iterator overlap_end;
-    const std::set<AmanziMesh::Entity_ID> &prev_domain = s->first;
+    const std::set<AmanziMesh::Entity_ID>& prev_domain = s->first;
     std::set_intersection(prev_domain.begin(), prev_domain.end(),
                           this_domain.begin(), this_domain.end(),
                           std::inserter(overlap, overlap.end()));
@@ -67,7 +67,7 @@ void DomainFunction::Define(const std::vector<std::string>& regions,
 void DomainFunction::Compute(double t)
 {
   int dim = (*mesh_).space_dimension();
-  double *args = new double[1+dim];
+  double* args = new double[1+dim];
   args[0] = t;
 
   for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
@@ -90,7 +90,7 @@ void DomainFunction::Compute(double t)
 void DomainFunction::ComputeDistribute(double t)
 {
   int dim = (*mesh_).space_dimension();
-  double *args = new double[1+dim];
+  double* args = new double[1+dim];
   args[0] = t;
 
   for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
@@ -117,8 +117,7 @@ void DomainFunction::ComputeDistribute(double t)
 void DomainFunction::ComputeDistribute(double t, double* weight)
 {
   int dim = (*mesh_).space_dimension();
-  double *args = new double[1+dim];
-  double *xargs = args+1;
+  double* args = new double[1+dim];
   args[0] = t;
 
   for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {
@@ -131,7 +130,7 @@ void DomainFunction::ComputeDistribute(double t, double* weight)
 
     for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
-      for (int i = 0; i < dim; ++i) xargs[i] = xc[i];
+      for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
       value_[*d] = (*(s->second))(args) * weight[*d] / domain_volume;
     }
   }

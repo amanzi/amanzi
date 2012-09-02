@@ -818,8 +818,10 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       int c2 = mfd.cell_get_face_adj_cell(c, f);
-      wsmin = std::min<double>(wsmin, ws[c2]);
-      wsmax = std::max<double>(wsmax, ws[c2]);
+      if (c2 >= 0) {
+        wsmin = std::min<double>(wsmin, ws[c2]);
+        wsmax = std::max<double>(wsmax, ws[c2]);
+      }
     }
 
     // predict new saturation
