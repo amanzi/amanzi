@@ -88,8 +88,8 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
-  double nokay() { return nokay_; }
-  double npassed() { return npassed_; }
+  int nokay() { return nokay_; }
+  int npassed() { return npassed_; }
 
  private:
   Teuchos::RCP<Flow_State> FS;
