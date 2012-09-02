@@ -147,6 +147,19 @@ void Darcy_PK::ProcessStringSourceDistribution(const std::string name, int* meth
   }
 }
 
+
+/* ******************************************************************
+* Printing information about Flow status.                                                     
+****************************************************************** */
+void Darcy_PK::PrintStatistics() const
+{
+  if (!MyPID && verbosity > 0) {
+    cout << "Flow PK:" << endl;
+    cout << "    Verbosity level = " << verbosity << endl;
+    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+  }
+}
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

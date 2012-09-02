@@ -93,6 +93,10 @@ class Darcy_PK : public Flow_PK {
   double mu() { return mu_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
 
+  // extension of STL
+  void set_intersection(const std::vector<int>& v1, 
+                        const std::vector<int>& v2, std::vector<int>* vv);
+
  private:
   Teuchos::ParameterList dp_list_;
   Teuchos::ParameterList preconditioner_list_;

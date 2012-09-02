@@ -623,26 +623,79 @@ void Darcy_PK::ProcessShiftWaterTableList()
 void Darcy_PK::CalculateShiftWaterTable(const std::string region) 
 {   
 cout << "processing region: " << region << endl;    
-  AmanziMesh::Entity_ID_List faces;
-  mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &faces);
+  Errors::Message msg;
 
-  int nfaces = faces.size();
-  for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
-    (*shift_water_table_)[f] = 0.0;
+  AmanziMesh::Entity_ID_List cells, faces, ss_faces;
+  AmanziMesh::Entity_ID_List nodes1, nodes2, common_nodes;
+
+  AmanziGeometry::Point p(dim);
+  std::vector<AmanziGeometry::Point> edges;
+
+  mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &ss_faces);
+  int n = ss_faces.size();
+
+  for (int i = 0; i < n; i++) {
+    int f1 = ss_faces[i];
+    mesh_->face_get_cells(f1, AmanziMesh::USED, &cells);
+
+    mesh_->face_get_nodes(f1, &nodes1);
+    std::sort(nodes1.begin(), nodes1.end());
+
+    int c = cells[0];
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    // find all edges that intersection of boundary faces f1 and f2
+    for (int j = 0; j < nfaces; j++) {
+      int f2 = faces[j];
+      if (f2 != f1) {
+        mesh_->face_get_cells(f2, AmanziMesh::USED, &cells);
+        int ncells = cells.size();
+        if (ncells == 1) {
+          mesh_->face_get_nodes(f2, &nodes2);
+          std::sort(nodes2.begin(), nodes2.end());
+          set_intersection(nodes1, nodes2, &common_nodes);
+
+          int m = common_nodes.size();
+          if (m > dim-1) {
+            msg << "Darcy PK: unsupported configuration.";
+            Exceptions::amanzi_throw(msg);
+          } else if (m == dim-1) {
+            for  (int k = 0; k < m; k++) {
+              int v = common_nodes[k];
+              mesh_->node_get_coordinates(v, &p);
+              edges.push_back(p);
+            }
+          }
+        }
+      }
+    }
   }
+
+// n = edges.size();
+// for (int i = 0; i < n; i++) cout << i << " " << edges[i] << endl;
 }
 
 
 /* ******************************************************************
-* Printing information about Flow status.                                                     
+* New implementation of the STL function.                                              
 ****************************************************************** */
-void Darcy_PK::PrintStatistics() const
+void Darcy_PK::set_intersection(const std::vector<int>& v1, 
+                                const std::vector<int>& v2, std::vector<int>* vv)
 {
-  if (!MyPID && verbosity > 0) {
-    cout << "Flow PK:" << endl;
-    cout << "    Verbosity level = " << verbosity << endl;
-    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+  int i(0), j(0), n1(v1.size()), n2(v2.size());
+
+  vv->clear();
+  while (i < n1 || j < n2) {
+    if (v1[i] < v2[j]) {
+      i++;
+    } else if (v2[j] < v1[i]) {
+      j++;
+    } else {
+      vv->push_back(v1[i]);
+      i++;
+      j++;
+    }
   }
 }
 
