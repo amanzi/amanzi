@@ -623,12 +623,13 @@ void Darcy_PK::ProcessShiftWaterTableList()
 void Darcy_PK::CalculateShiftWaterTable(const std::string region) 
 {   
 cout << "processing region: " << region << endl;    
+  double tol = 1e-24;
   Errors::Message msg;
 
   AmanziMesh::Entity_ID_List cells, faces, ss_faces;
   AmanziMesh::Entity_ID_List nodes1, nodes2, common_nodes;
 
-  AmanziGeometry::Point p(dim);
+  AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
   std::vector<AmanziGeometry::Point> edges;
 
   mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &ss_faces);
@@ -660,11 +661,19 @@ cout << "processing region: " << region << endl;
           if (m > dim-1) {
             msg << "Darcy PK: unsupported configuration.";
             Exceptions::amanzi_throw(msg);
-          } else if (m == dim-1) {
-            for  (int k = 0; k < m; k++) {
-              int v = common_nodes[k];
-              mesh_->node_get_coordinates(v, &p);
-              edges.push_back(p);
+          } else if (m == 1 && dim == 2) {
+            int v1 = common_nodes[0];
+            mesh_->node_get_coordinates(v1, &p1);
+            edges.push_back(p1);
+          } else if (m == 2 && dim == 3) {
+            int v1 = common_nodes[0], v2 = common_nodes[1];
+            mesh_->node_get_coordinates(v1, &p1);
+            mesh_->node_get_coordinates(v2, &p2);
+
+            p3 = p1 - p2;
+            if (p3[0] * p3[0] + p3[1] * p3[1] > tol * L22(p3)) {  // filter out vertical edges
+              edges.push_back(p1);
+              edges.push_back(p2);
             }
           }
         }
@@ -672,8 +681,30 @@ cout << "processing region: " << region << endl;
     }
   }
 
-// n = edges.size();
-// for (int i = 0; i < n; i++) cout << i << " " << edges[i] << endl;
+  // calculate head shift
+  int nedges = edges.size();
+  double edge_length, tol_edge, a, b;
+  double rho_g = -rho_ * gravity_[dim - 1];
+
+  for (int i = 0; i < n; i++) {
+    int f = ss_faces[i];
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    for (int j = 0; j < nedges; j += 2) {
+      p1 = edges[j + 1] - edges[j];
+      p2 = xf - edges[j];
+
+      edge_length = L22(p1);
+      tol_edge = tol * edge_length;
+
+      a = (p1 * p2) / edge_length;
+      b = p1[0] * p2[1] - p1[1] * p2[0];
+      if (b < tol_edge && a > -tol_edge && a < 1.0 + tol_edge) {
+        double z = edges[j][dim - 1] - a * p1[dim - 1];  
+        (*shift_water_table_)[f] = z * rho_g;
+        break;
+      }
+    } 
+  }
 }
 
 
