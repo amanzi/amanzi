@@ -633,6 +633,8 @@ void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
     status = H5Sclose(dataspace_id);  
     status = H5Pclose(acc_tpl1);
     status = H5Fclose(file);
+
+    delete [] DSpath;
   }
   
 void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
