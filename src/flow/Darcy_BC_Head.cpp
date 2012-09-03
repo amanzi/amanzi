@@ -47,13 +47,18 @@ void Darcy_PK::ProcessShiftWaterTableList()
 
 /* ******************************************************************
 * Calculate distance to the top of a given surface where the water 
-* table is set up.                                               
+* table is set up. 
+* WARNING: works only in 3D.                                            
 ****************************************************************** */
 void Darcy_PK::CalculateShiftWaterTable(const std::string region) 
 {   
-cout << "processing region: " << region << endl;    
   double tol = 1e-24;
   Errors::Message msg;
+
+  if (dim == 2) {
+    msg << "Darcy PK: This boundary condition is not supported in 2D.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   AmanziMesh::Entity_ID_List cells, faces, ss_faces;
   AmanziMesh::Entity_ID_List nodes1, nodes2, common_nodes;
@@ -88,7 +93,7 @@ cout << "processing region: " << region << endl;
 
           int m = common_nodes.size();
           if (m > dim-1) {
-            msg << "Darcy PK: unsupported configuration.";
+            msg << "Darcy PK: Unsupported configuration: two or more common edges.";
             Exceptions::amanzi_throw(msg);
           } else if (m == 1 && dim == 2) {
             int v1 = common_nodes[0];
@@ -110,7 +115,6 @@ cout << "processing region: " << region << endl;
     }
   }
   int nedges = edges.size();
-  // printf("found %5d edges on process %5d \n", nedges, MyPID);
 
 #ifdef HAVE_MPI
   int gsize;
@@ -158,6 +162,7 @@ cout << "processing region: " << region << endl;
   for (int i = 0; i < n; i++) {
     int f = ss_faces[i];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    int flag = 0;
     for (int j = 0; j < nedges; j += 2) {
       p1 = edges[j + 1] - edges[j];
       p2 = xf - edges[j];
@@ -170,14 +175,28 @@ cout << "processing region: " << region << endl;
       if (b < tol_edge && a > -tol_edge && a < 1.0 + tol_edge) {
         double z = edges[j][dim - 1] - a * p1[dim - 1];  
         (*shift_water_table_)[f] = z * rho_g;
-        break;
+        if (z > xf[2]) {
+          flag = 1;
+          break;
+        }
       }
     } 
+    if (flag == 0) {
+      msg << "Darcy PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 
 #ifdef HAVE_MPI
   delete [] edge_counts;
+  delete [] displs;
+  delete [] recvbuf;
+  if (sendbuf != NULL) delete [] sendbuf;
 #endif
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    printf("Darcy PK: found %5d boundary edges for region \"%s\"\n", nedges/2, region.c_str());   
+  }
 }
 
 
