@@ -11,6 +11,8 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
+#include <string>
+#include <algorithm>
 
 #include "Teuchos_RCP.hpp"
 
@@ -35,7 +37,7 @@ void Darcy_PK::ProcessShiftWaterTableList()
 
       const Epetra_BlockMap& fmap = mesh_->face_map(false);
       shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
-      
+
       int nregions = regions.size();
       for (int i = 0; i < nregions; i++) {
         CalculateShiftWaterTable(regions[i]);
@@ -50,8 +52,8 @@ void Darcy_PK::ProcessShiftWaterTableList()
 * table is set up. 
 * WARNING: works only in 3D.                                            
 ****************************************************************** */
-void Darcy_PK::CalculateShiftWaterTable(const std::string region) 
-{   
+void Darcy_PK::CalculateShiftWaterTable(const std::string region)
+{
   double tol = 1e-24;
   Errors::Message msg;
 
@@ -129,7 +131,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
   if (nedges > 0) sendbuf = new double[sendcount];
   for (int i = 0; i < nedges; i++) {
     for (int k = 0; k < dim; k++) sendbuf[dim * i + k] = edges[i][k];
-  } 
+  }
 
   // prepare receive buffer
   for (int i = 0; i < gsize; i++) edge_counts[i] *= dim;
@@ -141,7 +143,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
   displs[0] = 0;
   for (int i = 1; i < gsize; i++) displs[i] = edge_counts[i-1] + displs[i-1];
 
-  MPI_Allgatherv(sendbuf, sendcount, MPI_DOUBLE, 
+  MPI_Allgatherv(sendbuf, sendcount, MPI_DOUBLE,
                  recvbuf, edge_counts, displs, MPI_DOUBLE, comm);
 
   // process receive buffer
@@ -150,9 +152,9 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
   for (int i = 0; i < nedges; i++) {
     for (int k = 0; k < dim; k++) p1[k] = recvbuf[dim * i + k];
     edges.push_back(p1);
-  } 
+  }
 #endif
-  // if (MyPID == 2) for (int i = 0; i < nedges; i++) 
+  // if (MyPID == 2) for (int i = 0; i < nedges; i++)
   // printf("i= %5d  x = %12.6f %12.6f  %12.6f\n", i, edges[i][0], edges[i][1], edges[i][2]);
 
   // calculate head shift
@@ -173,14 +175,14 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
       a = (p1 * p2) / edge_length;
       b = p1[0] * p2[1] - p1[1] * p2[0];
       if (b < tol_edge && a > -tol_edge && a < 1.0 + tol_edge) {
-        double z = edges[j][dim - 1] - a * p1[dim - 1];  
+        double z = edges[j][dim - 1] - a * p1[dim - 1];
         (*shift_water_table_)[f] = z * rho_g;
         if (z > xf[2]) {
           flag = 1;
           break;
         }
       }
-    } 
+    }
     if (flag == 0) {
       msg << "Darcy PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
       Exceptions::amanzi_throw(msg);
@@ -195,7 +197,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 #endif
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    printf("Darcy PK: found %5d boundary edges for region \"%s\"\n", nedges/2, region.c_str());   
+    printf("Darcy PK: found %5d boundary edges for region \"%s\"\n", nedges/2, region.c_str());
   }
 }
 
@@ -203,13 +205,13 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 /* ******************************************************************
 * New implementation of the STL function.                                              
 ****************************************************************** */
-void Darcy_PK::set_intersection(const std::vector<int>& v1, 
+void Darcy_PK::set_intersection(const std::vector<int>& v1,
                                 const std::vector<int>& v2, std::vector<int>* vv)
 {
   int i(0), j(0), n1, n2;
 
-  n1 = (int)v1.size(); 
-  n2 = (int)v2.size();
+  n1 = v1.size();
+  n2 = v2.size();
   vv->clear();
 
   while (i < n1 && j < n2) {
