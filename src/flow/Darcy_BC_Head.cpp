@@ -109,17 +109,49 @@ cout << "processing region: " << region << endl;
       }
     }
   }
+  int nedges = edges.size();
+  // printf("found %5d edges on process %5d \n", nedges, MyPID);
 
 #ifdef HAVE_MPI
   int gsize;
   const MPI_Comm& comm = mesh_->get_comm()->Comm();
   MPI_Comm_size(comm, &gsize);
   int* edge_counts = new int[gsize];
+  MPI_Allgather(&nedges, 1, MPI_INT, edge_counts, 1, MPI_INT, comm);
+
+  // prepare send buffer
+  int sendcount = nedges * dim;
+  double* sendbuf = NULL;
+  if (nedges > 0) sendbuf = new double[sendcount];
+  for (int i = 0; i < nedges; i++) {
+    for (int k = 0; k < dim; k++) sendbuf[dim * i + k] = edges[i][k];
+  } 
+
+  // prepare receive buffer
+  for (int i = 0; i < gsize; i++) edge_counts[i] *= dim;
+  int recvcount = 0;
+  for (int i = 0; i < gsize; i++) recvcount += edge_counts[i];
+  double* recvbuf = new double[recvcount];
+
+  int* displs = new int[gsize];
+  displs[0] = 0;
+  for (int i = 1; i < gsize; i++) displs[i] = edge_counts[i-1] + displs[i-1];
+
+  MPI_Allgatherv(sendbuf, sendcount, MPI_DOUBLE, 
+                 recvbuf, edge_counts, displs, MPI_DOUBLE, comm);
+
+  // process receive buffer
+  edges.clear();
+  nedges = recvcount / dim;
+  for (int i = 0; i < nedges; i++) {
+    for (int k = 0; k < dim; k++) p1[k] = recvbuf[dim * i + k];
+    edges.push_back(p1);
+  } 
 #endif
+  // if (MyPID == 2) for (int i = 0; i < nedges; i++) 
+  // printf("i= %5d  x = %12.6f %12.6f  %12.6f\n", i, edges[i][0], edges[i][1], edges[i][2]);
 
   // calculate head shift
-  int nedges = edges.size();
-printf("found %5d on process %5d \n", nedges, MyPID);
   double edge_length, tol_edge, a, b;
   double rho_g = -rho_ * gravity_[dim - 1];
 
