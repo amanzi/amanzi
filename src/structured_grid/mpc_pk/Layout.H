@@ -72,11 +72,12 @@ struct Layout
     typedef BaseFab<int> IntFab;
     typedef FabArray<IntFab> MultiIntFab; 
 
-    Layout(Amr* parent = 0);
+    Layout(Amr* parent = 0,
+  	   int  nLevs = -1);
     ~Layout();
     void Clear();
     void SetParent(Amr* new_parent);
-    void Rebuild();
+    void Rebuild(int nLevs = -1);
     void SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const;
     int NumberOfGlobalNodeIds() const {return nNodes_global;}
     int NumberOfLocalNodeIds() const {return nNodes_local;}

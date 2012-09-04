@@ -18,17 +18,20 @@ struct MFTower
     MFTower(const Layout&    layout,
             const IndexType& t = IndexType(IntVect::TheZeroVector()),
             int              nComp = 1,
-            int              nGrow = 0);
+            int              nGrow = 0,
+	    int              numLevs = -1);
 
     MFTower(Layout&           layout,
-            PArray<MultiFab>& pamf);
+            PArray<MultiFab>& pamf,
+	    int               numLevs = -1);
 
     int NComp() const;
     int NGrow() const;
+    int NumLevels() const;
     MultiFab& operator[](int i);
     const MultiFab& operator[](int i) const;
     bool IsCompatible(const MFTower& rhs) const;
-    Real norm() const;
+    Real norm(int numLevs) const;
     const Layout& GetLayout() const;
     const IndexType& ixType() const;
 
@@ -39,22 +42,26 @@ struct MFTower
                            Real             mult=1,
                            int              sComp=0,
                            int              dComp=0,
-                           int              nComp=1);
+                           int              nComp=1,
+			   int              numLevs=-1);
     
     static void ECtoCCdiv(MFTower&               mft_cc,
                           const PArray<MFTower>& mft_ec,
                           Real                   mult=1,
                           int                    sComp=0,
                           int                    dComp=0,
-                          int                    nComp=1);
+                          int                    nComp=1,
+			  int                    numLevs=-1);
     
     static void AverageDown(MFTower& mft,
                             int      sComp=0,
-                            int      nComp=1);
+                            int      nComp=1,
+			    int      numLevs=-1);
     
     void SetVal(Real     val,
 		int      sComp=0,
-		int      nComp=1);
+		int      nComp=1,
+		int      numLevs=-1);
   
     static IndexType EC[BL_SPACEDIM], CC, NC;
 
@@ -79,15 +86,18 @@ struct MFTFillPatch
 
     void DoCoarseFineParallelInterp(MFTower& mft,
                                     int      sComp=1,
-                                    int      nComp=1) const;
+                                    int      nComp=1,
+				    int      numLevs=-1) const;
     void FillGrowCells(MFTower& mft,
                        int      sComp=0,
                        int      nComp=1,
-                       bool     do_piecewise_constant = false) const;
+                       bool     do_piecewise_constant = false,
+		       int      numLevs=-1) const;
 
     void FillGrowCellsSimple(MFTower& mft,
                              int      sComp=0,
-                             int      nComp=1) const;
+                             int      nComp=1,
+			     int      numLevs=-1) const;
 
     const Array<Array<IVSMap> >& GrowCellStencil() const {return perpInterpStencil;} //[lev][dir][iv] = stencil to fill grow cells
 

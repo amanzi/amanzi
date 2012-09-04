@@ -32,13 +32,16 @@ public:
   };
 
   RichardSolver(PMAmr&          pm_amr,
-		const RSParams& params);
+		const RSParams& params,
+		Layout&         layout);
   ~RichardSolver();
+  Layout& GetLayout() {return layout;}
   void ResetRhoSat();
   void SetTime(Real time);
   Real GetTime() const;
   void SetDt(Real dt);
   Real GetDt() const;
+  Real GetNumLevels() const {return nLevs;}
   MFTower& GetRhoSatN() {return *RhoSatOld;}
   MFTower& GetRhoSatNp1() {return *RhoSatNew;}
   MFTower& GetLambda() {return *Lambda;}
@@ -61,9 +64,9 @@ public:
   PMAmr& GetPMAMR() {return pm_amr;}
   MatFDColoring& GetMatFDColoring() {return matfdcoloring;}
   PorousMedia& GetPMlevel(int level) {return pm[level];}
-  const Array<BoxArray>& GridArray() const {return PMAmr::GetLayout().GridArray();}
-  const Array<Geometry>& GeomArray() const {return PMAmr::GetLayout().GeomArray();}
-  const Array<IntVect>& RefRatio() const {return PMAmr::GetLayout().RefRatio();}
+  const Array<BoxArray>& GridArray() const {return layout.GridArray();}
+  const Array<Geometry>& GeomArray() const {return layout.GeomArray();}
+  const Array<IntVect>& RefRatio() const {return layout.RefRatio();}
   const RichardSolver::RSParams& Parameters() {return params;}
 
   void UpdateDarcyVelocity(MFTower& pressure,
@@ -144,6 +147,7 @@ protected:
   RSParams params;
   PArray<PorousMedia> pm;
   MFTFillPatch* mftfp;
+  Layout& layout;
 
   SNES           snes;
   ISColoring     iscoloring;

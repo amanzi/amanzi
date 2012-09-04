@@ -1742,306 +1742,310 @@ PorousMedia::richard_init_to_steady()
     //
     // Richard initialization
     //
-    if (model == model_list["richard"])
-    {
-        std::string tag = "Richard Init-to-Steady";
-        if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-            std::cout << tag << std::endl;
-        }        
-
-        bool do_brute_force = false;
-        //do_brute_force = true;
+  if (model == model_list["richard"]) {
+    std::string tag = "Richard Init-to-Steady";
+    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+      std::cout << tag << std::endl;
+    }        
+    
+    bool do_brute_force = false;
+    //do_brute_force = true;
+    
+    if (level == 0) {
+      if (do_brute_force) {
+	richard_eqb_update(u_mac_curr);
+      } else {
+	int old_richard_solver_verbose = richard_solver_verbose;
+	richard_solver_verbose = richard_init_to_steady_verbose;
+	initial_iter = 1;
         
-        if (level == 0) {
-            if (do_brute_force)
-                richard_eqb_update(u_mac_curr);
-            else
-            {
-                int old_richard_solver_verbose = richard_solver_verbose;
-		richard_solver_verbose = richard_init_to_steady_verbose;
-		initial_iter = 1;
-                
-                Real cur_time = state[State_Type].curTime();
-                Real prev_time = state[State_Type].prevTime();
-                int  finest_level = parent->finestLevel();
-                Array<Real> dt_save(finest_level+1);
-                Array<int> nc_save(finest_level+1);
-                int  n_factor;
-                for (int k = 0; k <= finest_level; k++)
-                {
-                    nc_save[k] = parent->nCycle(k);
-                    dt_save[k] = parent->dtLevel()[k];
-                    dt_save[k] = parent->getLevel(k).get_state_data(0).curTime()
-                        - getLevel(k).get_state_data(0).prevTime();
-                }
+	Real cur_time = state[State_Type].curTime();
+	Real prev_time = state[State_Type].prevTime();
+	int  finest_level = parent->finestLevel();
+	Array<Real> dt_save(finest_level+1);
+	Array<int> nc_save(finest_level+1);
+	int  n_factor;
+	for (int k = 0; k <= finest_level; k++) {
+	  nc_save[k] = parent->nCycle(k);
+	  dt_save[k] = parent->dtLevel()[k];
+	  dt_save[k] = parent->getLevel(k).get_state_data(0).curTime()
+	    - getLevel(k).get_state_data(0).prevTime();
+	}
+	
+	Real t_max = (execution_mode=="init_to_steady" ? switch_time : steady_max_psuedo_time);
+	Real dt_init = steady_init_time_step;
+	Real dt = dt_init;
+	int k_max = steady_max_time_steps;
+	Real t_eps = 1.e-8*dt_init;
+	
+	MultiFab tmp(grids,1,1);
+	MultiFab tmpP(grids,1,1);
+	int nc = 0; // Component of water in state
+	PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
+	
+	bool solved = false;
+	int total_num_Newton_iterations = 0;
+	int total_rejected_Newton_steps = 0;
 
-                Real dt_init = steady_init_time_step;
-                Real t_max = (execution_mode=="init_to_steady" ? switch_time : steady_max_psuedo_time);
-                int k_max = steady_max_time_steps;
-                Real t_eps = 1.e-8*dt_init;
+	int grid_seq_init_fine = (steady_do_grid_sequence ? 0 : finest_level);
+	for (int grid_seq_fine=grid_seq_init_fine; grid_seq_fine<=finest_level; ++grid_seq_fine) {
 
-                MultiFab tmp(grids,1,1);
-                MultiFab tmpP(grids,1,1);
-                int nc = 0; // Component of water in state
+	  int num_active_levels = grid_seq_fine + 1;
+	  std::cout << "Number of active levels: " << num_active_levels << std::endl;
 
-                Real prev_abs_err, init_abs_err;
-                Real rel_err = -1;
-                Real abs_err = -1;
+	  if (num_active_levels > 1) {
+	    dt *= steady_grid_sequence_new_level_dt_factor;
+	  }
 
-                Real dt = dt_init;
-                Real t = 0;
-                bool first = true;
-                int k = 0;
-                bool solved = false;
-                bool continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
+	  Layout layout_sub(parent,num_active_levels);	  
+	  Real prev_abs_err, init_abs_err;
+	  Real rel_err = -1;
+	  Real abs_err = -1;
 
-                RichardNLSdata::Reason ret;
-                RichardNLSdata nld = BuildInitNLS();
+	  bool first = true;
+	  Real t = 0;
+	  int k = 0;
+	  bool continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
+	  
+	  RichardNLSdata::Reason ret;
+	  RichardNLSdata nld = BuildInitNLS();
+	  
+	  RichardSolver* rs = 0;
+	  if (steady_use_PETSc_snes) {
+	    RichardSolver::RSParams rsparams;
+	    rsparams.max_ls_iterations = richard_max_ls_iterations;
+	    rsparams.min_ls_factor = richard_min_ls_factor;
+	    rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
+	    rsparams.ls_reduction_factor = richard_ls_reduction_factor;
+	    rsparams.monitor_line_search = richard_monitor_line_search;
+	    rsparams.errfd = richard_perturbation_scale_for_J;
+	    rsparams.maxit = steady_limit_iterations;
+	    rsparams.maxf = steady_limit_function_evals;
+	    rsparams.atol = steady_abs_tolerance;
+	    rsparams.rtol = steady_rel_tolerance;
+	    rsparams.stol = steady_abs_update_tolerance;
+	    rsparams.use_fd_jac = richard_use_fd_jac;
+	    rsparams.use_dense_Jacobian = richard_use_dense_Jacobian;
+	    rsparams.upwind_krel = richard_upwind_krel;
+	    rsparams.pressure_maxorder = richard_pressure_maxorder;
+	    rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
+	    
+	    rs = new RichardSolver(*(PMParent()),rsparams,layout_sub);
+	  }
 
-		RichardSolver* rs = 0;
-                if (steady_use_PETSc_snes) {
-		  RichardSolver::RSParams rsparams;
-		  rsparams.max_ls_iterations = richard_max_ls_iterations;
-		  rsparams.min_ls_factor = richard_min_ls_factor;
-		  rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
-		  rsparams.ls_reduction_factor = richard_ls_reduction_factor;
-		  rsparams.monitor_line_search = richard_monitor_line_search;
-		  rsparams.errfd = richard_perturbation_scale_for_J;
-		  rsparams.maxit = steady_limit_iterations;
-		  rsparams.maxf = steady_limit_function_evals;
-		  rsparams.atol = steady_abs_tolerance;
-		  rsparams.rtol = steady_rel_tolerance;
-		  rsparams.stol = steady_abs_update_tolerance;
-		  rsparams.use_fd_jac = richard_use_fd_jac;
-		  rsparams.use_dense_Jacobian = richard_use_dense_Jacobian;
-		  rsparams.upwind_krel = richard_upwind_krel;
-		  rsparams.pressure_maxorder = richard_pressure_maxorder;
-		  rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
+	  while (continue_iterations) {
+	    // Advance the state data structures
+	    for (int lev=0;lev<num_active_levels;lev++) {
+	      PorousMedia& pm = getLevel(lev);
+	      for (int i = 0; i < num_state_type; i++) {
+		pm.state[i].allocOldData();
+		pm.state[i].swapTimeLevels(dt);
+		pm.state[i].setTimeLevel(t+dt,dt,dt);
+	      }
+	    }
 
-		  rs = new RichardSolver(*(PMParent()),rsparams);
-                }
+	    cur_time = state[Press_Type].curTime();
+	    prev_time = state[Press_Type].prevTime();
 
-                int total_num_Newton_iterations = 0;
-                int total_rejected_Newton_steps = 0;
-                while (continue_iterations)
-		{
-
-		  // Advance the state data structures
-		  for (int lev=0;lev<= finest_level;lev++)
-		    {
-		      PorousMedia& pm = getLevel(lev);
-		      for (int i = 0; i < num_state_type; i++)
-			{
-			  pm.state[i].allocOldData();
-			  pm.state[i].swapTimeLevels(dt);
-			}
-		    }
-		  // FIXME:
-		  // If execution mode is Initialize To Steady, time increments as we evolve here.
-		  // If mode is Transient, the loop here does not advance time
-		  cur_time = state[Press_Type].curTime();
-		  prev_time = state[Press_Type].prevTime();
-
-		  for (int lev=0;lev<= finest_level;lev++)
-		    {
-		      PorousMedia& pm = getLevel(lev);
-		      for (int i = 0; i < num_state_type; i++)
-			{
-			  MultiFab& od = pm.get_old_data(i);
-			  MultiFab& nd = pm.get_new_data(i);
-			  MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next time step
-			}
-		    }
-
-		  if (steady_use_PETSc_snes) {
-		    rs->ResetRhoSat();
+	    for (int lev=0;lev<num_active_levels;lev++)
+	      {
+		PorousMedia& pm = getLevel(lev);
+		for (int i = 0; i < num_state_type; i++)
+		  {
+		    MultiFab& od = pm.get_old_data(i);
+		    MultiFab& nd = pm.get_new_data(i);
+		    MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next time step
 		  }
+	      }
+	    
+	    if (steady_use_PETSc_snes) {
+	      rs->ResetRhoSat();
+	    }
+	    
+	    MultiFab& S_new = get_new_data(State_Type);
+	    MultiFab::Copy(tmp,get_new_data(Press_Type),nc,0,1,0);
+	    tmp.mult(-1.0);
+	    
+	    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+	      std::cout << tag << "  t=" << t 
+			<< ", n=" << k << ", dt=" << dt << '\n';
+	    }
 
-		  MultiFab& S_new = get_new_data(State_Type);
-		  MultiFab::Copy(tmp,get_new_data(Press_Type),nc,0,1,0);
-		  tmp.mult(-1.0);
-
-		  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                        std::cout << tag << "  t=" << t 
-                                  << ", n=" << k << ", dt=" << dt << '\n';
-                    }
-
-                    if (do_multilevel_full) {
-                        nld.ResetCounters();
-                        nld.ResetJacobianCounter();	
-
-			// Save the initial state 
-			for (int lev=0;lev<= finest_level;lev++)
-			  {
-			    PorousMedia&    fine_lev   = getLevel(lev);
-			    if (do_richard_sat_solve)
-			      {
-				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
-				MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
-			      }
-			    else
-			      {
-				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
-				MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
-			      }
-			  }
-
-			if (steady_use_PETSc_snes) 
-			  {
- 			      int retCode = rs->Solve(t+dt, dt, k, nld);
-                              if (retCode >= 0) {
-                                  ret = RichardNLSdata::RICHARD_SUCCESS;
-                              } 
-                              else {
-                                  if (ret == -3) {
-                                      ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
-                                  }
-                                  else {
-                                      ret = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
-                                      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
-                                          std::cout << "     **************** Newton failed: " << GetPETScReason(retCode) << '\n';
-                                  }
-                              }
-			  }
-			else
-			  {
-			    ret = richard_composite_update(dt,nld);
-			  }
-			total_num_Newton_iterations += nld.NLIterationsTaken();
-                    }
-                    else {
-                        int curr_nwt_iter = steady_limit_iterations;
-                        ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
-                        total_num_Newton_iterations += curr_nwt_iter;
-                    }
-
-                    if (ret == RichardNLSdata::RICHARD_SUCCESS)
-                    {
-                        prev_abs_err = abs_err;
-                        MultiFab::Add(tmp,get_new_data(Press_Type),nc,0,1,0);
-                        abs_err = tmp.norm2(0);
-                        if (first){
-                            init_abs_err = abs_err;
-                            first = false;
-                        }
-                        else {
-                            rel_err = abs_err / init_abs_err;
-                        }
-                    }
-                    else {
-
-                        if (steady_abort_on_psuedo_timestep_failure)
-                        {
-                            BoxLib::Abort("Aborting as instructed when timestep fails");
-                        }
-
-                        total_rejected_Newton_steps++;
-			for (int lev=0;lev<= finest_level;lev++)
-			  {
-			    PorousMedia&    fine_lev   = getLevel(lev);
-
-			    for (int k = 0; k < num_state_type; k++)
-			      {
-				fine_lev.state[k].reset();
-			      }
-
-			    if (do_richard_sat_solve)
-			      {
-				MultiFab& S_lev = fine_lev.get_new_data(State_Type);
-				MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
-			      }
-			    else
-			      {
-				MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
-				MultiFab::Copy(P_lev,nld.initialState[lev],0,0,1,1);
-			      }
-			  }
-                    }
-
-                    Real dt_new;
-                    bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
-
-                    if (ret == RichardNLSdata::RICHARD_SUCCESS)
-                    {
-                        k++;
-                        t += dt;
-			if (execution_mode=="init_to_steady")
-			  {
-			    solved = false;
-			  }
-			else
-			  {
-			    solved = ((abs_err <= steady_abs_update_tolerance) 
-				      || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
-			  }
-                        continue_iterations = cont && (!solved)  &&  (k < k_max)  &&  (t < t_max);
-
-                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
-                            std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken();
-                            if ( std::abs(dt - dt_new) > t_eps) {
-                                std::cout << "   dt factor = " << dt_new / dt;
-                            }
-                            std::cout << std::endl;
-                        }
-                    }
-                    else 
-                    {
-                        if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
-                            std::cout << tag << "   Step failed ";
-                            if (ret==RichardNLSdata::RICHARD_NONLINEAR_FAIL) {
-                                std::cout << "(NL failure)";
-                            }
-                            else {
-                                std::cout << "(L failure) ";
-                            }
-
-                            if ( std::abs(dt - dt_new) > t_eps) {
-                                std::cout << "   dt factor = " << dt_new / dt;
-                            }
-                            std::cout << std::endl;
-                        }
-                    }
-
-                    dt = std::min(dt_new, t_max-t);
-                }
-
-                delete rs;
-                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                    std::cout << tag << " Total psuedo-time advanced: " << t << " in " << k << " steps" << std::endl;
-                    std::cout << tag << "      Newton iters: " << total_num_Newton_iterations << std::endl;
-                    std::cout << tag << "      Rejected steps: " << total_rejected_Newton_steps << std::endl;
-                }
-
-                if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-                    if (solved) {
-                        std::cout << tag << " Success!  Steady solution found" << std::endl;
-                    }
-                    else {
-                        std::cout << tag << " Warning: solution is not steady.  Continuing..." << std::endl;
-                    }
-                }
-
-                richard_solver_verbose = old_richard_solver_verbose;
-		initial_iter = 0;
-
-                //
-                // Re-instate timestep.
-                //	
-		PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
-		if (execution_mode=="init_to_steady") {
-		  p->SetStartTime(t_max);
-		  p->SetCumTime(t_max);
+	    if (do_multilevel_full) {
+	      nld.ResetCounters();
+	      nld.ResetJacobianCounter();	
+	      
+	      // Save the initial state 
+	      for (int lev=0;lev<num_active_levels;lev++)
+		{
+		  PorousMedia&    fine_lev   = getLevel(lev);
+		  if (do_richard_sat_solve)
+		    {
+		      MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+		      MultiFab::Copy(nld.initialState[lev],S_lev,0,0,1,1);
+		    }
+		  else
+		    {
+		      MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+		      MultiFab::Copy(nld.initialState[lev],P_lev,0,0,1,1);
+		    }
 		}
-		Real time_after_init = p->GetStartTime();
-                parent->setDtLevel(dt_save);
-                parent->setNCycle(nc_save);
-                for (int k = 0; k <= finest_level; k++)
-                {
-		  getLevel(k).setTimeLevel(time_after_init,dt_save[k],dt_save[k]);
-                }
-            }
-        }
+	      
+	      if (steady_use_PETSc_snes) 
+		{
+		  int retCode = rs->Solve(t+dt, dt, k, nld);
+		  if (retCode >= 0) {
+		    ret = RichardNLSdata::RICHARD_SUCCESS;
+		  } 
+		  else {
+		    if (ret == -3) {
+		      ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
+		    }
+		    else {
+		      ret = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
+		      if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+			std::cout << "     **************** Newton failed: " << GetPETScReason(retCode) << '\n';
+		    }
+		  }
+		}
+	      else
+		{
+		  ret = richard_composite_update(dt,nld);
+		}
+	      total_num_Newton_iterations += nld.NLIterationsTaken();
+	    }
+	    else {
+	      int curr_nwt_iter = steady_limit_iterations;
+	      ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
+	      total_num_Newton_iterations += curr_nwt_iter;
+	    }
+
+	    if (ret == RichardNLSdata::RICHARD_SUCCESS) {
+	      prev_abs_err = abs_err;
+	      MultiFab::Add(tmp,get_new_data(Press_Type),nc,0,1,0);
+	      abs_err = tmp.norm2(0);
+	      if (first) {
+		init_abs_err = abs_err;
+		first = false;
+	      }
+	      else {
+		rel_err = abs_err / init_abs_err;
+	      }
+	    }
+	    else {
+	      if (steady_abort_on_psuedo_timestep_failure) {
+		BoxLib::Abort("Aborting as instructed when timestep fails");
+	      }
+	      total_rejected_Newton_steps++;
+	      for (int lev=0;lev<num_active_levels;lev++) {
+
+		PorousMedia&    fine_lev   = getLevel(lev);
+		for (int k = 0; k < num_state_type; k++) {
+		  fine_lev.state[k].reset();
+		}
+		
+		if (do_richard_sat_solve) {
+		  MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+		  MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
+		}
+		else {
+		  MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+		  MultiFab::Copy(P_lev,nld.initialState[lev],0,0,1,1);
+		}
+	      }
+	    } // Newton fail
+
+	    Real dt_new;
+	    bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
+	    
+	    if (ret == RichardNLSdata::RICHARD_SUCCESS) {
+	      k++;
+	      t += dt;
+	      if (execution_mode=="init_to_steady") {
+		solved = false; // Do not kick out early
+	      }
+	      else {
+		solved = ((abs_err <= steady_abs_update_tolerance) 
+			  || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+	      }
+	      if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
+		std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken();
+	      }
+	    }
+	    else {
+	      if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
+		std::cout << tag << "   Step failed ";
+		if (ret==RichardNLSdata::RICHARD_NONLINEAR_FAIL) {
+		  std::cout << "(NL failure)";
+		}
+		else {
+		  std::cout << "(L failure) ";
+		}
+	      }
+	    } // Newton fail
+		    
+	    if ( std::abs(dt - dt_new) > t_eps) {
+	      std::cout << "   dt factor = " << dt_new / dt << std::endl;
+	    }
+	    
+	    continue_iterations = cont && (!solved)  &&  (k < k_max)  &&  (t < t_max);
+	    if (continue_iterations) {
+	      dt = std::min(dt_new, t_max-t);
+	    }
+	  } // time-step
+		
+	  delete rs;
+
+	  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+	    std::cout << tag << " Total psuedo-time advanced: " << t << " in " << k << " steps" << std::endl;
+	    std::cout << tag << "      Newton iters: " << total_num_Newton_iterations << std::endl;
+	    std::cout << tag << "      Rejected steps: " << total_rejected_Newton_steps << std::endl;
+	  }
+	  
+	  // Set data on next level by interpolating the pressure field and inverting out rho.sat
+	  if (num_active_levels<=finest_level) {
+	    int curr_flev = num_active_levels - 1;
+	    PorousMedia& pmf = dynamic_cast<PorousMedia&>(getLevel(curr_flev + 1));
+	    pmf.setTimeLevel(t+dt,dt,dt);
+	    for (int lev=0; lev<=curr_flev; ++lev) {
+	      PorousMedia& pmfi = dynamic_cast<PorousMedia&>(getLevel(lev));
+	      pmfi.setTimeLevel(t+dt,dt,dt);
+	    }
+	    pmf.FillCoarsePatch(pmf.get_new_data(Press_Type),0,t+dt,Press_Type,0,ncomps);
+	    pmf.FillStateBndry(t,Press_Type,0,1); // Set boundary data (FIXME: If t-dep, this will set at t_final)
+	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type));
+	  }
+	  
+	  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+	    if (solved) {
+	      std::cout << tag << " Success!  Steady solution found" << std::endl;
+	    }
+	    else {
+	      std::cout << tag << " Warning: solution is not steady.  Continuing..." << std::endl;
+	    }
+	  }
+	}
+
+	Real time_after_init = p->GetStartTime();
+	for (int lev = 0; lev <= finest_level; lev++) {
+	  getLevel(lev).setTimeLevel(time_after_init,dt_save[lev],dt_save[lev]);
+	}
+	
+	richard_solver_verbose = old_richard_solver_verbose;
+	initial_iter = 0;
+	    
+	//
+	// Re-instate timestep.
+	//	
+	if (execution_mode=="init_to_steady") {
+	  p->SetStartTime(t_max);
+	  p->SetCumTime(t_max);
+	}
+	parent->setDtLevel(dt_save);
+	parent->setNCycle(nc_save);
+      }
     }
+  }
 #endif
 }
 
@@ -3046,6 +3050,8 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
     if (!pm_amr) 
       BoxLib::Abort("Bad cast in PorousMedia::advance_multilevel_richard");
 
+    int num_active_levels = finest_level + 1;
+    Layout layout_sub(parent,num_active_levels);
     RichardSolver* rs = 0;
     if (steady_use_PETSc_snes) {
       RichardSolver::RSParams rsparams;
@@ -3065,7 +3071,7 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
       rsparams.upwind_krel = richard_upwind_krel;
       rsparams.pressure_maxorder = richard_pressure_maxorder;
 
-      rs = new RichardSolver(*(PMParent()),rsparams);
+      rs = new RichardSolver(*(PMParent()),rsparams,layout_sub);
 
     }
     
@@ -8331,15 +8337,15 @@ PorousMedia::post_init_state ()
       else 
       {
           PMAmr* pmamr = PMParent();
+	  int  finest_level = parent->finestLevel();
 
           if (steady_use_PETSc_snes) {
               // Compute initial velocity field
-              RichardSolver rs(*pmamr,RichardSolver::RSParams());
+	      RichardSolver rs(*pmamr,RichardSolver::RSParams(),PMAmr::GetLayout());
               rs.ResetRhoSat();
               rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->GetStartTime());
           }
           else {
-              int  finest_level = parent->finestLevel();
               for (int k = 0; k <= finest_level; k++) {
                   PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(k));
                   BL_ASSERT(pm);
@@ -8358,7 +8364,10 @@ PorousMedia::post_init_state ()
   //
   for (int k = finest_level-1; k>= 0; k--)
     {
-      getLevel(k).avgDown();
+
+      //FIXME
+      std::cout << "HACK skip avgdown" << std::endl;
+      //getLevel(k).avgDown();
     }
 }
 

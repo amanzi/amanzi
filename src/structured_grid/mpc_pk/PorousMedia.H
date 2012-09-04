@@ -1324,6 +1324,8 @@ protected:
   static Real steady_rel_tolerance;
   static Real steady_abs_update_tolerance;
   static Real steady_rel_update_tolerance;
+  static int  steady_do_grid_sequence;
+  static Real steady_grid_sequence_new_level_dt_factor;
 
   //
   // Newton step defaults

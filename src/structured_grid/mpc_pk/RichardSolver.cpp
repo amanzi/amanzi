@@ -70,19 +70,18 @@ struct CheckCtx
 
 
 RichardSolver::RichardSolver(PMAmr&          _pm_amr,
-			     const RSParams& _params)
+			     const RSParams& _params,
+			     Layout&         _layout)
   : pm_amr(_pm_amr),
+    layout(_layout),
     params(_params)
 {
-  mftfp = new MFTFillPatch(PMAmr::GetLayout());
-  nLevs = pm_amr.finestLevel() + 1;
+  nLevs = layout.NumLevels();
+  mftfp = new MFTFillPatch(layout);
   pm.resize(nLevs,PArrayNoManage);
   for (int lev = 0; lev < nLevs; lev++)  {
     pm.set(lev,dynamic_cast<PorousMedia*>(&pm_amr.getLevel(lev)));
   }
-      
-  Layout& layout = PMAmr::GetLayout();
-  BL_ASSERT(nLevs == layout.NumLevels());
 
   // These will be set prior to each solve call in order to support the case that
   // the unlying multifabs get changed between repeated calls to this solver (AMR
@@ -106,19 +105,19 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   }
 
   if (!params.use_fd_jac) {
-      KappaCC = new MFTower(layout,kappacc);
+    KappaCC = new MFTower(layout,kappacc,nLevs);
   }
   else {
       KappaCC = 0;
   }
-  Lambda = new MFTower(layout,lambda);
-  Porosity = new MFTower(layout,porosity);
-  PCapParams = new MFTower(layout,pcap_params);
+  Lambda = new MFTower(layout,lambda,nLevs);
+  Porosity = new MFTower(layout,porosity,nLevs);
+  PCapParams = new MFTower(layout,pcap_params,nLevs);
       
   // Because kpedge has a weird boxarray, we maintain our own copy....should fix this
   ktmp.resize(BL_SPACEDIM);
   ctmp.resize(BL_SPACEDIM);
-  Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1);
+  Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   
   Kappa.resize(BL_SPACEDIM,PArrayManage);
   RichardCoefs.resize(BL_SPACEDIM,PArrayManage);
@@ -133,9 +132,9 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
       ctmp[d].set(lev, new MultiFab(ba,1,0));
       utmp.set(lev,&(pm[lev].UMac_Curr()[d]));
     }
-    Kappa.set(d,new MFTower(layout,ktmp[d]));
-    DarcyVelocity.set(d, new MFTower(layout,utmp));
-    RichardCoefs.set(d, new MFTower(layout,ctmp[d]));
+    Kappa.set(d,new MFTower(layout,ktmp[d],nLevs));
+    DarcyVelocity.set(d, new MFTower(layout,utmp,nLevs));
+    RichardCoefs.set(d, new MFTower(layout,ctmp[d],nLevs));
     utmp.clear();
   }
 
@@ -245,6 +244,7 @@ PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm,
 
     ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf);
     ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx);
+    
 #if 0
     if (it == 1) {
       dx_norm_0 = dx_norm;
@@ -279,7 +279,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   // Copy from MFTowers in state to Vec structures
   PetscErrorCode ierr;
-  Layout& layout = PMAmr::GetLayout();
   ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnTypInvV,PCapParamsMFT,2); CHKPETSC(ierr); // Get "sigma" = 1/P_typ, which is in slot number 2
@@ -340,18 +339,9 @@ RichardSolver::ResetRhoSat()
     P_new.set(lev,&(pm[lev].get_new_data(Press_Type)));
   }
 
-  Layout& layout = PMAmr::GetLayout();
-  delete RhoSatOld; RhoSatOld = new MFTower(layout,S_old);
-  delete RhoSatNew; RhoSatNew = new MFTower(layout,S_new);
-  delete Pnew; Pnew = new MFTower(layout,P_new);
-
-#if 0
-  for (int lev=0; lev<nLevs; ++lev) {
-      MultiFab::Copy((*PStar)[lev],pm[lev].get_new_data(Press_Type),0,0,1,0);
-      MultiFab::Copy((*RhoSatStar)[lev],(*RhoSatNew)[lev],0,0,1,0);
-      pm[lev].calc_richard_alpha(&((*AlphaStar)[lev]),(*RhoSatStar)[lev]);
-  }
-#endif
+  delete RhoSatOld; RhoSatOld = new MFTower(layout,S_old,nLevs);
+  delete RhoSatNew; RhoSatNew = new MFTower(layout,S_new,nLevs);
+  delete Pnew; Pnew = new MFTower(layout,P_new,nLevs);
 }
 
 void
@@ -381,7 +371,6 @@ RichardSolver::GetDt() const
 void
 RichardSolver::BuildOpSkel(Mat& J)
 {
-  Layout& layout = PMAmr::GetLayout();
   int num_rows = 1;
   int rows[1]; // At the moment, only set one row at a time
   Array<Real> vals;
@@ -675,7 +664,6 @@ RichardSolver::XmultYZ(MFTower&       X,
 		       int            nComp,
 		       int            nGrow)
 {
-  Layout& layout = PMAmr::GetLayout(); 
   BL_ASSERT(layout.IsCompatible(X));
   BL_ASSERT(layout.IsCompatible(Y));
   BL_ASSERT(layout.IsCompatible(Z));
@@ -744,7 +732,6 @@ RichardSolver::CCtoECgradAdd(PArray<MFTower>& mfte,
 			     int              dComp,
 			     int              nComp) const
 {
-  const Layout& layout = PMAmr::GetLayout();
   for (int d=0; d<BL_SPACEDIM; ++d) {            
     BL_ASSERT(layout.IsCompatible(mfte[d]));
   }
@@ -780,14 +767,13 @@ RichardSolver::FillPatch(MFTower& mft,
 			 int nComp,
 			 bool do_piecewise_constant)
 {
-  mftfp->FillGrowCells(mft,sComp,nComp,do_piecewise_constant);
+  mftfp->FillGrowCells(mft,sComp,nComp,do_piecewise_constant,nLevs);
 }
 
 void 
 RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
 				 Real             time)
 {
-  const Layout& layout = PMAmr::GetLayout();
   for (int d=0; d<BL_SPACEDIM; ++d) {            
     BL_ASSERT(layout.IsCompatible(velocity[d]));
   }
@@ -819,8 +805,7 @@ void
 RichardSolver::UpdateDarcyVelocity(PArray<MultiFab>& pressure,
 				   Real              time)
 {
-  Layout& layout = PMAmr::GetLayout();
-  MFTower* P = new MFTower(layout,pressure);
+  MFTower* P = new MFTower(layout,pressure,nLevs);
   UpdateDarcyVelocity(*P,time);
   delete P;
 }
@@ -853,7 +838,6 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 
     // Assumes lev=0 here corresponds to Amr.level=0, sets dirichlet values of rho.sat and
     // lambda on dirichlet pressure faces
-    const Layout& layout = PMAmr::GetLayout();
     for (int lev=0; lev<nLevs; ++lev) {
         pm[lev].FillStateBndry(time,Press_Type,0,1); // Set new boundary data
         pm[lev].calcInvPressure(rhoSat[lev],pressure[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
@@ -891,8 +875,9 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
     SetInflowVelocity(darcy_vel,time);
 
     // Average down fluxes
+    int sComp = 0;
     for (int d=0; d<BL_SPACEDIM; ++d) {
-        MFTower::AverageDown(darcy_vel[d]);
+      MFTower::AverageDown(darcy_vel[d],sComp,nComp,nLevs);
     }    
 }
 
@@ -916,13 +901,15 @@ RichardSolver::DpDtResidual(MFTower& residual,
   UpdateDarcyVelocity(pressure,time);
 
   // Get the divergence of the Darcy Flux
-  MFTower::ECtoCCdiv(residual,GetDarcyVelocity());
+  int sComp=0;
+  int dComp=0;
+  int nComp=1;
+  Real mult=1;
+  MFTower::ECtoCCdiv(residual,GetDarcyVelocity(),mult,sComp,dComp,nComp,nLevs);
 
-  const Layout& layout = PMAmr::GetLayout();
   const Array<BoxArray>& gridArray = layout.GridArray();
   const Array<IntVect>& refRatio = layout.RefRatio();
 
-  int nComp = 1;
   for (int lev=0; lev<nLevs; ++lev)
     {
       MultiFab& Rlev = residual[lev];
@@ -954,7 +941,6 @@ void RichardSolver::CreateJac(Mat& J,
 			      MFTower& pressure,
 			      Real dt)
 {
-  Layout& layout = PMAmr::GetLayout();
   const Array<BoxArray>& gridArray = layout.GridArray();
   const Array<IntVect>& refRatio   = layout.RefRatio();
   BaseFab<int> nodeNums;
@@ -966,7 +952,7 @@ void RichardSolver::CreateJac(Mat& J,
     kr_params.set(lev, pm[lev].KrParams());
   }
   MFTower& PCapParamsMFT = GetPCapParams();
-  MFTower KrParamsMFT(layout,kr_params);
+  MFTower KrParamsMFT(layout,kr_params,nLevs);
 
   const Array<int>& rinflow_bc_lo = pm[0].rinflowBCLo();
   const Array<int>& rinflow_bc_hi = pm[0].rinflowBCHi();
@@ -1126,10 +1112,10 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
         ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); // Unscale solution
     }
 
-    Layout& layout = PMAmr::GetLayout();
     MFTower& xMFT = rs->GetPressure();
     MFTower& fMFT = rs->GetResidual();
 
+    Layout& layout = rs->GetLayout();
     ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
 
     Real time = rs->GetTime();
@@ -1154,9 +1140,9 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
   if (!rs) {
     BoxLib::Abort("Bad cast in RichardJacFromPM");
   }
-  Layout& layout = PMAmr::GetLayout();
   MFTower& xMFT = rs->GetPressure();
   
+  Layout& layout = rs->GetLayout();
   ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
   Real dt = rs->GetDt();
   rs->CreateJac(*jacpre,xMFT,dt);
@@ -1184,6 +1170,7 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
    changed_w 	- indicates current iterate was changed by this routine 
 
  */
+static int jcnt = 0;
 PetscErrorCode 
 PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
 {
@@ -1214,6 +1201,18 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
 
     (*func)(snes,w,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);    
+
+#if 0
+    if (rs->GetNumLevels() == 3) {
+      Layout& layout = check_ctx->rs->GetLayout();
+      int nLevs = rs->GetNumLevels();
+      MFTower res(layout,MFTower::CC,1,0,nLevs);
+      ierr = layout.VecToMFTower(res,G,0);
+      std::cout << "Writing " << jcnt << std::endl;
+      VisMF::Write(res[nLevs-1],BoxLib::Concatenate("JUNK_",jcnt,2));
+      jcnt++;
+    }
+#endif
     
     bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
     int ls_iterations = 0;
@@ -1558,13 +1557,13 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
 
 
 static void
-MatSqueeze(Mat& J) 
+MatSqueeze(Mat& J,
+	   Layout& layout) 
 {
   PetscErrorCode ierr;
   Mat A;
   MatCreate(PETSC_COMM_WORLD,&A);
   MatSetType(A,MATSEQAIJ);
-  Layout& layout = PMAmr::GetLayout();
   int n = layout.NumberOfLocalNodeIds();
   int N = layout.NumberOfGlobalNodeIds();
 

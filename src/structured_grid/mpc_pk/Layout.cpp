@@ -163,11 +163,16 @@ Stencil::operator*=(Real val)
   return *this;
 }
 
-Layout::Layout(Amr* _parent)
+Layout::Layout(Amr* _parent,
+	       int  _nLevs)
     : initialized(false),
       nGrow(1),
-      parent(_parent)
+      parent(_parent),
+      nLevs(_nLevs)
 {
+  if (parent != 0) {
+    Rebuild(nLevs);
+  }
 }
 
 Layout::~Layout()
@@ -275,12 +280,13 @@ Layout::Area(int lev, int dir) const
 }
 
 void 
-Layout::Rebuild()
+Layout::Rebuild(int _nLevs)
 {
     nGrow = 1;
     BL_ASSERT(parent);
 
-    nLevs = parent->finestLevel() + 1;
+    if (nLevs<0) nLevs = parent->finestLevel() + 1;
+    BL_ASSERT(nLevs <= parent->finestLevel()+1);
 
     gridArray.resize(nLevs);
     geomArray.resize(nLevs);
@@ -537,11 +543,10 @@ Layout::SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const
 bool
 Layout::IsCompatible(const MFTower& mft) const
 {
-    int myproc = ParallelDescriptor::MyProc();
-    bool isio = ParallelDescriptor::IOProcessor();
-    bool isok = mft.GetLayout().NumLevels()==nLevs;
-    if (isio) {
-        for (int lev=0; lev<nLevs; ++lev)
+    int numLevs = mft.NumLevels();
+    bool isok = numLevs <= nLevs;
+    if (isok) {
+        for (int lev=0; lev<numLevs; ++lev)
         {
             isok &= mft.GetLayout().GridArray()[lev]==gridArray[lev];
         }
@@ -572,18 +577,13 @@ Layout::MFTowerToVec(Vec&           V,
 
     int myproc = ParallelDescriptor::MyProc();
     bool isio = ParallelDescriptor::IOProcessor();
-
+    int numLevs = mft.NumLevels();
+    BL_ASSERT(numLevs <= nLevs);
 
     PetscErrorCode ierr;
-    //ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&V); CHKPETSC(ierr);
-
-    //std::cout << "created PETSc vec: " << &V << std::endl;
-
-    //vecs_I_created.push_back(&V);
-
     FArrayBox fab;
     IntFab ifab;
-    for (int lev=0; lev<nLevs; ++lev)
+    for (int lev=0; lev<numLevs; ++lev)
     {
         BL_ASSERT(comp<mft[lev].nComp());
         for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
@@ -592,7 +592,7 @@ Layout::MFTowerToVec(Vec&           V,
             const Box& vbox = mfi.validbox();
 
             BoxArray ba(vbox);
-            if (lev<nLevs-1) {
+            if (lev<numLevs-1) {
                 BoxArray cfba = BoxArray(mft[lev+1].boxArray()).coarsen(refRatio[lev]);
                 ba = BoxLib::complementIn(vbox,cfba);
             }
@@ -630,6 +630,8 @@ Layout::VecToMFTower(MFTower&   mft,
 
     int myproc = ParallelDescriptor::MyProc();
     bool isio = ParallelDescriptor::IOProcessor();
+    int numLevs = mft.NumLevels();
+    BL_ASSERT(numLevs<=nLevs);
 
     PetscErrorCode ierr;
 
@@ -637,7 +639,7 @@ Layout::VecToMFTower(MFTower&   mft,
     IntFab ifab;
     ierr = VecAssemblyBegin(V); CHKPETSC(ierr);
     ierr = VecAssemblyEnd(V); CHKPETSC(ierr);
-    for (int lev=0; lev<nLevs; ++lev)
+    for (int lev=0; lev<numLevs; ++lev)
     {
         BL_ASSERT(comp<mft[lev].nComp());
 

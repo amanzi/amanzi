@@ -7,17 +7,23 @@
 MFTower::MFTower(const Layout&    _layout,
                  const IndexType& t,
                  int              _nComp,
-                 int              _nGrow)
-    : layout(_layout), iType(t), nComp(_nComp), nGrow(_nGrow), nLevs(layout.NumLevels())
+                 int              _nGrow,
+		 int              _nLevs)
+    : layout(_layout), iType(t), nComp(_nComp), nGrow(_nGrow), nLevs(_nLevs)
 {
-    define_alloc();
+  if (nLevs<0) nLevs = layout.NumLevels();
+  BL_ASSERT(nLevs <= layout.NumLevels());
+  define_alloc();
 }
 
 MFTower::MFTower(Layout&           _layout,
-                 PArray<MultiFab>& pamf)
-    : layout(_layout), nComp(pamf[0].nComp()), nGrow(pamf[0].nGrow()), nLevs(layout.NumLevels())  
+                 PArray<MultiFab>& pamf,
+		 int               _nLevs)
+    : layout(_layout), nComp(pamf[0].nComp()), nGrow(pamf[0].nGrow()), nLevs(_nLevs)  
 {
-    define_noalloc(pamf);
+  if (nLevs<0) nLevs = layout.NumLevels();
+  BL_ASSERT(nLevs <= layout.NumLevels());
+  define_noalloc(pamf);
 }
 
 MultiFab& MFTower::operator[](int i) {return mft[i];}
@@ -39,6 +45,12 @@ int
 MFTower::NGrow() const
 {
     return nGrow;
+}
+
+int 
+MFTower::NumLevels() const 
+{
+   return nLevs;
 }
 
 IndexType MFTower::EC[BL_SPACEDIM] = {D_DECL(IndexType(BoxLib::BASISV(0)),
@@ -98,20 +110,22 @@ MFTower::define_noalloc(PArray<MultiFab>& pamf)
 }
 
 Real
-MFTower::norm() const // currently only max norm supported
+MFTower::norm(int numLevs) const // currently only max norm supported
 {
+    if (numLevs<0) numLevs=nLevs;
+    BL_ASSERT(numLevs<=nLevs);
     FArrayBox fab;
     Real norm = 0;
     const Array<IntVect>& refRatio = layout.RefRatio();
     const Array<BoxArray>& gridArray = layout.GridArray();
-    for (int lev=0; lev<nLevs; ++lev)
+    for (int lev=0; lev<numLevs; ++lev)
     {
         for (MFIter mfi(mft[lev]); mfi.isValid(); ++mfi)
         {
             Box vbox = mfi.validbox();
             fab.resize(vbox,1);
             fab.copy(mft[lev][mfi]);
-            if (lev<nLevs-1) {
+            if (lev<numLevs-1) {
                 BoxArray cfba = BoxArray(gridArray[lev-1]).coarsen(refRatio[lev-1]);
                 std::vector< std::pair<int,Box> > isects = cfba.intersections(vbox);
                 for (int i = 0; i < isects.size(); i++)
@@ -132,13 +146,14 @@ MFTower::norm() const // currently only max norm supported
 bool
 MFTower::IsCompatible(const MFTower& rhs) const
 {
-    bool isok = nLevs==rhs.GetLayout().NumLevels();
+    int numLevs = rhs.NumLevels();
+    bool isok = numLevs<=rhs.GetLayout().NumLevels();
     const Array<IntVect>& refRatio = layout.RefRatio();
     const Array<BoxArray>& gridArray = layout.GridArray();
-    for (int lev=0; lev<nLevs && isok; ++lev)
+    for (int lev=0; lev<numLevs && isok; ++lev)
     {
         isok &= gridArray[lev] == rhs.GetLayout().GridArray()[lev];
-        if (lev < nLevs-1) {
+        if (lev < numLevs-1) {
             isok &= rhs.GetLayout().RefRatio()[lev]==refRatio[lev];
         }
     }
@@ -151,20 +166,24 @@ MFTower::CCtoECgrad(PArray<MFTower>& mfte,
                     Real             mult,
                     int              sComp,
                     int              dComp,
-                    int              nComp)
+                    int              nComp,
+		    int              numLevs)
 {
     // Note: Assumes that grow cells of mftc have been filled "properly":
     //    f-f: COI
     //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
     //   phys: Dirichlet data at wall extrapolated to fine cc in grow
     // 
+    int numLevs_tmp = mftc.NumLevels();
     const Layout& theLayout = mftc.GetLayout();
     for (int d=0; d<BL_SPACEDIM; ++d) {            
+        if (numLevs<0) numLevs_tmp = std::min(numLevs_tmp,mfte[d].NumLevels());
         BL_ASSERT(theLayout.IsCompatible(mfte[d]));
     }
+    if (numLevs<0) numLevs = numLevs_tmp;
+    BL_ASSERT(numLevs<=mftc.NumLevels());
     const Array<Geometry>& geomArray = theLayout.GeomArray();
-    int the_nLevs = theLayout.NumLevels();
-    for (int lev=0; lev<the_nLevs; ++lev) {
+    for (int lev=0; lev<numLevs; ++lev) {
         const MultiFab& mfc = mftc[lev];
         BL_ASSERT(mfc.nGrow()>=1);
         BL_ASSERT(sComp+nComp<=mfc.nComp());
@@ -194,17 +213,20 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
                    Real                   mult,
                    int                    sComp,
                    int                    dComp,
-                   int                    nComp)
+                   int                    nComp,
+		   int                    numLevs)
 {
+    if (numLevs<0) numLevs = mftc.NumLevels();
     const Layout& theLayout = mftc.GetLayout();
+    BL_ASSERT(theLayout.NumLevels()>=numLevs);
+    BL_ASSERT(mftc.NumLevels()>=numLevs);
     for (int d=0; d<BL_SPACEDIM; ++d) {            
         BL_ASSERT(theLayout.IsCompatible(mfte[d]));
+        BL_ASSERT(mfte[d].NumLevels()>=numLevs);
     }
 
     const Array<Geometry>& geomArray = theLayout.GeomArray();
-    int the_nLevs = theLayout.NumLevels();
-    
-    for (int lev=0; lev<the_nLevs; ++lev) {
+    for (int lev=0; lev<numLevs; ++lev) {
         MultiFab& mfc = mftc[lev];
         BL_ASSERT(dComp+nComp<=mfc.nComp());
 
@@ -236,8 +258,12 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
 void
 MFTower::AverageDown(MFTower& mft,
                      int      sComp,
-                     int      nComp)
+                     int      nComp,
+		     int      numLevs)
 {
+    if (numLevs<0) numLevs = mft.NumLevels();
+    BL_ASSERT(mft.NumLevels()>=numLevs);
+
     int dir = -1;
     for (int d=0; d<BL_SPACEDIM; ++d) {            
         if (mft.ixType() == EC[d]) {
@@ -251,9 +277,8 @@ MFTower::AverageDown(MFTower& mft,
     const Layout& theLayout = mft.GetLayout();
     const Array<IntVect>& refRatio = theLayout.RefRatio();
     const Array<BoxArray>& gridArray = theLayout.GridArray();
-    int the_nLevs = theLayout.NumLevels();
     FArrayBox cfab;
-    for (int lev=1; lev<the_nLevs; ++lev) {
+    for (int lev=1; lev<numLevs; ++lev) {
         MultiFab& mfe = mft[lev];
         BL_ASSERT(sComp+nComp<=mfe.nComp());
         const IntVect& ratio = refRatio[lev-1];
@@ -622,16 +647,20 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
 
 void
 MFTFillPatch::DoCoarseFineParallelInterp(MFTower& mft,
-                                        int      sComp,
-                                        int      nComp) const
+					 int      sComp,
+					 int      nComp,
+					 int      numLevs) const
 {
+    if (numLevs<0) numLevs = nLevs;
     BL_ASSERT(layout.IsCompatible(mft));
+    BL_ASSERT(numLevs<=layout.NumLevels());
+    BL_ASSERT(numLevs<=mft.NumLevels());
     const Array<BoxArray>& bndryCells = layout.BndryCells();
 
     const Array<Geometry>& geomArray = layout.GeomArray();
     const Array<IntVect>& refRatio = layout.RefRatio();
     const Array<BoxArray>& gridArray = layout.GridArray();
-    for (int lev=1; lev<nLevs; ++lev) {
+    for (int lev=1; lev<numLevs; ++lev) {
 
         MultiFab& mf = mft[lev];
         BL_ASSERT(mf.nGrow()>=1);
@@ -692,22 +721,25 @@ void
 MFTFillPatch::FillGrowCells(MFTower& mft,
                             int      sComp,
                             int      nComp,
-                            bool     do_piecewise_constant) const
+                            bool     do_piecewise_constant,
+			    int      numLevs) const
 {
+    if (numLevs<0) numLevs=nLevs;
     if (do_piecewise_constant) {
-        FillGrowCellsSimple(mft,sComp,nComp);
+      FillGrowCellsSimple(mft,sComp,nComp,numLevs);
         return;
     }
 
     // Note: Assumes that Dirichlet values have been loaded into the MultiFab grow cells at
     // physical boundaries (and that these values are to be applied at the cell walls).
     BL_ASSERT(layout.IsCompatible(mft));
+    BL_ASSERT(numLevs<=layout.NumLevels());
 
-    BL_ASSERT(perpInterpStencil.size()==nLevs);
+    BL_ASSERT(perpInterpStencil.size()>=numLevs);
     const Array<Geometry>& geomArray = layout.GeomArray();
     const Array<IntVect>& refRatio = layout.RefRatio();
     const Array<BoxArray>& gridArray = layout.GridArray();
-    for (int lev=0; lev<nLevs; ++lev) {
+    for (int lev=0; lev<numLevs; ++lev) {
         const Array<IVSMap>& perpInterpLev = perpInterpStencil[lev];
         MultiFab& mf = mft[lev];
         BL_ASSERT(mf.nGrow()>=1);
@@ -796,8 +828,9 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
 
 void
 MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
-                                 int      sComp,
-                                 int      nComp) const
+				  int      sComp,
+				  int      nComp,
+				  int      numLevs) const
 {
     // Note: Assumes that Dirichlet values have been loaded into the MultiFab grow cells at
     // physical boundaries (and that these values are to be applied at the cell walls).
@@ -805,13 +838,16 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
     // The simple version effectively does the full stuff, but with a first order interpolant
     // both parallel and perpendicular....ie, piecewise constant.  Since this is trivial to 
     // construct, we do not bother with the heavy guns
+    if (numLevs<0) numLevs=nLevs;
     BL_ASSERT(layout.IsCompatible(mft));
+    BL_ASSERT(layout.NumLevels()>=numLevs);
+    BL_ASSERT(mft.NumLevels()>=numLevs);
 
     const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
     const Array<Geometry>& geomArray = layout.GeomArray();
     const Array<IntVect>& refRatio = layout.RefRatio();
     const Array<BoxArray>& gridArray = layout.GridArray();
-    for (int lev=0; lev<nLevs; ++lev) {
+    for (int lev=0; lev<numLevs; ++lev) {
 
         MultiFab& mf = mft[lev];
         BL_ASSERT(mf.nGrow()>=1);
@@ -864,10 +900,13 @@ MFTFillPatch::FillGrowCellsSimple(MFTower& mft,
 void 
 MFTower::SetVal(Real     val,
 		int      sComp,
-		int      nComp)
+		int      nComp,
+		int      numLevs)
 {
+    if (numLevs<0) numLevs=nLevs;
+    BL_ASSERT(numLevs <= nLevs);
     const Layout& layout = GetLayout();
-    for (int lev=0; lev<nLevs; ++lev)
+    for (int lev=0; lev<numLevs; ++lev)
     {
         mft[lev].setVal(val,sComp,nComp);
     }

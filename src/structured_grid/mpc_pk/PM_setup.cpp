@@ -329,6 +329,8 @@ int  PorousMedia::richard_use_dense_Jacobian;
 int  PorousMedia::richard_upwind_krel;
 int  PorousMedia::richard_pressure_maxorder;
 bool PorousMedia::richard_scale_solution_before_solve;
+int  PorousMedia::steady_do_grid_sequence;
+Real PorousMedia::steady_grid_sequence_new_level_dt_factor;
 
 std::string PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
@@ -614,6 +616,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_rel_tolerance = 1.e-20;
   PorousMedia::steady_abs_update_tolerance = 1.e-12;
   PorousMedia::steady_rel_update_tolerance = -1;
+  PorousMedia::steady_do_grid_sequence = 1;
+  PorousMedia::steady_grid_sequence_new_level_dt_factor = 1.e-5;
 
   PorousMedia::richard_max_ls_iterations = 10;
   PorousMedia::richard_min_ls_factor = 1.e-8;
@@ -1591,6 +1595,8 @@ void PorousMedia::read_prob()
   pb.query("steady_rel_tolerance",steady_rel_tolerance);
   pb.query("steady_abs_update_tolerance",steady_abs_update_tolerance);
   pb.query("steady_rel_update_tolerance",steady_rel_update_tolerance);
+  pb.query("steady_do_grid_sequence",steady_do_grid_sequence);
+  pb.query("steady_grid_sequence_new_level_dt_factor",steady_grid_sequence_new_level_dt_factor);
 
   pb.query("richard_max_ls_iterations",richard_max_ls_iterations);
   pb.query("richard_min_ls_factor",richard_min_ls_factor);
