@@ -237,7 +237,7 @@ SUITE (Exodus)
   TEST_FIXTURE (SerialReadFixture, SerialReader2)
   {
     if (nproc == 1) {
-      read("../exodus_reader/test_files/hex_4x4x4_ss.exo");
+      read("../exodus_reader/test_files/hex_3x3x3_ss.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 4*4*4);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED), 3*3*4*3);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 3*3*3);
@@ -265,7 +265,7 @@ SUITE (Exodus)
       // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
       // CHECK_EQUAL(count, 16);
             
-      Auditor audit("hex_4x4x4_ss_", mesh);
+      Auditor audit("hex_3x3x3_ss_", mesh);
       audit();
     }
   }
@@ -319,7 +319,7 @@ SUITE (Exodus)
   TEST_FIXTURE (ParallelReadFixture, ParallelReader2)
   {
     if (nproc > 1 && nproc < 4) {
-      read("../exodus_reader/test_files/split1/hex_4x4x4_ss.par");
+      read("../exodus_reader/test_files/split1/hex_3x3x3_ss.par");
 
       //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
       //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
@@ -356,7 +356,7 @@ SUITE (Exodus)
       // comm.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 16);
 
-      Auditor audit("hex_4x4x4_ss.par", mesh);
+      Auditor audit("hex_3x3x3_ss.par", mesh);
       audit();
     }
   }            
