@@ -11,7 +11,7 @@
 #include "mpi.h"
 
 
-TEST(MOAB_HEX_3x3x2)
+TEST(MOAB_HEX_2x2x1)
 {
 
   int i, j, k, err, nc, nf, nv;
@@ -86,7 +86,7 @@ TEST(MOAB_HEX_3x3x2)
 
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x2_ss.exo",comm.get());
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x1_ss.exo",comm.get());
 
 
   nv = mesh.count_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
