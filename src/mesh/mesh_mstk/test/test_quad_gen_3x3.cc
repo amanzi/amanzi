@@ -56,7 +56,7 @@ TEST(MSTK_QUAD_GEN_3x3)
 
     }
 
-  std::ofstream fout("mstk_quad_gen_4x4.out");
+  std::ofstream fout("test/mstk_quad_gen_4x4.out");
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
 

@@ -55,7 +55,7 @@ TEST(MSTK_HEX_GEN_3x3x3)
 
     }
   
-  std::ofstream outfile("mstk_hex_gen_3x3x3.out");
+  std::ofstream outfile("test/mstk_hex_gen_3x3x3.out");
   Amanzi::MeshAudit auditor(mesh,outfile);
   auditor.Verify();
 

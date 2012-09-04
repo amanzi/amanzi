@@ -147,7 +147,7 @@ TEST(MSTK_HEX_2x2x1)
     }
 
   std::stringstream fname;
-  fname << "mstk_hex_2x2x1.out";
+  fname << "test/mstk_hex_2x2x1.out";
   std::ofstream fout(fname.str().c_str());
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
