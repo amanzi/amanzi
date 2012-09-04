@@ -10,11 +10,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "mpi.h"
 
-// Unless this example is enhanced, it does lesser testing than test_hex_3x3x2.cc
-
-TEST(MSTK_HEX_4x4x4_SETS_4P)
+TEST(MSTK_HEX_3x3x3_SETS_4P)
 {
   int rank, size;
 
@@ -22,49 +19,9 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
                                  "Bottom+Middle Box", "Top Box",
                                  "Bottom ColFunc", "Middle ColFunc", "Top ColFunc"};
 
-  int csetsize, expcsetsizes[4][8] = {{0,0,6,0,6,0,0,6},
-				      {1,3,3,4,3,1,3,3},
-				      {3,4,0,7,0,3,4,0},
-				      {5,2,0,7,0,5,2,0}};
+  int csetsize;
   
-  int expcsetcells[4][8][9] = 
-    {
-      {{-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {0,1,2,3,4,5,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {0,1,2,3,4,5,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {0,1,2,3,4,5,-1,-1,-1}},
-
-      {{0,-1,-1,-1,-1,-1,-1,-1,-1},
-       {1,2,3,-1,-1,-1,-1,-1,-1},
-       {4,5,6,-1,-1,-1,-1,-1,-1},
-       {0,1,2,3,-1,-1,-1,-1,-1},
-       {4,5,6,-1,-1,-1,-1,-1,-1},
-       {0,-1,-1,-1,-1,-1,-1,-1,-1},
-       {1,2,3,-1,-1,-1,-1,-1,-1},
-       {4,5,6,-1,-1,-1,-1,-1,-1}},
-      
-      {{0,1,2,-1,-1,-1,-1,-1,-1},
-       {3,4,5,6,-1,-1,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {0,1,2,3,4,5,6,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1},
-       {0,1,2,-1,-1,-1,-1,-1,-1},
-       {3,4,5,6,-1,-1,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1}},
-
-      {{0,1,2,3,4,-1,-1,-1,-1},
-       {5,6,-1,-1,-1,-1,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {0,1,2,3,4,5,6,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
-       {0,1,2,3,4,-1,-1,-1,-1},
-       {5,6,-1,-1,-1,-1,-1,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1,-1}}
-    };
+  int expcsetcells[4][8][9];
 
 
   std::string expfsetnames[4] = {"Face 101",  
@@ -72,32 +29,7 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
                                   "ZLO FACE Plane", 
 				 "YLO FACE Box"};
 
-  Amanzi::AmanziMesh::Set_ID expfsetids[4]={101,30004,0,0};
-
-  int fsetsize, expfsetsizes[4][4] = {{0,2,0,2},
-				      {1,1,1,2},
-				      {3,0,3,3},
-				      {5,0,5,2}};
-  
-  int expfsetfaces[4][4][5] = {{{-1,-1,-1,-1,-1},
-				{21,26,-1,-1,-1},
-				{-1,-1,-1,-1,-1},
-				{0,6,-1,-1,-1}},
-			       
-			       {{4,-1,-1,-1,-1},
-				{28,-1,-1,-1,-1},
-				{4,-1,-1,-1,-1},
-				{6,21,-1,-1,-1}},
-			       
-			       {{4,9,14,-1,-1},
-				{-1,-1,-1,-1,-1},
-				{4,9,14,-1,-1},
-				{0,16,20,-1,-1}},
-			       
-			       {{4,10,7,12,15},
-				{-1,-1,-1,-1,-1},
-				{4,7,10,12,15},
-				{0,5,-1,-1,-1}}};
+  int fsetsize;
 
   Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -117,16 +49,16 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
   CHECK_EQUAL(4,size);
 
 
-  std::string infilename = "test/hex_4x4x4_4P.xml";
+  std::string infilename = "test/hex_3x3x3_4P.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
   Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
 
-  // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
+  // Load a mesh consisting of 3x3x3 elements
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",comm.get(),3,gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_ss.exo",comm.get(),3,gm));
 
   Teuchos::ParameterList::ConstIterator i;
   for (i = reg_spec.begin(); i != reg_spec.end(); i++) {
@@ -155,7 +87,7 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
       // Do we have a valid sideset by this name
 
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+      CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
 
       int j;
       for (j = 0; j < 4; j++) {
@@ -165,19 +97,15 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
       CHECK(j < 4);
 
 
-      // Verify that we can get the right number of entities in the set
+      // Verify that we can get the number of entities in the set
 
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-
-      CHECK_EQUAL(expfsetsizes[rank][j],set_size);
+      int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
 
 
-      // Verify that we can get the correct set entities
+      // Verify that we can get the set entities
      
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-
-      CHECK_ARRAY_EQUAL(expfsetfaces[rank][j],setents,set_size);
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
 
     }
     else if (shape == "Region: Box") {
@@ -192,7 +120,7 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
 	  // Do we have a valid sideset by this name
 
-	  CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+	  CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
 	  
 	  int j;
 	  for (j = 0; j < 4; j++) {
@@ -202,27 +130,22 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 	  CHECK(j < 4);
 	  
 	  
-	  // Verify that we can get the right number of entities in the set
+	  // Verify that we can get the number of entities in the set
 	  
-	  int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+	  int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
 
-	  if (expfsetsizes[rank][j] != set_size)
-	    std::cout << "Wrong set size for " << reg_name << " on proc " << rank << std::endl;
-	  CHECK_EQUAL(expfsetsizes[rank][j],set_size);
-	  
 	  
 	  // Verify that we can get the correct set entities
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
 	  
-	  CHECK_ARRAY_EQUAL(expfsetfaces[rank][j],setents,set_size);	  
 	}
       else 
 	{
 	  // Do we have a valid cellset by this name
 	  
-	  CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+	  CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
 	  
 	  // Find the expected cell set info corresponding to this name 
 	  
@@ -232,18 +155,16 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 	  
 	  CHECK(j < 8);
 	  
-	  // Verify that we can get the right number of entities in the set
+	  // Verify that we can get the number of entities in the set
 	  
-	  int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+	  int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
 	  
-	  CHECK_EQUAL(expcsetsizes[rank][j],set_size);
 	  
-	  // Verify that we can get the correct set entities
+	  // Verify that we can get the set entities
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
 	  
-	  CHECK_ARRAY_EQUAL(expcsetcells[rank][j],setents,set_size);
 	}
     }
     else if (shape == "Region: Labeled Set") {
@@ -258,7 +179,7 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
 	// Do we have a valid sideset by this name
 
-	CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+	CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
 
         // Find the expected face set info corresponding to this name
 
@@ -270,25 +191,21 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 	  std::cerr << "Cannot find regname " << reg_name << "on processor " << rank << std::endl;
         CHECK(j < 4);
 	
-	// Verify that we can get the right number of entities in the set
+	// Verify that we can get the number of entities in the set
 	
-	int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-		
-        CHECK_EQUAL(expfsetsizes[rank][j],set_size);
+	int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
 
 	// Verify that we can get the correct set entities
 	
         Amanzi::AmanziMesh::Entity_ID_List setents;
-	mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-
-        CHECK_ARRAY_EQUAL(expfsetfaces[rank][j],setents,set_size);
+	mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
 
       }
       else if (entity_type == "Cell") {
 
 	// Do we have a valid sideset by this name
 
-	CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+	CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
 	
         // Find the expected face set info corresponding to this name
 
@@ -298,18 +215,16 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
         CHECK(j < 8);
 	
-	// Verify that we can get the right number of entities in the set
+	// Verify that we can get the number of entities in the set
 	
-	int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+	int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
 
-        CHECK_EQUAL(expcsetsizes[rank][j],set_size);
 	
-	// Verify that we can get the correct set entities
+	// Verify that we can get the set entities
 	
         Amanzi::AmanziMesh::Entity_ID_List setents;
-	mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+	mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
 
-        CHECK_ARRAY_EQUAL(expcsetcells[rank][j],setents,set_size);
       }
 
     }
@@ -317,7 +232,7 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
       // Do we have a valid cellset by this name
 
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+      CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
 	
       // Find the expected cell set info corresponding to this name
 
@@ -327,18 +242,15 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
       CHECK(j < 8);
 	
-      // Verify that we can get the right number of entities in the set
+      // Verify that we can get the number of entities in the set
 	
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+      int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
 
-      CHECK_EQUAL(expcsetsizes[rank][j],set_size);
 	
-      // Verify that we can get the correct set entities
+      // Verify that we can get the set entities
 	
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
-      
-      CHECK_ARRAY_EQUAL(expcsetcells[rank][j],setents,set_size);
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
 
     }
   }

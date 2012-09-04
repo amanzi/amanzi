@@ -10,9 +10,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Array.hpp"
 
-#include "mpi.h"
-
-
 // Extract some surfaces as-is from 3D mesh
 
 TEST(Extract_Surface_MSTK1_4P)
