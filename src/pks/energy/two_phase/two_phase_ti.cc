@@ -15,7 +15,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 // TwoPhase is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -59,8 +59,8 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   std::cout << "  res1 (after accumulation): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;
 #endif
 
-  // advection term, explicit
-  AddAdvection_(S_inter_, res, false);
+  // advection term, implicit
+  AddAdvection_(S_next_, res, false);
 #if DEBUG_FLAG
   std::cout << "  res0 (after advection): " << (*res)("cell",0) << " " << (*res)("face",3) << std::endl;
   std::cout << "  res1 (after advection): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;

@@ -222,12 +222,15 @@ void Coordinator::cycle_driver() {
     dt = tsm->TimeStep(S_->time(), dt);
 
     if (comm_->MyPID() == 0) {
+      std::cout << "======================================================================"
+                << std::endl << std::endl;
       std::cout << "Cycle = " << S_->cycle();
       std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
       std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+      std::cout << "----------------------------------------------------------------------"
+                << std::endl;
     }
 
-    // advance
     S_next_->advance_time(dt);
     fail = pk_->advance(dt);
 

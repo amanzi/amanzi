@@ -37,8 +37,23 @@ class MPCDiagonalFlowEnergy : public StrongMPC {
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
+  void precon_diagonal(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  void precon_upper_triangular(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  void precon_lower_triangular(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  void precon_alternating(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  void precon_accumulation(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
   Teuchos::RCP<Epetra_MultiVector> D_pT_;
   Teuchos::RCP<Epetra_MultiVector> D_Tp_;
+
+  enum PreconMethod {PRECON_ACCUMULATION,
+                     PRECON_DIAGONAL,
+                     PRECON_UPPER_TRIANGULAR,
+                     PRECON_LOWER_TRIANGULAR,
+                     PRECON_ALTERNATING};
+
+  PreconMethod method_;
+  double damping_;
 
  private:
   // factory registration

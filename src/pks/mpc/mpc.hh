@@ -40,7 +40,9 @@ class MPC : public PK {
 
 public:
   MPC(Teuchos::ParameterList& mpc_plist, const Teuchos::RCP<State>& S,
-      const Teuchos::RCP<TreeVector>& soln) : mpc_plist_(mpc_plist) {};
+        const Teuchos::RCP<TreeVector>& soln) :
+      mpc_plist_(mpc_plist),
+      n_iter_(0) {};
 
   // PK methods
   // -- calls all sub-PK initialize() methods
@@ -68,6 +70,7 @@ public:
 protected:
   std::vector< Teuchos::RCP<PK> > sub_pks_;
   Teuchos::ParameterList mpc_plist_;
+  int n_iter_;
 };
 } // close namespace Amanzi
 

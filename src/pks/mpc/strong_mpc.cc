@@ -114,6 +114,7 @@ void StrongMPC::initialize(const Teuchos::RCP<State>& S) {
 // -- Advance from state S0 to state S1 at time S0.time + dt.
 bool StrongMPC::advance(double dt) {
   state_to_solution(S_next_, solution_);
+  n_iter_ = 0;
 
   // take a bdf timestep
   double h = dt;
@@ -182,6 +183,8 @@ void StrongMPC::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     // fill the nonlinear function with each sub-PKs contribution
     (*pk)->fun(t_old, t_new, pk_u_old, pk_u_new, pk_g);
   }
+
+  n_iter_++;
 };
 
 

@@ -7,6 +7,7 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
          Ethan Coon (ATS version) (ecoon@lanl.gov)
 ------------------------------------------------------------------------- */
+#include "boost/math/special_functions/fpclassify.hpp"
 
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
@@ -368,11 +369,29 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   // patch up the BCs
   //  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", "flow");
+
+
+  for (int c=0; c!=num_rel_perm->size("cell",false); ++c) {
+    if (boost::math::isnan<double>((*num_rel_perm)("cell",c))) {
+      std::cout << "NaN in cell rel perm." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+  for (int f=0; f!=num_rel_perm->size("face",false); ++f) {
+    if (boost::math::isnan<double>((*num_rel_perm)("face",f))) {
+      std::cout << "NaN in face rel perm." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+
+
   for (int f=0; f!=num_rel_perm->size("face"); ++f) {
-    if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+    AmanziMesh::Entity_ID_List cells;
+    num_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (cells.size() < 2) {
       // just grab the cell inside's perm... this will need to be fixed eventually.
-      AmanziMesh::Entity_ID_List cells;
-      S->GetMesh()->face_get_cells(f, AmanziMesh::OWNED, &cells);
       (*num_rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
     }
   }
@@ -386,6 +405,8 @@ void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
   for (int c=0; c!=ncells; ++c) {
     (*num_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
   }
+
+  //  num_rel_perm->Print(std::cout);
 };
 
 
