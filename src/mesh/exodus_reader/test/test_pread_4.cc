@@ -39,9 +39,9 @@ SUITE (Exodus_4_Proc)
     checkit(thefile);
   }
 
-  TEST (hex_11x11x11_ss)
+  TEST (hex_10x10x10_ss)
   {
-    std::string bname(split_file_path("hex_11x11x11_ss.par").c_str());
+    std::string bname(split_file_path("hex_10x10x10_ss.par").c_str());
     
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 

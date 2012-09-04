@@ -27,9 +27,9 @@ extern void checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile);
 
 SUITE (Exodus_3_Proc)
 {
-  TEST (hex_4x4x4_ss)
+  TEST (hex_3x3x3_ss)
   {
-    std::string bname(split_file_path("hex_4x4x4_ss.par").c_str());
+    std::string bname(split_file_path("hex_3x3x3_ss.par").c_str());
     
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 
@@ -52,9 +52,9 @@ SUITE (Exodus_3_Proc)
     checkit(thefile);
   }
 
-  TEST (hex_11x11x11_ss)
+  TEST (hex_10x10x10_ss)
   {
-    std::string bname(split_file_path("hex_11x11x11_ss.par").c_str());
+    std::string bname(split_file_path("hex_10x10x10_ss.par").c_str());
     
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 
