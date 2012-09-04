@@ -10,7 +10,7 @@
 #include "MeshAudit.hh"
 
 
-TEST(MSTK_QUAD_GEN_3x3x3_4P)
+TEST(MSTK_QUAD_GEN_3x3_4P)
 {
 
   int i, j, k, err, nc, nf, nv;

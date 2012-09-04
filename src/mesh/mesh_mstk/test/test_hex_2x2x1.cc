@@ -10,7 +10,7 @@
 #include "Epetra_MpiComm.h"
 
 
-TEST(MSTK_HEX_3x3x2)
+TEST(MSTK_HEX_2x2x1)
 {
 
   int i, j, k, err, nc, nf, nv;

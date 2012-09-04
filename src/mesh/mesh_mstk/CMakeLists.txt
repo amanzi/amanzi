@@ -69,7 +69,7 @@ if (BUILD_TESTS)
                          test/test_hex_gen_4x4x4.cc
                          test/test_quad_gen_4x4.cc
                          test/test_extract_surface.cc
-                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES}) 
+                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES}) 
 
     # Test: mstk_mesh_parallel
     add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh
@@ -82,7 +82,7 @@ if (BUILD_TESTS)
                          test/test_quad_gen_4x4_4P.cc
                          test/test_hex_gen_4x4x4_4P.cc
 			 test/test_extract_surface_4P.cc
-                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES})
+                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES})
 
 endif()
 

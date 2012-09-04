@@ -31,7 +31,6 @@ private:
   int myprocid, numprocs;
 
   Mesh_ptr mesh;
-  //    MSTKComm *mstkcomm; Not defined - will define if we need it
 
   int serial_run;
   
