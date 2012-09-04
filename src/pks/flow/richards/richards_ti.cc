@@ -17,7 +17,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 // Richards is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -62,6 +62,7 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
 #endif
+
 };
 
 // -----------------------------------------------------------------------------
@@ -74,12 +75,63 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   std::cout << "  p1: " << (*u->data())("cell",0,99) << " " << (*u->data())("face",0,497) << std::endl;
 #endif
 
+  Teuchos::RCP<const CompositeVector> pres = u->data();
+  for (int c=0; c!=pres->size("cell",false); ++c) {
+    if (boost::math::isnan<double>((*pres)("cell",c))) {
+      std::cout << "Cutting time step due to NaN in cell residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+  for (int f=0; f!=pres->size("face",false); ++f) {
+    if (boost::math::isnan<double>((*pres)("face",f))) {
+      std::cout << "Cutting time step due to NaN in face residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
 
 #if DEBUG_FLAG
   std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " " << (*Pu->data())("face",0,3) << std::endl;
   std::cout << "  PC*p1: " << (*Pu->data())("cell",0,99) << " " << (*Pu->data())("face",0,497) << std::endl;
 #endif
+
+  Teuchos::RCP<const CompositeVector> ppres = Pu->data();
+  for (int c=0; c!=ppres->size("cell",false); ++c) {
+    if (boost::math::isnan<double>((*ppres)("cell",c))) {
+      // dump the schur complement
+      Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+      std::stringstream filename_s;
+      filename_s << "schur_" << S_next_->cycle() << ".txt";
+      EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+      std::cout << "updated precon " << S_next_->cycle() << std::endl;
+
+      // print the rel perm
+      Teuchos::RCP<const CompositeVector> num_rel_perm = S_next_->GetFieldData("numerical_rel_perm");
+      Teuchos::RCP<const CompositeVector> rel_perm = S_next_->GetFieldData("relative_permeability");
+      std::cout << "REL PERM: " << std::endl;
+      rel_perm->Print(std::cout);
+      std::cout << std::endl;
+      std::cout << "UPWINDED REL PERM: " << std::endl;
+      num_rel_perm->Print(std::cout);
+
+
+      // throw
+      std::cout << "Cutting time step due to NaN in PC'd cell residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+  for (int f=0; f!=ppres->size("face",false); ++f) {
+    if (boost::math::isnan<double>((*ppres)("face",f))) {
+      std::cout << "Cutting time step due to NaN in PC'd face residual." << std::endl;
+      Errors::Message m("Cut time step");
+      Exceptions::amanzi_throw(m);
+    }
+  }
+
 };
 
 

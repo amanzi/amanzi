@@ -37,13 +37,20 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(*rel_perm);
+
+  // update the flux (darcy + grav)
+  Teuchos::RCP<CompositeVector> darcy_flux =
+    S->GetFieldData("darcy_flux", "flow");
+  matrix_->DeriveFlux(*pres, darcy_flux);
+  AddGravityFluxesToVector_(S, darcy_flux);
+
+  // assemble the full system
   matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_(S, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
-
   matrix_->ComputeNegativeResidual(*pres, g);
 };
 
