@@ -2,7 +2,7 @@
   <ParameterList name="Bottom LS">
     <ParameterList name="Region: Labeled Set">
       <Parameter name="Label" type="String" value="10000"/>
-      <Parameter name="File" type="String" value="hex_4x4x4.exo"/>
+      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
       <Parameter name="Format" type="String" value="Exodus II"/>
       <Parameter name="Entity" type="String" value="Cell"/>
     </ParameterList>
@@ -10,7 +10,7 @@
   <ParameterList name="Middle LS">
     <ParameterList name="Region: Labeled Set">
       <Parameter name="Label" type="String" value="20000"/>
-      <Parameter name="File" type="String" value="hex_4x4x4.exo"/>
+      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
       <Parameter name="Format" type="String" value="Exodus II"/>
       <Parameter name="Entity" type="String" value="Cell"/>
     </ParameterList>
@@ -18,7 +18,7 @@
   <ParameterList name="Top LS">
     <ParameterList name="Region: Labeled Set">
       <Parameter name="Label" type="String" value="30000"/>
-      <Parameter name="File" type="String" value="hex_4x4x4.exo"/>
+      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
       <Parameter name="Format" type="String" value="Exodus II"/>
       <Parameter name="Entity" type="String" value="Cell"/>
     </ParameterList>
@@ -58,7 +58,7 @@
   <ParameterList name="Face 101">
     <ParameterList name="Region: Labeled Set">
       <Parameter name="Label" type="String" value="101"/>
-      <Parameter name="File" type="String" value="mesh.exo"/>
+      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
       <Parameter name="Format" type="String" value="Exodus II"/>
       <Parameter name="Entity" type="String" value="Face"/>
     </ParameterList>
@@ -66,7 +66,7 @@
   <ParameterList name="Face 30004">
     <ParameterList name="Region: Labeled Set">
       <Parameter name="Label" type="String" value="30004"/>
-      <Parameter name="File" type="String" value="mesh.exo"/>
+      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
       <Parameter name="Format" type="String" value="Exodus II"/>
       <Parameter name="Entity" type="String" value="Face"/>
     </ParameterList>
