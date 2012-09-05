@@ -118,9 +118,6 @@ class Darcy_PK : public Flow_PK {
   Matrix_MFD* preconditioner_;
 
   TI_Specs ti_specs_sss;  // Parameters for steady-state solution
-  int num_itrs_sss, max_itrs_sss;
-  std::string preconditioner_name_sss_;
-  double convergence_tol_sss, residual_sss;
 
   int num_itrs_trs;  // Parameters for transient solver
   double dT_desirable_;

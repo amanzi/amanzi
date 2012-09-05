@@ -98,13 +98,14 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStringMFD3D(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
   void ProcessStringPreconditioner(const std::string name, int* preconditioner);
+  std::string FindStringLinearSolver(const Teuchos::ParameterList& list, const Teuchos::ParameterList& solver_list);
 
  public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
   int MyPID;  // parallel information: will be moved to private
-  int verbosity, internal_tests;  // output information
+  int verbosity, verbosity_AztecOO, internal_tests;  // output information
  
   Teuchos::RCP<Flow_State> FS;
   

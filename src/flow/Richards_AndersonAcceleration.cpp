@@ -139,7 +139,7 @@ int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTn
     solver->SetRHS(&*rhs);
     solver->SetLHS(&*solution_new);
 
-    solver->Iterate(max_itrs, convergence_tol);
+    solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs = solver->NumIters();
     double linear_residual = solver->TrueResidual();
 

@@ -264,14 +264,14 @@ void Richards_PK::InitPicard(double T0)
   }
 
   // set up new preconditioner
-  preconditioner_method = ti_specs_igs_.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_igs_);
+  int method = ti_specs_igs_.preconditioner_method;
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_igs_.preconditioner_name);
   Teuchos::ParameterList ML_list;
-  if (preconditioner_name_igs_ == "Trilinos ML") {
+  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
     ML_list = tmp_list.sublist("ML Parameters"); 
-  } else if (preconditioner_name_igs_ == "Hypre AMG") {
+  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
     ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
-  } else if (preconditioner_name_igs_ == "Block ILU") {
+  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ML_list = tmp_list.sublist("Block ILU Parameters");
   }
 
@@ -280,7 +280,7 @@ void Richards_PK::InitPicard(double T0)
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
+  preconditioner_->InitPreconditioner(method, ML_list);
 
   // set up new time integration or solver
   solver = new AztecOO;
@@ -308,6 +308,10 @@ void Richards_PK::InitPicard(double T0)
   *solution_cells = pressure;
   *solution_faces = lambda;
 
+  // linear solver control options
+  max_itrs_linear = ti_specs_sss_.ls_specs.max_itrs;
+  convergence_tol_linear = ti_specs_sss_.ls_specs.convergence_tol;
+
   if (ini_with_darcy) {
     SolveFullySaturatedProblem(T0, *solution);
     double pmin = atm_pressure;
@@ -316,10 +320,10 @@ void Richards_PK::InitPicard(double T0)
   }
   DeriveSaturationFromPressure(pressure, ws);
 
-  // control options
+  // nonlinear solver control options
   set_time(T0, 0.0);  // overrides data provided in the input file
   ti_method = ti_method_igs;
-  num_itrs = 0;
+  num_itrs_nonlinear = 0;
   block_picard = 0;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
   error_control_ |= error_control_igs_;
@@ -359,22 +363,23 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   }
 
   // set up new preconditioner
-  preconditioner_method = ti_specs_sss_.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_sss_);
+  int method = ti_specs_sss_.preconditioner_method;
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_sss_.preconditioner_name);
   Teuchos::ParameterList ML_list;
-  if (preconditioner_name_sss_ == "Trilinos ML") {
-    ML_list = tmp_list.sublist("ML Parameters");
-  } else if (preconditioner_name_sss_ == "Hypre AMG") {
-    ML_list = tmp_list.sublist("BoomerAMG Parameters");
-  } else if (preconditioner_name_sss_ == "Block ILU") {
+  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
+    ML_list = tmp_list.sublist("ML Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ML_list = tmp_list.sublist("Block ILU Parameters");
   }
+
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
+  preconditioner_->InitPreconditioner(method, ML_list);
 
   // set up new time integration or solver
   if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
@@ -414,6 +419,10 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
     std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
+  // linear solver control options
+  max_itrs_linear = ti_specs_sss_.ls_specs.max_itrs;
+  convergence_tol_linear = ti_specs_sss_.ls_specs.convergence_tol;
+
   // (re)initialize pressure and saturation
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
@@ -430,10 +439,10 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   }
   DeriveSaturationFromPressure(pressure, water_saturation);
 
-  // control options
+  // nonlinear solver control options
   set_time(T0, dT0);  // overrides data provided in the input file
   ti_method = ti_method_sss;
-  num_itrs = 0;
+  num_itrs_nonlinear = 0;
   block_picard = 0;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
@@ -464,22 +473,23 @@ void Richards_PK::InitTransient(double T0, double dT0)
   set_time(T0, dT0);
 
   // set up new preconditioner
-  preconditioner_method = ti_specs_trs_.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(preconditioner_name_trs_);
+  int method = ti_specs_trs_.preconditioner_method;
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_trs_.preconditioner_name);
   Teuchos::ParameterList ML_list;
-  if (preconditioner_name_trs_ == "Trilinos ML") {
-    ML_list = tmp_list.sublist("ML Parameters");
-  } else if (preconditioner_name_trs_ == "Hypre AMG") {
-    ML_list = tmp_list.sublist("BoomerAMG Parameters");
-  } else if (preconditioner_name_trs_ == "Block ILU") {
+  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
+    ML_list = tmp_list.sublist("ML Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ML_list = tmp_list.sublist("Block ILU Parameters");
   }
+
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
+  preconditioner_->InitPreconditioner(method, ML_list);
 
   if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
     if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset BDF2 is to delete it.
@@ -528,11 +538,14 @@ void Richards_PK::InitTransient(double T0, double dT0)
 
   // control options
   ti_method = ti_method_trs;
-  num_itrs = 0;
+  num_itrs_nonlinear = 0;
   block_picard = 0;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
   error_control_ |= error_control_trs_;
+
+  max_itrs_linear = ti_specs_trs_.ls_specs.max_itrs;
+  convergence_tol_linear = ti_specs_trs_.ls_specs.convergence_tol;
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
@@ -561,7 +574,7 @@ int Richards_PK::Advance(double dT_MPC)
 
   // predict water mass change during time step
   time = T_physics;
-  if (num_itrs == 0) {  // initialization
+  if (num_itrs_nonlinear == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     ComputeUDot(time, *solution, udot);
     if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
@@ -603,7 +616,7 @@ int Richards_PK::Advance(double dT_MPC)
       dTnext = dT;
     }
   }
-  num_itrs++;
+  num_itrs_nonlinear++;
   return 0;
 }
 

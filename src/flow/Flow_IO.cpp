@@ -56,6 +56,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
 **************************************************************** */
 void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
 {
+  verbosity_AztecOO = AZ_none;
   if (name == "none") {
     *verbosity = FLOW_VERBOSITY_NONE;
   } else if (name == "low") {
@@ -66,6 +67,7 @@ void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
     *verbosity = FLOW_VERBOSITY_HIGH;
   } else if (name == "extreme") {
     *verbosity = FLOW_VERBOSITY_EXTREME;
+    verbosity_AztecOO = AZ_all;
   }
 }
 
@@ -96,6 +98,8 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
 **************************************************************** */
 void Flow_PK::ProcessStringPreconditioner(const std::string name, int* preconditioner)
 {
+  Errors::Message msg;
+
   if (name == "Trilinos ML") {
     *preconditioner = FLOW_PRECONDITIONER_TRILINOS_ML;
   } else if (name == "Hypre AMG") {
@@ -107,7 +111,34 @@ void Flow_PK::ProcessStringPreconditioner(const std::string name, int* precondit
 #endif
   } else if (name == "Block ILU") {
     *preconditioner = FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU;
+  } else {
+    msg << "\nFlow PK: specified preconditioner does not exist.";
+    Exceptions::amanzi_throw(msg);
   }
+}
+
+
+/* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list, 
+                                            const Teuchos::ParameterList& solver_list)
+{   
+  Errors::Message msg;
+  std::string name; 
+
+  if (list.isParameter("linear solver")) {
+    name = list.get<string>("linear solver");
+  } else {
+    msg << "Flow PK: time integrator does not define <linear solver>.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (! solver_list.isSublist(name)) {
+    msg << "Flow PK: linear solver \"" << name.c_str() << "\" does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+  return name;
 }
 
 }  // namespace AmanziFlow
