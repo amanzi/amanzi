@@ -196,6 +196,7 @@ Observation::point_sample (Real time)
               value = (*S_new)[mfi](idxs[lev],0);
           }
       }
+      delete S_new;
       ParallelDescriptor::ReduceIntMax(proc_with_data);
   }
 
