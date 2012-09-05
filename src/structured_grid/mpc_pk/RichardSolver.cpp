@@ -232,7 +232,11 @@ RichardSolver::~RichardSolver()
     delete mftfp;
 }
 
-PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm, PetscReal dx_norm, PetscReal fnew_norm, SNESConvergedReason *reason, void *ctx)
+static int dump_cnt = 0;
+
+PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm, 
+                                     PetscReal dx_norm, PetscReal fnew_norm, 
+                                     SNESConvergedReason *reason, void *ctx)
 {
     CheckCtx *user = (CheckCtx *) ctx;
     PetscErrorCode ierr;
@@ -244,6 +248,10 @@ PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm,
 
     ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf);
     ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx);
+
+    if (*reason > 0) {
+        dump_cnt = 0;
+    }
     
 #if 0
     if (it == 1) {
@@ -257,9 +265,14 @@ PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm,
     if (it != 0) // if it=0, xnew_norm=dx_norm=0 in ls.c
       {
 	if (ParallelDescriptor::IOProcessor()) {            
-	  std::cout << "                   dx_norm: " << dx_norm << ", dxre: " << dx_norm / dx_norm_0 << ", stol: " << stol << std::endl;
+	  std::cout << "                   dx_norm: " << dx_norm 
+                    << ", dxrel: " << dx_norm / dx_norm_0 
+                    << ", stol: " << stol << std::endl;
 	  std::cout << "                    p_norm: " << dx_norm / xnew_norm << std::endl;
-	  std::cout << "                 fnew_norm: " << fnew_norm << ", fre: " << fnew_norm / fnew_norm_0 << ", atol: " << atol << ", rtol: " << rtol << std::endl;
+	  std::cout << "                 fnew_norm: " << fnew_norm 
+                    << ", frel: " << fnew_norm / fnew_norm_0 
+                    << ", atol: " << atol 
+                    << ", rtol: " << rtol << std::endl;
 	}
       }
 #endif
@@ -281,10 +294,10 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   PetscErrorCode ierr;
   ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
-  ierr = layout.MFTowerToVec(SolnTypInvV,PCapParamsMFT,2); CHKPETSC(ierr); // Get "sigma" = 1/P_typ, which is in slot number 2
+  ierr = layout.MFTowerToVec(SolnTypInvV,PCapParamsMFT,2); CHKPETSC(ierr); // sigma = 1/P_typ
 
   if (params.scale_soln_before_solve) {
-      ierr = VecPointwiseMult(SolnV,SolnV,SolnTypInvV); // Mult(w,x,y): w=x.y  -- Scale initial solution
+      ierr = VecPointwiseMult(SolnV,SolnV,SolnTypInvV); // Mult(w,x,y): w=x.y  -- Scale IC
   }
   ierr = VecCopy(SolnTypInvV,SolnTypV); // Copy(x,y): y <- x
   ierr = VecReciprocal(SolnTypV); // Create vec to unscale as needed
@@ -299,6 +312,7 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULL); CHKPETSC(ierr);
 
   RichardSolver::SetTheRichardSolver(this);
+  dump_cnt = 0;
   ierr = SNESSolve(snes,PETSC_NULL,SolnV);CHKPETSC(ierr);
   RichardSolver::SetTheRichardSolver(0);
 
@@ -402,13 +416,13 @@ RichardSolver::BuildOpSkel(Mat& J)
       const Layout::MultiNodeFab& nodeLev = nodes[lev];
       const Layout::MultiIntFab& nodeIdsLev = nodeIds[lev];
 
-      Layout::MultiIntFab crseIds; // coarse cell ids surrounding fine grid, distributed to align with fine patches
+      Layout::MultiIntFab crseIds; // coarse cell ids at fine grid, distributed per fine patches
       crseContribs.set(lev,new MultiSetFab);
       if (lev>0) {
 	BoxArray bacg = BoxArray(gridArray[lev]).coarsen(refRatio[lev-1]).grow(1);
 	crseIds.define(bacg,1,0,Fab_allocate);
             
-	const Layout::MultiIntFab& crseIds_orig = nodeIds[lev-1]; // Need the following to crse cells through periodic boundary
+	const Layout::MultiIntFab& crseIds_orig = nodeIds[lev-1]; // crse cells through periodic boundary
 	BoxArray gcba = BoxArray(crseIds_orig.boxArray()).grow(crseIds_orig.nGrow());
 	Layout::MultiIntFab tmp(gcba,1,0);
 	for (MFIter mfi(crseIds_orig); mfi.isValid(); ++mfi) {
@@ -556,7 +570,7 @@ RichardSolver::BuildOpSkel(Mat& J)
 		      if (slev==lev) {
 			BL_ASSERT(nodeIdFab.box().contains(ivs));
 			int idx = nodeIdFab(ivs,0);
-			if (ivs != iv && idx>=0) { // idx<0 is where we hold the Dirichlet data, and iv was already added above
+			if (ivs != iv && idx>=0) { // idx<0 is Dirichlet data, iv added above
 			  nd.insert(idx);
 			}
 		      }
@@ -814,7 +828,8 @@ void
 RichardSolver::UpdateDarcyVelocity(MFTower& pressure,
 				   Real     time)
 {
-  ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),GetLambda(),GetKappa(),GetDensity(),GetGravity(),time);
+  ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),
+                       GetLambda(),GetKappa(),GetDensity(),GetGravity(),time);
 }
 
 void 
@@ -1170,7 +1185,6 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
    changed_w 	- indicates current iterate was changed by this routine 
 
  */
-static int jcnt = 0;
 PetscErrorCode 
 PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
 {
@@ -1203,14 +1217,14 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     ierr = VecNorm(G,NORM_2,&gnorm);    
 
 #if 0
-    if (rs->GetNumLevels() == 3) {
+    if (rs->GetNumLevels() == 2) {
       Layout& layout = check_ctx->rs->GetLayout();
       int nLevs = rs->GetNumLevels();
       MFTower res(layout,MFTower::CC,1,0,nLevs);
       ierr = layout.VecToMFTower(res,G,0);
-      std::cout << "Writing " << jcnt << std::endl;
-      VisMF::Write(res[nLevs-1],BoxLib::Concatenate("JUNK_",jcnt,2));
-      jcnt++;
+      VisMF::Write(res[nLevs-1],BoxLib::Concatenate("JUNK_",dump_cnt,2));
+      dump_cnt++;
+      if (dump_cnt>11) BoxLib::Abort();
     }
 #endif
     
@@ -1227,6 +1241,7 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         if (ls_factor < rsp.min_ls_factor) {
             ls_factor = rsp.min_ls_factor;
         }
+
         PetscReal mone = -1;
         ierr=VecWAXPY(w,mone*ls_factor,y,x); /* w = -y + x */
         *changed_w = PETSC_TRUE;

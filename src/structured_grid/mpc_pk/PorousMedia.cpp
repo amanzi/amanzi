@@ -3328,7 +3328,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
 
         while (continue_subcycle_transport)
         {
-            if (n_subcycle_transport > 0) {
+            if (n_subcycle_transport > 0 && saved_states.size()==0) {
                 for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
                 {
                     const MultiFab& old = fine_lev.get_old_data(*it);                          
@@ -3379,7 +3379,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
             }
             n_subcycle_transport++;
         }
-        if (n_subcycle_transport > 1) {
+        if (!saved_states.empty()) {
             for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
             {
                 MultiFab& old = get_old_data(*it);                          
@@ -8364,10 +8364,7 @@ PorousMedia::post_init_state ()
   //
   for (int k = finest_level-1; k>= 0; k--)
     {
-
-      //FIXME
-      std::cout << "HACK skip avgdown" << std::endl;
-      //getLevel(k).avgDown();
+      getLevel(k).avgDown();
     }
 }
 
