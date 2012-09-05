@@ -24,6 +24,7 @@ static Real atol_DEF = 1e-10;
 static Real rtol_DEF = 1e-20;
 static Real stol_DEF = 1e-12;
 static bool scale_soln_before_solve_DEF = true;
+static bool semi_analytic_J_DEF = false;
 
 RichardSolver::RSParams::RSParams()
 {
@@ -44,6 +45,7 @@ RichardSolver::RSParams::RSParams()
   rtol = rtol_DEF;
   stol = stol_DEF;
   scale_soln_before_solve = scale_soln_before_solve_DEF;
+  semi_analytic_J = semi_analytic_J_DEF;
 }
 
 static RichardSolver* static_rs_ptr = 0;
@@ -58,9 +60,11 @@ RichardSolver::SetTheRichardSolver(RichardSolver* ptr)
 static void MatSqueeze(Mat& J);
 PetscErrorCode RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx);
 PetscErrorCode RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx);
+PetscErrorCode SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx);
 PetscErrorCode PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w);
 PetscErrorCode RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy);
 PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy);
+PetscErrorCode RichardR2(SNES snes,Vec x,Vec f,void *dummy);
 
 struct CheckCtx
 {
@@ -99,12 +103,12 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     lambda.set(lev,pm[lev].LambdaCC_Curr());
     porosity.set(lev,pm[lev].Porosity());
     pcap_params.set(lev,pm[lev].PCapParams());
-    if (!params.use_fd_jac) {
+    if (!params.use_fd_jac || params.semi_analytic_J) {
         kappacc.set(lev,pm[lev].KappaCC());
     }
   }
 
-  if (!params.use_fd_jac) {
+  if (!params.use_fd_jac || params.semi_analytic_J) {
     KappaCC = new MFTower(layout,kappacc,nLevs);
   }
   else {
@@ -179,10 +183,16 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   if (params.use_fd_jac) {
     ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
-    ierr = MatFDColoringSetFunction(matfdcoloring,
-				    (PetscErrorCode (*)(void))RichardRes_DpDt,
-				    (void*)(this)); CHKPETSC(ierr);
-    
+    if (params.semi_analytic_J) {
+        ierr = MatFDColoringSetFunction(matfdcoloring,
+                                        (PetscErrorCode (*)(void))RichardR2,
+                                        (void*)(this)); CHKPETSC(ierr);
+    }
+    else {
+        ierr = MatFDColoringSetFunction(matfdcoloring,
+                                        (PetscErrorCode (*)(void))RichardRes_DpDt,
+                                        (void*)(this)); CHKPETSC(ierr);
+    }
     ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
     ierr = MatFDColoringSetParameters(matfdcoloring,params.errfd,PETSC_DEFAULT);CHKPETSC(ierr);
     ierr = SNESSetJacobian(snes,Jac,Jac,RichardComputeJacobianColor,matfdcoloring);CHKPETSC(ierr);
@@ -359,9 +369,9 @@ RichardSolver::ResetRhoSat()
 }
 
 void
-RichardSolver::SetTime(Real time) 
+RichardSolver::SetTime(Real t) 
 {
-  mytime = time;
+  mytime = t;
 }
 
 Real
@@ -786,7 +796,7 @@ RichardSolver::FillPatch(MFTower& mft,
 
 void 
 RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
-				 Real             time)
+				 Real             t)
 {
   for (int d=0; d<BL_SPACEDIM; ++d) {            
     BL_ASSERT(layout.IsCompatible(velocity[d]));
@@ -800,7 +810,7 @@ RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
     int dir = face.coordDir();
     for (int lev=0; lev<nLevs; ++lev) {
       MultiFab& uld = velocity[dir][lev];
-      if (pm[lev].get_inflow_velocity(face,inflow,time)) {
+      if (pm[lev].get_inflow_velocity(face,inflow,t)) {
 	int shift = ( face.isHigh() ? -1 : +1 );
 	inflow.shiftHalf(dir,shift);
 	for (MFIter mfi(uld); mfi.isValid(); ++mfi) {
@@ -817,19 +827,19 @@ RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
 
 void 
 RichardSolver::UpdateDarcyVelocity(PArray<MultiFab>& pressure,
-				   Real              time)
+				   Real              t)
 {
   MFTower* P = new MFTower(layout,pressure,nLevs);
-  UpdateDarcyVelocity(*P,time);
+  UpdateDarcyVelocity(*P,t);
   delete P;
 }
 
 void 
 RichardSolver::UpdateDarcyVelocity(MFTower& pressure,
-				   Real     time)
+				   Real     t)
 {
   ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),
-                       GetLambda(),GetKappa(),GetDensity(),GetGravity(),time);
+                       GetLambda(),GetKappa(),GetDensity(),GetGravity(),t);
 }
 
 void 
@@ -840,7 +850,7 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 				    const PArray<MFTower>& kappa,
 				    const Array<Real>&     density,
 				    const Array<Real>&     gravity,
-				    Real                   time)
+				    Real                   t)
 {
     // On Dirichlet boundaries, the grow cells of pressure will hold the value to apply at
     // the cell wall.  Note that since we use "calcInvPressure" to fill rho.sat, these
@@ -854,7 +864,7 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
     // Assumes lev=0 here corresponds to Amr.level=0, sets dirichlet values of rho.sat and
     // lambda on dirichlet pressure faces
     for (int lev=0; lev<nLevs; ++lev) {
-        pm[lev].FillStateBndry(time,Press_Type,0,1); // Set new boundary data
+        pm[lev].FillStateBndry(t,Press_Type,0,1); // Set new boundary data
         pm[lev].calcInvPressure(rhoSat[lev],pressure[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
         pm[lev].calcLambda(&(lambda[lev]),rhoSat[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
     }
@@ -887,7 +897,7 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
     }    
 
     // Overwrite fluxes at boundary with boundary conditions
-    SetInflowVelocity(darcy_vel,time);
+    SetInflowVelocity(darcy_vel,t);
 
     // Average down fluxes
     int sComp = 0;
@@ -907,20 +917,40 @@ Real TotalVolume()
 }
 
 void
-RichardSolver::DpDtResidual(MFTower& residual,
-			    MFTower& pressure,
-			    Real     time,
-			    Real     dt)
+RichardSolver::DivRhoU(MFTower& DivRhoU,
+                       MFTower& pressure,
+                       Real     t)
 {
   // Get the Darcy flux
-  UpdateDarcyVelocity(pressure,time);
+  UpdateDarcyVelocity(pressure,t);
 
   // Get the divergence of the Darcy Flux
   int sComp=0;
   int dComp=0;
   int nComp=1;
   Real mult=1;
-  MFTower::ECtoCCdiv(residual,GetDarcyVelocity(),mult,sComp,dComp,nComp,nLevs);
+  MFTower::ECtoCCdiv(DivRhoU,GetDarcyVelocity(),mult,sComp,dComp,nComp,nLevs);
+
+  const Array<Real>& rho = GetDensity();
+  for (int n=0; n<nComp; ++n) {
+      for (int lev=0; lev<nLevs; ++lev) {
+          DivRhoU[lev].mult(rho[n],dComp,1);
+      }
+  }
+}
+
+
+void
+RichardSolver::DpDtResidual(MFTower& residual,
+			    MFTower& pressure,
+			    Real     t,
+			    Real     dt)
+{
+  DivRhoU(residual,pressure,t);
+
+  int sComp=0;
+  int dComp=0;
+  int nComp=1;
 
   const Array<BoxArray>& gridArray = layout.GridArray();
   const Array<IntVect>& refRatio = layout.RefRatio();
@@ -938,11 +968,12 @@ RichardSolver::DpDtResidual(MFTower& residual,
 			RSn.dataPtr(),ARLIM(RSn.loVect()), ARLIM(RSn.hiVect()),
 			RSnp1.dataPtr(),ARLIM(RSnp1.loVect()), ARLIM(RSnp1.hiVect()),
 			Poros.dataPtr(),ARLIM(Poros.loVect()), ARLIM(Poros.hiVect()),
-		        GetDensity().dataPtr(), &dt,
-			vbox.loVect(), vbox.hiVect(), &nComp);
+			Poros.dataPtr(),ARLIM(Poros.loVect()), ARLIM(Poros.hiVect()),
+		        &dt, vbox.loVect(), vbox.hiVect(), &nComp);
         }
     }
 
+#if 0
   // Scale residual by cell volume/total volume
   Real total_volume = TotalVolume();
   for (int lev=0; lev<nLevs; ++lev)
@@ -950,6 +981,7 @@ RichardSolver::DpDtResidual(MFTower& residual,
         MultiFab::Multiply(residual[lev],layout.Volume(lev),0,0,nComp,0);
         residual[lev].mult(total_volume,0,1);
     }
+#endif
 }
 
 void RichardSolver::CreateJac(Mat& J, 
@@ -1133,9 +1165,39 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     Layout& layout = rs->GetLayout();
     ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
 
-    Real time = rs->GetTime();
+    Real t = rs->GetTime();
     Real dt = rs->GetDt();
-    rs->DpDtResidual(fMFT,xMFT,time,dt);
+    rs->DpDtResidual(fMFT,xMFT,t,dt);
+
+    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+
+    if (rs->Parameters().scale_soln_before_solve) {
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); // Reset solution scaling
+    }
+    return 0;
+}
+
+PetscErrorCode 
+RichardR2(SNES snes,Vec x,Vec f,void *dummy)
+{
+    PetscErrorCode ierr; 
+    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+    if (!rs) {
+        BoxLib::Abort("Bad cast in RichardR2");
+    }
+
+    if (rs->Parameters().scale_soln_before_solve) {
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); // Unscale solution
+    }
+
+    MFTower& xMFT = rs->GetPressure();
+    MFTower& fMFT = rs->GetResidual();
+
+    Layout& layout = rs->GetLayout();
+    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+
+    Real t = rs->GetTime();
+    rs->DivRhoU(fMFT,xMFT,t);
 
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
@@ -1546,6 +1608,200 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   PetscFunctionReturn(0);
 }
 
+void
+RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
+{
+  MFTower& PCapParamsMFT = GetPCapParams();
+  MFTower& PMFT = GetPressure();
+  MFTower& aMFT = GetLambda(); // A handy MFTower
+  PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0);
+
+  for (int lev=0; lev<nLevs; ++lev) {
+
+    pm[lev].calcInvPressure(GetRhoSatNp1()[lev],PMFT[lev]);
+    
+    for (MFIter mfi(PMFT[lev]); mfi.isValid(); ++mfi) {
+      const Box& vbox = mfi.validbox();
+
+      FArrayBox& pofab = GetPorosity()[lev][mfi];
+      FArrayBox& kcfab = GetKappaCC()[lev][mfi];
+      FArrayBox& cpfab = PCapParamsMFT[lev][mfi];
+      const int n_cp_coef = cpfab.nComp();
+
+      FArrayBox& nfab = GetRhoSatNp1()[lev][mfi];
+      FArrayBox& afab = aMFT[lev][mfi];
+      
+      FORT_RICHARD_ALPHA(afab.dataPtr(), ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
+			 nfab.dataPtr(), ARLIM(nfab.loVect()),ARLIM(nfab.hiVect()),
+			 pofab.dataPtr(), ARLIM(pofab.loVect()),ARLIM(pofab.hiVect()),
+			 kcfab.dataPtr(), ARLIM(kcfab.loVect()), ARLIM(kcfab.hiVect()),
+			 cpfab.dataPtr(), ARLIM(cpfab.loVect()), ARLIM(cpfab.hiVect()), &n_cp_coef,
+			 vbox.loVect(), vbox.hiVect());
+      
+    }
+  }
+
+  // Put into Vec data structure
+  ierr = GetLayout().MFTowerToVec(Alpha,aMFT,0); CHKPETSC(ierr);
+}
+
+
+PetscErrorCode  
+SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
+{
+  PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
+  PetscErrorCode ierr;
+  PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
+  PetscScalar    dx,*y,*w3_array;
+  PetscScalar    *vscale_array, *solnTyp_array, *a_array;
+  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
+  Vec            w1=coloring->w1,w2=coloring->w2,w3;
+  void           *fctx = coloring->fctx;
+  PetscBool      flg = PETSC_FALSE;
+  PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
+  Vec            x1_tmp;
+
+  PetscFunctionBegin;    
+  PetscValidHeaderSpecific(J,MAT_CLASSID,1);
+  PetscValidHeaderSpecific(coloring,MAT_FDCOLORING_CLASSID,2);
+  PetscValidHeaderSpecific(x1,VEC_CLASSID,3);
+  if (!f) SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_WRONGSTATE,"Must call MatFDColoringSetFunction()");
+
+  ierr = PetscLogEventBegin(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
+  ierr = MatSetUnfactored(J);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_fd_coloring_dont_rezero",&flg,PETSC_NULL);CHKPETSC(ierr);
+  if (flg) {
+    ierr = PetscInfo(coloring,"Not calling MatZeroEntries()\n");CHKPETSC(ierr);
+  } else {
+    PetscBool  assembled;
+    ierr = MatAssembled(J,&assembled);CHKPETSC(ierr);
+    if (assembled) {
+      ierr = MatZeroEntries(J);CHKPETSC(ierr);
+    }
+  }
+
+  x1_tmp = x1; 
+  if (!coloring->vscale){ 
+    ierr = VecDuplicate(x1_tmp,&coloring->vscale);CHKPETSC(ierr);
+  }
+    
+  /*
+    This is a horrible, horrible, hack. See DMMGComputeJacobian_Multigrid() it inproperly sets
+    coloring->F for the coarser grids from the finest
+  */
+  if (coloring->F) {
+    ierr = VecGetLocalSize(coloring->F,&m1);CHKPETSC(ierr);
+    ierr = VecGetLocalSize(w1,&m2);CHKPETSC(ierr);
+    if (m1 != m2) {  
+      coloring->F = 0; 
+      }    
+    }   
+
+
+  RichardSolver* rs = static_rs_ptr;
+  BL_ASSERT(rs);
+  Vec& AlphaV = rs->GetTrialResV(); // Handy Vec to reuse here
+  rs->ComputeRichardAlpha(AlphaV,x1_tmp);
+  Real dt = rs->GetDt();
+  Real dt_inv = 1/dt;
+
+  ierr = VecGetOwnershipRange(w1,&start,&end);CHKPETSC(ierr); /* OwnershipRange is used by ghosted x! */
+      
+  /* Set w1 = F(x1) */
+  if (coloring->F) {
+    w1          = coloring->F; /* use already computed value of function */
+    coloring->F = 0; 
+  } else {
+    ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+    ierr = (*f)(sctx,x1_tmp,w1,fctx);CHKPETSC(ierr);
+    ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+  }
+      
+  if (!coloring->w3) {
+    ierr = VecDuplicate(x1_tmp,&coloring->w3);CHKPETSC(ierr);
+    ierr = PetscLogObjectParent(coloring,coloring->w3);CHKPETSC(ierr);
+  }
+  w3 = coloring->w3;
+
+    /* Compute all the local scale factors, including ghost points */
+  ierr = VecGetLocalSize(x1_tmp,&N);CHKPETSC(ierr);
+
+  ierr = VecSet(coloring->vscale,1);
+  ierr = VecScale(coloring->vscale,1/epsilon);
+
+  if (ctype == IS_COLORING_GLOBAL){
+      ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+      ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+  }
+  
+  if (coloring->vscaleforrow) {
+    vscaleforrow = coloring->vscaleforrow;
+  } else SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_NULL,"Null Object: coloring->vscaleforrow");
+
+  /*
+    Loop over each color
+  */
+  int p = ParallelDescriptor::MyProc();
+  //
+  // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
+  // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
+  //
+  for (k=0; k<coloring->ncolors; k++) { 
+      coloring->currentcolor = k;
+      
+      ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
+      ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
+      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
+      for (l=0; l<coloring->ncolumns[k]; l++) {
+          col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
+          w3_array[col] += epsilon;
+      } 
+      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
+      ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+      
+      // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
+      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      
+      // Insert (w2_j / dx) into J_ij
+      PetscReal epsilon_inv = 1/epsilon;
+      ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
+      ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
+      if (ctype == IS_COLORING_GLOBAL) a_array = a_array - start;          
+
+      for (l=0; l<coloring->nrows[k]; l++) {
+          row    = coloring->rows[k][l];             /* local row index */
+          col    = coloring->columnsforrow[k][l];    /* global column index */
+          y[row] *= epsilon_inv;                     /* dx = epsilon */
+          srow   = row + start;                      /* global row index */
+
+          if (srow == col) {
+	    y[row] += a_array[srow] * dt_inv;
+          }
+          ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+      }
+      if (ctype == IS_COLORING_GLOBAL) a_array = a_array + start;          
+      ierr = VecRestoreArray(AlphaV,&a_array);CHKPETSC(ierr);
+      ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
+      
+  } /* end of for each color */
+   
+  coloring->currentcolor = -1;
+  ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  ierr = PetscLogEventEnd(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
+
+  flg  = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
+  if (flg) {
+    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULL);CHKPETSC(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode 
 RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx)
 {
@@ -1553,6 +1809,10 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
   PetscErrorCode ierr;
   Vec            f;
   PetscErrorCode (*ff)(void),(*fd)(void);
+
+  // ick!
+  RichardSolver* rs = static_rs_ptr;
+  BL_ASSERT(rs);
 
   PetscFunctionBegin;
   PetscValidHeaderSpecific(color,MAT_FDCOLORING_CLASSID,6);
@@ -1562,7 +1822,12 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
   if (fd == ff) { /* reuse function value computed in SNES */
     ierr  = MatFDColoringSetF(color,f);CHKPETSC(ierr);
   }
-  ierr  = RichardMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+  if (rs->Parameters().semi_analytic_J) {
+      ierr = SemiAnalyticMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+  } 
+  else {
+      ierr = RichardMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+  }
   if (*J != *B) {
     ierr = MatAssemblyBegin(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
     ierr = MatAssemblyEnd(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);

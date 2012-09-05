@@ -161,30 +161,31 @@
       end     
 
       subroutine FORT_RS_PDOTRES(Res,DIMS(Res),RSn,DIMS(RSn),
-     &     RSnp1,DIMS(RSnp1),Porosity,DIMS(Porosity),
-     &     rho,dt,lo,hi,nc)
+     &     RSnp1,DIMS(RSnp1),Porositynp1,DIMS(Porositynp1),
+     &     Porosityn,DIMS(Porosityn),dt,lo,hi,nc)
       implicit none      
       integer DIMDEC(Res)
       integer DIMDEC(RSn)
       integer DIMDEC(RSnp1)
-      integer DIMDEC(Porosity)
+      integer DIMDEC(Porositynp1)
+      integer DIMDEC(Porosityn)
       integer lo(SDIM),hi(SDIM)
       integer nc
       REAL_T  Res(DIMV(Res),nc)
       REAL_T  RSn(DIMV(RSn),nc)
       REAL_T  RSnp1(DIMV(RSnp1),nc)
-      REAL_T  Porosity(DIMV(Porosity))
+      REAL_T  Porositynp1(DIMV(Porositynp1))
+      REAL_T  Porosityn(DIMV(Porosityn))
       REAL_T  rho(nc)
       REAL_T  dt
       
       integer i, j, n
 
-c     On input, Res contains Div(DarcyVel)
+c     On input, Res contains Div(rho.DarcyVel)
       do n=1,nc
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
-               Res(i,j,n) = Porosity(i,j)*(RSnp1(i,j,n) - RSn(i,j,n))/dt
-     &              + rho(n)*Res(i,j,n)
+               Res(i,j,n) = (Porositynp1(i,j)*RSnp1(i,j,n) - Porosityn(i,j)*RSn(i,j,n))/dt + Res(i,j,n)
             enddo
          enddo
       enddo

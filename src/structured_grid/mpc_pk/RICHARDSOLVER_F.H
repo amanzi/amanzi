@@ -46,12 +46,12 @@ extern "C"
 			const int* dir, const int* nc,
                         const int* bclo, const int* bchi, const int* do_upwind);
 
-  void FORT_RS_PDOTRES (Real* res,      ARLIM_P(rlo),  ARLIM_P(rhi),
-			const Real* sn, ARLIM_P(snlo), ARLIM_P(snhi),
-			const Real* sp, ARLIM_P(splo), ARLIM_P(sphi),
-			const Real* ph, ARLIM_P(phlo), ARLIM_P(phhi),
-			const Real* rho, const Real* dt,
-			const int*  lo, const int*  hi, const int* nc);
+  void FORT_RS_PDOTRES (Real* res,        ARLIM_P(reslo), ARLIM_P(reshi),
+			const Real* rso,  ARLIM_P(rsnlo), ARLIM_P(rsnhi),
+			const Real* rsn,  ARLIM_P(rsnlo), ARLIM_P(rsnhi),
+			const Real* phio, ARLIM_P(phiolo), ARLIM_P(phiohi),
+			const Real* phin, ARLIM_P(phinlo), ARLIM_P(phinhi),
+			const Real* dt, const int*  lo, const int*  hi, const int* nc);
 }
 
 #endif

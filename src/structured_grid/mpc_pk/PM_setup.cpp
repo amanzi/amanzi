@@ -316,6 +316,8 @@ Real PorousMedia::steady_abs_tolerance;
 Real PorousMedia::steady_rel_tolerance;
 Real PorousMedia::steady_abs_update_tolerance;
 Real PorousMedia::steady_rel_update_tolerance;
+int  PorousMedia::steady_do_grid_sequence;
+Real PorousMedia::steady_grid_sequence_new_level_dt_factor;
 
 int  PorousMedia::richard_max_ls_iterations;
 Real PorousMedia::richard_min_ls_factor;
@@ -329,8 +331,7 @@ int  PorousMedia::richard_use_dense_Jacobian;
 int  PorousMedia::richard_upwind_krel;
 int  PorousMedia::richard_pressure_maxorder;
 bool PorousMedia::richard_scale_solution_before_solve;
-int  PorousMedia::steady_do_grid_sequence;
-Real PorousMedia::steady_grid_sequence_new_level_dt_factor;
+bool PorousMedia::richard_semi_analytic_J;
 
 std::string PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
@@ -631,6 +632,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_upwind_krel = 1;
   PorousMedia::richard_pressure_maxorder = 4;
   PorousMedia::richard_scale_solution_before_solve = true;
+  PorousMedia::richard_semi_analytic_J = false;
 
   PorousMedia::echo_inputs         = 0;
 }
@@ -1610,6 +1612,7 @@ void PorousMedia::read_prob()
   pb.query("richard_upwind_krel",richard_upwind_krel);
   pb.query("richard_pressure_maxorder",richard_pressure_maxorder);
   pb.query("richard_scale_solution_before_solve",richard_scale_solution_before_solve);
+  pb.query("richard_semi_analytic_J",richard_semi_analytic_J);
 
   // Get timestepping parameters.
   pb.get("cfl",cfl);

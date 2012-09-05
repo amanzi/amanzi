@@ -29,6 +29,7 @@ public:
     Real rtol; // Relative tolerance for norm(F)
     Real stol; // Absolute tolerance for norm(dp), dp is the Newton update
     bool scale_soln_before_solve; // Switch, scale P by 1/sigma before solve?
+    bool semi_analytic_J; // Explicitly use dPc/ds relationship in computing the Jacobian
   };
 
   RichardSolver(PMAmr&          pm_amr,
@@ -70,10 +71,10 @@ public:
   const RichardSolver::RSParams& Parameters() {return params;}
 
   void UpdateDarcyVelocity(MFTower& pressure,
-			   Real     time); // Set internal data
+			   Real     t); // Set internal data
 
   void UpdateDarcyVelocity(PArray<MultiFab>& pressure,
-			   Real              time); // Set internal data
+			   Real              t); // Set internal data
 
   void ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 			    MFTower&               pressure,
@@ -82,16 +83,22 @@ public:
 			    const PArray<MFTower>& kappa,
 			    const Array<Real>&     density,
 			    const Array<Real>&     gravity,
-			    Real                   time);
+			    Real                   t);
+
+  void DivRhoU(MFTower& DivRhoU,
+               MFTower& pressure,
+               Real     t);
 
   void DpDtResidual(MFTower& residual,
 		    MFTower& pressure,
-		    Real     time,
+		    Real     t,
 		    Real     dt);
 
   void CreateJac(Mat& J, 
 		 MFTower& pressure,
 		 Real dt);
+
+  void ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure);
 
   static void SetTheRichardSolver(RichardSolver* ptr);
 
