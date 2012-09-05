@@ -45,6 +45,8 @@ public:
   Real GetNumLevels() const {return nLevs;}
   MFTower& GetRhoSatN() {return *RhoSatOld;}
   MFTower& GetRhoSatNp1() {return *RhoSatNew;}
+  MFTower& GetAlpha() {return *Alpha;}
+  Vec& GetAlphaV() {return AlphaV;}
   MFTower& GetLambda() {return *Lambda;}
   MFTower& GetKappaCC() {return *KappaCC;}
   PArray<MFTower>& GetKappa() {return Kappa;}
@@ -162,10 +164,10 @@ protected:
 
   int nLevs;
   Array<PArray<MultiFab> > ktmp, ctmp; // Currently maintains its own copy of these, should be fixed
-  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCC, *PCapParams;
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCC, *PCapParams, *Alpha;
   PArray<MFTower> Kappa, DarcyVelocity, RichardCoefs;
 
-  Vec RhsV, SolnV, SolnTypV, SolnTypInvV, GV;
+  Vec RhsV, SolnV, SolnTypV, SolnTypInvV, GV, AlphaV;
   Mat Jac;
 
   Array<Real> gravity;

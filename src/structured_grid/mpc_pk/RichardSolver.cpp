@@ -122,6 +122,7 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   ktmp.resize(BL_SPACEDIM);
   ctmp.resize(BL_SPACEDIM);
   Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
+  Alpha = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   
   Kappa.resize(BL_SPACEDIM,PArrayManage);
   RichardCoefs.resize(BL_SPACEDIM,PArrayManage);
@@ -152,6 +153,7 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   ierr = VecDuplicate(RhsV,&SolnTypV); CHKPETSC(ierr);
   ierr = VecDuplicate(RhsV,&SolnTypInvV); CHKPETSC(ierr);
   ierr = VecDuplicate(RhsV,&GV); CHKPETSC(ierr);
+  ierr = VecDuplicate(RhsV,&AlphaV); CHKPETSC(ierr);
 
   const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
   mftfp->BuildStencil(pressure_bc, params.pressure_maxorder);
@@ -218,6 +220,7 @@ RichardSolver::~RichardSolver()
     ierr = SNESDestroy(&snes); CHKPETSC(ierr);
     ierr = MatDestroy(&Jac); CHKPETSC(ierr);
 
+    ierr = VecDestroy(&AlphaV); CHKPETSC(ierr);
     ierr = VecDestroy(&GV); CHKPETSC(ierr);
     ierr = VecDestroy(&SolnTypInvV); CHKPETSC(ierr);
     ierr = VecDestroy(&SolnTypV); CHKPETSC(ierr);
@@ -233,6 +236,7 @@ RichardSolver::~RichardSolver()
     RichardCoefs.clear();
     Kappa.clear();
 
+    delete Alpha;
     delete Rhs;
     delete Porosity;
     delete PCapParams;
@@ -1135,9 +1139,7 @@ void RichardSolver::CreateJac(Mat& J,
                       }
                   }
               }
-              
-              // Normalize matrix entries
-	      ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+              ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
 	  }
       }
     }
@@ -1613,7 +1615,7 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
 {
   MFTower& PCapParamsMFT = GetPCapParams();
   MFTower& PMFT = GetPressure();
-  MFTower& aMFT = GetLambda(); // A handy MFTower
+  MFTower& aMFT = GetAlpha();
   PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0);
 
   for (int lev=0; lev<nLevs; ++lev) {
@@ -1696,14 +1698,21 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
       coloring->F = 0; 
       }    
     }   
-
-
   RichardSolver* rs = static_rs_ptr;
   BL_ASSERT(rs);
-  Vec& AlphaV = rs->GetTrialResV(); // Handy Vec to reuse here
-  rs->ComputeRichardAlpha(AlphaV,x1_tmp);
-  Real dt = rs->GetDt();
-  Real dt_inv = 1/dt;
+  Vec& AlphaV = rs->GetAlphaV();
+  
+  Vec press;
+  ierr = VecDuplicate(x1_tmp,&press); CHKPETSC(ierr);
+  if (rs->Parameters().scale_soln_before_solve) {
+      ierr = VecPointwiseMult(press,x1_tmp,rs->GetSolnTypV()); // Mult(w,x,y): w=x.y, p=pbar.ptyp
+  }
+  rs->ComputeRichardAlpha(AlphaV,press);
+  if (rs->Parameters().scale_soln_before_solve) {
+      ierr = VecPointwiseMult(AlphaV,AlphaV,rs->GetSolnTypV()); // Mult(w,x,y): w=x.y, alphabar=alpha.ptyp
+  }
+
+  Real dt_inv = 1/rs->GetDt();
 
   ierr = VecGetOwnershipRange(w1,&start,&end);CHKPETSC(ierr); /* OwnershipRange is used by ghosted x! */
       
@@ -1765,11 +1774,15 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
       ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
       
-      // Insert (w2_j / dx) into J_ij
+      // Insert (w2_j / dx) into J_ij [include diagonal term, dR1_i/dpbar_i = alphabar
       PetscReal epsilon_inv = 1/epsilon;
       ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
       ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
-      if (ctype == IS_COLORING_GLOBAL) a_array = a_array - start;          
+
+      if (ctype == IS_COLORING_GLOBAL)
+      {
+          a_array -= start;          
+      }
 
       for (l=0; l<coloring->nrows[k]; l++) {
           row    = coloring->rows[k][l];             /* local row index */
@@ -1778,11 +1791,13 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
           srow   = row + start;                      /* global row index */
 
           if (srow == col) {
-	    y[row] += a_array[srow] * dt_inv;
+              y[row] += a_array[srow] * dt_inv;
           }
           ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
       }
-      if (ctype == IS_COLORING_GLOBAL) a_array = a_array + start;          
+      if (ctype == IS_COLORING_GLOBAL) {
+          a_array += start;          
+      }
       ierr = VecRestoreArray(AlphaV,&a_array);CHKPETSC(ierr);
       ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
       
