@@ -313,9 +313,10 @@ The remaining `"Flow`" parameters are
   an optimal discretization.
 
 * `"source and sink distribution method`" [string] identifies a method for distributing
-  quantities defined as integral values over regions. At the moment, it is applied
-  only to source and sink terms. The available options are `"volume`",
-  `"none`", and `"permeability`".
+  source Q over the specified regions. The available options are `"volume`",
+  `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+  in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
+  is defined over a few regions, Q will be distributed independently over each region.
 
 * `"relative position of water table`" [Array string] collects regions where
   the static head is set up with respect to the top side. For example, zero head

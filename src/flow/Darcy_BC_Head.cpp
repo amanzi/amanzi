@@ -54,7 +54,7 @@ void Darcy_PK::ProcessShiftWaterTableList()
 ****************************************************************** */
 void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 {
-  double tol = 1e-24;
+  double tol = 1e-10;
   Errors::Message msg;
 
   if (dim == 2) {
@@ -154,8 +154,8 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
     edges.push_back(p1);
   }
 #endif
-  // if (MyPID == 2) for (int i = 0; i < nedges; i++)
-  // printf("i= %5d  x = %12.6f %12.6f  %12.6f\n", i, edges[i][0], edges[i][1], edges[i][2]);
+  // if (MyPID == 0) for (int i = 0; i < nedges; i++)
+  //   printf("i= %5d  x = %12.6f %12.6f  %12.6f\n", i, edges[i][0], edges[i][1], edges[i][2]);
 
   // calculate head shift
   double edge_length, tol_edge, a, b;
@@ -173,9 +173,9 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
       tol_edge = tol * edge_length;
 
       a = (p1 * p2) / edge_length;
-      b = p1[0] * p2[1] - p1[1] * p2[0];
-      if (b < tol_edge && a > -tol_edge && a < 1.0 + tol_edge) {
-        double z = edges[j][dim - 1] - a * p1[dim - 1];
+      b = fabs(p1[0] * p2[1] - p1[1] * p2[0]);
+      if (b < tol_edge && a > -tol && a < 1.0 + tol) {
+        double z = edges[j][dim - 1] + a * p1[dim - 1];
         (*shift_water_table_)[f] = z * rho_g;
         if (z > xf[2]) {
           flag = 1;
