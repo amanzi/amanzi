@@ -15,10 +15,6 @@ Authors: Gianmarco Manzini
 namespace Amanzi {
 namespace Flow {
 
-#if 0
-}}
-#endif
-
 // -------------------------------------------------------------
 // Diffusion term, div K grad T
 // -------------------------------------------------------------
@@ -30,7 +26,7 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   // update the stiffness matrix
   Teuchos::RCP<const CompositeVector> cond =
     S->GetFieldData("upwind_overland_conductivity", name_);
-  matrix_->CreateMFDstiffnessMatrices(cond);
+  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
 
   // update the potential
   update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);

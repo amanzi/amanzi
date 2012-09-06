@@ -260,7 +260,7 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
 void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // Update flux if rel perm or h + Z has changed.
   bool update = UpdatePermeabilityData_(S.ptr());
-  update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S, name_);
+  update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
 
   if (update) {
     // update the stiffness matrix with the new rel perm

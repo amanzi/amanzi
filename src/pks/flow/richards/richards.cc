@@ -223,8 +223,8 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // Update flux if rel perm, density, or pressure have changed.
   bool update = UpdatePermeabilityData_(S.ptr());
-  update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
-  update |= S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S, name_);
+  update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
+  update |= S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
 
   if (update) {
     // update the stiffness matrix with the new rel perm
