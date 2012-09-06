@@ -1791,7 +1791,9 @@ PorousMedia::richard_init_to_steady()
 	for (int grid_seq_fine=grid_seq_init_fine; grid_seq_fine<=finest_level; ++grid_seq_fine) {
 
 	  int num_active_levels = grid_seq_fine + 1;
-	  std::cout << "Number of active levels: " << num_active_levels << std::endl;
+          if (ParallelDescriptor::IOProcessor() && richard_init_to_steady_verbose) {
+              std::cout << "Number of active levels: " << num_active_levels << std::endl;
+          }
 
 	  if (num_active_levels > 1) {
 	    dt *= steady_grid_sequence_new_level_dt_factor;
@@ -1970,7 +1972,7 @@ PorousMedia::richard_init_to_steady()
 			  || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
 	      }
 	      if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
-		std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken();
+                  std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken() << std::endl;
 	      }
 	    }
 	    else {
@@ -1985,10 +1987,6 @@ PorousMedia::richard_init_to_steady()
 	      }
 	    } // Newton fail
 		    
-	    if ( std::abs(dt - dt_new) > t_eps) {
-	      std::cout << "   dt factor = " << dt_new / dt << std::endl;
-	    }
-	    
 	    continue_iterations = cont && (!solved)  &&  (k < k_max)  &&  (t < t_max);
 	    if (continue_iterations) {
 	      dt = std::min(dt_new, t_max-t);
@@ -2017,6 +2015,7 @@ PorousMedia::richard_init_to_steady()
 	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type));
 
             solved = false;
+            ParallelDescriptor::Barrier();
 	  }
 	  
 	  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
@@ -2029,6 +2028,7 @@ PorousMedia::richard_init_to_steady()
 	  }
 	}
 
+        ParallelDescriptor::Barrier();
 	Real time_after_init = p->GetStartTime();
 	for (int lev = 0; lev <= finest_level; lev++) {
 	  getLevel(lev).setTimeLevel(time_after_init,dt_save[lev],dt_save[lev]);

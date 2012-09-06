@@ -1520,9 +1520,10 @@ PorousMedia::read_rock(int do_chem)
 	  }
       }
     if (rockTest.min(0) < 0) {
-      BoxLib::Abort("Material has not been defined over the entire domain");
+        VisMF::Write(rockTeset,"RockTest");
+        BoxLib::Abort("Material has not been defined over the entire domain.  See mf on disk: RockTest");
     }
-      }
+}
     
 void PorousMedia::read_prob()
 {
