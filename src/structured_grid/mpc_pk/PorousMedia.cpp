@@ -1829,6 +1829,7 @@ PorousMedia::richard_init_to_steady()
 	    rsparams.upwind_krel = richard_upwind_krel;
 	    rsparams.pressure_maxorder = richard_pressure_maxorder;
 	    rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
+	    rsparams.semi_analytic_J = richard_semi_analytic_J;
 	    
 	    rs = new RichardSolver(*(PMParent()),rsparams,layout_sub);
 	  }
@@ -2014,6 +2015,8 @@ PorousMedia::richard_init_to_steady()
 	    pmf.FillCoarsePatch(pmf.get_new_data(Press_Type),0,t+dt,Press_Type,0,ncomps);
 	    pmf.FillStateBndry(t,Press_Type,0,1); // Set boundary data (FIXME: If t-dep, this will set at t_final)
 	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type));
+
+            solved = false;
 	  }
 	  
 	  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {

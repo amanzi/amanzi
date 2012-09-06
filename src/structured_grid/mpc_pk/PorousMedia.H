@@ -1342,6 +1342,7 @@ protected:
   static int  richard_upwind_krel;
   static int  richard_pressure_maxorder;
   static bool richard_scale_solution_before_solve;
+  static bool richard_semi_analytic_J;
   //
   // Number of states
   //
