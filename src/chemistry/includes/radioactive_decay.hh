@@ -28,8 +28,8 @@ class RadioactiveDecay {
   ~RadioactiveDecay();
 
   // update forward and reverse effective reaction rates
-  void UpdateRate(const std::vector<double> total,
-                  const std::vector<double> total_sorbed,
+  void UpdateRate(const std::vector<double>& total,
+                  const std::vector<double>& total_sorbed,
                   const double porosity,
                   const double saturation,
                   const double bulk_volume);

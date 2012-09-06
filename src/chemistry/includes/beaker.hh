@@ -451,6 +451,8 @@ class Beaker {
   LUSolver lu_solver_;
 
   bool use_log_formulation_;
+
+  std::vector<double> sorption_isotherm_params_;
   
 #ifdef GLENN
   DirectSolver* solver;

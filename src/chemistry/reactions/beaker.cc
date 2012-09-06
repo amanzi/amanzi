@@ -23,6 +23,7 @@
 #include "general_rxn.hh"
 #include "radioactive_decay.hh"
 #include "ion_exchange_rxn.hh"
+#include "sorption_isotherm.hh"
 #include "kinetic_rate.hh"
 #include "mineral.hh"
 #include "mineral_kinetics_factory.hh"
@@ -76,7 +77,8 @@ Beaker::Beaker()
       rhs_(),
       jacobian_(),
       lu_solver_(),
-      use_log_formulation_(true) {
+      use_log_formulation_(true),
+      sorption_isotherm_params_(4, 0.0) {
   // this is ifdef is breaking the formatting tools
   // #ifdef GLENN
   // , solver(NULL) {
@@ -613,13 +615,12 @@ void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
       components->isotherm_freundlich_n.resize(ncomp(), 1.0);
     }
     for (int r = 0; r < sorption_isotherm_rxns_.size(); ++r) {
-      std::vector<double> params;
-      params = sorption_isotherm_rxns_.at(r).GetIsothermParameters();
+      const std::vector<double>& params = sorption_isotherm_rxns_.at(r).GetIsothermParameters();
       int id = sorption_isotherm_rxns_.at(r).species_id();
       components->isotherm_kd.at(id) = params.at(0);
-      if (sorption_isotherm_rxns_.at(r).IsothermName() == "freundlich") {
+      if (sorption_isotherm_rxns_.at(r).IsothermType() == SorptionIsotherm::FREUNDLICH) {
         components->isotherm_freundlich_n.at(id) = params.at(1);
-      } else if (sorption_isotherm_rxns_.at(r).IsothermName() == "langmuir") {
+      } else if (sorption_isotherm_rxns_.at(r).IsothermType() == SorptionIsotherm::LANGMUIR) {
         components->isotherm_langmuir_b.at(id) = params.at(1);
       }
     }
@@ -1095,17 +1096,18 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
     assert(components.isotherm_kd.size() == ncomp());
     assert(components.isotherm_freundlich_n.size() == ncomp());
     assert(components.isotherm_langmuir_b.size() == ncomp());
-    std::vector<double> params(4); // current max parameters is 2
+    // NOTE(bandre): sorption_isotherm_params_ hard coded size=4,
+    // current max parameters is 2
     for (int r = 0; r < sorption_isotherm_rxns_.size(); ++r) {
       int id = sorption_isotherm_rxns_.at(r).species_id();
-      params.at(0) = components.isotherm_kd.at(id);
-      std::string isotherm_name = sorption_isotherm_rxns_.at(r).IsothermName();
-      if (isotherm_name == "freundlich") {
-        params.at(1) = components.isotherm_freundlich_n.at(id);
-      } else if (isotherm_name == "langmuir") {
-        params.at(1) = components.isotherm_langmuir_b.at(id);
+      sorption_isotherm_params_.at(0) = components.isotherm_kd.at(id);
+      SorptionIsotherm::SorptionIsothermType isotherm_type = sorption_isotherm_rxns_.at(r).IsothermType();
+      if (isotherm_type == SorptionIsotherm::FREUNDLICH) {
+        sorption_isotherm_params_.at(1) = components.isotherm_freundlich_n.at(id);
+      } else if (isotherm_type == SorptionIsotherm::LANGMUIR) {
+        sorption_isotherm_params_.at(1) = components.isotherm_langmuir_b.at(id);
       }
-      sorption_isotherm_rxns_.at(r).SetIsothermParameters(params);
+      sorption_isotherm_rxns_.at(r).SetIsothermParameters(sorption_isotherm_params_);
     }
   }
 }  // end CopyComponentsToBeaker()

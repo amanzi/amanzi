@@ -55,6 +55,10 @@ class ActivityModel {
     return this->I_;
   }
 
+  int num_species(void) const {
+    return num_species_;
+  }
+
   virtual void Display(void) const = 0;
 
   void name(const std::string name) {
@@ -72,6 +76,8 @@ class ActivityModel {
   };
 
  protected:
+  void ResizeGamma(const int size);
+
   double log_to_ln(double d) {
     return d * 2.30258509299;
   }
@@ -90,8 +96,14 @@ class ActivityModel {
   double M_;  // sum ( m_i )
 
  private:
+  void set_num_species(const int value) {
+    this->num_species_ = value;
+  }
+
   Verbosity verbosity_;
   std::string name_;
+  int num_species_;
+  std::vector<double> gamma_;
 };
 
 }  // namespace chemistry

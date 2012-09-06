@@ -2,23 +2,28 @@
 #include "sorption_isotherm_freundlich.hh"
 
 #include <cmath>
+#include <vector>
 #include <iostream>
 #include <iomanip>
+
+#include "sorption_isotherm.hh"
 
 namespace amanzi {
 namespace chemistry {
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich()
-    : SorptionIsotherm("freundlich"),
+    : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH),
       KD_(0.), 
-      n_(0.) {
+      n_(0.),
+      params_(2, 0.0) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich(const double KD, 
                                                        const double n)
-    : SorptionIsotherm("freundlich"),
+    : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH),
       KD_(KD), 
-      n_(n) {
+      n_(n),
+      params_(2, 0.0) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermFreundlich::~SorptionIsothermFreundlich() {
@@ -30,11 +35,10 @@ double SorptionIsothermFreundlich::Evaluate(const Species& primarySpecies) {
   return KD() * std::pow(primarySpecies.activity(), n());
 }  // end Evaluate()
 
-std::vector<double> SorptionIsothermFreundlich::GetParameters(void) const {
-  std::vector<double> params(2, 0.0);
-  params.at(0) = KD();
-  params.at(1) = n();
-  return params;
+const std::vector<double>& SorptionIsothermFreundlich::GetParameters(void) {
+  params_.at(0) = KD();
+  params_.at(1) = n();
+  return params_;
 }  // end GetParameters()
 
 void SorptionIsothermFreundlich::SetParameters(const std::vector<double>& params) {

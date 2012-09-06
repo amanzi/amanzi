@@ -2,6 +2,8 @@
 #ifndef AMANZI_CHEMISTRY_SORPTION_ISOTHERM_FREUNDLICH_HH_
 #define AMANZI_CHEMISTRY_SORPTION_ISOTHERM_FREUNDLICH_HH_
 
+#include <vector>
+
 #include "sorption_isotherm.hh"
 
 // Class for Freundlich isotherm
@@ -25,12 +27,13 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
   double n(void) const { return n_; }
   void set_n(const double n) { n_ = n; }
 
-  std::vector<double> GetParameters(void) const;
+  const std::vector<double>& GetParameters(void);
   void SetParameters(const std::vector<double>& params);
 
  private:
   double KD_; // distribution coefficient
   double n_; // chemical-specific constant
+  std::vector<double> params_;
 
 }; // SorptionIsothermFreundlich
 

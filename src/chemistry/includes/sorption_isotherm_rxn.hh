@@ -24,12 +24,16 @@ class SorptionIsothermRxn {
                       SorptionIsotherm *isotherm);
   ~SorptionIsothermRxn();
 
-  std::vector<double> GetIsothermParameters(void) const;
+  const std::vector<double>& GetIsothermParameters(void) const;
 
   void SetIsothermParameters(const std::vector<double>& params);
 
   std::string IsothermName(void) const {
     return isotherm_->name();
+  }
+
+  SorptionIsotherm::SorptionIsothermType IsothermType(void) const {
+    return isotherm_->isotherm_type();
   }
 
   SpeciesId species_id(void) const {

@@ -113,8 +113,8 @@ void RadioactiveDecay::ConvertHalfLifeToRateConstant(void) {
 }  // end ConvertHalfLifeToRateConstant()
 
 // temporary location for member functions
-void RadioactiveDecay::UpdateRate(const std::vector<double> total,
-                                  const std::vector<double> total_sorbed,
+void RadioactiveDecay::UpdateRate(const std::vector<double>& total,
+                                  const std::vector<double>& total_sorbed,
                                   const double porosity,
                                   const double saturation,
                                   const double bulk_volume) {

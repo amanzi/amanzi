@@ -2,6 +2,8 @@
 #ifndef AMANZI_CHEMISTRY_SORPTION_ISOTHERM_LANGMUIR_HH_
 #define AMANZI_CHEMISTRY_SORPTION_ISOTHERM_LANGMUIR_HH_
 
+#include <vector>
+
 #include "sorption_isotherm.hh"
 
 // Class for Langmuir isotherm
@@ -26,7 +28,7 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
   double b(void) const { return b_; }
   void set_b(const double b) { b_ = b; }
 
-  std::vector<double> GetParameters(void) const;
+  const std::vector<double>& GetParameters(void);
   void SetParameters(const std::vector<double>& params);
 
 private:
@@ -35,7 +37,8 @@ private:
   double K_; 
   // number of sorption sites (max sorbed concentration)
   // units = mol/m^3 bulk
-  double b_; 
+  double b_;
+  std::vector<double> params_;
 
 }; // SorptionIsothermLangmuir
 

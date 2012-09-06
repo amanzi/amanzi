@@ -1,23 +1,28 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "sorption_isotherm_langmuir.hh"
 
+#include <vector>
 #include <iostream>
 #include <iomanip>
+
+#include "sorption_isotherm.hh"
 
 namespace amanzi {
 namespace chemistry {
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir()
-    : SorptionIsotherm("langmuir"),
+    : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
       K_(0.), 
-      b_(0.) {
+      b_(0.),
+      params_(2, 0.0) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir(const double K, 
                                                    const double b)
-    : SorptionIsotherm("langmuir"),
+    : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
       K_(K), 
-      b_(b) {
+      b_(b),
+      params_(2, 0.0) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermLangmuir::~SorptionIsothermLangmuir() {
@@ -28,12 +33,10 @@ void SorptionIsothermLangmuir::Init(const double K, const double b) {
   set_b(b);
 }
 
-std::vector<double> SorptionIsothermLangmuir::GetParameters(void) const {
-  std::vector<double> params;
-  params.resize(2, 0.0);
-  params.at(0) = K();
-  params.at(1) = b();
-  return params;
+const std::vector<double>& SorptionIsothermLangmuir::GetParameters(void) {
+  params_.at(0) = K();
+  params_.at(1) = b();
+  return params_;
 }  // end GetParameters()
 
 void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) {
