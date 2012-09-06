@@ -689,7 +689,6 @@ int MFD3D::stability_optimized(int cell,
     }
   }
 
-  if (status == WHETSTONE_ELEMENTAL_MATRIX_PASSED) cout << M << endl;
   return status;
 }
 
