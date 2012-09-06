@@ -979,11 +979,11 @@ RichardSolver::DpDtResidual(MFTower& residual,
 
 #if 0
   // Scale residual by cell volume/total volume
-  Real total_volume = TotalVolume();
+  Real total_volume_inv = 1/TotalVolume();
   for (int lev=0; lev<nLevs; ++lev)
     {
         MultiFab::Multiply(residual[lev],layout.Volume(lev),0,0,nComp,0);
-        residual[lev].mult(total_volume,0,1);
+        residual[lev].mult(total_volume_inv,0,1);
     }
 #endif
 }
@@ -1298,7 +1298,8 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     bool finished = norm_acceptable 
         || ls_iterations > rsp.max_ls_iterations
         || ls_factor <= rsp.min_ls_factor;
-    
+
+    Real gnorm_0 = gnorm;
     while (!finished) 
     {
         ls_factor *= rsp.ls_reduction_factor;
@@ -1322,7 +1323,8 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
                       << "iter=" << ls_iterations
                       << ", step length=" << ls_factor
                       << ", init residual norm=" << fnorm
-                      << ", new residual norm=" << gnorm << '\n';
+                      << ", Newton norm=" << gnorm_0
+                      << ", damped norm=" << gnorm << '\n';
 	}
         
         finished = norm_acceptable 
@@ -1368,7 +1370,7 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         PetscErrorCode ierr1 = MatFDColoringSetParameters(rs->GetMatFDColoring(),epsilon,PETSC_DEFAULT);        
         ierr1 = VecNorm(y,NORM_2,&ynorm);
 
-        std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
+        //std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
 #endif
     }
 
@@ -1618,6 +1620,8 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
   MFTower& aMFT = GetAlpha();
   PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0);
 
+  //Real total_volume_inv = 1/TotalVolume();
+
   for (int lev=0; lev<nLevs; ++lev) {
 
     pm[lev].calcInvPressure(GetRhoSatNp1()[lev],PMFT[lev]);
@@ -1641,6 +1645,9 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
 			 vbox.loVect(), vbox.hiVect());
       
     }
+
+    //MultiFab::Multiply(aMFT[lev],GetLayout().Volume(lev),0,0,1,0);
+    //aMFT[lev].mult(total_volume_inv,0,1);
   }
 
   // Put into Vec data structure

@@ -48,13 +48,14 @@ int main(int argc, char *argv[]) {
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
+  
+  // make sure only PE0 can write to std::cout  --  NO...do not do this!!
+  int rank;
+  rank = mpiSession.getRank();
+  //if (rank != 0) cout.rdbuf(0);
+  
   try {
-    Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
-    
-    // make sure only PE0 can write to std::cout
-    int rank;
-    rank = mpiSession.getRank();
-    //if (rank != 0) cout.rdbuf(0);
 
     Teuchos::CommandLineProcessor CLP;
     
@@ -172,21 +173,26 @@ int main(int argc, char *argv[]) {
     }
  
     Amanzi::timer_manager.stop( "Full Simulation" );
-    std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
-    
-    std::cout << Amanzi::timer_manager << std::endl;
-    
+    if (rank == 0) {
+        std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
+        
+        std::cout << Amanzi::timer_manager << std::endl;
+    }
     delete simulator;
   }
 
   catch (std::exception& e) {
-    std::cout << e.what() << std::endl;
-    std::cout << "Amanzi::SIMULATION_FAILED\n";
+    if (rank == 0) {
+        std::cout << e.what() << std::endl;
+        std::cout << "Amanzi::SIMULATION_FAILED\n";
+    }
   }
 
   // catch all
   catch (...) {
-    std::cout << "Amanzi::SIMULATION_FAILED\n";    
+    if (rank == 0) {
+        std::cout << "Amanzi::SIMULATION_FAILED\n";    
+    }
   }
 
 }
