@@ -39,6 +39,8 @@ Matrix_Audit::~Matrix_Audit()
 void Matrix_Audit::InitAudit()
 {
   printf("Matrix_Audit: initializing for matrix id =%2d\n", matrix_type); 
+  MyPID = mesh_->cell_map(false).Comm().MyPID();
+
   if (matrix_type == MATRIX_AUDIT_MFD) {
     A = &(matrix_->Aff_cells());
   }
@@ -50,22 +52,29 @@ void Matrix_Audit::InitAudit()
   }
 
   // allocate memory for Lapack
-  dmem1 = new double[lda];
-  dmem2 = new double[lda];
+  dmem1 = new double[lda + 1];
+  dmem2 = new double[lda + 1];
 
-  lwork1 = 10 * lda;
+  lwork1 = 10 * (lda + 1);
   dwork1 = new double[lwork1];
   printf("Matrix_Audit: maximum matrix size =%3d\n", lda); 
 }
 
 
 /* ******************************************************************
-* AAA. 
-cout << " |Aff|=" << matrix->Aff()->NormInf() << endl;
-cout << " |Afc|=" << matrix->Afc()->NormInf() << endl;
-double err;
-matrix->Acc()->NormInf(&err);
-cout << " |Acc|=" << err << endl;                                           
+* AAA.                                      
+****************************************************************** */
+int Matrix_Audit::RunAudit()
+{
+  int ierr;
+  ierr = CheckSpectralBounds();
+  ierr |= CheckSpectralBoundsExtended();
+  return ierr;
+}
+
+
+/* ******************************************************************
+* AAA.                                      
 ****************************************************************** */
 int Matrix_Audit::CheckSpectralBounds()
 { 
@@ -76,11 +85,11 @@ int Matrix_Audit::CheckSpectralBounds()
   double emin = 1e+99, emax = -1e+99;
   double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
 
-  for (int i = 0; i < A->size(); i++) {
-    Teuchos::SerialDenseMatrix<int, double>& Ai = (*A)[i];
-    int n = Ai.numRows();
+  for (int c = 0; c < A->size(); c++) {
+    Teuchos::SerialDenseMatrix<int, double> Acell((*A)[c]);
+    int n = Acell.numRows();
     
-    lapack.GEEV('N', 'N', n, Ai.values(), n, dmem1, dmem2, 
+    lapack.GEEV('N', 'N', n, Acell.values(), n, dmem1, dmem2, 
                 &VL, 1, &VR, 1, dwork1, lwork1, &info);
 
     OrderByIncrease(n, dmem1);
@@ -103,8 +112,79 @@ int Matrix_Audit::CheckSpectralBounds()
   }
   cndavg /= A->size();
 
-  printf("Matrix_Audit: eigenvalues (min,max) = %8.3g %8.3g\n", emin, emax); 
-  printf("Matrix_Audit: conditioning (min,max,avg) = %8.2g %8.2g %8.2g\n", cndmin, cndmax, cndavg);
+  if (MyPID == 0) {
+    printf("Matrix_Audit: lambda matrices\n");
+    printf("   eigenvalues (min,max) = %8.3g %8.3g\n", emin, emax); 
+    printf("   conditioning (min,max,avg) = %8.2g %8.2g %8.2g\n", cndmin, cndmax, cndavg);
+  }
+  return 0;
+}
+
+
+/* ******************************************************************
+* AAA.                                      
+****************************************************************** */
+int Matrix_Audit::CheckSpectralBoundsExtended()
+{ 
+  Errors::Message msg;
+
+  Teuchos::LAPACK<int, double> lapack;
+  int info;
+  double VL, VR;
+
+  double emin = 1e+99, emax = -1e+99;
+  double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
+
+  for (int c = 0; c < A->size(); c++) {
+    Teuchos::SerialDenseMatrix<int, double>& Aff = matrix_->Aff_cells()[c];
+    Epetra_SerialDenseVector& Acf = matrix_->Acf_cells()[c];
+    Epetra_SerialDenseVector& Afc = matrix_->Afc_cells()[c];
+    double& Acc = matrix_->Acc_cells()[c];
+    int n = Aff.numRows();
+
+    Teuchos::SerialDenseMatrix<int, double> Acell(n+1, n+1);
+    for (int i = 0; i < n; i++) {
+      Acell(n, n) = Acc;
+      Acell(i, n) = Afc[i];
+      Acell(n, i) = Acf[i];
+      for (int j = 0; j < n; j++) Acell(i, j) = Aff(i, j);
+    }
+
+    if (Acc <= 0.0) {
+      cout << Acell << endl;
+      msg << "Matrix Audit: Acc is not positive.";
+      Exceptions::amanzi_throw(msg);
+    }
+    
+    n++;
+    lapack.GEEV('N', 'N', n, Acell.values(), n, dmem1, dmem2, 
+                &VL, 1, &VR, 1, dwork1, lwork1, &info);
+
+    OrderByIncrease(n, dmem1);
+
+    double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
+    for (int k=2; k<n; k++) {
+      e = dmem1[k];
+      if (e > 0.99) continue;
+      a = std::min<double>(a, e);
+      b = std::max<double>(b, e);
+    }
+
+    emin = std::min<double>(emin, a);
+    emax = std::max<double>(emax, b);
+
+    double cnd = b / a;
+    cndmin = std::min<double>(cndmin, cnd);
+    cndmax = std::max<double>(cndmax, cnd);
+    cndavg += cnd;
+  }
+  cndavg /= A->size();
+
+  if (MyPID == 0) {
+    printf("Matrix_Audit: p-lambda matrices\n");
+    printf("   eigenvalues (min,max) = %8.3g %8.3g\n", emin, emax); 
+    printf("   conditioning (min,max,avg) = %8.2g %8.2g %8.2g\n", cndmin, cndmax, cndavg);
+  }
   return 0;
 }
 

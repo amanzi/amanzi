@@ -208,7 +208,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // DEBUG
     // Matrix_Audit audit(mesh_, matrix_);
     // audit.InitAudit();
-    // audit.CheckSpectralBounds();
+    // audit.RunAudit();
 
     // check convergence of non-linear residual
     L2error = matrix_->ComputeResidual(solution_new, residual);

@@ -426,10 +426,10 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE_API
     // read some boomer amg parameters
-    hypre_ncycles = prec_list.get<int>("cycle applications",5);
-    hypre_nsmooth = prec_list.get<int>("smoother sweeps",3);
-    hypre_tol = prec_list.get<double>("tolerance",0.0);
-    hypre_strong_threshold = prec_list.get<double>("strong threshold",0.0);
+    hypre_ncycles = prec_list.get<int>("cycle applications", 5);
+    hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
+    hypre_tol = prec_list.get<double>("tolerance", 0.0);
+    hypre_strong_threshold = prec_list.get<double>("strong threshold", 0.0);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ifp_plist_ = prec_list;
@@ -460,7 +460,7 @@ void Matrix_MFD::UpdatePreconditioner()
     functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
 
     Teuchos::ParameterList hypre_list;
-    //hypre_list.set("Solver", PCG);
+    // hypre_list.set("Solver", PCG);
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);

@@ -77,6 +77,8 @@ class Matrix_MFD : public Epetra_Operator {
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Acf_cells() { return Acf_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Afc_cells() { return Afc_cells_; }
   std::vector<double>& Acc_cells() { return Acc_cells_; }
   std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
   std::vector<double>& Fc_cells() { return Fc_cells_; }
