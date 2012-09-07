@@ -39,6 +39,8 @@ ThreePhaseEnergyEvaluator::ThreePhaseEnergyEvaluator(Teuchos::ParameterList& wc_
 
   dependencies_.insert(std::string("internal_energy_rock"));
   //  dependencies_.insert(std::string("cell_volume"));
+
+  //  check_derivative_ = true;
 };
 
 ThreePhaseEnergyEvaluator::ThreePhaseEnergyEvaluator(const ThreePhaseEnergyEvaluator& other) :

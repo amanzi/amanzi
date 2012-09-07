@@ -35,6 +35,8 @@ PermafrostWaterContent::PermafrostWaterContent(Teuchos::ParameterList& wc_plist)
   dependencies_.insert(std::string("molar_density_gas"));
   dependencies_.insert(std::string("mol_frac_gas"));
   //  dependencies_.insert(std::string("cell_volume"));
+
+  //  check_derivative_ = true;
 };
 
 PermafrostWaterContent::PermafrostWaterContent(const PermafrostWaterContent& other) :

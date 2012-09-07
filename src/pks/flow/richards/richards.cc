@@ -233,6 +233,8 @@ void Richards::initialize(const Teuchos::RCP<State>& S) {
   solution_->set_data(pres);
   atol_ = flow_plist_.get<double>("absolute error tolerance",1.0);
   rtol_ = flow_plist_.get<double>("relative error tolerance",1.0);
+  mass_atol_ = flow_plist_.get<double>("mass absolute error tolerance",1.0);
+  mass_rtol_ = flow_plist_.get<double>("mass relative error tolerance",1.0);
 
   if (!flow_plist_.get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
