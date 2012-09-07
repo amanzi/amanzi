@@ -44,6 +44,9 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
 
+  // calculate flux
+  UpdateFlux_(S_next_);
+
   // update boundary conditions
   bc_pressure_->Compute(t_new);
   bc_flux_->Compute(t_new);

@@ -79,9 +79,9 @@ void OverlandFlow::AddLoadValue_(const Teuchos::RCP<CompositeVector>& g) {
 
   if (is_source_term_) {
     S_next_->GetFieldEvaluator("overland_source")
-        ->HasFieldChanged(S_next_.ptr(), "overland_pk");
+        ->HasFieldChanged(S_next_.ptr(), name_);
     S_inter_->GetFieldEvaluator("overland_source")
-        ->HasFieldChanged(S_inter_.ptr(), "overland_pk");
+        ->HasFieldChanged(S_inter_.ptr(), name_);
 
     Teuchos::RCP <const CompositeVector> source0 =
         S_inter_->GetFieldData("overland_source");
@@ -96,15 +96,16 @@ void OverlandFlow::AddLoadValue_(const Teuchos::RCP<CompositeVector>& g) {
   }
 
   if (is_coupling_term_) {
-    S_next_->GetFieldEvaluator("overland_coupling")
-        ->HasFieldChanged(S_next_.ptr(), "overland_pk");
+    S_next_->GetFieldEvaluator("overland_source_from_subsurface")
+        ->HasFieldChanged(S_next_.ptr(), name_);
 
-    Teuchos::RCP <const CompositeVector> source1 =
+    Teuchos::RCP<const CompositeVector> pres = S_next_ ->GetFieldData(key_);
+    Teuchos::RCP<const CompositeVector> source1 =
         S_next_->GetFieldData("overland_source_from_subsurface");
 
     int c_owned = g->size("cell");
     for (int c=0; c!=c_owned; ++c) {
-      (*g)("cell",c) -= (*source1)("cell",c) * (*cell_volume1)("cell",c);
+      (*g)("cell",c) -= std::max<double>((*source1)("cell",c), -abs((*pres)("cell",c)) / (S_next_->time() - S_inter_->time())) * (*cell_volume1)("cell",c);
     }
   }
 };
