@@ -38,7 +38,7 @@ Matrix_Audit::~Matrix_Audit()
 ****************************************************************** */
 void Matrix_Audit::InitAudit()
 {
-  printf("Matrix_Audit: initializingfor matrix id =%2d\n", matrix_type); 
+  printf("Matrix_Audit: initializing for matrix id =%2d\n", matrix_type); 
   if (matrix_type == MATRIX_AUDIT_MFD) {
     A = &(matrix_->Aff_cells());
   }

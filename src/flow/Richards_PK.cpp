@@ -254,10 +254,10 @@ void Richards_PK::InitPicard(double T0)
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
-    std::printf("Richards PK: initializing of initial guess at T(sec)=%9.4e\n", T0);
+    std::printf("Richards PK: initializing initial guess at T(sec)=%9.4e\n", T0);
 
     if (ini_with_darcy) {
-      std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
+      std::printf("Richards PK: re-initializing with a clipped Darcy pressure \n");
       std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
     }
     std::printf("***********************************************************\n");

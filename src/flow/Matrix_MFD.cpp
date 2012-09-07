@@ -449,7 +449,7 @@ void Matrix_MFD::UpdatePreconditioner()
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE_API
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
-    Teuchos::RCP<FunctionParameter> functs[10];
+    Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
@@ -576,7 +576,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
     MLprec->ApplyInverse(Tf, Yf);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
 #ifdef HAVE_HYPRE_API
-    IfpHypre_Sff_->ApplyInverse(Tf, Yf);
+    ierr |= IfpHypre_Sff_->ApplyInverse(Tf, Yf);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ifp_prec_->ApplyInverse(Tf, Yf);

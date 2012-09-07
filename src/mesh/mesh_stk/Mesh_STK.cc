@@ -444,6 +444,8 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
   STK::Entity_Ids cell_ids;
   mesh_->face_to_elements(global_face_id, cell_ids);
   std::for_each(cell_ids.begin(), cell_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
+
+  outcellids->clear();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_epetra_map(true).LID(*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));

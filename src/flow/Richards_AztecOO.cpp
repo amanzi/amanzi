@@ -99,7 +99,7 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
   solver_tmp->SetUserOperator(matrix_);
   solver_tmp->SetPrecOperator(preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
-  solver_tmp->SetAztecOption(AZ_output, AZ_none);
+  solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
   Epetra_Vector b(*(matrix_->rhs()));

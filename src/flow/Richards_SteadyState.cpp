@@ -13,6 +13,7 @@ Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Richards_PK.hpp"
+#include "Matrix_Audit.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -203,6 +204,11 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
     preconditioner_->UpdatePreconditioner();
+
+    // DEBUG
+    // Matrix_Audit audit(mesh_, matrix_);
+    // audit.InitAudit();
+    // audit.CheckSpectralBounds();
 
     // check convergence of non-linear residual
     L2error = matrix_->ComputeResidual(solution_new, residual);
