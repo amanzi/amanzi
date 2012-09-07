@@ -124,8 +124,8 @@ protected:
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
-  double atol_;
-  double rtol_;
+  double atol_, mass_atol_;
+  double rtol_, mass_rtol_;
   double time_step_reduction_factor_;
 
   // boundary condition data

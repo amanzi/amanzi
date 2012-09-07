@@ -61,6 +61,44 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 #if DEBUG_FLAG
   std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
   std::cout << "  res1 (after accumulation): " << (*res)("cell",0,99) << " " << (*res)("face",0,497) << std::endl;
+
+  Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
+  Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
+  Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
+
+  std::cout << std::endl;
+  //  std::cout << "  mass balance at 0: " << std::endl;
+
+  //  std::cout << "      old water: " << (*wc0)("cell",0) << std::endl;
+  //  std::cout << "      new water: " << (*wc1)("cell",0) << std::endl;
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  wc0->mesh()->cell_get_faces_and_dirs(0, &faces, &dirs);
+  double flux = 0.0;
+  for (int lcv=0; lcv!=faces.size(); ++lcv) {
+    //    std::cout << "      face " << faces[lcv] << ": " << dirs[lcv]*(*darcy_flux)("face",faces[lcv]) << std::endl;
+    flux += dirs[lcv]*(*darcy_flux)("face",faces[lcv]);
+  }
+  //  std::cout << "    error: " << (*wc1)("cell",0) - (*wc0)("cell",0) + h*flux << std::endl;
+  std::cout << "  mass balance error0: " << (*wc1)("cell",0) - (*wc0)("cell",0) + h*flux << std::endl;
+
+  //  std::cout << std::endl;
+  //  std::cout << "  mass balance at 99: " << std::endl;
+  //  std::cout << "      old water: " << (*wc0)("cell",99) << std::endl;
+  //  std::cout << "      new water: " << (*wc1)("cell",99) << std::endl;
+
+  faces.clear();
+  dirs.clear();
+  wc0->mesh()->cell_get_faces_and_dirs(99, &faces, &dirs);
+  flux = 0.0;
+  for (int lcv=0; lcv!=faces.size(); ++lcv) {
+    //    std::cout << "      face " << faces[lcv] << ": " << dirs[lcv]*(*darcy_flux)("face",faces[lcv]) << std::endl;
+    flux += dirs[lcv]*(*darcy_flux)("face",faces[lcv]);
+  }
+  //  std::cout << "    error: " << (*wc1)("cell",99) - (*wc0)("cell",99) + h*flux << std::endl;
+  std::cout << "  mass balance error1: " << (*wc1)("cell",99) - (*wc0)("cell",99) + h*flux << std::endl;
 #endif
 
 };
@@ -169,12 +207,48 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     //    printf("face: %5i %14.7e %14.7e\n",lcv,(*(*fdpres_vec)(0))[lcv],tmp);
   }
 
+  /*
+  // error in mass conservation, which is what we really care about.  This
+  // would need serious work to be optimized, this is crap having to duplicate
+  // everything.
+  double enorm_mass = 0.0;
+  PK::solution_to_state(u, S_next_);
+  double h = S_next_->time() - S_inter_->time();
 
-  //  std::cout.precision(15);
-  //  std::cout << "Richards enorm (cell, face): " << std::scientific << enorm_val_cell
-  //            << " / " << std::scientific << enorm_val_face << std::endl;
+  S_next_->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S_next_.ptr(), "richards_pk");
+  UpdatePermeabilityData_(S_next_);
+  Teuchos::RCP<const CompositeVector> rel_perm =
+    S_next_->GetFieldData("numerical_rel_perm", "flow");
+  matrix_->CreateMFDstiffnessMatrices(*rel_perm);
+  Teuchos::RCP<CompositeVector> darcy_flux =
+    S_next_->GetFieldData("darcy_flux", "flow");
+  matrix_->DeriveFlux(*pres, darcy_flux);
+  AddGravityFluxesToVector_(S_next_, darcy_flux);
+  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), "richards_pk");
+  Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
+  Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
 
+  for (int c=0; c!=wc1->size("cell"); ++c) {
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+    wc0->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+    double flux = 0.0;
+    for (int lcv=0; lcv!=faces.size(); ++lcv) {
+      flux += dirs[lcv]*(*darcy_flux)("face",faces[lcv]);
+    }
+    double tmp = (*wc1)("cell",c) - (*wc0)("cell",c) + h*flux;
+    tmp = tmp / (mass_atol_ + mass_rtol_ * (*wc0)("cell",c));
+    enorm_mass = std::max<double>(enorm_mass, tmp);
+  }
+
+
+  std::cout << "ENORM (cell, face, mass): " << std::scientific << enorm_val_cell
+            << " / " << std::scientific << enorm_val_face
+            << " / " << std::scientific << enorm_mass << std::endl;
+*/
   double enorm_val = std::max<double>(enorm_val_cell, enorm_val_face);
+  //  enorm_val = std::max<double>(enorm_val, enorm_mass);
+
 #ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);

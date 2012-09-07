@@ -61,7 +61,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& eos_plist) :
 
   // -- pressure
   pres_key_ = eos_plist_.get<std::string>("pressure key",
-          domain_name+std::string("pressure"));
+          domain_name+std::string("effective_pressure"));
   dependencies_.insert(pres_key_);
 
   // Construct my EOS model

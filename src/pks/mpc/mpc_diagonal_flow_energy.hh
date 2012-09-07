@@ -36,6 +36,8 @@ class MPCDiagonalFlowEnergy : public StrongMPC {
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+
  protected:
   void precon_diagonal(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   void precon_upper_triangular(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);

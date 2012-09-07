@@ -21,6 +21,7 @@ add_library(relations_eos
   molar_fraction_gas_evaluator.cc
   vapor_pressure_relation_factory.cc
   vapor_pressure_water.cc
+  effective_pressure_evaluator.cc
  )
 
 
