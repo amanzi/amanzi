@@ -1,5 +1,6 @@
 #include "hdf5mpi_mesh.hh"
 #include <iostream>
+#include "mpi.h"
 
 //TODO(barker): clean up debugging output
 //TODO(barker): check that close file is always getting called
@@ -51,9 +52,12 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   h5Filename.append(std::string(".h5"));
 
   // new parallel
+  //H5Eset_auto(H5E_DEFAULT, NULL, NULL);
   file = parallelIO_open_file(h5Filename.c_str(), &IOgroup_, FILE_CREATE);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::createMeshFile - error creating mesh file");
+    std::stringstream err;
+    err << "HDF5_MPI::createMeshFile - error creating mesh file "<< h5Filename;
+    Errors::Message message(err.str());
     Exceptions::amanzi_throw(message);
   }
   
@@ -98,7 +102,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file,
                            (char*)"Mesh/Nodes", &IOgroup_, 
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete nodes;
+  delete [] nodes;
   
   // write out node map
   ids = new int[nmap.NumMyElements()];
@@ -111,6 +115,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
                            (char*)"Mesh/NodeMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   
+  delete [] ids;
   
   // get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
@@ -197,7 +202,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(cells, PIO_INTEGER, 2, globaldims, localdims, file, 
                            (char*)"Mesh/MixedElements", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete cells;
+  delete [] cells;
   
   // write out cell map
   ids = new int[cmap.NumMyElements()];
@@ -212,7 +217,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file, 
                            (char*)"Mesh/ElementMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete ids;
+  delete [] ids;
   
   // close file
   parallelIO_close_file(file, &IOgroup_);
@@ -267,15 +272,19 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
   }
 
   // open and write to file
-  file = parallelIO_open_file(H5MeshFilename_.c_str(), &IOgroup_,
+  file = parallelIO_open_file(H5MeshFilename().c_str(), &IOgroup_,
                               FILE_READWRITE);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::writeMeshRegion - error opening data file to write mesh region");
+    std::stringstream err;
+    err << "HDF5_MPI::writeMeshRegion - error opening data file to write mesh region ";
+    err << H5MeshFilename();
+    Errors::Message message(err.str());
     Exceptions::amanzi_throw(message);
   }
 
   parallelIO_write_dataset(idata, PIO_INTEGER, 2, globaldims, localdims, file, tmpName,
                            &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
+  delete [] tmpName;
 
   // Create subset connectivity dataset
  
@@ -301,9 +310,27 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
     gid[i] = ngmap.GID(i);
   }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
-
   std::vector<double> global_RegList(RegList.GlobalLength(),0);
-  viz_comm_.GatherAll(data, &global_RegList[0],RegList.MyLength()); 
+
+  // MB: changed the call
+  // viz_comm_.GatherAll(data, &global_RegList[0],RegList.MyLength()); 
+  // to the following code (up to the comment line below with many ='s in it)
+  //
+  // first communicate the dimensions of all the local arrays that need
+  // to be collated 
+  std::vector<int> dims(viz_comm_.NumProc(),0);
+  int mydim(RegList.MyLength());
+  MPI_Allgather(&mydim,1,MPI_INT,&dims[0],1,MPI_INT,viz_comm_.Comm());
+  // now compute the offsets for where each PE's data shall be stored
+  // in the reveive buffer
+  std::vector<int> displs(viz_comm_.NumProc(),0);
+  for (int i=0; i<dims.size(); ++i) 
+    for (int j=0; j<i; ++j) 
+      displs[i] += dims[j];
+  // then communicate the data (that potentially has different length on the different processors) 
+  // using MPI_Allgatherv since there is no matching call in Epetra_Comm
+  MPI_Allgatherv(data, dims[viz_comm_.MyPID()], MPI_DOUBLE, &global_RegList[0], &dims[0], &displs[0], MPI_DOUBLE, viz_comm_.Comm());
+  // ================ end of replacement code ===========================
   // get connectivity on this processor
   std::vector<int> local_conn;
   std::vector<int> local_ids;
@@ -362,6 +389,8 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
                            &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
   parallelIO_close_file(file, &IOgroup_);
 
+  delete [] tmpName;
+
   // find Grid node
   if (viz_comm_.MyPID() == 0) {
     Teuchos::XMLObject gridnode, xmlnode, tmp;
@@ -395,7 +424,6 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
     of << HDF5_MPI::xdmfHeader_ << xmlMesh_ << endl;
     of.close();
   }
-
 }
 
 
@@ -413,9 +441,12 @@ void HDF5_MPI::createDataFile(std::string soln_filename) {
   h5filename.append(std::string(".h5"));
   
   // new parallel
+  //H5Eset_auto(H5E_DEFAULT, NULL, NULL);
   file = parallelIO_open_file(h5filename.c_str(), &IOgroup_, FILE_CREATE);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::createDataFile - error creating data file");
+    std::stringstream err;
+    err << "HDF5_MPI::createDataFile - error creating data file " << h5filename;
+    Errors::Message message(err.str());
     Exceptions::amanzi_throw(message);
   }
 
@@ -471,6 +502,23 @@ void HDF5_MPI::endTimestep() {
     of.open(filename.str().c_str());
     of << xmlStep();
     of.close();
+  }
+}
+
+void HDF5_MPI::addStaticViz(const std::string varname, const std::string loc){
+  if (TrackXdmf()) {
+    if (viz_comm_.MyPID() == 0) {
+      int length(0);
+      if (loc == "CELL") {
+	length = NumElems();
+      } else if (loc == "NODE") {
+	length = NumNodes();
+      } else {
+	Exceptions::amanzi_throw("Can't add viz field that isn't CELL or NODE based");
+      }
+      Teuchos::XMLObject node = findMeshNode_(xmlStep());
+      node.addChild(addXdmfAttribute_(varname, loc, length, varname));
+    }
   }
 }
 
@@ -588,6 +636,8 @@ void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
     status = H5Sclose(dataspace_id);  
     status = H5Pclose(acc_tpl1);
     status = H5Fclose(file);
+
+    delete [] DSpath;
   }
   
 void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
@@ -610,7 +660,9 @@ void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
   file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
     
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::writeAttrInt - error opening data file to write attribute");
+    std::stringstream err;
+    err << "HDF5_MPI::writeAttrInt - error opening data file to write attribute " << H5DataFilename();
+    Errors::Message message(err.str());
     Exceptions::amanzi_throw(message);
   }
     
@@ -645,7 +697,9 @@ void HDF5_MPI::readAttrString(std::string &value, const std::string attrname)
   root = H5Gopen(file, "/", H5P_DEFAULT);
     
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::readAttrString - error opening data file to write attribute");
+    std::stringstream err;
+    err << "HDF5_MPI::readAttrString - error opening data file to write attribute " << H5DataFilename();
+    Errors::Message message(err.str());
     Exceptions::amanzi_throw(message);
   }
   
@@ -731,9 +785,11 @@ void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varn
 {
   hid_t file;
   
-  file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_, FILE_READWRITE);
+  file = parallelIO_open_file(H5DataFilename().c_str(), &IOgroup_, FILE_READWRITE);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::writeDataString - error opening data file to write field data");
+    std::stringstream err;
+    err << "HDF5_MPI::writeDataString - error opening data file to write field data " << H5DataFilename();
+    Errors::Message message(err.str());
     Exceptions::amanzi_throw(message);
   }
   
@@ -765,10 +821,12 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string var
   int ndims, dims[2], tmpsize;
   hid_t file;
   
-  file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+  file = parallelIO_open_file(H5DataFilename().c_str(), &IOgroup_,
                                     FILE_READONLY);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::readDataString - error opening data file to write field data");
+    std::stringstream err;
+    err << "HDF5_MPI::readDataString - error opening data file to write field data "<< H5DataFilename().c_str();
+    Errors::Message message(err.str());
     Exceptions::amanzi_throw(message);
   }
   
@@ -845,7 +903,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
 
   // TODO(barker): add error handling: can't write/create
 
-  file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+  file = parallelIO_open_file(H5DataFilename().c_str(), &IOgroup_,
                               FILE_READWRITE);
   if (file < 0) {
     Errors::Message message("HDF5_MPI::writeFieldData_ - error opening data file to write field data");
@@ -873,6 +931,8 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
       node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
     }
   }
+
+  delete [] tmp;
 }
   
 void HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
@@ -886,7 +946,7 @@ void HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
   int ndims;
-  hid_t file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+  hid_t file = parallelIO_open_file(H5DataFilename().c_str(), &IOgroup_,
                                     FILE_READONLY);
   if (file < 0) {
     Errors::Message message("HDF5_MPI::readFieldData_ - error opening data file to write field data");

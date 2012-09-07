@@ -81,6 +81,9 @@ TEST(HDF5_MPI) {
   // You can add mesh data to restart file, but is not necessary for valid restart
   restart_output->createMeshFile(Mesh, hdf5_datafile2);
 
+  // write static data to viz file
+  viz_output->writeDataReal(*cell_quantity,"cell_quantity_static");
+
   double time = 0.0;
   int cycle = 0;
   for (int i = 0; i < 15; i++) {
@@ -94,6 +97,7 @@ TEST(HDF5_MPI) {
     viz_output->writeCellDataReal(*cell_quantity, "cell_quantity");
     viz_output->writeCellDataReal(*fake_pressure, "pressure");
     viz_output->writeNodeDataReal(*node_quantity, "node_quantity");
+    viz_output->addStaticViz("cell_quantity_static", "CELL");
 
     // advance time and values
     time += 2.0;

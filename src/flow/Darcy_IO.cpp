@@ -84,25 +84,16 @@ void Darcy_PK::ProcessParameterList()
   ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss);
 
   if (sss_list.isParameter("preconditioner")) {
-    preconditioner_name_sss_ = sss_list.get<string>("preconditioner");
+    ti_specs_sss.preconditioner_name = sss_list.get<string>("preconditioner");
+    ProcessStringPreconditioner(ti_specs_sss.preconditioner_name, &ti_specs_sss.preconditioner_method);
   } else {
     msg << "Darcy PK: steady state time integrator does not define a preconditioner.";
     Exceptions::amanzi_throw(msg);
   }
 
-  if (! preconditioner_list_.isSublist(preconditioner_name_sss_)) {
-    msg << "Darcy PK: steady state preconditioner does not exist.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::string linear_solver_name;
-  if (sss_list.isParameter("linear solver")) {
-    linear_solver_name = sss_list.get<string>("linear solver");
-  } else {
-    msg << "Darcy PK: steady state time integrator does not define <linear solver>.";
-    Exceptions::amanzi_throw(msg);
-  }
-  ProcessStringLinearSolver(linear_solver_name, &max_itrs_sss, &convergence_tol_sss);
+  std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
+  LinearSolver_Specs& ls_specs = ti_specs_sss.ls_specs;
+  ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
 
   dT_method_ = 0;
   std::string dT_name = sss_list.get<string>("time stepping strategy", "simple");
@@ -119,7 +110,7 @@ void Darcy_PK::ProcessStringLinearSolver(
   Errors::Message msg;
 
   if (! solver_list_.isSublist(name)) {
-    msg << "Richards PK: steady state linear solver does not exist.";
+    msg << "Darcy PK: steady state linear solver does not exist.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -144,6 +135,19 @@ void Darcy_PK::ProcessStringSourceDistribution(const std::string name, int* meth
   } else {
     msg << "Darcy PK: unknown source normalization method has been specified.";
     Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ******************************************************************
+* Printing information about Flow status.                                                     
+****************************************************************** */
+void Darcy_PK::PrintStatistics() const
+{
+  if (!MyPID && verbosity > 0) {
+    cout << "Flow PK:" << endl;
+    cout << "    Verbosity level = " << verbosity << endl;
+    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
 

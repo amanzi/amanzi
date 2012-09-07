@@ -50,14 +50,14 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver_tmp->SetUserOperator(matrix_);
   solver_tmp->SetPrecOperator(preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, AZ_cg);
-  solver_tmp->SetAztecOption(AZ_output, AZ_none);
+  solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
   Epetra_Vector b(*(matrix_->rhs()));
   solver_tmp->SetRHS(&b);
 
   solver_tmp->SetLHS(&*solution);
-  solver_tmp->Iterate(max_itrs, convergence_tol);
+  solver_tmp->Iterate(max_itrs_linear, convergence_tol_linear);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();
@@ -99,14 +99,14 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
   solver_tmp->SetUserOperator(matrix_);
   solver_tmp->SetPrecOperator(preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
-  solver_tmp->SetAztecOption(AZ_output, AZ_none);
+  solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
   Epetra_Vector b(*(matrix_->rhs()));
   solver_tmp->SetRHS(&b);
 
   solver_tmp->SetLHS(&u);
-  solver_tmp->Iterate(max_itrs, convergence_tol);
+  solver_tmp->Iterate(max_itrs_linear, convergence_tol_linear);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();

@@ -77,6 +77,8 @@ class Matrix_MFD : public Epetra_Operator {
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Acf_cells() { return Acf_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Afc_cells() { return Afc_cells_; }
   std::vector<double>& Acc_cells() { return Acc_cells_; }
   std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
   std::vector<double>& Fc_cells() { return Fc_cells_; }
@@ -88,8 +90,8 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
-  double nokay() { return nokay_; }
-  double npassed() { return npassed_; }
+  int nokay() { return nokay_; }
+  int npassed() { return npassed_; }
 
  private:
   Teuchos::RCP<Flow_State> FS;

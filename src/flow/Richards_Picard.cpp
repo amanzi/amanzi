@@ -64,7 +64,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     solution_new = solution_old;  // initial solution guess
     solver->SetLHS(&solution_new);
 
-    solver->Iterate(max_itrs, convergence_tol);
+    solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs = solver->NumIters();
     double linear_residual = solver->TrueResidual();
 

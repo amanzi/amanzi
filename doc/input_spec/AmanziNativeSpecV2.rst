@@ -313,9 +313,14 @@ The remaining `"Flow`" parameters are
   an optimal discretization.
 
 * `"source and sink distribution method`" [string] identifies a method for distributing
-  quantities defined as integral values over regions. At the moment, it is applied
-  only to source and sink terms. The available options are `"volume`",
-  `"none`", and `"permeability`".
+  source Q over the specified regions. The available options are `"volume`",
+  `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+  in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
+  is defined over a few regions, Q will be distributed independently over each region.
+
+* `"relative position of water table`" [Array string] collects regions where
+  the static head is set up with respect to the top side. For example, zero head
+  can be specified on the top of a boundary side using this array.
 
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
@@ -911,6 +916,8 @@ at intervals corresponding to the numerical time step values; writes are control
     * `"start period stop`" [Array double] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
   * `"times`" an array of discrete times that at which a visualization dump shall be written.
+
+  * `"Regions`" [Array string] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
 
 Example:
 

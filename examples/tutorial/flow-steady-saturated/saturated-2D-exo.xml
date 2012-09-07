@@ -50,13 +50,11 @@
     <ParameterList name="Unstructured">
       <ParameterList name="Expert">
          <Parameter name="Framework" type="string" value="MSTK"/>
+        <Parameter name="Verify Mesh" type="bool" value="false"/>
       </ParameterList>
-      <ParameterList name="Generate Mesh">
-        <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array int" value="{10, 5, 5}"/>
-          <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0,  0.0}" />
-          <Parameter name="Domain High Corner" type="Array double" value="{100.0, 50.0, 50.0}" />
-        </ParameterList>
+      <ParameterList name="Read Mesh File">
+        <Parameter name="File" type="string" value="brick-10x5x5.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -71,24 +69,30 @@
         Domains:
     -->
     <ParameterList name="Entire Domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{100.0,50.0,50.0}"/>
+      <ParameterList name="Region: Labeled Set">
+        <Parameter name="Label"  type="string" value="10"/>
+        <Parameter name="File"   type="string" value="brick-10x5x5.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
     </ParameterList>
     <!--
         Boundaries
     -->
     <ParameterList name="Upstream">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{0.0,50.0,50.0}"/>
+      <ParameterList name="Region: Labeled Set">
+        <Parameter name="Label"  type="string" value="200"/>
+        <Parameter name="File"   type="string" value="brick-10x5x5.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Downstream">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{100.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{100.0,50.0,50.0}"/>
+      <ParameterList name="Region: Labeled Set">
+        <Parameter name="Label"  type="string" value="100"/>
+        <Parameter name="File"   type="string" value="brick-10x5x5.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
     <!-- 
@@ -202,7 +206,7 @@
 
     <ParameterList name="Observation Data">
 
-      <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
+      <Parameter name="Observation Output Filename" type="string" value="observation-exo.out"/>
       <ParameterList name="Pressure 1">
         <Parameter name="Region" type="string" value="Well 1"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
@@ -213,7 +217,7 @@
     </ParameterList>
 
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="steady-flow"/>
+      <Parameter name="File Name Base" type="string" value="steady-flow-exo"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
       <Parameter name="Time Macro" type="Array string" value="{Steady State}"/>
     </ParameterList>

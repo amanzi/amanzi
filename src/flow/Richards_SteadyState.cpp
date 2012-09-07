@@ -13,6 +13,7 @@ Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Richards_PK.hpp"
+#include "Matrix_Audit.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -97,13 +98,16 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
 {
   bool last_step = false;
 
-  int max_itrs = ti_specs.max_itrs;
+  int max_itrs_nonlinear = ti_specs.max_itrs;
   double T0 = ti_specs.T0;
   double T1 = ti_specs.T1;
   double dT0 = ti_specs.dT0;
 
+  max_itrs_linear = ti_specs.ls_specs.max_itrs;
+  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
+
   int itrs = 0;
-  while (itrs < max_itrs && T_physics < T1) {
+  while (itrs < max_itrs_nonlinear && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
       ComputeUDot(T0, *solution, udot);
@@ -150,7 +154,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
-  solver->SetAztecOption(AZ_output, AZ_none);
+  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // update steady state boundary conditions
@@ -159,13 +163,16 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   bc_flux->Compute(time);
   bc_head->Compute(time);
 
-  int max_itrs = ti_specs.max_itrs;
-  double residual_tol = ti_specs.residual_tol;
+  int max_itrs_nonlinear = ti_specs.max_itrs;
+  double residual_tol_nonlinear = ti_specs.residual_tol;
+
+  max_itrs_linear = ti_specs.ls_specs.max_itrs;
+  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
 
-  while (L2error > residual_tol && itrs < max_itrs) {
+  while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
@@ -198,6 +205,11 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
     preconditioner_->UpdatePreconditioner();
 
+    // DEBUG
+    // Matrix_Audit audit(mesh_, matrix_);
+    // audit.InitAudit();
+    // audit.RunAudit();
+
     // check convergence of non-linear residual
     L2error = matrix_->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
@@ -209,8 +221,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    solver->Iterate(max_itrs, convergence_tol);
-    int num_itrs = solver->NumIters();
+    solver->Iterate(max_itrs_linear, convergence_tol_linear);
+    int num_itrs_linear = solver->NumIters();
     double linear_residual = solver->TrueResidual() / L2norm;
 
     // update relaxation
@@ -219,7 +231,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
-          itrs, L2error, relaxation, linear_residual, num_itrs);
+          itrs, L2error, relaxation, linear_residual, num_itrs_linear);
     }
 
     int ndof = ncells_owned + nfaces_owned;

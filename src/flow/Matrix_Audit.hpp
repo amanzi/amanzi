@@ -22,11 +22,14 @@ class Matrix_Audit {
 
   // main members
   void InitAudit();
+  int RunAudit();
   int CheckSpectralBounds();
+  int CheckSpectralBoundsExtended();
 
  private:
   void OrderByIncrease(int n, double* mem);
 
+  int MyPID;
   int matrix_type;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   AmanziFlow::Matrix_MFD* matrix_;

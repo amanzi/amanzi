@@ -64,6 +64,10 @@ Function* FunctionFactory::Create(Teuchos::ParameterList &list) const
   return f;
 }
 
+
+/* ****************************************************************
+* Constant function
+**************************************************************** */
 Function* FunctionFactory::create_constant(Teuchos::ParameterList &params) const
 {
   Function *f;
@@ -78,6 +82,10 @@ Function* FunctionFactory::create_constant(Teuchos::ParameterList &params) const
   return f;
 }
 
+
+/* ****************************************************************
+* Tabular function
+**************************************************************** */
 Function* FunctionFactory::create_tabular(Teuchos::ParameterList &params) const
 {
   Function *f;
@@ -116,6 +124,10 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList &params) const
   return f;
 }
 
+
+/* ****************************************************************
+* Smooth function
+**************************************************************** */
 Function* FunctionFactory::create_smooth_step(Teuchos::ParameterList &params) const
 {
   Function *f;
@@ -137,6 +149,10 @@ Function* FunctionFactory::create_smooth_step(Teuchos::ParameterList &params) co
   return f;
 }
 
+
+/* ****************************************************************
+* Polynomial function
+**************************************************************** */
 Function* FunctionFactory::create_polynomial(Teuchos::ParameterList &params) const
 {
   Function *f;
@@ -158,6 +174,10 @@ Function* FunctionFactory::create_polynomial(Teuchos::ParameterList &params) con
   return f;
 }
 
+
+/* ****************************************************************
+* Linear function
+**************************************************************** */
 Function* FunctionFactory::create_linear(Teuchos::ParameterList &params) const
 {
   Function *f;
@@ -180,6 +200,10 @@ Function* FunctionFactory::create_linear(Teuchos::ParameterList &params) const
   return f;
 }
 
+
+/* ****************************************************************
+* Separable function
+**************************************************************** */
 Function* FunctionFactory::create_separable(Teuchos::ParameterList &params) const
 {
   Function *f;
@@ -211,6 +235,10 @@ Function* FunctionFactory::create_separable(Teuchos::ParameterList &params) cons
   return f;
 }
 
+
+/* ****************************************************************
+* Static head function requires more parameters in the input list.
+**************************************************************** */
 Function* FunctionFactory::create_static_head(Teuchos::ParameterList &params) const
 {
   Function *f;

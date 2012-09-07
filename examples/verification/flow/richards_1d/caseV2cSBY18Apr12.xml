@@ -83,20 +83,20 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Material Properties">
-      <ParameterList name="loam">
+      <ParameterList name="clay">
         <ParameterList name="Porosity: Uniform">
           <Parameter name="Value" type="double" value="0.43"  units="fraction"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="5.92360e-13"  units="m^2"/>
-          <Parameter name="Vertical" type="double" value="5.92360e-13"  units="m^2"/>
+          <Parameter name="Horizontal" type="double" value="1.18e-13"  units="m^2"/>
+          <Parameter name="Vertical" type="double" value="1.18e-13"  units="m^2"/>
 			<!-- changed units from m/s to m^2 -->
         </ParameterList>
         <ParameterList name="Capillary Pressure: van Genuchten">
-          <Parameter name="alpha" type="double" value="4.08622e-4" units="Pa^-1"/>
-          <Parameter name="Sr" type="double" value="0.186047" units="fraction"/>
+          <Parameter name="alpha" type="double" value="1.02e-4" units="Pa^-1"/>
+          <Parameter name="Sr" type="double" value="0.25" units="fraction"/>
 			<!-- changed residual saturation from 0.09 to 0.186407 (theta-r/theta-s =0.08/0.43) -->
-          <Parameter name="m" type="double" value="0.375"/>
+          <Parameter name="m" type="double" value=".0909"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
         <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
