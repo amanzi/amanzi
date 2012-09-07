@@ -25,6 +25,7 @@ Authors: Gianmarco Manzini
 #include "meshed_elevation_evaluator.hh"
 #include "standalone_elevation_evaluator.hh"
 #include "manning_conductivity_evaluator.hh"
+#include "source_from_subsurface_evaluator.hh"
 
 #include "overland.hh"
 
@@ -156,12 +157,24 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   }
 
   // -- coupling term evaluator
-  if (plist_.get<bool>("coupled to subsurface", false)) {
+  if (plist_.isSublist("subsurface coupling evaluator")) {
     is_coupling_term_ = true;
     S->RequireField("overland_source_from_subsurface", name_)
         ->SetMesh(S->GetMesh("surface"))->SetGhosted()
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("overland_coupling");
+
+    Teuchos::ParameterList source_plist = plist_.sublist("coupled to subsurface");
+    source_plist.set("surface mesh key", "surface");
+    source_plist.set("subsurface mesh key", "domain");
+    source_plist.set("subsurface flux key", "darcy_flux");
+    source_plist.set("molar density key", "molar_density_liquid");
+    // NOTE: this should change to "overland_molar_density_liquid" or
+    // whatever when such a thing exists.
+    source_plist.set("source key", "overland_source_from_subsurface");
+
+    Teuchos::RCP<FieldEvaluator> source_evaluator =
+      Teuchos::rcp(new FlowRelations::SourceFromSubsurfaceEvaluator(source_plist));
+    S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
 
