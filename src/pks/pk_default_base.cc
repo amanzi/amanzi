@@ -9,6 +9,7 @@ Author: Ethan Coon
 Default base with a few methods implemented in standard ways.
 ------------------------------------------------------------------------- */
 
+#include "global_verbosity.hh"
 #include "pk_default_base.hh"
 
 namespace Amanzi {
@@ -19,6 +20,8 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
 
   // set up the VerboseObject
   setLinePrefix(name_);
+
+  setDefaultVerbLevel(ATS::VerbosityLevel::level_);
   Teuchos::readVerboseObjectSublist(&plist_,this);
 
   // get the fancy output ??
