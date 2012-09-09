@@ -25,6 +25,7 @@ class Matrix_Audit {
   int RunAudit();
   int CheckSpectralBounds();
   int CheckSpectralBoundsExtended();
+  int CheckSpectralBoundsSchurComplement();
 
  private:
   void OrderByIncrease(int n, double* mem);
