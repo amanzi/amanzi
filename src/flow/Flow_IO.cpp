@@ -19,6 +19,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Flow_PK.hpp"
 
+#include "Ifpack.h"
+
 namespace Amanzi {
 namespace AmanziFlow {
 
@@ -104,7 +106,7 @@ void Flow_PK::ProcessStringPreconditioner(const std::string name, int* precondit
     *preconditioner = FLOW_PRECONDITIONER_TRILINOS_ML;
   } else if (name == "Hypre AMG") {
     *preconditioner = FLOW_PRECONDITIONER_HYPRE_AMG;
-#ifndef HAVE_HYPRE_API
+#ifndef HAVE_HYPRE
     Errors::Message msg;
     msg << "\nFlow PK: Hypre TPL has not been activated.";
     Exceptions::amanzi_throw(msg);   
