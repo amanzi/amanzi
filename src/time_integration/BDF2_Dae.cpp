@@ -532,10 +532,9 @@ namespace BDF2 {
     Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
       Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
 
+    double error(0.0);
     do
       {
-	double error;
-
 	// Check for too many nonlinear iterations.
 	if (itr >= state.mitr) 
 	  {
