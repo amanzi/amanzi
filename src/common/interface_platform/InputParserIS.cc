@@ -1087,7 +1087,12 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
       double alpha = vG_list.get<double>("alpha");
       double Sr = vG_list.get<double>("Sr");
       double m = vG_list.get<double>("m");
-      double ell = vG_list.get<double>("ell",0.5);
+      double ell;
+      if (rel_perm == "Mualem") {
+	ell = vG_list.get<double>("ell",ELL_MUALEM);
+      } else if (rel_perm == "Burdine") {
+	ell = vG_list.get<double>("ell",ELL_BURDINE);	
+      }
       double krel_smooth = vG_list.get<double>("krel smoothing interval", 0.0);
       if (krel_smooth < 0.0) {
         Exceptions::amanzi_throw(Errors::Message("If krel smoothing interval is specified it must be positive."));
@@ -1125,7 +1130,12 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 
       double lambda      = BC_list.get<double>("lambda");
       double alpha       = BC_list.get<double>("alpha");
-      double ell         = BC_list.get<double>("ell",0.5);
+      double ell;
+      if (rel_perm == "Mualem") {
+	ell = BC_list.get<double>("ell",ELL_MUALEM);
+      } else if (rel_perm == "Burdine") {
+	ell = BC_list.get<double>("ell",ELL_BURDINE);	
+      }
       double Sr          = BC_list.get<double>("Sr");
       double krel_smooth = BC_list.get<double>("krel smoothing interval",0.0);
 
