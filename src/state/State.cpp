@@ -164,6 +164,8 @@ void State::initialize_from_parameter_list()
     u[2] = 0.0;
   set_gravity(u);
 
+  p_atm = parameter_list.get<double>("atmospheric pressure",101325.0);
+
   set_zero_total_component_concentration();
   set_water_density(parameter_list.get<double>("Constant water density"));
   set_viscosity(parameter_list.get<double>("Constant viscosity"));
@@ -1138,8 +1140,19 @@ void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
   vis.write_vector(vol_water,"gravimetric water content");
   
-  // compute hydrostatic head
-  // TO DO
+  // compute hydraulic head (p-p_atm)/(rho*g)-z
+  Epetra_Vector hydraulic_head( mesh_maps->cell_map(false) );
+  hydraulic_head.PutScalar(p_atm);
+  hydraulic_head.Update(-1.0,*pressure,1.0);
+  int dim = mesh_maps->space_dimension();
+  hydraulic_head.Scale(1.0/( (*density) * (*gravity)[dim-1]));
+  Epetra_Vector centroid_z( mesh_maps->cell_map(false) );
+  for( int ic = mesh_maps->cell_map(false).MinLID(); ic <= mesh_maps->cell_map(false).MaxLID();  ++ic) {
+    Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
+    centroid_z[ic] = p[dim-1];
+  }
+  hydraulic_head.Update(1.0,centroid_z,-1.0);
+  vis.write_vector(hydraulic_head,"hydraulic head");
   
   std::vector<std::string> names(3);
   names[0] = "darcy velocity x";

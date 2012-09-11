@@ -1534,6 +1534,8 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     stt_list.set<double>("Gravity z", - GRAVITY_MAGNITUDE);
   }
 
+  stt_list.set<double>("atmospheric pressure",ATMOSPHERIC_PRESSURE);
+
   // find the viscosity
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
