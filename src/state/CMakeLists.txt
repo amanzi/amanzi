@@ -48,10 +48,10 @@ add_definitions("-DUSE_MPI")
 #
 # Library: state
 #
-file(GLOB state_inc_files "*.hpp")
+file(GLOB state_inc_files "*.hpp" "*.hh")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
-                   SOURCE State.cpp Restart.cpp Vis.cpp HEADERS ${state_inc_files}
+                   SOURCE State.cpp Restart.cpp Vis.cpp chemistry_data.cc HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output simple_mesh mesh_data ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
