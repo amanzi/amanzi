@@ -713,6 +713,11 @@ void MPC::cycle_driver() {
     *out << ",  Time(years) = "<< S->get_time()/ (365.25*60*60*24);
     *out << std::endl;
   }
+
+
+  // clean up
+  delete visualization;
+  delete restart;
 }
 
 
