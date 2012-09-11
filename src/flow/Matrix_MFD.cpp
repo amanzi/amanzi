@@ -425,7 +425,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     ML_list = prec_list;
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     // read some boomer amg parameters
     hypre_ncycles = prec_list.get<int>("cycle applications", 5);
     hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
