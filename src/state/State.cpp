@@ -895,16 +895,18 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }    
-  // } else if (var == "Hydrostatic Head") {
-  //   value = 0.0;
-  //   volume = 0.0;
+  } else if (var == "Hydraulic Head") {
+    value = 0.0;
+    volume = 0.0;
+    int dim = mesh_maps->space_dimension();
 
-  //   for (int i=0; i<mesh_block_size; ++i) {
-  //     int ic = cell_ids[i];
-  //     value += (*pressure)[ic]/ ( (*density) * (*gravity)[2]);
-  //     value *= mesh_maps->cell_volume(ic);
-  //     volume += mesh_maps->cell_volume(ic);
-  //   }
+    for (int i=0; i<mesh_block_size; ++i) {
+      int ic = cell_ids[i];
+      Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
+      value += ( (*pressure)[ic] - p_atm ) / ( (*density) * (*gravity)[dim-1]) + p[dim-1];
+      value *= mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }
   } else {
     std::stringstream ss;
     ss << "State::point_value: cannot make an observation for variable " << name;
@@ -1154,7 +1156,7 @@ void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
     Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
     centroid_z[ic] = p[dim-1];
   }
-  hydraulic_head.Update(1.0,centroid_z,-1.0);
+  hydraulic_head.Update(1.0,centroid_z,1.0);
   vis.write_vector(hydraulic_head,"hydraulic head");
   
   std::vector<std::string> names(3);
