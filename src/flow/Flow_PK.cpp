@@ -29,7 +29,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
+  void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 {
   flow_status_ = FLOW_STATUS_NULL;
 

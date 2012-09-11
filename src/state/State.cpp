@@ -27,7 +27,8 @@ State::State(int number_of_components_,
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
       using_sorption_(false),
-      use_sorption_isotherms_(false) {
+      use_sorption_isotherms_(false),
+      time(0.0) {
   // the default parameter_list is empty, so we can't sanely implement
   // mineralogy or isotherms here because we can't safely allocate
   // memory.... This constructor can't be used for anything with
@@ -48,7 +49,8 @@ State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
       using_sorption_(false),
-      use_sorption_isotherms_(false) {
+      use_sorption_isotherms_(false),
+      time(0.0) {
   // this constructor is going to be used in restarts, where we
   // read the number of components from a file before creating
   // storage
@@ -64,7 +66,8 @@ State::State(Teuchos::ParameterList &parameter_list_,
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
       using_sorption_(false),
-      use_sorption_isotherms_(false) {
+      use_sorption_isotherms_(false),
+      time(0.0) {
   init_verbosity(parameter_list);
 
   // need to set up a few things before we can setup the storage and assign values
