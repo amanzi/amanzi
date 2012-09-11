@@ -26,7 +26,7 @@ struct Exodus_file_holder
 
 struct Tiny_File : Exodus_file_holder
 {
-  Tiny_File () : Exodus_file_holder (test_file_path("hex_2x2x2_ss.exo").c_str()) { }
+  Tiny_File () : Exodus_file_holder (test_file_path("hex_1x1x1_ss.exo").c_str()) { }
 };
 
 struct Big_File : Exodus_file_holder
