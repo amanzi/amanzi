@@ -45,7 +45,7 @@ TEST(MSTK_HEX_3x3x3_4P)
 
   // Load a single hex from the hex1.exo file
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_4x4x4_ss.exo",comm.get(),3));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_ss.exo",comm.get(),3));
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
@@ -75,7 +75,7 @@ TEST(MSTK_HEX_3x3x3_4P)
 
 
   std::stringstream fname;
-  fname << "test/mstk_hex_4x4x4_4P." << rank << ".out";
+  fname << "test/mstk_hex_3x3x3_4P." << rank << ".out";
   std::ofstream fout(fname.str().c_str());
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
