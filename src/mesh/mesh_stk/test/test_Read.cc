@@ -154,7 +154,7 @@ SUITE (Exodus)
   TEST_FIXTURE (SerialReadFixture, SerialReader1)
   {
     if (nproc == 1) {
-      read("../exodus_reader/test_files/hex_11x11x11_ss.exo");
+      read("../exodus_reader/test_files/hex_10x10x10_ss.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 11*11*11);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED), 10*10*11*3);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 10*10*10);
@@ -183,7 +183,7 @@ SUITE (Exodus)
       // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
       // CHECK_EQUAL(count, 121);
             
-      Auditor audit("hex_11x11x11_ss_", mesh);
+      Auditor audit("hex_10x10x10_ss_", mesh);
       audit();
     }
   }
@@ -273,7 +273,7 @@ SUITE (Exodus)
   TEST_FIXTURE (ParallelReadFixture, ParallelReader1)
   {
     if (nproc > 1 && nproc <= 4) {
-      read("../exodus_reader/test_files/split1/hex_11x11x11_ss.par");
+      read("../exodus_reader/test_files/split1/hex_10x10x10_ss.par");
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 20);
@@ -311,7 +311,7 @@ SUITE (Exodus)
       // comm.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 121);
 
-      Auditor audit("hex_11x11x11_ss.par", mesh);
+      Auditor audit("hex_10x10x10_ss.par", mesh);
       audit();
     }
   }            
@@ -433,7 +433,7 @@ SUITE (Exodus)
     // FIXME: need to be able to assign path from configuration
 
     std::string fpath("../exodus_reader/test_files/");
-    std::string fname("hex_11x11x11_ss");
+    std::string fname("hex_10x10x10_ss");
     if (comm.NumProc() == 1) {
       fname += ".exo";
     } else {

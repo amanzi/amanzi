@@ -10,8 +10,8 @@ namespace bl = boost::lambda;
 #include "LabeledSetRegion.hh"
 
 
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -29,7 +29,7 @@ namespace STK {
 Mesh_STK_Impl::Mesh_STK_Impl (int space_dimension, 
                               const Epetra_MpiComm *comm,
                               Entity_map* entity_map,
-                              stk::mesh::MetaData *meta_data,
+                              stk::mesh::fem::FEMMetaData *meta_data,
                               stk::mesh::BulkData *bulk_data,
                               const Id_map& set_to_part,
                               Vector_field_type &coordinate_field) :
@@ -137,7 +137,7 @@ Mesh_STK_Impl::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) c
   stk::mesh::Entity *entity = id_to_entity(cell_rank, element);
   ASSERT (entity->identifier () == element);
 
-  const CellTopologyData* topo = stk::mesh::get_cell_topology (*entity);
+  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*entity).getCellTopologyData();
 
   ASSERT(topo != NULL);
 
@@ -327,7 +327,7 @@ double const *
 Mesh_STK_Impl::coordinates (stk::mesh::EntityId node) const
 {
 
-  stk::mesh::Entity *entity = id_to_entity(stk::mesh::Node, node);
+  stk::mesh::Entity *entity = id_to_entity(meta_data_->node_rank(), node);
   return coordinates (entity);
 
 }
@@ -459,13 +459,13 @@ bool Mesh_STK_Impl::valid_id (unsigned int id, stk::mesh::EntityRank rank) const
 stk::mesh::EntityRank Mesh_STK_Impl::get_element_type (int space_dimension)
 {
   ASSERT (valid_dimension (space_dimension));
-  return (space_dimension == 3) ? stk::mesh::Element : stk::mesh::Face;
+  return (space_dimension == 3) ? meta_data_->volume_rank() : meta_data_->face_rank();
 }
 
 stk::mesh::EntityRank Mesh_STK_Impl::get_face_type (int space_dimension)
 {
   ASSERT (valid_dimension (space_dimension));
-  return (space_dimension == 3) ? stk::mesh::Face : stk::mesh::Edge;
+  return (space_dimension == 3) ? meta_data_->face_rank() : meta_data_->edge_rank();
 }
 
 bool Mesh_STK_Impl::valid_dimension (int space_dimension)
@@ -475,8 +475,8 @@ bool Mesh_STK_Impl::valid_dimension (int space_dimension)
 
 bool Mesh_STK_Impl::valid_rank (stk::mesh::EntityRank rank)
 {
-  return (rank == stk::mesh::Node || rank == stk::mesh::Edge ||
-          rank == stk::mesh::Face || rank == stk::mesh::Element);
+  return (rank == meta_data_->node_rank() || rank == meta_data_->edge_rank() ||
+          rank == meta_data_->face_rank() || rank == meta_data_->volume_rank());
 }
 
 
@@ -493,11 +493,21 @@ void Mesh_STK_Impl::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part
 }
 
 
+stk::mesh::EntityRank Mesh_STK_Impl::kind_to_rank (Entity_kind kind) const {
+  return entity_map_->kind_to_rank(kind);
+}
+
+  Entity_kind Mesh_STK_Impl::rank_to_kind (stk::mesh::EntityRank rank) const {
+  return entity_map_->rank_to_kind(rank);
+}
+
+
+
 // Object validators
 // -----------------
 
 
-bool Mesh_STK_Impl::dimension_ok_ () const
+bool Mesh_STK_Impl::dimension_ok_ () 
 {
   return valid_dimension (space_dimension_);
 }
@@ -516,22 +526,22 @@ Mesh_STK_Impl::summary(std::ostream& os) const
     if (p == me) {
       os << boost::str(boost::format("Process %d: Nodes: %5d owned, %5d ghost, %5d used") %
                        me % 
-                       count_entities(stk::mesh::Node, OWNED) %
-                       count_entities(stk::mesh::Node, GHOST) %
-                       count_entities(stk::mesh::Node, USED))
+                       count_entities(NODE, OWNED) %
+                       count_entities(NODE, GHOST) %
+                       count_entities(NODE, USED))
          << std::endl;
 
       os << boost::str(boost::format("Process %d: Faces: %5d owned, %5d ghost, %5d used") %
                        me % 
-                       count_entities(stk::mesh::Face, OWNED) %
-                       count_entities(stk::mesh::Face, GHOST) %
-                       count_entities(stk::mesh::Face, USED))
+                       count_entities(FACE, OWNED) %
+                       count_entities(FACE, GHOST) %
+                       count_entities(FACE, USED))
          << std::endl;
       os << boost::str(boost::format("Process %d: Cells: %5d owned, %5d ghost, %5d used") %
                        me % 
-                       count_entities(stk::mesh::Element, OWNED) %
-                       count_entities(stk::mesh::Element, GHOST) %
-                       count_entities(stk::mesh::Element, USED))
+                       count_entities(Amanzi::AmanziMesh::CELL, OWNED) %
+                       count_entities(Amanzi::AmanziMesh::CELL, GHOST) %
+                       count_entities(Amanzi::AmanziMesh::CELL, USED))
          << std::endl;
     }
     communicator_->Barrier();
@@ -553,7 +563,7 @@ Mesh_STK_Impl::redistribute(const Epetra_Map& cellmap)
 {
   stk::mesh::Selector owned(meta_data_->locally_owned_part());
   stk::mesh::EntityVector cells;
-  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Element), cells);
+  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
 
   std::vector<int> gid(cells.size());
 

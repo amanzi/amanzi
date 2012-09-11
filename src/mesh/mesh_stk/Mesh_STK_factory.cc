@@ -31,9 +31,8 @@ namespace bl = boost::lambda;
 
 // Trilinos
 #include <Shards_CellTopology.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
@@ -90,12 +89,11 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   // Update construction variables for the new mesh.
   const int space_dimension = data.parameters ().dimensions ();
 
-  ASSERT (Mesh_STK_Impl::valid_dimension (space_dimension));
+  meta_data_  = new stk::mesh::fem::FEMMetaData (space_dimension,stk::mesh::fem::entity_rank_names (space_dimension));
+  bulk_data_  = new stk::mesh::BulkData (*((stk::mesh::MetaData *)meta_data_), 
+                                         parallel_machine_, bucket_size_);
 
-  entity_map_ = new Entity_map (space_dimension);
-  meta_data_  = new stk::mesh::MetaData (stk::mesh::fem_entity_rank_names ());
-  bulk_data_  = new stk::mesh::BulkData (*meta_data_, parallel_machine_, bucket_size_);
-
+  entity_map_ = new Entity_map (meta_data_);
   node_rank_    = entity_map_->kind_to_rank (NODE);
   face_rank_    = entity_map_->kind_to_rank (FACE);
   element_rank_ = entity_map_->kind_to_rank (CELL);
@@ -304,7 +302,7 @@ void Mesh_STK_factory::put_field_ (const Data::Field& field_data,
 void Mesh_STK_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int space_dimension)
 {
   coordinate_field_ = & meta_data_->declare_field<Vector_field_type>("coordinates");
-  stk::mesh::put_field (*coordinate_field_, stk::mesh::Node, part, space_dimension);
+  stk::mesh::put_field (*coordinate_field_, meta_data_->node_rank(), part, space_dimension);
 }
 
 /** 
@@ -327,7 +325,7 @@ void Mesh_STK_factory::add_coordinates_ (const Data::Coordinates<double>& coordi
   stk::mesh::Selector owned(meta_data_->universal_part ());
   Entity_vector local_nodes;
   stk::mesh::get_selected_entities (owned,
-                                    bulk_data_->buckets (stk::mesh::Node), 
+                                    bulk_data_->buckets (meta_data_->node_rank()), 
                                     local_nodes);
 
   // Loop over the nodes, if the node is used by the cells owned by
@@ -388,7 +386,7 @@ stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const Data::Element_block
 
   const shards::CellTopology topo(get_topology_data(mdtype));
       
-  stk::mesh::set_cell_topology (new_part, topo.getTopology ());
+  stk::mesh::fem::set_cell_topology (new_part, topo);
 
   add_set_part_relation_ (block.id (), new_part);
 
@@ -450,7 +448,7 @@ stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const Data::Node_set& set)
     name << set.name ();
   else
     name << "node set " << set.id ();
-  stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), stk::mesh::Node));
+  stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), meta_data_->node_rank()));
   meta_data_->declare_part_subset(*nodes_part_, new_part);
 
   add_set_part_relation_ (set.id (), new_part);
@@ -460,7 +458,7 @@ stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const Data::Node_set& set)
 
   stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const std::string name, const int id)
 {
-  stk::mesh::Part &new_part (meta_data_->declare_part (name, stk::mesh::Node));
+  stk::mesh::Part &new_part (meta_data_->declare_part (name, meta_data_->node_rank()));
   meta_data_->declare_part_subset(*nodes_part_, new_part);
 
   add_set_part_relation_ (id, new_part);
@@ -498,7 +496,7 @@ void Mesh_STK_factory::add_elements_to_part_ (const Data::Element_block& block, 
 {
   // Add connectivity information via stk::mesh::declare_element
   std::vector<int> storage (block.nodes_per_element ());
-  std::vector<int> global_vidx(block.nodes_per_element ());
+  std::vector<stk::mesh::EntityId> global_vidx(block.nodes_per_element ());
 
   for (int bidx = 0; bidx < block.num_elements (); ++bidx, ++localidx0)
   {
@@ -512,7 +510,7 @@ void Mesh_STK_factory::add_elements_to_part_ (const Data::Element_block& block, 
 
     try {
       stk::mesh::Entity &element = 
-          stk::mesh::declare_element (*bulk_data_, part, global_cidx, &global_vidx[0]);
+        stk::mesh::fem::declare_element (*bulk_data_, part, global_cidx, &global_vidx[0]);
     } catch (const std::exception& e) {
       std::stringstream msg;
       std::cerr << e.what() << std::endl;
@@ -534,7 +532,7 @@ Mesh_STK_factory::get_element_side_nodes_(const stk::mesh::Entity& element,
 {
   ASSERT(element.entity_rank() == element_rank_);
 
-  const CellTopologyData* topo = stk::mesh::get_cell_topology (element);
+  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (element).getCellTopologyData();
   ASSERT(topo != NULL);
 
   // get the cell nodes on this side
@@ -670,7 +668,7 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
   stk::mesh::PartVector parts(meta_data_->get_parts());
   for (stk::mesh::PartVector::iterator p = parts.begin(); 
        p != parts.end(); p++) {
-    const CellTopologyData* topo = stk::mesh::get_cell_topology (**p);
+    const CellTopologyData* topo = meta_data_->get_cell_topology (**p).getCellTopologyData();
         
     if (topo == NULL) continue;
 
@@ -801,7 +799,7 @@ Mesh_STK_factory::generate_cell_face_relations(void)
   for (stk::mesh::PartVector::iterator p = parts.begin(); 
        p != parts.end(); p++) {
 
-    const CellTopologyData* topo = stk::mesh::get_cell_topology (**p);
+    const CellTopologyData* topo = meta_data_->get_cell_topology (**p).getCellTopologyData();
         
     if (topo == NULL) continue;
 
@@ -1067,7 +1065,7 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
           
             stk::mesh::Selector owned(meta_data_->locally_owned_part());
             stk::mesh::EntityVector faces;
-            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Face), faces);
+            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
 
             stk::mesh::EntityVector::iterator f;
             for (f = faces.begin(); f != faces.end(); f++) {
@@ -1107,7 +1105,7 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
           
             stk::mesh::Selector owned(meta_data_->locally_owned_part());
             stk::mesh::EntityVector cells;
-            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Element), cells);
+            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
 
             stk::mesh::EntityVector::iterator c;
             for (c = cells.begin(); c != cells.end(); c++) {
@@ -1152,7 +1150,7 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
 
 	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
 	  stk::mesh::EntityVector faces;
-	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Face), faces);
+	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
 	  
 	  stk::mesh::EntityVector::iterator f;
 	  for (f = faces.begin(); f != faces.end(); f++) {
@@ -1202,7 +1200,7 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
 	  
 	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
 	  stk::mesh::EntityVector nodes;
-	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Node), nodes);
+	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->node_rank()), nodes);
 	 
 
           AmanziGeometry::Point rgnpnt(((AmanziGeometry::PointRegionPtr)greg)->point());
@@ -1332,7 +1330,7 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
           
           stk::mesh::Selector owned(meta_data_->locally_owned_part());
           stk::mesh::EntityVector cells;
-          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Element), cells);
+          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
           
           stk::mesh::EntityVector::iterator c;
           for (c = cells.begin(); c != cells.end(); c++) {

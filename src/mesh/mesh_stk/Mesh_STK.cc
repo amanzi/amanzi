@@ -20,10 +20,10 @@
 namespace bl = boost::lambda;
 
 #include <Shards_CellTopology.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 
-#include "Entity_map.hh"
 #include "Mesh_STK_Impl.hh"
 #include "Mesh_STK.hh"
 #include "stk_mesh_error.hh"
@@ -51,7 +51,6 @@ const unsigned int Mesh_STK::num_kinds_ =
 // -------------------------------------------------------------
 Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
   : mesh_(mesh), 
-    entity_map_(3),                   // FIXME: can be 2; take from mesh
     map_owned_(), map_used_()
 {
   Mesh::set_comm(mesh->communicator());
@@ -118,13 +117,13 @@ Mesh_STK::cell_get_type(const Entity_ID cellid) const
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;        // need 1-based for stk::mesh
 
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(CELL));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(CELL));
   stk::mesh::Entity* cell(mesh_->id_to_entity(rank, global_cell_id));
 
   // FIXME: Throw instead?
   ASSERT(cell != NULL);
 
-  const CellTopologyData* topo = stk::mesh::get_cell_topology (*cell);
+  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*cell).getCellTopologyData();
 
   // FIXME: Polyhedral, 2D not yet supported
 
@@ -157,7 +156,7 @@ Mesh_STK::num_entities (const Entity_kind kind,
                         const Parallel_type ptype) const
 {
   ASSERT(entity_valid_kind(kind));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
   return mesh_->count_entities(rank, ptype);
 }
 
@@ -773,7 +772,7 @@ Mesh_STK::get_set_entities (const std::string setname,
 {
 
   ASSERT (entity_valid_ptype(ptype));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
 
   stk::mesh::Part *part;
 
@@ -888,7 +887,7 @@ Mesh_STK::build_maps_ ()
 
   for (unsigned int i = 0; i < num_kinds_; i++) {
     Entity_kind kind(kinds_[i]);
-    stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
+    stk::mesh::EntityRank rank = mesh_->kind_to_rank (kind);
 
     STK::Entity_vector entities;
     std::vector<int> entity_ids;

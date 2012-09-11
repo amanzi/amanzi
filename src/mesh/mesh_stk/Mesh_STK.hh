@@ -357,9 +357,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   /// The mesh implementation
   STK::Mesh_STK_Impl_p mesh_;
 
-  /// A thing to relate stk::mesh ranks to Entity_kind
-  STK::Entity_map entity_map_;
-
   // Maps, Accessors and setters.
   // ----------------------------
   

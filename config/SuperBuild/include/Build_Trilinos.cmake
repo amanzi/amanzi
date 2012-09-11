@@ -4,7 +4,7 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
-set(trilinos_depend_projects NetCDF ExodusII Boost)
+set(trilinos_depend_projects NetCDF ExodusII HDF5 Boost)
 if(ENABLE_HYPRE)
   list(APPEND trilinos_depend_projects HYPRE)
 endif()
@@ -31,9 +31,10 @@ if ( ENABLE_STK_Mesh )
 endif()
 
 # Add the Seacas package for Trilinos versions greater than 10.8
-if ( "${Trilinos_VERSION}" VERSION_GREATER 10.8 )
-  list(APPEND Trilinos_PACKAGE_LIST SEACAS)
-endif()
+# HAVING TROUBLE WITH THIS FOR VERSIONS 10.10 and 10.12 - LEAVE DISABLED
+#if ( "${Trilinos_VERSION}" VERSION_GREATER 10.8 )
+#  list(APPEND Trilinos_PACKAGE_LIST SEACAS)
+#endif()
 
 # Generate the Trilinos Package CMake Arguments
 set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF")
@@ -120,10 +121,19 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DNetcdf_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
 
 # ExodusII 
+#list(APPEND Trilinos_CMAKE_TPL_ARGS
+#            "-DTPL_ENABLE_ExodusII:BOOL=ON" 
+#            "-DExodusII_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+#            "-DExodusII_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
 list(APPEND Trilinos_CMAKE_TPL_ARGS
-            "-DTPL_ENABLE_ExodusII:BOOL=ON" 
             "-DExodusII_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
             "-DExodusII_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+
+# HDF5
+list(APPEND Trilinos_CMAKE_TPL_ARGS
+            "-DTPL_ENABLE_HDF5:BOOL=ON"
+            "-DHDF5_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
+            "-DHDF5_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
 
 # HYPRE
 if( ENABLE_HYPRE )
@@ -179,7 +189,7 @@ set(Trilinos_CMAKE_LANG_ARGS
 # Trilinos needs a patch for GNU versions > 4.6
 if ( CMAKE_CXX_COMPILER_VERSION )
   if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-    if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
+    if ( "${Trilinos_VERSION}" VERSION_GREATER 10.8  OR ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
       set(ENABLE_Trilinos_Patch OFF)
     else()
       message(STATUS "Trilinos requires a patch when using"

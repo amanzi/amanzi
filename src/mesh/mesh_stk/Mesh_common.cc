@@ -16,7 +16,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include "dbc.hh"
 #include "Mesh_common.hh"
@@ -39,10 +39,10 @@ namespace mesh {
 void
 check_face_ownership(BulkData& bulk_data) {
   const int me(bulk_data.parallel_rank());
-  const MetaData& meta_data = bulk_data.mesh_meta_data();
+  const fem::FEMMetaData *meta_data = (fem::FEMMetaData *) &(bulk_data.mesh_meta_data());
   EntityVector faces;
-  Selector owned(meta_data.locally_owned_part());
-  get_selected_entities(owned, bulk_data.buckets(Face), faces);
+  Selector owned(meta_data->locally_owned_part());
+  get_selected_entities(owned, bulk_data.buckets(meta_data->face_rank()), faces);
 
   std::vector<EntityProc> eproc;
 
@@ -51,8 +51,8 @@ check_face_ownership(BulkData& bulk_data) {
 
     EntityVector theface, nodes, cells;
     theface.push_back(*f);
-    get_entities_through_relations(theface, Node, nodes);
-    get_entities_through_relations(nodes, Element, cells);
+    get_entities_through_relations(theface, meta_data->node_rank(), nodes);
+    get_entities_through_relations(nodes, meta_data->volume_rank(), cells);
 
     // there better be at least one cell related to this face
 
@@ -105,17 +105,17 @@ check_face_ownership(BulkData& bulk_data) {
 void
 check_node_ownership(BulkData& bulk_data) {
   const int me(bulk_data.parallel_rank());
-  const MetaData& meta_data = bulk_data.mesh_meta_data();
+  const fem::FEMMetaData *meta_data = (fem::FEMMetaData *) &(bulk_data.mesh_meta_data());
   EntityVector nodes;
-  Selector owned(meta_data.locally_owned_part());
-  get_selected_entities(owned, bulk_data.buckets(Node), nodes);
+  Selector owned(meta_data->locally_owned_part());
+  get_selected_entities(owned, bulk_data.buckets(meta_data->node_rank()), nodes);
 
   std::vector<EntityProc> eproc;
 
   for (EntityVector::iterator n = nodes.begin(); n != nodes.end(); n++) {
     EntityVector thenode, cells;
     thenode.push_back(*n);
-    get_entities_through_relations(nodes, Element, cells);
+    get_entities_through_relations(nodes, meta_data->volume_rank(), cells);
 
     unsigned int new_owner(10000000);
 

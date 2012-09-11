@@ -107,6 +107,12 @@ if ( BUILD_TESTS )
                        SOURCE test/Main.cc test/transport_parallel_mstk.cpp
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+        add_amanzi_test(transport_parallel_read_mstk transport_parallel_read_mstk
+		       KIND int
+	               NPROCS 4 
+                       SOURCE test/Main.cc test/transport_parallel_read_mstk.cpp
+                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
         add_amanzi_test(transport_2D transport_2D
 	                KIND unit
                         SOURCE test/Main.cc test/transport_2D.cpp
