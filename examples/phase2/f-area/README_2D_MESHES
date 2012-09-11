@@ -9,12 +9,17 @@ since these are not included in the TOUGH2 prototyping runs they are
 both assigned a very small intrinsic permeabiliy - essentially
 removing them from the simulation.
 
-The input files are named:
+The input files for the different cases that are located in the 
+subdirectories are named
 
-2d_f-area_flow_full_chem.xml    - XML problem description
+2d_f-area*.xml                  - XML problem description
+
+and
 ascem-2012-farea.bgd            - geochemistry input (basis, database)
 
-The input file uses a generic name for the mesh
+for the cases with geochemistry.
+
+The input files use a generic name for the mesh
 
 f_area_mesh_2D.exo
 
@@ -27,7 +32,7 @@ project directory:
 There is a README in this directory explaining the different resolutions
 and different files.  But I find it easiest to create links to each
 resolution, and then link the one that I want to the generic name that
-is in the input file.  For example, 
+is in the input file.  For example, in an example subdirectory execute
 
 ln -s /project/projectdirs/m1012/meshes/phase2/f-area/2012-04-24/refine_l0/mesh2_bc01tobc09.exo mesh2_bc01tobc09-l0.exo
 ln -s /project/projectdirs/m1012/meshes/phase2/f-area/2012-04-24/refine_l1/mesh2_bc01tobc09.exo mesh2_bc01tobc09-l1.exo
