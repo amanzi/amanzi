@@ -7,7 +7,7 @@
 
 struct chemistry_data {
 
-  chemistry_data(const Epetra_BlockMap &map, int number_of_species, int number_of_minerals,
+  chemistry_data(const Epetra_BlockMap &map, int number_of_components, int number_of_minerals,
                  int number_of_secondaries, int number_of_ion_exchange_sites,
                  int number_of_sorption_sites, bool using_sorption, bool using_sorption_isotherms);
 
