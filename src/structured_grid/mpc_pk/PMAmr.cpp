@@ -52,14 +52,17 @@ static Real
 process_events(bool& write_plotfile_after_step,
                bool& write_checkpoint_after_step,
                Array<int>& observations_after_step,
+               bool& begin_tpc,
                EventCoord& event_coord,
                Real time, Real dt, int iter, int diter)
 {
     write_plotfile_after_step = false;
     write_checkpoint_after_step = false;
+    begin_tpc = -1;
     Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
     Array<std::string>& vis_time_macros = PorousMedia::vis_time_macros;
     Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
+    Array<std::string>& tpc_labels = PorousMedia::tpc_labels;
 
     Real dt_new = dt;
     std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
@@ -99,6 +102,12 @@ process_events(bool& write_plotfile_after_step,
                     write_checkpoint_after_step = true;
                 }
             }
+
+            for (int k=0; k<tpc_labels.size(); ++k) {
+                if (eventList[j] == tpc_labels[k]) {
+                    begin_tpc = true;
+                }
+            }
         }
     }
     return dt_new;
@@ -119,13 +128,13 @@ PMAmr::init (Real strt_time_,
     {
         initialInit(strt_time,stop_time);
 
-        bool write_plot, write_check;
+        bool write_plot, write_check, begin_tpc;
         Array<int> initial_observations;
-        process_events(write_plot,write_check,initial_observations,event_coord,
+
+        process_events(write_plot,write_check,initial_observations,begin_tpc,event_coord,
                        cumtime, dt_level[0], level_steps[0], 0);
 
         if (write_plot) {
-
             writePlotFile(plot_file_root,level_steps[0]);
         }
 
@@ -134,87 +143,6 @@ PMAmr::init (Real strt_time_,
         }
     }
 }
-
-#if 0
-class ProcessIntegrator
-{
-    ProcessIntegrator(PMAmr& pmamr);
-
-    virtual Real Integrate(Real dt0);
-    virtual bool Step(Real dt);
-    virtual void PreStepMonitor() {}
-    virtual void PostStepMonitor() {}
-    virtual void HandleFailedStep() {}
-
-    Real IntegrateLevel(int  level,
-                        Real time,
-                        int  iteration,
-                        int  niter,
-                        Real stop_time);
-
-    PArray<ProcessIntegrator> sub_process_integrators;
-    
-    PMAmr& pmamr;
-};
-
-bool
-ProcessIntegrator::Step(Real dt)
-{
-    IntegrateLevel(lev_fine,time+(i-1)*dt_level[lev_fine],i,ncycle,stop_time);
-
-    if (level < finest_level)
-    {
-        const int lev_fine = level+1;
-
-        if (sub_cycle)
-        {
-            const int ncycle = n_cycle[lev_fine];
-
-            for (int i = 1; i <= ncycle; i++)
-                IntegrateLevel(lev_fine,time+(i-1)*dt_level[lev_fine],i,ncycle,stop_time);
-        }
-        else
-        {
-            pm_timeStep(lev_fine,time,1,1,stop_time);
-        }
-    }
-
-    amr_level[level].post_timestep(iteration);
-}
-
-
-ProcessIntegrator::ProcessIntegrator(PMAmr& _pmamr)
-    : pmamr(_pmamr)
-{
-}
-
-Real 
-ProcessIntegrator::Integrate(Real dt)
-{
-    PreStepMonitor();
-    bool step_succeeded = Step(dt);
-    if (!step_succeeded) {
-        HandleFailedStep();
-    }
-    PostStepMonitor();
-}
-
-Real 
-ProcessIntegrator::IntegrateLevel(int  level,
-                                  Real time,
-                                  int  iteration,
-                                  int  niter,
-                                  Real stop_time)
-{
-    Real dt_new = amr_level[level].advance(time,dt_level[level],iteration,niter);
-
-    dt_min[level] = iteration == 1 ? dt_new : std::min(dt_min[level],dt_new);
-
-    level_steps[level]++;
-    level_count[level]++;
-
-}
-#endif
 
 void
 PMAmr::pm_timeStep (int  level,
@@ -435,7 +363,7 @@ PMAmr::coarseTimeStep (Real stop_time)
         std::cout << "\nBEGIN TRANSIENT INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
     }
 
-    bool write_plot, write_check;
+    bool write_plot, write_check, begin_tpc;
     Array<int> observations_to_process;
 
     // NOTE: This is a hack to help keep dt from jumping too much.  Normally, the event processing
@@ -447,14 +375,15 @@ PMAmr::coarseTimeStep (Real stop_time)
     bool look_ahead_two_steps = true;
     Real dt2_red = -1;
     if (look_ahead_two_steps) {
-        dt2_red = process_events(write_plot,write_check,observations_to_process,event_coord,
+        dt2_red = process_events(write_plot,write_check,observations_to_process,begin_tpc,event_coord,
                                  cumtime, 2*dt_level[0], level_steps[0] + 1, 1);
         observations_to_process.clear();
         write_check=false;
         write_plot=false;
+        begin_tpc = -1;
     }
 
-    Real dt_red = process_events(write_plot,write_check,observations_to_process,event_coord,
+    Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_tpc,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
     
     // Note: if dt_red > 0, then dt_red == dt2_red
@@ -463,9 +392,14 @@ PMAmr::coarseTimeStep (Real stop_time)
     }
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
-        if (dt0_before_event_cut < 0) {
+        
+        if (begin_tpc >= 0) {
+            dt0_before_event_cut = -1; // "forget" current time step, we're headed into a Time Period Control interval
+        }
+        else if (dt0_before_event_cut < 0) {
             dt0_before_event_cut = dt_level[0];
         }
+
         Array<Real> dt_new(finest_level+1,dt_red);
         for (int lev = 1; lev <= finest_level; lev++) {
             dt_new[lev] = dt_new[lev-1]/Real(MaxRefRatio(lev-1));
@@ -636,9 +570,10 @@ PMAmr::initialInit (Real strt_time,
     //
     // The following was added to avoid stepping over registered events
     //
-    bool write_plot, write_check;
+    bool write_plot, write_check, begin_tpc;
     Array<int> observations_to_process;
-    Real dt_red = process_events(write_plot,write_check,observations_to_process,event_coord,
+    
+    Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_tpc,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
     if (dt_red > 0  &&  dt_red < dt0) {
         dt_min[0]  = dt_level[0];

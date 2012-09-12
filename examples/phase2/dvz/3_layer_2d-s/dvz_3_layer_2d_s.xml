@@ -1,6 +1,9 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
   <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
+  <Parameter name="EchoXMLfile" type="string" value="run_data/echoFile"/>
+  <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="TBD"/>
     <Parameter name="Author" type="string" value="Chandrika"/>
@@ -15,8 +18,7 @@
     <ParameterList name="Structured">
       <Parameter name="Domain Low Corner" type="Array double" value="{0,0}"/>
       <Parameter name="Domain High Corner" type="Array double" value="{216,107.52}"/>
-      <Parameter name="Number of Cells" type="Array int" value="{448,256}"/>
-      <Parameter name="Number of Cells" type="Array int" value="{64,32}"/>
+      <Parameter name="Number of Cells" type="Array int" value="{432,256}"/>
     </ParameterList>
   </ParameterList>
 
@@ -28,37 +30,42 @@
     <Parameter name="Verbosity" type="string" value="Low"/>
 
     <ParameterList name="Time Integration Mode">
+      
       <ParameterList name="Initialize To Steady">
-        <Parameter name="Start" type="double" value="0"/>
-        <Parameter name="End" type="double" value="9.4672798E10"/>
+        <!--
+           
+           Start initalization:  t =    0.0 [y] = 0.0           [s]
+           Start transient:      t = 1956.0 [y] = 6.17266656e+10 [s]  
+           End transient:        t = 3000 [y] = 9.46728e+10 [s]
+           
+           Note that at 1956, the land use model changes, causing a change in the background infiltration rate.
+           At the same time the first crib starts.
+           
+          -->
+        <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="Switch" type="double" value="6.17266656e+10"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="1.e9"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.e6"/>
-      	<Parameter name="Maximum Cycle Number" type="int" value="5000"/>
-        <!-- <Parameter name="Maximum Time Step Grow" type="double" value="1"/> -->
-        <!-- <Parameter name="Maximum Time Step Shrink" type="double" value="1"/> -->
+        <Parameter name="End" type="double" value="9.46728e+10"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1000"/>
+        <Parameter name="Maximum Time Step Grow" type="double" value="1.25"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="10"/>
       </ParameterList>
-      <!-- <ParameterList name="Transient"> -->
-      <!--   <Parameter name="Start" type="double" value="0"/> -->
-      <!--   <Parameter name="End" type="double" value="315360000"/> -->
-      <!--   <Parameter name="Initial Time Step" type="double" value="1.e8"/> -->
-      <!--   <Parameter name="End" type="double" value="415576000000000"/> -->
-      <!--   <Parameter name="Initial Time Step" type="double" value="1.e8"/> -->
-      <!-- 	<Parameter name="Maximum Time Step Size" type="double" value="1e14"/> -->
-      <!-- 	<Parameter name="Maximum Cycle Number" type="int" value="10"/> -->
-      <!--   <Parameter name="Maximum Time Step Change" type="double" value="1."/> -->
-      <!--   <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/> -->
-      <!-- </ParameterList> -->
-      <!-- <ParameterList name="Transient"> -->
-      <!--   <Parameter name="Start" type="double" value="0"/> -->
-      <!--   <Parameter name="End" type="double" value="1.5e11"/> -->
-      <!--   <Parameter name="Initial Time Step" type="double" value="1.e9"/> -->
-      <!-- 	<Parameter name="Maximum Time Step Size" type="double" value="1e10"/> -->
-      <!-- 	<Parameter name="Maximum Cycle Number" type="int" value="10000"/> -->
-      <!--   <Parameter name="Maximum Time Step Grow" type="double" value="1"/> -->
-      <!--   <Parameter name="Maximum Time Step Shrink" type="double" value="-1"/> -->
-      <!--   <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/> -->
-      <!-- </ParameterList> -->
+    </ParameterList>
+    <ParameterList name="Time Period Control">
+      <!--
+   
+            The time integrator is reset at Start time, and at the Switch time.  In addition,
+            it is usually reset at abrupt changes in source term activity.  In this simulation
+            the time series for the crib discharge is the following:
+
+   // FIXME
+            t = 1956.0 [y] = 6.173178481E10 [s]   Crib 216-B-17 starts
+            t = 1956.1 [y] = 6.173705521E10 [s]   Crib 216-B-17 stops
+            t = 1956.2 [y] = 6.173178481E10 [s]   Crib 216-B-18 starts
+            t = 1956.3 [y] = 6.173705521E10 [s]   Crib 216-B-18 stops
+            
+            -->                   
+      <Parameter name="Start Times" type="Array double" value="{6.17266656E10, 6.1729344E10, 6.173178481E10}"/>
+      <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10}"/>
     </ParameterList>
     <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00032"/> -->
 
@@ -67,96 +74,60 @@
       <ParameterList name="Basic Algorithm Control">
         <ParameterList name="Expert Settings">
 
-          <!-- <Parameter name="do_multilevel_full" type="int" value="1"/> -->
-          <!-- <Parameter name="do_richard_init_to_steady" type="int" value="1"/> -->
-          <!-- <Parameter name="do_richard_sat_solve" type="int" value="0"/> -->
-
-          <!-- <Parameter name="richard_init_to_steady_verbose" type="int" value="1"/> -->
-          <!-- <Parameter name="steady_limit_iterations" type="int" value="20"/> -->
-          <!-- <Parameter name="steady_max_iterations" type="int" value="10"/> -->
-          <!-- <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/> -->
-          <!-- <Parameter name="steady_min_iterations" type="int" value="6"/> -->
-          <!-- <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/> -->
-          <!-- <Parameter name="steady_min_iterations_2" type="int" value="3"/> -->
-          <!-- <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/> -->
-          <!-- <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/> -->
-          <!-- <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.5"/> -->
-          <!-- <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/> -->
-          <!-- <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.1"/> -->
-          <!-- <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.01"/> -->
-          <!-- <Parameter name="steady_abs_residual_tolerance" type="double" value="1.e-10"/> -->
-          <!-- <Parameter name="steady_abs_pressure_update_tolerance" type="double" value="1.e0"/> -->
-          <!-- <Parameter name="steady_init_time_step" type="double" value="1.e4"/> -->
-          <!-- <Parameter name="steady_max_time_steps" type="int" value="500"/> -->
-          <!-- <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/> -->
-          <!-- <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/> -->
-          <!-- <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/> -->
-          <!-- <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/> -->
-          <!-- <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/> -->
-
-          <!-- <Parameter name="richard_solver_verbose" type="int" value="1"/> -->
-          <!-- <Parameter name="richard_max_ls_iterations" type="int" value="10"/> -->
-          <!-- <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/> -->
-          <!-- <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/> -->
-          <!-- <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/> -->
-          <!-- <Parameter name="richard_monitor_linear_solve" type="int" value="0"/> -->
-          <!-- <Parameter name="richard_monitor_line_search" type="int" value="0"/> -->
-          <!-- <Parameter name="verbose" type="double" value="2"/> -->
-          
           <Parameter name="do_multilevel_full" type="int" value="1"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="0"/>
           <Parameter name="do_richard_sat_solve" type="int" value="0"/>
-
-          <Parameter name="richard_init_to_steady_verbose" type="int" value="3"/>
-          <Parameter name="steady_limit_iterations" type="int" value="50"/>
-          <Parameter name="steady_max_iterations" type="int" value="40"/>
+          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
+          <Parameter name="steady_limit_iterations" type="int" value="20"/>
+          <Parameter name="steady_max_iterations" type="int" value="15"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
-          <Parameter name="steady_min_iterations" type="int" value="30"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/>
-          <Parameter name="steady_min_iterations_2" type="int" value="1"/>
-          <Parameter name="steady_time_step_increase_factor_2" type="double" value="5"/>
+          <Parameter name="steady_min_iterations" type="int" value="10"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="1.25"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="2"/>
+          <Parameter name="steady_min_iterations_2" type="int" value="0"/>
+          <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
-          <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.5"/>
-          <Parameter name="steady_max_consecutive_failures_2" type="int" value="2"/>
-          <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.1"/>
-          <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.01"/>
-          <!-- <Parameter name="steady_init_time_step" type="double" value="1.e4"/> -->
-          <Parameter name="steady_max_time_steps" type="int" value="1000"/>
-          <Parameter name="steady_max_time_step_size" type="double" value="1.e20"/>
+          <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.05"/>
+          <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
+          <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.01"/>
+          <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.001"/>
+          <Parameter name="steady_max_time_steps" type="int" value="500"/>
           <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
           <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
-          <!-- <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e14"/> -->
+          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
           <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
           <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
-          <Parameter name="steady_abs_update_tolerance" type="double" value="1.e-10"/>
-          <Parameter name="steady_rel_update_tolerance" type="double" value="-1"/>
-          <Parameter name="steady_abs_tolerance" type="double" value="1.e-9"/>
-          <Parameter name="steady_rel_tolerance" type="double" value="1.e-10"/>
           <Parameter name="steady_limit_function_evals" type="int" value="100000000"/>
+          <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
+          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="double" value="1.e-3"/>
 
-          <Parameter name="richard_solver_verbose" type="int" value="3"/>
+          <Parameter name="richard_solver_verbose" type="int" value="2"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
-          <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
+          <Parameter name="richard_ls_acceptance_factor" type="double" value="50"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="0"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-6"/>
+
           <Parameter name="richard_use_fd_jac" type="int" value="1"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-8"/>
           <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
-          <Parameter name="richard_pressure_maxorder" type="int" value="4"/>
-          <Parameter name="v" type="int" value="0"/>
+          <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
+          <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
+          <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
+
+          <Parameter name="verbose" type="int" value="2"/>
 
         </ParameterList>
       </ParameterList>
       
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="1"/>
-        <Parameter name="Blocking Factor" type="Array int" value="{32, 32, 32, 32}"/>
-        <Parameter name="Maximum Grid Size" type="Array int" value="{64, 64, 64, 64}"/>
+        <Parameter name="Blocking Factor" type="Array int" value="{16}"/>
+        <Parameter name="Maximum Grid Size" type="Array int" value="{64}"/>
 	<ParameterList name="Expert Settings">
           <Parameter name="v" type="int" value="1"/>
         </ParameterList>
@@ -165,16 +136,7 @@
       <ParameterList name="Iterative Linear Solver Control">
 	<ParameterList name="Multigrid Algorithm">
 	  <ParameterList name="Expert Settings">
-	    <Parameter name="cg_solver" type="int" value="1"/>
-	    <Parameter name="maxiter" type="int" value="1000"/>
-	    <Parameter name="nu_0" type="int" value="2"/>
-	    <Parameter name="nu_1" type="int" value="2"/>
-	    <Parameter name="nu_2" type="int" value="16"/>
-	    <Parameter name="nu_f" type="int" value="2"/>
-	    <Parameter name="rtol_b" type="double" value="1.e-4"/>
-	    <Parameter name="smooth_on_cg_unstable" type="int" value="1"/>
 	    <Parameter name="v" type="int" value="0"/>
-            <Parameter name="max_L0_growth" type="double" value="10"/>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
@@ -492,24 +454,27 @@
   </ParameterList>
   <ParameterList name="Output">
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <ParameterList name="Time Macros"/>
-    <ParameterList name="Cycle Macros">
-      <ParameterList name="Every 10">
-        <Parameter name="Start_Period_Stop" type="Array int" value="{0,10,-1}"/>
-      </ParameterList>
-      <ParameterList name="Every 1">
-        <Parameter name="Start_Period_Stop" type="Array int" value="{0,1,-1}"/>
+    <ParameterList name="Time Macros">
+      <ParameterList name="Every_1_year">
+        <Parameter name="Start_Period_Stop" type="Array double" value="{6.17266656e+10,3.15576e+7,-1}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Variable Macros"/>
+    <ParameterList name="Cycle Macros">
+      <ParameterList name="Every_1.0_1000.0_-1">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
+      </ParameterList>
+      <ParameterList name="Every_10">
+        <Parameter name="Start_Period_Stop" type="Array int" value="{0,10,-1}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Observation Data"/>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="run_data/plt"/>
-      <Parameter name="Cycle Macros" type="Array string" value="{Every 1}"/>
+      <Parameter name="File Name Base" type="string" value="run_data/plot"/>
+      <Parameter name="Time Macros" type="Array string" value="{Every_1_year}"/>
     </ParameterList>
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="run_data/chk"/>
-      <Parameter name="Cycle Macros" type="Array string" value="{Every 10}"/>
+      <Parameter name="Cycle Macros" type="Array string" value="{Every_1.0_1000.0_-1}"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

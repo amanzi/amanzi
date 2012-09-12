@@ -183,6 +183,7 @@ namespace Amanzi {
                                       bool&                do_chem)
         {
             std::string ec_str = "Execution Control";
+            std::string tpc_str = "Time Period Control";
             std::string amr_str = "Adaptive Mesh Refinement Control";
             std::string prob_str = "Basic Algorithm Control";
             std::string it_str = "Iterative Linear Solver Control";
@@ -579,8 +580,70 @@ namespace Amanzi {
             // Optional lists
             //
             for (int i=0; i<optL.size(); ++i)
-            {
-                if (optL[i] == num_str)
+            {                
+                if (optL[i] == tpc_str)
+                {
+                    const std::string tpc_start_times_str = "Start Times";
+                    const std::string tpc_initial_time_steps_str = "Initial Time Step";
+                    const std::string tpc_initial_time_step_multipliers_str = "Initial Time Step Multiplier";
+                    const std::string tpc_maximum_time_steps_str = "Maximum Time Step";
+                    const ParameterList& tpc_list = ec_list.sublist(tpc_str);
+                    Array<std::string> nL, nP;
+                    PLoptions TPCopt(tpc_list,nL,nP,true,false); 
+                    const Array<std::string> TPCoptP = TPCopt.OptParms();
+
+                    Array<double> tpc_start_times, tpc_initial_time_steps, tpc_initial_time_step_multipliers, tpc_maximum_time_steps;
+                    for (int j=0; j<TPCoptP.size(); ++j)
+                    {
+                        const std::string& name = TPCoptP[j];
+                        if (name == tpc_start_times_str) {
+                            tpc_start_times = tpc_list.get<Array<double> >(tpc_start_times_str);
+                        }
+                        else if (name == tpc_initial_time_steps_str) {
+                            tpc_initial_time_steps = tpc_list.get<Array<double> >(tpc_initial_time_steps_str);
+                        }
+                        else if (name == tpc_initial_time_step_multipliers_str) {
+                            tpc_initial_time_step_multipliers = tpc_list.get<Array<double> >(tpc_initial_time_step_multipliers_str);
+                        }
+                        else if (name == tpc_maximum_time_steps_str) {
+                            tpc_maximum_time_steps = tpc_list.get<Array<double> >(tpc_maximum_time_steps_str);
+                        }
+                    }
+
+                    int num_periods = tpc_start_times.size();
+                    if (tpc_initial_time_steps.size() != num_periods) {
+                        if (tpc_initial_time_steps.size() != 0) {
+                            MyAbort("If specified, number of \""+tpc_initial_time_steps_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
+                        }
+                        else {
+                            tpc_initial_time_steps.resize(num_periods,-1);
+                        }
+                    }
+                    if (tpc_initial_time_step_multipliers.size() != num_periods) {
+                        if (tpc_initial_time_step_multipliers.size() != 0) {
+                            MyAbort("If specified, number of \""+tpc_initial_time_step_multipliers_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
+                        }
+                        else {
+                            tpc_initial_time_step_multipliers.resize(num_periods,1);
+                        }
+                    }
+                    if (tpc_maximum_time_steps.size() != num_periods) {
+                        if (tpc_maximum_time_steps.size() != 0) {
+                            MyAbort("If specified, number of \""+tpc_maximum_time_steps_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
+                        }
+                        else {
+                            tpc_maximum_time_steps.resize(num_periods,-1);
+                        }
+                    }
+
+                    if (num_periods>0) {
+                        prob_out_list.set<Array<double> >(underscore("TPC "+tpc_start_times_str), tpc_start_times);
+                        prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_steps_str), tpc_initial_time_steps);
+                        prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_step_multipliers_str), tpc_initial_time_step_multipliers);
+                        prob_out_list.set<Array<double> >(underscore("TPC "+tpc_maximum_time_steps_str), tpc_maximum_time_steps);
+                    }
+                }
+                else if (optL[i] == num_str)
                 {
                     const ParameterList& num_list = ec_list.sublist(num_str);
                     Array<std::string> nL, nP;
@@ -873,9 +936,6 @@ namespace Amanzi {
                             MyAbort("Unrecognized optional parameter to \"" + num_str + "\" list: \"" + NUMoptL[j] + "\"");
                         }
                     }
-                }
-                else {
-                    MyAbort("Unrecognized optional parameter to \"" + ec_str + "\" list: \"" + optL[i] + "\"");
                 }
             }
         }
@@ -2697,61 +2757,71 @@ namespace Amanzi {
 
             amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);
 
+            std::string output_str = "Output";
+            if (!parameter_list.isSublist(output_str)) {
+                MyAbort("Must have an \""+output_str+"\" section in the XML input file");
+            }
             const ParameterList& rlist = parameter_list.sublist("Output");
       
             // time macros
             std::set<std::string> time_macros;
-            const ParameterList& tlist = rlist.sublist("Time Macros");
-            ParameterList tmPL;
-            for (ParameterList::ConstIterator i=tlist.begin(); i!=tlist.end(); ++i) {
-                std::string label = tlist.name(i);
-                std::string _label = underscore(label);
-                const ParameterList& rslist = tlist.sublist(label);
-                Array<double> times, vals;
-                
-                ParameterList tPL;
-                for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
-                    const std::string& name = underscore(rslist.name(ii));
+            std::string time_macros_str = "Time Macros";
+            if (rlist.isSublist(time_macros_str)) {
+                const ParameterList& tlist = rlist.sublist(time_macros_str);
+                ParameterList tmPL;
+                for (ParameterList::ConstIterator i=tlist.begin(); i!=tlist.end(); ++i) {
+                    std::string label = tlist.name(i);
+                    std::string _label = underscore(label);
+                    if (!tlist.isSublist(label)) {
+                        MyAbort("Time macro \""+label+"\" must be a ParameterList");
+                    }
+                    const ParameterList& rslist = tlist.sublist(label);
+                    Array<double> times, vals;
                     
-                    if (name == "Times") {
-                        times = rslist.get<Array<double> >("Times");
-                    }
-                    else if (name == "Start_Period_Stop") {
-                        vals = rslist.get<Array<double> >("Start_Period_Stop");
-                    }
-                    else {
-                        std::cerr << "Invalid parameter in time macro  \"" << name
-                                  << "\""  << std::endl;
-                        throw std::exception();
-                    }
-                    
-                    std::string type;
-                    if (times.size()) {
-                        if (vals.size()) {
-                            std::cerr << "Cannot specify both time values and periods for time macro  \"" << name
+                    ParameterList tPL;
+                    for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
+                        const std::string& name = underscore(rslist.name(ii));
+                        
+                        if (name == "Times") {
+                            times = rslist.get<Array<double> >("Times");
+                        }
+                        else if (name == "Start_Period_Stop") {
+                            vals = rslist.get<Array<double> >("Start_Period_Stop");
+                        }
+                        else {
+                            std::cerr << "Invalid parameter in time macro  \"" << name
                                       << "\""  << std::endl;
                             throw std::exception();
                         }
-                        type = "times";
-                        tPL.set<Array<double> >("times",times);
-                    }
-                    else {
-                        if (vals.size()!=3) {
-                            std::cerr << "Incorrect number of values in time macro:  \"" << name
-                                      << "\""  << std::endl;
-                            throw std::exception();
+                        
+                        std::string type;
+                        if (times.size()) {
+                            if (vals.size()) {
+                                std::cerr << "Cannot specify both time values and periods for time macro  \"" << name
+                                          << "\""  << std::endl;
+                                throw std::exception();
+                            }
+                            type = "times";
+                            tPL.set<Array<double> >("times",times);
                         }
-                        type = "period";
-                        tPL.set<double>("start",vals[0]);
-                        tPL.set<double>("period",vals[1]);
-                        tPL.set<double>("stop",vals[2]);
+                        else {
+                            if (vals.size()!=3) {
+                                std::cerr << "Incorrect number of values in time macro:  \"" << name
+                                          << "\""  << std::endl;
+                                throw std::exception();
+                            }
+                            type = "period";
+                            tPL.set<double>("start",vals[0]);
+                            tPL.set<double>("period",vals[1]);
+                            tPL.set<double>("stop",vals[2]);
+                        }
+                        tPL.set<std::string>("type",type);
+                        tmPL.set(_label,tPL);
+                        time_macros.insert(_label);
                     }
-                    tPL.set<std::string>("type",type);
-                    tmPL.set(_label,tPL);
-                    time_macros.insert(_label);
                 }
+                amr_list.set("time_macro",tmPL);
             }
-            amr_list.set("time_macro",tmPL);
 
             Array<std::string> tma(time_macros.size());
             int cnt = 0;
@@ -2760,8 +2830,6 @@ namespace Amanzi {
             }
             amr_list.set<Array<std::string> >("time_macros",tma);
             
-
-
             // cycle macros
             std::set<std::string> cycle_macros;
 	    Array<std::string> cma;
@@ -2895,12 +2963,14 @@ namespace Amanzi {
                                     std::cerr << "Unrecognized time macro in \""+vis_data_str+"\": \""
                                               << vtMacros[i] << "\"" << std::endl;
                                     
+                                    std::cout << "Known macros: ";
                                     for (std::set<std::string>::const_iterator it=time_macros.begin();
                                          it!=time_macros.end(); ++it) {
-                                        std::cout << *it << " " << std::endl;
+                                        std::cout << *it << " ";
                                     }
-                                    throw std::exception();
+                                    std::cout << std::endl;
                                 }
+                                throw std::exception();
                             }
                         }
                     }
@@ -2913,12 +2983,10 @@ namespace Amanzi {
             //
             // Set default to dump all known fields
             if (!vis_vars_set) {
-                visNames.resize(user_derive_list.size());
                 for (int j=0; j<user_derive_list.size(); ++j) {
                     visNames.push_back(underscore(user_derive_list[j])); 
                 }
             }
-
 
             amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
             amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);

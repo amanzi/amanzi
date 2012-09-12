@@ -458,6 +458,7 @@ public:
 
   static Array<std::string> vis_cycle_macros, vis_time_macros;
   static Array<std::string> chk_cycle_macros, chk_time_macros;
+  static Array<std::string> tpc_labels;
   static int echo_inputs;
 
   void BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs);
@@ -1289,6 +1290,11 @@ protected:
   static std::string execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;
+  static Array<Real> tpc_start_times;
+  static Array<Real> tpc_initial_time_steps;
+  static Array<Real> tpc_initial_time_step_multipliers;
+  static Array<Real> tpc_maximum_time_steps;
+
 
   static int  richard_solver_verbose;
 
@@ -1325,7 +1331,7 @@ protected:
   static Real steady_abs_update_tolerance;
   static Real steady_rel_update_tolerance;
   static int  steady_do_grid_sequence;
-  static Real steady_grid_sequence_new_level_dt_factor;
+  static Array<Real> steady_grid_sequence_new_level_dt_factor;
 
   //
   // Newton step defaults

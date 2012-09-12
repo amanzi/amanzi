@@ -151,6 +151,45 @@ c ::: ----------------------------------------------------------
          end do
       end do
 
+#if 1
+c    ::: kpedge in x-dir
+      do i = imin, imax+1
+         fi = ratio*i
+         do j = jmin, jmax  
+            fj = ratio*j
+            kappax(i,j) = zero            
+            do k = 0,ratio-1
+               kl1 = 0
+               kl2 = 0
+               do l = 0,ratio-1
+                  kl1 = kl1 + one/kappadata(fi+l,fj+k,1)
+                  kl2 = kl2 + one/kappadata(fi-1-l,fj+k,1)
+               end do
+               kappax(i,j) = kappax(i,j) + two*ratio/(kl1 + kl2)
+            enddo
+            kappax(i,j) = kappax(i,j)/DBLE(ratio)
+         end do
+      end do
+         
+c     ::: kpedge in y-dir
+      do j = jmin, jmax+1
+         fj = ratio*j
+         do i = imin, imax         
+            fi = ratio*i
+            kappay(i,j) = zero
+            do k = 0,ratio-1   
+               kl1 = 0
+               kl2 = 0
+               do l = 0,ratio-1
+                  kl1 = kl1 + one/kappadata(fi+k,fj+l,2)
+                  kl2 = kl2 + one/kappadata(fi+k,fj-1-l,2)
+               end do
+               kappay(i,j) = kappay(i,j) + two*ratio/(kl1 + kl2)
+            end do
+            kappay(i,j) = kappay(i,j)/DBLE(ratio)
+         end do
+      end do
+#else
 c    ::: kpedge in x-dir
       do i = imin, imax+1
          fi = ratio*i
@@ -198,7 +237,7 @@ c     ::: kpedge in y-dir
             kappay(i,j) = two/(one/k1 + one/k2)
          end do
       end do
-
+#endif
       end
 
 

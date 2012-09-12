@@ -1788,6 +1788,18 @@ PorousMedia::richard_init_to_steady()
 	int total_rejected_Newton_steps = 0;
 
 	int grid_seq_init_fine = (steady_do_grid_sequence ? 0 : finest_level);
+
+        if (steady_do_grid_sequence) {
+            BL_ASSERT(steady_grid_sequence_new_level_dt_factor.size()>0);
+            Array<Real> new_level_dt_factor(finest_level,steady_grid_sequence_new_level_dt_factor[0]);
+            if (steady_grid_sequence_new_level_dt_factor.size()>1) {
+                new_level_dt_factor = steady_grid_sequence_new_level_dt_factor;
+            }
+            if (new_level_dt_factor.size()<finest_level-1) {
+                BoxLib::Abort("steady_grid_sequence_new_level_dt_factor requires either 1 or max_level entries");
+            }
+        }
+
 	for (int grid_seq_fine=grid_seq_init_fine; grid_seq_fine<=finest_level; ++grid_seq_fine) {
 
 	  int num_active_levels = grid_seq_fine + 1;
@@ -1796,7 +1808,7 @@ PorousMedia::richard_init_to_steady()
           }
 
 	  if (num_active_levels > 1) {
-	    dt *= steady_grid_sequence_new_level_dt_factor;
+	    dt *= steady_grid_sequence_new_level_dt_factor[num_active_levels-2];
 	  }
 
 	  Layout layout_sub(parent,num_active_levels);	  
@@ -2533,7 +2545,7 @@ PorousMedia::advance (Real time,
 	    // Old state is chem-advanced in-place.  Hook set to get grow data
 	    //  from squirreled away data rather than via a vanilla fillpatch
 	    strang_chem(time,dt/2,HYP_GROW);
-	    FillPatchedOldState_ok = false;
+	    // FillPatchedOldState_ok = false;  FIXME: Reacted state not yet squirreled away anywhere
 	  }
       }
 
@@ -3200,7 +3212,7 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
                     Real next_dt_subcycle_transport = std::min(fine_lev.dt_eig,tmax_subcycle_transport - tnew_subcycle_transport);
                     
                     if (richard_solver_verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
-                        std::cout << "    TRANSPORT: Subtcycle: " << n_subcycle_transport
+                        std::cout << "    TRANSPORT: Subcycle: " << n_subcycle_transport
                                   << " TIME from " << t_subcycle_transport
                                   << " to " <<  t_subcycle_transport + dt_subcycle_transport
                                   << ", DT_SUB = " << dt_subcycle_transport  << std::endl;
@@ -7443,7 +7455,8 @@ PorousMedia::computeNewDt (int                   finest_level,
   //          the solver.  If nothing else is at play, we use this
   // 
   // 3) Events mananged by PMAmr - These events are processed after this routine is called,
-  //          potentially chopping the timestep down to hit an event.  Ignore here.
+  //          potentially chopping the timestep down to hit an event.  Ignore all but time
+  //          period control intervals
   //
   // 4) User input dt_fixed
   //
@@ -7457,6 +7470,7 @@ PorousMedia::computeNewDt (int                   finest_level,
   bool check_for_dt_cut_by_event = true;
   bool in_transient_period = false;
 
+  int  tpc_interval = -1;
   Real dt_event = -1;
   Real dt_prev_suggest = -1;
   Real dt_eig_local = -1;
@@ -7542,6 +7556,29 @@ PorousMedia::computeNewDt (int                   finest_level,
 
       if (solute_transport_limits_dt && dt_eig_local>0) {
           dt_0 = std::min(dt_0, dt_eig_local);
+      }
+
+      int tpc_interval = -1;
+      for (int i=0; i<tpc_labels.size(); ++i) {
+          if (state[State_Type].curTime() >= tpc_start_times[i]) {
+              tpc_interval = i;
+          }
+      }
+      if (tpc_interval >= 0) {
+
+          if (tpc_initial_time_steps.size()>tpc_interval 
+              && tpc_initial_time_steps[tpc_interval]>0 
+              && (std::abs(state[State_Type].curTime() - tpc_start_times[tpc_interval]) < tpc_initial_time_steps[tpc_interval])) {
+              dt_0 = tpc_initial_time_steps[tpc_interval];
+          }
+          if (tpc_initial_time_step_multipliers.size()>tpc_interval 
+              && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
+              dt_0 *= tpc_initial_time_step_multipliers[tpc_interval];
+          }
+          if (tpc_maximum_time_steps.size()>tpc_interval
+              && tpc_maximum_time_steps[tpc_interval] > 0) {
+              dt_0 = std::min(dt_0,tpc_maximum_time_steps[tpc_interval]);
+          }          
       }
   }
 
@@ -11294,22 +11331,29 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
         FArrayBox sdat;
 
         // HACK
-        // If exec_mode is "init_to_steady", then build an adjust eval time such that
+        // If exec_mode is "init_to_steady", then build an adjusted eval time such that
         // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
         // if t^n = switch time, we are leaving switch_time, eval exactly at that time
         Real t_eval = time;
-        if (execution_mode=="init_to_steady") {
+        Real prev_time = state[State_Type].prevTime();
+        if (execution_mode=="init_to_steady" && prev_time >= PMParent()->GetStartTime()) {
             Real curr_time = state[State_Type].curTime();
-            Real prev_time = state[State_Type].prevTime();
-            Real teps = (curr_time - prev_time)*1.e-3;
+                Real teps = (curr_time - prev_time)*1.e-3;
 
-            if (time>0 &&  std::abs(time - switch_time) < teps) {
-                t_eval = prev_time;
-                t_eval = 0;
-                //std::cout.precision(20);
-                //std::cout << "For rho.S, adjust t_eval to " << t_eval << std::endl;
+            if (std::abs(curr_time - switch_time) < teps) {
+                t_eval = std::min(t_eval, switch_time - teps);
             }
+
+            if (std::abs(prev_time - switch_time) < teps) {
+                t_eval = std::max(t_eval, switch_time + teps);
+            }
+            //if (ParallelDescriptor::IOProcessor() && t_eval != time) {
+            //    std::cout << "NOTE: Adjusting eval time for saturation to avoid straddling tpc" << std::endl;
+            //  std::cout << "prev_time, curr_time, switch_time: " 
+            //            << prev_time << ", " << curr_time << ", " << switch_time << ", " << parent->cumTime() << ", " << PMParent()->GetStartTime() << std::endl;
+            //}
         }
+
 
 
         for (std::map<Orientation,BCDesc>::const_iterator
@@ -11343,21 +11387,28 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
     BL_ASSERT(setup_tracer_transport > 0);
     
     // HACK
-    // If exec_mode is "init_to_steady", then build an adjust eval time such that
+    // If exec_mode is "init_to_steady", then build an adjusted eval time such that
     // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
     // if t^n = switch time, we are leaving switch_time, eval exactly at that time
     Real t_eval = time;
-    if (execution_mode=="init_to_steady") {
+    Real prev_time = state[State_Type].prevTime();
+    if (execution_mode=="init_to_steady" && prev_time >= PMParent()->GetStartTime()) {
         Real curr_time = state[State_Type].curTime();
-        Real prev_time = state[State_Type].prevTime();
         Real teps = (curr_time - prev_time)*1.e-3;
         
-        if (time>0 && std::abs(time - switch_time) < teps) {
-            t_eval = prev_time;
-            t_eval = 0;
-            //std::cout.precision(20);
-            //std::cout << "For tracer, adjust t_eval to " << t_eval << std::endl;
+        if (std::abs(curr_time - switch_time) < teps) {
+            t_eval = std::min(t_eval, switch_time - teps);
         }
+        
+        if (std::abs(prev_time - switch_time) < teps) {
+            t_eval = std::max(t_eval, switch_time + teps);
+        }
+        //if (ParallelDescriptor::IOProcessor() && t_eval != time) {
+        //          std::cout << "NOTE: Adjusting eval time for solutes to avoid straddling tpc" << std::endl;
+        //  std::cout << "prev_time, curr_time, switch_time: " 
+        //            << prev_time << ", " << curr_time << ", " << switch_time << std::endl;
+        //}
+
     }
     
     for (int n=0; n<nComp; ++n) 
@@ -11401,21 +11452,27 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
     {
 
         // HACK
-        // If exec_mode is "init_to_steady", then build an adjust eval time such that
+        // If exec_mode is "init_to_steady", then build an adjusted eval time such that
         // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
         // if t^n = switch time, we are leaving switch_time, eval exactly at that time
         Real t_eval = time;
-        if (execution_mode=="init_to_steady") {
+        Real prev_time = state[Press_Type].prevTime();
+        if (execution_mode=="init_to_steady" && prev_time >= PMParent()->GetStartTime()) {
             Real curr_time = state[Press_Type].curTime();
-            Real prev_time = state[Press_Type].prevTime();
             Real teps = (curr_time - prev_time)*1.e-3;
 
-            if (time>0 &&  std::abs(time - switch_time) < teps) {
-                t_eval = prev_time;
-                t_eval = 0;
-                //std::cout.precision(20);
-                //std::cout << "For pressure, adjust t_eval to " << t_eval << std::endl;
+            if (std::abs(curr_time - switch_time) < teps) {
+                t_eval = std::min(t_eval, switch_time - teps);
             }
+
+            if (std::abs(prev_time - switch_time) < teps) {
+                t_eval = std::max(t_eval, switch_time + teps);
+            }
+            //if (ParallelDescriptor::IOProcessor() && t_eval != time) {
+            //  std::cout << "NOTE: Adjusting eval time for pressure to avoid straddling tpc" << std::endl;
+            //  std::cout << "prev_time, curr_time, switch_time: " 
+            //            << prev_time << ", " << curr_time << ", " << switch_time << std::endl;
+            //}
         }
 
         const Box domain = geom.Domain();

@@ -317,7 +317,7 @@ Real PorousMedia::steady_rel_tolerance;
 Real PorousMedia::steady_abs_update_tolerance;
 Real PorousMedia::steady_rel_update_tolerance;
 int  PorousMedia::steady_do_grid_sequence;
-Real PorousMedia::steady_grid_sequence_new_level_dt_factor;
+Array<Real> PorousMedia::steady_grid_sequence_new_level_dt_factor;
 
 int  PorousMedia::richard_max_ls_iterations;
 Real PorousMedia::richard_min_ls_factor;
@@ -335,6 +335,11 @@ bool PorousMedia::richard_semi_analytic_J;
 
 std::string PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
+Array<Real> PorousMedia::tpc_start_times;
+Array<Real> PorousMedia::tpc_initial_time_steps;
+Array<Real> PorousMedia::tpc_initial_time_step_multipliers;
+Array<Real> PorousMedia::tpc_maximum_time_steps;
+Array<std::string> PorousMedia::tpc_labels;
 
 static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
 namespace
@@ -587,6 +592,11 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::execution_mode      = "transient";
   PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
+  PorousMedia::tpc_start_times.resize(0);
+  PorousMedia::tpc_initial_time_steps.resize(0);
+  PorousMedia::tpc_initial_time_step_multipliers.resize(0);
+  PorousMedia::tpc_maximum_time_steps.resize(0);
+  PorousMedia::tpc_labels.resize(0);
 
   PorousMedia::richard_solver_verbose = 1;
 
@@ -618,7 +628,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_abs_update_tolerance = 1.e-12;
   PorousMedia::steady_rel_update_tolerance = -1;
   PorousMedia::steady_do_grid_sequence = 1;
-  PorousMedia::steady_grid_sequence_new_level_dt_factor = 1.e-5;
+  PorousMedia::steady_grid_sequence_new_level_dt_factor.resize(1,1.e-5);
 
   PorousMedia::richard_max_ls_iterations = 10;
   PorousMedia::richard_min_ls_factor = 1.e-8;
@@ -686,23 +696,39 @@ PorousMedia::variableSetUp ()
           if (!BoxLib::UtilCreateDirectory(df.first, 0755)) {
               BoxLib::CreateDirectoryFailed(df.first);
           }
+
+          ofs.open(pp_dump_file.c_str());
+          if (ofs.fail()) {
+              BoxLib::Abort(std::string("Cannot open pp dump file: "+pp_dump_file).c_str());
+          }
+          if (verbose>1)
+          {
+              std::cout << "\nDumping ParmParse table:\n";
+          }
+
+          // NOTE: Formatting useless since all data are strings at this point
+          //
+          // std::ios::fmtflags oflags = ofs.flags();
+          // ofs.setf(std::ios::floatfield, std::ios::scientific);
+          // int old_prec = ofs.precision(15);
+
+          bool prettyPrint = false;
+          ParmParse::dumpTable(ofs,prettyPrint);
+
+          // ofs.flags(oflags);
+          // ofs.precision(old_prec);
+
+          if (!ofs.good())
+              BoxLib::Error("Write of pp dump file failed");
+          
+
+          if (verbose>1)
+          {
+              std::cout << "... done dumping ParmParse table.\n" << '\n';
+          }
+          ofs.close();
       }
       ParallelDescriptor::Barrier();
-
-      ofs.open(pp_dump_file.c_str());
-      if (ofs.fail()) {
-          BoxLib::Abort(std::string("Cannot open pp dump file: "+pp_dump_file).c_str());
-      }
-      if (verbose>1 && ParallelDescriptor::IOProcessor())
-      {
-          std::cout << "\nDumping ParmParse table:\n";
-      }
-      ParmParse::dumpTable(ofs);
-      if (verbose>1 && ParallelDescriptor::IOProcessor())
-      {
-          std::cout << "... done dumping ParmParse table.\n" << '\n';
-      }
-      ofs.close();
   }
 
   read_params(); 
@@ -1552,6 +1578,41 @@ void PorousMedia::read_prob()
   //  
   ParmParse pb("prob");
 
+  int ntps = pb.countval("TPC_Start_Times");
+  if (ntps) {
+      tpc_start_times.resize(ntps);
+      pb.getarr("TPC_Start_Times",tpc_start_times,0,ntps);
+
+      int ndt = pb.countval("TPC_Initial_Time_Step");
+      BL_ASSERT(ndt==0 || ndt==ntps);
+      tpc_initial_time_steps.resize(ndt,-1);
+      if (ndt>0) {
+          pb.getarr("TPC_Initial_Time_Step",tpc_initial_time_steps,0,ndt);
+      }
+
+      int ndtm = pb.countval("TPC_Initial_Time_Step_Multiplier");
+      BL_ASSERT(ndtm==0 || ndtm==ntps);
+      tpc_initial_time_step_multipliers.resize(ndt,-1);
+      if (ndtm>0) {
+          pb.getarr("TPC_Initial_Time_Step_Multiplier",tpc_initial_time_step_multipliers,0,ndtm);
+      }
+
+      int ndtmax = pb.countval("TPC_Maximum_Time_Step");
+      BL_ASSERT(ndtmax==0 || ndtmax==ntps);
+      tpc_initial_time_steps.resize(ndtmax,-1);
+      if (ndtmax>0) {
+          pb.getarr("TPC_Maximum_Time_Step",tpc_maximum_time_steps,0,ndtmax);
+      }
+  }
+
+  tpc_labels.resize(ntps);
+  for (int i=0; i<ntps; ++i) {
+      int ndigits = (int) (std::log10(ntps) + .0001) + 1;
+      tpc_labels[i] = BoxLib::Concatenate("Time_Period_Begin_",i,ndigits);
+      defined_events[tpc_labels[i]] = new EventCoord::TimeEvent(Array<Real>(1,tpc_start_times[i]));
+      PMAmr::eventCoord().Register(tpc_labels[i],defined_events[tpc_labels[i]]);
+  }
+
   // determine the model based on model_name
   pb.query("model_name",model_name);
   model = model_list[model_name];
@@ -1599,8 +1660,10 @@ void PorousMedia::read_prob()
   pb.query("steady_abs_update_tolerance",steady_abs_update_tolerance);
   pb.query("steady_rel_update_tolerance",steady_rel_update_tolerance);
   pb.query("steady_do_grid_sequence",steady_do_grid_sequence);
-  pb.query("steady_grid_sequence_new_level_dt_factor",steady_grid_sequence_new_level_dt_factor);
-
+  int ndt = pb.countval("steady_grid_sequence_new_level_dt_factor");
+  if (ndt > 0) {
+      pb.getarr("steady_grid_sequence_new_level_dt_factor",steady_grid_sequence_new_level_dt_factor,0,ndt);
+  }
   pb.query("richard_max_ls_iterations",richard_max_ls_iterations);
   pb.query("richard_min_ls_factor",richard_min_ls_factor);
   pb.query("richard_ls_acceptance_factor",richard_ls_acceptance_factor);

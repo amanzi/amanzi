@@ -310,6 +310,9 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnTypInvV,PCapParamsMFT,2); CHKPETSC(ierr); // sigma = 1/P_typ
 
+  // HACK
+  //ierr = VecSet(SolnTypInvV,1); CHKPETSC(ierr);
+
   if (params.scale_soln_before_solve) {
       ierr = VecPointwiseMult(SolnV,SolnV,SolnTypInvV); // Mult(w,x,y): w=x.y  -- Scale IC
   }
@@ -1232,6 +1235,24 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
   PetscFunctionReturn(0);
 } 
 
+void RecordSolve(std::string& record_file,Vec& x,Vec& y,Vec& w,Vec& F,Vec& G,CheckCtx* check_ctx)
+{
+    if (ParallelDescriptor::IOProcessor())
+        if (!BoxLib::UtilCreateDirectory(record_file, 0755))
+            BoxLib::CreateDirectoryFailed(record_file);
+
+    RichardSolver* rs = check_ctx->rs;
+    Layout& layout = check_ctx->rs->GetLayout();
+    int nLevs = rs->GetNumLevels();
+    MFTower res(layout,MFTower::CC,1,0,nLevs);
+    PetscErrorCode ierr;
+    ierr = layout.VecToMFTower(res,G,0);
+    res.Write(BoxLib::Concatenate(record_file + "/Res_undamped_",dump_cnt,2));
+    ierr = layout.VecToMFTower(res,y,0);
+    res.Write(BoxLib::Concatenate(record_file + "/Update_undamped_",dump_cnt,2));
+    dump_cnt++;
+}
+
 /*
    PostCheck - User-defined routine that checks the validity of
    candidate steps of a line search method.  Set by SNESLineSearchSetPostCheck().
@@ -1280,17 +1301,11 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     (*func)(snes,w,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);    
 
-#if 0
-    if (rs->GetNumLevels() == 2) {
-      Layout& layout = check_ctx->rs->GetLayout();
-      int nLevs = rs->GetNumLevels();
-      MFTower res(layout,MFTower::CC,1,0,nLevs);
-      ierr = layout.VecToMFTower(res,G,0);
-      VisMF::Write(res[nLevs-1],BoxLib::Concatenate("JUNK_",dump_cnt,2));
-      dump_cnt++;
-      if (dump_cnt>11) BoxLib::Abort();
+    bool record_entire_solve = false;
+    std::string record_file = "SNES";
+    if (record_entire_solve) {
+        RecordSolve(record_file,x,y,w,F,G,check_ctx);
     }
-#endif
     
     bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
     int ls_iterations = 0;
