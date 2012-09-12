@@ -425,7 +425,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     ML_list = prec_list;
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     // read some boomer amg parameters
     hypre_ncycles = prec_list.get<int>("cycle applications", 5);
     hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
@@ -448,7 +448,7 @@ void Matrix_MFD::UpdatePreconditioner()
     MLprec->SetParameterList(ML_list);
     MLprec->ComputePreconditioner();
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
@@ -576,7 +576,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Tf, Yf);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     ierr |= IfpHypre_Sff_->ApplyInverse(Tf, Yf);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {

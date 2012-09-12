@@ -28,8 +28,9 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Flow_State.hpp"
 
-#include "Ifpack.h"
-#include "Ifpack_Hypre.h"
+#include "Ifpack.h" 
+// note that if trilinos is compiled with hypre support, then
+// including Ifpack.h results in the definition of HAVE_HYPRE
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -125,7 +126,7 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
   Teuchos::ParameterList ifp_plist_;
 
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
   double hypre_tol, hypre_strong_threshold;
   int hypre_nsmooth, hypre_ncycles;

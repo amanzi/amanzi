@@ -11,5 +11,8 @@
 #define PARTICLE_DENSITY                1.0
 #define CHEM_TRANS_DT_RATIO             1.0
 #define MAX_DIVERGENT_ITERATIONS        3
+#define ELL_MUALEM                      0.5
+#define ELL_BURDINE                     2.0
+
 
 #endif

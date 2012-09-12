@@ -5,7 +5,7 @@
 #include <iomanip>
 
 Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
-  plist(plist_), disabled(false), comm(comm_)
+  plist(plist_), disabled(false), comm(comm_), restart_output(NULL)
 {
   read_parameters(plist);
 
@@ -22,13 +22,13 @@ Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_)
 }
 
 // this constructor makes an object that will not create any output
-Amanzi::Restart::Restart (): disabled(true)
+Amanzi::Restart::Restart (): disabled(true), restart_output(NULL)
 {
 }
 
 Amanzi::Restart::~Restart() 
 {
-  delete restart_output;
+  if (!restart_output) delete restart_output;
 }
 
 

@@ -45,10 +45,6 @@ endif()
 
 # Need to move this to roo level -- lpritch
 add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
-if (Ifpack_ENABLE_HYPRE)
-  include_directories(${Ifpack_INCLUDE_DIRS})
-  add_definitions("-DHAVE_HYPRE_API")
-endif()
 #
 # Library: flow
 #

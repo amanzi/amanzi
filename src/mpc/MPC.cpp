@@ -334,6 +334,23 @@ void MPC::cycle_driver() {
     Amanzi::timer_manager.stop("Chemistry PK");
   }
 
+
+  if (chemistry_enabled) {
+    // create stor for chemistry data
+    int number_of_secondaries(0);
+    if (S->secondary_activity_coeff() != Teuchos::null) {
+      number_of_secondaries = S->secondary_activity_coeff()->NumVectors();
+    }
+    chem_data_ = Teuchos::rcp( new chemistry_data (mesh_maps->cell_map(false),
+						   S->get_total_component_concentration()->NumVectors(), 
+						   S->number_of_minerals(),
+						   number_of_secondaries,
+						   S->number_of_ion_exchange_sites(), 
+						   S->number_of_sorption_sites(),
+						   S->using_sorption(),
+						   S->use_sorption_isotherms()) );
+  }
+
   int iter = 0;  // set the iteration counter to zero
   S->set_cycle(iter);
 
@@ -612,6 +629,20 @@ void MPC::cycle_driver() {
           }
 
           if (chemistry_enabled) {
+	    // first store the chemistry state
+	    chem_data_->store(S->free_ion_concentrations(),
+			      S->primary_activity_coeff(),
+			      S->secondary_activity_coeff(),
+			      S->mineral_volume_fractions(),
+			      S->mineral_specific_surface_area(),
+			      S->total_sorbed(),
+			      S->sorption_sites(),
+			      S->surface_complex_free_site_conc(),
+			      S->ion_exchange_sites(),
+			      S->ion_exchange_ref_cation_conc(),
+			      S->isotherm_kd(),
+			      S->isotherm_freundlich_n(),
+			      S->isotherm_langmuir_b());
             try {
               if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
                 *out << "Chemistry PK: advancing...." << std::endl;
@@ -713,6 +744,11 @@ void MPC::cycle_driver() {
     *out << ",  Time(years) = "<< S->get_time()/ (365.25*60*60*24);
     *out << std::endl;
   }
+
+
+  // clean up
+  delete visualization;
+  delete restart;
 }
 
 

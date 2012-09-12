@@ -7,7 +7,7 @@
 
 
 Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
-    plist(plist_), disabled(false), comm(comm_), hasCycleData_(false)
+    plist(plist_), disabled(false), comm(comm_), hasCycleData_(false), viz_output(NULL)
 {
   read_parameters(plist);
 
@@ -16,7 +16,7 @@ Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
 }
 
 // this constructor makes an object that will not create any output
-Amanzi::Vis::Vis (): disabled(true), hasCycleData_(false)
+Amanzi::Vis::Vis (): disabled(true), hasCycleData_(false), viz_output(NULL)
 {
 }
 
@@ -69,7 +69,7 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 
 Amanzi::Vis::~Vis ()
 {
-  delete viz_output;
+  if (!viz_output) delete viz_output;
 }
 
 
