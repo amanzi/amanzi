@@ -623,51 +623,54 @@ endif (BLA_VENDOR MATCHES "Intel*" OR BLA_VENDOR STREQUAL "All")
 
 if ( BLA_VENDOR MATCHES "Cray_LibSci" OR BLA_VENDOR STREQUAL "All")
 
-    # lpritch: The environment variables are based on cray-libsci
-    # version 11.1.00. Tested against gnu, intel and pgi programming
-    # environemts on hopper.ersc.gov. Will likely change in future
-    # releases.
+    if ( NOT BLAS_LIBRARIES )
+      # lpritch: The environment variables are based on cray-libsci
+      # version 11.1.00. Tested against gnu, intel and pgi programming
+      # environemts on hopper.ersc.gov. Will likely change in future
+      # releases.
 
-    # Cray installs these libraries by compiler name and version
-    set(_cray_search_dir)
-    set(_cray_mc_version mc12)
-    set(_cray_search_libs)
-    string(TOUPPER ${CMAKE_Fortran_COMPILER_ID} _cray_compiler)
-    if ( "$ENV{CRAY_LIBSCI_BASE_DIR}"  STREQUAL "" )
-      message(WARNING "CRAY_LIBSCI_BASE_DIR not defined LibSci will fail.")
-    else()
-      if ( "${_cray_compiler}" STREQUAL "INTEL" )
-        set(_cray_compiler_dir INTEL/$ENV{INTEL_LIBSCI}/${_cray_mc_version}/lib)
-	set(_cray_search_libs sci_intel)
-      elseif ( "${_cray_compiler}" STREQUAL "PGI" )
-        set(_cray_compiler_dir PGI/$ENV{PGI_LIBSCI}/${_cray_mc_version}/lib)
-	set(_cray_search_libs sci_pgi)
-      elseif ( "${_cray_compiler}" STREQUAL "GNU" )
-	set(_cray_search_libs sci_gnu)
-        if ( "${CMAKE_Fortran_COMPILER_VERSION}" VERSION_LESS 4.7 ) 
-	    set(_cray_compiler_dir GNU/$ENV{GNU46_LIBSCI}/${_cray_mc_version}/lib)
-        else()    
-	    set(_cray_compiler_dir GNU/$ENV{GNU47_LIBSCI}/${_cray_mc_version}/lib)
-        endif()  
+      # Cray installs these libraries by compiler name and version
+      set(_cray_search_dir)
+      set(_cray_mc_version mc12)
+      set(_cray_search_libs)
+      string(TOUPPER ${CMAKE_Fortran_COMPILER_ID} _cray_compiler)
+      if ( "$ENV{CRAY_LIBSCI_BASE_DIR}"  STREQUAL "" )
+        message(WARNING "CRAY_LIBSCI_BASE_DIR not defined LibSci will fail.")
       else()
-        message(WARNING "Failed to define compiler search path")
-      endif()
-      set(_cray_search_dir $ENV{CRAY_LIBSCI_BASE_DIR}/${_cray_compiler_dir})
-      message(STATUS "Cray search directory=${_cray_search_dir}")
-      message(STATUS "Cray search libs=${_cray_search_libs}")
-    endif()	
-      	
- 
-    # Search for dgemm
-    check_fortran_libraries(
-    BLAS_LIBRARIES
-    BLAS
-    "dgemm"
-    ""
-    ${_cray_search_libs}
-    ""
-    ${_cray_search_dir}
-    )
+        if ( "${_cray_compiler}" STREQUAL "INTEL" )
+          set(_cray_compiler_dir INTEL/$ENV{INTEL_LIBSCI}/${_cray_mc_version}/lib)
+  	set(_cray_search_libs sci_intel)
+        elseif ( "${_cray_compiler}" STREQUAL "PGI" )
+          set(_cray_compiler_dir PGI/$ENV{PGI_LIBSCI}/${_cray_mc_version}/lib)
+  	set(_cray_search_libs sci_pgi)
+        elseif ( "${_cray_compiler}" STREQUAL "GNU" )
+  	set(_cray_search_libs sci_gnu)
+          if ( "${CMAKE_Fortran_COMPILER_VERSION}" VERSION_LESS 4.7 ) 
+  	    set(_cray_compiler_dir GNU/$ENV{GNU46_LIBSCI}/${_cray_mc_version}/lib)
+          else()    
+  	    set(_cray_compiler_dir GNU/$ENV{GNU47_LIBSCI}/${_cray_mc_version}/lib)
+          endif()  
+        else()
+          message(WARNING "Failed to define compiler search path")
+        endif()
+        set(_cray_search_dir $ENV{CRAY_LIBSCI_BASE_DIR}/${_cray_compiler_dir})
+        message(STATUS "Cray search directory=${_cray_search_dir}")
+        message(STATUS "Cray search libs=${_cray_search_libs}")
+      endif()	
+        	
+   
+      # Search for dgemm
+      check_fortran_libraries(
+      BLAS_LIBRARIES
+      BLAS
+      "dgemm"
+      ""
+      ${_cray_search_libs}
+      ""
+      ${_cray_search_dir}
+      )
+
+  endif(NOT BLAS_LIBRARIES)  
 
 endif( BLA_VENDOR MATCHES "Cray_LibSci" OR BLA_VENDOR STREQUAL "All")
 

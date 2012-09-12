@@ -346,6 +346,8 @@ if (BLA_VENDOR MATCHES "Intel*" OR BLA_VENDOR STREQUAL "All")
 endif(BLA_VENDOR MATCHES "Intel*" OR BLA_VENDOR STREQUAL "All")
 
 if(BLA_VENDOR MATCHES "Cray_LibSci" OR BLA_VENDOR STREQUAL "All")
+
+  if ( NOT LAPACK_LIBRARIES )
    
     # lpritch: The environment variables are based on cray-libsci
     # version 11.1.00. Tested against gnu, intel and pgi programming
@@ -393,6 +395,8 @@ if(BLA_VENDOR MATCHES "Cray_LibSci" OR BLA_VENDOR STREQUAL "All")
     ""
     ${_cray_search_dir}
     )
+
+  endif(NOT LAPACK_LIBRARIES)
 
  
 endif(BLA_VENDOR MATCHES "Cray_LibSci" OR BLA_VENDOR STREQUAL "All")
