@@ -32,12 +32,6 @@ public:
 
     static EventCoord& eventCoord() {return event_coord;}
 
-    void SetCumTime(Real strt_time) {cumtime = strt_time;}
-    Real GetCumTime() const {return cumtime;}
-  
-    Real GetStartTime() const {return strt_time;}
-    void SetStartTime(Real time) {strt_time = time;}
-
     static Layout& GetLayout() {return layout;}
 
     Real Dt0FromPreviousAdvance() const {return dt0_from_previous_advance;}

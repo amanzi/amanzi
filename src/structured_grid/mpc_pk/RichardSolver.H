@@ -30,6 +30,7 @@ public:
     Real stol; // Absolute tolerance for norm(dp), dp is the Newton update
     bool scale_soln_before_solve; // Switch, scale P by 1/sigma before solve?
     bool semi_analytic_J; // Explicitly use dPc/ds relationship in computing the Jacobian
+    bool centered_diff_J; // Numerical J is computed with centered difference instead of forward
   };
 
   RichardSolver(PMAmr&          pm_amr,

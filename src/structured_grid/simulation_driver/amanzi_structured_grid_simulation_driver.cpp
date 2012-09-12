@@ -138,6 +138,15 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         amrptr->coarseTimeStep(stop_time);
     }
 
+    // Write final checkpoint and plotfile
+    if (amrptr->stepOfLastCheckPoint() < amrptr->levelSteps(0)) {
+        amrptr->checkPoint();
+    }
+
+    if (amrptr->stepOfLastPlotFile() < amrptr->levelSteps(0)) {
+        amrptr->writePlotFile();
+    }
+
     // Process the observations
     const PArray<Observation>& observation_array = PorousMedia::TheObservationArray();
 

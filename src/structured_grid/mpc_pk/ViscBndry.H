@@ -23,8 +23,8 @@ public:
     {}
 
     virtual void setBndryConds (const BCRec&   phys_bc,
-                                IntVect& ratio,
-				int comp=0);
+                                const IntVect& ratio,
+				int            comp=0);
 
     virtual void setScalarBndryConds (const BCRec&   phys_bc,
 				      IntVect& ratio,

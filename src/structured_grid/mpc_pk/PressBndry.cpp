@@ -16,9 +16,9 @@ PressBndry::PressBndry (const BoxArray& _grids,
 {}
 
 void
-PressBndry::setBndryConds (const BCRec& phys_bc,
-			   IntVect&     ratio,
-			   int          comp)
+PressBndry::setBndryConds (const BCRec&   phys_bc,
+			   const IntVect& ratio,
+			   int            comp)
 {
     //
     // ALL BCLOC VALUES ARE NOW DEFINED AS A LENGTH IN PHYSICAL
@@ -31,7 +31,7 @@ PressBndry::setBndryConds (const BCRec& phys_bc,
 
     for (OrientationIter fi; fi; ++fi)
     {
-      Array<Real>& bloc                = bcloc[fi()];
+      BndryData::RealTuple& bloc = bcloc[fi()];
       Array< Array<BoundCond> >& bctag = bcond[fi()];
 
       int dir    = fi().coordDir();

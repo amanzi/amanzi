@@ -135,7 +135,7 @@ PMAmr::init (Real strt_time_,
                        cumtime, dt_level[0], level_steps[0], 0);
 
         if (write_plot) {
-            writePlotFile(plot_file_root,level_steps[0]);
+            writePlotFile();
         }
 
         if (write_check) {
@@ -265,7 +265,7 @@ PMAmr::pm_timeStep (int  level,
     if (plotfile_on_restart && !(restart_file.empty()) )
     {
 	plotfile_on_restart = 0;
-	writePlotFile(plot_file_root,level_steps[0]);
+	writePlotFile();
     }
     //
     // Advance grids at this level.
@@ -494,14 +494,12 @@ PMAmr::coarseTimeStep (Real stop_time)
 
     if (write_check || (to_checkpoint==1))
     {
-        last_checkpoint = level_steps[0];
         checkPoint();
     }
 
     if (write_plot)
     {
-        last_plotfile = level_steps[0];
-        writePlotFile(plot_file_root,level_steps[0]);
+        writePlotFile();
     }
 
     if (to_stop)

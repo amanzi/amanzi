@@ -28,6 +28,10 @@
 
 #include <MFTower.H>
 
+#ifdef MG_USE_FBOXLIB
+#include <stencil_types.H>
+#endif
+
 #if defined(BL_OSF1)
 #if defined(BL_USE_DOUBLE)
 const Real BL_BOGUS      = DBL_QNAN;
@@ -577,7 +581,7 @@ Diffusion::diffuse_scalar (Real                   dt,
 	}
       }
 
-      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
+      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal, CC_CROSS_STENCIL);
       mgt_solver.set_maxorder(max_order);
 
       const MultiFab* aa_p[1];
@@ -797,7 +801,7 @@ Diffusion::diffuse_iter_CPL (Real                   dt,
 	}
       }
 
-      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
+      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal, CC_CROSS_STENCIL);
       mgt_solver.set_maxorder(max_order);
 
       const MultiFab* aa_p[1];
@@ -2832,7 +2836,7 @@ Diffusion::solve(ABecLaplacian*    visc_op,
 	}
       }
 
-      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
+      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal, CC_CROSS_STENCIL);
       mgt_solver.set_maxorder(max_order);
 
       const MultiFab* aa_p[1];
@@ -3262,7 +3266,7 @@ Diffusion::getOp (int                   comp,
     }
   }
 
-  MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
+  MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal, CC_CROSS_STENCIL);
   mgt_solver.set_maxorder(max_order);
     
   return mgt_solver;
@@ -3324,7 +3328,7 @@ Diffusion::getOp (int                                     comp,
     }
   }
 
-  MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
+  MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal, CC_CROSS_STENCIL);
   mgt_solver.set_maxorder(max_order);
     
   return mgt_solver;

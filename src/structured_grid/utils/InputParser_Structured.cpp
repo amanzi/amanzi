@@ -876,8 +876,8 @@ namespace Amanzi {
             amr_out_list.set<Array<int> >("blocking_factor",blocking_factor);
             amr_out_list.set<Array<int> >("n_error_buf",n_err_buf);
             amr_out_list.set<Array<int> >("max_grid_size",max_grid);
-            int amr_nosub = ( do_amr_subcycling ? 0 : 1);
-            amr_out_list.set<int>("nosub", amr_nosub);
+            std::string amr_subcycling_mode = ( do_amr_subcycling ? "Auto" : "None");
+            amr_out_list.set<std::string>("subcycling_mode", amr_subcycling_mode);
 
             amr_out_list.set("v",amr_v);
             mg_out_list.set("v",mg_v);

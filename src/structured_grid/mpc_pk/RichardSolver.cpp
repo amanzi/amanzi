@@ -26,6 +26,8 @@ static Real stol_DEF = 1e-12;
 static bool scale_soln_before_solve_DEF = true;
 static bool semi_analytic_J_DEF = false;
 
+static bool centered_diff_J_DEF = true;
+
 RichardSolver::RSParams::RSParams()
 {
   // Set default values for all parameters
@@ -46,6 +48,7 @@ RichardSolver::RSParams::RSParams()
   stol = stol_DEF;
   scale_soln_before_solve = scale_soln_before_solve_DEF;
   semi_analytic_J = semi_analytic_J_DEF;
+  centered_diff_J = centered_diff_J_DEF;
 }
 
 static RichardSolver* static_rs_ptr = 0;
@@ -1737,15 +1740,17 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   Real dt_inv = 1/rs->GetDt();
 
   ierr = VecGetOwnershipRange(w1,&start,&end);CHKPETSC(ierr); /* OwnershipRange is used by ghosted x! */
-      
-  /* Set w1 = F(x1) */
-  if (coloring->F) {
-    w1          = coloring->F; /* use already computed value of function */
-    coloring->F = 0; 
-  } else {
-    ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-    ierr = (*f)(sctx,x1_tmp,w1,fctx);CHKPETSC(ierr);
-    ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+
+  if (!rs->Parameters().centered_diff_J) {
+      /* Set w1 = F(x1) */
+      if (coloring->F) {
+          w1          = coloring->F; /* use already computed value of function */
+          coloring->F = 0; 
+      } else {
+          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = (*f)(sctx,x1_tmp,w1,fctx);CHKPETSC(ierr);
+          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      }
   }
       
   if (!coloring->w3) {
@@ -1777,8 +1782,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
   // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
   //
-  Vec w4;
-  ierr = VecDuplicate(w3,&w4); CHKPETSC(ierr);
+  Vec& w4 = rs->GetTrialResV(); // A handy Vec to use if centered diff for J
 
   for (k=0; k<coloring->ncolors; k++) { 
       coloring->currentcolor = k;
@@ -1803,22 +1807,24 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
       if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array + start;
       ierr = VecRestoreArray(w4,&w4_array);CHKPETSC(ierr);
 
-#if 1
-      // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
-      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-      PetscReal epsilon_inv = 1/epsilon;
-#else
-      // w2 - w1 = F(w3) - F(w4) = F(x1 + dx) - F(x1 - dx)
-      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-      ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);        
-      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-      PetscReal epsilon_inv = 0.5/epsilon;
-#endif
+      PetscReal epsilon_inv;
+      if (rs->Parameters().centered_diff_J) {
+          // w2 <- w2 - w1 = F(w3) - F(w4) = F(x1 + dx) - F(x1 - dx)
+          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+          ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);        
+          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+          epsilon_inv = 0.5/epsilon;
+      }
+      else {
+          // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
+          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+          epsilon_inv = 1/epsilon;
+      }
       
       // Insert (w2_j / dx) into J_ij [include diagonal term, dR1_i/dpbar_i = alphabar
       ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          

@@ -2041,7 +2041,7 @@ PorousMedia::richard_init_to_steady()
 	}
 
         ParallelDescriptor::Barrier();
-	Real time_after_init = p->GetStartTime();
+	Real time_after_init = p->startTime();
 	for (int lev = 0; lev <= finest_level; lev++) {
 	  getLevel(lev).setTimeLevel(time_after_init,dt_save[lev],dt_save[lev]);
 	}
@@ -2053,8 +2053,8 @@ PorousMedia::richard_init_to_steady()
 	// Re-instate timestep.
 	//	
 	if (execution_mode=="init_to_steady") {
-	  p->SetStartTime(t_max);
-	  p->SetCumTime(t_max);
+	  p->setStartTime(t_max);
+	  p->setCumTime(t_max);
 	}
 	parent->setDtLevel(dt_save);
 	parent->setNCycle(nc_save);
@@ -3353,7 +3353,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
             }
 
             PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
-            p->SetCumTime(t_subcycle_transport);
+            p->setCumTime(t_subcycle_transport);
 
             fine_lev.setTimeLevel(t_subcycle_transport+dt_subcycle_transport,
 				  dt_subcycle_transport,dt_subcycle_transport);
@@ -3413,8 +3413,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
         }
       }
   }
-  PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
-  p->SetCumTime(time); // reset to start of subcycled time period
+  parent->setCumTime(time); // reset to start of subcycled time period
   return true;
 }
 
@@ -7419,8 +7418,8 @@ PorousMedia::GetUserInputInitDt()
 
     if (execution_mode=="init_to_steady")
     {
-        Real cum_time = PMParent()->GetCumTime(); // Time evolved to so far
-        Real start_time = PMParent()->GetStartTime(); // Time simulation started from
+        Real cum_time = parent->cumTime(); // Time evolved to so far
+        Real start_time = parent->startTime(); // Time simulation started from
         
         user_input_dt_init = switch_time <= start_time ?  dt_init  :  steady_init_time_step;
     } 
@@ -7479,8 +7478,8 @@ PorousMedia::computeNewDt (int                   finest_level,
   Real dt_0;
   int max_level = parent->maxLevel();
 
-  Real cum_time = PMParent()->GetCumTime(); // Time evolved to so far
-  Real start_time = PMParent()->GetStartTime(); // Time simulation started from
+  Real cum_time = parent->cumTime(); // Time evolved to so far
+  Real start_time = parent->startTime(); // Time simulation started from
 
   if (fixed_dt > 0) {
       dt_0 = fixed_dt;
@@ -7615,8 +7614,8 @@ PorousMedia::computeInitialDt (int                   finest_level,
       n_cycle[i] = sub_cycle ? parent->MaxRefRatio(i-1) : 1;
     }
 
-  Real cum_time = PMParent()->GetCumTime(); // Time evolved to so far
-  Real start_time = PMParent()->GetStartTime(); // Time simulation started from
+  Real cum_time = parent->cumTime(); // Time evolved to so far
+  Real start_time = parent->startTime(); // Time simulation started from
   
   Real dt_0 = GetUserInputInitDt();
 
@@ -7654,7 +7653,7 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
                               Array<Real>& dt_save,
                               Real         stop_time)
 {
-  const Real strt_time    = PMParent()->GetStartTime();
+  const Real strt_time    = parent->startTime();
   const int  finest_level = parent->finestLevel();
 
   if (verbose>3 && ParallelDescriptor::IOProcessor())
@@ -7664,7 +7663,7 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
 
   if (dt_init_local < 0) {
 
-      dt_init_local = stop_time - PMParent()->GetStartTime();
+      dt_init_local = stop_time - parent->startTime();
 
       // Create a temporary data structure for this solve -- this u_mac just
       //   used to compute dt.
@@ -7687,7 +7686,7 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
   }
 
   // Make something workable if stop>=start
-  if (stop_time <= PMParent()->GetStartTime())
+  if (stop_time <= parent->startTime())
   {
       dt_init_local = std::abs(dt_init);
   }
@@ -8383,14 +8382,14 @@ PorousMedia::post_init_state ()
               // Compute initial velocity field
 	      RichardSolver rs(*pmamr,RichardSolver::RSParams(),PMAmr::GetLayout());
               rs.ResetRhoSat();
-              rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->GetStartTime());
+              rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->startTime());
           }
           else {
               for (int k = 0; k <= finest_level; k++) {
                   PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(k));
                   BL_ASSERT(pm);
                   int nc = 0; // Component of water in state
-                  pm->compute_vel_phase(pm->u_mac_curr,nc,pmamr->GetStartTime());
+                  pm->compute_vel_phase(pm->u_mac_curr,nc,pmamr->startTime());
               }
           }
       }
@@ -11336,7 +11335,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
         // if t^n = switch time, we are leaving switch_time, eval exactly at that time
         Real t_eval = time;
         Real prev_time = state[State_Type].prevTime();
-        if (execution_mode=="init_to_steady" && prev_time >= PMParent()->GetStartTime()) {
+        if (execution_mode=="init_to_steady" && prev_time >= parent->startTime()) {
             Real curr_time = state[State_Type].curTime();
                 Real teps = (curr_time - prev_time)*1.e-3;
 
@@ -11392,7 +11391,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
     // if t^n = switch time, we are leaving switch_time, eval exactly at that time
     Real t_eval = time;
     Real prev_time = state[State_Type].prevTime();
-    if (execution_mode=="init_to_steady" && prev_time >= PMParent()->GetStartTime()) {
+    if (execution_mode=="init_to_steady" && prev_time >= parent->startTime()) {
         Real curr_time = state[State_Type].curTime();
         Real teps = (curr_time - prev_time)*1.e-3;
         
@@ -11457,7 +11456,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
         // if t^n = switch time, we are leaving switch_time, eval exactly at that time
         Real t_eval = time;
         Real prev_time = state[Press_Type].prevTime();
-        if (execution_mode=="init_to_steady" && prev_time >= PMParent()->GetStartTime()) {
+        if (execution_mode=="init_to_steady" && prev_time >= parent->startTime()) {
             Real curr_time = state[Press_Type].curTime();
             Real teps = (curr_time - prev_time)*1.e-3;
 
