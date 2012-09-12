@@ -188,7 +188,7 @@ Mesh_STK_Impl::element_to_faces_and_dirs(stk::mesh::EntityId element,
   stk::mesh::Entity *entity = id_to_entity(cell_rank, element);
   ASSERT (entity->identifier () == element);
 
-  const CellTopologyData* topo = stk::mesh::get_cell_topology (*entity);
+  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*entity).getCellTopologyData();
 
   ASSERT(topo != NULL);
 
@@ -335,8 +335,8 @@ Mesh_STK_Impl::coordinates (stk::mesh::EntityId node) const
 void
 Mesh_STK_Impl::set_coordinates (stk::mesh::EntityId node, const double *coords) 
 {
-
-  stk::mesh::Entity *entity = id_to_entity(stk::mesh::Node, node);
+  const int node_rank = entity_map_->kind_to_rank (NODE);
+  stk::mesh::Entity *entity = id_to_entity(node_rank, node);
   double * node_coordinates = stk::mesh::field_data(coordinate_field_, *entity);
 
   std::copy(coords, coords+space_dimension_, node_coordinates);

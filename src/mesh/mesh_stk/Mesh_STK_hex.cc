@@ -141,7 +141,6 @@ Mesh_STK::Mesh_STK (const double x0,
                     const Epetra_MpiComm *communicator,
                     const AmanziGeometry::GeometricModelPtr &gm) 
   : mesh_(),
-    entity_map_ (2),
     map_owned_(), map_used_()
 {
   Exceptions::amanzi_throw(Errors::Message("STKMesh mesh cannot generate 2D meshes"));

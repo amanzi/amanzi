@@ -80,18 +80,18 @@ SUITE (HexMesh)
     CHECK_EQUAL (mesh->rank_id (), me);
         
     int lcount, gcount;
-    lcount = mesh->count_entities(stk::mesh::Element,Amanzi::AmanziMesh::OWNED);
+    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL),Amanzi::AmanziMesh::OWNED);
     comm.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, isize*jsize*ksize);
 
-    lcount = mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED);
+    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::OWNED);
     comm.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, 
                  (isize  )*(jsize  )*(ksize+1) + 
                  (isize  )*(jsize+1)*(ksize ) + 
                  (isize+1)*(jsize  )*(ksize ));
 
-    lcount = mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED);
+    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::OWNED);
     comm.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
 
@@ -100,32 +100,32 @@ SUITE (HexMesh)
     // Check sets in a different test
     // stk::mesh::Part *side;
 
-    // side = mesh->get_set("West", stk::mesh::Face);
+    // side = mesh->get_set("West", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
     // comm.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
-    // side = mesh->get_set("East", stk::mesh::Face);
+    // side = mesh->get_set("East", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
     // comm.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
-    // side = mesh->get_set("South", stk::mesh::Face);
+    // side = mesh->get_set("South", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
     // comm.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*ksize);
 
-    // side = mesh->get_set("North", stk::mesh::Face);
+    // side = mesh->get_set("North", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
     // comm.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*ksize);
 
-    // side = mesh->get_set("Bottom", stk::mesh::Face);
+    // side = mesh->get_set("Bottom", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
     // comm.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
-    // side = mesh->get_set("East", stk::mesh::Face);
+    // side = mesh->get_set("East", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
     // comm.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, jsize*ksize);
@@ -162,7 +162,7 @@ SUITE (HexMesh)
 
     Amanzi::AmanziMesh::STK::Entity_vector e;
 
-    int ncell(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED));
+    int ncell(mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED));
 
     if (nproc > 1) {
 
@@ -170,13 +170,13 @@ SUITE (HexMesh)
 
       // all processes should have at least 1 but at most 8 shared nodes
 
-      mesh->get_entities(stk::mesh::Node, Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::GHOST, e);
       // CHECK(e.size() <= 8);
       e.clear();
 
       // processes > 1 should have only 1 ghost face
 
-      mesh->get_entities(stk::mesh::Face, Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::GHOST, e);
 
       if (me == 0) {
         // CHECK(e.empty());
@@ -187,7 +187,7 @@ SUITE (HexMesh)
 
       // the number of USED faces depends on the number of cells owned
 
-      // mesh->get_entities(stk::mesh::Face, Amanzi::AmanziMesh::USED, e);
+      // mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::USED, e);
 
       int nface_expected(ncell*5+1);
 
@@ -198,10 +198,10 @@ SUITE (HexMesh)
       // processes should have at least 1 but at most 2 shared
       // cells, but it doesn't
             
-      mesh->get_entities(stk::mesh::Element, Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::GHOST, e);
       e.clear();
            
-      mesh->get_entities(stk::mesh::Element, Amanzi::AmanziMesh::USED, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::USED, e);
       e.clear();
 
       // CHECK(!e.empty());
@@ -210,7 +210,7 @@ SUITE (HexMesh)
       // for (int p = 0; p < nproc; p++) {
       //     if (me == p) {
       //         Amanzi::AmanziMesh::STK::Entity_vector nodes;
-      //         mesh->get_entities(stk::mesh::Node, USED, nodes);
+      //         mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), USED, nodes);
       //         for (unsigned int i = 0; i < nodes.size(); i++) {
       //             unsigned int gid(nodes[i]->identifier());
       //             const double *coord = mesh->coordinates(gid);
@@ -226,13 +226,13 @@ SUITE (HexMesh)
 
     } else {
 
-      mesh->get_entities(stk::mesh::Node, Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::GHOST, e);
       CHECK(e.empty());
 
-      mesh->get_entities(stk::mesh::Face, Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::GHOST, e);
       CHECK(e.empty());
         
-      mesh->get_entities(stk::mesh::Element, Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::GHOST, e);
       CHECK(e.empty());
     }            
 
