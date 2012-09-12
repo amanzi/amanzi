@@ -48,9 +48,9 @@
         </ParameterList>
         <ParameterList name="Generate Mesh">
            <ParameterList name="Uniform Structured">
-             <Parameter name="Number of Cells" type="Array int" value="{1, 1, 200}"/>
-             <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0,  0.0}"  units="m" />
-             <Parameter name="Domain High Corner" type="Array double" value="{1.0, 1.0, 2.00}"  units="m"/>
+             <Parameter name="Number of Cells" type="Array(int)" value="{1, 1, 200}"/>
+             <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0,  0.0}"  units="m" />
+             <Parameter name="Domain High Corner" type="Array(double)" value="{1.0, 1.0, 2.00}"  units="m"/>
            </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -58,27 +58,27 @@
     <ParameterList name="Regions">
       <ParameterList name="Top Surface">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,2.0}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,2.0}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,2.0}"  units="m"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,2.0}"  units="m"/>
 			<!-- 2 meter column represented by 200 1x1x0.01 meter grid cells -->
         </ParameterList>
       </ParameterList>
       <ParameterList name="Bottom Surface">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"  units="m"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,0.0}"  units="m"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 0 and Plane Surface 1">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.5}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"  units="m"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.5}"  units="m"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 1 and Plane Surface 2">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,1.5}"  units="m"/>
-          <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,2.}"  units="m"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,1.5}"  units="m"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,2.}"  units="m"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -99,7 +99,7 @@
           <Parameter name="m" type="double" value="0.375"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
-        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
       </ParameterList>
       <ParameterList name="sand">
         <ParameterList name="Porosity: Uniform">
@@ -116,7 +116,7 @@
           <Parameter name="m" type="double" value="0.6666667"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
-        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Phase Definitions">
@@ -131,14 +131,14 @@
         </ParameterList>
         <ParameterList name="Phase Components">
           <ParameterList name="Water">
-            <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
+            <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Initial Conditions">
       <ParameterList name="All">
-        <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
         <ParameterList name="IC: Uniform Pressure">
          <Parameter name="Phase" type="string" value="Aqueous"/>
          <Parameter name="Value" type="double" value="81747."  units="Pa"/>
@@ -160,19 +160,19 @@
     </ParameterList>
     <ParameterList name="Boundary Conditions">
       <ParameterList name="BC For Bottom Surface">
-        <Parameter name="Assigned Regions" type="Array string" value="{Bottom Surface}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Bottom Surface}"/>
 		<ParameterList name="BC: Uniform Pressure">
-  	    <Parameter name="Times" type="Array double" value="{0.0, 3.16E11}" units="s"/>
-            <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-            <Parameter name="Values" type="Array double" value="{99630.6336,99630.6336}" units="Pa"/>
+  	    <Parameter name="Times" type="Array(double)" value="{0.0, 3.16E11}" units="s"/>
+            <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+            <Parameter name="Values" type="Array(double)" value="{99630.6336,99630.6336}" units="Pa"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="BC For Top Surface">
-        <Parameter name="Assigned Regions" type="Array string" value="{Top Surface}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array double" value="{0.0, 3.16E11}"/>
-          <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-          <Parameter name="Inward Mass Flux" type="Array double" value="{5.776620e-5, 5.776620e-5}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 3.16E11}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+          <Parameter name="Inward Mass Flux" type="Array(double)" value="{5.776620e-5, 5.776620e-5}"/>
 			<!-- 0.5 cm/d * (1 m/100 cm)(1 d/24 h)(1 h/3600 s) (998.2 kg/m3) -->
         </ParameterList>
       </ParameterList>
@@ -181,7 +181,7 @@
       <ParameterList name="Time Macros"/>
       <ParameterList name="Cycle Macros">
         <ParameterList name="Every_1.0_1000.0_-1">
-          <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
+          <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Variable Macros"/>

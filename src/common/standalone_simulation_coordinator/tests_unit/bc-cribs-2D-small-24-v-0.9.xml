@@ -8,59 +8,59 @@
     <!--<Parameter name="Framework" type="string" value="Structured"/>-->
     <!--<Parameter name="Framework" type="string" value="Simple"/>-->
     <ParameterList name="Generate">
-      <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
-      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-      <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+      <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
+      <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+      <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
     </ParameterList>   
   </ParameterList>
 
   <ParameterList name="Regions">
     <ParameterList name="Rwia region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0., 0.}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 6.}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0., 0.}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 6.}"/>
       </ParameterList>   
     </ParameterList>   
     <ParameterList name="Rlm region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0.,  6.0}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 11.4}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0.,  6.0}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 11.4}"/>
       </ParameterList>   
     </ParameterList>   
     <ParameterList name="CCUg region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0., 11.4}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 18.0}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0., 11.4}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 18.0}"/>
       </ParameterList>   
     </ParameterList>   
     <ParameterList name="CCuz region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0., 18.0}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 22.2}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0., 18.0}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 22.2}"/>
       </ParameterList>   
     </ParameterList>   
     <ParameterList name="Hg region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0., 22.2}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 23.4}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0., 22.2}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 23.4}"/>
       </ParameterList>   
     </ParameterList>   
     <ParameterList name="Hfs region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0., 23.4}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 82.2}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0., 23.4}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 82.2}"/>
       </ParameterList>   
     </ParameterList>   
     <ParameterList name="Hcs region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0., 82.2}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 96.0}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0., 82.2}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 96.0}"/>
       </ParameterList>   
     </ParameterList>   
     <ParameterList name="Bf region">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{  0.0, 0.,  96.0}"/>
-        <Parameter name="hi" type="Array double" value="{103.2, 0., 103.2}"/>
+        <Parameter name="lo" type="Array(double)" value="{  0.0, 0.,  96.0}"/>
+        <Parameter name="hi" type="Array(double)" value="{103.2, 0., 103.2}"/>
       </ParameterList>   
     </ParameterList>   
   </ParameterList>
@@ -74,9 +74,9 @@
         <Parameter name="permeability" type="double" value="3.7532e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.2857, 1.9401e-4, 0.103}"/>
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.2857, 1.9401e-4, 0.103}"/>
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{Rwia region}"/>
+      <Parameter name="regions" type="Array(string)" value="{Rwia region}"/>
     </ParameterList>
 
     <ParameterList name="Rlm"> 
@@ -87,9 +87,9 @@
         <Parameter name="permeability" type="double" value="5.0618e-14"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.5115, 7.3518e-4, 0.074}"/>
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.5115, 7.3518e-4, 0.074}"/>
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{Rlm region}"/>
+      <Parameter name="regions" type="Array(string)" value="{Rlm region}"/>
     </ParameterList>
 
     <ParameterList name="CCUg"> 
@@ -100,9 +100,9 @@
         <Parameter name="permeability" type="double" value="2.9989e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.6011, 2.1443e-4, 0.089}"/>
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.6011, 2.1443e-4, 0.089}"/>
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{CCUg region}"/>
+      <Parameter name="regions" type="Array(string)" value="{CCUg region}"/>
     </ParameterList>
 
     <ParameterList name="CCuz"> 
@@ -113,9 +113,9 @@
         <Parameter name="permeability" type="double" value="5.0618e-14"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.4203, 1.7358e-4, 0.134}"/>
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{CCuz region}"/>
+      <Parameter name="regions" type="Array(string)" value="{CCuz region}"/>
     </ParameterList>
 
     <ParameterList name="Hg"> 
@@ -126,9 +126,9 @@
         <Parameter name="permeability" type="double" value="2.9989e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.5554, 5.1054e-5, 0.097}"/>
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{Hg region}"/>
+      <Parameter name="regions" type="Array(string)" value="{Hg region}"/>
     </ParameterList>
 
     <ParameterList name="Hfs"> 
@@ -139,9 +139,9 @@
         <Parameter name="permeability" type="double" value="2.0447e-12"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.4203, 1.7358e-4, 0.134}"/>
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{Hfs region}"/>
+      <Parameter name="regions" type="Array(string)" value="{Hfs region}"/>
     </ParameterList>
 
     <ParameterList name="Hcs"> 
@@ -152,9 +152,9 @@
         <Parameter name="permeability" type="double" value="4.8346e-12"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.5554, 5.1054e-5, 0.097}"/>
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{Hcs region}"/>
+      <Parameter name="regions" type="Array(string)" value="{Hcs region}"/>
     </ParameterList>
 
     <ParameterList name="Bf"> 
@@ -165,16 +165,16 @@
         <Parameter name="permeability" type="double" value="5.4344e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.3976, 8.1687e-5, 0.135}"/> 
+        <Parameter name="m alpha slr" type="Array(double)" value="{0.3976, 8.1687e-5, 0.135}"/> 
       </ParameterList>
-      <Parameter name="regions" type="Array string" value="{Bf region}"/>
+      <Parameter name="regions" type="Array(string)" value="{Bf region}"/>
     </ParameterList>
   </ParameterList>
 
 
   <ParameterList name="State">
 
-    <Parameter name="Gravity" type="Array double" value="{0.0, 0.0, -9.81}"/>
+    <Parameter name="Gravity" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
 
     <ParameterList name="Water">
       <Parameter name="mass density" type="double" value="998.32"/>
@@ -231,7 +231,7 @@
       <Parameter name="state id" type="string" value="water"/>
       <Parameter name="region" type="string" value="all"/>
       <Parameter name="functional" type="string" value="integral"/>
-      <Parameter name="times" type="Array double" value="{0.0}"/>
+      <Parameter name="times" type="Array(double)" value="{0.0}"/>
     </ParameterList>
   </ParameterList>
 

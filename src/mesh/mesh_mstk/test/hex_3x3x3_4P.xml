@@ -1,55 +1,55 @@
 <ParameterList name="Regions">
   <ParameterList name="Bottom LS">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="String" value="10000"/>
-      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
-      <Parameter name="Format" type="String" value="Exodus II"/>
-      <Parameter name="Entity" type="String" value="Cell"/>
+      <Parameter name="Label" type="string" value="10000"/>
+      <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Cell"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Middle LS">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="String" value="20000"/>
-      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
-      <Parameter name="Format" type="String" value="Exodus II"/>
-      <Parameter name="Entity" type="String" value="Cell"/>
+      <Parameter name="Label" type="string" value="20000"/>
+      <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Cell"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top LS">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="String" value="30000"/>
-      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
-      <Parameter name="Format" type="String" value="Exodus II"/>
-      <Parameter name="Entity" type="String" value="Cell"/>
+      <Parameter name="Label" type="string" value="30000"/>
+      <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Cell"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Bottom+Middle Box">
     <ParameterList name="Region: Box">
-      <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-      <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.66}"/>
+      <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+      <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,0.66}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top Box">
     <ParameterList name="Region: Box">
-      <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.66}"/>
-      <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.0}"/>
+      <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.66}"/>
+      <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Bottom ColFunc">
     <ParameterList name="Region: Color Function">
-      <Parameter name="File" type="String" value="test/colorfunc.txt"/>
+      <Parameter name="File" type="string" value="test/colorfunc.txt"/>
       <Parameter name="Value" type="int" value="25"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Middle ColFunc">
     <ParameterList name="Region: Color Function">
-      <Parameter name="File" type="String" value="test/colorfunc.txt"/>
+      <Parameter name="File" type="string" value="test/colorfunc.txt"/>
       <Parameter name="Value" type="int" value="33"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top ColFunc">
     <ParameterList name="Region: Color Function">
-      <Parameter name="File" type="String" value="test/colorfunc.txt"/>
+      <Parameter name="File" type="string" value="test/colorfunc.txt"/>
       <Parameter name="Value" type="int" value="10"/>
     </ParameterList>
   </ParameterList>
@@ -57,30 +57,30 @@
   <!-- sidesets -->
   <ParameterList name="Face 101">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="String" value="101"/>
-      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
-      <Parameter name="Format" type="String" value="Exodus II"/>
-      <Parameter name="Entity" type="String" value="Face"/>
+      <Parameter name="Label" type="string" value="101"/>
+      <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Face"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Face 30004">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="String" value="30004"/>
-      <Parameter name="File" type="String" value="hex_3x3x3_ss.exo"/>
-      <Parameter name="Format" type="String" value="Exodus II"/>
-      <Parameter name="Entity" type="String" value="Face"/>
+      <Parameter name="Label" type="string" value="30004"/>
+      <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="Face"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="ZLO FACE Plane">
     <ParameterList name="Region: Plane">
-      <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
-      <Parameter name="Direction" type="Array double" value="{0.0,0.0,1.0}"/>
+      <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
+      <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,1.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="YLO FACE Box">
     <ParameterList name="Region: Box">
-      <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-      <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0,1.0}"/>
+      <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+      <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0,1.0}"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

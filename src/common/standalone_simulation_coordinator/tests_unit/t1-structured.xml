@@ -7,7 +7,7 @@
   </ParameterList>
   <ParameterList name="amr">
     <Parameter name="check_file" type="string" value="test_1/dump-"/>
-    <Parameter name="chk_cycle_macros" type="Array string" value="{Every-10-steps}"/>
+    <Parameter name="chk_cycle_macros" type="Array(string)" value="{Every-10-steps}"/>
     <ParameterList name="cycle_macro">
       <ParameterList name="Every-10-steps">
         <Parameter name="period" type="int" value="10"/>
@@ -16,53 +16,53 @@
         <Parameter name="type" type="string" value="period"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="cycle_macros" type="Array string" value="{Every-10-steps}"/>
-    <Parameter name="derive_plot_vars" type="Array string" value="{Material_ID, Capillary_Pressure}"/>
+    <Parameter name="cycle_macros" type="Array(string)" value="{Every-10-steps}"/>
+    <Parameter name="derive_plot_vars" type="Array(string)" value="{Material_ID, Capillary_Pressure}"/>
     <Parameter isUsed="true" name="max_level" type="int" value="0"/>
-    <Parameter name="n_cell" type="Array int" value="{64, 128}"/>
+    <Parameter name="n_cell" type="Array(int)" value="{64, 128}"/>
     <Parameter name="plot_file" type="string" value="test_1/viz-"/>
-    <Parameter name="ref_ratio" type="Array int" value="{2}"/>
+    <Parameter name="ref_ratio" type="Array(int)" value="{2}"/>
     <ParameterList name="time_macro">
       <ParameterList name="Long">
-        <Parameter name="times" type="Array double" value="{1e+06}"/>
+        <Parameter name="times" type="Array(double)" value="{1e+06}"/>
         <Parameter name="type" type="string" value="times"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="time_macros" type="Array string" value="{Long}"/>
-    <Parameter name="user_derive_list" type="Array string" value="{Material_ID, Capillary_Pressure, Volumetric_Water_Content, Porosity, Aqueous_Saturation, Aqueous_Pressure}"/>
+    <Parameter name="time_macros" type="Array(string)" value="{Long}"/>
+    <Parameter name="user_derive_list" type="Array(string)" value="{Material_ID, Capillary_Pressure, Volumetric_Water_Content, Porosity, Aqueous_Saturation, Aqueous_Pressure}"/>
     <Parameter name="v" type="int" value="1"/>
-    <Parameter name="vis_cycle_macros" type="Array string" value="{Every-10-steps}"/>
+    <Parameter name="vis_cycle_macros" type="Array(string)" value="{Every-10-steps}"/>
   </ParameterList>
   <ParameterList name="cg"/>
   <ParameterList name="comp">
-    <Parameter name="bc_labels" type="Array string" value="{BC_For_Inflow, BC_For_No_Flow, BC_For_Scalar}"/>
+    <Parameter name="bc_labels" type="Array(string)" value="{BC_For_Inflow, BC_For_No_Flow, BC_For_Scalar}"/>
     <ParameterList name="bcs">
       <ParameterList name="BC_For_Inflow">
-        <Parameter name="aqueous_vol_flux" type="Array double" value="{1.1091e-10}"/>
-        <Parameter isUsed="true" name="regions" type="Array string" value="{YHIBC}"/>
+        <Parameter name="aqueous_vol_flux" type="Array(double)" value="{1.1091e-10}"/>
+        <Parameter isUsed="true" name="regions" type="Array(string)" value="{YHIBC}"/>
         <Parameter name="rock" type="string" value="Bf"/>
         <Parameter isUsed="true" name="type" type="string" value="zero_total_velocity"/>
       </ParameterList>
       <ParameterList name="BC_For_No_Flow">
-        <Parameter isUsed="true" name="regions" type="Array string" value="{XLOBC, XHIBC}"/>
+        <Parameter isUsed="true" name="regions" type="Array(string)" value="{XLOBC, XHIBC}"/>
         <Parameter isUsed="true" name="type" type="string" value="noflow"/>
       </ParameterList>
       <ParameterList name="BC_For_Scalar">
-        <Parameter isUsed="true" name="regions" type="Array string" value="{YLOBC}"/>
+        <Parameter isUsed="true" name="regions" type="Array(string)" value="{YLOBC}"/>
         <Parameter isUsed="true" name="type" type="string" value="pressure"/>
-        <Parameter name="vals" type="Array double" value="{101325}"/>
+        <Parameter name="vals" type="Array(double)" value="{101325}"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="hi_bc" type="Array int" value="{4, 1}"/>
-    <Parameter name="ic_labels" type="Array string" value="{IC_For_Domain}"/>
+    <Parameter name="hi_bc" type="Array(int)" value="{4, 1}"/>
+    <Parameter name="ic_labels" type="Array(string)" value="{IC_For_Domain}"/>
     <ParameterList name="ics">
       <ParameterList name="IC_For_Domain">
-        <Parameter name="regions" type="Array string" value="{All}"/>
+        <Parameter name="regions" type="Array(string)" value="{All}"/>
         <Parameter name="type" type="string" value="hydrostatic"/>
         <Parameter name="water_table_height" type="double" value="0"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="lo_bc" type="Array int" value="{4, 1}"/>
+    <Parameter name="lo_bc" type="Array(int)" value="{4, 1}"/>
   </ParameterList>
   <ParameterList name="diffuse"/>
   <ParameterList name="geometry">
@@ -81,10 +81,10 @@
     </ParameterList>
     <Parameter name="coord_sys" type="string" value="0"/>
     <Parameter name="geometry_eps" type="double" value="0.0001032"/>
-    <Parameter name="is_periodic" type="Array int" value="{0, 0}"/>
-    <Parameter name="prob_hi" type="Array double" value="{32, 64}"/>
-    <Parameter name="prob_lo" type="Array double" value="{0, 0}"/>
-    <Parameter name="regions" type="Array string" value="{Top-half, Bottom-half}"/>
+    <Parameter name="is_periodic" type="Array(int)" value="{0, 0}"/>
+    <Parameter name="prob_hi" type="Array(double)" value="{32, 64}"/>
+    <Parameter name="prob_lo" type="Array(double)" value="{0, 0}"/>
+    <Parameter name="regions" type="Array(string)" value="{Top-half, Bottom-half}"/>
   </ParameterList>
   <ParameterList name="mac"/>
   <ParameterList name="mg">
@@ -99,7 +99,7 @@
     <Parameter name="v" type="string" value="0"/>
   </ParameterList>
   <ParameterList name="observation">
-    <Parameter name="observation" type="Array string" value="{output01}"/>
+    <Parameter name="observation" type="Array(string)" value="{output01}"/>
     <ParameterList name="output01">
       <Parameter name="field" type="string" value="Volumetric_Water_Content"/>
       <Parameter name="obs_type" type="string" value="integral"/>
@@ -109,18 +109,18 @@
   </ParameterList>
   <ParameterList name="phase">
     <ParameterList name="Aqueous">
-      <Parameter name="comps" type="Array string" value="{Water}"/>
-      <Parameter name="density" type="Array double" value="{998}"/>
-      <Parameter name="diffusivity" type="Array double" value="{-1}"/>
-      <Parameter name="viscosity" type="Array double" value="{0.00089}"/>
+      <Parameter name="comps" type="Array(string)" value="{Water}"/>
+      <Parameter name="density" type="Array(double)" value="{998}"/>
+      <Parameter name="diffusivity" type="Array(double)" value="{-1}"/>
+      <Parameter name="viscosity" type="Array(double)" value="{0.00089}"/>
     </ParameterList>
-    <Parameter name="phases" type="Array string" value="{Aqueous}"/>
+    <Parameter name="phases" type="Array(string)" value="{Aqueous}"/>
   </ParameterList>
   <ParameterList name="press">
-    <Parameter name="hi_bc" type="Array int" value="{4, 1}"/>
-    <Parameter name="inflow_bc_hi" type="Array int" value="{0, 1}"/>
-    <Parameter name="inflow_bc_lo" type="Array int" value="{0, 0}"/>
-    <Parameter name="lo_bc" type="Array int" value="{4, 2}"/>
+    <Parameter name="hi_bc" type="Array(int)" value="{4, 1}"/>
+    <Parameter name="inflow_bc_hi" type="Array(int)" value="{0, 1}"/>
+    <Parameter name="inflow_bc_lo" type="Array(int)" value="{0, 0}"/>
+    <Parameter name="lo_bc" type="Array(int)" value="{4, 2}"/>
   </ParameterList>
   <ParameterList name="prob">
     <Parameter name="cfl" type="int" value="1"/>
@@ -135,60 +135,60 @@
   </ParameterList>
   <ParameterList name="rock">
     <ParameterList name="Bf">
-      <Parameter name="cpl_param" type="Array double" value="{0.28571, 19.5557, 0.103, 0}"/>
+      <Parameter name="cpl_param" type="Array(double)" value="{0.28571, 19.5557, 0.103, 0}"/>
       <Parameter name="cpl_type" type="int" value="3"/>
       <Parameter name="density" type="double" value="1000"/>
-      <Parameter name="kr_param" type="Array double" value="{0.28571, 0.103, 0}"/>
+      <Parameter name="kr_param" type="Array(double)" value="{0.28571, 0.103, 0}"/>
       <Parameter name="kr_type" type="int" value="3"/>
-      <Parameter name="permeability" type="Array double" value="{617.677, 617.677}"/>
+      <Parameter name="permeability" type="Array(double)" value="{617.677, 617.677}"/>
       <Parameter name="permeability_dist" type="string" value="uniform"/>
       <Parameter name="porosity" type="double" value="0.158"/>
       <Parameter name="porosity_dist" type="string" value="uniform"/>
-      <Parameter name="regions" type="Array string" value="{Top-half}"/>
+      <Parameter name="regions" type="Array(string)" value="{Top-half}"/>
     </ParameterList>
     <ParameterList name="Hfs">
-      <Parameter name="cpl_param" type="Array double" value="{0.25, 20, 0.15, 0}"/>
+      <Parameter name="cpl_param" type="Array(double)" value="{0.25, 20, 0.15, 0}"/>
       <Parameter name="cpl_type" type="int" value="3"/>
       <Parameter name="density" type="double" value="1000"/>
-      <Parameter name="kr_param" type="Array double" value="{0.25, 0.15, 0}"/>
+      <Parameter name="kr_param" type="Array(double)" value="{0.25, 0.15, 0}"/>
       <Parameter name="kr_type" type="int" value="3"/>
-      <Parameter name="permeability" type="Array double" value="{500, 500}"/>
+      <Parameter name="permeability" type="Array(double)" value="{500, 500}"/>
       <Parameter name="permeability_dist" type="string" value="uniform"/>
       <Parameter name="porosity" type="double" value="0.2"/>
       <Parameter name="porosity_dist" type="string" value="uniform"/>
-      <Parameter name="regions" type="Array string" value="{Bottom-half}"/>
+      <Parameter name="regions" type="Array(string)" value="{Bottom-half}"/>
     </ParameterList>
     <Parameter name="permeability_file" type="string" value="test_1/kp"/>
     <Parameter name="porosity_file" type="string" value="test_1/pp"/>
-    <Parameter name="rock" type="Array string" value="{Bf, Hfs}"/>
+    <Parameter name="rock" type="Array(string)" value="{Bf, Hfs}"/>
   </ParameterList>
   <ParameterList name="source"/>
   <Parameter name="stop_time" type="double" value="1.e6"/>
   <ParameterList name="tracer">
     <ParameterList name="Tc-99">
       <ParameterList name="BC_For_Inflow">
-        <Parameter name="regions" type="Array string" value="{YHIBC}"/>
+        <Parameter name="regions" type="Array(string)" value="{YHIBC}"/>
         <Parameter name="type" type="string" value="concentration"/>
-        <Parameter name="vals" type="Array double" value="{0}"/>
+        <Parameter name="vals" type="Array(double)" value="{0}"/>
       </ParameterList>
       <ParameterList name="BC_For_No_Flow">
-        <Parameter name="regions" type="Array string" value="{XLOBC, XHIBC}"/>
+        <Parameter name="regions" type="Array(string)" value="{XLOBC, XHIBC}"/>
         <Parameter name="type" type="string" value="noflow"/>
       </ParameterList>
       <ParameterList name="BC_For_Scalar">
-        <Parameter name="regions" type="Array string" value="{YLOBC}"/>
+        <Parameter name="regions" type="Array(string)" value="{YLOBC}"/>
         <Parameter name="type" type="string" value="outflow"/>
       </ParameterList>
       <ParameterList name="IC_For_Domain">
-        <Parameter name="regions" type="Array string" value="{All}"/>
+        <Parameter name="regions" type="Array(string)" value="{All}"/>
         <Parameter name="type" type="string" value="concentration"/>
         <Parameter name="val" type="double" value="0"/>
       </ParameterList>
       <Parameter name="group" type="string" value="Total"/>
-      <Parameter name="tbcs" type="Array string" value="{BC_For_Inflow, BC_For_No_Flow, BC_For_Scalar}"/>
-      <Parameter name="tinits" type="Array string" value="{IC_For_Domain}"/>
+      <Parameter name="tbcs" type="Array(string)" value="{BC_For_Inflow, BC_For_No_Flow, BC_For_Scalar}"/>
+      <Parameter name="tinits" type="Array(string)" value="{IC_For_Domain}"/>
     </ParameterList>
-    <Parameter name="tracers" type="Array string" value="{Tc-99}"/>
+    <Parameter name="tracers" type="Array(string)" value="{Tc-99}"/>
   </ParameterList>
 </ParameterList>
 

@@ -36,9 +36,9 @@
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
        <ParameterList name="Uniform Structured">
-         <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-         <Parameter name="Domain High Corner" type="Array double" value="{1.0, 1.0, 1.0}" />
-         <Parameter name="Number of Cells" type="Array int" value="{1, 1, 10}"/>
+         <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+         <Parameter name="Domain High Corner" type="Array(double)" value="{1.0, 1.0, 1.0}" />
+         <Parameter name="Number of Cells" type="Array(int)" value="{1, 1, 10}"/>
        </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -48,56 +48,56 @@
   <ParameterList name="Regions">
     <ParameterList name="All">
       <ParameterList name="Region: Box">
-       <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
-       <Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
+       <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+       <Parameter name="High Coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Upper">
       <ParameterList name="Region: Box">
-       <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.5}"/>
-       <Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 1.0}"/>
+       <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.5}"/>
+       <Parameter name="High Coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Lower">
       <ParameterList name="Region: Box">
-       <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
-       <Parameter name="High Coordinate" type="Array double" value="{1.0, 1.0, 0.5}"/>
+       <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+       <Parameter name="High Coordinate" type="Array(double)" value="{1.0, 1.0, 0.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="XLOW">
       <ParameterList name="Region: Plane">
-       <Parameter name="Location" type="Array double" value="{0.0, 0.5, 0.5}"/>
-       <Parameter name="Direction" type="Array double" value="{1.0, 0.0, 0.0}"/>
+       <Parameter name="Location" type="Array(double)" value="{0.0, 0.5, 0.5}"/>
+       <Parameter name="Direction" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="XHIGH">
       <ParameterList name="Region: Plane">
-       <Parameter name="Location" type="Array double" value="{1.0, 0.5, 0.5}"/>
-       <Parameter name="Direction" type="Array double" value="{-1.0, 0.0, 0.0}"/>
+       <Parameter name="Location" type="Array(double)" value="{1.0, 0.5, 0.5}"/>
+       <Parameter name="Direction" type="Array(double)" value="{-1.0, 0.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="YLOW">
       <ParameterList name="Region: Plane">
-       <Parameter name="Location" type="Array double" value="{0.5, 0.0, 0.5}"/>
-       <Parameter name="Direction" type="Array double" value="{0.0, 1.0, 0.0}"/>
+       <Parameter name="Location" type="Array(double)" value="{0.5, 0.0, 0.5}"/>
+       <Parameter name="Direction" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="YHIGH">
       <ParameterList name="Region: Plane">
-       <Parameter name="Location" type="Array double" value="{0.5, 1.0, 0.5}"/>
-       <Parameter name="Direction" type="Array double" value="{0.0, -1.0, 0.0}"/>
+       <Parameter name="Location" type="Array(double)" value="{0.5, 1.0, 0.5}"/>
+       <Parameter name="Direction" type="Array(double)" value="{0.0, -1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="ZLOW">
       <ParameterList name="Region: Plane">
-       <Parameter name="Location" type="Array double" value="{0.5, 0.5, 0.0}"/>
-       <Parameter name="Direction" type="Array double" value="{0.0, 0.0, 1.0}"/>
+       <Parameter name="Location" type="Array(double)" value="{0.5, 0.5, 0.0}"/>
+       <Parameter name="Direction" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="ZHIGH">
       <ParameterList name="Region: Plane">
-       <Parameter name="Location" type="Array double" value="{0.5, 0.5, 1.0}"/>
-       <Parameter name="Direction" type="Array double" value="{0.0, 0.0, -1.0}"/>
+       <Parameter name="Location" type="Array(double)" value="{0.5, 0.5, 1.0}"/>
+       <Parameter name="Direction" type="Array(double)" value="{0.0, 0.0, -1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -105,7 +105,7 @@
   
   <ParameterList name="Material Properties">
     <ParameterList name="Soil">
-      <Parameter name="Assigned Regions" type="Array string" value="{Lower}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Lower}"/>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
@@ -148,7 +148,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Waste">
-      <Parameter name="Assigned Regions" type="Array string" value="{Upper}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Upper}"/>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
@@ -205,24 +205,24 @@
       </ParameterList>
       <ParameterList name="Phase Components">
         <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array string" value="{Al+++,H+,HPO4-,SiO2(aq),UO2++}"/>
+          <Parameter name="Component Solutes" type="Array(string)" value="{Al+++,H+,HPO4-,SiO2(aq),UO2++}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList> <!-- Aqueous Phase -->
     <ParameterList name="Solid">
-      <Parameter name="Minerals" type="Array string" value="{Kaolinite,Quartz,(UO2)3(PO4)2.4H2O}"/>
-      <Parameter name="Sorption Sites" type="Array string" value="{>FeOH,>AlOH,>SiOH}"/>
+      <Parameter name="Minerals" type="Array(string)" value="{Kaolinite,Quartz,(UO2)3(PO4)2.4H2O}"/>
+      <Parameter name="Sorption Sites" type="Array(string)" value="{>FeOH,>AlOH,>SiOH}"/>
     </ParameterList> <!-- Solid Phase -->
   </ParameterList> <!-- phase definitions -->
   
   <ParameterList name="Initial Conditions">
     <ParameterList name="IC for soil">
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Gradient Value" type="Array double" value="{0.0,1.0}"/>
-        <Parameter name="Reference Coordinate" type="Array double" value="{0.0,0.0}"/>
+        <Parameter name="Gradient Value" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="Reference Coordinate" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="Reference Value" type="double" value="101325.0"/>
       </ParameterList>
-      <Parameter name="Assigned Regions" type="Array string" value="{All,Lower,Upper}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{All,Lower,Upper}"/>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
@@ -270,38 +270,38 @@
   
   <ParameterList name="Boundary Conditions">
     <ParameterList name="BC left">
-      <Parameter name="Assigned Regions" type="Array string" value="{XLOW}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{XLOW}"/>
       <ParameterList name="Solute BC">
        <ParameterList name="Aqueous">
          <ParameterList name="Water">
            <ParameterList name="Al+++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="H+">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="HPO4-">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="SiO2(aq)">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="UO2++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -310,38 +310,38 @@
     </ParameterList>
 
     <ParameterList name="BC right">
-      <Parameter name="Assigned Regions" type="Array string" value="{XHIGH}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{XHIGH}"/>
       <ParameterList name="Solute BC">
        <ParameterList name="Aqueous">
          <ParameterList name="Water">
            <ParameterList name="Al+++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="H+">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="HPO4-">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="SiO2(aq)">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="UO2++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -350,38 +350,38 @@
     </ParameterList>
 
      <ParameterList name="BC front">
-      <Parameter name="Assigned Regions" type="Array string" value="{YLOW}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{YLOW}"/>
       <ParameterList name="Solute BC">
        <ParameterList name="Aqueous">
          <ParameterList name="Water">
            <ParameterList name="Al+++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="H+">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="HPO4-">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="SiO2(aq)">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="UO2++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -390,38 +390,38 @@
     </ParameterList>
 
      <ParameterList name="BC back">
-      <Parameter name="Assigned Regions" type="Array string" value="{YHIGH}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{YHIGH}"/>
       <ParameterList name="Solute BC">
        <ParameterList name="Aqueous">
          <ParameterList name="Water">
            <ParameterList name="Al+++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="H+">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="HPO4-">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="SiO2(aq)">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="UO2++">
              <ParameterList name="BC: Zero Flux">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -430,38 +430,38 @@
     </ParameterList>
 
    <ParameterList name="BC lower">
-      <Parameter name="Assigned Regions" type="Array string" value="{ZLOW}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{ZLOW}"/>
       <ParameterList name="Solute BC">
        <ParameterList name="Aqueous">
          <ParameterList name="Water">
            <ParameterList name="Al+++">
              <ParameterList name="BC: Outflow">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="H+">
              <ParameterList name="BC: Outflow">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="HPO4-">
              <ParameterList name="BC: Outflow">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="SiO2(aq)">
              <ParameterList name="BC: Outflow">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="UO2++">
              <ParameterList name="BC: Outflow">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -469,48 +469,48 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="BC upper">
-      <Parameter name="Assigned Regions" type="Array string" value="{ZHIGH}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{ZHIGH}"/>
       <ParameterList name="Solute BC">
        <ParameterList name="Aqueous">
          <ParameterList name="Water">
            <ParameterList name="Al+++">
              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
              <ParameterList name="BC: Uniform Concentration">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Values" type="Array double" value="{1.0}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+               <Parameter name="Values" type="Array(double)" value="{1.0}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="H+">
              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
              <ParameterList name="BC: Uniform Concentration">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Values" type="Array double" value="{1.0}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+               <Parameter name="Values" type="Array(double)" value="{1.0}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="HPO4-">
              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
              <ParameterList name="BC: Uniform Concentration">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Values" type="Array double" value="{1.0}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+               <Parameter name="Values" type="Array(double)" value="{1.0}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="SiO2(aq)">
              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
              <ParameterList name="BC: Uniform Concentration">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Values" type="Array double" value="{1.0}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+               <Parameter name="Values" type="Array(double)" value="{1.0}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="UO2++">
              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
              <ParameterList name="BC: Uniform Concentration">
-               <Parameter name="Times" type="Array double" value="{0.0}"/>     
-               <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Values" type="Array double" value="{1.0}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.0}"/>     
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+               <Parameter name="Values" type="Array(double)" value="{1.0}"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -522,11 +522,11 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="test_chemistry_pk.bgd" />
-    <Parameter name="Verbosity" type="Array string" value="{verbose, warning, error}" />
+    <Parameter name="Verbosity" type="Array(string)" value="{verbose, warning, error}" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
-    <Parameter name="Auxiliary Data" type="Array string" value="{pH}"/>
+    <Parameter name="Auxiliary Data" type="Array(string)" value="{pH}"/>
   </ParameterList> <!-- Chemistry -->
 
 
