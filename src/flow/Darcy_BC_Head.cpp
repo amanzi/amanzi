@@ -197,7 +197,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 #endif
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    printf("Darcy PK: found %5d boundary edges for region \"%s\"\n", nedges/2, region.c_str());
+    printf("Darcy PK: found %5d boundary edges for side set \"%s\"\n", nedges/2, region.c_str());
   }
 }
 
