@@ -17,23 +17,24 @@ namespace Relations {
 Utils::RegisteredFactory<FieldEvaluator,MolarFractionGasEvaluator> MolarFractionGasEvaluator::factory_("molar fraction gas");
 
 
-MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& mfg_plist) :
-    mfg_plist_(mfg_plist) {
+MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
 
   // set up the actual model
-  ASSERT(mfg_plist_.isSublist("vapor pressure model parameters"));
+  ASSERT(plist_.isSublist("vapor pressure model parameters"));
   VaporPressureRelationFactory vpm_fac;
   sat_vapor_model_ = vpm_fac.createVaporPressure(
-      mfg_plist_.sublist("vapor pressure model parameters"));
+      plist_.sublist("vapor pressure model parameters"));
 
   // process the list for my provided field.
-  if (mfg_plist_.isParameter("molar fraction key")) {
-    my_key_ = mfg_plist_.get<string>("molar fraction key");
+  if (plist_.isParameter("molar fraction key")) {
+    my_key_ = plist_.get<string>("molar fraction key");
   } else {
-    std::string name = mfg_plist_.name();
+    std::string name = plist_.name();
     std::size_t start = name.find_last_of(">");
     my_key_ = name.substr(start+1);
   }
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // set up dependencies
   std::size_t end = my_key_.find_first_of("_");
@@ -45,7 +46,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& mfg
     domain_name = domain_name+std::string("_");
   }
 
-  temp_key_ = mfg_plist_.get<std::string>("temperature key",
+  temp_key_ = plist_.get<std::string>("temperature key",
           domain_name+std::string("temperature"));
   dependencies_.insert(temp_key_);
 }
@@ -53,7 +54,6 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& mfg
 
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    mfg_plist_(other.mfg_plist_),
     sat_vapor_model_(other.sat_vapor_model_),
     temp_key_(other.temp_key_) {}
 

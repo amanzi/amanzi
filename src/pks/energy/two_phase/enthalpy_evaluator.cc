@@ -14,8 +14,10 @@ FieldEvaluator for enthalpy.
 namespace Amanzi {
 namespace Energy {
 
-EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& enth_plist) {
-  my_key_ = enth_plist.get<std::string>("enthalpy key", "enthalpy_liquid");
+EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
+  my_key_ = plist_.get<std::string>("enthalpy key", "enthalpy_liquid");
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
   dependencies_.insert(std::string("molar_density_liquid"));
   dependencies_.insert(std::string("internal_energy_liquid"));

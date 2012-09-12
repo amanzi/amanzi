@@ -11,6 +11,9 @@ Solves:
 du/dt + v dot grad h = div Ke grad T .......... fix me!
 ------------------------------------------------------------------------- */
 
+#include "advection.hh"
+#include "eos.hh"
+#include "iem.hh"
 #include "field_evaluator.hh"
 #include "two_phase.hh"
 

@@ -24,7 +24,7 @@ namespace FlowRelations {
 class WRMLinearSystem : public WRM {
 
 public:
-  explicit WRMLinearSystem(Teuchos::ParameterList& wrm_plist);
+  explicit WRMLinearSystem(Teuchos::ParameterList& plist);
 
   // required methods from the base class
   virtual double k_relative(double pc) { return 1.0; }
@@ -36,7 +36,7 @@ public:
  private:
   void InitializeFromPlist_();
 
-  Teuchos::ParameterList wrm_plist_;
+  Teuchos::ParameterList plist_;
   double alpha_;
   double sat_at_zero_pc_;
 

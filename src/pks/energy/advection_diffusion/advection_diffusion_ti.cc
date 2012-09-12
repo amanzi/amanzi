@@ -62,38 +62,11 @@ void AdvectionDiffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<T
   std::cout << "  Pu: " << (*Pu->data())("cell",0) << " " << (*Pu->data())("face",0) << std::endl;
 };
 
-// computes a norm on u-du and returns the result
-double AdvectionDiffusion::enorm(Teuchos::RCP<const TreeVector> u,
-                           Teuchos::RCP<const TreeVector> du) {
-  double enorm_val = 0.0;
-  Teuchos::RCP<const Epetra_MultiVector> temp_vec = u->data()->ViewComponent("cell", false);
-  Teuchos::RCP<const Epetra_MultiVector> dtemp_vec = du->data()->ViewComponent("cell", false);
-
-  for (int lcv=0; lcv!=temp_vec->MyLength(); ++lcv) {
-    double tmp = abs((*(*dtemp_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*temp_vec)(0))[lcv]));
-    enorm_val = std::max<double>(enorm_val, tmp);
-  }
-
-  Teuchos::RCP<const Epetra_MultiVector> ftemp_vec = u->data()->ViewComponent("face", false);
-  Teuchos::RCP<const Epetra_MultiVector> fdtemp_vec = du->data()->ViewComponent("face", false);
-
-  for (int lcv=0; lcv!=ftemp_vec->MyLength(); ++lcv) {
-    double tmp = abs((*(*fdtemp_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*ftemp_vec)(0))[lcv]));
-    enorm_val = std::max<double>(enorm_val, tmp);
-  }
-
-#ifdef HAVE_MPI
-  double buf = enorm_val;
-  MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
-
-  return enorm_val;
-};
 
 // updates the preconditioner
 void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   S_next_->set_time(t);
-  PK::solution_to_state(up, S_next_);
+  PKDefaultBase::solution_to_state(up, S_next_);
 
   // div K_e grad u
   Teuchos::RCP<CompositeVector> thermal_conductivity =

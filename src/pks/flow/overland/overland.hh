@@ -10,43 +10,35 @@ Authors: Gianmarco Manzini
 #ifndef PK_FLOW_OVERLAND_HH_
 #define PK_FLOW_OVERLAND_HH_
 
-#include <vector>
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
-#include "state.hh"
 #include "matrix_mfd.hh"
 #include "upwinding.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "boundary_function.hh"
 #include "composite_vector_function.hh"
-
-#include "PK.hh"
-#include "pk_factory.hh"
 #include "bdf_time_integrator.hh"
-
 #include "wrm.hh"
+
+#include "pk_factory.hh"
+#include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
 namespace Flow {
-#if 0
-}}
-#endif
 
-class OverlandFlow : public PK {
+class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandFlow(Teuchos::ParameterList& flow_plist,
-               const Teuchos::RCP<State>& S,
-               const Teuchos::RCP<TreeVector>& solution);
+  OverlandFlow(Teuchos::ParameterList& plist,
+               const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, solution),
+      PKPhysicalBDFBase(plist, solution) {}
 
   // main methods
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::RCP<State>& S);
+  virtual void setup(const Teuchos::Ptr<State>& S);
+
+  // -- Initialize owned (dependent) variables.
+  virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // -- Choose a time step compatible with physics.
   virtual double get_dt() {
@@ -86,14 +78,13 @@ public:
 
 private:
   // boundary condition members
-  virtual void UpdateBoundaryConditions_(const Teuchos::RCP<State>& S);
-  virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::RCP<State>& S);
+  virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
+  virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S);
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres );
 
   // bdf needs help
-  void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-                                       const Teuchos::RCP<CompositeVector>& pres);
+  void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& pres);
 
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
@@ -111,7 +102,7 @@ private:
   void AddLoadValue_(const Teuchos::RCP<CompositeVector>& g);
 
   // mesh creation
-  void CreateMesh_(const Teuchos::RCP<State>& S);
+  void CreateMesh_(const Teuchos::Ptr<State>& S);
 
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 

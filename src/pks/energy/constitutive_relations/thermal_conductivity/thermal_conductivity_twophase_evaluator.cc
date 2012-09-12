@@ -16,18 +16,19 @@ namespace Energy {
 namespace EnergyRelations {
 
 ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
-      Teuchos::ParameterList& tc_plist) :
-    tc_plist_(tc_plist) {
-  my_key_ = tc_plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
+      Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
+  my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
-  poro_key_ = tc_plist_.get<std::string>("porosity key", "porosity");
+  poro_key_ = plist_.get<std::string>("porosity key", "porosity");
   dependencies_.insert(poro_key_);
 
-  sat_key_ = tc_plist_.get<std::string>("saturation key", "saturation_liquid");
+  sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
   dependencies_.insert(sat_key_);
 
-  ASSERT(tc_plist_.isSublist("thermal conductivity parameters"));
-  Teuchos::ParameterList sublist = tc_plist_.sublist("thermal conductivity parameters");
+  ASSERT(plist_.isSublist("thermal conductivity parameters"));
+  Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   ThermalConductivityTwoPhaseFactory fac;
   tc_ = fac.createThermalConductivityModel(sublist);
 }
@@ -36,7 +37,6 @@ ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
 ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
       const ThermalConductivityTwoPhaseEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    tc_plist_(other.tc_plist_),
     poro_key_(other.poro_key_),
     sat_key_(other.sat_key_),
     tc_(other.tc_) {}

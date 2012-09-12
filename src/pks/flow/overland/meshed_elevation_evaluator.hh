@@ -18,7 +18,9 @@ namespace FlowRelations {
 class MeshedElevationEvaluator : public ElevationEvaluator {
 
  public:
-  MeshedElevationEvaluator();
+  explicit
+  MeshedElevationEvaluator(Teuchos::ParameterList& plist);
+
   MeshedElevationEvaluator(const MeshedElevationEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;

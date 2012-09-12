@@ -7,8 +7,6 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include "primary_variable_field_evaluator.hh"
-
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
 
@@ -31,19 +29,16 @@ RegisteredPKFactory<TwoPhase> TwoPhase::reg_("two-phase energy");
 
 
 // -------------------------------------------------------------
-// Constructor
+// Setup
 // -------------------------------------------------------------
-TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<State>& S,
-                   const Teuchos::RCP<TreeVector>& solution) :
-    energy_plist_(plist) {
-  solution_ = solution;
+void TwoPhase::setup(const Teuchos::Ptr<State>& S) {
+  PKPhysicalBDFBase::setup(S);
   SetupEnergy_(S);
   SetupPhysicalEvaluators_(S);
 };
 
 
-void TwoPhase::SetupEnergy_(const Teuchos::RCP<State>& S) {
+void TwoPhase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // Require fields and evaluators for those fields.
   // primary variable: temperature on both cells and faces, ghosted, with 1 dof
@@ -55,11 +50,8 @@ void TwoPhase::SetupEnergy_(const Teuchos::RCP<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField("temperature", "energy")->SetMesh(S->GetMesh())
+  S->RequireField(key_, name_)->SetMesh(S->GetMesh())
     ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> temp_evaluator =
-    Teuchos::rcp(new PrimaryVariableFieldEvaluator("temperature"));
-  S->SetFieldEvaluator("temperature", temp_evaluator);
 
   // Get data for non-field quanitites.
   S->RequireFieldEvaluator("cell_volume");
@@ -69,27 +61,27 @@ void TwoPhase::SetupEnergy_(const Teuchos::RCP<State>& S) {
                                 ->AddComponent("face", AmanziMesh::FACE, 1);
 
   // boundary conditions
-  Teuchos::ParameterList bc_plist = energy_plist_.sublist("boundary conditions", true);
+  Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
   EnergyBCFactory bc_factory(S->GetMesh(), bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
-  Teuchos::ParameterList advect_plist = energy_plist_.sublist("Advection");
+  Teuchos::ParameterList advect_plist = plist_.sublist("Advection");
   advection_ = advection_factory.create(advect_plist, S->GetMesh());
   advection_->set_num_dofs(1);
 
   // operator for the diffusion terms
   bool symmetric = true;
-  Teuchos::ParameterList mfd_plist = energy_plist_.sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->GetMesh()));
   matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
 
   // preconditioner
-  Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("Diffusion PC");
+  Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
   preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->GetMesh()));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
@@ -102,21 +94,21 @@ void TwoPhase::SetupEnergy_(const Teuchos::RCP<State>& S) {
 // Create the physical evaluators for water content, water
 // retention, rel perm, etc, that are specific to Richards.
 // -------------------------------------------------------------
-void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
+void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
-  S->RequireField("energy")->SetMesh(S->GetMesh())->SetGhosted()
+  S->RequireField(name_)->SetMesh(S->GetMesh())->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList ee_plist = energy_plist_.sublist("energy evaluator");
-  ee_plist.set("energy key", "energy");
+  Teuchos::ParameterList ee_plist = plist_.sublist("energy evaluator");
+  ee_plist.set("energy key", name_);
   Teuchos::RCP<TwoPhaseEnergyEvaluator> ee =
     Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_plist));
-  S->SetFieldEvaluator("energy", ee);
+  S->SetFieldEvaluator(name_, ee);
 
   // -- advection of enthalpy
   S->RequireField("enthalpy_liquid")->SetMesh(S->GetMesh())
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList enth_plist = energy_plist_.sublist("enthalpy evaluator");
+  Teuchos::ParameterList enth_plist = plist_.sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", "enthalpy_liquid");
   Teuchos::RCP<EnthalpyEvaluator> enth =
     Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
@@ -126,7 +118,7 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->RequireField("thermal_conductivity")->SetMesh(S->GetMesh())
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
-    energy_plist_.sublist("thermal conductivity evaluator");
+    plist_.sublist("thermal conductivity evaluator");
   Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhaseEvaluator> tcm =
     Teuchos::rcp(new EnergyRelations::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator("thermal_conductivity", tcm);
@@ -136,9 +128,9 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
-  // initial timestep size
-  dt_ = energy_plist_.get<double>("initial time step", 1.);
+void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
+  // initialize BDF stuff and physical domain stuff
+  PKPhysicalBDFBase::initialize(S);
 
   // initialize boundary conditions
   int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -163,41 +155,16 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
 
   // initial conditions
   // -- Get the IC function plist.
-  if (!energy_plist_.isSublist("initial condition")) {
+  if (!plist_.isSublist("initial condition")) {
     std::stringstream messagestream;
     messagestream << "Two Phase Energy PK has no initial condition parameter list.";
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }
 
-  // -- Calculate the IC.
-  Teuchos::ParameterList ic_plist = energy_plist_.sublist("initial condition");
-  Teuchos::RCP<Field> temp_field = S->GetField("temperature", "energy");
-  temp_field->Initialize(ic_plist);
-
   // update face temperatures as a hint?
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-  DeriveFaceValuesFromCellValues_(S, temp);
-
-  // initialize the timesteppper
-  solution_->set_data(temp);
-  atol_ = energy_plist_.get<double>("absolute error tolerance",1.0);
-  rtol_ = energy_plist_.get<double>("relative error tolerance",1.0);
-
-  if (!energy_plist_.get<bool>("strongly coupled PK", false)) {
-    // -- instantiate time stepper
-    Teuchos::RCP<Teuchos::ParameterList> bdf1_plist_p =
-      Teuchos::rcp(new Teuchos::ParameterList(energy_plist_.sublist("time integrator")));
-    time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf1_plist_p, solution_));
-    time_step_reduction_factor_ = bdf1_plist_p->get<double>("time step reduction factor");
-
-    // -- initialize time derivative
-    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
-    solution_dot->PutScalar(0.0);
-
-    // -- set initial state
-    time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
-  }
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
+  DeriveFaceValuesFromCellValues_(temp);
 };
 
 
@@ -210,86 +177,16 @@ void TwoPhase::initialize(const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {};
 
-
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
-void TwoPhase::state_to_solution(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<TreeVector>& solution) {
-  solution->set_data(S->GetFieldData("temperature", "energy"));
-};
-
-
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
-void TwoPhase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
-        const Teuchos::RCP<State>& S) {
-  S->SetData("temperature", "energy", solution->data());
-  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("temperature");
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pri_fm =
-      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
-  pri_fm->SetFieldAsChanged();
-};
-
-
-// -----------------------------------------------------------------------------
-// Advance from state S to state S_next at time S.time + dt.
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-// Advance from state S to state S_next at time S.time + dt.
-// -----------------------------------------------------------------------------
-bool TwoPhase::advance(double dt) {
-  state_to_solution(S_next_, solution_);
-
-  // take a bdf timestep
-  double h = dt;
-  double dt_solver;
-  try {
-    dt_solver = time_stepper_->time_step(h, solution_);
-  } catch (Exceptions::Amanzi_exception &error) {
-    if (S_next_->GetMesh()->get_comm()->MyPID() == 0) {
-      std::cout << "Timestepper called error: " << error.what() << std::endl;
-    }
-    if (error.what() == std::string("BDF time step failed") ||
-        error.what() == std::string("Cut time step")) {
-      // try cutting the timestep
-      dt_ = h*time_step_reduction_factor_;
-      return true;
-    } else {
-      throw error;
-    }
-  }
-
-  // commit the step as successful
-  time_stepper_->commit_solution(h, solution_);
-  solution_to_state(solution_, S_next_);
-  commit_state(h, S_next_);
-
-  // update the timestep size
-  if (dt_solver < dt_ && dt_solver >= h) {
-    // We took a smaller step than we recommended, and it worked fine (not
-    // suprisingly).  Likely this was due to constraints from other PKs or
-    // vis.  Do not reduce our recommendation.
-  } else {
-    dt_ = dt_solver;
-  }
-
-  return false;
-};
-
-
 // -----------------------------------------------------------------------------
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
-void TwoPhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& temp) {
+void TwoPhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& temp) {
   AmanziMesh::Entity_ID_List cells;
 
   int f_owned = temp->size("face");
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
-    S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    temp->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

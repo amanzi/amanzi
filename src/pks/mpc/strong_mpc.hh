@@ -20,48 +20,50 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 
 #include <vector>
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-#include "state.hh"
-#include "tree_vector.hh"
 #include "bdf_fn_base.hh"
-#include "bdf_time_integrator.hh"
 #include "mpc.hh"
+#include "pk_bdf_base.hh"
 
 namespace Amanzi {
 
-class StrongMPC : public MPC {
+// note this looks odd, but StrongMPC is both a MPC within a hierarchy of BDF
+// PKs, but it also IS a BDF PK itself, in that it implements the BDF
+// interface.
+class StrongMPC : public MPC<PKBDFBase>, public PKBDFBase {
 
 public:
-  StrongMPC(Teuchos::ParameterList& mpc_plist, const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& soln);
+  StrongMPC(Teuchos::ParameterList& plist,
+            const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist, soln),
+      MPC<PKBDFBase>(plist,soln),
+      PKBDFBase(plist,soln) {}
 
-  virtual bool advance(double dt);
-  virtual void initialize(const Teuchos::RCP<State>& S);
-  virtual double get_dt() { return dt_; }
+  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // StrongMPC is a BDFFnBase
-  // computes the non-linear functional g = g(t,u,udot)
-  void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  // -- computes the non-linear functional g = g(t,u,udot)
+  //    By default this just calls each sub pk fun().
+  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
-  // applies preconditioner to u and returns the result in Pu
+  // -- enorm for the coupled system
+  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du);
+
+  // StrongMPC's preconditioner is, by default, just the block-diagonal
+  // operator formed by placing the sub PK's preconditioners on the diagonal.
+  // -- Apply preconditioner to u and returns the result in Pu.
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
-  // computes a norm on u-du and returns the result
-  virtual double enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
-
-  // updates the preconditioner
+  // -- Update the preconditioner.
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-protected:
-  // mathematical operators
-  Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
-  double dt_;
-  double atol_;
-  double rtol_;
-  double time_step_reduction_factor_;
+  // -- Experimental approach -- calling this indicates that the time
+  //    integration scheme is changing the value of the solution in
+  //    state.
+  virtual void changed_solution();
+
 
 private:
   // factory registration

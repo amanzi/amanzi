@@ -18,7 +18,8 @@ namespace FlowRelations {
 class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
 
  public:
-  ElevationEvaluator();
+  explicit
+  ElevationEvaluator(Teuchos::ParameterList& plist);
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,

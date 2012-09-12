@@ -13,15 +13,17 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-ManningConductivityEvaluator::ManningConductivityEvaluator(Teuchos::ParameterList& cond_plist) :
-    cond_plist_(cond_plist) {
-  slope_regularization_ = cond_plist_.get<double>("slope regularization epsilon", 1.e-8);
-  manning_exp_ = cond_plist_.get<double>("Manning exponent", 0.6666666666666667);
+ManningConductivityEvaluator::ManningConductivityEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
+  slope_regularization_ = plist_.get<double>("slope regularization epsilon", 1.e-8);
+  manning_exp_ = plist_.get<double>("Manning exponent", 0.6666666666666667);
   manning_key_ = "manning_coefficient";
   pres_key_ = "overland_pressure";
   slope_key_ = "slope_magnitude";
 
   my_key_ = "overland_conductivity";
+  setLinePrefix(my_key_+std::string(" evaluator"));
+
   dependencies_.insert(pres_key_);
   dependencies_.insert(slope_key_);
 }
@@ -29,7 +31,6 @@ ManningConductivityEvaluator::ManningConductivityEvaluator(Teuchos::ParameterLis
 
 ManningConductivityEvaluator::ManningConductivityEvaluator(const ManningConductivityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    cond_plist_(other.cond_plist_),
     slope_regularization_(other.slope_regularization_),
     pres_key_(other.pres_key_),
     slope_key_(other.slope_key_),
@@ -81,7 +82,7 @@ void ManningConductivityEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>
   // add the evaluator.
   S->RequireField(manning_key_);
   dependencies_.insert(manning_key_);
-  Teuchos::ParameterList mann_plist = cond_plist_.sublist("Manning coefficient");
+  Teuchos::ParameterList mann_plist = plist_.sublist("Manning coefficient");
   mann_plist.set("evaluator name", manning_key_);
   Teuchos::RCP<FieldEvaluator> mann_fm = Teuchos::rcp(new IndependentVariableFieldEvaluator(mann_plist));
   S->SetFieldEvaluator(manning_key_, mann_fm);

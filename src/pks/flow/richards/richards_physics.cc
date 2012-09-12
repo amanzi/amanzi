@@ -22,13 +22,13 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
 
   // update the rel perm on cells.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S);
   Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("numerical_rel_perm", "flow");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+    S->GetFieldData("numerical_rel_perm", name_);
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
   // std::cout << "REL PERM:" << std::endl;
   // rel_perm->Print(std::cout);
@@ -40,7 +40,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 
   // update the flux (darcy + grav)
   Teuchos::RCP<CompositeVector> darcy_flux =
-    S->GetFieldData("darcy_flux", "flow");
+    S->GetFieldData("darcy_flux", name_);
   matrix_->DeriveFlux(*pres, darcy_flux);
   AddGravityFluxesToVector_(S, darcy_flux);
 
@@ -62,8 +62,8 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // update the water content at both the old and new times.
-  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), "richards_pk");
-  S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(), "richards_pk");
+  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(), name_);
 
   // get these fields
   Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
@@ -79,9 +79,9 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
 // -------------------------------------------------------------
 // Convert abs perm vector to tensor.
 // -------------------------------------------------------------
-void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
+void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
   // currently assumes isotropic perm, should be updated
-  S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> perm = S->GetFieldData("permeability");
   int ncells = perm->size("cell");
   int ndofs = perm->num_dofs("cell");
@@ -122,11 +122,11 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
 
   // Get the rel perm, and ensure it is up to date.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
 
   // Get the density, in a mass basis, and ensure it is up to date.
-  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
@@ -165,11 +165,11 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
 
   // Get the rel perm, and ensure it is up to date.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
 
   // Get the density, in a mass basis, and ensure it is up to date.
-  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());

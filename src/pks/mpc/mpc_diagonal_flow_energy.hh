@@ -12,11 +12,8 @@ block-diagonal coupler.
 #ifndef PKS_MPC_DIAGONAL_FLOW_ENERGY_HH_
 #define PKS_MPC_DIAGONAL_FLOW_ENERGY_HH_
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
-
-#include "state.hh"
+#include "richards.hh"
+#include "two_phase.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
@@ -24,11 +21,20 @@ namespace Amanzi {
 class MPCDiagonalFlowEnergy : public StrongMPC {
 
  public:
-  MPCDiagonalFlowEnergy(Teuchos::ParameterList& mpc_plist, const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& soln);
+  MPCDiagonalFlowEnergy(Teuchos::ParameterList& plist,
+                        const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist, soln),
+      StrongMPC(plist, soln) {}
 
   // initialize the preconditioner
-  virtual void initialize(const Teuchos::RCP<State>& S);
+  virtual void initialize(const Teuchos::Ptr<State>& S);
+
+  // advance
+  virtual bool advance(double dt);
+
+  // evaluate the residual
+  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
@@ -38,13 +44,17 @@ class MPCDiagonalFlowEnergy : public StrongMPC {
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
- protected:
+ protected: // methods
   void precon_diagonal(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   void precon_upper_triangular(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   void precon_lower_triangular(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   void precon_alternating(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   void precon_accumulation(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
+ protected: // data
+
+  Teuchos::RCP<Flow::Richards> richards_pk_;
+  Teuchos::RCP<Energy::TwoPhase> two_phase_pk_;
   Teuchos::RCP<Epetra_MultiVector> D_pT_;
   Teuchos::RCP<Epetra_MultiVector> D_Tp_;
 
@@ -56,6 +66,7 @@ class MPCDiagonalFlowEnergy : public StrongMPC {
 
   PreconMethod method_;
   double damping_;
+  int n_iter_;
 
  private:
   // factory registration

@@ -14,26 +14,23 @@ namespace EnergyRelations {
 
 Utils::RegisteredFactory<FieldEvaluator,IEMWaterVaporEvaluator> IEMWaterVaporEvaluator::factory_("iem water vapor");
 
-IEMWaterVaporEvaluator::IEMWaterVaporEvaluator(Teuchos::ParameterList& iem_plist) :
-    SecondaryVariableFieldEvaluator(),
-    iem_plist_(iem_plist) {
+IEMWaterVaporEvaluator::IEMWaterVaporEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
   // defaults work fine, this sublist need not exist
-  Teuchos::ParameterList sublist = iem_plist.sublist("IEM parameters");
+  Teuchos::ParameterList sublist = plist.sublist("IEM parameters");
   iem_ = Teuchos::rcp(new IEMWaterVapor(sublist));
 
   InitializeFromPlist_();
 }
 
-IEMWaterVaporEvaluator::IEMWaterVaporEvaluator(Teuchos::ParameterList& iem_plist, const Teuchos::RCP<IEMWaterVapor>& iem) :
-    SecondaryVariableFieldEvaluator(),
-    iem_plist_(iem_plist),
+IEMWaterVaporEvaluator::IEMWaterVaporEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEMWaterVapor>& iem) :
+    SecondaryVariableFieldEvaluator(plist),
     iem_(iem) {
   InitializeFromPlist_();
 }
 
 IEMWaterVaporEvaluator::IEMWaterVaporEvaluator(const IEMWaterVaporEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    iem_plist_(other.iem_plist_),
     iem_(other.iem_),
     temp_key_(other.temp_key_),
     mol_frac_key_(other.mol_frac_key_) {}
@@ -44,7 +41,8 @@ IEMWaterVaporEvaluator::Clone() const {
 }
 
 void IEMWaterVaporEvaluator::InitializeFromPlist_() {
-  my_key_ = iem_plist_.get<std::string>("internal energy key");
+  my_key_ = plist_.get<std::string>("internal energy key");
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // Set up my dependencies.
   std::size_t end = my_key_.find_first_of("_");
@@ -57,12 +55,12 @@ void IEMWaterVaporEvaluator::InitializeFromPlist_() {
   }
 
   // -- temperature
-  temp_key_ = iem_plist_.get<std::string>("temperature key",
+  temp_key_ = plist_.get<std::string>("temperature key",
           domain_name+std::string("temperature"));
   dependencies_.insert(temp_key_);
 
   // -- molar fraction of water vapor in the gaseous phase
-  mol_frac_key_ = iem_plist_.get<std::string>("vapor molar fraction key",
+  mol_frac_key_ = plist_.get<std::string>("vapor molar fraction key",
           domain_name+std::string("mol_frac_gas"));
   dependencies_.insert(mol_frac_key_);
 }

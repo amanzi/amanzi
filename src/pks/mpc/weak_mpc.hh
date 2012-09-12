@@ -15,36 +15,30 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #ifndef PKS_MPC_WEAKMPC_HH_
 #define PKS_MPC_WEAKMPC_HH_
 
-#include <vector>
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-#include "state.hh"
-#include "tree_vector.hh"
+#include "PK.hh"
 #include "mpc.hh"
 
 namespace Amanzi {
 
-class WeakMPC : public MPC {
+class WeakMPC : public MPC<PK> {
 
 public:
-  WeakMPC(Teuchos::ParameterList& mpc_plist,
-          const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln);
+  WeakMPC(Teuchos::ParameterList& plist,
+          const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist,soln),
+      MPC<PK>(plist, soln) {};
 
+  // PK methods
+  // -- dt is the minimum of the sub pks
+  virtual double get_dt();
+
+  // -- advance each sub pk dt.
   virtual bool advance(double dt);
 
 private:
   // factory registration
   static RegisteredPKFactory<WeakMPC> reg_;
 
-  // These BDF methods do not need to be implemented for the weak mpc.
-  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {};
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {};
-  virtual double enorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du) {};
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {};
 
 };
 } // close namespace Amanzi
