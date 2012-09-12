@@ -29,7 +29,7 @@ namespace AmanziFlow {
 /* *******************************************************************
 * Flow state is build from scratch and filled with zeros.         
 ******************************************************************* */
-Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
+Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
 {
   int dim = mesh->space_dimension();
   const Epetra_BlockMap& cmap = mesh->cell_map(false);
@@ -55,15 +55,13 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   specific_yield_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   mesh_ = mesh;
-
-  S_ = NULL;
 }
 
 
 /* *******************************************************************
 * Flow state is build from state S.        
 ******************************************************************* */
-Flow_State::Flow_State(Teuchos::RCP<State> S)
+Flow_State::Flow_State(Teuchos::RCP<State> S) : S_(NULL)
 {
   vertical_permeability_ = S->get_vertical_permeability();
   horizontal_permeability_ = S->get_horizontal_permeability();
@@ -90,7 +88,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
 }
 
 
-Flow_State::Flow_State(State& S)
+Flow_State::Flow_State(State& S) : S_(NULL)
 {
   vertical_permeability_ = S.get_vertical_permeability();
   horizontal_permeability_ = S.get_horizontal_permeability();
@@ -122,7 +120,7 @@ Flow_State::Flow_State(State& S)
 * mode = ViewMemory   creates the flow state from internal one   
 *                     as the MPC expected                     
 ******************************************************************* */
-Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
+Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode) : S_(NULL)
 {
   if (mode == CopyPointers) {
     vertical_permeability_ = FS.vertical_permeability();

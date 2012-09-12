@@ -404,6 +404,8 @@ class State : public Teuchos::VerboseObject<State> {
   Teuchos::RCP<double*> gravity;
   Teuchos::RCP<double> density;
   Teuchos::RCP<double> viscosity;
+
+  double p_atm;
   
   int number_of_components;
   std::map<std::string,int> comp_no;

@@ -97,7 +97,7 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
+  // std::vector<int> dirs;
 
   Aff_cells_.clear();
   Afc_cells_.clear();
@@ -106,7 +106,8 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    // mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
@@ -424,7 +425,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     ML_list = prec_list;
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     // read some boomer amg parameters
     hypre_ncycles = prec_list.get<int>("cycle applications", 5);
     hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
@@ -447,7 +448,7 @@ void Matrix_MFD::UpdatePreconditioner()
     MLprec->SetParameterList(ML_list);
     MLprec->ComputePreconditioner();
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
@@ -575,7 +576,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Tf, Yf);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     ierr |= IfpHypre_Sff_->ApplyInverse(Tf, Yf);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
