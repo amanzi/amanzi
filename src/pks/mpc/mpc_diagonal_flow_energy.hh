@@ -17,6 +17,8 @@ block-diagonal coupler.
 #include "Epetra_MultiVector.h"
 
 #include "state.hh"
+#include "richards.hh"
+#include "two_phase.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
@@ -45,6 +47,9 @@ class MPCDiagonalFlowEnergy : public StrongMPC {
   void precon_alternating(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   void precon_accumulation(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
+
+  Teuchos::RCP<Flow::Richards> richards_pk_;
+  Teuchos::RCP<Energy::TwoPhase> two_phase_pk_;
   Teuchos::RCP<Epetra_MultiVector> D_pT_;
   Teuchos::RCP<Epetra_MultiVector> D_Tp_;
 

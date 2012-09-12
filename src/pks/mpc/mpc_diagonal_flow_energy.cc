@@ -28,6 +28,11 @@ MPCDiagonalFlowEnergy::MPCDiagonalFlowEnergy(Teuchos::ParameterList& mpc_plist,
 void MPCDiagonalFlowEnergy::initialize(const Teuchos::RCP<State>& S) {
   StrongMPC::initialize(S);
 
+  richards_pk_ = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
+  ASSERT(richards_pk_ != Teuchos::null);
+  two_phase_pk_ = Teuchos::rcp_dynamic_cast<Energy::TwoPhase>(sub_pks_[1]);
+  ASSERT(two_phase_pk_ != Teuchos::null);
+
   std::string methodstring = mpc_plist_.get<std::string>("preconditioning approach");
   if (methodstring == "diagonal") {
     method_ = PRECON_DIAGONAL;

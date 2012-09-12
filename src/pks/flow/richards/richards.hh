@@ -137,6 +137,8 @@ protected:
 
   // factory registration
   static RegisteredPKFactory<Richards> reg_;
+
+  friend class MPCDiagonalFlowEnergy;
 };
 
 }  // namespace AmanziFlow
