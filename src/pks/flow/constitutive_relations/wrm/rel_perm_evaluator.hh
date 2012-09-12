@@ -21,8 +21,8 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
   //  explicit
-  //  RelPermEvaluator(Teuchos::ParameterList& wrm_plist);
-  RelPermEvaluator(Teuchos::ParameterList& wrm_plist,
+  //  RelPermEvaluator(Teuchos::ParameterList& plist);
+  RelPermEvaluator(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<WRMRegionPairList>& wrms);
 
   RelPermEvaluator(const RelPermEvaluator& other);
@@ -39,7 +39,7 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
   void InitializeFromPlist_();
 
-  Teuchos::ParameterList wrm_plist_;
+  Teuchos::ParameterList plist_;
   Teuchos::RCP<WRMRegionPairList> wrms_;
   Key sat_key_;
 };

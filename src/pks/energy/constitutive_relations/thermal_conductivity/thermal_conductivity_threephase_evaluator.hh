@@ -23,7 +23,7 @@ class ThermalConductivityThreePhaseEvaluator :
 
  public:
   // constructor format for all derived classes
-  ThermalConductivityThreePhaseEvaluator(Teuchos::ParameterList& tc_plist);
+  ThermalConductivityThreePhaseEvaluator(Teuchos::ParameterList& plist);
   ThermalConductivityThreePhaseEvaluator(const ThermalConductivityThreePhaseEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -35,10 +35,6 @@ class ThermalConductivityThreePhaseEvaluator :
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-
-  // PList
-  Teuchos::ParameterList tc_plist_;
-
   Teuchos::RCP<ThermalConductivityThreePhase> tc_;
 
   // Keys for fields

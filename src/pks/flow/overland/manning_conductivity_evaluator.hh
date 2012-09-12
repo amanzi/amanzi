@@ -31,7 +31,6 @@ class ManningConductivityEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
 
 private:
-  Teuchos::ParameterList cond_plist_;
   Key pres_key_;
   Key slope_key_;
   Key manning_key_;

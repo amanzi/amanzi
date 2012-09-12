@@ -48,7 +48,7 @@ void OverlandFlow::fun( double t_old,
   // update boundary conditions
   bc_pressure_->Compute(t_new);
   bc_flux_->Compute(t_new);
-  UpdateBoundaryConditions_(S_next_);
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->data();
@@ -59,7 +59,7 @@ void OverlandFlow::fun( double t_old,
 
   // update the preconditioner
   if (niter_ % (precon_lag_+1) == 0) {
-    UpdateBoundaryConditionsNoElev_(S_next_);
+    UpdateBoundaryConditionsNoElev_(S_next_.ptr());
     update_precon_for_real(t_new, u_new, t_new - t_old);
   }
 
@@ -226,14 +226,14 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
   // update state with the solution up.
 #ifdef UPDATE_FOR_REAL
   S_next_->set_time(t);
-  PK::solution_to_state(up, S_next_);
+  PKDefaultBase::solution_to_state(up, S_next_);
 #endif
 
 #ifdef UPDATE_FOR_REAL
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_    ->Compute(S_next_->time());
-  UpdateBoundaryConditionsNoElev_(S_next_);
+  UpdateBoundaryConditionsNoElev_(S_next_.ptr());
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_);

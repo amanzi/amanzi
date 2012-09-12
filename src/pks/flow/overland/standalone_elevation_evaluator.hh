@@ -28,7 +28,6 @@ class StandaloneElevationEvaluator : public ElevationEvaluator {
           const std::vector<Teuchos::Ptr<CompositeVector> >& results);
 
  protected:
-  Teuchos::ParameterList elev_plist_;
   Teuchos::RCP<Functions::CompositeVectorFunction> elevation_function_;
   Teuchos::RCP<Functions::CompositeVectorFunction> slope_function_;
 

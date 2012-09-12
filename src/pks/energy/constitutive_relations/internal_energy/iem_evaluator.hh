@@ -22,8 +22,8 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  IEMEvaluator(Teuchos::ParameterList& iem_plist);
-  IEMEvaluator(Teuchos::ParameterList& iem_plist, const Teuchos::RCP<IEM>& iem);
+  IEMEvaluator(Teuchos::ParameterList& plist);
+  IEMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEM>& iem);
   IEMEvaluator(const IEMEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -40,7 +40,6 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   void InitializeFromPlist_();
 
   Key temp_key_;
-  Teuchos::ParameterList iem_plist_;
   Teuchos::RCP<IEM> iem_;
 
  private:

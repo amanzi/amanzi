@@ -11,6 +11,7 @@
 #define AMANZI_RELATIONS_EOS_EVALUATOR_HH_
 
 #include "eos.hh"
+#include "factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {
@@ -36,10 +37,6 @@ class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
 
   Teuchos::RCP<EOS> get_EOS() { return eos_; }
  protected:
-
-  // PList
-  Teuchos::ParameterList eos_plist_;
-
   // the actual model
   Teuchos::RCP<EOS> eos_;
   EOSMode mode_;

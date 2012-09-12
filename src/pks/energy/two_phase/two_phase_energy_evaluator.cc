@@ -21,8 +21,11 @@ This is simply the conserved quantity in Richards equation.
 namespace Amanzi {
 namespace Energy {
 
-TwoPhaseEnergyEvaluator::TwoPhaseEnergyEvaluator(Teuchos::ParameterList& wc_plist) {
-  my_key_ = std::string("energy");
+TwoPhaseEnergyEvaluator::TwoPhaseEnergyEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
+  my_key_ = plist_.get<std::string>("energy key", "energy");
+  setLinePrefix(my_key_+std::string(" evaluator"));
+
   dependencies_.insert(std::string("porosity"));
 
   dependencies_.insert(std::string("saturation_liquid"));

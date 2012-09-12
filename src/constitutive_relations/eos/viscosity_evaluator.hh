@@ -22,7 +22,7 @@ class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
 
   // constructor format for all derived classes
   explicit
-  ViscosityEvaluator(Teuchos::ParameterList& visc_plist);
+  ViscosityEvaluator(Teuchos::ParameterList& plist);
 
   ViscosityEvaluator(const ViscosityEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -34,10 +34,6 @@ class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-
-  // PList
-  Teuchos::ParameterList visc_plist_;
-
   // the actual model
   Teuchos::RCP<ViscosityRelation> visc_;
 
