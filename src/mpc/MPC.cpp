@@ -342,13 +342,13 @@ void MPC::cycle_driver() {
       number_of_secondaries = S->secondary_activity_coeff()->NumVectors();
     }
     chem_data_ = Teuchos::rcp( new chemistry_data (mesh_maps->cell_map(false),
-						   S->get_total_component_concentration()->NumVectors(), 
-						   S->number_of_minerals(),
-						   number_of_secondaries,
-						   S->number_of_ion_exchange_sites(), 
-						   S->number_of_sorption_sites(),
-						   S->using_sorption(),
-						   S->use_sorption_isotherms()) );
+                                                   S->get_total_component_concentration()->NumVectors(),
+                                                   S->number_of_minerals(),
+                                                   number_of_secondaries,
+                                                   S->number_of_ion_exchange_sites(),
+                                                   S->number_of_sorption_sites(),
+                                                   S->using_sorption(),
+                                                   S->use_sorption_isotherms()) );
   }
 
   int iter = 0;  // set the iteration counter to zero
@@ -613,127 +613,127 @@ void MPC::cycle_driver() {
           Amanzi::timer_manager.stop("Chemistry PK");
         }
 
-	// at this time we know the time step that we are going to use during subcycling: tc_dT
+        // at this time we know the time step that we are going to use during subcycling: tc_dT
 
 
-	if (chemistry_enabled) {
-	  // first store the chemistry state
-	  chem_data_->store(S->free_ion_concentrations(),
-			    S->primary_activity_coeff(),
-			    S->secondary_activity_coeff(),
-			    S->mineral_volume_fractions(),
-			    S->mineral_specific_surface_area(),
-			    S->total_sorbed(),
-			    S->sorption_sites(),
-			    S->surface_complex_free_site_conc(),
-			    S->ion_exchange_sites(),
-			    S->ion_exchange_ref_cation_conc(),
-			    S->isotherm_kd(),
-			    S->isotherm_freundlich_n(),
-			    S->isotherm_langmuir_b());	
-	}
-	// store the total component concentration, so that we
-	// can restore it in the case of a chemistry failure
-	Epetra_MultiVector tcc_stor(*total_component_concentration_star);
+        if (chemistry_enabled) {
+          // first store the chemistry state
+          chem_data_->store(S->free_ion_concentrations(),
+                            S->primary_activity_coeff(),
+                            S->secondary_activity_coeff(),
+                            S->mineral_volume_fractions(),
+                            S->mineral_specific_surface_area(),
+                            S->total_sorbed(),
+                            S->sorption_sites(),
+                            S->surface_complex_free_site_conc(),
+                            S->ion_exchange_sites(),
+                            S->ion_exchange_ref_cation_conc(),
+                            S->isotherm_kd(),
+                            S->isotherm_freundlich_n(),
+                            S->isotherm_langmuir_b());
+        }
+        // store the total component concentration, so that we
+        // can restore it in the case of a chemistry failure
+        Epetra_MultiVector tcc_stor(*total_component_concentration_star);
 
-	bool success(true);
-	int tries(0);
-	int fail_count(0);
+        bool success(true);
+        int tries(0);
+        // int fail_count(0);
 
-	do {
-	  // try to subcycle with tc_dT, if that fails, we will cut that time step and try again
-	  try {
-	    
-	    // subcycling loop
-	    for (int iss = 0; iss<ntc; ++iss) {
-	      if (transport_enabled) {
-		Amanzi::timer_manager.start("Transport PK");
-		TPK->Advance(tc_dT);
-		if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
-		  // get the transport state and commit it to the state
-		  Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
-		  *total_component_concentration_star = *TS_next->total_component_concentration();
-		} else {
-		  Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
-		  Exceptions::amanzi_throw(message);
-		}
-		Amanzi::timer_manager.stop("Transport PK");
-	      } else { // if we're not advancing transport we still need to prepare for chemistry
-		*total_component_concentration_star = *S->get_total_component_concentration();
-	      }
-	      
-	      if (chemistry_enabled) {
-		
-		if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-		  *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
-		}
-		Amanzi::timer_manager.start("Chemistry PK");
-		CPK->advance(tc_dT, total_component_concentration_star);
-		
-		if (fail_count < 1) {
-		  ++fail_count;
-		  throw ChemistryException();
-		}
+        do {
+          // try to subcycle with tc_dT, if that fails, we will cut that time step and try again
+          try {
 
-		Amanzi::timer_manager.stop("Chemistry PK");
-		S->update_total_component_concentration(CPK->get_total_component_concentration());
-	      } else {
-		S->update_total_component_concentration(*total_component_concentration_star);
-	      }
-	      
-	      S->set_intermediate_time(S->intermediate_time() + tc_dT);
-	      Amanzi::timer_manager.start("Transport PK");
-	      if (transport_enabled) TPK->CommitState(TS);
-	      Amanzi::timer_manager.stop("Transport PK");
-	      Amanzi::timer_manager.start("Chemistry PK");
-	      if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
-	      Amanzi::timer_manager.stop("Chemistry PK");
-	    }
-	    success = true;
-	  } catch (const ChemistryException& chem_error) {
-	    
-	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-	      *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
-            }	    
-	    
-	    // decrease the chemistry subcycling timestep and adjust the 
-	    // number of subcycles we need to take accordingly
-	    ntc = 2*ntc;
-	    tc_dT = 0.5 * tc_dT;
-	    
-	    // increase the retry count
-	    ++tries;
+            // subcycling loop
+            for (int iss = 0; iss<ntc; ++iss) {
+              if (transport_enabled) {
+                Amanzi::timer_manager.start("Transport PK");
+                TPK->Advance(tc_dT);
+                if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
+                  // get the transport state and commit it to the state
+                  Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
+                  *total_component_concentration_star = *TS_next->total_component_concentration();
+                } else {
+                  Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
+                  Exceptions::amanzi_throw(message);
+                }
+                Amanzi::timer_manager.stop("Transport PK");
+              } else { // if we're not advancing transport we still need to prepare for chemistry
+                *total_component_concentration_star = *S->get_total_component_concentration();
+              }
 
-	    // bail if we've cut the subcycling timestep too many times
-	    if (tries>=3) {
-	      Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
-	      Exceptions::amanzi_throw(message);	      
-	    }
+              if (chemistry_enabled) {
 
-	    // restore chemistry data to the beginning of the subcycling
-	    chem_data_->retrieve(S->free_ion_concentrations(),
-				 S->primary_activity_coeff(),
-				 S->secondary_activity_coeff(),
-				 S->mineral_volume_fractions(),
-				 S->mineral_specific_surface_area(),
-				 S->total_sorbed(),
-				 S->sorption_sites(),
-				 S->surface_complex_free_site_conc(),
-				 S->ion_exchange_sites(),
-				 S->ion_exchange_ref_cation_conc(),
-				 S->isotherm_kd(),
-				 S->isotherm_freundlich_n(),
-				 S->isotherm_langmuir_b());
-	    // restore the total component concentration to the beginning of chemistry subcycling
-	    S->update_total_component_concentration(tcc_stor);
+                if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+                  *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
+                }
+                Amanzi::timer_manager.start("Chemistry PK");
+                CPK->advance(tc_dT, total_component_concentration_star);
 
-	    success = false;
-	  }
-	  
-	} while (!success);
-	
+                // if (fail_count < 1) {
+                //  ++fail_count;
+                //  throw ChemistryException();
+                //}
+
+                Amanzi::timer_manager.stop("Chemistry PK");
+                S->update_total_component_concentration(CPK->get_total_component_concentration());
+              } else {
+                S->update_total_component_concentration(*total_component_concentration_star);
+              }
+
+              S->set_intermediate_time(S->intermediate_time() + tc_dT);
+              Amanzi::timer_manager.start("Transport PK");
+              if (transport_enabled) TPK->CommitState(TS);
+              Amanzi::timer_manager.stop("Transport PK");
+              Amanzi::timer_manager.start("Chemistry PK");
+              if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
+              Amanzi::timer_manager.stop("Chemistry PK");
+            }
+            success = true;
+          } catch (const ChemistryException& chem_error) {
+
+            if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+              *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
+            }
+
+            // decrease the chemistry subcycling timestep and adjust the
+            // number of subcycles we need to take accordingly
+            ntc = 2*ntc;
+            tc_dT = 0.5 * tc_dT;
+
+            // increase the retry count
+            ++tries;
+
+            // bail if we've cut the subcycling timestep too many times
+            if (tries>=3) {
+              Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
+              Exceptions::amanzi_throw(message);
+            }
+
+            // restore chemistry data to the beginning of the subcycling
+            chem_data_->retrieve(S->free_ion_concentrations(),
+                                 S->primary_activity_coeff(),
+                                 S->secondary_activity_coeff(),
+                                 S->mineral_volume_fractions(),
+                                 S->mineral_specific_surface_area(),
+                                 S->total_sorbed(),
+                                 S->sorption_sites(),
+                                 S->surface_complex_free_site_conc(),
+                                 S->ion_exchange_sites(),
+                                 S->ion_exchange_ref_cation_conc(),
+                                 S->isotherm_kd(),
+                                 S->isotherm_freundlich_n(),
+                                 S->isotherm_langmuir_b());
+            // restore the total component concentration to the beginning of chemistry subcycling
+            S->update_total_component_concentration(tcc_stor);
+
+            success = false;
+          }
+
+        } while (!success);
+
       }
-      
+
       // update the times in the state object
       S->advance_time(mpc_dT);
 
