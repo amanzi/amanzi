@@ -122,12 +122,12 @@ set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)
 # TPL: netCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 1)
-set(NetCDF_VERSION_PATCH 3)
+set(NetCDF_VERSION_MINOR 2)
+set(NetCDF_VERSION_PATCH 1.1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814) 
+set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc) 
 
 #
 # ASCEM-IO
