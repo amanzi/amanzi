@@ -21,7 +21,7 @@ namespace FlowRelations {
 class WRMVanGenuchten : public WRM {
 
 public:
-  explicit WRMVanGenuchten(Teuchos::ParameterList& wrm_plist);
+  explicit WRMVanGenuchten(Teuchos::ParameterList& plist);
 
   // required methods from the base class
   double k_relative(double pc);
@@ -35,7 +35,7 @@ public:
  private:
   void InitializeFromPlist_();
 
-  Teuchos::ParameterList wrm_plist_;
+  Teuchos::ParameterList plist_;
 
   double m_;  // van Genuchten parameters: m, n, alpha
   double n_;

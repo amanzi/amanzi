@@ -21,8 +21,8 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  WRMEvaluator(Teuchos::ParameterList& wrm_plist);
-  WRMEvaluator(Teuchos::ParameterList& wrm_plist,
+  WRMEvaluator(Teuchos::ParameterList& plist);
+  WRMEvaluator(Teuchos::ParameterList& plist,
                const Teuchos::RCP<std::vector<WRMRegionPair> >& wrms);
   WRMEvaluator(const WRMEvaluator& other);
 
@@ -35,8 +35,6 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
   Teuchos::RCP<WRMRegionPairList> get_WRMs() { return wrms_; }
 
  protected:
-
-  Teuchos::ParameterList wrm_plist_;
   Teuchos::RCP<WRMRegionPairList> wrms_;
 };
 

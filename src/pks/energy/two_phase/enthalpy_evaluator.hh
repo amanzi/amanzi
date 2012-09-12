@@ -23,7 +23,7 @@ class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 
 public:
   explicit
-  EnthalpyEvaluator(Teuchos::ParameterList& energy_plist);
+  EnthalpyEvaluator(Teuchos::ParameterList& plist);
   EnthalpyEvaluator(const EnthalpyEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;

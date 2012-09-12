@@ -12,10 +12,12 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-ElevationEvaluator::ElevationEvaluator() {
-  my_keys_.push_back("elevation");
-  my_keys_.push_back("slope_magnitude");
-  my_keys_.push_back("pres_elev");
+ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariablesFieldEvaluator(plist) {
+  my_keys_.push_back(plist_.get<std::string>("elevation key", "elevation"));
+  my_keys_.push_back(plist_.get<std::string>("slope magnitude key", "slope_magnitude"));
+  my_keys_.push_back(plist_.get<std::string>("potential key", "pres_elev"));
+  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   pres_key_ = "overland_pressure";
   dependencies_.insert(pres_key_);

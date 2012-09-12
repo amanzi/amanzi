@@ -21,8 +21,11 @@ This is simply the conserved quantity in permafrost-Richards equation.
 namespace Amanzi {
 namespace Flow {
 
-PermafrostWaterContent::PermafrostWaterContent(Teuchos::ParameterList& wc_plist) {
+PermafrostWaterContent::PermafrostWaterContent(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
   my_key_ = std::string("water_content");
+  setLinePrefix(my_key_+std::string(" evaluator"));
+
   dependencies_.insert(std::string("porosity"));
 
   dependencies_.insert(std::string("saturation_liquid"));

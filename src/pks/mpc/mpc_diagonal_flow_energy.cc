@@ -20,20 +20,31 @@ namespace Amanzi {
 RegisteredPKFactory<MPCDiagonalFlowEnergy> MPCDiagonalFlowEnergy::reg_("energy-flow diagonally coupled");
 
 
-MPCDiagonalFlowEnergy::MPCDiagonalFlowEnergy(Teuchos::ParameterList& mpc_plist,
-        const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) :
-    StrongMPC(mpc_plist, S, soln) {};
+bool MPCDiagonalFlowEnergy::advance(double dt) {
+  n_iter_ = 0;
+  StrongMPC::advance(dt);
+}
 
+void MPCDiagonalFlowEnergy::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+  n_iter_++;
+  StrongMPC::fun(t_old, t_new, u_old, u_new, g);
+}
 
-void MPCDiagonalFlowEnergy::initialize(const Teuchos::RCP<State>& S) {
+void MPCDiagonalFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   StrongMPC::initialize(S);
 
   richards_pk_ = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
   ASSERT(richards_pk_ != Teuchos::null);
   two_phase_pk_ = Teuchos::rcp_dynamic_cast<Energy::TwoPhase>(sub_pks_[1]);
   ASSERT(two_phase_pk_ != Teuchos::null);
+  // this is just to check that we have access to protected/private data in
+  // Richards/TwoPhase
+  ASSERT(richards_pk_->preconditioner_ != Teuchos::null);
+  ASSERT(two_phase_pk_->preconditioner_ != Teuchos::null);
 
-  std::string methodstring = mpc_plist_.get<std::string>("preconditioning approach");
+  std::string methodstring = plist_.get<std::string>("preconditioning approach");
+
   if (methodstring == "diagonal") {
     method_ = PRECON_DIAGONAL;
   } else if (methodstring == "upper triangular") {
@@ -48,7 +59,7 @@ void MPCDiagonalFlowEnergy::initialize(const Teuchos::RCP<State>& S) {
     ASSERT(0);
   }
 
-  damping_ = mpc_plist_.get<double>("preconditioner damping", 1.0);
+  damping_ = plist_.get<double>("preconditioner damping", 1.0);
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");

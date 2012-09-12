@@ -16,12 +16,11 @@ namespace EnergyRelations {
 Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> IEMEvaluator::factory_("iem");
 
 
-IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& iem_plist) :
-    SecondaryVariableFieldEvaluator(),
-    iem_plist_(iem_plist) {
+IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
 
-  ASSERT(iem_plist_.isSublist("IEM parameters"));
-  Teuchos::ParameterList sublist = iem_plist_.sublist("IEM parameters");
+  ASSERT(plist_.isSublist("IEM parameters"));
+  Teuchos::ParameterList sublist = plist_.sublist("IEM parameters");
   IEMFactory fac;
   iem_ = fac.createIEM(sublist);
 
@@ -29,9 +28,8 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& iem_plist) :
 }
 
 
-IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& iem_plist, const Teuchos::RCP<IEM>& iem) :
-    SecondaryVariableFieldEvaluator(),
-    iem_plist_(iem_plist),
+IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<IEM>& iem) :
+    SecondaryVariableFieldEvaluator(plist),
     iem_(iem) {
 
   InitializeFromPlist_();
@@ -40,7 +38,6 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& iem_plist, const Teuchos::RCP
 
 IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    iem_plist_(other.iem_plist_),
     iem_(other.iem_),
     temp_key_(other.temp_key_) {}
 
@@ -52,7 +49,8 @@ IEMEvaluator::Clone() const {
 
 
 void IEMEvaluator::InitializeFromPlist_() {
-  my_key_ = iem_plist_.get<std::string>("internal energy key");
+  my_key_ = plist_.get<std::string>("internal energy key");
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // Set up my dependencies.
   std::size_t end = my_key_.find_first_of("_");
@@ -65,7 +63,7 @@ void IEMEvaluator::InitializeFromPlist_() {
   }
 
   // -- temperature
-  temp_key_ = iem_plist_.get<std::string>("temperature key",
+  temp_key_ = plist_.get<std::string>("temperature key",
           domain_name+std::string("temperature"));
   dependencies_.insert(temp_key_);
 }

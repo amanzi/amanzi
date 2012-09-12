@@ -16,17 +16,19 @@ namespace Relations {
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,EffectivePressureEvaluator> EffectivePressureEvaluator::factory_("effective_pressure");
 
-EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& ep_plist) :
-    ep_plist_(ep_plist) {
+EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
   my_key_ = ep_plist_.get<std::string>("effective pressure key", "effective_pressure");
+  setLinePrefix(my_key_+std::string(" evaluator"));
+
   pres_key_ = ep_plist_.get<std::string>("pressure key", "pressure");
   dependencies_.insert(pres_key_);
 }
 
 
-EffectivePressureEvaluator::EffectivePressureEvaluator(const EffectivePressureEvaluator& other) :
+EffectivePressureEvaluator::EffectivePressureEvaluator(
+        const EffectivePressureEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    ep_plist_(other.ep_plist_),
     pres_key_(other.pres_key_) {}
 
 

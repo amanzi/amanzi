@@ -14,14 +14,14 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-WRMIceWaterEvaluator::WRMIceWaterEvaluator(Teuchos::ParameterList& wrm_plist) :
-    WRMEvaluator(wrm_plist) {
+WRMIceWaterEvaluator::WRMIceWaterEvaluator(Teuchos::ParameterList& plist) :
+    WRMEvaluator(plist) {
   InitializeFromPlist_();
 }
 
-WRMIceWaterEvaluator::WRMIceWaterEvaluator(Teuchos::ParameterList& wrm_plist,
+WRMIceWaterEvaluator::WRMIceWaterEvaluator(Teuchos::ParameterList& plist,
         const Teuchos::RCP<WRMRegionPairList>& wrms) :
-    WRMEvaluator(wrm_plist, wrms) {
+    WRMEvaluator(plist, wrms) {
   InitializeFromPlist_();
 }
 
@@ -40,27 +40,28 @@ WRMIceWaterEvaluator::Clone() const {
 
 void WRMIceWaterEvaluator::InitializeFromPlist_() {
   // my keys are for saturation and rel perm.
-  my_keys_.push_back(wrm_plist_.get<string>("saturation key", "saturation_liquid"));
+  my_keys_.push_back(plist_.get<string>("saturation key", "saturation_liquid"));
+  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
-  calc_other_sat_ = wrm_plist_.get<bool>("calculate minor saturation", true);
+  calc_other_sat_ = plist_.get<bool>("calculate minor saturation", true);
   if (calc_other_sat_) {
     ASSERT(0);  // this is not implemented, as it physically doesn't make sense.
-    //my_keys_.push_back(wrm_plist_.get<string>("other saturation key", "one_minus_sat_liq"));
+    //my_keys_.push_back(plist_.get<string>("other saturation key", "one_minus_sat_liq"));
   }
 
   // my dependencies are temperature and density
-  temp_key_ = wrm_plist_.get<string>("temperature key", "temperature");
+  temp_key_ = plist_.get<string>("temperature key", "temperature");
   dependencies_.insert(temp_key_);
 
   // get the physical evaluator for P_{c-il}(T)
-  ASSERT(wrm_plist_.isSublist("capillary pressure of ice-water"));
-  Teuchos::ParameterList pc_plist = wrm_plist_.sublist("capillary pressure of ice-water");
+  ASSERT(plist_.isSublist("capillary pressure of ice-water"));
+  Teuchos::ParameterList pc_plist = plist_.sublist("capillary pressure of ice-water");
   pc_ = Teuchos::rcp(new PCIceWater(pc_plist));
 
   if (pc_->IsMolarBasis()) {
-    dens_key_ = wrm_plist_.get<std::string>("molar density key", "molar_density_liquid");
+    dens_key_ = plist_.get<std::string>("molar density key", "molar_density_liquid");
   } else {
-    dens_key_ = wrm_plist_.get<std::string>("mass density key", "mass_density_liquid");
+    dens_key_ = plist_.get<std::string>("mass density key", "mass_density_liquid");
   }
   dependencies_.insert(dens_key_);
 }
