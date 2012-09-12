@@ -601,7 +601,7 @@ void MPC::cycle_driver() {
           }
           if (mpc_dT > c_dT) {
             ntc = floor(mpc_dT/c_dT)+1;
-            tc_dT = mpc_dT/double(ntc);
+            tc_dT = mpc_dT/static_cast<double>(ntc);
           }
 
           if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
