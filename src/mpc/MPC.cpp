@@ -609,6 +609,7 @@ void MPC::cycle_driver() {
             if (transport_enabled) {
               *out << "  (chemistry sub cycling time step) / (transport time step) = " << tc_dT/t_dT << std::endl;
             }
+            *out << "  chemistry subcycling timestep = " << tc_dT << std::endl;
           }
           Amanzi::timer_manager.stop("Chemistry PK");
         }
