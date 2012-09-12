@@ -692,11 +692,6 @@ void MPC::cycle_driver() {
             }
             success = true;
           } catch (const ChemistryException& chem_error) {
-
-            if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-              *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
-            }
-
             // decrease the chemistry subcycling timestep and adjust the
             // number of subcycles we need to take accordingly
             ntc = 2*ntc;
@@ -709,6 +704,11 @@ void MPC::cycle_driver() {
             if (tries>=3) {
               Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
               Exceptions::amanzi_throw(message);
+            }
+
+            if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+              *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
+              *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
             }
 
             // restore chemistry data to the beginning of the subcycling
