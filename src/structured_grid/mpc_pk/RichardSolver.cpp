@@ -1777,34 +1777,54 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
   // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
   //
+  Vec w4;
+  ierr = VecDuplicate(w3,&w4); CHKPETSC(ierr);
+
   for (k=0; k<coloring->ncolors; k++) { 
       coloring->currentcolor = k;
       
       ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
       ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
       if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
+
+      ierr = VecCopy(x1_tmp,w4);CHKPETSC(ierr);
+      PetscReal *w4_array;
+      ierr = VecGetArray(w4,&w4_array);CHKPETSC(ierr);
+      if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array - start;          
+
       for (l=0; l<coloring->ncolumns[k]; l++) {
           col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
           w3_array[col] += epsilon;
+          w4_array[col] -= epsilon;
       } 
       if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
       ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
       
+      if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array + start;
+      ierr = VecRestoreArray(w4,&w4_array);CHKPETSC(ierr);
+
+#if 1
       // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
       ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
       ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      PetscReal epsilon_inv = 1/epsilon;
+#else
+      // w2 - w1 = F(w3) - F(w4) = F(x1 + dx) - F(x1 - dx)
+      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);        
+      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      PetscReal epsilon_inv = 0.5/epsilon;
+#endif
       
       // Insert (w2_j / dx) into J_ij [include diagonal term, dR1_i/dpbar_i = alphabar
-      PetscReal epsilon_inv = 1/epsilon;
       ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
       ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
 
-      if (ctype == IS_COLORING_GLOBAL)
-      {
-          a_array -= start;          
-      }
+      if (ctype == IS_COLORING_GLOBAL) a_array -= start;          
 
       for (l=0; l<coloring->nrows[k]; l++) {
           row    = coloring->rows[k][l];             /* local row index */
