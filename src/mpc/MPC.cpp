@@ -616,7 +616,6 @@ void MPC::cycle_driver() {
 
         // at this time we know the time step that we are going to use during subcycling: tc_dT
 
-
         if (chemistry_enabled) {
           // first store the chemistry state
           chem_data_->store(S->free_ion_concentrations(),
@@ -647,6 +646,9 @@ void MPC::cycle_driver() {
 
             // subcycling loop
             for (int iss = 0; iss<ntc; ++iss) {
+
+              // first we do a transport step, or if transport is off, we simply prepare
+              // total_component_concentration_star for the chemistry step
               if (transport_enabled) {
                 Amanzi::timer_manager.start("Transport PK");
                 TPK->Advance(tc_dT);
@@ -663,6 +665,8 @@ void MPC::cycle_driver() {
                 *total_component_concentration_star = *S->get_total_component_concentration();
               }
 
+              // second we do a chemistry step, or if chemistry is off, we simply update 
+              // total_component_concentration in state
               if (chemistry_enabled) {
 
                 if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
@@ -682,6 +686,8 @@ void MPC::cycle_driver() {
                 S->update_total_component_concentration(*total_component_concentration_star);
               }
 
+              // all went well, so we can advance intermediate time, and call commit state
+              // for each pk
               S->set_intermediate_time(S->intermediate_time() + tc_dT);
               Amanzi::timer_manager.start("Transport PK");
               if (transport_enabled) TPK->CommitState(TS);
@@ -692,6 +698,12 @@ void MPC::cycle_driver() {
             }
             success = true;
           } catch (const ChemistryException& chem_error) {
+            
+            // if the chemistry step failed, we back up to the beginning of
+            // the chemistry subcycling loop, but to do that we must restore
+            // a few things, such as the chemistry state, total component
+            // concentration, and back up the intermediate time
+
             // decrease the chemistry subcycling timestep and adjust the
             // number of subcycles we need to take accordingly
             ntc = 2*ntc;
@@ -706,6 +718,7 @@ void MPC::cycle_driver() {
               Exceptions::amanzi_throw(message);
             }
 
+            // the the user know that we're backing up due to a chemistry failure
             if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
               *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
               *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
@@ -725,6 +738,7 @@ void MPC::cycle_driver() {
                                  S->isotherm_kd(),
                                  S->isotherm_freundlich_n(),
                                  S->isotherm_langmuir_b());
+
             // restore the total component concentration to the beginning of chemistry subcycling
             S->update_total_component_concentration(tcc_stor);
             
@@ -741,9 +755,6 @@ void MPC::cycle_driver() {
       // update the times in the state object
       S->advance_time(mpc_dT);
 
-      //      ASSERT(S->intermediate_time() == S->final_time());
-      // if (FPK->flow_status() == AmanziFlow::FLOW_STATUS_STEADY_STATE_COMPLETE) S->set_time(Tswitch);
-
       // ===========================================================
       // we're done with this time step, commit the state
       // in the process kernels
@@ -753,6 +764,7 @@ void MPC::cycle_driver() {
         Amanzi::timer_manager.start("Transport PK");
         if (transport_enabled) TPK->CommitState(TS);
         Amanzi::timer_manager.stop("Transport PK");
+
         Amanzi::timer_manager.start("Chemistry PK");
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
         Amanzi::timer_manager.stop("Chemistry PK");
