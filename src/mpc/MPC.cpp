@@ -671,7 +671,7 @@ void MPC::cycle_driver() {
                 Amanzi::timer_manager.start("Chemistry PK");
                 CPK->advance(tc_dT, total_component_concentration_star);
 
-                // if (fail_count < 1) {
+                //if (fail_count < 1) {
                 //  ++fail_count;
                 //  throw ChemistryException();
                 //}
@@ -727,6 +727,9 @@ void MPC::cycle_driver() {
                                  S->isotherm_langmuir_b());
             // restore the total component concentration to the beginning of chemistry subcycling
             S->update_total_component_concentration(tcc_stor);
+            
+            // reset the intermediate time to the beginning
+            S->set_intermediate_time(S->initial_time());
 
             success = false;
           }
