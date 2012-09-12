@@ -13,13 +13,13 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-StandaloneElevationEvaluator::StandaloneElevationEvaluator(Teuchos::ParameterList& elev_plist) :
-    ElevationEvaluator(),
-    elev_plist_(elev_plist) {};
+StandaloneElevationEvaluator::StandaloneElevationEvaluator(
+        Teuchos::ParameterList& plist) :
+    ElevationEvaluator(plist) {}
 
-StandaloneElevationEvaluator::StandaloneElevationEvaluator(const StandaloneElevationEvaluator& other) :
-    ElevationEvaluator(),
-    elev_plist_(other.elev_plist_) {};
+StandaloneElevationEvaluator::StandaloneElevationEvaluator(
+        const StandaloneElevationEvaluator& other) :
+    ElevationEvaluator(other) {}
 
 Teuchos::RCP<FieldEvaluator> StandaloneElevationEvaluator::Clone() const {
   return Teuchos::rcp(new StandaloneElevationEvaluator(*this));
@@ -33,12 +33,12 @@ void StandaloneElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr
 
   // If necessary, create the functions from paramater lists.
   if (elevation_function_ == Teuchos::null) {
-    Teuchos::ParameterList elev_plist = elev_plist_.sublist("elevation function");
-    elevation_function_ = Functions::CreateCompositeVectorFunction(elev_plist, *elev);
+    Teuchos::ParameterList plist = plist_.sublist("elevation function");
+    elevation_function_ = Functions::CreateCompositeVectorFunction(plist, *elev);
   }
 
   if (slope_function_ == Teuchos::null) {
-    Teuchos::ParameterList slope_plist = elev_plist_.sublist("slope function");
+    Teuchos::ParameterList slope_plist = plist_.sublist("slope function");
     slope_function_ = Functions::CreateCompositeVectorFunction(slope_plist, *slope);
   }
 

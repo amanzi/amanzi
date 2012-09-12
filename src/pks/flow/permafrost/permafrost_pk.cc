@@ -34,27 +34,10 @@ RegisteredPKFactory<Permafrost> Permafrost::reg_("permafrost flow");
 
 
 // -------------------------------------------------------------
-// Constructor
-// -------------------------------------------------------------
-Permafrost::Permafrost(Teuchos::ParameterList& flow_plist,
-                       const Teuchos::RCP<State>& S,
-                       const Teuchos::RCP<TreeVector>& solution) {
-  flow_plist_ = flow_plist;
-  solution_ = solution;
-
-  // Creation is done in two parts.
-  // -- Pieces common to all flow evaluators.
-  SetupRichardsFlow_(S);
-
-  // -- Pieces specific to the permafrost evaluator.
-  SetupPhysicalEvaluators_(S);
-};
-
-// -------------------------------------------------------------
 // Create the physical evaluators for water content, water
 // retention, rel perm, etc, that are specific to Richards.
 // -------------------------------------------------------------
-void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
+void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Absolute permeability.
   //       For now, we assume scalar permeability.  This will change.
   S->RequireField("permeability")->SetMesh(S->GetMesh())->SetGhosted()
@@ -64,7 +47,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   // -- water content, and evaluator
   S->RequireField("water_content")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = flow_plist_.sublist("water content evaluator");
+  Teuchos::ParameterList wc_plist = plist_.sublist("water content evaluator");
   Teuchos::RCP<PermafrostWaterContent> wc =
       Teuchos::rcp(new PermafrostWaterContent(wc_plist));
   S->SetFieldEvaluator("water_content", wc);
@@ -85,7 +68,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   //    Krel(p_atm - p_liquid).
 
   // Evaluator 3.
-  Teuchos::ParameterList wrm_plist = flow_plist_.sublist("water retention evaluator");
+  Teuchos::ParameterList wrm_plist = plist_.sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMPermafrostEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMPermafrostEvaluator(wrm_plist));
   S->SetFieldEvaluator("saturation_liquid", wrm);
@@ -104,7 +87,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S) {
   S->SetFieldEvaluator(Bkey, wrm_B);
 
   // Evaluator 2.  Constructed using the same underlying vanGenuchten evaluator as evaluator 1.
-  Teuchos::ParameterList Aplist = flow_plist_.sublist("ice-water retention evaluator");
+  Teuchos::ParameterList Aplist = plist_.sublist("ice-water retention evaluator");
   std::string Akey = wrm_plist.get<string>("1/A key", "wrm_permafrost_one_on_A");
   Aplist.set("saturation key", Akey);
   Aplist.set("calculate minor saturation", false);

@@ -13,28 +13,26 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& wrm_plist) :
+// RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
 //     SecondaryVariableFieldEvaluator(),
-//     wrm_plist_(wrm_plist) {
-//   ASSERT(wrm_plist.isSublist("WRM parameters"));
-//   Teuchos::ParameterList sublist = wrm_plist.sublist("WRM parameters");
+//     plist_(plist) {
+//   ASSERT(plist.isSublist("WRM parameters"));
+//   Teuchos::ParameterList sublist = plist.sublist("WRM parameters");
 //   WRMFactory fac;
 //   wrm_ = fac.createWRM(sublist);
 
 //   InitializeFromPlist_();
 // }
 
-RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& wrm_plist,
+RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
         const Teuchos::RCP<WRMRegionPairList>& wrms) :
-    SecondaryVariableFieldEvaluator(),
-    wrm_plist_(wrm_plist),
+    SecondaryVariableFieldEvaluator(plist),
     wrms_(wrms) {
   InitializeFromPlist_();
 }
 
 RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    wrm_plist_(other.wrm_plist_),
     wrms_(other.wrms_),
     sat_key_(other.sat_key_) {}
 
@@ -47,10 +45,11 @@ RelPermEvaluator::Clone() const {
 
 void RelPermEvaluator::InitializeFromPlist_() {
   // my keys are for saturation and rel perm.
-  my_key_ = wrm_plist_.get<string>("rel perm key", "relative_permeability");
+  my_key_ = plist_.get<string>("rel perm key", "relative_permeability");
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // my dependencies are just saturation.
-  sat_key_ = wrm_plist_.get<string>("saturation key", "saturation_liquid");
+  sat_key_ = plist_.get<string>("saturation key", "saturation_liquid");
   dependencies_.insert(sat_key_);
 }
 

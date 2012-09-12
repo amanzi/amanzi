@@ -13,14 +13,13 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& wrm_plist) :
-    SecondaryVariablesFieldEvaluator(),
-    wrm_plist_(wrm_plist) {
-  ASSERT(wrm_plist_.isSublist("WRM parameters"));
+WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariablesFieldEvaluator(plist) {
+  ASSERT(plist_.isSublist("WRM parameters"));
 
   WRMFactory fac;
 
-  Teuchos::ParameterList region_list = wrm_plist_.sublist("WRM parameters");
+  Teuchos::ParameterList region_list = plist_.sublist("WRM parameters");
   wrms_ = Teuchos::rcp(new WRMRegionPairList());
 
   for (Teuchos::ParameterList::ConstIterator lcv=region_list.begin();
@@ -36,15 +35,13 @@ WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& wrm_plist) :
   }
 }
 
-WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& wrm_plist,
+WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
                            const Teuchos::RCP<std::vector<WRMRegionPair> >& wrms) :
-    SecondaryVariablesFieldEvaluator(),
-    wrm_plist_(wrm_plist),
+    SecondaryVariablesFieldEvaluator(plist),
     wrms_(wrms) {}
 
 WRMEvaluator::WRMEvaluator(const WRMEvaluator& other) :
     SecondaryVariablesFieldEvaluator(other),
-    wrm_plist_(other.wrm_plist_),
     wrms_(other.wrms_) {}
 
 } //namespace

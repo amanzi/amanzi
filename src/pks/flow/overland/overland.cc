@@ -40,12 +40,7 @@ RegisteredPKFactory<OverlandFlow> OverlandFlow::reg_("overland flow");
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
-                           const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& solution) :
-  flow_plist_(flow_plist) {
-
-  solution_ = solution;
+void OverlandFlow::setup(const Teuchos::Ptr<State>& S) {
   CreateMesh_(S);
 
   // Require fields and evaluators for those fields.
@@ -60,9 +55,6 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
 
   S->RequireField("overland_pressure", "overland_flow")->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_evaluator =
-      Teuchos::rcp(new PrimaryVariableFieldEvaluator("overland_pressure"));
-  S->SetFieldEvaluator("overland_pressure", pressure_evaluator);
 
   // -- owned secondary variables, no evaluator used
   S->RequireField("overland_flux", "overland_flow")->SetMesh(S->GetMesh("surface"))
@@ -84,7 +76,8 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
     Teuchos::ParameterList elev_plist = flow_plist_.sublist("elevation evaluator");
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
-    elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator());
+    Teuchos::ParameterList elev_plist = flow_plist_.sublist("elevation evaluator");
+    elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
@@ -171,7 +164,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& flow_plist,
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
+void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   // initial timestep size
   dt_ = flow_plist_.get<double>("Initial time step", 1.);
 
@@ -203,7 +196,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
   ic->Compute(S->time(), pres.ptr());
 
   // -- Initialize face values as the mean of neighboring cell values.
-  DeriveFaceValuesFromCellValues_(S, pres);
+  DeriveFaceValuesFromCellValues_(pres);
 
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_overland_conductivity","overland_flow")->PutScalar(1.0);
@@ -238,7 +231,7 @@ void OverlandFlow::initialize(const Teuchos::RCP<State>& S) {
 };
 
 
-void OverlandFlow::CreateMesh_(const Teuchos::RCP<State>& S) {
+void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
   // Create mesh
   if (S->GetMesh()->space_dimension() == 3) {
 
@@ -464,15 +457,14 @@ void OverlandFlow::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
-void OverlandFlow::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector> & pres) {
+void OverlandFlow::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector> & pres) {
   AmanziMesh::Entity_ID_List cells;
   pres->ScatterMasterToGhosted("cell");
 
   int f_owned = pres->size("face");
   for (int f=0; f!=f_owned; ++f) {
     cells.clear();
-    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    pres->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
 
     int ncells = cells.size();
     double face_value = 0.0;
@@ -487,7 +479,7 @@ void OverlandFlow::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
-void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::RCP<State>& S) {
+void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<const CompositeVector> elevation = S->GetFieldData("elevation");
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("overland_pressure");
@@ -526,7 +518,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::RCP<State>& S) {
   }
 };
 
-void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::RCP<State>& S) {
+void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<const CompositeVector> elevation = S->GetFieldData("elevation");
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("overland_pressure");
