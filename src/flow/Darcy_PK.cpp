@@ -380,9 +380,13 @@ int Darcy_PK::Advance(double dT_MPC)
   // update boundary conditions and source terms
   time = T_physics;
   bc_pressure->Compute(time);
-  bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
+  if (shift_water_table_.getRawPtr() == NULL) {
+    bc_head->Compute(time);
+  } else {
+    bc_head->ComputeShift(time, shift_water_table_->Values());
+  }
 
   if (src_sink != NULL) {
     if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
