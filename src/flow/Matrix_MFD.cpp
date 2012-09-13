@@ -107,7 +107,6 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    // mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];

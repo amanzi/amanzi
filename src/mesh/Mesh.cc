@@ -586,8 +586,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     std::vector<int> fdirs;
     std::vector<AmanziGeometry::Point> cfcoords;
     
-    cell_get_faces(cellid,&faces);
-    cell_get_face_dirs(cellid,&fdirs);
+    cell_get_faces_and_dirs(cellid,&faces,&fdirs);
     
     nf = faces.size();
     

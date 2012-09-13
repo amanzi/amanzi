@@ -125,15 +125,6 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
       const Amanzi::AmanziMesh::Entity_kind kind) const
   { return 0; }
 
-  void 
-  cell_get_faces (const Amanzi::AmanziMesh::Entity_ID cellid, 
-                  Amanzi::AmanziMesh::Entity_ID_List *faceids) const
-  {} 
-
-  void cell_get_face_dirs (const Amanzi::AmanziMesh::Entity_ID cellid, 
-                           std::vector<int> *face_dirs) const
-  {}
-  
   void cell_get_faces_and_dirs (const Amanzi::AmanziMesh::Entity_ID cellid,
                                 Amanzi::AmanziMesh::Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
