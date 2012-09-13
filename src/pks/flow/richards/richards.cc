@@ -63,6 +63,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                     ->SetComponents(names2, locations2, num_dofs2);
 
   // -- secondary variables, no evaluator used
+  S->RequireField("darcy_flux_direction", name_)->SetMesh(S->GetMesh())->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("darcy_flux", name_)->SetMesh(S->GetMesh())->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("darcy_velocity", name_)->SetMesh(S->GetMesh())->SetGhosted()
@@ -103,7 +105,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-            "relative_permeability", "numerical_rel_perm", "darcy_flux"));
+            "relative_permeability", "numerical_rel_perm", "darcy_flux_direction"));
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (method_name == "arithmetic mean") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
@@ -190,16 +192,14 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
-  // Initialize face values as the mean of neighboring cell values.
-  Teuchos::RCP<CompositeVector> pres = S->GetFieldData(key_, name_);
-  DeriveFaceValuesFromCellValues_(pres);
-
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("numerical_rel_perm",name_)->PutScalar(1.0);
   S->GetField("numerical_rel_perm",name_)->set_initialized();
 
   S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
   S->GetField("darcy_flux", name_)->set_initialized();
+  S->GetFieldData("darcy_flux_direction", name_)->PutScalar(0.0);
+  S->GetField("darcy_flux_direction", name_)->set_initialized();
 
   S->GetFieldData("darcy_velocity", name_)->PutScalar(0.0);
   S->GetField("darcy_velocity", name_)->set_initialized();
@@ -221,20 +221,25 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  // update the rel perm on cells.
-  bool update = S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), name_);
-  if (update) UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm", name_);
+  // Update flux if rel perm, density, or pressure have changed.
+  bool update = UpdatePermeabilityData_(S.ptr());
+  update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
+  update |= S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S, name_);
 
-  // update the flux
-  Teuchos::RCP<const CompositeVector> pres =
-    S->GetFieldData(key_);
-  Teuchos::RCP<CompositeVector> darcy_flux =
-    S->GetFieldData("darcy_flux", name_);
+  if (update) {
+    // update the stiffness matrix with the new rel perm
+    Teuchos::RCP<const CompositeVector> rel_perm =
+        S->GetFieldData("numerical_rel_perm", name_);
+    matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
 
-  matrix_->CreateMFDstiffnessMatrices(*rel_perm);
-  matrix_->DeriveFlux(*pres, darcy_flux);
-  AddGravityFluxesToVector_(S, darcy_flux);
+    // derive the fluxes
+    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+    Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+    Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
+    matrix_->DeriveFlux(*pres, darcy_flux);
+    AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
+  }
 };
 
 
@@ -254,77 +259,82 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
-void Richards::UpdatePermeabilityData_(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
-  //  std::cout << "REL PERM:" << std::endl;
-  //  rel_perm->Print(std::cout);
+bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
+  bool update_perm = S->GetFieldEvaluator("relative_permeability")
+      ->HasFieldChanged(S, name_);
 
-  // get the upwinding done
-  upwinding_->Update(S.ptr());
+  // requirements due to the upwinding method
+  if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+    bool update_dir = S->GetFieldEvaluator("mass_density_liquid")
+        ->HasFieldChanged(S, name_);
+    update_dir |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
 
-  // patch up the BCs
-  //  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
-  Teuchos::RCP<CompositeVector> num_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
+    if (update_dir) {
+      // update the direction of the flux -- note this is NOT the flux
+      Teuchos::RCP<CompositeVector> flux_dir =
+          S->GetFieldData("darcy_flux_direction", name_);
 
+      // Create the stiffness matrix without a rel perm (rel perm = 1)
+      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
 
-  for (int c=0; c!=num_rel_perm->size("cell",false); ++c) {
-    if (boost::math::isnan<double>((*num_rel_perm)("cell",c))) {
-      std::cout << "NaN in cell rel perm." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
+      // Derive the pressure fluxes
+      Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+      matrix_->DeriveFlux(*pres, flux_dir);
+
+      // Add in the gravity fluxes
+      Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+      Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+      AddGravityFluxesToVector_(gvec, Teuchos::null, rho, flux_dir);
+    }
+
+    update_perm |= update_dir;
+  }
+
+  Teuchos::RCP<CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm", name_);
+  if (update_perm) {
+    // upwind
+    upwinding_->Update(S);
+
+    // REMOVE ME!
+    for (int c=0; c!=rel_perm->size("cell",false); ++c) {
+      if (boost::math::isnan<double>((*rel_perm)("cell",c))) {
+        std::cout << "NaN in cell rel perm." << std::endl;
+        Errors::Message m("Cut time step");
+        Exceptions::amanzi_throw(m);
+      }
+    }
+    for (int f=0; f!=rel_perm->size("face",false); ++f) {
+      if (boost::math::isnan<double>((*rel_perm)("face",f))) {
+        std::cout << "NaN in face rel perm." << std::endl;
+        Errors::Message m("Cut time step");
+        Exceptions::amanzi_throw(m);
+      }
+    }
+
+    // patch up the BCs -- FIX ME --etc
+    for (int f=0; f!=rel_perm->size("face"); ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      if (cells.size() < 2) {
+        // just grab the cell inside's perm... this will need to be fixed eventually.
+        (*rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
+      }
     }
   }
-  for (int f=0; f!=num_rel_perm->size("face",false); ++f) {
-    if (boost::math::isnan<double>((*num_rel_perm)("face",f))) {
-      std::cout << "NaN in face rel perm." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
+
+  // Scale cells by n/visc if needed.
+  update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
+  update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
+
+  if (update_perm) {
+    Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
+    Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
+    for (int c=0; c!=rel_perm->size("cell"); ++c) {
+      (*rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
     }
   }
 
-
-  for (int f=0; f!=num_rel_perm->size("face"); ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    num_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    if (cells.size() < 2) {
-      // just grab the cell inside's perm... this will need to be fixed eventually.
-      (*num_rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
-    }
-  }
-
-  // scale cells by n/visc
-  S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S.ptr(), name_);
-  S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
-  int ncells = num_rel_perm->size("cell");
-  for (int c=0; c!=ncells; ++c) {
-    (*num_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
-  }
-
-  //  num_rel_perm->Print(std::cout);
-};
-
-
-// -----------------------------------------------------------------------------
-// Interpolate pressure ICs on cells to ICs for lambda (faces).
-// -----------------------------------------------------------------------------
-void Richards::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& pres) {
-  AmanziMesh::Entity_ID_List cells;
-  pres->ScatterMasterToGhosted("cell");
-
-  int f_owned = pres->size("face");
-  for (int f=0; f!=f_owned; ++f) {
-    cells.clear();
-    pres->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    double face_value = 0.0;
-    for (int n=0; n!=ncells; ++n) {
-      face_value += (*pres)("cell",cells[n]);
-    }
-    (*pres)("face",f) = face_value / ncells;
-  }
+  return update_perm;
 };
 
 

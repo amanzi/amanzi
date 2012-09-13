@@ -38,6 +38,11 @@ void StrongMPC::setup(const Teuchos::Ptr<State>& S) {
 // initialize() methods.
 // -----------------------------------------------------------------------------
 void StrongMPC::initialize(const Teuchos::Ptr<State>& S) {
+  // Just calls both subclass's initialize.  NOTE - order is important here --
+  // MPC<PKBDFBase> grabs the primary variables from each sub-PK and stuffs
+  // them into the solution, which must be done prior to BDFBase initializing
+  // the timestepper.
+
   // Initialize all sub PKs.
   MPC<PKBDFBase>::initialize(S);
 

@@ -69,15 +69,15 @@ void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> 
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // div K_e grad u
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S_next_->GetFieldData("thermal_conductivity", "energy");
+  Teuchos::RCP<const CompositeVector> thermal_conductivity =
+      S_next_->GetFieldData("thermal_conductivity");
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  preconditioner_->CreateMFDstiffnessMatrices(*thermal_conductivity);
+  preconditioner_->CreateMFDstiffnessMatrices(thermal_conductivity);
   preconditioner_->CreateMFDrhsVectors();
 
   // update with accumulation terms

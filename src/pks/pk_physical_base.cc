@@ -77,8 +77,35 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
   field->Initialize(ic_plist);
 
+  // -- Update faces from cells if needed.
+  if (ic_plist.get<bool>("initialize faces from cells", false)) {
+    DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
+  }
+
   // -- Push the data into the solution.
   solution_->set_data(field->GetFieldData());
+};
+
+
+// -----------------------------------------------------------------------------
+// Interpolate pressure ICs on cells to ICs for lambda (faces).
+// -----------------------------------------------------------------------------
+void PKPhysicalBase::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv) {
+  AmanziMesh::Entity_ID_List cells;
+  cv->ScatterMasterToGhosted("cell");
+
+  int f_owned = cv->size("face");
+  for (int f=0; f!=f_owned; ++f) {
+    cells.clear();
+    cv->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += (*cv)("cell",cells[n]);
+    }
+    (*cv)("face",f) = face_value / ncells;
+  }
 };
 
 

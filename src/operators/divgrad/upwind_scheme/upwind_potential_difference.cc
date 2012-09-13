@@ -11,6 +11,8 @@
 // determined by an (optional) other field.
 // -----------------------------------------------------------------------------
 
+#include "composite_vector.hh"
+#include "state.hh"
 #include "upwind_potential_difference.hh"
 
 namespace Amanzi {

@@ -12,6 +12,8 @@
 
 #include "Mesh.hh"
 
+#include "composite_vector.hh"
+#include "state.hh"
 #include "upwind_cell_centered.hh"
 
 namespace Amanzi {

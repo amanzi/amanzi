@@ -74,7 +74,6 @@ protected:
 
   virtual void UpdateBoundaryConditions_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
-  virtual void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& temp);
 
   virtual void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
   virtual void AddAdvection_(const Teuchos::RCP<State> S,

@@ -123,7 +123,7 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
 /* ******************************************************************
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
-void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
+void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel){
   int dim = mesh_->space_dimension();
 
   WhetStone::MFD3D mfd(mesh_);
@@ -144,22 +144,28 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const CompositeVector& Krel) {
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (!Krel.has_component("face")) {
+    if (Krel == Teuchos::null) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * Krel("cell",0,c);
+          Bff(m, n) = Mff(m,n);
         }
       }
-    } else if (!Krel.has_component("cell")) {
+    } else if (!Krel->has_component("face")) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * Krel("face",0,faces[m]);
+          Bff(m, n) = Mff(m,n) * (*Krel)("cell",0,c);
+        }
+      }
+    } else if (!Krel->has_component("cell")) {
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * (*Krel)("face",0,faces[m]);
         }
       }
     } else {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * Krel("cell",0,c) * Krel("face",0,faces[m]);
+          Bff(m, n) = Mff(m,n) * (*Krel)("cell",0,c) * (*Krel)("face",0,faces[m]);
         }
       }
     }

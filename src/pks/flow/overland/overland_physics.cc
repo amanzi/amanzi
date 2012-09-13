@@ -34,7 +34,7 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
     S->GetFieldData("upwind_overland_conductivity", "overland_flow");
 
   // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(*cond);
+  matrix_->CreateMFDstiffnessMatrices(cond);
   matrix_->CreateMFDrhsVectors();
 
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
