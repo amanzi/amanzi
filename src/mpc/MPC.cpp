@@ -638,7 +638,6 @@ void MPC::cycle_driver() {
 
         bool success(true);
         int tries(0);
-        // int fail_count(0);
 
         do {
           // try to subcycle with tc_dT, if that fails, we will cut that time step and try again
@@ -674,11 +673,6 @@ void MPC::cycle_driver() {
                 }
                 Amanzi::timer_manager.start("Chemistry PK");
                 CPK->advance(tc_dT, total_component_concentration_star);
-
-                //if (fail_count < 1) {
-                //  ++fail_count;
-                //  throw ChemistryException();
-                //}
 
                 Amanzi::timer_manager.stop("Chemistry PK");
                 S->update_total_component_concentration(CPK->get_total_component_concentration());
