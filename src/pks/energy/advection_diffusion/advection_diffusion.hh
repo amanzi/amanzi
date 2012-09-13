@@ -67,7 +67,6 @@ private:
   void ApplyDiffusion_(const Teuchos::RCP<State> S, const Teuchos::RCP<CompositeVector> f);
 
   // methods for applying/using the discretization/operators
-  void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& temp);
   void UpdateBoundaryConditions_();
   void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
 

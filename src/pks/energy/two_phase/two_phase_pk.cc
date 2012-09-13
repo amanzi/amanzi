@@ -152,19 +152,6 @@ void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
-
-  // initial conditions
-  // -- Get the IC function plist.
-  if (!plist_.isSublist("initial condition")) {
-    std::stringstream messagestream;
-    messagestream << "Two Phase Energy PK has no initial condition parameter list.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-  // update face temperatures as a hint?
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
-  DeriveFaceValuesFromCellValues_(temp);
 };
 
 
@@ -176,26 +163,6 @@ void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {};
-
-// -----------------------------------------------------------------------------
-// Interpolate pressure ICs on cells to ICs for lambda (faces).
-// -----------------------------------------------------------------------------
-void TwoPhase::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& temp) {
-  AmanziMesh::Entity_ID_List cells;
-
-  int f_owned = temp->size("face");
-  for (int f=0; f!=f_owned; ++f) {
-    cells.clear();
-    temp->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    double face_value = 0.0;
-    for (int n=0; n!=ncells; ++n) {
-      face_value += (*temp)("cell",cells[n]);
-    }
-    (*temp)("face",f) = face_value / ncells;
-  }
-};
 
 
 // -----------------------------------------------------------------------------

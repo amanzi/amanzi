@@ -75,12 +75,9 @@ protected:
   virtual void UpdateBoundaryConditions_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres);
 
-  // bdf needs help
-  virtual void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& pres);
-
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual void SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S);
-  virtual void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
+  virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
   // -- diffusion term
@@ -90,11 +87,16 @@ protected:
   // -- accumulation term
   virtual void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
 
-  // -- gravity contributions
-  virtual void AddGravityFluxes_(const Teuchos::RCP<State>& S,
+  // -- gravity contributions to matrix or vector
+  virtual void AddGravityFluxes_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
+          const Teuchos::RCP<const CompositeVector>& rel_perm,
+          const Teuchos::RCP<const CompositeVector>& rho,
           const Teuchos::RCP<Operators::MatrixMFD>& matrix);
-  virtual void AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& darcy_mass_flux);
+
+  virtual void AddGravityFluxesToVector_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
+          const Teuchos::RCP<const CompositeVector>& rel_perm,
+          const Teuchos::RCP<const CompositeVector>& rho,
+          const Teuchos::RCP<CompositeVector>& darcy_flux);
 
 
 protected:

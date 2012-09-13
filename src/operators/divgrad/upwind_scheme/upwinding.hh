@@ -13,21 +13,18 @@
 #ifndef AMANZI_UPWINDING_SCHEME_
 #define AMANZI_UPWINDING_SCHEME_
 
-#include "state.hh"
-#include "composite_vector.hh"
-
 namespace Amanzi {
+
+// forward declaration
+class State;
+
 namespace Operators {
 
 class Upwinding {
-  // eventually this should be something like:
-  // class Upwinding : public Model {
 
-public:
-
-virtual void
-Update(const Teuchos::Ptr<State>& S) = 0;
-
+ public:
+  virtual void
+  Update(const Teuchos::Ptr<State>& S) = 0;
 };
 
 } // namespace
