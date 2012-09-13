@@ -30,6 +30,19 @@ endif()
 ##############################################################################
 # Boost
 ##############################################################################
+
+# CMake 2.8.6 FindBoost stops at version 1.46
+# Add more versions to the search see cmake --help-module FindBoost for
+# more information.
+set(Boost_ADDITIONAL_VERSIONS 
+    1.47 1.47.0
+    1.48 1.48.0
+    1.49 1.49.0
+    1.50 1.50.0
+    1.51 1.51.0
+    1.52 1.52.0
+    1.53 1.53.0
+    1.54 1.55.0)
 find_package( Boost COMPONENTS system filesystem program_options regex REQUIRED)
 set_feature_info(Boost
                  "C++ Extension library"
@@ -43,11 +56,11 @@ if ( Boost_VERSION)
                     " is older than the supported (1.46) version.")
   endif()
 
-  # The Boost filesystem library changed and deprecated some functions
-  # This flag should be used when packages include boost/filesystem.hpp
-  # and packages use an older version. The change from version 2 to 3
-  # occured with the 1.49 Boost release. Please refer to the 
-  # documentation 
+  # The Boost filesystem library changed and deprecated some functions.
+  # This define should be used when packages include boost/filesystem.hpp
+  # and packages any of these new or deprecated functions.
+  # The change from version 2 to 3 occured with the 1.49 Boost release.
+  # Please refer to the online documentation at www.boost.org.
   if ( "${Boost_VERSION}" VERSION_LESS "1.34" )
     set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=1")
   elseif ( "${Boost_VERSION}" VERSION_LESS "1.49" )
