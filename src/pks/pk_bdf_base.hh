@@ -57,6 +57,9 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   // error criteria
   double atol_, rtol_;
 
+  // debugging
+  bool catch_errors_;
+
 };
 
 } // namespace

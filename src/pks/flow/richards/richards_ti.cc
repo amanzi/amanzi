@@ -285,7 +285,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<const CompositeVector> pres =
       S_next_->GetFieldData(key_);
 
-
+  /*
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
 
   // update with accumulation terms
@@ -327,6 +327,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   *out_ << "    cv =" << (*cell_volume)("cell",c) << std::endl;
   *out_ << "   res3 (99) =" << (*dwc_dp)("cell",c) / phi / (*cell_volume)("cell",c) << std::endl;
   }
+  */
 
   // -- get the matrices/rhs that need updating
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();

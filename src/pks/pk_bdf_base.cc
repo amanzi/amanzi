@@ -30,6 +30,12 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
   dt_ = plist_.get<double>("initial time step", 1.);
   time_step_reduction_factor_ =
     plist_.get<double>("time step reduction factor", 1.);
+
+  // debugging option -- The BDF advance() method catches all errors, and then
+  // re-throws ones it doesn't recognize.  Putting "false" in the PK PList
+  // removes the catch, making debugging and debugger usage easier.
+  catch_errors_ = plist_.get<bool>("catch thrown errors", true);
+
 };
 
 
@@ -69,20 +75,24 @@ bool PKBDFBase::advance(double dt) {
   // take a bdf timestep
   double h = dt;
   double dt_solver;
-  try {
-    dt_solver = time_stepper_->time_step(h, solution_);
-  } catch (Exceptions::Amanzi_exception &error) {
-    // fix me! --etc
-    std::cout << "Timestepper called error: " << error.what() << std::endl;
+  if (catch_errors_) {
+    try {
+      dt_solver = time_stepper_->time_step(h, solution_);
+    } catch (Exceptions::Amanzi_exception &error) {
+      // fix me! --etc
+      std::cout << "Timestepper called error: " << error.what() << std::endl;
 
-    if (error.what() == std::string("BDF time step failed") ||
-        error.what() == std::string("Cut time step")) {
-      // try cutting the timestep
-      dt_ = h*time_step_reduction_factor_;
-      return true;
-    } else {
-      throw error;
+      if (error.what() == std::string("BDF time step failed") ||
+          error.what() == std::string("Cut time step")) {
+        // try cutting the timestep
+        dt_ = h*time_step_reduction_factor_;
+        return true;
+      } else {
+        throw error;
+      }
     }
+  } else {
+    dt_solver = time_stepper_->time_step(h, solution_);
   }
 
   // commit the step as successful
