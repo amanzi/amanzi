@@ -139,20 +139,24 @@ add_amanzi_library(udriv
 
 #
 # Binary: verify_mesh
-#
 add_amanzi_executable(verify_mesh
                       SOURCE verify_mesh.cc
                       LINK_LIBS mesh_factory mesh mesh_audit ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
+		    		    
 
 #
 # Binary: verify_hex
-#
+# verify_hex uses deprecated boost::filesystem
+# methods needs to pass version information to the
+# prepoccessor
 if ( ENABLE_CGNS )
     add_amanzi_executable(verify_hex
                           SOURCE verify_hex.cc
                           LINK_LIBS mesh_factory
                                     mesh mesh_audit
                                     output ${Boost_LIBRARIES} ${CGNS_LIBRARIES})
+    set_target_properties(verify_hex PROPERTIES
+                          COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")
 endif()
 
 #

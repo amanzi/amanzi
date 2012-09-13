@@ -43,6 +43,20 @@ if ( Boost_VERSION)
                     " is older than the supported (1.46) version.")
   endif()
 
+  # The Boost filesystem library changed and deprecated some functions
+  # This flag should be used when packages include boost/filesystem.hpp
+  # and packages use an older version. The change from version 2 to 3
+  # occured with the 1.49 Boost release. Please refer to the 
+  # documentation 
+  if ( "${Boost_VERSION}" VERSION_LESS "1.34" )
+    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=1")
+  elseif ( "${Boost_VERSION}" VERSION_LESS "1.49" )
+    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=2")
+  else()
+    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=3")
+  endif()  
+
+
 endif()
 
 ##############################################################################

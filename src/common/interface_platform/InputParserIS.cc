@@ -12,7 +12,7 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
-#define BOOST_FILESYSTEM_VERSION 2
+#define  BOOST_FILESYTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 

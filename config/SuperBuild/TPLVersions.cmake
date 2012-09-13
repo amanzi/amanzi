@@ -88,13 +88,13 @@ set(CGNS_MD5_SUM        42063efdf726c81300a51c3495d3224e)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 48)
+set(Boost_VERSION_MINOR 51)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.gz)
-set(Boost_MD5_SUM        313a11e97eb56eb7efd18325354631be) 
+set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
+set(Boost_MD5_SUM        4b6bd483b692fd138aef84ed2c8eb679) 
 
 #
 # TPL: BoostCmake
@@ -105,7 +105,7 @@ set(BoostCmake_VERSION_PATCH 1)
 set(BoostCmake_VERSION        ${BoostCmake_VERSION_MAJOR}.${BoostCmake_VERSION_MINOR}.${BoostCmake_VERSION_PATCH})
 set(BoostCmake_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(BoostCmake_ARCHIVE_FILE   boost-cmake-cmake-${BoostCmake_VERSION}.tar.gz)
-set(BoostCmake_MD5_SUM        c85221a1bf8b45537538249b9e912f4c) 
+set(BoostCmake_MD5_SUM        ) 
 
 #
 # TPL: HDF5
