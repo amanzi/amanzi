@@ -231,14 +231,14 @@ BOOST_VERSION=1_46_1
 UNITTEST_VERSION=1.4
 ZLIB_VERSION=1.2.5
 CURL_VERSION=7.21.2
-HDF5_VERSION=1.8.7
+HDF5_VERSION=1.8.8
 NETCDF_VERSION=4.1.1
 EXODUS_VERSION=4.98
 MOAB_VERSION=r4276
 CGNS_VERSION=2.5
 CGNS_PATCH=4
 METIS_VERSION=4.0.3
-MSTK_VERSION=1.84
+MSTK_VERSION=1.86rc2
 TRILINOS_VERSION=10.6.4
 CCSE_VERSION=1.0.9
 ASCEMIO_VERSION=2.1
@@ -810,6 +810,8 @@ function install_mstk {
 	-D CMAKE_BUILD_TYPE:STRING=Release \
 	-D ENABLE_PARALLEL=yes \
 	-D ENABLE_ExodusII=yes \
+        -D ENABLE_ZOLTAN:BOOL=TRUE \
+        -D ZOLTAN_DIR:PATH=${TRILINOS_INSTALL} \
 	-D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \
 	-D NetCDF_DIR:FILEPATH=${NETCDF_PREFIX} \
 	-D ExodusII_DIR:FILEPATH=${PREFIX} \
@@ -1391,11 +1393,6 @@ if [ $BUILD_ASCEMIO -eq 1 ]; then
     cd ${SCRIPT_DIR}
 fi
 
-if [ $BUILD_CCSE -eq 1 ]; then
-    install_ccse
-    cd ${SCRIPT_DIR}
-fi
-
 if [ $BUILD_NETCDF -eq 1 ]; then
     install_netcdf
     cd ${SCRIPT_DIR}
@@ -1417,11 +1414,6 @@ if [ $BUILD_METIS -eq 1 ]; then
     cd ${SCRIPT_DIR}
 fi
 
-if [ $BUILD_MSTK -eq 1 ]; then
-    install_mstk
-    cd ${SCRIPT_DIR}
-fi
-
 if [ $BUILD_CGNS -eq 1 ]; then
     install_cgns
     cd ${SCRIPT_DIR}
@@ -1429,6 +1421,16 @@ fi
 
 if [ $BUILD_TRILINOS -eq 1 ]; then
     install_trilinos
+    cd ${SCRIPT_DIR}
+fi
+
+if [ $BUILD_MSTK -eq 1 ]; then
+    install_mstk
+    cd ${SCRIPT_DIR}
+fi
+
+if [ $BUILD_CCSE -eq 1 ]; then
+    install_ccse
     cd ${SCRIPT_DIR}
 fi
 

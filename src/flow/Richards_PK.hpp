@@ -112,7 +112,6 @@ class Richards_PK : public Flow_PK {
   void CalculateWRMcurves(Teuchos::ParameterList& list);
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
-  std::string FindStringLinearSolver(const Teuchos::ParameterList& list);
   void AnalysisTI_Specs();
 
   // water retention models
@@ -162,7 +161,6 @@ class Richards_PK : public Flow_PK {
   AztecOO* solver;  // Linear solver data
   Matrix_MFD* matrix_;
   Matrix_MFD* preconditioner_;
-  double convergence_tol;
 
   BDF2::Dae* bdf2_dae;  // Time intergrators
   BDF1Dae* bdf1_dae;
@@ -170,20 +168,16 @@ class Richards_PK : public Flow_PK {
   int error_control_;
   double functional_max_norm;
 
-  TI_Specs ti_specs_igs_;  // Parameters for initial guess solution
+  TI_Specs ti_specs_igs_;  // Tree time integration phases
   int ti_method_igs, error_control_igs_;
-  std::string preconditioner_name_igs_;
-
-  TI_Specs ti_specs_sss_;  // Parameters for steady-state solution
+  TI_Specs ti_specs_sss_;
   int ti_method_sss, error_control_sss_;
-  std::string preconditioner_name_sss_;
-
-  TI_Specs ti_specs_trs_; // Parameters for transient solution
+  TI_Specs ti_specs_trs_;
   int ti_method_trs, error_control_trs_; 
-  std::string preconditioner_name_trs_;
 
   //double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
-  int ti_method, num_itrs, max_itrs, preconditioner_method;
+  int ti_method, num_itrs_nonlinear, max_itrs_linear;
+  double convergence_tol_linear;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

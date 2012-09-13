@@ -17,6 +17,7 @@
 #include "Unstructured_observations.hpp"
 #include "Vis.hpp"
 #include "Restart.hpp"
+#include "chemistry_data.hh"
 
 namespace Amanzi {
 
@@ -93,7 +94,9 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   
   // picard flag
   bool do_picard_;
-   
+
+  // stor for chemistry data to allow repeat of chemistry step
+  Teuchos::RCP<chemistry_data> chem_data_;
 };
     
 } // namespace Amanzi

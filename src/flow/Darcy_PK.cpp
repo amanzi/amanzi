@@ -114,6 +114,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
+  verbosity = FLOW_VERBOSITY_HIGH;
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
 }
 
@@ -168,13 +169,20 @@ void Darcy_PK::InitPK()
   bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces_wghost, 0.0);
 
+  ProcessShiftWaterTableList();
+
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
   time = T_physics;
-  bc_head->Compute(time);
+  bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
+  if (shift_water_table_.getRawPtr() == NULL) {
+    bc_head->Compute(time);
+  } else {
+    bc_head->ComputeShift(time, shift_water_table_->Values());
+  }
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure,
@@ -193,7 +201,7 @@ void Darcy_PK::InitPK()
   Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
 
   // Preconditioner
-  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(preconditioner_name_sss_).sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(ti_specs_sss.preconditioner_name).sublist("ML Parameters");
   preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
 
   // Allocate memory for wells
@@ -247,7 +255,6 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   set_time(T0, dT0);
   dT_desirable_ = dT0;  // The minimum desirable time step from now on.
-  num_itrs_sss = 0;
 
   Epetra_Vector& pressure = FS->ref_pressure();
   *solution_cells = pressure;
@@ -343,13 +350,17 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&u);  // initial solution guess
 
-  solver->Iterate(max_itrs_sss, convergence_tol_sss);
-  num_itrs_sss = solver->NumIters();
-  residual_sss = solver->TrueResidual();
+  int max_itrs = ti_specs_sss.ls_specs.max_itrs;
+  double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
+
+  solver->Iterate(max_itrs, convergence_tol);
+
+  int num_itrs = solver->NumIters();
+  double residual = solver->TrueResidual();
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::cout << "Darcy solver performed " << num_itrs_sss << " iterations." << std::endl
-              << "Norm of true residual = " << residual_sss << std::endl;
+    std::cout << "Darcy solver performed " << num_itrs << " iterations." << std::endl
+              << "Norm of the true residual = " << residual << std::endl;
   }
 }
 
@@ -369,9 +380,13 @@ int Darcy_PK::Advance(double dT_MPC)
   // update boundary conditions and source terms
   time = T_physics;
   bc_pressure->Compute(time);
-  bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
+  if (shift_water_table_.getRawPtr() == NULL) {
+    bc_head->Compute(time);
+  } else {
+    bc_head->ComputeShift(time, shift_water_table_->Values());
+  }
 
   if (src_sink != NULL) {
     if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
@@ -407,7 +422,10 @@ int Darcy_PK::Advance(double dT_MPC)
   solver->SetLHS(&*solution);  // initial solution guess
   *pdot_cells = *solution_cells;
 
-  solver->Iterate(max_itrs_sss, convergence_tol_sss);
+  int max_itrs = ti_specs_sss.ls_specs.max_itrs;
+  double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
+
+  solver->Iterate(max_itrs, convergence_tol);
   num_itrs_trs++;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
@@ -487,8 +505,9 @@ void Darcy_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Te
 {
   for (int c = 0; c < K.size(); c++) {
     Kxy[c] = 0.0;
-    for (int i = 0; i < dim; i++) Kxy[c] += K[c](i, i);
-    Kxy[c] /= dim;
+    int idim = std::max<int>(1, K[c].size() - 1);
+    for (int i = 0; i < idim; i++) Kxy[c] += K[c](i, i);
+    Kxy[c] /= idim;
   }
 }
 
@@ -532,22 +551,37 @@ void Darcy_PK::UpdateSpecificYield()
 
   WhetStone::MFD3D mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
 
+  int negative_yield = 0;
   for (int c = 0; c < ncells_owned; c++) {
     if (specific_yield_wghost[c] > 0.0) {
-      mesh_->cell_get_faces(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
+      double area = 0.0;
       int nfaces = faces.size();
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         int c2 = mfd3d.cell_get_face_adj_cell(c, f);
 
-        if (specific_yield_wghost[c2] <= 0.0) {  // cell in the fully saturated layer
-          FS->ref_specific_yield()[c] *= mesh_->face_area(f);
-          break;
+        if (c2 >= 0) {
+          if (specific_yield_wghost[c2] <= 0.0)  // cell in the fully saturated layer
+            area -= (mesh_->face_normal(f))[dim - 1] * dirs[n];
         }
       }
+      FS->ref_specific_yield()[c] *= area;
+      if (area <= 0.0) negative_yield++;
     }
+  }
+
+#ifdef HAVE_MPI
+  int negative_yield_tmp = negative_yield;
+  mesh_->get_comm()->MaxAll(&negative_yield_tmp, &negative_yield, 1);
+#endif
+  if (negative_yield > 0) {
+    Errors::Message msg;
+    msg << "Darcy PK: configuration of the yield region leads to negative yield interfaces.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -569,19 +603,6 @@ void Darcy_PK::AddTimeDerivativeSpecificYield(
     double factor = specific_yield[c] / (g * dT_prec);
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
-  }
-}
-
-
-/* ******************************************************************
-* Printing information about Flow status.                                                     
-****************************************************************** */
-void Darcy_PK::PrintStatistics() const
-{
-  if (!MyPID && verbosity > 0) {
-    cout << "Flow PK:" << endl;
-    cout << "    Verbosity level = " << verbosity << endl;
-    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
 

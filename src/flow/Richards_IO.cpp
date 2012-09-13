@@ -136,7 +136,6 @@ void Richards_PK::ProcessParameterList()
   }
 
   // Time integrator for period I, temporary called initial guess initialization
-  int method;
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {
     Teuchos::ParameterList& igs_list = rp_list_.sublist("initial guess pseudo time integrator");
 
@@ -147,12 +146,12 @@ void Richards_PK::ProcessParameterList()
     ProcessStringTimeIntegration(ti_method_name, &ti_method_igs);
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
 
-    preconditioner_name_igs_ = FindStringPreconditioner(igs_list);
-    ProcessStringPreconditioner(preconditioner_name_igs_, &method);
-    ti_specs_igs_.preconditioner_method = method;
+    ti_specs_igs_.preconditioner_name = FindStringPreconditioner(igs_list);
+    ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(igs_list);
-    ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
+    std::string linear_solver_name = FindStringLinearSolver(igs_list, solver_list_);
+    LinearSolver_Specs& ls_specs = ti_specs_igs_.ls_specs;
+    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
 
     ProcessStringErrorOptions(igs_list, &error_control_igs_);
   }
@@ -168,12 +167,12 @@ void Richards_PK::ProcessParameterList()
     ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
 
-    preconditioner_name_sss_ = FindStringPreconditioner(sss_list);
-    ProcessStringPreconditioner(preconditioner_name_sss_, &method);
-    ti_specs_sss_.preconditioner_method = method;
+    ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
+    ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(sss_list);
-    ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
+    std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
+    LinearSolver_Specs& ls_specs = ti_specs_sss_.ls_specs;
+    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
 
     ProcessStringErrorOptions(sss_list, &error_control_sss_);
 
@@ -189,12 +188,12 @@ void Richards_PK::ProcessParameterList()
     ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
 
-    preconditioner_name_trs_ = FindStringPreconditioner(trs_list);
-    ProcessStringPreconditioner(preconditioner_name_trs_, &method);
-    ti_specs_trs_.preconditioner_method = method;
+    ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
+    ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(trs_list);
-    ProcessStringLinearSolver(linear_solver_name, &max_itrs, &convergence_tol);
+    std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
+    LinearSolver_Specs& ls_specs = ti_specs_trs_.ls_specs;
+    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
 
     ProcessStringErrorOptions(trs_list, &error_control_trs_);
 
@@ -324,7 +323,7 @@ void Richards_PK::ProcessStringLinearSolver(
 
   Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
   *max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
-  *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
+  *convergence_tol = tmp_list.get<double>("error tolerance", 1e-10);
 }
 
 
@@ -345,29 +344,6 @@ std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& 
 
   if (! preconditioner_list_.isSublist(name)) {
     msg << "Richards PK: steady state preconditioner does not exist.";
-    Exceptions::amanzi_throw(msg);
-  }
-  return name;
-}
-
-
-/* ****************************************************************
-* Find string for the preconditoner.
-**************************************************************** */
-std::string Richards_PK::FindStringLinearSolver(const Teuchos::ParameterList& list)
-{   
-  Errors::Message msg;
-  std::string name; 
-
-  if (list.isParameter("linear solver")) {
-    name = list.get<string>("linear solver");
-  } else {
-    msg << "Richards PK: steady state time integrator does not define <linear solver>.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (! solver_list_.isSublist(name)) {
-    msg << "Richards PK: steady state linear solver does not exist.";
     Exceptions::amanzi_throw(msg);
   }
   return name;

@@ -21,11 +21,14 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
+/* ******************************************************************
+* Cannot destroy ML cleanly. Try Trilinos 10.10 (lipnikov@lanl.gov)                                        
+****************************************************************** */
 Matrix_MFD::~Matrix_MFD()
 {
   // if (MLprec->IsPreconditionerComputed()) {
-  //  MLprec->DestroyPreconditioner();
-  //  delete MLprec;
+  //   MLprec->DestroyPreconditioner();
+  //   delete MLprec;
   // }
 }
 
@@ -421,12 +424,12 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     ML_list = prec_list;
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     // read some boomer amg parameters
-    hypre_ncycles = prec_list.get<int>("cycle applications",5);
-    hypre_nsmooth = prec_list.get<int>("smoother sweeps",3);
-    hypre_tol = prec_list.get<double>("tolerance",0.0);
-    hypre_strong_threshold = prec_list.get<double>("strong threshold",0.0);
+    hypre_ncycles = prec_list.get<int>("cycle applications", 5);
+    hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
+    hypre_tol = prec_list.get<double>("tolerance", 0.0);
+    hypre_strong_threshold = prec_list.get<double>("strong threshold", 0.0);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ifp_plist_ = prec_list;
@@ -444,9 +447,9 @@ void Matrix_MFD::UpdatePreconditioner()
     MLprec->SetParameterList(ML_list);
     MLprec->ComputePreconditioner();
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
-    Teuchos::RCP<FunctionParameter> functs[10];
+    Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
@@ -457,7 +460,7 @@ void Matrix_MFD::UpdatePreconditioner()
     functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
 
     Teuchos::ParameterList hypre_list;
-    //hypre_list.set("Solver", PCG);
+    // hypre_list.set("Solver", PCG);
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
@@ -572,8 +575,8 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Tf, Yf);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
-#ifdef HAVE_HYPRE_API
-    IfpHypre_Sff_->ApplyInverse(Tf, Yf);
+#ifdef HAVE_HYPRE
+    ierr |= IfpHypre_Sff_->ApplyInverse(Tf, Yf);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ifp_prec_->ApplyInverse(Tf, Yf);
@@ -605,7 +608,7 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
                                      const Epetra_Import& face_importer,
                                      Epetra_Vector& darcy_mass_flux)
 {
-  Epetra_Vector* solution_faces = FS->CreateFaceView(solution);
+  Teuchos::RCP<Epetra_Vector> solution_faces = Teuchos::rcp(FS->CreateFaceView(solution));
 #ifdef HAVE_MPI
   Epetra_Vector solution_faces_wghost(mesh_->face_map(true));
   solution_faces_wghost.Import(*solution_faces, face_importer, Insert);

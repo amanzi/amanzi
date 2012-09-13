@@ -84,7 +84,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
         (*Krel_faces)[f] = (*Krel_cells)[c];  // The boundary face.
       } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
         (*Krel_faces)[f] += (*Krel_cells)[c] / 2;  // Almost vertical face.
-      }
+      } 
     }
   }
 }

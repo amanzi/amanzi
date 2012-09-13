@@ -31,11 +31,10 @@ SUITE(VISUALIZATION) {
     tsps[2] = 10.0;
     tlist.set<Teuchos::Array<double> >("start period stop", tsps);    
 
-    Teuchos::ParameterList& t2list = plist.sublist("time start period stop").sublist("some other name");   
     Teuchos::Array<double> times(2);
     times[0] = 1.0;
     times[1] = 3.0;
-    t2list.set<Teuchos::Array<double> >("times",times);
+    plist.set<Teuchos::Array<double> >("times",times);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Vis V(plist, &comm);

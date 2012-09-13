@@ -34,14 +34,14 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
 
-  int max_itrs = ti_specs_sss_.max_itrs;
+  int max_itrs_nonlinear = ti_specs_sss_.max_itrs;
   double T1 = ti_specs_sss_.T1;
   double dTmax = ti_specs_sss_.dTmax;
-  double residual_tol = ti_specs_sss_.residual_tol;
+  double residual_tol_nonlinear = ti_specs_sss_.residual_tol;
 
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
-  while (L2error > residual_tol && itrs < max_itrs) {
+  while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     if (!is_matrix_symmetric) {  // Define K and Krel_faces
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
@@ -85,7 +85,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    solver->Iterate(max_itrs, convergence_tol);
+    solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs = solver->NumIters();
     double residual = solver->TrueResidual();
 

@@ -103,6 +103,7 @@ BoundaryFunction* FlowBCFactory::createSeepageFace() const
 
 /* ******************************************************************
 * Process Dirichet BC (pressure), step 2.
+* Loop over sublists with typical names "BC 0", "BC 1", etc.
 ****************************************************************** */
 void FlowBCFactory::processPressureList(Teuchos::ParameterList& list,
                                         BoundaryFunction* bc) const
@@ -174,12 +175,13 @@ void FlowBCFactory::processPressureSpec(Teuchos::ParameterList& list, BoundaryFu
 
 /* ******************************************************************
 * Process Neumann BC (mass flux), step 2.
+* Iterate through the BC specification sublists in the list with 
+* typical names "BC 0", "BC 1", etc. All are expected to be sublists 
+* of identical structure.
 ****************************************************************** */
 void FlowBCFactory::processMassFluxList(Teuchos::ParameterList& list,
                                         BoundaryFunction* bc) const
 {
-  // Iterate through the BC specification sublists in the list.
-  // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
     std::string name = i->first;
     if (list.isSublist(name)) {
@@ -191,7 +193,7 @@ void FlowBCFactory::processMassFluxList(Teuchos::ParameterList& list,
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else {  // Parameter is not a sublist
+    } else {
       Errors::Message m;
       m << "parameter \"" << name.c_str() << "\" is not a sublist";
       Exceptions::amanzi_throw(m);
@@ -207,8 +209,8 @@ void FlowBCFactory::processMassFluxSpec(Teuchos::ParameterList& list,
                                         BoundaryFunction* bc) const
 {
   Errors::Message m;
-  // Get the regions parameter value.
   std::vector<std::string> regions;
+
   if (list.isParameter("regions")) {
     if (list.isType<Teuchos::Array<std::string> >("regions")) {
       regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
@@ -246,13 +248,14 @@ void FlowBCFactory::processMassFluxSpec(Teuchos::ParameterList& list,
 
 /* ******************************************************************
 * Process Dirichet BC (static head), step 2.
+* Iterate through the BC specification sublists with typical names 
+* "BC 0", "BC 1", etc. All are expected to be sublists of identical 
+* structure.
 ****************************************************************** */
 void FlowBCFactory::processStaticHeadList(
     double p0, double density, AmanziGeometry::Point& gravity,
     Teuchos::ParameterList& list, BoundaryFunction* bc) const
 {
-  // Iterate through the BC specification sublists in the list.
-  // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
     std::string name = i->first;
     if (list.isSublist(name)) {
@@ -264,7 +267,7 @@ void FlowBCFactory::processStaticHeadList(
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else {  // Parameter is not a sublist.
+    } else {
       Errors::Message m;
       m << "parameter \"" << name.c_str() << "\" is not a sublist";
       Exceptions::amanzi_throw(m);
@@ -290,7 +293,7 @@ void FlowBCFactory::processStaticHeadSpec(
       m << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(m);
     }
-  } else {  // Parameter "regions" is missing.
+  } else {
     m << "parameter \"regions\" is missing";
     Exceptions::amanzi_throw(m);
   }
@@ -364,8 +367,8 @@ void FlowBCFactory::processSeepageFaceSpec(Teuchos::ParameterList& list,
                                            BoundaryFunction* bc) const
 {
   Errors::Message m;
-  // Get the regions parameter value.
   std::vector<std::string> regions;
+
   if (list.isParameter("regions")) {
     if (list.isType<Teuchos::Array<std::string> >("regions")) {
       regions = list.get<Teuchos::Array<std::string> >("regions").toVector();

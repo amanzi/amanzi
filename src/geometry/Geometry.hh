@@ -49,22 +49,26 @@ namespace AmanziGeometry
                         const std::vector<Point> fcoords);
 
   
-  // Compute area of polygon 
+  // Compute area, centroid and normal of polygon 
   
   // In 2D, the area is computed by a contour integral around the
   // perimeter. In 3D, the area is computed by connecting a
   // "center" point of the polygon to the edges of the polygon and
   // summing the areas of the resulting triangles
+  //
+  // The normal of a 3D polygon is computed as the sum of the area
+  // weighted normals of the triangular facets
   
-  void polygon_get_area_centroid(const std::vector<Point> coords,
-                                 double *area, Point *centroid);
+  void polygon_get_area_centroid_normal(const std::vector<Point> coords,
+                                        double *area, Point *centroid,
+                                        Point *normal);
   
   
   // Get area weighted normal of polygon
   // In 2D, the normal is unambiguous - the normal is evaluated at one corner
   // In 3D, the procedure evaluates the normal at each corner and averages it
   
-  Point polygon_get_normal(const std::vector<Point> coords);
+  //  Point polygon_get_normal(const std::vector<Point> coords);
   
 
   // Is point in polygon

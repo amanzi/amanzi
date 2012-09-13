@@ -217,47 +217,6 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
   return result;
 }
 
-// -------------------------------------------------------------
-// Mesh_STK::cell_get_faces
-// -------------------------------------------------------------
-void 
-Mesh_STK::cell_get_faces (const Entity_ID cellid, 
-                          std::vector<Entity_ID> *outfaceids) const
-{
-  stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
-  global_cell_id += 1;                  // need 1-based for stk::mesh
-
-  STK::Entity_Ids stk_face_ids;
-  mesh_->element_to_faces(global_cell_id, stk_face_ids);
-  // 0-based for Epetra_Map
-  std::for_each(stk_face_ids.begin(), stk_face_ids.end(), bl::_1 -= 1);
-
-  outfaceids->clear();
-  for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
-       f != stk_face_ids.end(); f++) {
-    stk::mesh::EntityId global_face_id(*f);
-    ASSERT(this->face_epetra_map(true).MyGID(global_face_id));
-    stk::mesh::EntityId local_face_id = 
-        this->face_epetra_map(true).LID(global_face_id);
-    outfaceids->push_back(local_face_id);
-  }
-}  
-
-// -------------------------------------------------------------
-// Mesh_STK::cell_get_face_dirs
-// -------------------------------------------------------------
-void 
-Mesh_STK::cell_get_face_dirs (const Entity_ID cellid, 
-                              std::vector<int> *face_dirs) const
-{
-  stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
-  global_cell_id += 1;        // need 1-based for stk::mesh
-  
-  face_dirs->clear();
-  mesh_->element_to_face_dirs(global_cell_id, *face_dirs);
-}
-
-
 // Get faces of a cell and directions in which the cell uses the face 
 
 // The Amanzi coding guidelines regarding function arguments is purposely
@@ -414,11 +373,12 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
   Entity_ID_List node_faces;
   Entity_ID_List cell_faces;
   Entity_ID_List outids;
+  std::vector<int> fdirs;
 
   outfaceids->clear();
   this->node_get_faces(nodeid, ptype, &node_faces);
   std::sort(node_faces.begin(), node_faces.end());
-  this->cell_get_faces(cellid, &cell_faces);
+  this->cell_get_faces_and_dirs(cellid, &cell_faces,&fdirs);
   std::sort(cell_faces.begin(), cell_faces.end());
 
   std::set_intersection(node_faces.begin(), node_faces.end(),
@@ -443,6 +403,8 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
   STK::Entity_Ids cell_ids;
   mesh_->face_to_elements(global_face_id, cell_ids);
   std::for_each(cell_ids.begin(), cell_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
+
+  outcellids->clear();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_epetra_map(true).LID(*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));
@@ -464,7 +426,9 @@ Mesh_STK::cell_get_face_adj_cells(const Entity_ID cellid,
                                   Entity_ID_List *fadj_cellids) const
 {
   Entity_ID_List faces;
-  cell_get_faces(cellid, &faces);
+  std::vector<int> fdirs;
+
+  cell_get_faces_and_dirs(cellid, &faces, &fdirs);
 
   fadj_cellids->clear();
   for (Entity_ID_List::iterator f = faces.begin(); 

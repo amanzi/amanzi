@@ -1073,10 +1073,24 @@ Boundary condition functions utilize a parameterized model for time variations t
       <Parameter name="Time Functions" type="Array string" value="{Constant, Linear}"/>    
 
 
-This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
-two intervals are speicified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
-20 over the interval t=2 to t=3, and then is constant at 30 for t>3.
+This defines two time intervals, [1,2) and [2,3), three <time,time value> pairs, <1,10>, <2,20>, and <3,30>, and
+two time functions, `"Constant`" and `"Linear`" that correspond to the intervals [1,2) and [2,3) respectively.
 
+The type  of the function (linear or constant) on the intervals is specified by the `"Time Functions`" parameter. 
+For a particular interval it can be either `"Linear`" or `"Constant`". 
+
+- If the function type is `"Constant`", the function has the value that is specified as the time value at the left 
+  end of the interval. In this example, we have f(t) = 10, for t in the interval [1,2).
+
+- If the function type is `"Linear`", the function is the linear interpolant that is defined by the <time,time value>
+  pairs at the two endpoints of the interval. In this example, these two  <time,time value> pairs are <2,20> and <3,30> and 
+  we have f(x) = (30-20)*(x-2)/(3-2) + 20, for t in the interval [2,3). Note that this is indeed the linear function 
+  for which f(2) = 20 and f(3) = 30.
+
+- By convention, the function is constant for t in (-inf,1) and for t in [3,+inf) such that 
+
+  - f(x) = 10, for x <1, specified by the first <time,time value> pair, and
+  - f(x) = 30, for x >= 3, specified by the last <time,time value> pair. 
 
 Example Phase Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1116,6 +1130,7 @@ The user must specify when the various types of output are desired.  For Observa
  * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
  * MaterialID
  * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
+ * Hydraulic Head [ (aqueous pressure - atmospheric pressure)/(rho * gravity) + z ]
 
 Note that MaterialID will be treated as a double that is unique to each defined material.  Its value will be generated internal to Amanzi.  The log file will be appended with the (material name)->(integer) mapping used.  Also note that this list tacitly assumes the presence of Aqueous Water as one of the transported components.  Presently, it is an error if the `"Phase Definition`" above does not sufficiently define this component.
 

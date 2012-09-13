@@ -127,17 +127,17 @@ set(NetCDF_VERSION_PATCH 2)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        4a94ebe2d998d649159aa5665c83fb1a)
+set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814) 
 
 #
-# TPL: ASCEMIO
+# ASCEM-IO
 #
 set(ASCEMIO_VERSION_MAJOR 2)
-set(ASCEMIO_VERSION_MINOR 1)
+set(ASCEMIO_VERSION_MINOR 2)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
 set(ASCEMIO_URL_STRING    "http://software.lanl.gov/ascem/tpls")
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
-set(ASCEMIO_MD5_SUM        a3c3387ee7909e50a43c6a4fe50dd15f)      
+set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)      
 
 #
 # TPL: ExodusII

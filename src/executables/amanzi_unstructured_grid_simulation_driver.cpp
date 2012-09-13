@@ -338,6 +338,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // Clean up
   mesh.reset();
+  delete simdomain_ptr;
   delete comm;
       
   return Amanzi::Simulator::SUCCESS;

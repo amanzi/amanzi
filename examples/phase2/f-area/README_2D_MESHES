@@ -1,0 +1,57 @@
+========================================================================
+F-Area Two-Dimensional Flow with Reactive Transport
+========================================================================
+
+This is an representative case for the F-Area 2D simulations.  The
+model is based on the last family of meshes proposed by Sergio, and
+which include the Gordon Aquifer and Gordon Confining Unit.  However,
+since these are not included in the TOUGH2 prototyping runs they are
+both assigned a very small intrinsic permeabiliy - essentially
+removing them from the simulation.
+
+The input files for the different cases that are located in the 
+subdirectories are named
+
+2d_f-area*.xml                  - XML problem description
+
+and
+ascem-2012-farea.bgd            - geochemistry input (basis, database)
+
+for the cases with geochemistry.
+
+The input files use a generic name for the mesh
+
+f_area_mesh_2D.exo
+
+and so you need to provide the desired F-Area mesh in Exodus format
+with this name.  The meshes are available on Hopper, in the ascem
+project directory:
+
+/project/projectdirs/m1012/meshes/phase2/f-area/2012-04-24/
+
+There is a README in this directory explaining the different resolutions
+and different files.  But I find it easiest to create links to each
+resolution, and then link the one that I want to the generic name that
+is in the input file.  For example, in an example subdirectory execute
+
+ln -s /project/projectdirs/m1012/meshes/phase2/f-area/2012-04-24/refine_l0/mesh2_bc01tobc09.exo mesh2_bc01tobc09-l0.exo
+ln -s /project/projectdirs/m1012/meshes/phase2/f-area/2012-04-24/refine_l1/mesh2_bc01tobc09.exo mesh2_bc01tobc09-l1.exo
+ln -s /project/projectdirs/m1012/meshes/phase2/f-area/2012-04-24/refine_l2/mesh2_bc01tobc09.exo mesh2_bc01tobc09-l2.exo
+
+and then link the one that you want.  For example, assume you want the
+coarsest one:
+
+ln -s mesh2_bc01tobc09-l0.exo f_area_mesh_2D.exo
+
+Now you have all the input you need, and you can run this test case.  We
+are typically using 24 cores as a reasonable tradeoff between the needs
+of the flow solve, and the geochemistry
+
+aprun -n 24 ${SOME_PATH_TO_AMANZI}/bin/amanzi --xml_file=2d_f-area_flow_full_chem.xml
+
+You may want to redirect output, and/or put this in a batch script.
+
+
+
+
+

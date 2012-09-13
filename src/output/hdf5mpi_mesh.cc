@@ -102,7 +102,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file,
                            (char*)"Mesh/Nodes", &IOgroup_, 
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete nodes;
+  delete [] nodes;
   
   // write out node map
   ids = new int[nmap.NumMyElements()];
@@ -115,6 +115,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
                            (char*)"Mesh/NodeMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
   
+  delete [] ids;
   
   // get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
@@ -201,7 +202,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(cells, PIO_INTEGER, 2, globaldims, localdims, file, 
                            (char*)"Mesh/MixedElements", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete cells;
+  delete [] cells;
   
   // write out cell map
   ids = new int[cmap.NumMyElements()];
@@ -216,7 +217,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file, 
                            (char*)"Mesh/ElementMap", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete ids;
+  delete [] ids;
   
   // close file
   parallelIO_close_file(file, &IOgroup_);
@@ -283,6 +284,7 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
 
   parallelIO_write_dataset(idata, PIO_INTEGER, 2, globaldims, localdims, file, tmpName,
                            &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
+  delete [] tmpName;
 
   // Create subset connectivity dataset
  
@@ -387,6 +389,8 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
                            &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
   parallelIO_close_file(file, &IOgroup_);
 
+  delete [] tmpName;
+
   // find Grid node
   if (viz_comm_.MyPID() == 0) {
     Teuchos::XMLObject gridnode, xmlnode, tmp;
@@ -420,7 +424,6 @@ void HDF5_MPI::writeMeshRegion(const AmanziMesh::Mesh &mesh_maps,
     of << HDF5_MPI::xdmfHeader_ << xmlMesh_ << endl;
     of.close();
   }
-
 }
 
 
@@ -633,6 +636,8 @@ void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
     status = H5Sclose(dataspace_id);  
     status = H5Pclose(acc_tpl1);
     status = H5Fclose(file);
+
+    delete [] DSpath;
   }
   
 void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
@@ -926,6 +931,8 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
       node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
     }
   }
+
+  delete [] tmp;
 }
   
 void HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)

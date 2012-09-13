@@ -28,8 +28,9 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Flow_State.hpp"
 
-#include "Ifpack.h"
-#include "Ifpack_Hypre.h"
+#include "Ifpack.h" 
+// note that if trilinos is compiled with hypre support, then
+// including Ifpack.h results in the definition of HAVE_HYPRE
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -77,6 +78,8 @@ class Matrix_MFD : public Epetra_Operator {
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Acf_cells() { return Acf_cells_; }
+  std::vector<Epetra_SerialDenseVector>& Afc_cells() { return Afc_cells_; }
   std::vector<double>& Acc_cells() { return Acc_cells_; }
   std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
   std::vector<double>& Fc_cells() { return Fc_cells_; }
@@ -88,8 +91,8 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
-  double nokay() { return nokay_; }
-  double npassed() { return npassed_; }
+  int nokay() { return nokay_; }
+  int npassed() { return npassed_; }
 
  private:
   Teuchos::RCP<Flow_State> FS;
@@ -123,7 +126,7 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
   Teuchos::ParameterList ifp_plist_;
 
-#ifdef HAVE_HYPRE_API
+#ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
   double hypre_tol, hypre_strong_threshold;
   int hypre_nsmooth, hypre_ncycles;

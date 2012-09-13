@@ -67,7 +67,9 @@ TEST(Geometric_Ops)
       fcoords3.push_back(xyz3);
     }
 
-    Amanzi::AmanziGeometry::Point normal = Amanzi::AmanziGeometry::polygon_get_normal(locfcoords3);
+    double farea;
+    Amanzi::AmanziGeometry::Point normal(3), fcentroid(3);
+    Amanzi::AmanziGeometry::polygon_get_area_centroid_normal(locfcoords3,&farea,&fcentroid,&normal);
 
     CHECK_EQUAL(exp_hex_fnormals1[i][0],normal.x());
     CHECK_EQUAL(exp_hex_fnormals1[i][1],normal.y());

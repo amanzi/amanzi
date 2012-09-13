@@ -17,6 +17,21 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
+// We cannot initialize linear solvers with a parameter list
+class LinearSolver_Specs {
+ public:
+  LinearSolver_Specs() {
+    num_itrs = 0;
+    max_itrs = 100;
+    convergence_tol = 1e-10;
+  }
+  ~LinearSolver_Specs() {};
+
+ public:
+  int num_itrs, max_itrs;
+  double convergence_tol; 
+};
+
 class TI_Specs {
  public:
   TI_Specs() { 
@@ -31,9 +46,11 @@ class TI_Specs {
     initialize_with_darcy = false;
     clip_saturation = 0.6;
   }
+  ~TI_Specs() {};
 
  public:
   int ti_method;
+  LinearSolver_Specs ls_specs;
   std::string preconditioner_name;
   int preconditioner_method;
   int num_itrs, max_itrs;

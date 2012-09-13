@@ -27,7 +27,8 @@ State::State(int number_of_components_,
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
       using_sorption_(false),
-      use_sorption_isotherms_(false) {
+      use_sorption_isotherms_(false),
+      time(0.0) {
   // the default parameter_list is empty, so we can't sanely implement
   // mineralogy or isotherms here because we can't safely allocate
   // memory.... This constructor can't be used for anything with
@@ -48,7 +49,8 @@ State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
       using_sorption_(false),
-      use_sorption_isotherms_(false) {
+      use_sorption_isotherms_(false),
+      time(0.0) {
   // this constructor is going to be used in restarts, where we
   // read the number of components from a file before creating
   // storage
@@ -64,7 +66,8 @@ State::State(Teuchos::ParameterList &parameter_list_,
       number_of_ion_exchange_sites_(0),
       number_of_sorption_sites_(0),
       using_sorption_(false),
-      use_sorption_isotherms_(false) {
+      use_sorption_isotherms_(false),
+      time(0.0) {
   init_verbosity(parameter_list);
 
   // need to set up a few things before we can setup the storage and assign values
@@ -163,6 +166,8 @@ void State::initialize_from_parameter_list()
   else
     u[2] = 0.0;
   set_gravity(u);
+
+  p_atm = parameter_list.get<double>("atmospheric pressure",101325.0);
 
   set_zero_total_component_concentration();
   set_water_density(parameter_list.get<double>("Constant water density"));
@@ -890,16 +895,18 @@ double State::point_value(const std::string& point_region, const std::string& na
       value += (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }    
-  // } else if (var == "Hydrostatic Head") {
-  //   value = 0.0;
-  //   volume = 0.0;
+  } else if (var == "Hydraulic Head") {
+    value = 0.0;
+    volume = 0.0;
+    int dim = mesh_maps->space_dimension();
 
-  //   for (int i=0; i<mesh_block_size; ++i) {
-  //     int ic = cell_ids[i];
-  //     value += (*pressure)[ic]/ ( (*density) * (*gravity)[2]);
-  //     value *= mesh_maps->cell_volume(ic);
-  //     volume += mesh_maps->cell_volume(ic);
-  //   }
+    for (int i=0; i<mesh_block_size; ++i) {
+      int ic = cell_ids[i];
+      Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
+      value += ( (*pressure)[ic] - p_atm ) / ( (*density) * (*gravity)[dim-1]) + p[dim-1];
+      value *= mesh_maps->cell_volume(ic);
+      volume += mesh_maps->cell_volume(ic);
+    }
   } else {
     std::stringstream ss;
     ss << "State::point_value: cannot make an observation for variable " << name;
@@ -1138,8 +1145,19 @@ void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
   vis.write_vector(vol_water,"gravimetric water content");
   
-  // compute hydrostatic head
-  // TO DO
+  // compute hydraulic head (p-p_atm)/(rho*g)-z
+  Epetra_Vector hydraulic_head( mesh_maps->cell_map(false) );
+  hydraulic_head.PutScalar(p_atm);
+  hydraulic_head.Update(-1.0,*pressure,1.0);
+  int dim = mesh_maps->space_dimension();
+  hydraulic_head.Scale(1.0/( (*density) * (*gravity)[dim-1]));
+  Epetra_Vector centroid_z( mesh_maps->cell_map(false) );
+  for( int ic = mesh_maps->cell_map(false).MinLID(); ic <= mesh_maps->cell_map(false).MaxLID();  ++ic) {
+    Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
+    centroid_z[ic] = p[dim-1];
+  }
+  hydraulic_head.Update(1.0,centroid_z,1.0);
+  vis.write_vector(hydraulic_head,"hydraulic head");
   
   std::vector<std::string> names(3);
   names[0] = "darcy velocity x";

@@ -7,7 +7,7 @@
 
 
 Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
-    plist(plist_), disabled(false), comm(comm_), hasCycleData_(false)
+    plist(plist_), disabled(false), comm(comm_), hasCycleData_(false), viz_output(NULL)
 {
   read_parameters(plist);
 
@@ -16,7 +16,7 @@ Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
 }
 
 // this constructor makes an object that will not create any output
-Amanzi::Vis::Vis (): disabled(true), hasCycleData_(false)
+Amanzi::Vis::Vis (): disabled(true), hasCycleData_(false), viz_output(NULL)
 {
 }
 
@@ -36,12 +36,12 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
           Teuchos::Array<double> sps = itlist.get<Teuchos::Array<double> >("start period stop");
           time_sps.push_back(sps.toVector());
         }
-        if (itlist.isParameter("times")) {
-          Teuchos::Array<double> vtimes = itlist.get<Teuchos::Array<double> >("times");
-          times.push_back(vtimes.toVector());
-        }
       }
     }
+  }
+  if (plist.isParameter("times")) {
+    Teuchos::Array<double> vtimes = plist.get<Teuchos::Array<double> >("times");
+    times.push_back(vtimes.toVector());
   }
   // Grab the cycle start period stop data
   if ( plist.isSublist("cycle start period stop") ) {
@@ -69,7 +69,7 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 
 Amanzi::Vis::~Vis ()
 {
-  delete viz_output;
+  if (!viz_output) delete viz_output;
 }
 
 
@@ -206,18 +206,23 @@ bool Amanzi::Vis::dump_requested(const int cycle, const double time) {
 bool Amanzi::Vis::dump_requested(const double time) {
   if (!is_disabled())  {
     // loop over the start period stop triplets
-    for (std::vector<std::vector<double> >::const_iterator it = time_sps.begin(); it != time_sps.end(); ++it) {
-      double start = (*it)[0];
-      double period = (*it)[1];
-      double stop = (*it)[2];
-      if (Amanzi::near_equal(time,start)) return true;
-      if (time > start && (stop == -1.0 || time <= stop)) {
-        double n_periods = floor( (time - start )/period );
-        double tmp = start + n_periods*period;
-        if (Amanzi::near_equal(time,tmp)) return true;
+    if (time_sps.size() > 0) {
+      for (std::vector<std::vector<double> >::const_iterator it = time_sps.begin(); it != time_sps.end(); ++it) {
+        if ( (Amanzi::near_equal(time,(*it)[0]) || time >= (*it)[0]) &&
+             (Amanzi::near_equal((*it)[2],-1.0) || time <= (*it)[2] || Amanzi::near_equal(time,(*it)[2]) ) ) {
+          if (Amanzi::near_equal(time,(*it)[0])) {
+            return true;
+          }
+          double n_per_tmp = (time - (*it)[0])/(*it)[1];
+          double n_periods = floor(n_per_tmp);
+          if (Amanzi::near_equal(n_periods+1.0,n_per_tmp)) n_periods += 1.0;
+          double tmp = (*it)[0] + n_periods*(*it)[1];
+          if (Amanzi::near_equal(time,tmp)) {
+            return true;
+          }
+        }
       }
     }
-
     // loop over the time arrays
     for (std::vector<std::vector<double> >::const_iterator it = times.begin(); it != times.end(); ++it) {
       for (std::vector<double>::const_iterator j= (*it).begin(); j!=(*it).end(); ++j) {
