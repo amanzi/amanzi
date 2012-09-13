@@ -122,12 +122,12 @@ set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)
 # TPL: netCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 2)
-set(NetCDF_VERSION_PATCH 1.1)
+set(NetCDF_VERSION_MINOR 1)
+set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc)
+set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814)
 
 #
 # ASCEM-IO
@@ -142,12 +142,12 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 # TPL: ExodusII
 #
-set(ExodusII_VERSION_MAJOR 5)
-set(ExodusII_VERSION_MINOR 22)
+set(ExodusII_VERSION_MAJOR 4)
+set(ExodusII_VERSION_MINOR 98)
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
 set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
-set(ExodusII_MD5_SUM        b5f537d7028f2c8cf6b4ba3e8a469dbe)
+set(ExodusII_MD5_SUM       4480e641d6ada58f5d8ecb7172e76791)
 
 #
 # TPL: MSTK
