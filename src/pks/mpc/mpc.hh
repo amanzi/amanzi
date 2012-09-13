@@ -96,8 +96,9 @@ void MPC<PK_Type>::setup(const Teuchos::Ptr<State>& S) {
       solution_->PushBack(pk_soln);
 
       // create the PK
-      Teuchos::RCP<PK> pk_notype =
-          pk_factory.CreatePK(pks_list.sublist(name_i), pk_soln);
+      Teuchos::ParameterList pk_list = pks_list.sublist(name_i);
+      pk_list.set("PK name", name_i);
+      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, pk_soln);
       pk_notype->setup(S);
 
       Teuchos::RCP<PK_Type> pk = Teuchos::rcp_dynamic_cast<PK_Type>(pk_notype);
@@ -117,8 +118,9 @@ void MPC<PK_Type>::setup(const Teuchos::Ptr<State>& S) {
         solution_->PushBack(pk_soln);
 
         // create the PK
-        Teuchos::RCP<PK> pk_notype =
-            pk_factory.CreatePK(pks_list.sublist(name_i), pk_soln);
+        Teuchos::ParameterList pk_list = pks_list.sublist(name_i);
+        pk_list.set("PK name", name_i);
+        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, pk_soln);
         pk_notype->setup(S);
 
         Teuchos::RCP<PK_Type> pk = Teuchos::rcp_dynamic_cast<PK_Type>(pk_notype);

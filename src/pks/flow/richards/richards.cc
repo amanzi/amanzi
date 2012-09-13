@@ -197,7 +197,11 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("numerical_rel_perm",name_)->PutScalar(1.0);
   S->GetField("numerical_rel_perm",name_)->set_initialized();
+
+  S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
   S->GetField("darcy_flux", name_)->set_initialized();
+
+  S->GetFieldData("darcy_velocity", name_)->PutScalar(0.0);
   S->GetField("darcy_velocity", name_)->set_initialized();
 
   // absolute perm
@@ -230,8 +234,43 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     S->GetFieldData("darcy_flux", name_);
 
   matrix_->CreateMFDstiffnessMatrices(*rel_perm);
+
+  for (int f=0; f!=darcy_flux->size("face", true); ++f) {
+    if ((*darcy_flux)("face",f) < 0.0) {
+      std::cout << "fail previously" << std::endl;
+    }
+
+    if ((*pres)("face",f) < 0.0) {
+      std::cout << "fail previously" << std::endl;
+    }
+  }
+
   matrix_->DeriveFlux(*pres, darcy_flux);
+
+
+  for (int f=0; f!=darcy_flux->size("face", true); ++f) {
+    if ((*darcy_flux)("face",f) < 0.0) {
+      std::cout << "fail previously" << std::endl;
+    }
+
+    if ((*pres)("face",f) < 0.0) {
+      std::cout << "fail previously" << std::endl;
+    }
+  }
+
   AddGravityFluxesToVector_(S, darcy_flux);
+
+
+  for (int f=0; f!=darcy_flux->size("face", true); ++f) {
+    if ((*darcy_flux)("face",f) < 0.0) {
+      std::cout << "fail previously" << std::endl;
+    }
+
+    if ((*pres)("face",f) < 0.0) {
+      std::cout << "fail previously" << std::endl;
+    }
+  }
+
 };
 
 

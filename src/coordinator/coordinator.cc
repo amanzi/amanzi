@@ -51,7 +51,9 @@ void Coordinator::coordinator_init() {
 
   // -- create the pk
   PKFactory pk_factory;
-  pk_ = pk_factory.CreatePK(pks_list.sublist(pk_name), soln_);
+  Teuchos::ParameterList pk_list = pks_list.sublist(pk_name);
+  pk_list.set("PK name", pk_name);
+  pk_ = pk_factory.CreatePK(pk_list, soln_);
   pk_->setup(S_);
 
   // // create the observations
