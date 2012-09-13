@@ -67,3 +67,11 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control
                     ${HDF5_logging_args})
+
+# --- Useful variables for packages that depend on HDF5 (NetCDF)
+include(BuildLibraryName)
+build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
+set(HDF5_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
+list(REMOVE_DUPLICATES HDF5_INCLUDE_DIRS)

@@ -195,12 +195,12 @@ set(PETSc_MD5_SUM        b9b5b42ffb6c619e4f7ee6b29134dc5f)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 10)
-set(Trilinos_VERSION_MINOR 6)
-set(Trilinos_VERSION_PATCH 4)
+set(Trilinos_VERSION_MINOR 12)
+set(Trilinos_VERSION_PATCH 2)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.gz)
-set(Trilinos_MD5_SUM        75b393e633bde4d9565df304f84b52e4) 
+set(Trilinos_MD5_SUM        eafdfb5d702b7ae1ce6146db2233bc94) 
 
 #
 # TPL: SEACAS

@@ -118,3 +118,17 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control
                     ${NetCDF_logging_args})
+
+# --- Useful variables for packages that depend on NetCDF (Trilinos, ExodusII)
+include(BuildLibraryName)
+build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+set(NetCDF_C_LIBRARIES ${NetCDF_C_LIBRARY})
+if ( ENABLE_NetCDF4 )
+  list(APPEND NetCDF_C_LIBRARIES ${HDF5_LIBRARIES})
+  list(APPEND NetCDF_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
+  list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
+endif()
+  
+
