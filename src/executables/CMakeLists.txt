@@ -173,14 +173,16 @@ endif()
 #
 # Binary: verify_deform
 #
-add_amanzi_executable(verify_deform
-                      SOURCE verify_deform.cc
-                      LINK_LIBS mesh_factory
-                                mesh
-                                ${amanzi_mesh_libs}
-                                output
-                                ${Epetra_LIBRARIES}
-                                ${Teuchos_LIBRARIES})
+if ( ENABLE_STK_Mesh )
+  add_amanzi_executable(verify_deform
+                        SOURCE verify_deform.cc
+                        LINK_LIBS mesh_factory
+                                  mesh
+                                  ${amanzi_mesh_libs}
+                                  output
+                                  ${Epetra_LIBRARIES}
+                                  ${Teuchos_LIBRARIES})
+endif()                                
 
                                 
 #

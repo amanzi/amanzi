@@ -59,7 +59,7 @@ if ( Boost_VERSION)
   # The Boost filesystem library changed and deprecated some functions.
   # This define should be used when packages include boost/filesystem.hpp
   # and packages any of these new or deprecated functions.
-  # The change from version 2 to 3 occured with the 1.49 Boost release.
+  # The change from version 2 to 3 occurred with the 1.49 Boost release.
   # Please refer to the online documentation at www.boost.org.
   if ( "${Boost_VERSION}" VERSION_LESS "1.34" )
     set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=1")
@@ -176,7 +176,7 @@ if ( Trilinos_FOUND )
                    NO_MODULE
                    HINTS ${Trilinos_DIR}
                    PATH_SUFFIXES include lib)
-      if (STK_FOUND)
+      if (Zoltan_FOUND)
         trilinos_package_enabled_tpls(Zoltan)
         list(APPEND Zoltan_LIBRARIES "${Zoltan_TPL_LIBRARIES}")
         list(APPEND Zoltan_INCLUDE_DIRS "${Zoltan_TPL_INCLUDE_DIRS}")

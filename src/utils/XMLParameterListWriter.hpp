@@ -8,6 +8,8 @@
 
 namespace Teuchos
 {
+
+#if 0
   template<>
   class ToStringTraits<double> {
   public:
@@ -19,6 +21,7 @@ namespace Teuchos
       return os.str();
     }
   };
+#endif
 
   inline std::string Amanzi_toString(const Teuchos::Array<double>& a) {
     std::ostringstream ss;
