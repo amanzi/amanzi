@@ -40,6 +40,7 @@ foreach(package ${Trilinos_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
 
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:STRING=OFF")
 
 #  - Trilinos TPL Configuration
 
@@ -132,9 +133,11 @@ set(Trilinos_CMAKE_ARGS
 # - Final language ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
-		   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+		           -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
                    ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-		   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE})
+		           -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+                   ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE})
 
 #  --- Define the Trilinos patch step
 
