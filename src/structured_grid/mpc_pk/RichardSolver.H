@@ -7,11 +7,8 @@
 
 class RichardNLSdata;
 
-class RichardSolver
+struct RSParams
 {
-public:
-  struct RSParams
-  {
     RSParams();
     bool use_fd_jac; // Use matrix-free or finite-difference Jacobian
     bool use_dense_Jacobian; // Use dense storage for Jacobian
@@ -31,7 +28,12 @@ public:
     bool scale_soln_before_solve; // Switch, scale P by 1/sigma before solve?
     bool semi_analytic_J; // Explicitly use dPc/ds relationship in computing the Jacobian
     bool centered_diff_J; // Numerical J is computed with centered difference instead of forward
-  };
+    Real variable_switch_saturation_threshold; // Newton iterate s if this is less than s, otherwise p
+};
+
+class RichardSolver
+{
+public:
 
   RichardSolver(PMAmr&          pm_amr,
 		const RSParams& params,
@@ -71,7 +73,7 @@ public:
   const Array<BoxArray>& GridArray() const {return layout.GridArray();}
   const Array<Geometry>& GeomArray() const {return layout.GeomArray();}
   const Array<IntVect>& RefRatio() const {return layout.RefRatio();}
-  const RichardSolver::RSParams& Parameters() {return params;}
+  const RSParams& Parameters() {return params;}
 
   void UpdateDarcyVelocity(MFTower& pressure,
 			   Real     t); // Set internal data

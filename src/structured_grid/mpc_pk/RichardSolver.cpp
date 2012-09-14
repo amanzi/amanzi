@@ -27,8 +27,9 @@ static bool scale_soln_before_solve_DEF = true;
 static bool semi_analytic_J_DEF = false;
 
 static bool centered_diff_J_DEF = true;
+static Real variable_switch_saturation_threshold_DEF = 0.9996;
 
-RichardSolver::RSParams::RSParams()
+RSParams::RSParams()
 {
   // Set default values for all parameters
   use_fd_jac = use_fd_jac_DEF;
@@ -49,6 +50,7 @@ RichardSolver::RSParams::RSParams()
   scale_soln_before_solve = scale_soln_before_solve_DEF;
   semi_analytic_J = semi_analytic_J_DEF;
   centered_diff_J = centered_diff_J_DEF;
+  variable_switch_saturation_threshold = variable_switch_saturation_threshold_DEF;
 }
 
 static RichardSolver* static_rs_ptr = 0;
@@ -65,6 +67,7 @@ PetscErrorCode RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStr
 PetscErrorCode RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx);
 PetscErrorCode SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx);
 PetscErrorCode PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w);
+PetscErrorCode PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w);
 PetscErrorCode RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy);
 PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy);
 PetscErrorCode RichardR2(SNES snes,Vec x,Vec f,void *dummy);
@@ -106,12 +109,12 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     lambda.set(lev,pm[lev].LambdaCC_Curr());
     porosity.set(lev,pm[lev].Porosity());
     pcap_params.set(lev,pm[lev].PCapParams());
-    if (!params.use_fd_jac || params.semi_analytic_J) {
+    if (!params.use_fd_jac || params.semi_analytic_J || params.variable_switch_saturation_threshold) {
         kappacc.set(lev,pm[lev].KappaCC());
     }
   }
 
-  if (!params.use_fd_jac || params.semi_analytic_J) {
+  if (!params.use_fd_jac || params.semi_analytic_J || params.variable_switch_saturation_threshold) {
     KappaCC = new MFTower(layout,kappacc,nLevs);
   }
   else {
@@ -328,12 +331,18 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   CheckCtx check_ctx;
   check_ctx.rs = this;
   check_ctx.nld = &nl_data;
-  ierr = SNESLineSearchSetPostCheck(snes,PostCheck,(void *)(&check_ctx));CHKPETSC(ierr);  
+
+  if (params.variable_switch_saturation_threshold) {
+      ierr = SNESLineSearchSetPostCheck(snes,PostCheckAlt,(void *)(&check_ctx));CHKPETSC(ierr);
+  }
+  else {
+      ierr = SNESLineSearchSetPostCheck(snes,PostCheck,(void *)(&check_ctx));CHKPETSC(ierr);  
+  }
   ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULL); CHKPETSC(ierr);
 
   RichardSolver::SetTheRichardSolver(this);
   dump_cnt = 0;
-  ierr = SNESSolve(snes,PETSC_NULL,SolnV);CHKPETSC(ierr);
+  ierr = SNESSolve(snes,PETSC_NULL,SolnV);
   RichardSolver::SetTheRichardSolver(0);
 
   int iters;
@@ -1281,7 +1290,7 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     CheckCtx* check_ctx = (CheckCtx*)ctx;
     RichardSolver* rs = check_ctx->rs;
     RichardNLSdata* nld = check_ctx->nld;
-    const RichardSolver::RSParams& rsp = rs->Parameters();
+    const RSParams& rsp = rs->Parameters();
 
     if (rs==0) {
         BoxLib::Abort("Context cast failed in PostCheck");
@@ -1340,7 +1349,6 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
             std::cout << tag << tag_ls
                       << "iter=" << ls_iterations
                       << ", step length=" << ls_factor
-                      << ", init residual norm=" << fnorm
                       << ", Newton norm=" << gnorm_0
                       << ", damped norm=" << gnorm << '\n';
 	}
@@ -1371,7 +1379,7 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
 
         if (ls_factor == 1) {
             std::string reason = "Full linear step accepted";
-            if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
+            if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search>1) {
                 std::cout << tag << tag_ls << reason << std::endl;
             }
         }
@@ -1390,6 +1398,189 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
 
         //std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
 #endif
+    }
+
+    return ierr;
+}
+
+PetscErrorCode
+AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *changed_dp,PetscBool  *changed_pkp1)
+{
+    PetscErrorCode ierr;
+    CheckCtx* check_ctx = (CheckCtx*)ctx;
+    RichardSolver* rs = check_ctx->rs;
+    RichardNLSdata* nld = check_ctx->nld;
+    if (rs==0) {
+        BoxLib::Abort("Context cast failed in AltUpdate");
+    }
+    const RSParams& rsp = rs->Parameters();
+
+    if (rs->Parameters().scale_soln_before_solve) {
+        ierr = VecPointwiseMult(dp,dp,rs->GetSolnTypV()); CHKPETSC(ierr);
+        ierr = VecPointwiseMult(pk,pk,rs->GetSolnTypV()); CHKPETSC(ierr);
+    }
+
+    MFTower& P_MFT = rs->GetPressure();
+    MFTower& RS_MFT = rs->GetRhoSatNp1();
+    MFTower& DP_MFT = rs->GetAlpha(); //Handy data container
+    const MFTower& K_MFT = rs->GetKappaCC();
+
+    Layout& layout = rs->GetLayout();
+    ierr = layout.VecToMFTower(P_MFT,pk,0); CHKPETSC(ierr);
+    ierr = layout.VecToMFTower(DP_MFT,dp,0); CHKPETSC(ierr);
+
+    int nLevs = layout.NumLevels();
+    for (int lev=0; lev<nLevs; ++lev) {
+
+        // Fill (rho.sat)^{n+1,k} from p^{n+1,k}
+        rs->GetPMlevel(lev).calcInvPressure(RS_MFT[lev],P_MFT[lev]);  
+  
+        // Get full set of Pcap parameters directly
+        // (not just the sigma part stored in my copy of PCapParams)
+        const MultiFab* PCapParams = rs->GetPMlevel(lev).PCapParams();
+
+        // Compute the "Alternating Update" according to Krabbenhoft, AWR30 p.483
+        for (MFIter mfi(P_MFT[lev]); mfi.isValid(); ++mfi) {
+            const Box& vbox = mfi.validbox();
+            const FArrayBox& kcf = K_MFT[lev][mfi];
+            const FArrayBox& cpf = (*PCapParams)[mfi];
+            int n_cp_coefs = cpf.nComp();
+            
+            FArrayBox& rsf = RS_MFT[lev][mfi];
+            FArrayBox& pf  = P_MFT[lev][mfi];
+            FArrayBox& dpf = DP_MFT[lev][mfi];
+
+            FORT_RS_ALTUP(rsf.dataPtr(),ARLIM(rsf.loVect()), ARLIM(rsf.hiVect()),
+                          pf.dataPtr(), ARLIM(pf.loVect()),  ARLIM(pf.hiVect()),
+                          dpf.dataPtr(),ARLIM(dpf.loVect()), ARLIM(dpf.hiVect()),
+                          kcf.dataPtr(),ARLIM(kcf.loVect()), ARLIM(kcf.hiVect()),
+                          cpf.dataPtr(),ARLIM(cpf.loVect()), ARLIM(cpf.hiVect()),
+                          &n_cp_coefs, &ls_factor, vbox.loVect(), vbox.hiVect(),
+                          &(rs->Parameters()).variable_switch_saturation_threshold);
+        }
+    }
+    
+    // Put pkp1 and dp (back) into Vec data structures, scale to ptyp (remember to rescale pk)
+    ierr = layout.MFTowerToVec(dp,DP_MFT,0); CHKPETSC(ierr);
+    ierr = layout.MFTowerToVec(pkp1,P_MFT,0); CHKPETSC(ierr);
+
+    if (rs->Parameters().scale_soln_before_solve) {
+        ierr = VecPointwiseMult(dp,dp,rs->GetSolnTypInvV()); CHKPETSC(ierr);
+        ierr = VecPointwiseMult(pk,pk,rs->GetSolnTypInvV()); CHKPETSC(ierr);
+        ierr = VecPointwiseMult(pkp1,pkp1,rs->GetSolnTypInvV()); CHKPETSC(ierr);
+    }
+    *changed_dp = PETSC_TRUE;
+    *changed_pkp1 = PETSC_TRUE;
+
+    PetscFunctionReturn(ierr);
+}
+
+PetscErrorCode 
+PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
+{
+    std::string tag = "       Newton step: ";
+    std::string tag_ls = "  line-search:  ";
+    CheckCtx* check_ctx = (CheckCtx*)ctx;
+    RichardSolver* rs = check_ctx->rs;
+    RichardNLSdata* nld = check_ctx->nld;
+    if (rs==0) {
+        BoxLib::Abort("Context cast failed in PostCheckAlt");
+    }
+    const RSParams& rsp = rs->Parameters();
+
+    PetscErrorCode ierr;
+    PetscReal fnorm, xnorm, ynorm, gnorm;
+    PetscErrorCode (*func)(SNES,Vec,Vec,void*);
+    void *fctx;
+
+    Real ls_factor = 1;
+    ierr = AltUpdate(snes,x,y,w,ctx,ls_factor,changed_y,changed_w);
+
+    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+
+    Vec& F = rs->GetResidualV();
+    Vec& G = rs->GetTrialResV();
+    
+    (*func)(snes,x,F,fctx);
+    ierr = VecNorm(F,NORM_2,&fnorm);
+
+    (*func)(snes,w,G,fctx);
+    ierr = VecNorm(G,NORM_2,&gnorm);    
+
+    bool record_entire_solve = false;
+    std::string record_file = "SNES";
+    if (record_entire_solve) {
+        RecordSolve(record_file,x,y,w,F,G,check_ctx);
+    }
+    
+    bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
+    int ls_iterations = 0;
+    bool finished = norm_acceptable 
+        || ls_iterations > rsp.max_ls_iterations
+        || ls_factor <= rsp.min_ls_factor;
+
+    Real gnorm_0 = gnorm;
+    while (!finished) 
+    {
+        ls_factor *= rsp.ls_reduction_factor;
+        if (ls_factor < rsp.min_ls_factor) {
+            ls_factor = rsp.min_ls_factor;
+        }
+
+        ierr = AltUpdate(snes,x,y,w,ctx,ls_factor,changed_y,changed_w);
+
+        (*func)(snes,w,G,fctx);
+        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
+        norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
+        
+        if (ls_factor < 1 
+            && rsp.monitor_line_search 
+            && ParallelDescriptor::IOProcessor())
+	{
+            std::cout << tag << tag_ls
+                      << "iter=" << ls_iterations
+                      << ", step length=" << ls_factor
+                      << ", Newton norm=" << gnorm_0
+                      << ", damped norm=" << gnorm << '\n';
+	}
+        
+        finished = norm_acceptable 
+            || ls_iterations > rsp.max_ls_iterations
+            || ls_factor <= rsp.min_ls_factor;      
+        ls_iterations++;
+    }
+    
+    if (ls_iterations > rsp.max_ls_iterations) 
+    {
+        std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
+        ierr = PETSC_TRUE;
+        if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
+            std::cout << tag << tag_ls << reason << std::endl;
+        }
+    }
+    else if (ls_factor <= rsp.min_ls_factor) {
+        std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
+        ierr = PETSC_TRUE;
+        if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
+            std::cout << tag << tag_ls << reason << std::endl;
+        }
+    }
+    else {
+        ierr = PETSC_FALSE;
+
+        if (ls_factor == 1) {
+            std::string reason = "Full linear step accepted";
+            if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search>1) {
+                std::cout << tag << tag_ls << reason << std::endl;
+            }
+        }
+        else {
+            // Set update to the one actually used
+            ierr=VecScale(y,ls_factor);
+            *changed_y = PETSC_TRUE;
+        }
+
+        int iters = nld->NLIterationsTaken() + 1;
     }
 
     return ierr;

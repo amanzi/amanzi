@@ -28,6 +28,7 @@
 
 #include <PMAmr.H>
 class RichardSolver;
+class RSParams;
 #include <RichardSolver.H>
 
 #ifdef AMANZI
@@ -1032,6 +1033,9 @@ protected:
 
   static void InitializeStaticVariables();
 
+  void SetRichardSolverParameters(RSParams&          rsparams,
+                                  const std::string& IDstring) const;
+
   // Deals with the ghost cells 
   AuxBoundaryData aux_boundary_data_old;
   bool            FillPatchedOldState_ok;
@@ -1349,6 +1353,7 @@ protected:
   static int  richard_pressure_maxorder;
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;
+  static Real richard_variable_switch_saturation_threshold;
   //
   // Number of states
   //

@@ -115,18 +115,16 @@ process_events(bool& write_plotfile_after_step,
 
 
 void
-PMAmr::init (Real strt_time_,
-             Real stop_time)
+PMAmr::init (Real t_start,
+             Real t_stop)
 {
-    strt_time = strt_time_;
-
     if (!restart_file.empty() && restart_file != "init")
     {
         restart(restart_file);
     }
     else
     {
-        initialInit(strt_time,stop_time);
+        initialInit(t_start,t_stop);
 
         bool write_plot, write_check, begin_tpc;
         Array<int> initial_observations;
@@ -358,6 +356,8 @@ PMAmr::coarseTimeStep (Real stop_time)
                               stop_time,
                               post_regrid_flag);
 
+    Real strt_time = startTime();
+
     if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())
     {
         std::cout << "\nBEGIN TRANSIENT INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
@@ -516,8 +516,8 @@ PMAmr::coarseTimeStep (Real stop_time)
 }
 
 void
-PMAmr::initialInit (Real strt_time,
-                    Real stop_time)
+PMAmr::initialInit (Real t_start,
+                    Real t_stop)
 {
     checkInput();
     //
@@ -543,11 +543,12 @@ PMAmr::initialInit (Real strt_time,
     delete [] RanAmpl;
     delete [] RanPhase;
 #endif
-    cumtime = strt_time;
+    setStartTime(t_start);
+    setCumTime(startTime());
     //
     // Define base level grids.
     //
-    defBaseLevel(strt_time);
+    defBaseLevel(startTime());
     //
     // Compute dt and set time levels of all grid data.
     //
@@ -556,7 +557,7 @@ PMAmr::initialInit (Real strt_time,
                                   n_cycle,
                                   ref_ratio,
                                   dt_level,
-                                  stop_time);
+                                  t_stop);
     //
     // The following was added for multifluid.
     //
@@ -589,10 +590,10 @@ PMAmr::initialInit (Real strt_time,
     }
 
     if (max_level > 0)
-        bldFineLevels(strt_time);
+        bldFineLevels(startTime());
 
     for (int lev = 0; lev <= finest_level; lev++)
-        amr_level[lev].setTimeLevel(strt_time,dt_level[lev],dt_level[lev]);
+        amr_level[lev].setTimeLevel(startTime(),dt_level[lev],dt_level[lev]);
 
     for (int lev = 0; lev <= finest_level; lev++)
         amr_level[lev].post_regrid(0,finest_level);
@@ -600,7 +601,7 @@ PMAmr::initialInit (Real strt_time,
     // Perform any special post_initialization operations.
     //
     for (int lev = 0; lev <= finest_level; lev++)
-        amr_level[lev].post_init(stop_time);
+        amr_level[lev].post_init(t_stop);
 
     for (int lev = 0; lev <= finest_level; lev++)
     {

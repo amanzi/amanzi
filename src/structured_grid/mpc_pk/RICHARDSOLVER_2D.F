@@ -190,3 +190,83 @@ c     On input, Res contains Div(rho.DarcyVel)
          enddo
       enddo
       end
+
+
+      subroutine FORT_RS_ALTUP(rhosat,DIMS(rhosat),p,DIMS(p),
+     &     dp,DIMS(dp),kappa,DIMS(kappa),coef,DIMS(coef),n_coef,
+     &     ls_factor,lo,hi,sTOL)
+
+      implicit none
+
+#include "probdata.H"
+
+      integer DIMDEC(rhosat)
+      integer DIMDEC(p)
+      integer DIMDEC(dp)
+      integer DIMDEC(kappa)
+      integer DIMDEC(coef)
+      integer n_coef
+      REAL_T  ls_factor
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  rhosat(DIMV(rhosat),ncomps)
+      REAL_T  p(DIMV(p),ncomps)
+      REAL_T  dp(DIMV(dp),ncomps)
+      REAL_T  kappa(DIMV(kappa))
+      REAL_T  coef(DIMV(coef),n_coef)
+      REAL_T  sTOL
+
+      integer i,j
+      integer l_cpl_type
+      REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpcdse, phitmp
+      REAL_T  rhostmp(ncomps), stmp(ncomps), ds
+      REAL_T  p_save(ncomps)
+      logical is_saturated
+      REAL_T  saturated_s_thresh
+      parameter (saturated_s_thresh = 1.d0 - 1.d-8)
+
+      phitmp = one
+      do j = lo(2),hi(2)
+         do i = lo(1),hi(1)
+
+            l_cpl_type = nint(coef(i,j,1))
+            l_cpl_coef = coef(i,j,2)
+            l_sigma    = coef(i,j,3)
+            l_sat_res  = coef(i,j,4)
+
+            rhostmp = zero
+            rhostmp(1:ncomps) = rhosat(i,j,1:ncomps) 
+
+c     Get s^{k+1,*} = s^{k}  -  (ds/dp)^k . fac.dp,  ds/dp = - 1 / [(dpc/dse).(dse/ds)] 
+c     If s^{k+1,*} < sTOL, then s^{k+1} = s^{k+1,*}, p^{k+1} from s^{k+1}
+c       else p^{k+1} = p^{k} - fac.dp, s^{k+1} from p^{k+1}
+
+            is_saturated = (ABS(rhostmp(1)/rhoval(1)).ge.saturated_s_thresh)
+
+            if (.not. is_saturated) then
+               call get_dcplds(dpcdse,rhostmp,rhoval,phitmp,kappa(i,j),
+     &              l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
+               ds = ls_factor*(one-l_sat_res)*dp(i,j,1)/dpcdse
+               stmp(1) = rhostmp(1)/rhoval(1) + ds
+               stmp(1) = MIN(one,MAX(zero,stmp(1)))
+               is_saturated = (stmp(1) .ge. sTOL)
+            endif
+            
+            if (is_saturated) then
+               p(i,j,1) = p(i,j,1) - ls_factor*dp(i,j,1)
+               call get_invcpl(rhosat(i,j,1),-p(i,j,1),rhoval(1),phitmp,
+     &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
+            else
+               rhosat(i,j,1) = stmp(1) * rhoval(1)
+               if (ncomps.gt.1) then
+                  rhosat(i,j,2) = (one - stmp(1)) * rhoval(2)
+               endif
+               p_save = p(i,j,1)
+               call get_cpl(p(i,j,1),rhosat(i,j,1),rhoval(1),phitmp,
+     &              kappa(i,j),l_sigma,ncomps,l_sat_res,
+     &              l_cpl_type,l_cpl_coef)
+               p(i,j,1) = -p(i,j,1)
+               dp(i,j,1) = (p_save(1) - p(i,j,1))/ls_factor
+            endif
+         end do 
+      end do
+      end

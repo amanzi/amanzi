@@ -1736,6 +1736,30 @@ GetPETScReason(int flag)
 }
 
 void
+PorousMedia::SetRichardSolverParameters(RSParams&          rsparams,
+                                        const std::string& IDstring) const
+{
+    // For the moment, ignore IDstring: all solver setups identical
+    rsparams.max_ls_iterations = richard_max_ls_iterations;
+    rsparams.min_ls_factor = richard_min_ls_factor;
+    rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
+    rsparams.ls_reduction_factor = richard_ls_reduction_factor;
+    rsparams.monitor_line_search = richard_monitor_line_search;
+    rsparams.errfd = richard_perturbation_scale_for_J;
+    rsparams.maxit = steady_limit_iterations;
+    rsparams.maxf = steady_limit_function_evals;
+    rsparams.atol = steady_abs_tolerance;
+    rsparams.rtol = steady_rel_tolerance;
+    rsparams.stol = steady_abs_update_tolerance;
+    rsparams.use_fd_jac = richard_use_fd_jac;
+    rsparams.use_dense_Jacobian = richard_use_dense_Jacobian;
+    rsparams.upwind_krel = richard_upwind_krel;
+    rsparams.pressure_maxorder = richard_pressure_maxorder;
+    rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
+    rsparams.semi_analytic_J = richard_semi_analytic_J;
+}
+
+void
 PorousMedia::richard_init_to_steady()
 {
 #ifdef MG_USE_FBOXLIB
@@ -1826,25 +1850,8 @@ PorousMedia::richard_init_to_steady()
 	  
 	  RichardSolver* rs = 0;
 	  if (steady_use_PETSc_snes) {
-	    RichardSolver::RSParams rsparams;
-	    rsparams.max_ls_iterations = richard_max_ls_iterations;
-	    rsparams.min_ls_factor = richard_min_ls_factor;
-	    rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
-	    rsparams.ls_reduction_factor = richard_ls_reduction_factor;
-	    rsparams.monitor_line_search = richard_monitor_line_search;
-	    rsparams.errfd = richard_perturbation_scale_for_J;
-	    rsparams.maxit = steady_limit_iterations;
-	    rsparams.maxf = steady_limit_function_evals;
-	    rsparams.atol = steady_abs_tolerance;
-	    rsparams.rtol = steady_rel_tolerance;
-	    rsparams.stol = steady_abs_update_tolerance;
-	    rsparams.use_fd_jac = richard_use_fd_jac;
-	    rsparams.use_dense_Jacobian = richard_use_dense_Jacobian;
-	    rsparams.upwind_krel = richard_upwind_krel;
-	    rsparams.pressure_maxorder = richard_pressure_maxorder;
-	    rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
-	    rsparams.semi_analytic_J = richard_semi_analytic_J;
-	    
+	    RSParams rsparams;
+            SetRichardSolverParameters(rsparams,"InitialSteady");
 	    rs = new RichardSolver(*(PMParent()),rsparams,layout_sub);
 	  }
 
@@ -3069,25 +3076,9 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
     Layout layout_sub(parent,num_active_levels);
     RichardSolver* rs = 0;
     if (steady_use_PETSc_snes) {
-      RichardSolver::RSParams rsparams;
-      rsparams.max_ls_iterations = richard_max_ls_iterations;
-      rsparams.min_ls_factor = richard_min_ls_factor;
-      rsparams.ls_acceptance_factor = richard_ls_acceptance_factor;
-      rsparams.ls_reduction_factor = richard_ls_reduction_factor;
-      rsparams.monitor_line_search = richard_monitor_line_search;
-      rsparams.errfd = richard_perturbation_scale_for_J;
-      rsparams.maxit = steady_limit_iterations;
-      rsparams.maxf = steady_limit_function_evals;
-      rsparams.atol = steady_abs_tolerance;
-      rsparams.rtol = steady_rel_tolerance;
-      rsparams.stol = steady_abs_update_tolerance;
-      rsparams.use_fd_jac = richard_use_fd_jac;
-      rsparams.use_dense_Jacobian = richard_use_dense_Jacobian;
-      rsparams.upwind_krel = richard_upwind_krel;
-      rsparams.pressure_maxorder = richard_pressure_maxorder;
-
+      RSParams rsparams;
+      SetRichardSolverParameters(rsparams,"FlowAdvance");
       rs = new RichardSolver(*(PMParent()),rsparams,layout_sub);
-
     }
     
     RichardNLSdata nld = BuildInitNLS();
@@ -8380,7 +8371,9 @@ PorousMedia::post_init_state ()
 
           if (steady_use_PETSc_snes) {
               // Compute initial velocity field
-	      RichardSolver rs(*pmamr,RichardSolver::RSParams(),PMAmr::GetLayout());
+              RSParams rsparams;
+              SetRichardSolverParameters(rsparams,"Initial-Velocity-Eval");
+	      RichardSolver rs(*pmamr,rsparams,PMAmr::GetLayout());
               rs.ResetRhoSat();
               rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->startTime());
           }

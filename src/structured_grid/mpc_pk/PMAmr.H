@@ -49,8 +49,6 @@ private:
     PMAmr (const PMAmr& rhs);
     PMAmr& operator= (const PMAmr& rhs);
 
-    Real strt_time;
-
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
 };
