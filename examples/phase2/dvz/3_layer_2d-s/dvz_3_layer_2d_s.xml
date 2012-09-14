@@ -49,8 +49,9 @@
         <Parameter name="Steady Initial Time Step" type="double" value="1.e8"/>
         <Parameter name="Maximum Time Step Grow" type="double" value="1.25"/>
         <Parameter name="Maximum Time Step Grow" type="double" value="2"/>
+        <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e10"/>
+        <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e10"/>
         <Parameter name="Transient Initial Time Step" type="double" value="10"/>
-        <!-- <Parameter name="Maximum Cycle Number" type="int" value="1"/> -->
       </ParameterList>
     </ParameterList>
     <ParameterList name="Time Period Control">
@@ -70,7 +71,7 @@
       <Parameter name="Start Times" type="Array double" value="{6.17266656E10, 6.1729344E10, 6.173178481E10}"/>
       <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10}"/>
     </ParameterList>
-    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00032"/> -->
+    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00017"/> -->
 
     <ParameterList name="Numerical Control Parameters">
 
@@ -110,7 +111,7 @@
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
-          <Parameter name="richard_ls_acceptance_factor" type="double" value="50"/>
+          <Parameter name="richard_ls_acceptance_factor" type="double" value="5"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="1"/>

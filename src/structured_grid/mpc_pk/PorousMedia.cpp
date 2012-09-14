@@ -1757,6 +1757,7 @@ PorousMedia::SetRichardSolverParameters(RSParams&          rsparams,
     rsparams.pressure_maxorder = richard_pressure_maxorder;
     rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
     rsparams.semi_analytic_J = richard_semi_analytic_J;
+    rsparams.variable_switch_saturation_threshold = richard_variable_switch_saturation_threshold;
 }
 
 void
@@ -3114,11 +3115,11 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
     {
         rs->ResetRhoSat();
         int retCode = rs->Solve(t_flow+dt_flow, dt_flow, 1, nld);
-        if (retCode >= 0) {
+        if (retCode > 0) {
             ret = RichardNLSdata::RICHARD_SUCCESS;
         } 
         else {
-            if (ret == -3) {
+            if (ret == -3 || ret == 0) {
                 ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
             }
             else {
@@ -7541,6 +7542,14 @@ PorousMedia::computeNewDt (int                   finest_level,
           }
           if (dt_shrink_max <= 1) {
               dt_0 = std::max(dt_0, dt_shrink_max * dt_0);
+          }
+          if (transient_richard_max_dt > 0) {
+              dt_0 = std::min(transient_richard_max_dt,dt_0);
+          }
+      }
+      else {
+          if (steady_richard_max_dt > 0) {
+              dt_0 = std::min(steady_richard_max_dt,dt_0);
           }
       }
 

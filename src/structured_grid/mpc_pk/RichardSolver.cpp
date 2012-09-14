@@ -332,7 +332,7 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   check_ctx.rs = this;
   check_ctx.nld = &nl_data;
 
-  if (params.variable_switch_saturation_threshold) {
+  if (params.variable_switch_saturation_threshold>0) {
       ierr = SNESLineSearchSetPostCheck(snes,PostCheckAlt,(void *)(&check_ctx));CHKPETSC(ierr);
   }
   else {
@@ -1475,6 +1475,12 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
     PetscFunctionReturn(ierr);
 }
 
+#if defined(PETSC_3_2)
+#include <private/snesimpl.h>
+#else
+#include <petsc-private/snesimpl.h> 
+#endif
+
 PetscErrorCode 
 PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
 {
@@ -1557,6 +1563,7 @@ PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBo
         if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
+        snes->reason = SNES_DIVERGED_LINE_SEARCH;
     }
     else if (ls_factor <= rsp.min_ls_factor) {
         std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
@@ -1564,6 +1571,7 @@ PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBo
         if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
+        snes->reason = SNES_DIVERGED_LINE_SEARCH;
     }
     else {
         ierr = PETSC_FALSE;

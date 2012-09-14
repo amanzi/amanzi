@@ -217,9 +217,8 @@ c     On input, Res contains Div(rho.DarcyVel)
 
       integer i,j
       integer l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpcdse, phitmp
+      REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpcdse, phitmp, pcap, pnew
       REAL_T  rhostmp(ncomps), stmp(ncomps), ds
-      REAL_T  p_save(ncomps)
       logical is_saturated
       REAL_T  saturated_s_thresh
       parameter (saturated_s_thresh = 1.d0 - 1.d-8)
@@ -245,8 +244,8 @@ c       else p^{k+1} = p^{k} - fac.dp, s^{k+1} from p^{k+1}
             if (.not. is_saturated) then
                call get_dcplds(dpcdse,rhostmp,rhoval,phitmp,kappa(i,j),
      &              l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
-               ds = ls_factor*(one-l_sat_res)*dp(i,j,1)/dpcdse
-               stmp(1) = rhostmp(1)/rhoval(1) + ds
+               ds = -ls_factor*(one-l_sat_res)*dp(i,j,1)/dpcdse
+               stmp(1) = rhostmp(1)/rhoval(1) - ds
                stmp(1) = MIN(one,MAX(zero,stmp(1)))
                is_saturated = (stmp(1) .ge. sTOL)
             endif
@@ -256,16 +255,15 @@ c       else p^{k+1} = p^{k} - fac.dp, s^{k+1} from p^{k+1}
                call get_invcpl(rhosat(i,j,1),-p(i,j,1),rhoval(1),phitmp,
      &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
             else
-               rhosat(i,j,1) = stmp(1) * rhoval(1)
+               call get_invst(rhosat(i,j,1),stmp(1),rhoval(1),l_sat_res,ncomps)
                if (ncomps.gt.1) then
-                  rhosat(i,j,2) = (one - stmp(1)) * rhoval(2)
+                  rhosat(i,j,2) = (one - rhosat(i,j,1)/rhoval(1)) * rhoval(2)
                endif
-               p_save = p(i,j,1)
-               call get_cpl(p(i,j,1),rhosat(i,j,1),rhoval(1),phitmp,
-     &              kappa(i,j),l_sigma,ncomps,l_sat_res,
-     &              l_cpl_type,l_cpl_coef)
-               p(i,j,1) = -p(i,j,1)
-               dp(i,j,1) = (p_save(1) - p(i,j,1))/ls_factor
+               call get_cpl(pcap,rhosat(i,j,1),rhoval(1),phitmp,
+     &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type)
+               pnew = -pcap
+               dp(i,j,1) = - (pnew - p(i,j,1))
+               p(i,j,1) = pnew
             endif
          end do 
       end do
