@@ -85,9 +85,7 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
 
 // -- Initialize owned (dependent) variables.
 void AdvectionDiffusion::initialize(const Teuchos::Ptr<State>& S) {
-  // initialize the operators
-  matrix_->CreateMFDmassMatrices(Teuchos::null);
-  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+  PKPhysicalBDFBase::initialize(S);
 
   // initialize boundary conditions
   int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -99,30 +97,9 @@ void AdvectionDiffusion::initialize(const Teuchos::Ptr<State>& S) {
   bc_flux_->Compute(time);
   UpdateBoundaryConditions_();
 
-  // update face temperature IC as a hint?
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
-  DeriveFaceValuesFromCellValues_(temp);
-};
-
-
-// -----------------------------------------------------------------------------
-// Interpolate pressure ICs on cells to ICs for lambda (faces).
-// -----------------------------------------------------------------------------
-void AdvectionDiffusion::DeriveFaceValuesFromCellValues_(const Teuchos::RCP<CompositeVector>& temp) {
-  AmanziMesh::Entity_ID_List cells;
-
-  int f_owned = temp->size("face");
-  for (int f=0; f!=f_owned; ++f) {
-    cells.clear();
-    temp->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    double face_value = 0.0;
-    for (int n=0; n!=ncells; ++n) {
-      face_value += (*temp)("cell",cells[n]);
-    }
-    (*temp)("face",f) = face_value / ncells;
-  }
+  // initialize the operators
+  matrix_->CreateMFDmassMatrices(Teuchos::null);
+  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
 };
 
 

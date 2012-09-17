@@ -23,8 +23,8 @@ namespace Amanzi {
 void PKPhysicalBDFBase::setup(const Teuchos::Ptr<State>& S) {
 
   // call the meat of the base constructurs via Setup methods
-  PKBDFBase::setup(S);
   PKPhysicalBase::setup(S);
+  PKBDFBase::setup(S);
 };
 
 
@@ -33,9 +33,11 @@ void PKPhysicalBDFBase::setup(const Teuchos::Ptr<State>& S) {
 // methods, so we need a unique overrider.
 // -----------------------------------------------------------------------------
 void PKPhysicalBDFBase::initialize(const Teuchos::Ptr<State>& S) {
-  // just calls both subclasses
-  PKBDFBase::initialize(S);
+  // Just calls both subclass's initialize.  NOTE - order is important here --
+  // PhysicalBase grabs the primary variable and stuffs it into the solution,
+  // which must be done prior to BDFBase initializing the timestepper.
   PKPhysicalBase::initialize(S);
+  PKBDFBase::initialize(S);
 }
 
 

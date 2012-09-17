@@ -40,6 +40,7 @@ class PKPhysicalBase : public virtual PKDefaultBase {
 
  protected: // methods
   std::string Key_(std::string suffix) { return domain_prefix_+suffix; }
+  void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);
 
  protected: // data
   // name of domain, associated mesh
