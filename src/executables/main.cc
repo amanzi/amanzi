@@ -8,6 +8,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "global_verbosity.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -26,6 +28,7 @@
 #endif
 
 
+Teuchos::EVerbosityLevel ATS::VerbosityLevel::level_ = Teuchos::VERB_MEDIUM;
 
 int main(int argc, char *argv[])
 {
@@ -33,7 +36,7 @@ int main(int argc, char *argv[])
 #ifdef AMANZI_USE_FENV
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
-  
+
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
 
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
   std::string xmlInFileName = "options.xml";
   CLP.setOption("xml_file", &xmlInFileName, "XML options file");
   CLP.throwExceptions(false);
-
+  
   Teuchos::CommandLineProcessor::EParseCommandLineReturn
     parseReturn = CLP.parse(argc, argv);
 
@@ -73,6 +76,11 @@ int main(int argc, char *argv[])
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
   Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+  Teuchos::RCP<Teuchos::FancyOStream> fos;
+  Teuchos::readVerboseObjectSublist(&driver_parameter_list,&fos,&ATS::VerbosityLevel::level_);
+
+  std::cout << ATS::VerbosityLevel::level_ << std::endl;
+
   const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
 
   // Read the "Framework" from the "Mesh" parameter list so that we know which
