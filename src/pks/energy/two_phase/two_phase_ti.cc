@@ -29,7 +29,7 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
-
+  
   Teuchos::RCP<CompositeVector> u = u_new->data();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Two-Phase Residual calculation:" << std::endl;
