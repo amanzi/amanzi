@@ -69,10 +69,13 @@ void StrongMPC::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
        pk != sub_pks_.end(); ++pk) {
 
     // pull out the old solution sub-vector
-    Teuchos::RCP<TreeVector> pk_u_old = u_old->SubVector((*pk)->name());
-    if (pk_u_old == Teuchos::null) {
-      Errors::Message message("MPC: vector structure does not match PK structure");
-      Exceptions::amanzi_throw(message);
+    Teuchos::RCP<TreeVector> pk_u_old(Teuchos::null);
+    if (u_old != Teuchos::null) {
+      pk_u_old = u_old->SubVector((*pk)->name());
+      if (pk_u_old == Teuchos::null) {
+        Errors::Message message("MPC: vector structure does not match PK structure");
+        Exceptions::amanzi_throw(message);
+      }
     }
 
     // pull out the new solution sub-vector
@@ -203,7 +206,8 @@ void StrongMPC::changed_solution() {
 // Check admissibility of each sub-pk
 // -----------------------------------------------------------------------------
 bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
-  // loop over sub-PKs
+  // First ensure each PK thinks we are admissible -- this will ensure
+  // the residual can at least be evaluated.
   for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
 
@@ -214,9 +218,18 @@ bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
       Exceptions::amanzi_throw(message);
     }
 
-    if (!(*pk)->is_admissible(pk_u)) return false;
+    if (!(*pk)->is_admissible(pk_u)) {
+      if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+        Teuchos::OSTab tab = getOSTab();
+        *out_ << "PK " << (*pk)->name() << " is not admissible." << std::endl;
+      }
+
+      return false;
+    }
   }
-  return true;
+
+  // If that worked, check backtracking admissility.
+  return PKBDFBase::is_admissible(u);
 };
 
 

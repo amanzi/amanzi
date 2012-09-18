@@ -18,6 +18,8 @@ namespace Amanzi {
 RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> MPCFrozenCoupledFlowEnergy::reg_("frozen energy-flow preconditioner coupled");
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  PKBDFBase::modify_predictor(h,u);
+
   // modification of the initial guess occurs by updating T using this guess,
   // then calculating the p that would be required to keep the same water
   // mass.

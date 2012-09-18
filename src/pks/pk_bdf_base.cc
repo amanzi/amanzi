@@ -122,6 +122,13 @@ bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   double norm(0.);
   int ierr = g->NormInf(&norm);
 
+  if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+    Teuchos::OSTab tab = getOSTab();
+    *out_ << "Checking admissibility with backtracking: res: "
+          << norm << " old res: " << residual_norm_ << std::endl;
+  }
+
+
   // ensure the new residual is smaller than the old residual
   if (ierr || norm > residual_norm_) return false;
 

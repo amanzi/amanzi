@@ -209,14 +209,34 @@ void TwoPhase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& tem
 };
 
 bool TwoPhase::is_admissible(Teuchos::RCP<const TreeVector> up) {
+  return true;
+
   Teuchos::RCP<const CompositeVector> temp = up->data();
   Teuchos::RCP<const CompositeVector> temp0 = S_->GetFieldData("temperature");
 
-  for (int c=0; c!=temp->size("cell"); ++c) {
-    if (abs((*temp)("cell",c) - (*temp0)("cell",c)) > dT_max_) {
-      return false;
+  CompositeVector dT(*temp0);
+  dT = *temp0;
+  dT.Update(-1.0, *temp, 1.0);
+  double diff(0.);
+  dT.NormInf(&diff);
+
+  temp0->Print(std::cout);
+  temp->Print(std::cout);
+
+  if (diff > dT_max_) {
+    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+      Teuchos::OSTab tab = getOSTab();
+      *out_ << "Energy PK is inadmissible, dT_max = " << diff << " > " << dT_max_ << std::endl;
+    }
+    return false;
+  } else {
+    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+      Teuchos::OSTab tab = getOSTab();
+      *out_ << "Energy PK is admissible, dT_max = " << diff << " <= " << dT_max_ << std::endl;
     }
   }
+
+
   return true;
 }
 
