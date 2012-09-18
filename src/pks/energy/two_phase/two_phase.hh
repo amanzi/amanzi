@@ -74,6 +74,10 @@ public:
   // problems with temperatures -- setting a range of admissible temps
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
+  // error monitor
+  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du);
+
 protected:
   // for now, several points of entry into the science, as I'm not sure where
   // things will settle for a Phalanx-like system
