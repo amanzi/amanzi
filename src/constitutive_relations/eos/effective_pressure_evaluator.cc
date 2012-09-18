@@ -41,13 +41,17 @@ void EffectivePressureEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                          const Teuchos::Ptr<CompositeVector>& result) {
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
-  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
+  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
   // evaluate effective pressure as max(pres, p_atm)
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int id=0; id!=result->size(*comp); ++id) {
-      (*result)(*comp, id) = std::max((*pres)(*comp,id), *p_atm);
+    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+    int count = result->size(*comp);
+    for (int id=0; id!=count; ++id) {
+      result_v[0][id] = std::max<double>(pres_v[0][id], p_atm);
     }
   }
 }
@@ -56,16 +60,18 @@ void EffectivePressureEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
-  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
-
+  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
   ASSERT(wrt_key == pres_key_);
-
   // pressure is max(pres, p_atm), so derivative is 1 or 0
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int id=0; id!=result->size(*comp); ++id) {
-      (*result)(*comp, id) = (*pres)(*comp,id) > *p_atm ?  1.0 : 0.0;
+    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+    int count = result->size(*comp);
+    for (int id=0; id!=count; ++id) {
+      result_v[0][id] = pres_v[0][id] > p_atm ? 1.0 : 0.0;
     }
   }
 };

@@ -68,14 +68,17 @@ void MolarFractionGasEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
-  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
+  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
   // evaluate p_s / p_atm
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int id=0; id!=result->size(*comp); ++id) {
-      double svp = sat_vapor_model_->SaturatedVaporPressure((*temp)(*comp, id));
-      (*result)(*comp, id) = svp / (*p_atm);
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+    int count = result->size(*comp);
+    for (int id=0; id!=count; ++id) {
+      result_v[0][id] = sat_vapor_model_->SaturatedVaporPressure(temp_v[0][id]) / p_atm;
     }
   }
 }
@@ -88,14 +91,17 @@ void MolarFractionGasEvaluator::EvaluateFieldPartialDerivative_(
 
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
-  Teuchos::RCP<const double> p_atm = S->GetScalarData("atmospheric_pressure");
+  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
   // evaluate d/dT( p_s / p_atm )
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int id=0; id!=result->size(*comp); ++id) {
-      double dsvp = sat_vapor_model_->DSaturatedVaporPressureDT((*temp)(*comp, id));
-      (*result)(*comp, id) = dsvp / (*p_atm);
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+    int count = result->size(*comp);
+    for (int id=0; id!=count; ++id) {
+      result_v[0][id] = sat_vapor_model_->DSaturatedVaporPressureDT(temp_v[0][id]) / p_atm;
     }
   }
 }

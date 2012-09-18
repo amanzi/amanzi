@@ -128,6 +128,8 @@ void PKPhysicalBDFBase::set_states(const Teuchos::RCP<const State>& S,
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
+
+  changed_solution();
 };
 
 

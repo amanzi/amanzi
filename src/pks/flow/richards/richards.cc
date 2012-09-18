@@ -42,7 +42,6 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
-  
 };
 
 
@@ -133,6 +132,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
+  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 }
 
 // -------------------------------------------------------------
@@ -322,22 +322,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   if (update_perm) {
     // upwind
     upwinding_->Update(S);
-
-    // REMOVE ME!
-    for (int c=0; c!=uw_rel_perm->size("cell",false); ++c) {
-      if (boost::math::isnan<double>((*uw_rel_perm)("cell",c))) {
-        std::cout << "NaN in cell rel perm." << std::endl;
-        Errors::Message m("Cut time step");
-        Exceptions::amanzi_throw(m);
-      }
-    }
-    for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
-      if (boost::math::isnan<double>((*uw_rel_perm)("face",f))) {
-        std::cout << "NaN in face rel perm." << std::endl;
-        Errors::Message m("Cut time step");
-        Exceptions::amanzi_throw(m);
-      }
-    }
 
     // patch up the BCs -- FIX ME --etc
     Teuchos::RCP<const CompositeVector> rel_perm =

@@ -109,6 +109,7 @@ protected:
 protected:
   // control switches
   int Krel_method_;
+  bool assemble_preconditioner_;
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability
