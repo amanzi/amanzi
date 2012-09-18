@@ -66,6 +66,7 @@ double PKBDFBase::get_dt() { return dt_; }
 // -----------------------------------------------------------------------------
 bool PKBDFBase::advance(double dt) {
   state_to_solution(S_next_, solution_);
+  residual_norm_ = 1.e99;
 
   // take a bdf timestep
   double dt_solver;
