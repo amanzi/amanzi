@@ -191,7 +191,6 @@ void StrongMPC::changed_solution() {
   }
 };
 
-
 // -----------------------------------------------------------------------------
 // Compute a norm on u-du and returns the result.
 // For a Strong MPC, the enorm is just the max of the sub PKs enorms.

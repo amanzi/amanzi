@@ -204,16 +204,18 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   preconditioner_->AssembleGlobalMatrices();
   preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+
+  // dump the schur complement
+  //  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  //  std::stringstream filename_s;
+  //  filename_s << "schur_" << S_next_->cycle() << ".txt";
+  //  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  //  *out_ << "updated precon " << S_next_->cycle() << std::endl;
+
+
   preconditioner_->UpdatePreconditioner();
 
   /*
-  // dump the schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
-  std::stringstream filename_s;
-  filename_s << "schur_" << S_next_->cycle() << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-  *out_ << "updated precon " << S_next_->cycle() << std::endl;
-
   // print the rel perm
   Teuchos::RCP<const CompositeVector> num_rel_perm =
       S_next_->GetFieldData("upwind_overland_conductivity");
