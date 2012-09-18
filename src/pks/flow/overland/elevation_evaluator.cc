@@ -19,7 +19,7 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
   my_keys_.push_back(plist_.get<std::string>("potential key", "pres_elev"));
   setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
-  pres_key_ = "overland_pressure";
+  pres_key_ = plist_.get<std::string>("height key", "ponded_depth");
   dependencies_.insert(pres_key_);
 }
 

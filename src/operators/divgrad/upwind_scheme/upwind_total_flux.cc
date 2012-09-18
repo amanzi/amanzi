@@ -114,8 +114,6 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       }
     }
   }
-
-  face_coef->ScatterMasterToGhosted("face");
 };
 
 } //namespace

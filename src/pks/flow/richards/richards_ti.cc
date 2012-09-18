@@ -201,7 +201,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_();
+  UpdateBoundaryConditionsPreconditioner_();
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
@@ -231,8 +231,11 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
   // -- update the cell-cell block
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-  for (int c=0; c!=pres->size("cell"); ++c) {
+  std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
+  for (int c=0; c!=dwc_dp->size("cell"); ++c) {
     Acc_cells[c] += (*dwc_dp)("cell",c) / h;
+    Fc_cells[c] += (*pres)("cell",c) * (*dwc_dp)("cell",c) / h;
+
   }
 
   // Assemble and precompute the Schur complement for inversion.
@@ -240,6 +243,25 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   preconditioner_->AssembleGlobalMatrices();
   preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
   preconditioner_->UpdatePreconditioner();
+
+  /*
+  // dump the schur complement
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  std::stringstream filename_s;
+  filename_s << "schur_" << S_next_->cycle() << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  *out_ << "updated precon " << S_next_->cycle() << std::endl;
+
+  // print the rel perm
+  Teuchos::RCP<const CompositeVector> cell_rel_perm =
+      S_next_->GetFieldData("relative_permeability");
+  *out_ << "REL PERM: " << std::endl;
+  cell_rel_perm->Print(*out_);
+  *out_ << std::endl;
+  *out_ << "UPWINDED REL PERM: " << std::endl;
+  rel_perm->Print(*out_);
+  */
+
 };
 
 }  // namespace Flow

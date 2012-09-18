@@ -24,19 +24,27 @@ namespace Flow {
 // -------------------------------------------------------------
 void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<CompositeVector>& g) {
-  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
-  Teuchos::RCP<CompositeVector> darcy_flux =
-    S->GetFieldData("overland_flux", "overland_flow");
-
   // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> cond =
-    S->GetFieldData("upwind_overland_conductivity", "overland_flow");
+  bool update = UpdatePermeabilityData_(S.ptr());
 
   // update the stiffness matrix
+  Teuchos::RCP<const CompositeVector> cond =
+    S->GetFieldData("upwind_overland_conductivity", name_);
   matrix_->CreateMFDstiffnessMatrices(cond);
-  matrix_->CreateMFDrhsVectors();
 
+  // update the potential
+  update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
+
+  // derive fluxes
+  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+  if (update) {
+    Teuchos::RCP<CompositeVector> flux =
+        S->GetFieldData("overland_flux", name_);
+    matrix_->DeriveFlux(*pres_elev, flux);
+  }
+
+  // assemble the stiffness matrix
+  matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
@@ -49,8 +57,8 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 // Accumulation of internal energy term du/dt
 // -------------------------------------------------------------
 void OverlandFlow::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
-  const CompositeVector & pres0        = *(S_inter_->GetFieldData("overland_pressure"));
-  const CompositeVector & pres1        = *(S_next_ ->GetFieldData("overland_pressure"));
+  const CompositeVector & pres0        = *(S_inter_->GetFieldData(key_));
+  const CompositeVector & pres1        = *(S_next_ ->GetFieldData(key_));
   const CompositeVector & cell_volume0 = *(S_inter_->GetFieldData("surface_cell_volume"));
   const CompositeVector & cell_volume1 = *(S_next_ ->GetFieldData("surface_cell_volume"));
 

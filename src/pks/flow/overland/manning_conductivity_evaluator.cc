@@ -18,7 +18,7 @@ ManningConductivityEvaluator::ManningConductivityEvaluator(Teuchos::ParameterLis
   slope_regularization_ = plist_.get<double>("slope regularization epsilon", 1.e-8);
   manning_exp_ = plist_.get<double>("Manning exponent", 0.6666666666666667);
   manning_key_ = "manning_coefficient";
-  pres_key_ = "overland_pressure";
+  pres_key_ = plist_.get<std::string>("height key", "ponded_depth");
   slope_key_ = "slope_magnitude";
 
   my_key_ = "overland_conductivity";

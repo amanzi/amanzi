@@ -73,6 +73,7 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
+  virtual void UpdateBoundaryConditionsPreconditioner_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres);
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method

@@ -231,6 +231,10 @@ void Coordinator::cycle_driver() {
                 << std::endl;
     }
 
+    if (S_->cycle() == 22) {
+      std::cout << "we are here" << std::endl;
+    }
+
     S_next_->advance_time(dt);
     fail = pk_->advance(dt);
 

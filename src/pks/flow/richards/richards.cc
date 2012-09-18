@@ -290,21 +290,21 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     update_perm |= update_dir;
   }
 
-  Teuchos::RCP<CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm", name_);
+  Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
   if (update_perm) {
     // upwind
     upwinding_->Update(S);
 
     // REMOVE ME!
-    for (int c=0; c!=rel_perm->size("cell",false); ++c) {
-      if (boost::math::isnan<double>((*rel_perm)("cell",c))) {
+    for (int c=0; c!=uw_rel_perm->size("cell",false); ++c) {
+      if (boost::math::isnan<double>((*uw_rel_perm)("cell",c))) {
         std::cout << "NaN in cell rel perm." << std::endl;
         Errors::Message m("Cut time step");
         Exceptions::amanzi_throw(m);
       }
     }
-    for (int f=0; f!=rel_perm->size("face",false); ++f) {
-      if (boost::math::isnan<double>((*rel_perm)("face",f))) {
+    for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
+      if (boost::math::isnan<double>((*uw_rel_perm)("face",f))) {
         std::cout << "NaN in face rel perm." << std::endl;
         Errors::Message m("Cut time step");
         Exceptions::amanzi_throw(m);
@@ -312,12 +312,15 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     }
 
     // patch up the BCs -- FIX ME --etc
-    for (int f=0; f!=rel_perm->size("face"); ++f) {
+    Teuchos::RCP<const CompositeVector> rel_perm =
+        S->GetFieldData("relative_permeability");
+
+    for (int f=0; f!=uw_rel_perm->size("face"); ++f) {
       AmanziMesh::Entity_ID_List cells;
-      rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      uw_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
       if (cells.size() < 2) {
         // just grab the cell inside's perm... this will need to be fixed eventually.
-        (*rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
+        (*uw_rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
       }
     }
   }
@@ -329,9 +332,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   if (update_perm) {
     Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
     Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
-    for (int c=0; c!=rel_perm->size("cell"); ++c) {
-      (*rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
+    for (int c=0; c!=uw_rel_perm->size("cell"); ++c) {
+      (*uw_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
     }
+
+    // communicate
+    uw_rel_perm->ScatterMasterToGhosted("face");
   }
 
   return update_perm;
@@ -361,6 +367,24 @@ void Richards::UpdateBoundaryConditions_() {
   }
 };
 
+
+// -----------------------------------------------------------------------------
+// Evaluate boundary conditions at the current time.
+// -----------------------------------------------------------------------------
+void Richards::UpdateBoundaryConditionsPreconditioner_() {
+  UpdateBoundaryConditions_();
+
+  // Attempt of a hack to deal with zero rel perm
+  double eps = 1.e-16;
+  Teuchos::RCP<const CompositeVector> relperm =
+      S_next_->GetFieldData("numerical_rel_perm");
+  for (int f=0; f!=relperm->size("face"); ++f) {
+    if ((*relperm)("face",f) < eps) {
+      bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+      bc_values_[f] = 0.0;
+    }
+  }
+};
 
 // -----------------------------------------------------------------------------
 // Add a boundary marker to owned faces.

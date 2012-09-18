@@ -46,12 +46,21 @@ void PKPhysicalBDFBase::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
+  // VerboseObject stuff.
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "ENorm (Infnorm) of: " << name_ << ": ";
+  }
+
   Teuchos::RCP<const CompositeVector> vec = u->data();
   Teuchos::RCP<const CompositeVector> dvec = du->data();
+
 
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=vec->begin();
        comp!=vec->end(); ++comp) {
+    double enorm_comp = 0.0;
+    double infnorm_comp = 0.0;
     for (int id=0; id!=vec->size(*comp,false); ++id) {
       if (boost::math::isnan<double>((*dvec)(*comp,id))) {
         std::cout << "Cutting time step due to NaN in correction." << std::endl;
@@ -60,8 +69,18 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
       }
 
       double tmp = abs((*dvec)(*comp,id)) / (atol_+rtol_*abs((*vec)(*comp,id)));
-      enorm_val = std::max<double>(enorm_val, tmp);
+      enorm_comp = std::max<double>(enorm_comp, tmp);
+      infnorm_comp = std::max<double>(infnorm_comp, abs((*dvec)(*comp,id)));
     }
+
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << *comp << " = " << enorm_comp << " (" << infnorm_comp << ")  ";
+    }
+    enorm_val = std::max<double>(enorm_val, enorm_comp);
+  }
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << std::endl;
   }
 
 #ifdef HAVE_MPI
