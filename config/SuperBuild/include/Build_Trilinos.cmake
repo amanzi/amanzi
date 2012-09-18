@@ -40,7 +40,12 @@ foreach(package ${Trilinos_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
 
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:STRING=OFF")
+# Remove SEACAS from the build and force STK to use external Exodus
+if ( ENABLE_STK_Mesh )
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:STRING=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DSTK_ENABLE_SEACASExodus:STRING=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DSTK_ENABLE_SEACASNemesis:STRING=OFF")
+endif()
 
 #  - Trilinos TPL Configuration
 
@@ -89,6 +94,7 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_Netcdf:BOOL=ON"
             "-DTPL_Netcdf_INCLUDE_DIRS:STRING=${NetCDF_INCLUDE_DIRS}"
             "-DTPL_Netcdf_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}")
+
 
 # HYPRE
 if( ENABLE_HYPRE )
