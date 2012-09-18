@@ -249,7 +249,7 @@ void OverlandFlow::update_precon_for_real(double t, Teuchos::RCP<const TreeVecto
 
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
-  preconditioner_->CreateMFDstiffnessMatrices(cond);
+  preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
   preconditioner_->CreateMFDrhsVectors();
 
   // 2. Update local matrices diagonal with the accumulation terms.
