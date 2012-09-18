@@ -103,5 +103,8 @@ set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
 set(ENABLE_PETSC @ENABLE_PETSC@ CACHE BOOL "Build PETSc interfaces")
 set(PETSC_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "PETSc installation prefix")
 
+# HYPRE
+set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interface")
+
 # Trilinos
-set(Trilinos_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
+set(Trilinos_INSTALL_PREFIX @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")

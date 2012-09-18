@@ -107,14 +107,25 @@ endif()
 ##############################################################################
 # This command alters Trilinos_DIR. If it finds the configuration file
 # Trilinos_DIR is set to the path the configuration file was found.
-find_package(Trilinos 10.6 REQUIRED
-             HINTS ${Trilinos_DIR}
+if ( NOT Trilinos_INSTALL_PREFIX )
+  message(WARNING "Use Trilinos_INSTALL_PREFIX"
+                  " to define the Trilinos installation location"
+		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilnos directory>\n")
+endif()
+set(Trilinos_MINIMUM_VERSION 10.12)
+find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
+             PATHS ${Trilinos_INSTALL_PREFIX}
              PATH_SUFFIXES include)
-trilinos_package_enabled_tpls(Trilinos)           
             
 if ( Trilinos_FOUND )
 
-    message(STATUS "Found Trilinos: ${Trilinos_LIBRARY_DIR}")
+    message(STATUS "Found Trilinos: ${Trilinos_DIR} (${Trilinos_VERSION})")
+    trilinos_package_enabled_tpls(Trilinos)           
+
+    if ( "${Trilinos_VERSION}" VERSION_LESS ${Trilinos_MINIMUM_VERSION} ) 
+      message(FATAL_ERROR "Trilinos version ${Trilinos_VERSION} is not sufficient."
+	                  " Amanzi requires at least version ${Trilinos_MINIMUM_VERSION}")
+    endif()
 
     # Amanzi uses Epetra and Teuchos utils throughout the code. 
     # This find_package call defines Epetra_* variables.
@@ -140,9 +151,10 @@ if ( Trilinos_FOUND )
     foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
       find_package(${tri_package} REQUIRED
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib)
       trilinos_package_enabled_tpls(${tri_package})
+      message(STATUS "Located Trilinos package ${tri_package}: ${${tri_package}_DIR}")
       # For some reason, Trilinos defines dependent TPLs in *_TPL_LIBRARIES not
       # in *_LIBRARIES. We update the variables so the usage of these variables
       # is consistent with other FindXXX modules.
@@ -157,9 +169,10 @@ if ( Trilinos_FOUND )
     if ( ENABLE_STK_Mesh )
       find_package(STK
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib)
       if (STK_FOUND)
+	message(STATUS "Located Trilinos package STK: ${STK_DIR}")
         trilinos_package_enabled_tpls(STK)
         list(APPEND STK_LIBRARIES "${STK_TPL_LIBRARIES}")
         list(APPEND STK_INCLUDE_DIRS "${STK_TPL_INCLUDE_DIRS}")
@@ -174,9 +187,10 @@ if ( Trilinos_FOUND )
     if ( ENABLE_MSTK_Mesh )
       find_package(Zoltan
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib)
       if (Zoltan_FOUND)
+	message(STATUS "Located Trilinos package Zoltan: ${Zoltan_DIR}")
         trilinos_package_enabled_tpls(Zoltan)
         list(APPEND Zoltan_LIBRARIES "${Zoltan_TPL_LIBRARIES}")
         list(APPEND Zoltan_INCLUDE_DIRS "${Zoltan_TPL_INCLUDE_DIRS}")
@@ -194,12 +208,13 @@ if ( Trilinos_FOUND )
       # Ifpack - preconditioner package that serves as a wrapper for HYPRE
       find_package(Ifpack 
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib
                    )
       list(APPEND Ifpack_LIBRARIES "${Ifpack_TPL_LIBRARIES}")
       list(APPEND Ifpack_INCLUDE_DIRS "${Ifpack_TPL_INCLUDE_DIRS}")
-      if (Ifpack_FOUND)      
+      if (Ifpack_FOUND)
+	message(STATUS "Located Triilnos package Ifpack: ${Ifpack_DIR}")
         trilinos_package_enabled_tpls(Ifpack)
       else()
         message(SEND_ERROR "Trilinos in ${Trilinos_DIR} does not have the Ifpack package")
@@ -221,14 +236,6 @@ else()
                         " Please define the location of your Trilinos installation\n"
                         "using -D Trilinos_DIR:FILEPATH=<install path>\n")
 endif()    
-
-# Trilinos can contain 20 or more libraries (packages). The variable Trilinos_LIBRARIES
-# does not have full path names only library names. I suspect if it did include
-# full path names the link command would exceed the command line character limit on
-# many platforms, thus we need to add Trilinos library path to the link to find these
-# libraries. Since Amanzi calls many Trilinos packages directly we'll add Trilinos
-# to all link commands here. Yes, this is overkill. We'll have wrappers someday.
-link_directories(${Trilinos_LIBRARY_DIRS})
 
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
