@@ -7,7 +7,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(NetCDF 
                              TARGET netcdf
-                             DEPENDS CURL
+                             DEPENDS ${MPI_PROJECT} CURL
                             )
 
 # --- Define the patch command
@@ -46,7 +46,7 @@ if (ENABLE_NetCDF4)
   # These options were removed in version 4.1.3 _sigh_
   if ( ${NetCDF_VERSION} VERSION_LESS 4.1.3 )
     append_set(NetCDF_netcdf4_opts
-                        --with-hdf5=${HDF5_install_dir}
+                        --with-netcdf=${HDF5_install_dir}
                         --with-zlib=${ZLIB_install_dir})
   endif()  
 
@@ -71,6 +71,15 @@ build_whitespace_string(netcdf_cppflags ${cpp_flags_list})
 
 build_whitespace_string(netcdf_fcflags 
                         ${Amanzi_COMMON_FCFLAGS} )
+
+# Add MPI C libraries 
+if ( ( NOT BUILD_MPI) AND ( NOT MPI_WRAPPERS_IN_USE ) AND (MPI_C_LIBRARIES) )
+  build_whitespace_string(netcdf_ldflags -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES} ${CMAKE_EXE_LINKER_FLAGS})
+else()
+  build_whitespace_string(netcdf_ldflags -L${TPL_INSTALL_PREFIX}/lib ${CMAKE_EXE_LINKER_FLAGS})
+endif()  
+
+
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     DEPENDS   ${NetCDF_PACKAGE_DEPENDS}             # Package dependency target
@@ -80,7 +89,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${NetCDF_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${NetCDF_MD5_SUM}                # md5sum of the archive file
-		    # -- Patch 
+                    # -- Patch 
                     PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${NetCDF_source_dir}           # Source directory
@@ -91,16 +100,16 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                                                 ${NetCDF_netcdf4_opts} 
                                                 --disable-dap
                                                 --disable-shared
-						--disable-fortran
-						--disable-f90
-						--disable-f77
-						--disable-fortran-compiler-check
-                                                CC=${CMAKE_C_COMPILER}
+                                                --disable-fortran
+                                                --disable-f90
+                                                --disable-f77
+                                                --disable-fortran-compiler-check
+                                                CC=${CMAKE_C_COMPILER_USE}
                                                 CFLAGS=${netcdf_cflags}
-                                                CXX=${CMAKE_CXX_COMPILER}
+                                                CXX=${CMAKE_CXX_COMPILER_USE}
                                                 CXXFLAGS=${netcdf_cxxflags}
                                                 CPPFLAGS=${netcdf_cppflags}
-                                                LDFLAGS=-L<INSTALL_DIR>/lib
+                                                LDFLAGS=${netcdf_ldflags}
                     # -- Build
                     BINARY_DIR        ${NetCDF_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
@@ -109,3 +118,17 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control
                     ${NetCDF_logging_args})
+
+# --- Useful variables for packages that depend on NetCDF (Trilinos, ExodusII)
+include(BuildLibraryName)
+build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+set(NetCDF_C_LIBRARIES ${NetCDF_C_LIBRARY})
+if ( ENABLE_NetCDF4 )
+  list(APPEND NetCDF_C_LIBRARIES ${HDF5_LIBRARIES})
+  list(APPEND NetCDF_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
+  list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
+endif()
+  
+

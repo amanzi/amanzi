@@ -8,7 +8,7 @@
 define_external_project_args(ASCEMIO 
                              TARGET ascemio
                              BUILD_IN_SOURCE
-                             DEPENDS HDF5)
+                             DEPENDS ${MPI_PROJECT} HDF5)
 
 
 # -- Define the build command
@@ -23,7 +23,7 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-build-step.sh.in
 set(ASCEMIO_cmake_build ${ASCEMIO_prefix_dir}/ascemio-build-step.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-build-step.cmake.in
                ${ASCEMIO_cmake_build}
-       @ONLY)
+               @ONLY)
 set(ASCEMIO_BUILD_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_build})
 
 # --- Define the install command

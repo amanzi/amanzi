@@ -9,7 +9,7 @@
 # MPI and to resolve links we need MPI compile wrappers.
 define_external_project_args(SEACAS
                              TARGET seacas
-                             DEPENDS HDF5 NetCDF)
+                             DEPENDS ${MPI_PROJECT} HDF5 NetCDF)
 
 
 # --- Define the configure parameters
@@ -35,23 +35,26 @@ set(seacas_netcdf_libraries
        ${seacas_hdf5_hl_library}
        ${seacas_hdf5_library}
        ${seacas_z_library})
+if ( (NOT BUILD_MPI) AND (NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES) )
+  list(APPEND seacas_netcdf_libraries ${MPI_C_LIBRARIES})
+endif()
 
 # The CMake cache args
 set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_INSTALL_PREFIX:FILEPATH=<INSTALL_DIR>
-		    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
-		    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-		    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-		    -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                    -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=-L${TPL_INSTALL_PREFIX}/lib
-		    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
-		    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
-		    -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
-		    -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
-		    -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
+                    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
+                    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
+                    -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
+                    -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
+                    -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
                     )
 
 # --- Add external project build and tie to the SEACAS build target

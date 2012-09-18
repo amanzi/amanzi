@@ -20,7 +20,7 @@
 #define EXODUS_FILE_DIR "test_files"
 #endif
 
-#define BOOST_FILESYSTEM_VERSION 2
+#define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
 namespace bfs = boost::filesystem;
 

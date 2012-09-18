@@ -204,7 +204,7 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
     # Search for NetCDF
     find_package(NetCDF QUIET REQUIRED)
     set_target_properties(${ExodusII_LIBRARY} PROPERTIES
-                          IMPORTED_LINK_INTERFACE_LIBRARIES "${NetCDF_LIBRARIES}")
+                          IMPORTED_LINK_INTERFACE_LIBRARIES "${NetCDF_C_LIBRARIES}")
     list(APPEND ExodusII_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
 
     #add_package_dependency(ExodusII DEPENDS_ON NetCDF)

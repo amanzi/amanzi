@@ -16,7 +16,7 @@ from xml.etree import ElementTree as ETree
 try:
   import amanzi as Amanzi
 except ImportError:
-  amanzi_python_install_prefix='@AmanziPython_INSTALL_PREFIX@'
+  amanzi_python_install_prefix='/usr/local/lib/python2.6/site-packages'
   sys.path.append(amanzi_python_install_prefix)
   import amanzi as Amanzi
 
@@ -30,7 +30,7 @@ except ImportError:
 parser = OptionParser()
 
 # Binary file
-amanzi_dflt_binary='@Amanzi_EXECUTABLE@'
+amanzi_dflt_binary='/usr/local/bin/amanzi'
 parser.add_option("-b", "--binary", dest="binary", default=amanzi_dflt_binary, 
                   help="Amanzi binary file",metavar="FILE")
 
@@ -39,12 +39,12 @@ parser.add_option("-i", "--input", dest="input",
                   help="Amanzi input file",metavar="FILE")
 
 # Unscramble Viz binary file
-unscram_viz_dflt_binary='@Amanzi_UnscrambleViz_BINARY@'
+unscram_viz_dflt_binary='/usr/local/bin/unscramble_viz'
 parser.add_option("--unscramble-viz", dest="unscramble_viz", default=unscram_viz_dflt_binary, 
                   help="Amanzi unscramble viz files binary ",metavar="FILE")
 
 # Unscramble Restart binary file
-unscram_restart_dflt_binary='@Amanzi_UnscrambleRestart_BINARY@'
+unscram_restart_dflt_binary='/usr/local/bin/unscramble_restart'
 parser.add_option("--unscramble-restart", dest="unscramble_restart", default=unscram_restart_dflt_binary, 
                   help="Amanzi unscramble restart files binary ",metavar="FILE")
 
@@ -65,22 +65,22 @@ parser.add_option("-n", "--nprocs", dest="nprocs",
                   help="Number of processors",metavar="NUM")
 
 # HDF5 Difference Binary (h5diff)
-h5diff_dflt_binary='@HDF5_H5DIFF_BINARY@'
+h5diff_dflt_binary='/local/lpritch/ASCEM/rc2-2012/tpl-new/bin/h5diff'
 parser.add_option("--h5diff", dest="h5diff", default=h5diff_dflt_binary,
                   help="HDF5 difference tool", metavar="FILE")
 
 # HDF5 List Binary (h5ls)
-h5ls_dflt_binary='@HDF5_H5LS_BINARY@'
+h5ls_dflt_binary='/local/lpritch/ASCEM/rc2-2012/tpl-new/bin/h5ls'
 parser.add_option("--h5ls", dest="h5ls", default=h5ls_dflt_binary,
                   help="HDF5 ls tool", metavar="FILE")
 
 # HDF5 Dump Binary (h5dump)
-h5dump_dflt_binary='@HDF5_H5DUMP_BINARY@'
+h5dump_dflt_binary='/local/lpritch/ASCEM/rc2-2012/tpl-new/bin/h5dump'
 parser.add_option("--h5dump", dest="h5dump", default=h5dump_dflt_binary,
                   help="HDF5 data dump tool", metavar="FILE")
 
 # HDF5 Copy Binary (h5copy)
-h5copy_dflt_binary='@HDF5_H5COPY_BINARY@'
+h5copy_dflt_binary='/local/lpritch/ASCEM/rc2-2012/tpl-new/bin/h5copy'
 parser.add_option("--h5copy", dest="h5copy", default=h5copy_dflt_binary,
                   help="HDF5 data copy tool", metavar="FILE")
 

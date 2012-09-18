@@ -4,7 +4,7 @@
 # Build TPL:  PETSc 
 #    
 # --- Define all the directories and common external project flags
-define_external_project_args(PETSc TARGET petsc BUILD_IN_SOURCE)
+define_external_project_args(PETSc TARGET petsc DEPENDS ${MPI_PROJECT} BUILD_IN_SOURCE)
 
 # --- Define configure parameters
 
@@ -24,6 +24,9 @@ set(cpp_flag_list
 list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(petsc_cppflags ${cpp_flags_list})
 
+build_whitespace_string(petsc_fcflags
+                       -I${TPL_INSTALL_PREFIX}/include
+                       ${Amanzi_COMMON_FCFLAGS})
 # Set PETSc debug flag
 if ( "${CMAKE_BUILD_TYPE}" STREQUAL "Release" )
   set(petsc_debug_flag 0)
@@ -45,12 +48,13 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     CONFIGURE_COMMAND
 		                <SOURCE_DIR>/configure
 				            --prefix=${TPL_INSTALL_PREFIX}
-					    --with-cc=${CMAKE_C_COMPILER}
-					    --with-cxx=${CMAKE_CXX_COMPILER}
-					    --with-fc=${CMAKE_Fortran_COMPILER}
-					    --CFLAGS=${petsc_cflags}
-					    --CXXFLAGS=${petsc_cxxflags}
-					    --with-debugging=${petsc_debug_flag}
+                            --with-cc=${CMAKE_C_COMPILER_USE}
+                            --with-cxx=${CMAKE_CXX_COMPILER_USE}
+                            --with-fc=${CMAKE_Fortran_COMPILER_USE}
+					        --CFLAGS=${petsc_cflags}
+					        --CXXFLAGS=${petsc_cxxflags}
+                            --FFLAGS=${petsc_fcflags}
+					        --with-debugging=${petsc_debug_flag}
                     # -- Build
                     BINARY_DIR        ${PETSc_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # Run the CMake script to build

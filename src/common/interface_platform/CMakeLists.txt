@@ -28,6 +28,8 @@ if ( CCSE_FOUND )
   include_directories(${CCSE_INCLUDE_DIRS})
 endif()  
 
+include_directories(${Boost_INCLUDE_DIRS})
+
 #
 # interface library
 #

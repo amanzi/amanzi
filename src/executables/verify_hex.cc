@@ -18,8 +18,7 @@
 
 #include <iostream>
 #include <boost/format.hpp>
-// TODO: We are using depreciated parts of boost::filesystem
-#define BOOST_FILESYSTEM_VERSION 2
+#define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem/path.hpp>
 namespace bf = boost::filesystem;
 #include <boost/program_options.hpp>
@@ -36,6 +35,29 @@ namespace po = boost::program_options;
 #include "MeshException.hh"
 
 #include "cgns_mesh_par.hh"
+
+// -------------------------------------------------------------
+// grab_filename
+// -------------------------------------------------------------
+/**
+  * Simple routine to parse the filename from a path 
+  * boost::filesystem object that handles the differences between
+  * version 2 (path.leaf()) and 3 (path.filename())
+  *
+  * @param some_path a boost::filesystem path 
+  * 
+  * Return string that defines the filename
+  */
+std::string
+grab_filename(const bf::path& some_path) {
+#if BOOST_FILESYSTEM_VERSION == 2
+  return some_path.leaf();
+#elif BOOST_FILESYSTEM_VERSION == 3
+  return some_path.filename().generic_string();
+#else
+#error Invalid Boost Filesystem library version
+#endif
+}
 
 // -------------------------------------------------------------
 // dump_cgns
@@ -126,7 +148,8 @@ int
 main(int argc, char **argv)
 {
   bf::path progpath(argv[0]);
-  std::string progname = progpath.leaf();
+  std::string progname = grab_filename(progpath);
+
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);

@@ -33,6 +33,7 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     SOURCE_DIR       ${ZLIB_source_dir}               # Source directory
                     CMAKE_CACHE_ARGS ${ZLIB_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
                                      ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
                     BINARY_DIR        ${ZLIB_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
@@ -41,3 +42,9 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control
                     ${ZLIB_logging_args})
+
+# --- Useful variables that depend on ZlIB (HDF5, NetCDF)
+include(BuildLibraryName)
+build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+

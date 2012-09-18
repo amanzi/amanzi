@@ -15,8 +15,8 @@
 #include "Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
-// TODO: We are using depreciated parts of boost::filesystem
-#define BOOST_FILESYSTEM_VERSION 2
+
+#define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include "time_step_manager.hh"

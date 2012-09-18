@@ -4,7 +4,10 @@
 # Build TPL:  HYPRE 
 #    
 # --- Define all the directories and common external project flags
-define_external_project_args(HYPRE TARGET hypre BUILD_IN_SOURCE)
+define_external_project_args(HYPRE 
+                             TARGET hypre
+                             DEPENDS ${MPI_PROJECT}
+                             BUILD_IN_SOURCE)
 
 # --- Define configure parameters
 
@@ -23,6 +26,29 @@ set(cpp_flag_list
     ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(hypre_cppflags ${cpp_flags_list})
+
+# Is OpenMP available
+find_package(OpenMP)
+
+set(hypre_openmp_opt)
+if ( OPENMP_FOUND )
+  set(hypre_openmp_opt --with-openmp)
+endif()
+print_variable(hypre_openmp_opt)
+
+# Locate LAPACK and BLAS
+
+set(hypre_blas_opt)
+find_package(BLAS)
+if ( BLAS_FOUND )
+  set(hypre_blas_opt --with-blas)
+endif()
+
+set(hypre_lapack_opt)
+find_package(LAPACK)
+if ( LAPACK_FOUND )
+  set(hypre_lapack_opt --with-lapack)
+endif()
 
 # Build the configure script
 set(HYPRE_sh_configure ${HYPRE_prefix_dir}/hypre-configure-step.sh)
