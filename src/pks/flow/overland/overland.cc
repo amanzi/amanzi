@@ -376,7 +376,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     S->GetFieldData("overland_flux", "overland_flow");
 
   // communicate face perms
-  matrix_->CreateMFDstiffnessMatrices(upwind_conductivity);
+  matrix_->CreateMFDstiffnessMatrices(upwind_conductivity.ptr());
   matrix_->DeriveFlux(*pres_elev, darcy_flux);
 };
 
