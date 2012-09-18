@@ -8,9 +8,9 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Epetra_MpiComm.h>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+//#include <stk_mesh/fem/FieldTraits.hpp>
 
 #include <map>
 #include <memory>
@@ -30,7 +30,7 @@ class Mesh_STK_Impl {
   Mesh_STK_Impl (int space_dimension, 
                  const Epetra_MpiComm *communicator, 
                  Entity_map* entity_map, 
-                 stk::mesh::MetaData *meta_data, 
+                 stk::mesh::fem::FEMMetaData *meta_data, 
                  stk::mesh::BulkData *bulk_data,
                  const Id_map &set_to_part,
                  Vector_field_type& coordinate_field);
@@ -43,7 +43,7 @@ class Mesh_STK_Impl {
     
   int space_dimension () const { return space_dimension_;  }
     
-  const stk::mesh::MetaData& meta_data    () const { return *meta_data_; }
+  const stk::mesh::fem::FEMMetaData& meta_data    () const { return *meta_data_; }
   const stk::mesh::BulkData& build_data   () const { return *bulk_data_; }
   const Entity_map&          entity_map   () const { return *entity_map_; }
   const Epetra_MpiComm      *communicator () const { return communicator_; }
@@ -105,21 +105,23 @@ class Mesh_STK_Impl {
   // Static information
   // ------------------
 
-  static stk::mesh::EntityRank get_element_type (int space_dimension);
-  static stk::mesh::EntityRank get_face_type    (int space_dimension);
+  stk::mesh::EntityRank get_element_type (int space_dimension);
+  stk::mesh::EntityRank get_face_type    (int space_dimension);
 
 
   // Validators
   // ----------
 
-  static bool valid_dimension (int space_dimension);
-  static bool valid_rank (stk::mesh::EntityRank);
+  bool valid_dimension (int space_dimension);
+  bool valid_rank (stk::mesh::EntityRank);
 
   /// redistribute cell ownership according to the specified map
   void redistribute(const Epetra_Map& cellmap);
 
   void summary(std::ostream& os) const;
-    
+
+  stk::mesh::EntityRank  kind_to_rank (Entity_kind kind) const;
+  Entity_kind rank_to_kind (stk::mesh::EntityRank   rank) const;
 
  private:
 
@@ -129,7 +131,7 @@ class Mesh_STK_Impl {
   int space_dimension_;
   bool consistent_;
     
-  std::auto_ptr<stk::mesh::MetaData> meta_data_;
+  std::auto_ptr<stk::mesh::fem::FEMMetaData> meta_data_;
   std::auto_ptr<stk::mesh::BulkData> bulk_data_;
     
   Vector_field_type &coordinate_field_;
@@ -147,7 +149,7 @@ class Mesh_STK_Impl {
 
   // Internal Validators
   bool element_type_ok_ () const;
-  bool dimension_ok_ () const;
+  bool dimension_ok_ ();
     
   // Disable copy and assignment.
   Mesh_STK_Impl (const Mesh_STK_Impl& rhs);

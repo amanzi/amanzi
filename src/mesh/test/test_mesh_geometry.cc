@@ -125,6 +125,21 @@ TEST(MESH_GEOMETRY_PLANAR)
       }
 
       CHECK_EQUAL(found,true);
+
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      std::vector<int> cfdirs;
+      Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
+
+      mesh->cell_get_faces_and_dirs(i,&cfaces,&cfdirs);
+      normal_sum.set(0.0);
+
+      for (int j = 0; j < cfaces.size(); j++) {
+        normal = mesh->face_normal(cfaces[j],false,i);
+        normal_sum += normal;
+      }
+
+      double val = L22(normal_sum);
+      CHECK_CLOSE(val,0.0,1.0e-20);                
     }
 
     for (int i = 0; i < nfaces; i++) {
@@ -554,6 +569,21 @@ TEST(MESH_GEOMETRY_SOLID)
       }
 
       CHECK_EQUAL(found,true);
+
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      std::vector<int> cfdirs;
+      Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
+
+      mesh->cell_get_faces_and_dirs(i,&cfaces,&cfdirs);
+      normal_sum.set(0.0);
+
+      for (int j = 0; j < cfaces.size(); j++) {
+        normal = mesh->face_normal(cfaces[j],false,i);
+        normal_sum += normal;
+      }
+
+      double val = L22(normal_sum);
+      CHECK_CLOSE(val,0.0,1.0e-20);                
     }
 
     for (int i = 0; i < nfaces; i++) {
@@ -625,6 +655,47 @@ TEST(MESH_GEOMETRY_SOLID)
 
       CHECK_EQUAL(found,true);
     }
+
+    
+    // Now deform the mesh a little and verify that the sum of the
+    // outward normals of all faces of cell is still zero
+
+    Amanzi::AmanziGeometry::Point ccoords(3);
+    mesh->node_get_coordinates(13,&ccoords); // central node
+
+    // Lets be sure this is the central node
+    CHECK_EQUAL(ccoords[0],0.5);
+    CHECK_EQUAL(ccoords[1],0.5);
+    CHECK_EQUAL(ccoords[2],0.5);
+    
+    // Perturb it
+    ccoords.set(0.7,0.7,0.7);
+    mesh->node_set_coordinates(13,ccoords);
+
+    // Now check the normals
+
+    for (int i = 0; i < ncells; i++) {
+
+      //      cout << "CELL " << i << ":" << std::endl;
+
+      Amanzi::AmanziMesh::Entity_ID_List cfaces;
+      std::vector<int> cfdirs;
+      Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
+
+      mesh->cell_get_faces_and_dirs(i,&cfaces,&cfdirs);
+      normal_sum.set(0.0);
+
+      for (int j = 0; j < cfaces.size(); j++) {
+        normal = mesh->face_normal(cfaces[j],true,i);
+        normal_sum += normal;
+        //        cout << "      face " << j << " normal : " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+      }
+
+      double val = L22(normal_sum);
+      CHECK_CLOSE(val,0.0,1.0e-20);                
+
+      //      cout << "Sum of normals: " << val << std::endl << std::endl;
+    }    
 
   } // for each framework i
 

@@ -64,6 +64,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 
   AmanziMesh::Entity_ID_List cells, faces, ss_faces;
   AmanziMesh::Entity_ID_List nodes1, nodes2, common_nodes;
+  std::vector<int> fdirs;
 
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
   std::vector<AmanziGeometry::Point> edges;
@@ -79,7 +80,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
     std::sort(nodes1.begin(), nodes1.end());
 
     int c = cells[0];
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
     // find all edges that intersection of boundary faces f1 and f2

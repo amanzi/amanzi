@@ -73,64 +73,64 @@
            <ParameterList name="BC 1">
              <ParameterList name="outward mass flux">
                <ParameterList name="function-tabular">
-                 <Parameter name="forms" type="Array string" value="{constant, constant, constant}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 6.17267e+10, 6.17293e+10, 9.46728e+10}"/>
-                 <Parameter name="y values" type="Array double" value="{-1.1071e-07, -0.00254022, -1.48666e-06, -1.48666e-06}"/>
+                 <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+                 <Parameter name="x values" type="Array(double)" value="{0, 6.17267e+10, 6.17293e+10, 9.46728e+10}"/>
+                 <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -0.00254022, -1.48666e-06, -1.48666e-06}"/>
                </ParameterList>
              </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Top Surface Outside Crib_216-B-17}"/>
+             <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-17}"/>
            </ParameterList>
            <ParameterList name="BC 2">
              <ParameterList name="outward mass flux">
                <ParameterList name="function-tabular">
-                 <Parameter name="forms" type="Array string" value="{constant, constant, constant, constant}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 6.17267e+10, 6.17318e+10, 6.17371e+10, 9.46728e+10}"/>
-                 <Parameter name="y values" type="Array double" value="{-1.1071e-07, -1.48666e-06, -0.00330423, -1.48666e-06, -1.48666e-06}"/>
+                 <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
+                 <Parameter name="x values" type="Array(double)" value="{0, 6.17267e+10, 6.17318e+10, 6.17371e+10, 9.46728e+10}"/>
+                 <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -0.00330423, -1.48666e-06, -1.48666e-06}"/>
                </ParameterList>
              </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Top Surface Outside Crib_216-B-18}"/>
+             <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-18}"/>
            </ParameterList>
            <ParameterList name="BC 3">
              <ParameterList name="outward mass flux">
                <ParameterList name="function-tabular">
-                 <Parameter name="forms" type="Array string" value="{constant, constant}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 6.17267e+10, 9.46728e+10}"/>
-                 <Parameter name="y values" type="Array double" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
+                 <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+                 <Parameter name="x values" type="Array(double)" value="{0, 6.17267e+10, 9.46728e+10}"/>
+                 <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                </ParameterList>
              </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Top Surface Outside Recharge_Boundary_btwnCribs}"/>
+             <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_btwnCribs}"/>
            </ParameterList>
            <ParameterList name="BC 4">
              <ParameterList name="outward mass flux">
                <ParameterList name="function-tabular">
-                 <Parameter name="forms" type="Array string" value="{constant, constant}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 6.17267e+10, 9.46728e+10}"/>
-                 <Parameter name="y values" type="Array double" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
+                 <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+                 <Parameter name="x values" type="Array(double)" value="{0, 6.17267e+10, 9.46728e+10}"/>
+                 <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                </ParameterList>
              </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Top Surface Outside Recharge_Boundary_eastOfCribs}"/>
+             <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_eastOfCribs}"/>
            </ParameterList>
            <ParameterList name="BC 5">
              <ParameterList name="outward mass flux">
                <ParameterList name="function-tabular">
-                 <Parameter name="forms" type="Array string" value="{constant, constant}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 6.17267e+10, 9.46728e+10}"/>
-                 <Parameter name="y values" type="Array double" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
+                 <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+                 <Parameter name="x values" type="Array(double)" value="{0, 6.17267e+10, 9.46728e+10}"/>
+                 <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
                </ParameterList>
              </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Top Surface Outside Recharge_Boundary_westOfCribs}"/>
+             <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_westOfCribs}"/>
            </ParameterList>
          </ParameterList>
          <ParameterList name="pressure">
            <ParameterList name="BC 0">
              <ParameterList name="boundary pressure">
                <ParameterList name="function-tabular">
-                 <Parameter name="forms" type="Array string" value="{constant}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 9.46728e+10}"/>
-                 <Parameter name="y values" type="Array double" value="{101325, 101325}"/>
+                 <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                 <Parameter name="x values" type="Array(double)" value="{0, 9.46728e+10}"/>
+                 <Parameter name="y values" type="Array(double)" value="{101325, 101325}"/>
                </ParameterList>
              </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Bottom Surface Outside All}"/>
+             <Parameter name="regions" type="Array(string)" value="{Bottom Surface Outside All}"/>
            </ParameterList>
          </ParameterList>
        </ParameterList>
@@ -228,8 +228,8 @@
        </ParameterList>
      </ParameterList>
      <ParameterList name="Time Period Control">
-       <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10}"/>
-       <Parameter name="Start Times" type="Array double" value="{6.17293e+10, 6.17318e+10, 6.17371e+10}"/>
+       <Parameter name="Initial Time Step" type="Array(double)" value="{10, 10, 10}"/>
+       <Parameter name="Start Times" type="Array(double)" value="{6.17293e+10, 6.17318e+10, 6.17371e+10}"/>
      </ParameterList>
      <ParameterList name="VerboseObject">
        <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -245,9 +245,9 @@
          <Parameter name="Framework" type="string" value="MSTK"/>
        </ParameterList>
        <ParameterList name="Generate Mesh">
-         <Parameter name="Domain High Corner" type="Array double" value="{216, 107.52}"/>
-         <Parameter name="Domain Low Corner" type="Array double" value="{0, 0}"/>
-         <Parameter name="Number of Cells" type="Array int" value="{432, 256}"/>
+         <Parameter name="Domain High Corner" type="Array(double)" value="{216, 107.52}"/>
+         <Parameter name="Domain Low Corner" type="Array(double)" value="{0, 0}"/>
+         <Parameter name="Number of Cells" type="Array(int)" value="{432, 256}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -255,97 +255,97 @@
    <ParameterList name="Regions">
      <ParameterList name="Bottom Surface Outside All">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{216, 0}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{0, 0}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{216, 0}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Crib_216-B-17">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{78.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{74.5, 106.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{78.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{74.5, 106.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Crib_216-B-18">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{147.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{143.5, 106.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{147.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{143.5, 106.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Recharge_Boundary_btwnCribs">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{143.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{78.5, 106.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{143.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{78.5, 106.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Recharge_Boundary_eastOfCribs">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{216, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{147.5, 106.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{216, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{147.5, 106.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Recharge_Boundary_westOfCribs">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{74.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{0, 106.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{74.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{0, 106.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Region between Plane Surface 0 and Plane Surface 1">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{216, 39.9}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{0, 0}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{216, 39.9}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Region between Plane Surface 1 and Plane Surface 2">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{216, 80.22}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{0, 39.9}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{216, 80.22}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{0, 39.9}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Region between Plane Surface 2 and Plane Surface 3">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{216, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{0, 80.22}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{216, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{0, 80.22}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Top Surface Outside Crib_216-B-17">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{78.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{74.5, 107.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{78.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{74.5, 107.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Top Surface Outside Crib_216-B-18">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{147.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{143.5, 107.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{147.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{143.5, 107.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Top Surface Outside Recharge_Boundary_btwnCribs">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{143.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{78.5, 107.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{143.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{78.5, 107.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Top Surface Outside Recharge_Boundary_eastOfCribs">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{216, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{147.5, 107.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{216, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{147.5, 107.52}"/>
        </ParameterList>
      </ParameterList>
      <ParameterList name="Top Surface Outside Recharge_Boundary_westOfCribs">
        <ParameterList name="Region: Box">
-         <Parameter name="High Coordinate" type="Array double" value="{74.5, 107.52}"/>
-         <Parameter name="Low Coordinate" type="Array double" value="{0, 107.52}"/>
+         <Parameter name="High Coordinate" type="Array(double)" value="{74.5, 107.52}"/>
+         <Parameter name="Low Coordinate" type="Array(double)" value="{0, 107.52}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
    <ParameterList name="State">
-     <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
+     <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
      <Parameter name="Constant viscosity" type="double" value="0.001002"/>
      <Parameter name="Constant water density" type="double" value="998.2"/>
      <Parameter name="Gravity x" type="double" value="0"/>
      <Parameter name="Gravity y" type="double" value="-9.81"/>
      <Parameter name="Gravity z" type="double" value="-9.81"/>
-     <Parameter name="Material Names" type="Array string" value="{Facies_1, Facies_2, Facies_3}"/>
+     <Parameter name="Material Names" type="Array(string)" value="{Facies_1, Facies_2, Facies_3}"/>
      <ParameterList name="Mesh block Region between Plane Surface 0 and Plane Surface 1">
        <Parameter name="Constant component concentration 0" type="double" value="0"/>
        <Parameter name="Constant horizontal permeability" type="double" value="2.0706e-09"/>
@@ -353,8 +353,8 @@
        <Parameter name="Constant vertical permeability" type="double" value="2.0706e-10"/>
        <Parameter name="Region" type="string" value="Region between Plane Surface 0 and Plane Surface 1"/>
        <ParameterList name="linear pressure">
-         <Parameter name="gradient" type="Array double" value="{0, -9793.52}"/>
-         <Parameter name="reference coordinate" type="Array double" value="{0, 0}"/>
+         <Parameter name="gradient" type="Array(double)" value="{0, -9793.52}"/>
+         <Parameter name="reference coordinate" type="Array(double)" value="{0, 0}"/>
          <Parameter name="reference value" type="double" value="101325"/>
        </ParameterList>
      </ParameterList>
@@ -365,8 +365,8 @@
        <Parameter name="Constant vertical permeability" type="double" value="1.9976e-13"/>
        <Parameter name="Region" type="string" value="Region between Plane Surface 1 and Plane Surface 2"/>
        <ParameterList name="linear pressure">
-         <Parameter name="gradient" type="Array double" value="{0, -9793.52}"/>
-         <Parameter name="reference coordinate" type="Array double" value="{0, 0}"/>
+         <Parameter name="gradient" type="Array(double)" value="{0, -9793.52}"/>
+         <Parameter name="reference coordinate" type="Array(double)" value="{0, 0}"/>
          <Parameter name="reference value" type="double" value="101325"/>
        </ParameterList>
      </ParameterList>
@@ -377,14 +377,14 @@
        <Parameter name="Constant vertical permeability" type="double" value="6.9365e-12"/>
        <Parameter name="Region" type="string" value="Region between Plane Surface 2 and Plane Surface 3"/>
        <ParameterList name="linear pressure">
-         <Parameter name="gradient" type="Array double" value="{0, -9793.52}"/>
-         <Parameter name="reference coordinate" type="Array double" value="{0, 0}"/>
+         <Parameter name="gradient" type="Array(double)" value="{0, -9793.52}"/>
+         <Parameter name="reference coordinate" type="Array(double)" value="{0, 0}"/>
          <Parameter name="reference value" type="double" value="101325"/>
        </ParameterList>
      </ParameterList>
      <Parameter name="Number of component concentrations" type="int" value="1"/>
-     <Parameter name="Region Name to Material ID Map (Material IDs)" type="Array int" value="{3, 1, 2}"/>
-     <Parameter name="Region Name to Material ID Map (Region Names)" type="Array string" value="{Region between Plane Surface 0 and Plane Surface 1, Region between Plane Surface 1 and Plane Surface 2, Region between Plane Surface 2 and Plane Surface 3}"/>
+     <Parameter name="Region Name to Material ID Map (Material IDs)" type="Array(int)" value="{3, 1, 2}"/>
+     <Parameter name="Region Name to Material ID Map (Region Names)" type="Array(string)" value="{Region between Plane Surface 0 and Plane Surface 1, Region between Plane Surface 1 and Plane Surface 2, Region between Plane Surface 2 and Plane Surface 3}"/>
    </ParameterList>
 
    <ParameterList name="Transport">
@@ -395,40 +395,40 @@
 
      <ParameterList name="Transport BCs">
        <ParameterList name="BC 0">
-         <Parameter name="Component 0" type="Array double" value="{0, 0}"/>
-         <Parameter name="Regions" type="Array string" value="{Bottom Surface Outside All}"/>
-         <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-         <Parameter name="Times" type="Array double" value="{0, 9.46728e+10}"/>
+         <Parameter name="Component 0" type="Array(double)" value="{0, 0}"/>
+         <Parameter name="Regions" type="Array(string)" value="{Bottom Surface Outside All}"/>
+         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+         <Parameter name="Times" type="Array(double)" value="{0, 9.46728e+10}"/>
        </ParameterList>
        <ParameterList name="BC 1">
-         <Parameter name="Component 0" type="Array double" value="{0, 1.88139e-06, 0, 0}"/>
-         <Parameter name="Regions" type="Array string" value="{Top Surface Outside Crib_216-B-17}"/>
-         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant}"/>
-         <Parameter name="Times" type="Array double" value="{0, 6.17267e+10, 6.17293e+10, 9.46728e+10}"/>
+         <Parameter name="Component 0" type="Array(double)" value="{0, 1.88139e-06, 0, 0}"/>
+         <Parameter name="Regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-17}"/>
+         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
+         <Parameter name="Times" type="Array(double)" value="{0, 6.17267e+10, 6.17293e+10, 9.46728e+10}"/>
        </ParameterList>
        <ParameterList name="BC 2">
-         <Parameter name="Component 0" type="Array double" value="{0, 0, 2.26689e-06, 0, 0}"/>
-         <Parameter name="Regions" type="Array string" value="{Top Surface Outside Crib_216-B-18}"/>
-         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant, Constant}"/>
-         <Parameter name="Times" type="Array double" value="{0, 6.17267e+10, 6.17318e+10, 6.17371e+10, 9.46728e+10}"/>
+         <Parameter name="Component 0" type="Array(double)" value="{0, 0, 2.26689e-06, 0, 0}"/>
+         <Parameter name="Regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-18}"/>
+         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
+         <Parameter name="Times" type="Array(double)" value="{0, 6.17267e+10, 6.17318e+10, 6.17371e+10, 9.46728e+10}"/>
        </ParameterList>
        <ParameterList name="BC 3">
-         <Parameter name="Component 0" type="Array double" value="{0, 0, 0}"/>
-         <Parameter name="Regions" type="Array string" value="{Top Surface Outside Recharge_Boundary_btwnCribs}"/>
-         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-         <Parameter name="Times" type="Array double" value="{0, 6.17267e+10, 9.46728e+10}"/>
+         <Parameter name="Component 0" type="Array(double)" value="{0, 0, 0}"/>
+         <Parameter name="Regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_btwnCribs}"/>
+         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+         <Parameter name="Times" type="Array(double)" value="{0, 6.17267e+10, 9.46728e+10}"/>
        </ParameterList>
        <ParameterList name="BC 4">
-         <Parameter name="Component 0" type="Array double" value="{0, 0, 0}"/>
-         <Parameter name="Regions" type="Array string" value="{Top Surface Outside Recharge_Boundary_eastOfCribs}"/>
-         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-         <Parameter name="Times" type="Array double" value="{0, 6.17267e+10, 9.46728e+10}"/>
+         <Parameter name="Component 0" type="Array(double)" value="{0, 0, 0}"/>
+         <Parameter name="Regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_eastOfCribs}"/>
+         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+         <Parameter name="Times" type="Array(double)" value="{0, 6.17267e+10, 9.46728e+10}"/>
        </ParameterList>
        <ParameterList name="BC 5">
-         <Parameter name="Component 0" type="Array double" value="{0, 0, 0}"/>
-         <Parameter name="Regions" type="Array string" value="{Top Surface Outside Recharge_Boundary_westOfCribs}"/>
-         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-         <Parameter name="Times" type="Array double" value="{0, 6.17267e+10, 9.46728e+10}"/>
+         <Parameter name="Component 0" type="Array(double)" value="{0, 0, 0}"/>
+         <Parameter name="Regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_westOfCribs}"/>
+         <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+         <Parameter name="Times" type="Array(double)" value="{0, 6.17267e+10, 9.46728e+10}"/>
        </ParameterList>
        <Parameter name="number of BCs" type="int" value="6"/>
      </ParameterList>

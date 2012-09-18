@@ -147,25 +147,6 @@ class Mesh
 
   // Get faces of a cell.
 
-  // On a distributed mesh, this will return all the faces of the
-  // cell, OWNED or GHOST. The faces will be returned in a standard
-  // order according to Exodus II convention.
-
-  virtual
-  void cell_get_faces (const Entity_ID cellid,
-                       Entity_ID_List *faceids) const = 0;
-
-
-  // Get directions in which a cell uses face
-  // In 3D, direction is 1 if face normal points out of cell
-  // and -1 if face normal points into cell
-  // In 2D, direction is 1 if face/edge is defined in the same
-  // direction as the cell polygon, and -1 otherwise
-
-  virtual
-  void cell_get_face_dirs (const Entity_ID cellid,
-                           std::vector<int> *face_dirs) const = 0;
-
 
   // Get faces of a cell and directions in which the cell uses the face 
 
@@ -190,16 +171,6 @@ class Mesh
 				const bool ordered=false) const = 0;
 
 
-
-  // Get nodes of cell
-  // On a distributed mesh, all nodes (OWNED or GHOST) of the cell
-  // are returned
-  // Nodes are returned in a standard order (Exodus II convention)
-  // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES in 3D
-  // For a general polyhedron this will return the nodes in
-  // arbitrary order
-  // In 2D, the nodes of the polygon will be returned in ccw order
-  // consistent with the face normal
 
   virtual
   void cell_get_nodes (const Entity_ID cellid,

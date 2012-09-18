@@ -441,19 +441,6 @@ unsigned int Mesh_simple::num_entities (AmanziMesh::Entity_kind kind,
   }
 }
 
-void Mesh_simple::cell_get_faces (AmanziMesh::Entity_ID cell, 
-				  AmanziMesh::Entity_ID_List *faceids)  const 
-{
-  unsigned int offset = (unsigned int) 6*cell;
-
-  faceids->clear();
-
-  for (int i = 0; i < 6; i++) {
-    faceids->push_back(*(cell_to_face_.begin()+offset));
-    offset++;
-  }
-}
-
 
 void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
                                            AmanziMesh::Entity_ID_List *faceids,
@@ -550,19 +537,6 @@ void Mesh_simple::cell_get_coordinates (AmanziMesh::Entity_ID local_cell_id,
   {      
     node_get_coordinates ( *it, &xyz);
     ccoords->push_back(xyz);
-  }
-}
-
-
-void Mesh_simple::cell_get_face_dirs (AmanziMesh::Entity_ID cell, 
-				      std::vector<int> *cfacedirs) const
-{
-  unsigned int offset = (unsigned int) 6*cell;
-
-  cfacedirs->clear();
-  for (int i = 0; i < 6; i++) {
-    cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
-    offset++;
   }
 }
 

@@ -38,7 +38,7 @@ TEST(ADVANCE_WITH_STK) {
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_STK("test/hex_4x4x4_ss.exo", comm, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_STK("test/hex_3x3x3_ss.exo", comm, gm));
   
   // create a transport state with two component 
   int num_components = 2;

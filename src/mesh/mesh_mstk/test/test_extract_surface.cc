@@ -225,7 +225,7 @@ TEST(Extract_Surface_MSTK2)
 TEST(Extract_Surface_MSTK3)
 {
 
-  std::string filename("test/hex_4x4x4_ss.exo");
+  std::string filename("test/hex_3x3x3_ss.exo");
 
   Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
 

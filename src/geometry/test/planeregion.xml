@@ -1,8 +1,8 @@
 <ParameterList name="Regions">
   <ParameterList name="Top Section">
     <ParameterList name="Region: Plane">
-      <Parameter name="Location" type="Array double" value="{2, 3, 5}"/>
-      <Parameter name="Direction" type="Array double" value="{1, 1, 0}"/>
+      <Parameter name="Location" type="Array(double)" value="{2, 3, 5}"/>
+      <Parameter name="Direction" type="Array(double)" value="{1, 1, 0}"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

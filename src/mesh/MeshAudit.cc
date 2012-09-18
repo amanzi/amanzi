@@ -465,7 +465,6 @@ bool MeshAudit::check_face_refs_by_cells() const
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     mesh->cell_get_faces_and_dirs(j, &cface, &cfdirs);
-    //    mesh->cell_get_faces(j, &cface);
     for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
   }
 
@@ -581,7 +580,6 @@ bool MeshAudit::check_cell_to_face_dirs() const
     fdirs.assign(6, INT_MAX);
     try {
       mesh->cell_get_faces_and_dirs(j, &faces, &fdirs);  // this may fail
-      //      mesh->cell_get_face_dirs(j, &fdirs);
       bool bad_data = false;
       for (int k = 0; k < fdirs.size(); ++k)
         if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;

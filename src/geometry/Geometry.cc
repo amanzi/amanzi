@@ -234,17 +234,22 @@ namespace Amanzi
     // point to the edges of the polygon and summing the moments of
     // the resulting triangles
     //
+    // Also, compute the "normal" of the polygon as the sum of the 
+    // area weighted normals of the triangular facets
+    //
     // Cannot use the contour integral method as it might indicate that a
     // self-intersecting polygon has positive volume. This situation 
     // might occur in dynamic meshes
 
-    void polygon_get_area_centroid(const std::vector<Point> coords,
-				   double *area, Point *centroid) {
+    void polygon_get_area_centroid_normal(const std::vector<Point> coords,
+                                          double *area, Point *centroid, 
+                                          Point *normal) {
 
       bool negvol = false;
 
       (*area) = 0;
-	centroid->set(0.0);
+      centroid->set(0.0);
+      normal->set(0.0);
 
       unsigned int np = coords.size();
 
@@ -252,7 +257,6 @@ namespace Amanzi
 	cout << "Degenerate polygon - area is zero" << std::endl;
 	return;
       }
-
 
       int dim = coords[0].dim();
 
@@ -268,9 +272,9 @@ namespace Amanzi
         Point v1 = coords[2]-coords[1];
         Point v2 = coords[0]-coords[1];
         
-        Point v3 = v1^v2;
+        (*normal) = 0.5*v1^v2;
         
-        *area = sqrt(v3*v3) / 2;
+        (*area) = norm(*normal);
         (*centroid) = center;   
       }
       else {
@@ -282,9 +286,9 @@ namespace Amanzi
           Point v1 = coords[i]-center;
           Point v2 = coords[(i+1)%np]-center;
 	  
-          Point v3 = v1^v2;
+          Point v3 = 0.5*v1^v2;
 	  
-          double area_temp = norm(v3)/2;
+          double area_temp = norm(v3);
 
           // In 2D, if the cross-product is negative, the element is inverted
           // In 3D, validity is a lot more subtle - a polygon in 3D is 
@@ -295,8 +299,9 @@ namespace Amanzi
           if (dim == 2 && v3[0] <= 0.0)
             negvol = true;
 
+          (*normal) += v3;
           (*area) += area_temp;
-          (*centroid) += (coords[i]+coords[(i+1)%np]+center) * (area_temp/3.0);
+          (*centroid) += area_temp*(coords[i]+coords[(i+1)%np]+center)/3.0;
         }
         
         (*centroid) /= (*area);
@@ -312,6 +317,75 @@ namespace Amanzi
       
     } // polygon_get_area_centroid
   
+
+
+    // Get area weighted normal of polygon
+    // In 2D, the normal is unambiguous - the normal is evaluated at one corner
+    // In 3D, the procedure evaluates the normal of each triangular facet and
+    // returns the area weighted sum of the normals
+
+    // Point polygon_get_normal(const std::vector<Point> coords)
+    // {
+
+    //   if (coords.size() < 3) {
+    //     cout << "Degenerate polygon - Cannot compute normal" << std::endl;	
+    //     Point dummynormal(0,0,0);
+    //     return dummynormal;
+    //   }
+
+    //   int dim = coords[0].dim();
+
+    //   Point normal(dim);
+
+    //   switch (dim) {
+    //   case 2: {
+    //     // sufficient to evaluate normal at one corner
+
+    //     Point v1 = coords[2]-coords[1];
+    //     Point v2 = coords[0]-coords[1];
+
+    //     normal.set(0.0,0.0);
+    //     normal = v1^v2;
+    //     break;
+    //   }
+    //   case 3: {
+    //     normal.set(0.0,0.0,0.0);
+    //     unsigned int np = coords.size();
+
+    //     if (np == 3) {
+    //       Point v1 = coords[1]-coords[0];
+    //       Point v2 = coords[2]-coords[0];
+    //       normal += v1^v2;
+    //     }
+    //     else {
+    //       // compute sum of area weighted normals of each triangular facet
+
+    //       Point center(dim);
+	
+    //       // Compute a center point 
+      
+    //       for (int i = 0; i < np; i++)
+    //         center += coords[i];
+    //       center /= np;
+      
+    //       for (int i = 0; i < np; i++) {
+    //         Point v1 = coords[i]-center;
+    //         Point v2 = coords[(i+1)%np]-center;
+            
+    //         Point v3 = v1^v2;
+	  
+    //         normal += 0.5*v3;
+    //       }
+    //     }
+    //     break;
+    //   }
+    //   default:
+    //     cout << "Invalid coordinate dimensions" << std::endl;
+    //   }
+
+    //   return normal;
+
+    // } // polygon_get_normal
 
 
     // Check if point is in polygon by Jordan's crossing algorithm
@@ -343,57 +417,6 @@ namespace Amanzi
       return (c == 1);
     }
 
-
-
-    // Get normalized normal of polygon
-    // In 2D, the normal is unambiguous - the normal is evaluated at one corner
-    // In 3D, the procedure evaluates the normal at each corner and averages it
-
-    Point polygon_get_normal(const std::vector<Point> coords)
-    {
-
-      if (coords.size() < 3) {
-	cout << "Degenerate polygon - Cannot compute normal" << std::endl;	
-	Point dummynormal(0,0,0);
-	return dummynormal;
-      }
-
-      int dim = coords[0].dim();
-
-      Point normal(dim);
-
-      switch (dim) {
-      case 2: {
-	// sufficient to evaluate normal at one corner
-
-	Point v1 = coords[2]-coords[1];
-	Point v2 = coords[0]-coords[1];
-
-	normal.set(0.0,0.0);
-	normal = v1^v2;
-	break;
-      }
-      case 3: {
-	// evaluate normal at all corners and average
-
-	normal.set(0.0,0.0,0.0);
-	unsigned int np = coords.size();
-	for (int i = 0; i < np; i++) {
-	  Point v1 = coords[(i+1)%np]-coords[i];
-	  Point v2 = coords[(i-1+np)%np]-coords[i];
-	  normal += v1^v2;
-	}
-	break;
-      }
-      default:
-	cout << "Invalid coordinate dimensions" << std::endl;
-      }
-
-      normal /= norm(normal);
-
-      return normal;
-
-    } // polygon_get_normal
 
 
 

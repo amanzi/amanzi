@@ -101,8 +101,10 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume, AmanziGe
     std::vector<AmanziGeometry::Point> ccoords;
     
     cell_get_coordinates(cellid,&ccoords);
+
+    AmanziGeometry::Point normal(spacedim);
     
-    AmanziGeometry::polygon_get_area_centroid(ccoords,volume,centroid);
+    AmanziGeometry::polygon_get_area_centroid_normal(ccoords,volume,centroid,&normal);
 
     return 1;
   }
@@ -130,11 +132,8 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume, AmanziGe
 
     face_get_coordinates(faceid,&fcoords);
       
-    AmanziGeometry::polygon_get_area_centroid(fcoords,area,centroid);
-      
-
-    AmanziGeometry::Point normal = AmanziGeometry::polygon_get_normal(fcoords);
-    normal *= *area;
+    AmanziGeometry::Point normal(3);
+    AmanziGeometry::polygon_get_area_centroid_normal(fcoords,area,centroid,&normal);      
 
     Entity_ID_List cellids;    
     face_get_cells(faceid, USED, &cellids);
@@ -380,7 +379,6 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
     if (recompute) {
       double area;
       AmanziGeometry::Point centroid(spacedim);
-      AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
       compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
     }
     else {      
@@ -588,8 +586,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     std::vector<int> fdirs;
     std::vector<AmanziGeometry::Point> cfcoords;
     
-    cell_get_faces(cellid,&faces);
-    cell_get_face_dirs(cellid,&fdirs);
+    cell_get_faces_and_dirs(cellid,&faces,&fdirs);
     
     nf = faces.size();
     

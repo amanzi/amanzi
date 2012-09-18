@@ -137,22 +137,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // Downward Adjacencies
   //---------------------
 
-  // Get faces of a cell.
-  // On a distributed mesh, this will return all the faces of the
-  // cell, OWNED or GHOST. The faces will be returned in a standard
-  // order according to Exodus II convention.
-  void cell_get_faces (const Entity_ID cellid, 
-                       Entity_ID_List *faceids) const;
-    
-    
-  // Get directions in which a cell uses face
-  // In 3D, direction is 1 if face normal points out of cell
-  // and -1 if face normal points into cell
-  // In 2D, direction is 1 if face/edge is defined in the same
-  // direction as the cell polygon, and -1 otherwise
-  void cell_get_face_dirs (const Entity_ID cellid, 
-                           std::vector<int> *face_dirs) const;
-
   // Get faces of a cell and directions in which the cell uses the face 
 
   // The Amanzi coding guidelines regarding function arguments is purposely
@@ -356,9 +340,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
   /// The mesh implementation
   STK::Mesh_STK_Impl_p mesh_;
-
-  /// A thing to relate stk::mesh ranks to Entity_kind
-  STK::Entity_map entity_map_;
 
   // Maps, Accessors and setters.
   // ----------------------------

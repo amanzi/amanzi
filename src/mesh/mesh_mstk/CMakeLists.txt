@@ -58,18 +58,18 @@ if (BUILD_TESTS)
 
 
     # Test: mstk_mesh
+    #REMOVED: test/test_hex_2x2x1.cc
     add_amanzi_test(mstk_mesh test_mstk_mesh
                     KIND int
                     SOURCE
                          test/Main.cc 
-                         test/test_hex_2x2x2.cc
-                         test/test_hex_3x3x2.cc
-                         test/test_hex_4x4x4.cc
-                         test/test_hex_4x4x4_sets.cc
-                         test/test_hex_gen_4x4x4.cc
-                         test/test_quad_gen_4x4.cc
+                         test/test_hex_1x1x1.cc
+                         test/test_hex_3x3x3.cc
+                         test/test_hex_3x3x3_sets.cc
+                         test/test_hex_gen_3x3x3.cc
+                         test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
-                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES}) 
+                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES}) 
 
     # Test: mstk_mesh_parallel
     add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh
@@ -77,12 +77,12 @@ if (BUILD_TESTS)
                     NPROCS 4
                     SOURCE
                          test/Main.cc
-                         test/test_hex_4x4x4_4P.cc
-                         test/test_hex_4x4x4_sets_4P.cc
-                         test/test_quad_gen_4x4_4P.cc
-                         test/test_hex_gen_4x4x4_4P.cc
+                         test/test_hex_3x3x3_4P.cc
+                         test/test_hex_3x3x3_sets_4P.cc
+                         test/test_quad_gen_3x3_4P.cc
+                         test/test_hex_gen_3x3x3_4P.cc
 			 test/test_extract_surface_4P.cc
-                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES})
+                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES})
 
 endif()
 

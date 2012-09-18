@@ -9,10 +9,10 @@
   <ParameterList name="Regions">
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="String" value="103"/>
-        <Parameter name="File" type="String" value="hex_4x4x4_ss.exo"/>
-        <Parameter name="Format" type="String" value="Unknown"/>
-        <Parameter name="Entity" type="String" value="Face"/>
+        <Parameter name="Label" type="string" value="103"/>
+        <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
+        <Parameter name="Format" type="string" value="Unknown"/>
+        <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -34,16 +34,16 @@
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="2"/>
       <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array string" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
+        <Parameter name="Component 0" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
       </ParameterList>  
       <ParameterList name="BC 1">
-        <Parameter name="Component 1" type="Array double" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array string" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
+        <Parameter name="Component 1" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
       </ParameterList>  
     </ParameterList>  
    </ParameterList>

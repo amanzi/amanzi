@@ -20,10 +20,10 @@
 namespace bl = boost::lambda;
 
 #include <Shards_CellTopology.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 
-#include "Entity_map.hh"
 #include "Mesh_STK_Impl.hh"
 #include "Mesh_STK.hh"
 #include "stk_mesh_error.hh"
@@ -51,7 +51,6 @@ const unsigned int Mesh_STK::num_kinds_ =
 // -------------------------------------------------------------
 Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
   : mesh_(mesh), 
-    entity_map_(3),                   // FIXME: can be 2; take from mesh
     map_owned_(), map_used_()
 {
   Mesh::set_comm(mesh->communicator());
@@ -118,13 +117,13 @@ Mesh_STK::cell_get_type(const Entity_ID cellid) const
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;        // need 1-based for stk::mesh
 
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(CELL));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(CELL));
   stk::mesh::Entity* cell(mesh_->id_to_entity(rank, global_cell_id));
 
   // FIXME: Throw instead?
   ASSERT(cell != NULL);
 
-  const CellTopologyData* topo = stk::mesh::get_cell_topology (*cell);
+  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*cell).getCellTopologyData();
 
   // FIXME: Polyhedral, 2D not yet supported
 
@@ -157,7 +156,7 @@ Mesh_STK::num_entities (const Entity_kind kind,
                         const Parallel_type ptype) const
 {
   ASSERT(entity_valid_kind(kind));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
   return mesh_->count_entities(rank, ptype);
 }
 
@@ -217,47 +216,6 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
   }
   return result;
 }
-
-// -------------------------------------------------------------
-// Mesh_STK::cell_get_faces
-// -------------------------------------------------------------
-void 
-Mesh_STK::cell_get_faces (const Entity_ID cellid, 
-                          std::vector<Entity_ID> *outfaceids) const
-{
-  stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
-  global_cell_id += 1;                  // need 1-based for stk::mesh
-
-  STK::Entity_Ids stk_face_ids;
-  mesh_->element_to_faces(global_cell_id, stk_face_ids);
-  // 0-based for Epetra_Map
-  std::for_each(stk_face_ids.begin(), stk_face_ids.end(), bl::_1 -= 1);
-
-  outfaceids->clear();
-  for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
-       f != stk_face_ids.end(); f++) {
-    stk::mesh::EntityId global_face_id(*f);
-    ASSERT(this->face_epetra_map(true).MyGID(global_face_id));
-    stk::mesh::EntityId local_face_id = 
-        this->face_epetra_map(true).LID(global_face_id);
-    outfaceids->push_back(local_face_id);
-  }
-}  
-
-// -------------------------------------------------------------
-// Mesh_STK::cell_get_face_dirs
-// -------------------------------------------------------------
-void 
-Mesh_STK::cell_get_face_dirs (const Entity_ID cellid, 
-                              std::vector<int> *face_dirs) const
-{
-  stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
-  global_cell_id += 1;        // need 1-based for stk::mesh
-  
-  face_dirs->clear();
-  mesh_->element_to_face_dirs(global_cell_id, *face_dirs);
-}
-
 
 // Get faces of a cell and directions in which the cell uses the face 
 
@@ -415,11 +373,12 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
   Entity_ID_List node_faces;
   Entity_ID_List cell_faces;
   Entity_ID_List outids;
+  std::vector<int> fdirs;
 
   outfaceids->clear();
   this->node_get_faces(nodeid, ptype, &node_faces);
   std::sort(node_faces.begin(), node_faces.end());
-  this->cell_get_faces(cellid, &cell_faces);
+  this->cell_get_faces_and_dirs(cellid, &cell_faces,&fdirs);
   std::sort(cell_faces.begin(), cell_faces.end());
 
   std::set_intersection(node_faces.begin(), node_faces.end(),
@@ -467,7 +426,9 @@ Mesh_STK::cell_get_face_adj_cells(const Entity_ID cellid,
                                   Entity_ID_List *fadj_cellids) const
 {
   Entity_ID_List faces;
-  cell_get_faces(cellid, &faces);
+  std::vector<int> fdirs;
+
+  cell_get_faces_and_dirs(cellid, &faces, &fdirs);
 
   fadj_cellids->clear();
   for (Entity_ID_List::iterator f = faces.begin(); 
@@ -775,7 +736,7 @@ Mesh_STK::get_set_entities (const std::string setname,
 {
 
   ASSERT (entity_valid_ptype(ptype));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
 
   stk::mesh::Part *part;
 
@@ -890,7 +851,7 @@ Mesh_STK::build_maps_ ()
 
   for (unsigned int i = 0; i < num_kinds_; i++) {
     Entity_kind kind(kinds_[i]);
-    stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
+    stk::mesh::EntityRank rank = mesh_->kind_to_rank (kind);
 
     STK::Entity_vector entities;
     std::vector<int> entity_ids;
