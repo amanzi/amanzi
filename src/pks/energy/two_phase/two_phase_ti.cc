@@ -29,7 +29,7 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
-  
+
   Teuchos::RCP<CompositeVector> u = u_new->data();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Two-Phase Residual calculation:" << std::endl;
@@ -155,6 +155,47 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     preconditioner_->UpdatePreconditioner();
   }
 };
+
+
+double TwoPhase::enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du) {
+  S_next_->GetFieldEvaluator("energy")->HasFieldChanged(S_next_.ptr(), name_);
+  const CompositeVector& energy = *S_next_->GetFieldData("energy");
+
+  const CompositeVector& res = *du->data();
+  const CompositeVector& temp = *u->data();
+  double h = S_next_->time() - S_inter_->time();
+
+  double enorm_cell(0.);
+  int ncells = res.size("cell");
+  for (int c=0; c!=ncells; ++c) {
+    double tmp = abs(h*res("cell",c)) / (atol_+rtol_*abs(energy("cell",c)));
+    enorm_cell = std::max<double>(enorm_cell, tmp);
+  }
+
+  double enorm_face(0.);
+  int nfaces = res.size("face");
+  for (int f=0; f!=nfaces; ++f) {
+    double tmp = abs(res("face",f)) / (atol_+rtol_*273.15);
+    enorm_face = std::max<double>(enorm_face, tmp);
+  }
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    double infnorm_c, infnorm_f;
+    res.ViewComponent("cell",false)->NormInf(&infnorm_c);
+    res.ViewComponent("face",false)->NormInf(&infnorm_f);
+    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
+    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
+  }
+
+  double enorm_val(std::max<double>(enorm_face, enorm_cell));
+#ifdef HAVE_MPI
+  double buf = enorm_val;
+  MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+  return enorm_val;
+};
+
 
 } // namespace Energy
 } // namespace Amanzi

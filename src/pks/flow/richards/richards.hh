@@ -73,6 +73,10 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  // error monitor
+  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du);
+
 protected:
   // Create of physical evaluators.
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
