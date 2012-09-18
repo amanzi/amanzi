@@ -61,6 +61,9 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  // admissible update
+  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
+
 private:
   // setup methods
   virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);

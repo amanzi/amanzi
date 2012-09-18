@@ -13,6 +13,7 @@ Authors: Neil Carlson (version 1)
 #include "flow_bc_factory.hh"
 
 #include "upwinding.hh"
+#include "Mesh_MSTK.hh"
 #include "matrix_mfd.cc"
 
 #include "upwind_cell_centered.hh"
@@ -23,6 +24,7 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
+#include "source_from_subsurface_evaluator.hh"
 #include "wrm_richards_evaluator.hh"
 #include "rel_perm_evaluator.hh"
 #include "richards_water_content.hh"
@@ -89,6 +91,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   FlowBCFactory bc_factory(S->GetMesh(), bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
+
+  // coupling
+  coupled_to_surface_ = plist_.get<bool>("coupled to surface", false);
+  if (coupled_to_surface_) {
+    S->RequireField("overland_source_from_subsurface");
+  }
 
   // Create the upwinding method
   S->RequireField("numerical_rel_perm", name_)->SetMesh(S->GetMesh())->SetGhosted()
@@ -225,24 +233,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // Update flux if rel perm, density, or pressure have changed.
-  bool update = UpdatePermeabilityData_(S.ptr());
-  update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
-  update |= S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
-
-  if (update) {
-    // update the stiffness matrix with the new rel perm
-    Teuchos::RCP<const CompositeVector> rel_perm =
-        S->GetFieldData("numerical_rel_perm", name_);
-    matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-
-    // derive the fluxes
-    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-    Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
-    Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
-    matrix_->DeriveFlux(*pres, darcy_flux);
-    AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
-  }
+  UpdateFlux_(S);
 
   // As a diagnostic, calculate the mass balance error
   if (S_next_ != Teuchos::null) {
@@ -377,6 +368,35 @@ void Richards::UpdateBoundaryConditions_() {
     bc_markers_[f] = Operators::MFD_BC_FLUX;
     bc_values_[f] = bc->second;
   }
+
+  if (coupled_to_surface_) {
+    S_next_->GetFieldEvaluator("overland_source_from_subsurface")
+      ->HasFieldChanged(S_next_.ptr(), name_);
+
+    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
+      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S_next_->GetMesh("surface"));
+    Teuchos::RCP<const CompositeVector> source =
+      S_next_->GetFieldData("overland_source_from_subsurface");
+    Teuchos::RCP<const CompositeVector> n_liq =
+      S_next_->GetFieldData("molar_density_liquid");
+
+    for (int c=0; c!=source->size("cell"); ++c) {
+      // this is wonky... using the subsurface's density... should be
+      // upwinded?  But for this to be upwinded correctly, we probably need
+      // the conserved quantity in overland flow to be moles water, not volume
+      // water as it currently is.
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      ASSERT(cells.size() == 1);
+
+      bc_markers_[f] = Operators::MFD_BC_FLUX;
+      bc_values_[f] = (*source)("cell",c) * (*n_liq)("cell",cells[0]);
+    }
+  }
+
+
 };
 
 

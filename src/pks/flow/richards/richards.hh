@@ -43,7 +43,8 @@ public:
   Richards(Teuchos::ParameterList& plist,
            const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
-      PKPhysicalBDFBase(plist, solution) {
+      PKPhysicalBDFBase(plist, solution),
+      coupled_to_surface_(false) {
     // set a few parameters before setup
     plist_.set("solution key", "pressure");
   }
@@ -87,6 +88,9 @@ protected:
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
+  // -- flux calculation
+  virtual void UpdateFlux_(const Teuchos::RCP<State>& S);
+
   // -- diffusion term
   virtual void ApplyDiffusion_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& g);
@@ -110,6 +114,7 @@ protected:
   // control switches
   int Krel_method_;
   bool assemble_preconditioner_;
+  bool coupled_to_surface_;
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability

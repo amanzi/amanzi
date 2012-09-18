@@ -25,6 +25,7 @@ Authors: Gianmarco Manzini
 #include "meshed_elevation_evaluator.hh"
 #include "standalone_elevation_evaluator.hh"
 #include "manning_conductivity_evaluator.hh"
+#include "source_from_subsurface_evaluator.hh"
 
 #include "overland.hh"
 
@@ -148,7 +149,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
     source_plist.set("evaluator name", "overland_source");
     is_source_term_ = true;
-    S->RequireField("overland_source")->SetMesh(S->GetMesh("surface"))
+    S->RequireField("overland_source")->SetMesh(mesh_)
         ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::RCP<FieldEvaluator> source_evaluator =
         Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
@@ -156,17 +157,28 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   }
 
   // -- coupling term evaluator
-  if (plist_.get<bool>("coupled to subsurface", false)) {
+  if (plist_.isSublist("subsurface coupling evaluator")) {
     is_coupling_term_ = true;
-    S->RequireField("overland_source_from_subsurface", name_)
-        ->SetMesh(S->GetMesh("surface"))->SetGhosted()
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("overland_coupling");
+    S->RequireField("overland_source_from_subsurface")
+        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList source_plist = plist_.sublist("subsurface coupling evaluator");
+    source_plist.set("surface mesh key", "surface");
+    source_plist.set("subsurface mesh key", "domain");
+    source_plist.set("subsurface flux key", "darcy_flux");
+    source_plist.set("molar density key", "molar_density_liquid");
+    // NOTE: this should change to "overland_molar_density_liquid" or
+    // whatever when such a thing exists.
+    source_plist.set("source key", "overland_source_from_subsurface");
+
+    Teuchos::RCP<FieldEvaluator> source_evaluator =
+      Teuchos::rcp(new FlowRelations::SourceFromSubsurfaceEvaluator(source_plist));
+    S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
 
   // -- cell volume and evaluator
-  S->RequireField("surface_cell_volume")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField("surface_cell_volume")->SetMesh(mesh_)->SetGhosted()
                                 ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("surface_cell_volume");
 }
@@ -460,5 +472,17 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 };
 
 
+bool OverlandFlow::is_admissible(Teuchos::RCP<const TreeVector> up) {
+  Teuchos::RCP<const Epetra_MultiVector> depth = up->data()->ViewComponent("cell",false);
+
+  double minh(0.);
+  int ierr = depth->MinValue(&minh);
+  if (ierr || minh < 0.) {
+    return false;
+  }
+  return true;
+}
+
 } // namespace
 } // namespace
+

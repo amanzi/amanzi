@@ -107,7 +107,6 @@ void Coordinator::initialize() {
       }
 
       Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
-      vis_plist.set<std::string>("file name base",mesh->first);
       Teuchos::RCP<Visualization> vis =
         Teuchos::rcp(new Visualization(vis_plist, comm_));
       vis->set_mesh(mesh->second);
