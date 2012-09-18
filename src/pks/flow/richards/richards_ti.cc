@@ -214,7 +214,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
-  preconditioner_->CreateMFDstiffnessMatrices(rel_perm);
+  preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
   AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
 
