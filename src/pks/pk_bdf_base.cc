@@ -10,6 +10,7 @@ Default base with default implementations of methods for a PK integrated using
 BDF.
 ------------------------------------------------------------------------- */
 
+#include "Teuchos_TimeMonitor.hpp"
 #include "bdf1_time_integrator.hh"
 #include "pk_bdf_base.hh"
 
@@ -53,6 +54,9 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
     // -- set initial state
     time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
   }
+
+  // set up the wallclock timer
+  step_walltime_ = Teuchos::TimeMonitor::getNewCounter(name_+std::string(" BDF step timer"));
 };
 
 
@@ -68,11 +72,15 @@ double PKBDFBase::get_dt() { return dt_; }
 bool PKBDFBase::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
+  Teuchos::RCP<Teuchos::Time> cvtime =
+      Teuchos::TimeMonitor::getNewCounter("composite vector access");
+
   // take a bdf timestep
   double h = dt;
   double dt_solver;
   if (catch_errors_) {
     try {
+      Teuchos::TimeMonitor timer(*step_walltime_);
       dt_solver = time_stepper_->time_step(h, solution_);
     } catch (Exceptions::Amanzi_exception &error) {
       // fix me! --etc
@@ -88,7 +96,14 @@ bool PKBDFBase::advance(double dt) {
       }
     }
   } else {
+    Teuchos::TimeMonitor timer(*step_walltime_);
     dt_solver = time_stepper_->time_step(h, solution_);
+  }
+
+  // VerboseObject stuff.
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    Teuchos::OSTab tab = getOSTab();
+    Teuchos::TimeMonitor::summarize();
   }
 
   // commit the step as successful
@@ -119,6 +134,5 @@ bool PKBDFBase::advance(double dt) {
 // Allows a PK to modify the initial guess.
 // -----------------------------------------------------------------------------
 bool PKBDFBase::modify_predictor(double h, Teuchos::RCP<TreeVector> up) { return false; }
-
 
 } // namespace

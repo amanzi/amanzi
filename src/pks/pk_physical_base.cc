@@ -55,7 +55,7 @@ void PKPhysicalBase::state_to_solution(const Teuchos::RCP<State>& S,
 void PKPhysicalBase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
   S->SetData(key_, name_, solution->data());
-  solution_evaluator_->SetFieldAsChanged();
+  //  solution_evaluator_->SetFieldAsChanged();
 };
 
 

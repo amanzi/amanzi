@@ -63,9 +63,12 @@ void ViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // evaluate p_s / p_atm
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int id=0; id!=result->size(*comp); ++id) {
-      (*result)(*comp, id) =
-          visc_->Viscosity((*temp)(*comp, id));
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+    int count = result->size(*comp);
+    for (int id=0; id!=count; ++id) {
+      result_v[0][id] = visc_->Viscosity(temp_v[0][id]);
     }
   }
 }
@@ -82,9 +85,12 @@ void ViscosityEvaluator::EvaluateFieldPartialDerivative_(
   // evaluate d/dT( p_s / p_atm )
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int id=0; id!=result->size(*comp); ++id) {
-      (*result)(*comp, id) =
-          visc_->DViscosityDT((*temp)(*comp, id));
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+    int count = result->size(*comp);
+    for (int id=0; id!=count; ++id) {
+      result_v[0][id] = visc_->DViscosityDT(temp_v[0][id]);
     }
   }
 }

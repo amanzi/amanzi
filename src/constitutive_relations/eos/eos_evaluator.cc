@@ -97,9 +97,13 @@ void EOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     Teuchos::Ptr<CompositeVector> result = results[index];
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
-      for (int id=0; id!=result->size(*comp); ++id) {
-        (*result)(*comp, id) =
-            eos_->MolarDensity((*temp)(*comp, id), (*pres)(*comp, id));
+      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+      const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+      int count = result->size(*comp);
+      for (int id=0; id!=count; ++id) {
+        result_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres_v[0][id]);
       }
     }
     index++;
@@ -114,9 +118,13 @@ void EOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     Teuchos::Ptr<CompositeVector> result = results[index];
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
-      for (int id=0; id!=result->size(*comp); ++id) {
-        (*result)(*comp, id) =
-            eos_->MassDensity((*temp)(*comp, id), (*pres)(*comp, id));
+      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+      const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+      int count = result->size(*comp);
+      for (int id=0; id!=count; ++id) {
+        result_v[0][id] = eos_->MassDensity(temp_v[0][id], pres_v[0][id]);
       }
     }
   }
@@ -138,9 +146,13 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       Teuchos::Ptr<CompositeVector> result = results[index];
       for (CompositeVector::name_iterator comp=result->begin();
            comp!=result->end(); ++comp) {
-        for (int id=0; id!=result->size(*comp); ++id) {
-          (*result)(*comp, id) =
-              eos_->DMolarDensityDp((*temp)(*comp, id), (*pres)(*comp, id));
+        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+        Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+        int count = result->size(*comp);
+        for (int id=0; id!=count; ++id) {
+          result_v[0][id] = eos_->DMolarDensityDp(temp_v[0][id], pres_v[0][id]);
         }
       }
       index++;
@@ -155,9 +167,13 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       Teuchos::Ptr<CompositeVector> result = results[index];
       for (CompositeVector::name_iterator comp=result->begin();
            comp!=result->end(); ++comp) {
-        for (int id=0; id!=result->size(*comp); ++id) {
-          (*result)(*comp, id) =
-              eos_->DMassDensityDp((*temp)(*comp, id), (*pres)(*comp, id));
+        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+        Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+        int count = result->size(*comp);
+        for (int id=0; id!=count; ++id) {
+          result_v[0][id] = eos_->DMassDensityDp(temp_v[0][id], pres_v[0][id]);
         }
       }
     }
@@ -170,9 +186,13 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       Teuchos::Ptr<CompositeVector> result = results[index];
       for (CompositeVector::name_iterator comp=result->begin();
            comp!=result->end(); ++comp) {
-        for (int id=0; id!=result->size(*comp); ++id) {
-          (*result)(*comp, id) =
-              eos_->DMolarDensityDT((*temp)(*comp, id), (*pres)(*comp, id));
+        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+        Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+        int count = result->size(*comp);
+        for (int id=0; id!=count; ++id) {
+          result_v[0][id] = eos_->DMolarDensityDT(temp_v[0][id], pres_v[0][id]);
         }
       }
       index++;
@@ -187,9 +207,13 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       Teuchos::Ptr<CompositeVector> result = results[index];
       for (CompositeVector::name_iterator comp=result->begin();
            comp!=result->end(); ++comp) {
-        for (int id=0; id!=result->size(*comp); ++id) {
-          (*result)(*comp, id) =
-              eos_->DMassDensityDT((*temp)(*comp, id), (*pres)(*comp, id));
+        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
+        Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+        int count = result->size(*comp);
+        for (int id=0; id!=count; ++id) {
+          result_v[0][id] = eos_->DMassDensityDT(temp_v[0][id], pres_v[0][id]);
         }
       }
     }
@@ -198,7 +222,6 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
     ASSERT(0);
   }
 }
-
 
 } // namespace
 } // namespace
