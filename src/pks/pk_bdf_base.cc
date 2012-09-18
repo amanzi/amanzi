@@ -72,32 +72,14 @@ double PKBDFBase::get_dt() { return dt_; }
 bool PKBDFBase::advance(double dt) {
   state_to_solution(S_next_, solution_);
 
-  Teuchos::RCP<Teuchos::Time> cvtime =
-      Teuchos::TimeMonitor::getNewCounter("composite vector access");
-
   // take a bdf timestep
-  double h = dt;
   double dt_solver;
-  if (catch_errors_) {
-    try {
-      Teuchos::TimeMonitor timer(*step_walltime_);
-      dt_solver = time_stepper_->time_step(h, solution_);
-    } catch (Exceptions::Amanzi_exception &error) {
-      // fix me! --etc
-      std::cout << "Timestepper called error: " << error.what() << std::endl;
-
-      if (error.what() == std::string("BDF time step failed") ||
-          error.what() == std::string("Cut time step")) {
-        // try cutting the timestep
-        dt_ = h*time_step_reduction_factor_;
-        return true;
-      } else {
-        throw error;
-      }
-    }
-  } else {
+  bool fail;
+  if (true) { // this is here simply to create a context for timer,
+              // which stops the clock when it is destroyed at the
+              // closing brace.
     Teuchos::TimeMonitor timer(*step_walltime_);
-    dt_solver = time_stepper_->time_step(h, solution_);
+    fail = time_stepper_->time_step(dt, dt_solver, solution_);
   }
 
   // VerboseObject stuff.
@@ -107,12 +89,12 @@ bool PKBDFBase::advance(double dt) {
   }
 
   // commit the step as successful
-  time_stepper_->commit_solution(h, solution_);
+  time_stepper_->commit_solution(dt, solution_);
   solution_to_state(solution_, S_next_);
-  commit_state(h, S_next_);
+  commit_state(dt, S_next_);
 
   // update the timestep size
-  if (dt_solver < dt_ && dt_solver >= h) {
+  if (dt_solver < dt_ && dt_solver >= dt) {
     // We took a smaller step than we recommended, and it worked fine (not
     // suprisingly).  Likely this was due to constraints from other PKs or
     // vis.  Do not reduce our recommendation.
