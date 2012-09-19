@@ -529,7 +529,7 @@ endif()
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
-           -DTrilinos_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+           -DTrilinos_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX})
 
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
@@ -670,12 +670,12 @@ if ( BUILD_Amanzi )
                       UPDATE_COMMAND ""
                       CMAKE_ARGS
 		                ${Amanzi_CMAKE_ARGS}
-				        ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                        -DCMAKE_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-			         	${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                        -DCMAKE_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
-				        ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                        -DCMAKE_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
+			        ${Amanzi_CMAKE_C_COMPILER_ARGS}
+                                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+			       	${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+			        ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                        INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
 endif()        
                
