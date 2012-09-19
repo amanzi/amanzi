@@ -15,14 +15,7 @@ Authors: Gianmarco Manzini
 namespace Amanzi {
 namespace Flow {
 
-#if 0
-}}
-#endif
-
 #define DEBUG_FLAG 0
-#define DEBUG_RES_FLAG 0
-#define UPDATE_FOR_REAL 0
-#define DEBUG_ERROR_FLAG 0
 
 // Overland is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -42,10 +35,12 @@ void OverlandFlow::fun( double t_old,
   double h = t_new - t_old;
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    std::cout << "OverlandFlow Residual calculation:" << std::endl;
-    std::cout << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+    *out_ << "OverlandFlow Residual calculation:" << std::endl;
+    *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
   }
+#endif
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -62,24 +57,30 @@ void OverlandFlow::fun( double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
 
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    std::cout << "  res0 (after diffusion): " << (*res)("cell",0,0) << " "
+    *out_ << "  res0 (after diffusion): " << (*res)("cell",0,0) << " "
               << (*res)("face",0,0) << std::endl;
   }
+#endif
 
   // accumulation term
   AddAccumulation_(res);
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    std::cout << "  res0 (after accumulation): " << (*res)("cell",0,0) << " "
+    *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0) << " "
               << (*res)("face",0,0) << std::endl;
   }
+#endif
 
   // add rhs load value
   AddLoadValue_(res);
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    std::cout << "  res0 (after source): " << (*res)("cell",0,0) << " "
+    *out_ << "  res0 (after source): " << (*res)("cell",0,0) << " "
               << (*res)("face",0,0) << std::endl;
   }
+#endif
 };
 
 
@@ -90,18 +91,20 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    std::cout << "Precon application:" << std::endl;
-    std::cout << "  p0: " << (*u->data())("cell",0,0) << " "
+    *out_ << "Precon application:" << std::endl;
+    *out_ << "  p0: " << (*u->data())("cell",0,0) << " "
               << (*u->data())("face",0,0) << std::endl;
   }
+#endif
 
   // check for nans in residual
   Teuchos::RCP<const CompositeVector> res = u->data();
   for (int c=0; c!=res->size("cell"); ++c) {
     if (boost::math::isnan<double>((*res)("cell",c))) {
       int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      std::cout << "Cutting time step due to NaN in cell residual on proc "
+      *out_ << "Cutting time step due to NaN in cell residual on proc "
                 << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -110,7 +113,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   for (int f=0; f!=res->size("face"); ++f) {
     if (boost::math::isnan<double>((*res)("face",f))) {
       int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      std::cout << "Cutting time step due to NaN in face residual on proc "
+      *out_ << "Cutting time step due to NaN in face residual on proc "
                 << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -120,17 +123,19 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
 
   // Dump correction
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    std::cout << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
+    *out_ << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
               << (*Pu->data())("face",0,0) << std::endl;
   }
+#endif
 
   // check for nans in preconditioned residual
   Teuchos::RCP<const CompositeVector> Pres = Pu->data();
   for (int c=0; c!=Pres->size("cell"); ++c) {
     if (boost::math::isnan<double>((*Pres)("cell",c))) {
       int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      std::cout << "Cutting time step due to NaN in PC'd cell residual on proc "
+      *out_ << "Cutting time step due to NaN in PC'd cell residual on proc "
                 << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -139,7 +144,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   for (int f=0; f!=Pres->size("face"); ++f) {
     if (boost::math::isnan<double>((*Pres)("face",f))) {
       int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      std::cout << "Cutting time step due to NaN in PC'd face residual on proc "
+      *out_ << "Cutting time step due to NaN in PC'd face residual on proc "
                 << mypid << "." << std::endl;
       Errors::Message m("Cut time step");
       Exceptions::amanzi_throw(m);
@@ -155,11 +160,13 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
     *out_ << "  p0: " << (*up->data())("cell",0,0) << " "
               << (*up->data())("face",0,0) << std::endl;
   }
+#endif
 
   // update state with the solution up.
   S_next_->set_time(t);
@@ -176,10 +183,12 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
 
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  conductivity0: " << (*cond)("cell",0,0) << " "
               << (*cond)("face",0,0) << std::endl;
   }
+#endif
 
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
