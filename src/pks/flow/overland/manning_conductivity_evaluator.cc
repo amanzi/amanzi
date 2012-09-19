@@ -54,14 +54,23 @@ void ManningConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   double exponent = manning_exp_ + 1.0;
 
-  for (int c=0; c!=result->size("cell"); ++c) {
-    double scaling = (*mann)("cell",c) *
-        std::sqrt(std::max((*slope)("cell",c), slope_regularization_));
+  for (CompositeVector::name_iterator comp=result->begin();
+       comp!=result->end(); ++comp) {
+    const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp,false);
+    const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
+    const Epetra_MultiVector& mann_v = *mann->ViewComponent(*comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
-    if ((*pres)("cell",c) > 0.0) {
-      (*result)("cell",c) = std::pow(std::abs((*pres)("cell",c)), exponent) / scaling;
-    } else {
-      (*result)("cell",c) = 0.0;
+    int ncomp = result->size(*comp, false);
+    for (int i=0; i!=ncomp; ++i) {
+      double scaling = mann_v[0][i] *
+        std::sqrt(std::max(slope_v[0][i], slope_regularization_));
+
+      if (pres_v[0][i] > 0.0) {
+        result_v[0][i] = std::pow(std::abs(pres_v[0][i]), exponent) / scaling;
+      } else {
+        result_v[0][i] = 0.0;
+      }
     }
   }
 }
@@ -79,12 +88,13 @@ void ManningConductivityEvaluator::EvaluateFieldPartialDerivative_(
 void ManningConductivityEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // special EnsureCompatibility to add in a evaluator for Manning's Coef.
 
-  // add the evaluator.
+  // add the evaluator, which is just a function for Manning's Coef
   S->RequireField(manning_key_);
   dependencies_.insert(manning_key_);
   Teuchos::ParameterList mann_plist = plist_.sublist("Manning coefficient");
   mann_plist.set("evaluator name", manning_key_);
-  Teuchos::RCP<FieldEvaluator> mann_fm = Teuchos::rcp(new IndependentVariableFieldEvaluator(mann_plist));
+  Teuchos::RCP<FieldEvaluator> mann_fm =
+    Teuchos::rcp(new IndependentVariableFieldEvaluator(mann_plist));
   S->SetFieldEvaluator(manning_key_, mann_fm);
 
   // Call the base class's method.
