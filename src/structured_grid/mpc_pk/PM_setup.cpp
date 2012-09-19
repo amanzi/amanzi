@@ -1373,7 +1373,7 @@ PorousMedia::read_rock(int do_chem)
     pp.query("gslib_file",gsfile);
 
     pp.query("Use_Shifted_Kr_Eval",use_shifted_Kr_eval);
-    pp.query("Saturation_Threshold_For_vg_Kr",saturation_threshold_for_vg_Kr);
+    pp.query("Saturation_Threshold_For_Kr",saturation_threshold_for_vg_Kr);
 
     if (use_shifted_Kr_eval!=1 && saturation_threshold_for_vg_Kr>1) {
         if (ParallelDescriptor::IOProcessor()) {

@@ -1257,11 +1257,17 @@ void RecordSolve(std::string& record_file,Vec& x,Vec& y,Vec& w,Vec& F,Vec& G,Che
     Layout& layout = check_ctx->rs->GetLayout();
     int nLevs = rs->GetNumLevels();
     MFTower res(layout,MFTower::CC,1,0,nLevs);
+    std::string resfile=BoxLib::Concatenate(record_file + "/Res_undamped_",dump_cnt,2);
+    std::string updfile=BoxLib::Concatenate(record_file + "/Update_undamped_",dump_cnt,2);
+
     PetscErrorCode ierr;
     ierr = layout.VecToMFTower(res,G,0);
-    res.Write(BoxLib::Concatenate(record_file + "/Res_undamped_",dump_cnt,2));
+    res.Write(resfile);
     ierr = layout.VecToMFTower(res,y,0);
-    res.Write(BoxLib::Concatenate(record_file + "/Update_undamped_",dump_cnt,2));
+    res.Write(updfile);
+    if (ParallelDescriptor::IOProcessor()) {
+        std::cout << ".......Residual and update written to " << resfile << " and " << updfile << std::endl;
+    }
     dump_cnt++;
 }
 
@@ -1416,8 +1422,9 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
     const RSParams& rsp = rs->Parameters();
 
     if (rs->Parameters().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(dp,dp,rs->GetSolnTypV()); CHKPETSC(ierr);
-        ierr = VecPointwiseMult(pk,pk,rs->GetSolnTypV()); CHKPETSC(ierr);
+        Vec& Ptyp = rs->GetSolnTypV();
+        ierr = VecPointwiseMult(dp,dp,Ptyp); CHKPETSC(ierr);
+        ierr = VecPointwiseMult(pk,pk,Ptyp); CHKPETSC(ierr);
     }
 
     MFTower& P_MFT = rs->GetPressure();
@@ -1460,16 +1467,19 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
         }
     }
     
-    // Put pkp1 and dp (back) into Vec data structures, scale to ptyp (remember to rescale pk)
+    // Put modified dp into Vec
     ierr = layout.MFTowerToVec(dp,DP_MFT,0); CHKPETSC(ierr);
-    ierr = layout.MFTowerToVec(pkp1,P_MFT,0); CHKPETSC(ierr);
+
+    // Compute new p = p - dp, then scale all p, pnew and dt
+    ierr = VecWAXPY(pkp1,-1.0,dp,pk);CHKPETSC(ierr);
 
     if (rs->Parameters().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(dp,dp,rs->GetSolnTypInvV()); CHKPETSC(ierr);
-        ierr = VecPointwiseMult(pk,pk,rs->GetSolnTypInvV()); CHKPETSC(ierr);
-        ierr = VecPointwiseMult(pkp1,pkp1,rs->GetSolnTypInvV()); CHKPETSC(ierr);
+        Vec& PtypInv = rs->GetSolnTypInvV();
+        ierr = VecPointwiseMult(dp,dp,PtypInv); CHKPETSC(ierr);
+        ierr = VecPointwiseMult(pk,pk,PtypInv); CHKPETSC(ierr);
+        ierr = VecPointwiseMult(pkp1,pkp1,PtypInv); CHKPETSC(ierr);
     }
-    *changed_dp = PETSC_TRUE;
+    *changed_dp = PETSC_FALSE; // We changed dp and pnew, but we took care of the update already
     *changed_pkp1 = PETSC_TRUE;
 
     PetscFunctionReturn(ierr);
@@ -1482,7 +1492,7 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
 #endif
 
 PetscErrorCode 
-PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
+PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,PetscBool  *changed_pnew)
 {
     std::string tag = "       Newton step: ";
     std::string tag_ls = "  line-search:  ";
@@ -1500,23 +1510,22 @@ PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBo
     void *fctx;
 
     Real ls_factor = 1;
-    ierr = AltUpdate(snes,x,y,w,ctx,ls_factor,changed_y,changed_w);
-
+    ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);
     ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
 
     Vec& F = rs->GetResidualV();
     Vec& G = rs->GetTrialResV();
     
-    (*func)(snes,x,F,fctx);
+    (*func)(snes,p,F,fctx);
     ierr = VecNorm(F,NORM_2,&fnorm);
 
-    (*func)(snes,w,G,fctx);
+    (*func)(snes,pnew,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);    
 
     bool record_entire_solve = false;
     std::string record_file = "SNES";
     if (record_entire_solve) {
-        RecordSolve(record_file,x,y,w,F,G,check_ctx);
+        RecordSolve(record_file,p,dp,pnew,F,G,check_ctx);
     }
     
     bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
@@ -1533,9 +1542,8 @@ PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBo
             ls_factor = rsp.min_ls_factor;
         }
 
-        ierr = AltUpdate(snes,x,y,w,ctx,ls_factor,changed_y,changed_w);
-
-        (*func)(snes,w,G,fctx);
+        ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);
+        (*func)(snes,pnew,G,fctx);
         ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
         norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
         
@@ -1581,11 +1589,6 @@ PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBo
             if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search>1) {
                 std::cout << tag << tag_ls << reason << std::endl;
             }
-        }
-        else {
-            // Set update to the one actually used
-            ierr=VecScale(y,ls_factor);
-            *changed_y = PETSC_TRUE;
         }
 
         int iters = nld->NLIterationsTaken() + 1;

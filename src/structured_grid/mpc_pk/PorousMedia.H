@@ -928,11 +928,17 @@ public:
   void dirichletPressBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
-                           Real               time);
+                           Real               t);
   void get_inflow_density(const Orientation& face,
-			  const RegionData&  face_bc,
-			  FArrayBox&         ccBndFab,
-			  Real               time);
+                          const RegionData&  face_bc,
+                          FArrayBox&         fab,
+                          const Box&         ccBndBox,
+                          Real               t);
+
+  Real AdjustBCevalTime(int  state_idx,
+                        Real time,
+                        bool tadj_verbose);
+
   //
   // Called in grid_places after other tagging routines to modify
   //   the list of tagged points

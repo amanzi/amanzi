@@ -1200,8 +1200,8 @@ namespace Amanzi {
                 const ParameterEntry& entry = rlist.getEntry(label);
             
                 std::string _label = underscore(label);
-                if (entry.isList()) {
-                    
+                if (entry.isList())
+                {
                     // Add this rock label to list of rocks
                     arrayrock.push_back(_label);
 
@@ -1487,8 +1487,7 @@ namespace Amanzi {
 		    }
 		}
                 else {
-
-		    std::string sat_str = "Saturation Threshold For vg Kr";
+		    std::string sat_str = "Saturation Threshold For Kr";
                     if (rlist.isParameter(sat_str)) {
                         double saturation_threshold_for_vg_Kr;
                         saturation_threshold_for_vg_Kr = rlist.get<double>(sat_str);
@@ -1506,7 +1505,6 @@ namespace Amanzi {
                     if (rlist.isParameter("Porosity Output File"))
                         pp_file = rlist.get<std::string>("Porosity Output File");
                 }
-
             }
 
             if (add_chemistry_properties)

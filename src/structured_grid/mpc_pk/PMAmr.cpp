@@ -121,6 +121,7 @@ PMAmr::init (Real t_start,
     if (!restart_file.empty() && restart_file != "init")
     {
         restart(restart_file);
+        setStartTime(0); // FIXME: This needs to be written to the checkpoint
     }
     else
     {

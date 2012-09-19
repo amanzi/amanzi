@@ -2421,7 +2421,7 @@ c ::: ------------------------------------------------------------------
       
       subroutine FORT_STEADYSTATE_FAB(rho,DIMS(rho),rhoval,muval,ncomps,
      &     kappa,DIMS(kappa),krcoef,DIMS(krcoef),nkrcoef,vel,DIMS(vel),
-     &     dx,nc,grav)
+     &     mask,DIMS(mask),dx,nc,grav,lo,hi)
 
       implicit none
 
@@ -2430,6 +2430,7 @@ c ::: ------------------------------------------------------------------
       integer DIMDEC(kappa)
       integer DIMDEC(krcoef)
       integer DIMDEC(vel)
+      integer DIMDEC(mask)
       integer ncomps, nkrcoef
       REAL_T  rho(DIMV(rho),ncomps)
       REAL_T  kappa(DIMV(kappa))
@@ -2438,37 +2439,42 @@ c ::: ------------------------------------------------------------------
       REAL_T  muval(ncomps)
       REAL_T  dx(SDIM)
       REAL_T  vel(DIMV(vel))
+      REAL_T  mask(DIMV(mask))
       REAL_T  grav
+      integer lo(SDIM),hi(SDIM)
       
       integer i,j,l_kr_type
       REAL_T  l_kr_coef, l_sat_res
       REAL_T  vtot, gstar, sol
 
       vtot  = zero
-      do j = ARG_L2(rho), ARG_H2(rho)
-         do i = ARG_L1(rho), ARG_H1(rho)
-            l_kr_type = nint(krcoef(i,j,1))
-            l_kr_coef = krcoef(i,j,2)
-            l_sat_res = krcoef(i,j,3)
+      do j = lo(2), hi(2)
+         do i = lo(1), hi(1)
+            if (mask(i,j).gt.0) then
 
-            if (ncomps == 1) then
-               gstar = -kappa(i,j)*rhoval(1)*grav
-               call FORT_FIND_INV_RFLUX(sol,vel(i,j),gstar,muval,
-     &              ncomps,l_kr_type,l_kr_coef)
-            else
-               gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
-               call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
-     &              ncomps,l_kr_type,l_kr_coef)
-            end if
-
-            sol = sol*(1.0-l_sat_res)+l_sat_res
+               l_kr_type = nint(krcoef(i,j,1))
+               l_kr_coef = krcoef(i,j,2)
+               l_sat_res = krcoef(i,j,3)
+               
+               if (ncomps == 1) then
+                  gstar = -kappa(i,j)*rhoval(1)*grav
+                  call FORT_FIND_INV_RFLUX(sol,vel(i,j),gstar,muval,
+     &                 ncomps,l_kr_type,l_kr_coef)
+               else
+                  gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
+                  call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
+     &                 ncomps,l_kr_type,l_kr_coef)
+               end if
+               
+               sol = sol*(1.0-l_sat_res)+l_sat_res
             
-            rho(i,j,1) = rhoval(1)*sol
-
-            if (ncomps > 1) then
-               rho(i,j,2) = rhoval(2)*(1.0-sol)
+               rho(i,j,1) = rhoval(1)*sol
+               
+               if (ncomps > 1) then
+                  rho(i,j,2) = rhoval(2)*(1.0-sol)
+               endif
+               
             endif
-
          end do
       end do 
 

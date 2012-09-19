@@ -666,6 +666,8 @@ PorousMedia::restart (Amr&          papa,
     }
   mac_projector->install_level(level,this,volume,area );
 
+  aofs = new MultiFab(grids,NUM_SCALARS,0);
+
   //
   // Build metric coefficients for RZ calculations.
   //
@@ -1026,6 +1028,7 @@ PorousMedia::initData ()
 		const int n_kr_coef = kr_coef->nComp();
 		DEF_CLIMITS(kdat,k_ptr,k_lo,k_hi);
 		DEF_CLIMITS(kpdat,kp_ptr,kp_lo,kp_hi);
+
 		FORT_STEADYSTATE(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
 				 density.dataPtr(),muval.dataPtr(),&ncomps,
 				 kp_ptr, ARLIM(kp_lo),ARLIM(kp_hi), 
@@ -3828,7 +3831,7 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
 bool
 PorousMedia::get_inflow_velocity(const Orientation& face,
                                  FArrayBox&         ccBndFab,
-                                 Real               time)
+                                 Real               t)
 {
     bool ret = false;
     if (bc_descriptor_map.find(face) != bc_descriptor_map.end()) 
@@ -3837,6 +3840,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
         const int* domhi = domain.hiVect();
         const int* domlo = domain.loVect();
         const Real* dx   = geom.CellSize();
+        Real t_eval = AdjustBCevalTime(State_Type,t,false);
 
         const BCDesc& bc_desc = bc_descriptor_map[face];
         const Box bndBox = bc_desc.first;
@@ -3849,7 +3853,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
 
             if (face_bc.Type() == "zero_total_velocity") {
                 ret = true;
-		Array<Real> inflow_tmp = face_bc(time);
+		Array<Real> inflow_tmp = face_bc(t_eval);
 		Real inflow_vel = inflow_tmp[0];
                 const PArray<Region>& regions = face_bc.Regions();
                 for (int j=0; j<regions.size(); ++j)
@@ -3865,40 +3869,50 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
 void
 PorousMedia::get_inflow_density(const Orientation& face,
 				const RegionData&  face_bc,
-				FArrayBox&         ccBndFab,
-				Real               time)
+				FArrayBox&         fab,
+				const Box&         ccBndBox,
+				Real               t)
 {
   if (model == model_list["steady-saturated"]) {
     for (int n=0; n<ncomps; ++n) {
-      ccBndFab.setVal(density[n],ccBndFab.box(),n,1);
+      fab.setVal(density[n],ccBndBox,n,1);
     }
   }
   else {
     const Real* dx   = geom.CellSize();
+    FArrayBox mask;
     if (face_bc.Type() == "zero_total_velocity") {
-        Array<Real> inflow_vel = face_bc(time);
+        Real t_eval = AdjustBCevalTime(State_Type,t,false);
+        Array<Real> inflow_vel = face_bc(t_eval);
 	FArrayBox cdat, ktdat, kdat, vdat;
 	const int n_kr_coef = kr_coef->nComp();
-	cdat.resize(ccBndFab.box(),n_kr_coef);
-	ktdat.resize(ccBndFab.box(),BL_SPACEDIM);
-	vdat.resize(ccBndFab.box(),1);
+	cdat.resize(ccBndBox,n_kr_coef);
+	ktdat.resize(ccBndBox,BL_SPACEDIM);
+	vdat.resize(ccBndBox,1);
 	for (int i=0; i<rocks.size(); ++i)
 	  {	  
 	    rocks[i].set_constant_krval(cdat,dx);
 	    rocks[i].set_constant_kval(ktdat,dx);
 	  }
-	kdat.resize(ccBndFab.box(),1);
-	kdat.copy(ktdat,ccBndFab.box(),face.coordDir(),
-		  ccBndFab.box(),0,1);
+	kdat.resize(ccBndBox,1);
+	kdat.copy(ktdat,ccBndBox,face.coordDir(),ccBndBox,0,1);
 
 	const PArray<Region>& regions = face_bc.Regions();
-	for (int j=0; j<regions.size(); ++j)
+        
+        mask.resize(ccBndBox,1); mask.setVal(-1);
+	for (int j=0; j<regions.size(); ++j) {
 	  regions[j].setVal(vdat,inflow_vel[0],0,dx,0);
+	  regions[j].setVal(mask,1,0,dx,0);
+        }
 
-	DEF_LIMITS(ccBndFab,s_ptr,s_lo,s_hi);
+	DEF_LIMITS(fab,s_ptr,s_lo,s_hi);
 	DEF_CLIMITS(vdat,v_ptr,v_lo,v_hi);
 	DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
 	DEF_CLIMITS(kdat,k_ptr,k_lo,k_hi);
+	DEF_CLIMITS(mask,m_ptr,m_lo,m_hi);
+        Box ovlp = fab.box() & ccBndBox;
+        const int* lo = ovlp.loVect();
+        const int* hi = ovlp.hiVect();
 
 	int nc = 1;
 	FORT_STEADYSTATE_FAB(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
@@ -3906,7 +3920,8 @@ PorousMedia::get_inflow_density(const Orientation& face,
 			     k_ptr, ARLIM(k_lo),ARLIM(k_hi), 
 			     c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_kr_coef,
 			     v_ptr, ARLIM(v_lo),ARLIM(v_hi), 
-			     dx, &nc, &gravity);
+			     m_ptr, ARLIM(m_lo),ARLIM(m_hi), 
+			     dx, &nc, &gravity, lo, hi);
     }
   }
 }
@@ -4830,6 +4845,12 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       satn.copy(Stn_fpi(),0,0,1);
       sat.mult(1.0/density[0]);
       satn.mult(1.0/density[0]);
+      BL_ASSERT(aofs->size()>i);
+      BL_ASSERT(divu_fp->size()>i);
+      BL_ASSERT(rock_phi->size()>i);
+      BL_ASSERT(area[0].size()>i);
+      BL_ASSERT(area[1].size()>i);
+
       godunov->AdvectTracer(grids[i], dx, dt, 
 			    area[0][i], u_macG[0][i], flux[0], 
 			    area[1][i], u_macG[1][i], flux[1], 
@@ -7453,7 +7474,7 @@ PorousMedia::computeNewDt (int                   finest_level,
   //
   // 5) If regrided, assume that we computed a dt_min prior (in dt_min) and enforce
   //
-  // 6) Boounded growth/decrease via user input
+  // 6) Bounded growth/decrease via user input
   //
 
   bool solute_transport_limits_dt = true;
@@ -11320,6 +11341,42 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
     return false;
 }
 
+Real
+PorousMedia::AdjustBCevalTime(int  state_idx,
+                              Real time,
+                              bool tadj_verbose)
+{                              
+    // HACK
+    // If exec_mode is "init_to_steady", then build an adjusted eval time such that
+    // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
+    // if t^n = switch time, we are leaving switch_time, eval exactly at that time
+    Real t_eval = time;
+    Real prev_time = state[state_idx].prevTime();
+    if (execution_mode=="init_to_steady" && prev_time >= parent->startTime()) {
+        Real curr_time = state[state_idx].curTime();
+        Real teps = (curr_time - prev_time)*1.e-6;
+        
+        if (std::abs(curr_time - switch_time) < teps) {
+            t_eval = std::min(t_eval, std::max(prev_time, switch_time - teps));
+        }
+        
+        if (std::abs(prev_time - switch_time) < teps) {
+            t_eval = std::max(t_eval, std::min(curr_time, switch_time + teps));
+        }
+
+        if (tadj_verbose && ParallelDescriptor::IOProcessor() && t_eval != time) {
+            const int old_prec = std::cout.precision(18);
+            std::cout << "NOTE: Adjusting eval time for saturation to avoid straddling tpc" << std::endl;
+            std::cout << "    prev_time, curr_time, switch_time: " 
+                      << prev_time << ", " << curr_time << ", " << switch_time << std::endl;
+            std::cout << "    cum_time, strt_time, time, t_eval: " << parent->cumTime() << ", " 
+                      << parent->startTime() << ", " << time << ", " << t_eval << std::endl;
+            std::cout.precision(old_prec);
+        }
+    }
+    return t_eval;
+}
+
 void
 PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, int nComp)
 {
@@ -11329,88 +11386,38 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
         const int* domhi = domain.hiVect();
         const int* domlo = domain.loVect();
         const Real* dx   = geom.CellSize();
-        FArrayBox sdat;
 
-        // HACK
-        // If exec_mode is "init_to_steady", then build an adjusted eval time such that
-        // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
-        // if t^n = switch time, we are leaving switch_time, eval exactly at that time
-        Real t_eval = time;
-        Real prev_time = state[State_Type].prevTime();
-        if (execution_mode=="init_to_steady" && prev_time >= parent->startTime()) {
-            Real curr_time = state[State_Type].curTime();
-                Real teps = (curr_time - prev_time)*1.e-3;
-
-            if (std::abs(curr_time - switch_time) < teps) {
-                t_eval = std::min(t_eval, switch_time - teps);
-            }
-
-            if (std::abs(prev_time - switch_time) < teps) {
-                t_eval = std::max(t_eval, switch_time + teps);
-            }
-            //if (ParallelDescriptor::IOProcessor() && t_eval != time) {
-            //    std::cout << "NOTE: Adjusting eval time for saturation to avoid straddling tpc" << std::endl;
-            //  std::cout << "prev_time, curr_time, switch_time: " 
-            //            << prev_time << ", " << curr_time << ", " << switch_time << ", " << parent->cumTime() << ", " << PMParent()->GetStartTime() << std::endl;
-            //}
-        }
-
-
+        Real t_eval = AdjustBCevalTime(State_Type,time,false);
 
         for (std::map<Orientation,BCDesc>::const_iterator
                  it=bc_descriptor_map.begin(); it!=bc_descriptor_map.end(); ++it) 
         {
             const Box bndBox = it->second.first;
-            const Array<int>& face_bc_idxs = it->second.second;
-            sdat.resize(bndBox,nComp); sdat.setVal(0);
-
-            for (int i=0; i<face_bc_idxs.size(); ++i) {
-                const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
-
-		if (face_bc.Type() == "zero_total_velocity") {
-		  get_inflow_density(it->first,face_bc,sdat,t_eval);
-		}
-		else {
-		  face_bc.apply(sdat,dx,0,nComp,t_eval);
-		}
-	    }
             Box ovlp = bndBox & fab.box();
             if (ovlp.ok()) {
-                fab.copy(sdat,ovlp,0,ovlp,dComp,nComp);
-            }
+                const Array<int>& face_bc_idxs = it->second.second;
+                
+                for (int i=0; i<face_bc_idxs.size(); ++i) {
+                    const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+                    
+                    if (face_bc.Type() == "zero_total_velocity") {
+                        get_inflow_density(it->first,face_bc,fab,bndBox,t_eval);
+                    }
+                    else {
+                        face_bc.apply(fab,dx,0,nComp,t_eval);
+                    }
+                }
+	    }
         }
-    }    
+    }
 }  
 
 void
 PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp)
 {
     BL_ASSERT(setup_tracer_transport > 0);
-    
-    // HACK
-    // If exec_mode is "init_to_steady", then build an adjusted eval time such that
-    // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
-    // if t^n = switch time, we are leaving switch_time, eval exactly at that time
-    Real t_eval = time;
-    Real prev_time = state[State_Type].prevTime();
-    if (execution_mode=="init_to_steady" && prev_time >= parent->startTime()) {
-        Real curr_time = state[State_Type].curTime();
-        Real teps = (curr_time - prev_time)*1.e-3;
-        
-        if (std::abs(curr_time - switch_time) < teps) {
-            t_eval = std::min(t_eval, switch_time - teps);
-        }
-        
-        if (std::abs(prev_time - switch_time) < teps) {
-            t_eval = std::max(t_eval, switch_time + teps);
-        }
-        //if (ParallelDescriptor::IOProcessor() && t_eval != time) {
-        //          std::cout << "NOTE: Adjusting eval time for solutes to avoid straddling tpc" << std::endl;
-        //  std::cout << "prev_time, curr_time, switch_time: " 
-        //            << prev_time << ", " << curr_time << ", " << switch_time << std::endl;
-        //}
 
-    }
+    Real t_eval = AdjustBCevalTime(State_Type,time,false);
     
     for (int n=0; n<nComp; ++n) 
     {
@@ -11421,23 +11428,16 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
             const int* domhi = domain.hiVect();
             const int* domlo = domain.loVect();
             const Real* dx   = geom.CellSize();
-            FArrayBox sdat;
             
             for (std::map<Orientation,BCDesc>::const_iterator
                      it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
             {
                 const Box bndBox = it->second.first;
                 const Array<int>& face_bc_idxs = it->second.second;
-                sdat.resize(bndBox,1); sdat.setVal(0);
                 
                 for (int i=0; i<face_bc_idxs.size(); ++i) {
                     const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
-                    face_tbc.apply(sdat,dx,0,1,t_eval);
-                }
-
-                Box ovlp = bndBox & fab.box();
-                if (ovlp.ok()) {
-                    fab.copy(sdat,ovlp,0,ovlp,dComp+n,1);
+                    face_tbc.apply(fab,dx,dComp+n,1,t_eval);
                 }
             }
         }    
@@ -11447,74 +11447,63 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
 void
 PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
 {
-  Array<int> bc(BL_SPACEDIM*2,0);
-
+    Array<int> bc(BL_SPACEDIM*2,0);
     if (pbc_descriptor_map.size()) 
     {
-
-        // HACK
-        // If exec_mode is "init_to_steady", then build an adjusted eval time such that
-        // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
-        // if t^n = switch time, we are leaving switch_time, eval exactly at that time
-        Real t_eval = time;
-        Real prev_time = state[Press_Type].prevTime();
-        if (execution_mode=="init_to_steady" && prev_time >= parent->startTime()) {
-            Real curr_time = state[Press_Type].curTime();
-            Real teps = (curr_time - prev_time)*1.e-3;
-
-            if (std::abs(curr_time - switch_time) < teps) {
-                t_eval = std::min(t_eval, switch_time - teps);
-            }
-
-            if (std::abs(prev_time - switch_time) < teps) {
-                t_eval = std::max(t_eval, switch_time + teps);
-            }
-            //if (ParallelDescriptor::IOProcessor() && t_eval != time) {
-            //  std::cout << "NOTE: Adjusting eval time for pressure to avoid straddling tpc" << std::endl;
-            //  std::cout << "prev_time, curr_time, switch_time: " 
-            //            << prev_time << ", " << curr_time << ", " << switch_time << std::endl;
-            //}
-        }
-
         const Box domain = geom.Domain();
         const int* domhi = domain.hiVect();
         const int* domlo = domain.loVect();
         const Real* dx   = geom.CellSize();
-        FArrayBox sdat, prdat;
+        Real t_eval = AdjustBCevalTime(Press_Type,time,false);
+
+        FArrayBox sdat, prdat, mask;
         for (std::map<Orientation,BCDesc>::const_iterator
                  it=pbc_descriptor_map.begin(); it!=pbc_descriptor_map.end(); ++it) 
         {
             const Box bndBox = it->second.first;
             const Array<int>& face_bc_idxs = it->second.second;
-            sdat.resize(bndBox,ncomps); sdat.setVal(0);
-	    prdat.resize(bndBox,1); prdat.setVal(0);
-
-            for (int i=0; i<face_bc_idxs.size(); ++i) {
-                const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
-
-		if (model==model_list["richard"]) {
-		  face_bc.apply(sdat,dx,0,ncomps,t_eval);
-		  FArrayBox cpldat, phidat, kpdat, ktdat;
-		  const int n_cpl_coef = cpl_coef->nComp();
-		  cpldat.resize(bndBox,n_cpl_coef);
-		  phidat.resize(bndBox,1);
-		  ktdat.resize(bndBox,BL_SPACEDIM);
-		  kpdat.resize(bndBox,1);
-		  for (int i=0; i<rocks.size(); ++i)
-		    {	  
-		      rocks[i].set_constant_cplval(cpldat,dx);
-		      rocks[i].set_constant_kval(ktdat,dx);
-		      rocks[i].set_constant_pval(phidat,dx);
-		    }
-		  kpdat.copy(ktdat,bndBox,it->first.coordDir(),bndBox,0,1);
-		  calcCapillary(prdat,sdat,phidat,kpdat,cpldat,bndBox,bc);
+            Box subbox = bndBox & fab.box();
+            if (subbox.ok()) {
+                sdat.resize(subbox,ncomps); 
+                prdat.resize(subbox,ncomps); prdat.setVal(0);
+                
+                for (int i=0; i<face_bc_idxs.size(); ++i) {
+                    const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+                    
+                    if (model==model_list["richard"]) {
+                        sdat.setVal(0);
+                        face_bc.apply(sdat,dx,0,ncomps,t_eval);
+                        mask.resize(subbox,1); mask.setVal(-1);
+                        const PArray<Region>& regions = face_bc.Regions();
+                        for (int j=0; j<regions.size(); ++j)
+                        { 
+                            regions[j].setVal(mask,1,0,dx,0);
+                        }
+                        
+                        FArrayBox cpldat, phidat, kpdat, ktdat;
+                        const int n_cpl_coef = cpl_coef->nComp();
+                        cpldat.resize(subbox,n_cpl_coef);
+                        phidat.resize(subbox,1);
+                        ktdat.resize(subbox,BL_SPACEDIM);
+                        kpdat.resize(subbox,1);
+                        for (int i=0; i<rocks.size(); ++i)
+                        {	  
+                            rocks[i].set_constant_cplval(cpldat,dx);
+                            rocks[i].set_constant_kval(ktdat,dx);
+                            rocks[i].set_constant_pval(phidat,dx);
+                        }
+                        kpdat.copy(ktdat,subbox,it->first.coordDir(),subbox,0,1);
+                        calcCapillary(prdat,sdat,phidat,kpdat,cpldat,subbox,bc);
+                        for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
+                            if (mask(iv,0) > 0) {
+                                for (int n=0; n<ncomps; ++n) {
+                                    fab(iv,n) = - prdat(iv,n);
+                                }
+                            }
+                        }
+                    }
 		}
 	    }
-
-            Box ovlp = bndBox & fab.box();
-            if (ovlp.ok()) {
-                fab.copy(prdat,ovlp,0,ovlp,0,1);
-            }
         }
     }    
 }  

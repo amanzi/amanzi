@@ -49,8 +49,8 @@
         <Parameter name="Steady Initial Time Step" type="double" value="1.e8"/>
         <Parameter name="Maximum Time Step Grow" type="double" value="1.25"/>
         <Parameter name="Maximum Time Step Grow" type="double" value="2"/>
-        <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e10"/>
-        <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e10"/>
+        <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e9"/>
+        <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e9"/>
         <Parameter name="Transient Initial Time Step" type="double" value="10"/>
       </ParameterList>
     </ParameterList>
@@ -71,7 +71,7 @@
       <Parameter name="Start Times" type="Array double" value="{6.17266656E10, 6.1729344E10, 6.173178481E10}"/>
       <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10}"/>
     </ParameterList>
-    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00017"/> -->
+    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00069"/> -->
 
     <ParameterList name="Numerical Control Parameters">
 
@@ -233,6 +233,7 @@
   <ParameterList name="Material Properties">
     <Parameter name="Permeability Output File" type="string" value="run_data/kp"/>
     <Parameter name="Porosity Output File" type="string" value="run_data/pp"/>
+    <Parameter name="Saturation Threshold For Kr" type="double" value="0.9"/>
     
     <ParameterList name="Facies_1">
       <ParameterList name="Porosity: Uniform">
