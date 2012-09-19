@@ -3379,10 +3379,11 @@ PorousMedia::advance_multilevel_saturated (Real  time,
                 
                 dt_subcycle_transport = std::min(dt_eig,tmax_subcycle_transport - t_subcycle_transport);
                 BL_ASSERT(dt_subcycle_transport > 0);
+#if 0
                 MultiFab& S_new = fine_lev.get_new_data(State_Type);
                 MultiFab& S_old = fine_lev.get_old_data(State_Type);
                 MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
-                
+#endif
             }
             else {
                 continue_subcycle_transport = false;
@@ -4941,7 +4942,7 @@ PorousMedia::getFuncCountDM (const BoxArray& bxba, int ngrow)
   int count = 0;
   Array<long> vwrk(bxba.size());
   for (MFIter mfi(fctmpnew); mfi.isValid(); ++mfi)
-    vwrk[count++] = static_cast<long>(fctmpnew[mfi].sum(0));
+      vwrk[count++] = static_cast<long>(std::max(1.,fctmpnew[mfi].sum(0)));
 
   fctmpnew.clear();
 
@@ -5013,6 +5014,12 @@ TagUnusedGrowCells(MultiFab&    state,
 		   int          comp,
 		   int          nComp)
 {
+#if 1
+    // Don't use any grow cells that are not f-f
+    state.setBndry(tagVal,comp,nComp);
+    state.FillBoundary(comp,nComp);
+    pm.Geom().FillPeriodicBoundary(state,comp,nComp);
+#else
   const BoxArray& ba = state.boxArray();
   const Geometry& geom = pm.Geom();
   const Box& domain = geom.Domain();
@@ -5044,6 +5051,7 @@ TagUnusedGrowCells(MultiFab&    state,
 	  fab.setVal(tagVal,isects[ii].second,comp,nComp);
 	}
     }
+#endif
 }
 
 static
@@ -5112,9 +5120,6 @@ PorousMedia::strang_chem (Real time,
   //MultiFab& Aux  = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type)  : get_new_data(Aux_Chem_Type));
   MultiFab& Aux  = get_new_data(Aux_Chem_Type);
 
-  // FIXME: Curently have no code to set Aux_Chem_Type data at the physical boundaries, so we just punt
-  ngrow = 0;
-
 #if defined(AMANZI)
   //
   // ngrow == 0 -> we're working on the valid region of state.
@@ -5147,8 +5152,9 @@ PorousMedia::strang_chem (Real time,
   //
   // Assume we are always doing funccount.
   //
-  BoxArray            ba = ChemistryGrids(S, parent, level, ngrow);
-  DistributionMapping dm = getFuncCountDM(ba,ngrow);
+  int ngrow_tmp = 0;
+  BoxArray            ba = ChemistryGrids(S, parent, level, ngrow_tmp);
+  DistributionMapping dm = getFuncCountDM(ba,ngrow_tmp);
 
   if (verbose > 2 && ParallelDescriptor::IOProcessor())
     {
@@ -5167,24 +5173,24 @@ PorousMedia::strang_chem (Real time,
   auxTemp.copy(Aux,0,0,Aux.nComp());  // Parallel copy.
 
   Real tagVal = -1;
-  if (ngrow>0) {
+  if (ngrow_tmp>0) {
     for (int n=0; n<ncomps+ntracers; ++n) 
       {      
 	const BCRec& theBC = AmrLevel::desc_lst[State_Type].getBC(n);
-	TagUnusedGrowCells(S,State_Type,theBC,*this,ngrow,tagVal,n,1);
+	TagUnusedGrowCells(S,State_Type,theBC,*this,ngrow_tmp,tagVal,n,1);
       }
   }
   
   phiTemp.define(ba, 1, 0, dm, Fab_allocate);
 
-  if (ngrow == 0)
+  if (ngrow_tmp == 0)
     {
       phiTemp.copy(*rock_phi,0,0,1);
     }
   else
     {
-      BL_ASSERT(rock_phi->nGrow() >= ngrow);
-      MultiFab phiGrow(BoxArray(rock_phi->boxArray()).grow(ngrow), 1, 0);
+      BL_ASSERT(rock_phi->nGrow() >= ngrow_tmp);
+      MultiFab phiGrow(BoxArray(rock_phi->boxArray()).grow(ngrow_tmp), 1, 0);
       for (MFIter mfi(*rock_phi); mfi.isValid(); ++mfi)
 	phiGrow[mfi].copy((*rock_phi)[mfi],0,0,1);
       phiTemp.copy(phiGrow,0,0,1);  // Parallel copy.
@@ -5277,13 +5283,14 @@ PorousMedia::strang_chem (Real time,
   // Grab the auxiliary chemistry data
   for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
     {
+      Box box = mfi.validbox();
       FArrayBox& fab     = stateTemp[mfi];
       FArrayBox& phi_fab = phiTemp[mfi];
       FArrayBox& vol_fab = volTemp[mfi];
       FArrayBox& fct_fab = fcnCntTemp[mfi];
       FArrayBox& aux_fab = auxTemp[mfi];
-      const int* lo      = fab.loVect();
-      const int* hi      = fab.hiVect();
+      const int* lo      = box.loVect();
+      const int* hi      = box.hiVect();
 
 #if (BL_SPACEDIM == 2)
       for (int iy=lo[1]; iy<=hi[1]; iy++)
@@ -5428,7 +5435,7 @@ PorousMedia::strang_chem (Real time,
   Aux.copy(auxTemp,0,0,Aux.nComp()); // Parallel copy, everything.
   auxTemp.clear();
     
-  if (ngrow == 0)
+  if (ngrow == 0 || ngrow_tmp == 0)
     {
       Fcnt.copy(fcnCntTemp,0,0,1); // Parallel copy.
       fcnCntTemp.clear();
@@ -11419,6 +11426,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
 
     Real t_eval = AdjustBCevalTime(State_Type,time,false);
     
+    FArrayBox bndFab;
     for (int n=0; n<nComp; ++n) 
     {
         int tracer_idx = sComp+n-ncomps;
@@ -11432,12 +11440,16 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
             for (std::map<Orientation,BCDesc>::const_iterator
                      it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
             {
-                const Box bndBox = it->second.first;
-                const Array<int>& face_bc_idxs = it->second.second;
-                
-                for (int i=0; i<face_bc_idxs.size(); ++i) {
-                    const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
-                    face_tbc.apply(fab,dx,dComp+n,1,t_eval);
+                const Box bndBox = Box(it->second.first) & fab.box();
+                if (bndBox.ok()) {
+                    bndFab.resize(bndBox,1);
+                    bndFab.copy(fab,dComp+n,0,1);
+                    const Array<int>& face_bc_idxs = it->second.second;
+                    for (int i=0; i<face_bc_idxs.size(); ++i) {
+                        const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
+                        face_tbc.apply(bndFab,dx,0,1,t_eval);
+                    }
+                    fab.copy(bndFab,0,dComp+n,1);
                 }
             }
         }    
