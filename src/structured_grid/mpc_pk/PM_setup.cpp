@@ -540,7 +540,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::init_shrink  = 1.0;
   PorousMedia::dt_init      = -1.0; // Ignore if < 0
   PorousMedia::dt_grow_max  = -1;
-  PorousMedia::dt_shrink_max  = -1;
+  PorousMedia::dt_shrink_max  = 10;
   PorousMedia::fixed_dt     = -1.0;
   PorousMedia::steady_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::transient_richard_max_dt = -1; // Ignore if < 0

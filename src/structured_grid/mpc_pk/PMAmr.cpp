@@ -58,7 +58,7 @@ process_events(bool& write_plotfile_after_step,
 {
     write_plotfile_after_step = false;
     write_checkpoint_after_step = false;
-    begin_tpc = -1;
+    begin_tpc = false;
     Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
     Array<std::string>& vis_time_macros = PorousMedia::vis_time_macros;
     Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
@@ -381,7 +381,7 @@ PMAmr::coarseTimeStep (Real stop_time)
         observations_to_process.clear();
         write_check=false;
         write_plot=false;
-        begin_tpc = -1;
+        begin_tpc=false;
     }
 
     Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_tpc,event_coord,
@@ -394,7 +394,7 @@ PMAmr::coarseTimeStep (Real stop_time)
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
         
-        if (begin_tpc >= 0) {
+        if (begin_tpc) {
             dt0_before_event_cut = -1; // "forget" current time step, we're headed into a Time Period Control interval
         }
         else if (dt0_before_event_cut < 0) {
