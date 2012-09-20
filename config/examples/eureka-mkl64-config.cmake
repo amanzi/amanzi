@@ -52,4 +52,4 @@ set(ENABLE_Structured FALSE CACHE BOOL "Flag for structured mesh capability")
 set(ENABLE_HYPRE TRUE CACHE BOOL "Enable the HYPRE preconditioner package")
 
 # --- TPL Installation location
-set(TPL_INSTALL_PREFIX "$ENV{HOME}/tpls/installs/PMPI-intel12/mkl64" CACHE PATH "ASCEM TPL installation location")
+set(TPL_INSTALL_PREFIX "${ASCEM_PROJECT_DIR}/tpls/installs/PMPI-intel12" CACHE PATH "ASCEM TPL installation location")
