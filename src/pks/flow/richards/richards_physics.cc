@@ -25,8 +25,8 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   UpdatePermeabilityData_(S.ptr());
 
   // update if pressure or rho has changed too, since this means new fluxes
-  S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
-  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S, name_);
+  S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
+  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
 
   // NOTE we always do this, even if the FieldEvaluators say we don't need to
   // update.  This is because previous calculations were done in a

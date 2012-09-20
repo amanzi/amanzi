@@ -39,14 +39,16 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 #include "InputParser.H"
+#include "global_verbosity.hh"
 
 Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
         const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
+  using Teuchos::OSTab;
+  setDefaultVerbLevel(ATS::VerbosityLevel::level_);
+  Teuchos::EVerbosityLevel verbLevel = getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = getOStream();
+  OSTab tab = getOSTab(); // This sets the line prefix and adds one tab
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
