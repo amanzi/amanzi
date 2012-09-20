@@ -930,6 +930,7 @@ PorousMedia::initData ()
     // Initialize rock properties
     //
     init_rock_properties();
+
     //
     // Initialize the state and the pressure.
     //
@@ -7240,64 +7241,67 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
   Real estdt        = 1.0e+20; // FIXME: need more robust
   const Real cur_time = state[State_Type].curTime();
 
-  if (dt_eig != 0.0)
-    {
-        if (cfl>0) {
-            estdt = cfl * dt_eig;
-        }
-	else
-	  estdt = dt_eig;
-    } 
-  else 
-    {
-      int making_new_umac = 0;
-      
-      // Need to define the MAC velocities in order to define the initial dt 
-      if (u_mac == 0) 
-	{
-	  making_new_umac = 1;
+  if (solute_transport_limits_dt) {
 
-	  u_mac = new MultiFab[BL_SPACEDIM];
-	  for (int dir = 0; dir < BL_SPACEDIM; dir++)
-	    {
-	      BoxArray edge_grids(grids);
-	      edge_grids.surroundingNodes(dir);
-	      u_mac[dir].define(edge_grids,1,0,Fab_allocate);
-	      u_mac[dir].setVal(0.);
-	    }
+      if (dt_eig != 0.0)
+      {
+          if (cfl>0) {
+              estdt = cfl * dt_eig;
+          }
+          else
+              estdt = dt_eig;
+      } 
+      else 
+      {
+          int making_new_umac = 0;
+          
+          // Need to define the MAC velocities in order to define the initial dt 
+          if (u_mac == 0) 
+          {
+              making_new_umac = 1;
+              
+              u_mac = new MultiFab[BL_SPACEDIM];
+              for (int dir = 0; dir < BL_SPACEDIM; dir++)
+              {
+                  BoxArray edge_grids(grids);
+                  edge_grids.surroundingNodes(dir);
+                  u_mac[dir].define(edge_grids,1,0,Fab_allocate);
+                  u_mac[dir].setVal(0.);
+              }
 #ifdef MG_USE_FBOXLIB
-	  if (model == model_list["richard"]) {
-              if (!steady_use_PETSc_snes) {
-                  compute_vel_phase(u_mac,0,cur_time);
+              if (model == model_list["richard"]) {
+                  if (!steady_use_PETSc_snes) {
+                      compute_vel_phase(u_mac,0,cur_time);
+                  }
+              }
+              else
+#endif
+              {
+                  MultiFab* RhoD;
+                  RhoD  = new MultiFab[BL_SPACEDIM];
+                  for (int dir = 0; dir < BL_SPACEDIM; dir++)
+                  {
+                      BoxArray edge_grids(grids);
+                      edge_grids.surroundingNodes(dir);
+                      RhoD[dir].define(edge_grids,1,0,Fab_allocate);
+                      RhoD[dir].setVal(0.);
+                  }
+                  
+                  initial_mac_project(u_mac,RhoD,cur_time);
+                  delete [] RhoD;
               }
           }
-	  else
-#endif
-	    {
-	      MultiFab* RhoD;
-	      RhoD  = new MultiFab[BL_SPACEDIM];
-	      for (int dir = 0; dir < BL_SPACEDIM; dir++)
-		{
-		  BoxArray edge_grids(grids);
-		  edge_grids.surroundingNodes(dir);
-		  RhoD[dir].define(edge_grids,1,0,Fab_allocate);
-		  RhoD[dir].setVal(0.);
-		}
-
-	      initial_mac_project(u_mac,RhoD,cur_time);
-	      delete [] RhoD;
-	    }
-	}
-
-
-      predictDT(u_mac);
-
-      if (cfl>0) {
-          estdt = cfl*dt_eig;
+          
+          
+          predictDT(u_mac);
+          
+          if (cfl>0) {
+              estdt = cfl*dt_eig;
+          }
+          if (making_new_umac)
+              delete [] u_mac;
       }
-      if (making_new_umac)
-	delete [] u_mac;
-    }
+  }
 
   // 
   // Limit by max_dt
@@ -7484,7 +7488,6 @@ PorousMedia::computeNewDt (int                   finest_level,
   // 6) Bounded growth/decrease via user input
   //
 
-  bool solute_transport_limits_dt = true;
   bool start_with_previously_suggested_dt = true;
   bool check_for_dt_cut_by_event = true;
   bool in_transient_period = false;
@@ -8338,9 +8341,7 @@ PorousMedia::post_init (Real stop_time)
   // Call initial_mac_project in order to get a good initial dt.
   //
   post_init_state();
-  //
-  // Estimate the initial timestepping.
-  //
+
   post_init_estDT(dt_init_local, nc_save, dt_save, stop_time);
 
   const Real strt_time       = state[State_Type].curTime();

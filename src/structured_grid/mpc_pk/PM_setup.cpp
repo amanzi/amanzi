@@ -232,11 +232,13 @@ int  PorousMedia::variable_scal_diff;
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
 //
-// Transport flame
+// Transport flags
 //
 bool PorousMedia::do_tracer_transport;
 bool PorousMedia::setup_tracer_transport;
 int  PorousMedia::transport_tracers;
+bool PorousMedia::solute_transport_limits_dt;
+
 //
 // Chemistry flag.
 //
@@ -598,6 +600,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::tpc_initial_time_step_multipliers.resize(0);
   PorousMedia::tpc_maximum_time_steps.resize(0);
   PorousMedia::tpc_labels.resize(0);
+  PorousMedia::solute_transport_limits_dt = false;
 
   PorousMedia::richard_solver_verbose = 1;
 
@@ -1618,6 +1621,9 @@ void PorousMedia::read_prob()
   // determine the model based on model_name
   pb.query("model_name",model_name);
   model = model_list[model_name];
+  if (model_name=="steady-saturated") {
+      solute_transport_limits_dt = true;
+  }
 
   // if model is specified, this supersedes model_name
   pb.query("model",model);
@@ -1627,6 +1633,13 @@ void PorousMedia::read_prob()
       setup_tracer_transport = true; // NOTE: May want these data structures regardless...
   }
 
+  if (setup_tracer_transport && 
+      ( model==model_list["steady-saturated"]
+        || (execution_mode=="init_to_steady" && switch_time<=0)
+        || (execution_mode!="init_to_steady" && do_tracer_transport) ) ) {
+      transport_tracers = true;
+  }
+    
   // Verbosity
   pb.query("v",verbose);
   pb.query("richard_solver_verbose",richard_solver_verbose);

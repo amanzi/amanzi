@@ -1304,7 +1304,7 @@ protected:
   static Array<Real> tpc_initial_time_steps;
   static Array<Real> tpc_initial_time_step_multipliers;
   static Array<Real> tpc_maximum_time_steps;
-
+  static bool solute_transport_limits_dt;
 
   static int  richard_solver_verbose;
 

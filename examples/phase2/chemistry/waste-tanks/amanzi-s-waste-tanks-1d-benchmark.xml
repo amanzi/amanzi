@@ -14,7 +14,7 @@
 <!--        <Parameter name="End" type="double" value="3.15576000e10"/> -->
         <Parameter name="End" type="double" value="1.0e11"/>
         <Parameter name="Switch" type="double" value="0.0"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="3.15576000e7"/>
+        <!-- <Parameter name="Transient Initial Time Step" type="double" value="3.15576000e7"/> -->
       	<Parameter name="Maximum Cycle Number" type="int" value="2000000"/>
       </ParameterList>
     </ParameterList>
@@ -491,5 +491,6 @@
     <Parameter name="Tolerance" type="double" value="1.0e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
     <Parameter name="Max Time Step (s)" type="double" value="31557600.0"/>
+    <Parameter name="Max Time Step (s)" type="double" value="3.75686e5"/>
   </ParameterList> <!-- Chemistry -->
 </ParameterList>
