@@ -64,8 +64,9 @@ TEST(Extract_Surface_MSTK1)
 
 
   // Number of cells (quadrilaterals) in surface mesh
-
-  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf = surfmesh.get_set_size(setnames[0],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  ncells_surf += surfmesh.get_set_size(setnames[1],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  //  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(18,ncells_surf);
       
   // Number of "faces" (edges) in surface mesh
