@@ -54,7 +54,7 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   damping_ = plist_.get<double>("preconditioner damping", 1.0);
   
   is_matrix_constructed = false;
-  decoupled = true;
+  decoupled = false;
   
   coupled_pc_ = plist_.sublist("Coupled PC");
 //   ml_plist_ = coupled_pc_.sublist("ML Parameters");
