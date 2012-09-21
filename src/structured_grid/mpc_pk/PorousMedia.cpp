@@ -3167,7 +3167,6 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
                 Real t_subcycle_transport = t_flow;
                 Real tmax_subcycle_transport = t_flow + dt_flow;
                 int n_subcycle_transport = 0;
-                int nmax_subcycle_transport = 10;
                 
                 // Because of the swap above, S_old here contains flow-advanced saturations and the 
                 // solute concentrations prior to the transport advance, wrt the saturations prior to
@@ -3196,31 +3195,32 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
                 
                 getLevel(lev).state[State_Type].setTimeLevel(t_flow+fine_lev.dt_eig,fine_lev.dt_eig,fine_lev.dt_eig);
                 
-                bool continue_subcycle_transport = (t_subcycle_transport < tmax_subcycle_transport) && (n_subcycle_transport < nmax_subcycle_transport);
+                bool continue_subcycle_transport = (t_subcycle_transport < tmax_subcycle_transport);
                 while (continue_subcycle_transport)
-                {
-                    
+                {                    
                     Real dt_subcycle_transport = std::min(fine_lev.dt_eig,tmax_subcycle_transport - t_subcycle_transport);                        
 
                     fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_subcycle_transport,ncomps,ltracer,true);
                     
                     Real tnew_subcycle_transport = t_subcycle_transport + dt_subcycle_transport;
                     Real next_dt_subcycle_transport = std::min(fine_lev.dt_eig,tmax_subcycle_transport - tnew_subcycle_transport);
-                    
+
                     if (richard_solver_verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
                         std::cout << "    TRANSPORT: Subcycle: " << n_subcycle_transport
                                   << " TIME from " << t_subcycle_transport
-                                  << " to " <<  t_subcycle_transport + dt_subcycle_transport
+                                  << " to " <<  tnew_subcycle_transport
                                   << ", DT_SUB = " << dt_subcycle_transport  << std::endl;
                     }
                     
+                    if (std::abs(tnew_subcycle_transport + next_dt_subcycle_transport - tmax_subcycle_transport)<1.e-6*next_dt_subcycle_transport) {
+                        next_dt_subcycle_transport = tmax_subcycle_transport - tnew_subcycle_transport;
+                    }
                     
-                    t_subcycle_transport += dt_subcycle_transport;
+                    continue_subcycle_transport = std::abs(tnew_subcycle_transport - tmax_subcycle_transport) > 1.e-6*dt_subcycle_transport;                                        
+                    t_subcycle_transport = std::min(tnew_subcycle_transport,tmax_subcycle_transport);
                     dt_subcycle_transport = next_dt_subcycle_transport;			    
                     n_subcycle_transport++;
-                    
-                    continue_subcycle_transport = (t_subcycle_transport < tmax_subcycle_transport) && (n_subcycle_transport < nmax_subcycle_transport);
-                    
+
                     if (continue_subcycle_transport)
                     {
                         // Advance the state data structures

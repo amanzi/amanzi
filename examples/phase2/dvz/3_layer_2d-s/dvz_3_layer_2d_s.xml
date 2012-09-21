@@ -69,7 +69,7 @@
       <Parameter name="Maximum Time Step" type="Array double" value="{5.e4, 5.e9, 5.e4, 5.e9}"/>
       <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10, 10}"/>
     </ParameterList>
-    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="chk00069"/> -->
+    <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00044"/>
 
     <ParameterList name="Numerical Control Parameters">
 
