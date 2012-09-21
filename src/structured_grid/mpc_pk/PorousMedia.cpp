@@ -2480,6 +2480,8 @@ PorousMedia::ml_step_driver(Real  t,
                 dt_this_attempt = dt_suggest;
             }
 
+            dt_iter++;
+
             continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
         }
 
@@ -3324,7 +3326,6 @@ PorousMedia::advance_multilevel_saturated (Real  time,
             int num_subcycles = std::max(1,(int)(dt / fine_lev.dt_eig) + 1);
             fine_lev.dt_eig = dt / num_subcycles;
         }
-
         Real dt_subcycle_transport = std::min(fine_lev.dt_eig,dt);
         Real t_eps = 1.e-8*dt_subcycle_transport;
 
@@ -3364,27 +3365,30 @@ PorousMedia::advance_multilevel_saturated (Real  time,
             fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_subcycle_transport,ncomps,ltracer,true);
             t_subcycle_transport += dt_subcycle_transport;
             
-            if (std::abs(tmax_subcycle_transport - t_subcycle_transport) < t_eps) {
+            Real subcycle_time_remaining = tmax_subcycle_transport - t_subcycle_transport;
+            if (subcycle_time_remaining < t_eps) {
 	      t_subcycle_transport = tmax_subcycle_transport;
+              subcycle_time_remaining = 0;
             }
             
-            if (t_subcycle_transport < tmax_subcycle_transport)
+            if (subcycle_time_remaining > 0)
             {
-                
+                fine_lev.predictDT(fine_lev.u_macG_trac); // updates dt_eig
+                if (fine_lev.dt_eig < dt_subcycle_transport) {
+                    int num_subcycles = std::max(1,(int)(subcycle_time_remaining / fine_lev.dt_eig) + 1);
+                    dt_subcycle_transport = subcycle_time_remaining / num_subcycles;
+                }
+                dt_subcycle_transport = std::min(dt_subcycle_transport,subcycle_time_remaining);
+                BL_ASSERT(dt_subcycle_transport > 0);
+                fine_lev.dt_eig = dt_subcycle_transport;
+
                 // Advance the state data structures
-                for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
+                for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
+                     it!=End; ++it) 
                 {
                     fine_lev.state[*it].allocOldData();
                     fine_lev.state[*it].swapTimeLevels(dt_subcycle_transport);
                 }
-                
-                dt_subcycle_transport = std::min(dt_eig,tmax_subcycle_transport - t_subcycle_transport);
-                BL_ASSERT(dt_subcycle_transport > 0);
-#if 0
-                MultiFab& S_new = fine_lev.get_new_data(State_Type);
-                MultiFab& S_old = fine_lev.get_old_data(State_Type);
-                MultiFab::Copy(S_old,S_new,ncomps,ncomps,ntracers,1);
-#endif
             }
             else {
                 continue_subcycle_transport = false;
@@ -3392,7 +3396,8 @@ PorousMedia::advance_multilevel_saturated (Real  time,
             n_subcycle_transport++;
         }
         if (!saved_states.empty()) {
-            for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
+            for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
+                 it!=End; ++it) 
             {
                 MultiFab& old = get_old_data(*it);                          
                 MultiFab::Copy(old,*saved_states[*it],0,0,old.nComp(),old.nGrow());

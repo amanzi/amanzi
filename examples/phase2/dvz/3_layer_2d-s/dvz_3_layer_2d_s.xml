@@ -49,8 +49,8 @@
         <Parameter name="Steady Initial Time Step" type="double" value="1.e8"/>
         <Parameter name="Maximum Time Step Grow" type="double" value="1.25"/>
         <Parameter name="Maximum Time Step Grow" type="double" value="2"/>
-        <Parameter name="Steady Maximum Time Step Size" type="double" value="5.e9"/>
-        <Parameter name="Transient Maximum Time Step Size" type="double" value="5.e9"/>
+        <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e9"/>
+        <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e9"/>
         <Parameter name="Transient Initial Time Step" type="double" value="10"/>
       </ParameterList>
     </ParameterList>
@@ -59,17 +59,17 @@
    
             The time integrator is reset at Start time, and at the Switch time (1956 [y])
 
-            t = 1956.0 [y] = 6.17266656e+10  [s]   Crib 216-B-17 starts (Tc-99 @ 1.881389ppm)
+            t = 1956.0 [y] = 6.17266656e+10  [s]   Crib 216-B-17 starts (Tc-99 @ 1.881389 ppm)
             t = 1956.1 [y] = 6.1729344e+10   [s]   Crib 216-B-17 stops
-            t = 1956.2 [y] = 6.173178481e+10 [s]   Crib 216-B-18 starts (tc-99 @ 2.266885Eppm)
+            t = 1956.2 [y] = 6.173178481e+10 [s]   Crib 216-B-18 starts (Tc-99 @ 2.266885 ppm)
             t = 1956.3 [y] = 6.173705521e+10 [s]   Crib 216-B-18 stops
 
             -->                   
       <Parameter name="Start Times" type="Array double" value="{6.17266656e+10, 6.1729344E10, 6.173178481E10, 6.173705521E10}"/>
-      <Parameter name="Maximum Time Step" type="Array double" value="{5.e4, 5.e9, 5.e4, 5.e9}"/>
+      <Parameter name="Maximum Time Step" type="Array double" value="{5.e4, 1.e9, 5.e4, 1.e9}"/>
       <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10, 10}"/>
     </ParameterList>
-    <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00044"/>
+    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00044"/> -->
 
     <ParameterList name="Numerical Control Parameters">
 
@@ -84,8 +84,7 @@
           <Parameter name="steady_max_iterations" type="int" value="15"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="1.25"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="2"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="1.5"/>
           <Parameter name="steady_min_iterations_2" type="int" value="0"/>
           <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
@@ -231,7 +230,6 @@
   <ParameterList name="Material Properties">
     <Parameter name="Permeability Output File" type="string" value="run_data/kp"/>
     <Parameter name="Porosity Output File" type="string" value="run_data/pp"/>
-    <Parameter name="Saturation Threshold For Kr" type="double" value="0.9"/>
     
     <ParameterList name="Facies_1">
       <ParameterList name="Porosity: Uniform">
@@ -395,7 +393,7 @@
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array double" value="{0.0, 6.17266656e+10, 9.4672798E10}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Inward Mass Flux" type="Array double" value="{1.1071E-7, 1.48666E-6, 1.48666E-6}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -417,7 +415,7 @@
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array double" value="{0.0, 6.17266656e+10, 9.4672798E10}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Inward Mass Flux" type="Array double" value="{1.1071E-7, 1.48666E-6, 1.48666E-6}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -439,7 +437,7 @@
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array double" value="{0.0, 6.17266656e+10, 9.4672798E10}"/>
         <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+        <Parameter name="Inward Mass Flux" type="Array double" value="{1.1071E-7, 1.48666E-6, 1.48666E-6}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
