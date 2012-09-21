@@ -15,6 +15,7 @@ Fully three-phase (air, water, ice) permafrost energy equation.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "pk_factory.hh"
 #include "two_phase.hh"
 
 namespace Amanzi {
@@ -23,12 +24,12 @@ namespace Energy {
 class ThreePhase : public TwoPhase {
 
 public:
-  ThreePhase() {};
-  ThreePhase(Teuchos::ParameterList& plist, const Teuchos::RCP<State>& S,
-                      const Teuchos::RCP<TreeVector>& solution);
+  ThreePhase(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist,solution),
+      TwoPhase(plist, solution) {}
 
 protected:
-  virtual void SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S);
+  virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
 private:
   static RegisteredPKFactory<ThreePhase> reg_;

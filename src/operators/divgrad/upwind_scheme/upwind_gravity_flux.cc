@@ -11,6 +11,8 @@
 // -----------------------------------------------------------------------------
 
 #include "tensor.hpp"
+#include "composite_vector.hh"
+#include "state.hh"
 #include "upwind_gravity_flux.hh"
 
 namespace Amanzi {

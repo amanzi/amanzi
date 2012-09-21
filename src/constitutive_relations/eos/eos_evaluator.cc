@@ -17,11 +17,11 @@ namespace Relations {
 Utils::RegisteredFactory<FieldEvaluator,EOSEvaluator> EOSEvaluator::factory_("eos");
 
 
-EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& eos_plist) :
-    eos_plist_(eos_plist) {
+EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariablesFieldEvaluator(plist) {
 
   // Process the list for my provided field.
-  std::string mode = eos_plist_.get<std::string>("EOS basis", "molar");
+  std::string mode = plist_.get<std::string>("EOS basis", "molar");
   if (mode == "molar") {
     mode_ = EOS_MODE_MOLAR;
   } else if (mode == "mass") {
@@ -34,14 +34,15 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& eos_plist) :
 
   // my keys
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
-    a_key_ = eos_plist_.get<std::string>("molar density key");
+    a_key_ = plist_.get<std::string>("molar density key");
     my_keys_.push_back(a_key_);
   }
 
   if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-    a_key_ = eos_plist_.get<std::string>("mass density key");
+    a_key_ = plist_.get<std::string>("mass density key");
     my_keys_.push_back(a_key_);
   }
+  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // Set up my dependencies.
   std::size_t end = a_key_.find_first_of("_");
@@ -55,25 +56,24 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& eos_plist) :
   }
 
   // -- temperature
-  temp_key_ = eos_plist_.get<std::string>("temperature key",
+  temp_key_ = plist_.get<std::string>("temperature key",
           domain_name+std::string("temperature"));
   dependencies_.insert(temp_key_);
 
   // -- pressure
-  pres_key_ = eos_plist_.get<std::string>("pressure key",
-          domain_name+std::string("pressure"));
+  pres_key_ = plist_.get<std::string>("pressure key",
+          domain_name+std::string("effective_pressure"));
   dependencies_.insert(pres_key_);
 
   // Construct my EOS model
-  ASSERT(eos_plist_.isSublist("EOS parameters"));
+  ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory eos_fac;
-  eos_ = eos_fac.createEOS(eos_plist_.sublist("EOS parameters"));
+  eos_ = eos_fac.createEOS(plist_.sublist("EOS parameters"));
 };
 
 
 EOSEvaluator::EOSEvaluator(const EOSEvaluator& other) :
     SecondaryVariablesFieldEvaluator(other),
-    eos_plist_(other.eos_plist_),
     eos_(other.eos_),
     mode_(other.mode_),
     temp_key_(other.temp_key_),

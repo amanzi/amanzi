@@ -19,7 +19,7 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
 
   explicit
-  WRMPermafrostEvaluator(Teuchos::ParameterList& wrm_plist);
+  WRMPermafrostEvaluator(Teuchos::ParameterList& plist);
 
   WRMPermafrostEvaluator(const WRMPermafrostEvaluator& other);
 
@@ -33,7 +33,6 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results);
 
  private:
-  Teuchos::ParameterList wrm_plist_;
   Key one_on_A_key_;
   Key one_on_B_key_;
   Key s_l_key_;

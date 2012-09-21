@@ -10,58 +10,39 @@ Authors: Gianmarco Manzini
 #ifndef PK_FLOW_OVERLAND_HH_
 #define PK_FLOW_OVERLAND_HH_
 
-#include <vector>
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
-#include "state.hh"
 #include "matrix_mfd.hh"
 #include "upwinding.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "boundary_function.hh"
 #include "composite_vector_function.hh"
-
-#include "PK.hh"
-#include "pk_factory.hh"
 #include "bdf_time_integrator.hh"
-
 #include "wrm.hh"
+
+#include "pk_factory.hh"
+#include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
 namespace Flow {
-#if 0
-}}
-#endif
 
-class OverlandFlow : public PK {
+class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandFlow(Teuchos::ParameterList& flow_plist,
-               const Teuchos::RCP<State>& S,
-               const Teuchos::RCP<TreeVector>& solution);
+  OverlandFlow(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, solution),
+      PKPhysicalBDFBase(plist, solution),
+      standalone_mode_(false),
+      is_source_term_(false),
+      is_coupling_term_(false) {
+    plist_.set("solution key", "ponded_depth");
+  }
 
   // main methods
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::RCP<State>& S);
+  virtual void setup(const Teuchos::Ptr<State>& S);
 
-  // -- Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return dt_;
-  }
-
-  // -- transfer operators -- pointer copy
-  virtual void state_to_solution(const Teuchos::RCP<State>& S,
-                                 const Teuchos::RCP<TreeVector>& soln);
-
-  virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
-                                 const Teuchos::RCP<State>& S);
-
-  // -- Advance from state S to state S_next at time S0.time + dt.
-  virtual bool advance(double dt);
+  // -- Initialize owned (dependent) variables.
+  virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
@@ -77,30 +58,23 @@ public:
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
-  // computes a norm on u-du and returns the result
-  virtual double enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
-
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-  void update_precon_for_real(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 private:
+  // setup methods
+  virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);
+  virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
+
   // boundary condition members
-  virtual void UpdateBoundaryConditions_(const Teuchos::RCP<State>& S);
-  virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::RCP<State>& S);
+  virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
+  virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S);
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres );
 
-  // bdf needs help
-  void DeriveFaceValuesFromCellValues_(const Teuchos::RCP<State>& S,
-                                       const Teuchos::RCP<CompositeVector>& pres);
-
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
-  void UpdatePermeabilityData_(const Teuchos::RCP<State>& S);
-
-  // -- Update the elevation and slope magnitude from the mesh or functions.
-  void UpdateElevationAndSlope_(const Teuchos::RCP<State>& S);
+  bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
   // -- diffusion term
@@ -111,7 +85,7 @@ private:
   void AddLoadValue_(const Teuchos::RCP<CompositeVector>& g);
 
   // mesh creation
-  void CreateMesh_(const Teuchos::RCP<State>& S);
+  void CreateMesh_(const Teuchos::Ptr<State>& S);
 
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
@@ -119,16 +93,9 @@ private:
   // control switches
   bool standalone_mode_; // domain mesh == surface mesh
 
-  // time stuff
-  double dt_;
-  double dt0_;
-  Teuchos::RCP<Teuchos::Time> steptime_; //timer
-
-  // input parameter data
-  Teuchos::ParameterList flow_plist_;
-
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
+  Teuchos::RCP<Teuchos::Time> steptime_; //timer
 
   // Conductivity evaluator, needed for hacking BCs for upwinding.
   double manning_exp_;
@@ -137,14 +104,8 @@ private:
   bool is_coupling_term_;
 
   // mathematical operators
-  Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
-  double atol_;
-  double rtol_;
-  int niter_;
-  int precon_lag_;
-  double time_step_reduction_factor_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
@@ -156,7 +117,6 @@ private:
 
   // factory registration
   static RegisteredPKFactory<OverlandFlow> reg_;
-
 };
 
 }  // namespace AmanziFlow

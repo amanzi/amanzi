@@ -20,7 +20,7 @@ include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
 # wrap stuff in whole-archive for static stuff
-WHOLE_ARCHIVE(pk_factory)
+WHOLE_ARCHIVE(pk_bases)
 WHOLE_ARCHIVE(pk_energy_advection_diffusion)
 WHOLE_ARCHIVE(pk_energy_constant_temperature)
 WHOLE_ARCHIVE(pk_energy_three_phase)
@@ -42,7 +42,6 @@ WHOLE_ARCHIVE(amanzi_state)
 target_link_libraries(ats
                       coordinator
                       ${mpc}
-                      ${pk_factory}
 #                      ${pk_transport_passive_tracer}
                       ${pk_energy_constant_temperature}
                       ${pk_energy_advection_diffusion}
@@ -51,6 +50,7 @@ target_link_libraries(ats
                       ${pk_flow_permafrost}
                       ${pk_flow_richards}
                       ${pk_flow_overland}
+                      ${pk_bases}
                       energy_bc_factory
                       ${energy_relations_thermal_conductivity}
                       ${energy_relations_internal_energy}

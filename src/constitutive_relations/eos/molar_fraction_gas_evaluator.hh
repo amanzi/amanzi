@@ -21,7 +21,7 @@ class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  MolarFractionGasEvaluator(Teuchos::ParameterList& mfg_plist);
+  MolarFractionGasEvaluator(Teuchos::ParameterList& plist);
 
   MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -33,9 +33,6 @@ class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-
-  // PList
-  Teuchos::ParameterList mfg_plist_;
   Key temp_key_;
 
   Teuchos::RCP<VaporPressureRelation> sat_vapor_model_;

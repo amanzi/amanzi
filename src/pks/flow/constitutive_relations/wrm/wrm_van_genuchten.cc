@@ -18,8 +18,8 @@ Utils::RegisteredFactory<WRM,WRMVanGenuchten> WRMVanGenuchten::factory_("van Gen
 /* ******************************************************************
  * Setup fundamental parameters for this model.
  ****************************************************************** */
-WRMVanGenuchten::WRMVanGenuchten(Teuchos::ParameterList& wrm_plist) :
-    wrm_plist_(wrm_plist) {
+WRMVanGenuchten::WRMVanGenuchten(Teuchos::ParameterList& plist) :
+    plist_(plist) {
   InitializeFromPlist_();
 };
 
@@ -91,10 +91,10 @@ void  WRMVanGenuchten::set_smoothing_interval_width(double pc_transition) {
 
 
 void WRMVanGenuchten::InitializeFromPlist_() {
-  m_ = wrm_plist_.get<double>("van Genuchten m");
-  alpha_ = wrm_plist_.get<double>("van Genuchten alpha");
-  sr_ = wrm_plist_.get<double>("van Genuchten residual saturation", 0.0);
-  pc_transition_ = wrm_plist_.get<double>("van Genuchten smoothing interval width", 0.0);
+  m_ = plist_.get<double>("van Genuchten m");
+  alpha_ = plist_.get<double>("van Genuchten alpha");
+  sr_ = plist_.get<double>("van Genuchten residual saturation", 0.0);
+  pc_transition_ = plist_.get<double>("van Genuchten smoothing interval width", 0.0);
 
   n_ = 1.0 / (1.0 - m_);
 };

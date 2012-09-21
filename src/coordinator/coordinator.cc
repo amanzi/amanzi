@@ -44,17 +44,17 @@ void Coordinator::coordinator_init() {
   // create the top level PK
   Teuchos::ParameterList pks_list = parameter_list_.sublist("PKs");
   Teuchos::ParameterList::ConstIterator pk_item = pks_list.begin();
-
   const std::string &pk_name = pks_list.name(pk_item);
-  const Teuchos::ParameterEntry &pk_value = pks_list.entry(pk_item);
 
   // -- create the solution
   soln_ = Teuchos::rcp(new TreeVector(pk_name));
 
   // -- create the pk
   PKFactory pk_factory;
-  pk_ = pk_factory.CreatePK(pks_list.sublist(pk_name), S_, soln_);
-  pk_->set_name(pk_name);
+  Teuchos::ParameterList pk_list = pks_list.sublist(pk_name);
+  pk_list.set("PK name", pk_name);
+  pk_ = pk_factory.CreatePK(pk_list, soln_);
+  pk_->setup(S_.ptr());
 
   // // create the observations
   // Teuchos::ParameterList observation_plist = parameter_list_.sublist("Observation");
@@ -67,7 +67,7 @@ void Coordinator::initialize() {
   S_->Setup();
 
   // Initialize the process kernels (initializes all independent variables)
-  pk_->initialize(S_);
+  pk_->initialize(S_.ptr());
 
   // Initialize the state (initializes all dependent variables).
   S_->Initialize();
@@ -229,6 +229,10 @@ void Coordinator::cycle_driver() {
       std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
       std::cout << "----------------------------------------------------------------------"
                 << std::endl;
+    }
+
+    if (S_->cycle() == 22) {
+      std::cout << "we are here" << std::endl;
     }
 
     S_next_->advance_time(dt);

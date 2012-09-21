@@ -23,7 +23,7 @@ class ThermalConductivityTwoPhaseEvaluator :
 
  public:
   // constructor format for all derived classes
-  ThermalConductivityTwoPhaseEvaluator(Teuchos::ParameterList& tc_plist);
+  ThermalConductivityTwoPhaseEvaluator(Teuchos::ParameterList& plist);
   ThermalConductivityTwoPhaseEvaluator(const ThermalConductivityTwoPhaseEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -35,10 +35,6 @@ class ThermalConductivityTwoPhaseEvaluator :
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-
-  // PList
-  Teuchos::ParameterList tc_plist_;
-
   Teuchos::RCP<ThermalConductivityTwoPhase> tc_;
 
   // Keys for fields

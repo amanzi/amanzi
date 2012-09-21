@@ -16,6 +16,10 @@
 #include "upwinding.hh"
 
 namespace Amanzi {
+
+class State;
+class CompositeVector;
+
 namespace Operators {
 
 class UpwindTotalFlux : public Upwinding {

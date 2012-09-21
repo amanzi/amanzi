@@ -13,19 +13,22 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& wrm_plist) :
-    WRMEvaluator(wrm_plist) {
+WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& plist) :
+    WRMEvaluator(plist),
+    calc_other_sat_(false) {
   InitializeFromPlist_();
 }
 
-WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& wrm_plist,
+WRMRichardsEvaluator::WRMRichardsEvaluator(Teuchos::ParameterList& plist,
         const Teuchos::RCP<WRMRegionPairList>& wrms) :
-    WRMEvaluator(wrm_plist, wrms) {
+    WRMEvaluator(plist, wrms),
+    calc_other_sat_(false) {
   InitializeFromPlist_();
 }
 
 WRMRichardsEvaluator::WRMRichardsEvaluator(const WRMRichardsEvaluator& other) :
     WRMEvaluator(other),
+    calc_other_sat_(other.calc_other_sat_),
     pres_key_(other.pres_key_) {}
 
 Teuchos::RCP<FieldEvaluator>
@@ -36,16 +39,19 @@ WRMRichardsEvaluator::Clone() const {
 
 void WRMRichardsEvaluator::InitializeFromPlist_() {
   // my keys are for saturation and rel perm.
-  my_keys_.push_back(wrm_plist_.get<string>("saturation key", "saturation_liquid"));
+  my_keys_.push_back(plist_.get<string>("saturation key", "saturation_liquid"));
 
-  calc_other_sat_ = wrm_plist_.get<bool>("calculate minor saturation", true);
+  calc_other_sat_ = plist_.get<bool>("calculate minor saturation", true);
   if (calc_other_sat_) {
-    my_keys_.push_back(wrm_plist_.get<string>("other saturation key", "saturation_gas"));
+    my_keys_.push_back(plist_.get<string>("other saturation key", "saturation_gas"));
   }
 
   // my dependencies are just pressure.
-  pres_key_ = wrm_plist_.get<string>("pressure key", "pressure");
+  pres_key_ = plist_.get<string>("pressure key", "pressure");
   dependencies_.insert(pres_key_);
+
+  // set up the verbose object
+  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 }
 
 

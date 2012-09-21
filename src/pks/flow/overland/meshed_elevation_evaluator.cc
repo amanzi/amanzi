@@ -15,11 +15,11 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-MeshedElevationEvaluator::MeshedElevationEvaluator() :
-    ElevationEvaluator() {};
+MeshedElevationEvaluator::MeshedElevationEvaluator(Teuchos::ParameterList& plist) :
+    ElevationEvaluator(plist) {};
 
 MeshedElevationEvaluator::MeshedElevationEvaluator(const MeshedElevationEvaluator& other) :
-    ElevationEvaluator() {};
+    ElevationEvaluator(other) {};
 
 Teuchos::RCP<FieldEvaluator>
 MeshedElevationEvaluator::Clone() const {

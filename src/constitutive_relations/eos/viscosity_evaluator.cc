@@ -16,12 +16,12 @@ namespace Relations {
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,ViscosityEvaluator> ViscosityEvaluator::factory_("viscosity");
 
-ViscosityEvaluator::ViscosityEvaluator(
-    Teuchos::ParameterList& visc_plist) :
-    visc_plist_(visc_plist) {
+ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
 
   // my keys
-  my_key_ = visc_plist_.get<std::string>("viscosity key", "viscosity_liquid");
+  my_key_ = plist_.get<std::string>("viscosity key", "viscosity_liquid");
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // Set up my dependencies.
   std::size_t end = my_key_.find_first_of("_");
@@ -33,20 +33,19 @@ ViscosityEvaluator::ViscosityEvaluator(
   }
 
   // -- temperature
-  temp_key_ = visc_plist_.get<std::string>("temperature key",
+  temp_key_ = plist_.get<std::string>("temperature key",
           domain_name+std::string("temperature"));
   dependencies_.insert(temp_key_);
 
   // Construct my Viscosity model
-  ASSERT(visc_plist_.isSublist("viscosity model parameters"));
+  ASSERT(plist_.isSublist("viscosity model parameters"));
   ViscosityRelationFactory visc_fac;
-  visc_ = visc_fac.createViscosity(visc_plist_.sublist("viscosity model parameters"));
+  visc_ = visc_fac.createViscosity(plist_.sublist("viscosity model parameters"));
 };
 
 
 ViscosityEvaluator::ViscosityEvaluator(const ViscosityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    visc_plist_(other.visc_plist_),
     visc_(other.visc_),
     temp_key_(other.temp_key_) {}
 
