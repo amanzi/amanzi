@@ -25,7 +25,8 @@ known_c_compilers="mpicc cc gcc icc"
 known_cxx_compilers="mpiCC mpicxx CC g++ icpc"
 known_fortran_compilers="mpif90 ftn gfortran ifort"
 
-# Script directory
+# Directory information
+start_directory=$PWD
 bootstrap_dir=$(cd $(dirname "$0");pwd)
 amanzi_source_dir=$(cd ${bootstrap_dir}/..;pwd)
 
@@ -50,7 +51,8 @@ curl_binary=`which curl`
 
 # CMake
 cmake_binary=`which cmake`
-cmake_version=2.8.7
+ctest_binary=`which ctest`
+cmake_version=2.8.8
 cmake_url=http://www.cmake.org/files/v2.8
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
@@ -85,9 +87,11 @@ unstructured=$TRUE
 stk_mesh=$TRUE
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
-amanzi_branch=default
+amanzi_branch=
 test_suite=$FALSE
 netcdf4=${TRUE}
+petsc=${TRUE}
+hypre=${TRUE}
 
 
 
@@ -139,6 +143,15 @@ function fatal_message()
 }
 
 # Utilities
+
+function make_fullpath()
+{
+  if echo $1 | grep "^\/" > /dev/null 2> /dev/null; then
+    echo $1
+  else
+    echo "$start_directory/$1"
+  fi
+}
 
 function mkdir_now()
 {
@@ -250,6 +263,8 @@ Value in brackets indicates default setting.
   stk_mesh                build the STK Mesh Toolkit ['"${stk_mesh}"']
   mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
+  hypre                   build the HYPRE solver APIs ['"${hypre}"']
+  petsc                   build the PETSc solver APIs ['"${petsc}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
 
 Tool definitions:
@@ -259,6 +274,7 @@ Tool definitions:
   --with-fort-compiler=FILE  FILE is the Fortran compiler
 
   --with-cmake[=FILE]        FILE is the CMake binary ['"${cmake_binary}"'] without FILE builds CMake
+  --with-ctest=FILE          FILE is the CTest binary ['"${ctest_binary}"'], ignored if --with-cmake is set
   --with-hg=FILE             FILE is the Mercurial binary ['"${hg_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
@@ -295,6 +311,7 @@ echo '
 
 Tools:
     cmake_binary ='"${cmake_binary}"'
+    ctest_binary ='"${ctest_binary}"'
     hg_binary    ='"${hg_binary}"'
     curl_binary  ='"${curl_binary}"'
     mpi_root_dir ='"${mpi_root_dir}"'
@@ -317,6 +334,8 @@ Build Features:
     moab_mesh           ='"${moab_mesh}"'
     test_suite          ='"${test_suite}"'
     netcdf4             ='"${netcdf4}"'
+    hypre               ='"${hypre}"'
+    petsc               ='"${petsc}"'
 
 Directories:
     prefix                 ='"${prefix}"'
@@ -346,7 +365,8 @@ function parse_argv()
                 ;;
 
       --prefix=*)
-                 prefix=`parse_option_with_equal ${opt} 'prefix'`
+                 tmp=`parse_option_with_equal ${opt} 'prefix'`
+		 prefix=`make_fullpath ${tmp}`
                  ;;
 
       --parallel=[0-9]*)
@@ -380,19 +400,28 @@ function parse_argv()
                  ;;
 
       --with-c-compiler=*)
-                 build_c_compiler=`parse_option_with_equal ${opt} 'with-c-compiler'`
+                 tmp=`parse_option_with_equal ${opt} 'with-c-compiler'`
+                 build_c_compiler=`make_fullpath $tmp`
                  ;;
 
       --with-cxx-compiler=*)
-                 build_cxx_compiler=`parse_option_with_equal ${opt} 'with-cxx-compiler'`
+                 tmp=`parse_option_with_equal ${opt} 'with-cxx-compiler'`
+                 build_cxx_compiler=`make_fullpath $tmp`
                  ;;
 
       --with-fort-compiler=*)
-                 build_fort_compiler=`parse_option_with_equal ${opt} 'with-fort-compiler'`
+                 tmp=`parse_option_with_equal ${opt} 'with-fort-compiler'`
+                 build_fort_compiler=`make_fullpath $tmp`
                  ;;
 
       --with-cmake=*)
-                 cmake_binary=`parse_option_with_equal ${opt} 'with-cmake'`
+                 tmp=`parse_option_with_equal ${opt} 'with-cmake'`
+                 cmake_binary=`make_fullpath $tmp`
+                 ;;
+
+      --with-ctest=*)
+                 tmp=`parse_option_with_equal ${opt} 'with-ctest'`
+                 ctest_binary=`make_fullpath $tmp`
                  ;;
 
       --with-cmake)
@@ -400,43 +429,52 @@ function parse_argv()
                  ;;
 
       --with-hg=*)
-                 hg_binary=`parse_option_with_equal ${opt} 'with-hg'`
+                 tmp=`parse_option_with_equal ${opt} 'with-hg'`
+                 hg_binary=`make_fullpath $tmp`
                  ;;
 
       --with-curl=*)
-                 curl_binary=`parse_option_with_equal ${opt} 'with-curl'`
+                 tmp=`parse_option_with_equal ${opt} 'with-curl'`
+                 curl_binary=`make_fullpath $tmp`
                  ;;
 
       --with-mpi=*)
-                 mpi_root_dir=`parse_option_with_equal ${opt} 'with-mpi'`
+                 tmp=`parse_option_with_equal ${opt} 'with-mpi'`
+                 mpi_root_dir=`make_fullpath $tmp`
                  ;;
 
       --amanzi-build-dir=*)
-                 amanzi_build_dir=`parse_option_with_equal ${opt} 'amanzi-build-dir'`
+                 tmp=`parse_option_with_equal ${opt} 'amanzi-build-dir'`
+                 amanzi_build_dir=`make_fullpath $tmp`
                   ;;
 
       --amanzi-install-prefix=*)
-                 amanzi_install_prefix=`parse_option_with_equal ${opt} 'amanzi-install-prefix'`
+                 tmp=`parse_option_with_equal ${opt} 'amanzi-install-prefix'`
+                 amanzi_install_prefix=`make_fullpath $tmp`
                  ;;
 
       --tpl-install-prefix=*)
-                 tpl_install_prefix=`parse_option_with_equal ${opt} 'tpl-install-prefix'`
+                 tmp=`parse_option_with_equal ${opt} 'tpl-install-prefix'`
+                 tpl_install_prefix=`make_fullpath $tmp`
                  ;;
 
       --tpl-build-dir=*)
-                 tpl_build_dir=`parse_option_with_equal ${opt} 'tpl-build-dir'`
+                 tmp=`parse_option_with_equal ${opt} 'tpl-build-dir'`
+                 tpl_build_dir=`make_fullpath $tmp`
                  ;;
 
       --tpl-download-dir=*)
-                 tpl_download_dir=`parse_option_with_equal ${opt} 'tpl-download-dir'`
+                 tmp=`parse_option_with_equal ${opt} 'tpl-download-dir'`
+                 tpl_download_dir=`make_fullpath $tmp`
                  ;;
       
       --tpl-config-file=*)
-                 tpl_config_file=`parse_option_with_equal ${opt} 'tpl-config-file'`
+                 tmp=`parse_option_with_equal ${opt} 'tpl-config-file'`
+                 tpl_config_file=`make_fullpath $tmp`
                  ;;
 
        *)
-                 error_message "'${opt}' is an unknown option"
+                 error_message "'${opt}' is an unknown option or an option missing a value"
                  exit_now 20
                  ;;
       esac
@@ -476,7 +514,7 @@ curl_test_protocol()
 
 function cmake_version
 {
-  ver_string=`${curl_binary} --version | sed 's/cmake version[ ]*//'`
+  ver_string=`${cmake_binary} --version | sed 's/cmake version[ ]*//'`
   echo ${ver_string}
 }
 
@@ -609,6 +647,7 @@ function build_cmake
   fi
 
   cmake_binary=${root_install_dir}/bin/cmake
+  ctest_binary=${root_install_dir}/bin/ctest
 
   status_message "CMake build complete"
 
@@ -648,9 +687,9 @@ function check_mpi_root
     mpi_root_env="${MPIROOT} ${MPI_ROOT} ${MPIHOME} ${MPI_HOME} ${MPI_PREFIX}"
     for env_try in ${mpi_root_env}; do
       if [ -e "${env_try}" ]; then
-mpi_root_dir="${env_try}"
-status_message "Located MPI installation in ${mpi_root_dir}"
-break
+        mpi_root_dir="${env_try}"
+        status_message "Located MPI installation in ${mpi_root_dir}"
+        break
       fi
     done
 
@@ -810,7 +849,7 @@ function check_tools
   fi
   status_message "CURL binary: ${curl_binary}"
 
-  # Check CMake
+  # Check CMake and CTest
   if [ -z "${cmake_binary}" ]; then 
     status_message "CMake not defined. Will build"
     build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
@@ -819,7 +858,12 @@ function check_tools
     error_message "CMake binary does not exist. Will build."
     build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
   fi
+  if [ ! -e "${ctest_binary}" ]; then
+    error_message "CTest binary does not exist. Will deactivate the test suite."
+    test_suite=${FALSE}
+  fi
   status_message "CMake binary: ${cmake_binary}"
+  status_message "CTest binary: ${ctest_binary}"
 
   status_message "Tool check complete"
 
@@ -889,8 +933,9 @@ check_compilers
 check_tools
 
 # Change the branch
-hg_change_branch ${amanzi_branch}
-
+if [ ! -z "${amanzi_branch}" ]; then
+  hg_change_branch ${amanzi_branch}
+fi
 
 # Now build the TPLs if the config file is not defined
 if [ -z "${tpl_config_file}" ]; then
@@ -916,6 +961,8 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
                 -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
                 -DENABLE_NETCDF4:BOOL=${netcdf4} \
+                -DENABLE_HYPRE:BOOL=${hypre} \
+                -DENABLE_PETSC:BOOL=${petsc} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -975,8 +1022,7 @@ status_message "Build Amanzi with configure file ${tpl_config_file}"
 # Amanzi Configure
 cd ${amanzi_build_dir}
 
-# -- Amanzi Mesh options
-
+# -- Amanzi options
 
 ${cmake_binary} \
               -C${tpl_config_file} \
@@ -986,6 +1032,8 @@ ${cmake_binary} \
               -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
               -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
               -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+              -DENABLE_HYPRE:BOOL=${hypre} \
+              -DENABLE_PETSC:BOOL=${petsc} \
               ${amanzi_source_dir}
 
 if [ $? -ne 0 ]; then
@@ -1005,7 +1053,8 @@ status_message "Amanzi build complete"
 # Amanzi Test Suite
 if [ "${test_suite}" -eq "${TRUE}" ]; then
   status_message "Run Amanzi test suite"
-  make test
+  ${ctest_binary} --output-on-failure --output-log=amanzi-test-results.log -j ${parallel_jobs}
+  status_message "Test results in amanzi-test-results.log"
   if [ $? -ne 0 ]; then
     error_message "Amanzi test suite failed"
     exit_now 30
