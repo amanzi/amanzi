@@ -68,6 +68,12 @@ build_c_compiler=
 build_cxx_compiler=
 build_fort_compiler=
 
+# Compiler flags
+build_c_flags=
+build_cxx_flags=
+build_fort_flags=
+build_link_flags=
+
 # MPI installation
 mpi_root_dir=
 
@@ -276,6 +282,12 @@ Tool definitions:
   --with-cxx-compiler=FILE   FILE is the C++ compiler
   --with-fort-compiler=FILE  FILE is the Fortran compiler
 
+  --with-c-flags=STRING      STRING is additional C compiler flags
+  --with-cxx-flags=STRING    STRING is additional C++ compiler flags
+  --with-fort-flags=STRING   STRING is additional Fortran compiler flags
+
+  --with-link-flags=STRING   STRING is additional linker flags
+
   --with-cmake[=FILE]        FILE is the CMake binary ['"${cmake_binary}"'] without FILE builds CMake
   --with-ctest=FILE          FILE is the CTest binary ['"${ctest_binary}"'], ignored if --with-cmake is set
   --with-hg=FILE             FILE is the Mercurial binary ['"${hg_binary}"']
@@ -324,6 +336,14 @@ Compilers:
     build_cxx_compiler  ='"${build_cxx_compiler}"'
     build_fort_compiler ='"${build_fort_compiler}"'
 
+Compile Flags    
+    build_c_flags    ='"${build_c_flags}"'
+    build_cxx_flags  ='"${build_cxx_flags}"'
+    build_fort_flags ='"${build_fort_flags}"'
+
+Link Flags
+    build_link_flags ='"${build_link_flags}"'
+
 Build configuration:
     build_type          ='"${build_type}"'
     tpl_config_file     ='"${tpl_config_file}"'
@@ -359,7 +379,7 @@ function parse_argv()
   while [ $i -le ${last} ]
   do
     opt=${argv[$i]}
-    #echo "i: ${i} opt=$opt last: $last"
+    echo "i: ${i} opt=$opt last: $last"
     case ${opt} in
 
       -h|--h|--help)
@@ -372,12 +392,12 @@ function parse_argv()
 		 ;;
 
       --prefix=*)
-                 tmp=`parse_option_with_equal ${opt} 'prefix'`
+                 tmp=`parse_option_with_equal "${opt}" 'prefix'`
 		 prefix=`make_fullpath ${tmp}`
                  ;;
 
       --parallel=[0-9]*)
-                 parallel_jobs=`parse_option_with_equal ${opt} 'parallel'`
+                 parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
                  ;;
       
       --opt)
@@ -389,12 +409,12 @@ function parse_argv()
                  ;;
 
       --disable-*)
-                 feature=`parse_feature ${opt}`
+                 feature=`parse_feature "${opt}"`
                  set_feature ${feature} 'disable'
                  ;;
 
       --enable-*)
-                 feature=`parse_feature ${opt}`
+                 feature=`parse_feature "${opt}"`
                  set_feature ${feature} 'enable'
                  ;;
 
@@ -403,31 +423,47 @@ function parse_argv()
                  ;;
 
       --branch=*)
-                 amanzi_branch=`parse_option_with_equal ${opt} 'branch'`
+                 amanzi_branch=`parse_option_with_equal "${opt}" 'branch'`
                  ;;
 
       --with-c-compiler=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-c-compiler'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-c-compiler'`
                  build_c_compiler=`make_fullpath $tmp`
                  ;;
 
+      --with-c-flags=*)
+                 build_c_flags=`parse_option_with_equal "${opt}" 'with-c-flags'`
+                 ;;
+
       --with-cxx-compiler=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-cxx-compiler'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-cxx-compiler'`
                  build_cxx_compiler=`make_fullpath $tmp`
                  ;;
 
+      --with-cxx-flags=*)
+                 build_cxx_flags=`parse_option_with_equal "${opt}" 'with-cxx-flags'`
+                 ;;
+
       --with-fort-compiler=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-fort-compiler'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-fort-compiler'`
                  build_fort_compiler=`make_fullpath $tmp`
                  ;;
 
+      --with-fort-flags=*)
+                 build_fort_flags=`parse_option_with_equal "${opt}" 'with-fort-flags'`
+                 ;;
+
+      --with-link-flags=*)
+                 build_link_flags=`parse_option_with_equal "${opt}" 'with-link-flags'`
+                 ;;
+
       --with-cmake=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-cmake'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-cmake'`
                  cmake_binary=`make_fullpath $tmp`
                  ;;
 
       --with-ctest=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-ctest'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-ctest'`
                  ctest_binary=`make_fullpath $tmp`
                  ;;
 
@@ -436,47 +472,47 @@ function parse_argv()
                  ;;
 
       --with-hg=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-hg'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-hg'`
                  hg_binary=`make_fullpath $tmp`
                  ;;
 
       --with-curl=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-curl'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-curl'`
                  curl_binary=`make_fullpath $tmp`
                  ;;
 
       --with-mpi=*)
-                 tmp=`parse_option_with_equal ${opt} 'with-mpi'`
+                 tmp=`parse_option_with_equal "${opt}" 'with-mpi'`
                  mpi_root_dir=`make_fullpath $tmp`
                  ;;
 
       --amanzi-build-dir=*)
-                 tmp=`parse_option_with_equal ${opt} 'amanzi-build-dir'`
+                 tmp=`parse_option_with_equal "${opt}" 'amanzi-build-dir'`
                  amanzi_build_dir=`make_fullpath $tmp`
                   ;;
 
       --amanzi-install-prefix=*)
-                 tmp=`parse_option_with_equal ${opt} 'amanzi-install-prefix'`
+                 tmp=`parse_option_with_equal "${opt}" 'amanzi-install-prefix'`
                  amanzi_install_prefix=`make_fullpath $tmp`
                  ;;
 
       --tpl-install-prefix=*)
-                 tmp=`parse_option_with_equal ${opt} 'tpl-install-prefix'`
+                 tmp=`parse_option_with_equal "${opt}" 'tpl-install-prefix'`
                  tpl_install_prefix=`make_fullpath $tmp`
                  ;;
 
       --tpl-build-dir=*)
-                 tmp=`parse_option_with_equal ${opt} 'tpl-build-dir'`
+                 tmp=`parse_option_with_equal "${opt}" 'tpl-build-dir'`
                  tpl_build_dir=`make_fullpath $tmp`
                  ;;
 
       --tpl-download-dir=*)
-                 tmp=`parse_option_with_equal ${opt} 'tpl-download-dir'`
+                 tmp=`parse_option_with_equal "${opt}" 'tpl-download-dir'`
                  tpl_download_dir=`make_fullpath $tmp`
                  ;;
       
       --tpl-config-file=*)
-                 tmp=`parse_option_with_equal ${opt} 'tpl-config-file'`
+                 tmp=`parse_option_with_equal "${opt}" 'tpl-config-file'`
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
 
@@ -1039,6 +1075,10 @@ cd ${amanzi_build_dir}
 
 ${cmake_binary} \
               -C${tpl_config_file} \
+	      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+	      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+	      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
               -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
               -DENABLE_Structured:BOOL=${structured} \
               -DENABLE_Unstructured:BOOL=${unstructured} \
