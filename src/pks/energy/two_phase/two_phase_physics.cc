@@ -11,6 +11,9 @@ Solves:
 du/dt + v dot grad h = div Ke grad T .......... fix me!
 ------------------------------------------------------------------------- */
 
+#include "advection.hh"
+#include "eos.hh"
+#include "iem.hh"
 #include "field_evaluator.hh"
 #include "two_phase.hh"
 
@@ -108,7 +111,7 @@ void TwoPhase::ApplyDiffusion_(const Teuchos::RCP<State> S,
     S->GetFieldData("thermal_conductivity");
 
   // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(*thermal_conductivity);
+  matrix_->CreateMFDstiffnessMatrices(thermal_conductivity.ptr());
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();

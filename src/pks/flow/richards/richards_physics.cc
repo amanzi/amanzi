@@ -21,32 +21,32 @@ namespace Flow {
 void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
 
-  // update the rel perm on cells.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  // update the rel perm if needed
+  UpdatePermeabilityData_(S.ptr());
 
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S);
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("numerical_rel_perm", "flow");
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+  // update if pressure or rho has changed too, since this means new fluxes
+  S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
+  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
 
-  // std::cout << "REL PERM:" << std::endl;
-  // rel_perm->Print(std::cout);
-  // std::cout << "PRESSURE:" << std::endl;
-  // pres->Print(std::cout);
+  // NOTE we always do this, even if the FieldEvaluators say we don't need to
+  // update.  This is because previous calculations were done in a
+  // preconditioner, and therefore not put into matrix_.
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+  Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
 
   // update the stiffness matrix
-  matrix_->CreateMFDstiffnessMatrices(*rel_perm);
+  matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
 
-  // update the flux (darcy + grav)
-  Teuchos::RCP<CompositeVector> darcy_flux =
-    S->GetFieldData("darcy_flux", "flow");
+  // derive the fluxes
   matrix_->DeriveFlux(*pres, darcy_flux);
-  AddGravityFluxesToVector_(S, darcy_flux);
+  AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
 
   // assemble the full system
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_(S, matrix_);
+  AddGravityFluxes_(gvec, rel_perm, rho, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
@@ -62,8 +62,8 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // update the water content at both the old and new times.
-  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), "richards_pk");
-  S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(), "richards_pk");
+  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(), name_);
 
   // get these fields
   Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
@@ -79,9 +79,9 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
 // -------------------------------------------------------------
 // Convert abs perm vector to tensor.
 // -------------------------------------------------------------
-void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
+void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
   // currently assumes isotropic perm, should be updated
-  S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), "richards_pk");
+  S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> perm = S->GetFieldData("permeability");
   int ncells = perm->size("cell");
   int ndofs = perm->num_dofs("cell");
@@ -116,18 +116,10 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::RCP<State>& S) {
 //
 // Must be called before applying boundary conditions and global assembling.
 // -----------------------------------------------------------------------------
-void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
+void Richards::AddGravityFluxes_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
+        const Teuchos::RCP<const CompositeVector>& rel_perm,
+        const Teuchos::RCP<const CompositeVector>& rho,
         const Teuchos::RCP<Operators::MatrixMFD>& matrix) {
-
-  Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-
-  // Get the rel perm, and ensure it is up to date.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
-
-  // Get the density, in a mass basis, and ensure it is up to date.
-  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -135,22 +127,76 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int c_owned = rho->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->GetMesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+  if (rel_perm == Teuchos::null) { // no rel perm
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-    Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
-    double& Fc = matrix->Fc_cells()[c];
+      Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+      double& Fc = matrix->Fc_cells()[c];
 
-    for (int n=0; n!=nfaces; ++n) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = S->GetMesh()->face_normal(f);
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
 
-      double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-          * (*Krel)("face",f) *  (*Krel)("cell",c) * (*rho)("cell",c);
-      Ff[n] += outward_flux;
-      Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
+            * (*rho)("cell",c);
+        Ff[n] += outward_flux;
+        Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
+      }
+    }
+
+  } else if (!rel_perm->has_component("face")) { // rel perm on cells only
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+      double& Fc = matrix->Fc_cells()[c];
+
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
+
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
+            * (*rel_perm)("cell",c) * (*rho)("cell",c);
+        Ff[n] += outward_flux;
+        Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
+      }
+    }
+
+  } else if (!rel_perm->has_component("cell")) { // rel perm on faces only
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+      double& Fc = matrix->Fc_cells()[c];
+
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
+
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
+            * (*rel_perm)("face",f) * (*rho)("cell",c);
+        Ff[n] += outward_flux;
+        Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
+      }
+    }
+
+  } else { // rel perm on both cells and faces
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+      double& Fc = matrix->Fc_cells()[c];
+
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
+
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
+            * (*rel_perm)("face",f) * (*rel_perm)("cell",c) * (*rho)("cell",c);
+        Ff[n] += outward_flux;
+        Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
+      }
     }
   }
 };
@@ -159,18 +205,10 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 // Updates global Darcy vector calculated by a discretization method.
 // -----------------------------------------------------------------------------
-void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
+void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
+        const Teuchos::RCP<const CompositeVector>& rel_perm,
+        const Teuchos::RCP<const CompositeVector>& rho,
         const Teuchos::RCP<CompositeVector>& darcy_flux) {
-
-  Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
-
-  // Get the rel perm, and ensure it is up to date.
-  S->GetFieldEvaluator("relative_permeability")->HasFieldChanged(S.ptr(), "richards_pk");
-  Teuchos::RCP<const CompositeVector> Krel = S->GetFieldData("numerical_rel_perm");
-
-  // Get the density, in a mass basis, and ensure it is up to date.
-  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), "richards_pk");
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -178,23 +216,61 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<State>& S,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int f_used = darcy_flux->size("face", true);
   int f_owned = darcy_flux->size("face", false);
-  std::vector<bool> done(f_used, false);
+  std::vector<bool> done(darcy_flux->size("face",true), false);
 
-  int c_owned = rho->size("cell");
-  for (int c=0; c!=c_owned; ++c) {
-    S->GetMesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+  if (rel_perm == Teuchos::null) { // no rel perm
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
+        if (f<f_owned && !done[f]) {
+          (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal) * (*rho)("cell",c);
+          done[f] = true;
+        }
+      }
+    }
 
-    for (int n=0; n!=nfaces; ++n) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = S->GetMesh()->face_normal(f);
+  } else if (!rel_perm->has_component("face")) { // rel perm on cells only
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
+        if (f<f_owned && !done[f]) {
+          (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal)
+              * (*rel_perm)("cell",c) * (*rho)("cell",c);
+          done[f] = true;
+        }
+      }
+    }
 
-      if (f<f_owned && !done[f]) {
-        (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal)
-            * (*Krel)("cell",c) * (*Krel)("face",f) * (*rho)("cell",c);
-        done[f] = true;
+  } else if (!rel_perm->has_component("cell")) { // rel perm on faces only
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
+        if (f<f_owned && !done[f]) {
+          (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal)
+              * (*rel_perm)("face",f) * (*rho)("cell",c);
+          done[f] = true;
+        }
+      }
+    }
+
+  } else { // rel perm on both cells and faces
+    for (int c=0; c!=rho->size("cell"); ++c) {
+      darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int n=0; n!=faces.size(); ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
+        if (f<f_owned && !done[f]) {
+          (*darcy_flux)("face",f) += (((*K_)[c] * gravity) * normal)
+              * (*rel_perm)("cell",c) * (*rel_perm)("face",f) * (*rho)("cell",c);
+          done[f] = true;
+        }
       }
     }
   }

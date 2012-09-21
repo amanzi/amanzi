@@ -20,9 +20,9 @@ class WRMRichardsEvaluator : public WRMEvaluator {
  public:
 
   explicit
-  WRMRichardsEvaluator(Teuchos::ParameterList& wrm_plist);
+  WRMRichardsEvaluator(Teuchos::ParameterList& plist);
 
-  WRMRichardsEvaluator(Teuchos::ParameterList& wrm_plist,
+  WRMRichardsEvaluator(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<WRMRegionPairList>& wrms);
 
   WRMRichardsEvaluator(const WRMRichardsEvaluator& other);

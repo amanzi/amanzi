@@ -92,11 +92,11 @@ void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
     S->GetFieldData("temperature");
 
   // get conductivity, and push it into whetstone tensor
-  Teuchos::RCP<CompositeVector> thermal_conductivity =
-    S->GetFieldData("thermal_conductivity", "energy");
+  Teuchos::RCP<const CompositeVector> thermal_conductivity =
+    S->GetFieldData("thermal_conductivity");
 
   // calculate the div-grad operator, apply it to temperature, and add to residual
-  matrix_->CreateMFDstiffnessMatrices(*thermal_conductivity);
+  matrix_->CreateMFDstiffnessMatrices(thermal_conductivity.ptr());
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();

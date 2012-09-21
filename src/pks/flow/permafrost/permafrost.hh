@@ -41,14 +41,13 @@ friend class MPCCoupledFlowEnergy;
 
 public:
   // Constructors.
-  Permafrost() {};
-  Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
-           const Teuchos::RCP<TreeVector>& solution);
-  
+  Permafrost(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist,solution),
+      Richards(plist, solution) {}
 
 protected:
   // Create of physical evaluators.
-  virtual void SetupPhysicalEvaluators_(const Teuchos::RCP<State>& S);
+  virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
 private:
   // factory registration

@@ -16,21 +16,22 @@ namespace Energy {
 namespace EnergyRelations {
 
 ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
-      Teuchos::ParameterList& tc_plist) :
-    tc_plist_(tc_plist) {
-  my_key_ = tc_plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
+      Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
+  my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
+  setLinePrefix(my_key_+std::string(" evaluator"));
 
-  poro_key_ = tc_plist_.get<std::string>("porosity key", "porosity");
+  poro_key_ = plist_.get<std::string>("porosity key", "porosity");
   dependencies_.insert(poro_key_);
 
-  sat_key_ = tc_plist_.get<std::string>("saturation key", "saturation_liquid");
+  sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
   dependencies_.insert(sat_key_);
 
-  sat2_key_ = tc_plist_.get<std::string>("second saturation key", "saturation_ice");
+  sat2_key_ = plist_.get<std::string>("second saturation key", "saturation_ice");
   dependencies_.insert(sat2_key_);
 
-  ASSERT(tc_plist_.isSublist("thermal conductivity parameters"));
-  Teuchos::ParameterList sublist = tc_plist_.sublist("thermal conductivity parameters");
+  ASSERT(plist_.isSublist("thermal conductivity parameters"));
+  Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   ThermalConductivityThreePhaseFactory fac;
   tc_ = fac.createThermalConductivityModel(sublist);
 }
@@ -39,7 +40,6 @@ ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
 ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
       const ThermalConductivityThreePhaseEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    tc_plist_(other.tc_plist_),
     poro_key_(other.poro_key_),
     sat_key_(other.sat_key_),
     sat2_key_(other.sat2_key_),

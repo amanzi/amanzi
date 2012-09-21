@@ -16,27 +16,27 @@ namespace FlowRelations {
 
 #define DEBUG_FLAG 1
 
-WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& wrm_plist) :
-    wrm_plist_(wrm_plist) {
+WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariablesFieldEvaluator(plist) {
 
   // my keys are for saturation
-  s_l_key_ = wrm_plist_.get<string>("liquid saturation key", "saturation_liquid");
+  s_l_key_ = plist_.get<string>("liquid saturation key", "saturation_liquid");
   my_keys_.push_back(s_l_key_);
-  my_keys_.push_back(wrm_plist_.get<string>("ice saturation key", "saturation_ice"));
-  my_keys_.push_back(wrm_plist_.get<string>("gas saturation key", "saturation_gas"));
+  my_keys_.push_back(plist_.get<string>("ice saturation key", "saturation_ice"));
+  my_keys_.push_back(plist_.get<string>("gas saturation key", "saturation_gas"));
+  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // 1/A is the ice-liquid
-  one_on_A_key_ = wrm_plist_.get<string>("1/A key", "wrm_permafrost_one_on_A");
+  one_on_A_key_ = plist_.get<string>("1/A key", "wrm_permafrost_one_on_A");
   dependencies_.insert(one_on_A_key_);
 
   // 1/B is the gas-liquid
-  one_on_B_key_ = wrm_plist_.get<string>("1/B key", "wrm_permafrost_one_on_B");
+  one_on_B_key_ = plist_.get<string>("1/B key", "wrm_permafrost_one_on_B");
   dependencies_.insert(one_on_B_key_);
 }
 
 WRMPermafrostEvaluator::WRMPermafrostEvaluator(const WRMPermafrostEvaluator& other) :
     SecondaryVariablesFieldEvaluator(other),
-    wrm_plist_(other.wrm_plist_),
     one_on_A_key_(other.one_on_A_key_),
     one_on_B_key_(other.one_on_B_key_),
     s_l_key_(other.s_l_key_) {}

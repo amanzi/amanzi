@@ -22,8 +22,8 @@ class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  IEMWaterVaporEvaluator(Teuchos::ParameterList& iem_plist);
-  IEMWaterVaporEvaluator(Teuchos::ParameterList& iem_plist,
+  IEMWaterVaporEvaluator(Teuchos::ParameterList& plist);
+  IEMWaterVaporEvaluator(Teuchos::ParameterList& plist,
                          const Teuchos::RCP<IEMWaterVapor>& iem);
   IEMWaterVaporEvaluator(const IEMWaterVaporEvaluator& other);
 
@@ -42,7 +42,6 @@ class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
 
   Key temp_key_;
   Key mol_frac_key_;
-  Teuchos::ParameterList iem_plist_;
   Teuchos::RCP<IEMWaterVapor> iem_;
 
  private:

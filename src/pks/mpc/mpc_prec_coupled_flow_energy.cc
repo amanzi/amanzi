@@ -30,12 +30,7 @@ namespace Amanzi {
 RegisteredPKFactory<MPCCoupledFlowEnergy> MPCCoupledFlowEnergy::reg_("energy-flow preconditioner coupled");
 
 
-MPCCoupledFlowEnergy::MPCCoupledFlowEnergy(Teuchos::ParameterList &mpc_plist, const Teuchos::RCP<State>& S,
-         const Teuchos::RCP<TreeVector>& solution) :
-    StrongMPC(mpc_plist, S, solution) {};
-
-
-void MPCCoupledFlowEnergy::initialize(const Teuchos::RCP<State>& S) {
+void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
 
      StrongMPC::initialize(S);
      
@@ -56,12 +51,12 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::RCP<State>& S) {
 //     ASSERT(0);
 //   }
 
-  damping_ = mpc_plist_.get<double>("preconditioner damping", 1.0);
+  damping_ = plist_.get<double>("preconditioner damping", 1.0);
   
   is_matrix_constructed = false;
   decoupled = true;
   
-  coupled_pc_ = mpc_plist_.sublist("Coupled PC");
+  coupled_pc_ = plist_.sublist("Coupled PC");
 //   ml_plist_ = coupled_pc_.sublist("ML Parameters");
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
@@ -84,7 +79,7 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::RCP<State>& S) {
 
 };
 
-void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices (const Teuchos::RCP<State>& S) 
+void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices (const Teuchos::Ptr<State>& S) 
 {
     Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
 //       Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");

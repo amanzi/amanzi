@@ -21,8 +21,11 @@ This is simply the conserved quantity in Richards equation.
 namespace Amanzi {
 namespace Flow {
 
-RichardsWaterContent::RichardsWaterContent(Teuchos::ParameterList& wc_plist) {
+RichardsWaterContent::RichardsWaterContent(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
   my_key_ = std::string("water_content");
+  setLinePrefix(my_key_+std::string(" evaluator"));
+
   dependencies_.insert(std::string("porosity"));
 
   dependencies_.insert(std::string("saturation_liquid"));

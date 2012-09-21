@@ -52,11 +52,13 @@ namespace Amanzi {
 class MPCCoupledFlowEnergy : public StrongMPC {
 
  public:
-  MPCCoupledFlowEnergy(Teuchos::ParameterList& mpc_plist, const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& soln);
+  MPCCoupledFlowEnergy(Teuchos::ParameterList& plist,
+                       const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist, soln),
+      StrongMPC(plist, soln) {}
 
   // initialize the preconditioner
-  virtual void initialize(const Teuchos::RCP<State>& S);
+  virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
@@ -71,7 +73,7 @@ class MPCCoupledFlowEnergy : public StrongMPC {
 
  protected:
 //   void precon_version1(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-  void SymbolicAssembleGlobalMatrices(const Teuchos::RCP<State>& S);
+  void SymbolicAssembleGlobalMatrices(const Teuchos::Ptr<State>& S);
   
   Teuchos::RCP<Epetra_MultiVector> D_pT_;
   Teuchos::RCP<Epetra_MultiVector> D_Tp_;

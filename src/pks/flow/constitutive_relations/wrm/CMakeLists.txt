@@ -16,7 +16,7 @@ add_library(flow_relations_wrm
   wrm_ice_water_evaluator.cc wrm_richards_evaluator.cc
   wrm_evaluator.cc
   wrm_factory.cc
-  wrm_linear_system.cc wrm_van_genuchten.cc
+  wrm_linear_system.cc wrm_van_genuchten.cc wrm_zero_relperm.cc
   pc_ice_water.cc
   rel_perm_evaluator.cc
   )
