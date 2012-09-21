@@ -2182,6 +2182,36 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
                 }
 
             }
+          else if (rgn->type() == AmanziGeometry::PLANE) 
+            {
+              if (celldim == 2) {
+                mset1 = MSet_New(mesh,setname.c_str(),MFACE);
+              
+                int ncells = num_entities(CELL, USED);
+              
+                for (int ic = 0; ic < ncells; ic++)
+                {
+                  std::vector<AmanziGeometry::Point> ccoords(spacedim);
+
+                  cell_get_coordinates(ic, &ccoords);
+
+                  bool on_plane = true;
+                  for (int j = 0; j < ccoords.size(); j++)
+                    {
+                      if (!rgn->inside(ccoords[j]))
+                          {
+                            on_plane = false;
+                            break;
+                          }
+                    }
+                  
+                  if (on_plane)
+                    {
+                      MSet_Add(mset1,cell_id_to_handle[ic]);
+                    }
+                }
+              }
+            }
           else
             {
               Errors::Message mesg("Region type not applicable/supported for cell sets");
