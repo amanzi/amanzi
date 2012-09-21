@@ -20,6 +20,9 @@ FALSE=0
 system_name=`uname`
 system_arch=`uname -m`
 
+# Test script controls
+print_exit=${FALSE}
+
 # Known compiler lists
 known_c_compilers="mpicc cc gcc icc"
 known_cxx_compilers="mpiCC mpicxx CC g++ icpc"
@@ -363,6 +366,10 @@ function parse_argv()
                 print_usage
                 exit_now 0
                 ;;
+
+      --print)
+                 print_exit=${TRUE}
+		 ;;
 
       --prefix=*)
                  tmp=`parse_option_with_equal ${opt} 'prefix'`
@@ -932,6 +939,12 @@ check_compilers
 # Check the cmake, hg and curl tools
 check_tools
 
+# Print and exit if --print is set
+if [ "${print_exit}" -eq "${TRUE}" ]; then
+  print_variable_values
+  exit_now 0
+fi
+
 # Change the branch
 if [ ! -z "${amanzi_branch}" ]; then
   hg_change_branch ${amanzi_branch}
@@ -1053,7 +1066,7 @@ status_message "Amanzi build complete"
 # Amanzi Test Suite
 if [ "${test_suite}" -eq "${TRUE}" ]; then
   status_message "Run Amanzi test suite"
-  ${ctest_binary} --output-on-failure --output-log=amanzi-test-results.log -j ${parallel_jobs}
+  ${ctest_binary} --output-on-failure --output-log amanzi-test-results.log -j ${parallel_jobs}
   status_message "Test results in amanzi-test-results.log"
   if [ $? -ne 0 ]; then
     error_message "Amanzi test suite failed"
