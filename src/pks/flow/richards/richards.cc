@@ -12,6 +12,7 @@ Authors: Neil Carlson (version 1)
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 
+#include "upwinding.hh"
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
@@ -44,6 +45,7 @@ Richards::Richards(Teuchos::ParameterList& flow_plist,
   solution_ = solution;
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
+  
 };
 
 

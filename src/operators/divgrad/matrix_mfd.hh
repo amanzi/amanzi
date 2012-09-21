@@ -139,6 +139,19 @@ public:
                   const Teuchos::RCP<CompositeVector>& flux) const;
   void DeriveCellVelocity(const CompositeVector& flux,
                           const Teuchos::RCP<CompositeVector>& velocity) const;
+                          
+//   Teuchos::SerialDenseMatrix<int, double> get_Aff_cells ( int cell ) {
+//           return Aff_cells_[cell];
+//   }
+//   Epetra_SerialDenseVector get_Acf_cells ( int cell ) {
+//           return Acf_cells_[cell];
+//   }
+//   Epetra_SerialDenseVector get_Afc_cells ( int cell ) {
+//           return Afc_cells_[cell];
+//   }
+//   double get_Acc_cell( int cell ) {
+//           return Acc_cells_[cell];
+//   }
 
 private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -186,6 +199,8 @@ private:
   Teuchos::RCP<const Epetra_Map> supermap_;
   Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO
   Teuchos::RCP<CompositeVector> vector_y_;
+  
+  friend class MPCCoupledFlowEnergy;
 };
 
 }  // namespace AmanziFlow

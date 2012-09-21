@@ -24,6 +24,10 @@
 #include "pk_factory.hh"
 #include "bdf_time_integrator.hh"
 
+// #include "mpc_prec_coupled_flow_energy.hh"
+
+// class Amanzi::MPCCoupledFlowEnergy;
+
 namespace Amanzi {
 namespace Flow {
 
@@ -33,12 +37,15 @@ const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
 const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4;
 
 class Richards : public PK {
+        
+// friend class Amanzi::MPCCoupledFlowEnergy;
+// friend void MPCCoupledFlowEnergy::ComputeShurComplementPK();
 
 public:
   Richards() {};
   Richards(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
-           const Teuchos::RCP<TreeVector>& solution);
-
+          const Teuchos::RCP<TreeVector>& solution);
+  
   // main methods
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::RCP<State>& S);
@@ -74,6 +81,11 @@ public:
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  
+  // get the preconditioner
+//   Teuchos::RCP<Operators::MatrixMFD> get_precon(){ return preconditioner_};
+  
+  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
 
 protected:
   // Create of physical evaluators.
@@ -123,7 +135,7 @@ protected:
   // mathematical operators
   Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+//   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
   double atol_;
   double rtol_;
   double time_step_reduction_factor_;
@@ -137,6 +149,8 @@ protected:
 
   // factory registration
   static RegisteredPKFactory<Richards> reg_;
+  
+  
 };
 
 }  // namespace AmanziFlow

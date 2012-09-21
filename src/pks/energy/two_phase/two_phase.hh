@@ -30,6 +30,10 @@ us to the air-water system.
 
 #include "PK.hh"
 
+// class IEM;
+// class EOS;
+// class Amanzi::Operators::Advection;
+
 namespace Amanzi {
 namespace Energy {
 
@@ -76,6 +80,8 @@ public:
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  
+  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
 
 protected:
   // for now, several points of entry into the science, as I'm not sure where
@@ -108,7 +114,7 @@ protected:
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+//   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
 
   // models for evaluating BCs
   Teuchos::RCP<Relations::EOS> eos_liquid_;
@@ -123,6 +129,8 @@ protected:
 private:
   // factory registration
   static RegisteredPKFactory<TwoPhase> reg_;
+  
+  friend  class MPCCoupledFlowEnergy;
 };
 
 } // namespace Energy

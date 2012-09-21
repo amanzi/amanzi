@@ -36,12 +36,15 @@ namespace Amanzi {
 namespace Flow {
 
 class Permafrost : public Richards {
+        
+friend class MPCCoupledFlowEnergy;
 
 public:
   // Constructors.
   Permafrost() {};
   Permafrost(Teuchos::ParameterList& flow_plist, const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
+  
 
 protected:
   // Create of physical evaluators.
@@ -50,6 +53,8 @@ protected:
 private:
   // factory registration
   static RegisteredPKFactory<Permafrost> reg_;
+  
+  
 };
 
 }  // namespace AmanziFlow

@@ -32,6 +32,8 @@ protected:
 
 private:
   static RegisteredPKFactory<ThreePhase> reg_;
+  
+  friend  class MPCCoupledFlowEnergy;
 };
 
 } // namespace Energy

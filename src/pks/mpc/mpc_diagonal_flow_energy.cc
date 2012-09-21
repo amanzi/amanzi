@@ -25,8 +25,11 @@ MPCDiagonalFlowEnergy::MPCDiagonalFlowEnergy(Teuchos::ParameterList& mpc_plist,
 
 
 void MPCDiagonalFlowEnergy::initialize(const Teuchos::RCP<State>& S) {
+        
   StrongMPC::initialize(S);
 
+  std::cout<<"before preconditioning approac\n";
+  exit(0);
   std::string methodstring = mpc_plist_.get<std::string>("preconditioning approach");
   if (methodstring == "diagonal") {
     method_ = PRECON_DIAGONAL;

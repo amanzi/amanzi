@@ -17,6 +17,9 @@ Author: Ethan Coon
 
 #include "bdf1_time_integrator.hh"
 
+#include "iem.hh"
+#include "eos.hh"
+
 #include "eos_evaluator.hh"
 #include "iem_evaluator.hh"
 #include "two_phase_energy_evaluator.hh"

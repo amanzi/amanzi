@@ -323,6 +323,8 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
   Aff_->GlobalAssemble();
   Sff_->GlobalAssemble();
+  
+  
 
   if (flag_symmetry_) {
     Afc_ = Acf_;
@@ -368,7 +370,7 @@ void MatrixMFD::AssembleGlobalMatrices() {
     (*Acc_)[c] = Acc_cells_[c];
     (*Acf_).ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
     (*Aff_).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
-
+    
     if (!flag_symmetry_)
       (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
   }
@@ -388,6 +390,9 @@ void MatrixMFD::AssembleGlobalMatrices() {
     }
   }
   rhs_->GatherGhostedToMaster("face");
+  
+//   exit(0);
+  
 }
 
 
@@ -423,7 +428,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
         Schur(n, n) = 1.0;
       }
     }
-
+   
     Epetra_IntSerialDenseVector faces_GID(nfaces);
     for (int n=0; n!=nfaces; ++n) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
     (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
@@ -490,13 +495,20 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));
   Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
+  
+  
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc_ inv(Acc_) Xc
   int ierr;
-
+  
   ierr  = Tc.ReciprocalMultiply(1.0, *Acc_, *X.ViewComponent("cell", false), 0.0);
+  
+  
   ierr |= (*Afc_).Multiply(true, Tc, Tf);  // Afc_ is kept in transpose form
   Tf.Update(1.0, *X.ViewComponent("face", false), -1.0);
+ 
+ 
+//   exit(0);
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
   if (prec_method_ == TRILINOS_ML) {
@@ -510,11 +522,15 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #endif
   } 
-
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
+
   Tc.Update(1.0, *X.ViewComponent("cell", false), -1.0);
+  
+  
   ierr |= Y->ViewComponent("cell", false)->ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
+  
+
 
   if (ierr) {
     Errors::Message msg("MatrixMFD::ApplyInverse has failed in calculating y = A*x.");

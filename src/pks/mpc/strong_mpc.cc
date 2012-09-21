@@ -216,6 +216,10 @@ void StrongMPC::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector
     // Fill the preconditioned u as the block-diagonal product using each sub-PK.
     (*pk)->precon(pk_u, pk_Pu);
   }
+  
+//   std::cout<<*(((Pu->SubVector("flow"))->data())->ViewComponent("cell", false));
+//   cout<<"Exit from StrongMPC precon\n";
+//   exit(0);
 };
 
 
@@ -247,6 +251,8 @@ double StrongMPC::enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tre
     double tmp_norm = (*pk)->enorm(pk_u, pk_du);
     norm = std::max(norm, tmp_norm);
   }
+  cout<<"Norm from StrongMPC::enorm: "<<norm<<endl;
+  
   return norm;
 };
 
@@ -267,6 +273,7 @@ void StrongMPC::update_precon(double t, Teuchos::RCP<const TreeVector> up, doubl
     }
 
     // update precons of each of the sub-PKs
+    std::cout << "Before update_precon in strong_mpc.cc\n";
     (*pk)->update_precon(t, pk_up, h);
   };
 };
