@@ -1158,7 +1158,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   }
 
   if (!bad_faces2.empty()) {
-    os << "ERROR: found ghost faces that are not exact copies of their master:";
+    os << "WARNING: found ghost faces with the same orientation and nodes but face_get_nodes returns nodes in different order (1,2,3,4) vs (2,3,4,1)";
     write_list(bad_faces2, MAX_OUT);
     error = true; // some controversy whether this should be considered an error
   }
