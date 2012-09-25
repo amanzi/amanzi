@@ -478,7 +478,7 @@ Teuchos::ParameterList get_Regions_List(Teuchos::ParameterList* plist) {
           std::string file = rlist.sublist((rlist.name(i))).sublist("Region: Labeled Set").get<std::string>("File");
           boost::filesystem::path meshfile_path(meshfile);
           boost::filesystem::path labeled_set_meshfile_path(file);
-          if (!boost::filesystem::equivalent(meshfile_path, labeled_set_meshfile_path)) {
+          if (meshfile != file) {
             Errors::Message message("There is a labeled set region that refers to a mesh file that is different from the mesh file that is defined in the Mesh list: " + file);
             Exceptions::amanzi_throw(message);
           }
@@ -549,7 +549,14 @@ Teuchos::ParameterList translate_Mesh_List(Teuchos::ParameterList* plist) {
 
           // Assume that if the framework is unspecified then stk::mesh is used
           // This is obviously a kludge but I don't know how to get around it
-          if (numproc_ > 1 && (framework == "Unspecified" || framework == "stk::mesh")) {
+          //
+          // Eventually we have to be able to tell it if we have
+          // prepartitioned files or if we have a single file that we
+          // want to partition 
+
+          // if (numproc_ > 1 && (framework == "Unspecified" || framework == "stk::mesh")) {
+
+          if (numproc_ > 1) {
             std::string par_file = file.replace(file.size()-4,4,std::string(".par"));
 
             fn_list.set<std::string>("File",par_file);
