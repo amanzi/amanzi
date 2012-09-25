@@ -1861,6 +1861,11 @@ PorousMedia::richard_init_to_steady()
 	  }
 
 	  while (continue_iterations) {
+
+            if (steady_use_PETSc_snes) {
+                rs->SetCurrentTimestep(k);
+            }
+              
 	    // Advance the state data structures
 	    for (int lev=0;lev<num_active_levels;lev++) {
 	      PorousMedia& pm = getLevel(lev);

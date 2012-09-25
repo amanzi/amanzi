@@ -115,7 +115,7 @@ else(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
     #  (2) PETSC_DIR/<lib,Lib>
     #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
     #
-    set(petsc_lib_names "petsc")
+    set(petsc_lib_names "petsc;superlu_dist_2.5;superlu_4.2")
     if (PETSC_LIBRARY_DIR)
 
         if (EXISTS "${PETSC_LIBRARY_DIR}")

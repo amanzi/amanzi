@@ -25,9 +25,12 @@ static Real rtol_DEF = 1e-20;
 static Real stol_DEF = 1e-12;
 static bool scale_soln_before_solve_DEF = true;
 static bool semi_analytic_J_DEF = false;
-
 static bool centered_diff_J_DEF = true;
 static Real variable_switch_saturation_threshold_DEF = 0.9996;
+
+static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
+static bool record_entire_solve = false;
+static std::string record_file = "SNES";
 
 RSParams::RSParams()
 {
@@ -51,6 +54,7 @@ RSParams::RSParams()
   semi_analytic_J = semi_analytic_J_DEF;
   centered_diff_J = centered_diff_J_DEF;
   variable_switch_saturation_threshold = variable_switch_saturation_threshold_DEF;
+  max_num_Jacobian_reuses = max_num_Jacobian_reuses_DEF;
 }
 
 static RichardSolver* static_rs_ptr = 0;
@@ -60,6 +64,19 @@ RichardSolver::SetTheRichardSolver(RichardSolver* ptr)
 {
     static_rs_ptr = ptr;
 }
+
+void 
+RichardSolver::SetCurrentTimestep(int step)
+{
+    current_timestep = step;
+}
+
+int 
+RichardSolver::GetCurrentTimestep() const
+{
+    return current_timestep;
+}
+
 
 // Forward declaration of local helper functions
 static void MatSqueeze(Mat& J);
@@ -299,6 +316,28 @@ PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm,
     PetscFunctionReturn(ierr);
 }
 
+void
+RichardSolver::ResetRemainingJacobianReuses()
+{
+    num_remaining_Jacobian_reuses = Parameters().max_num_Jacobian_reuses;
+}
+
+void
+RichardSolver::UnsetRemainingJacobianReuses()
+{
+    num_remaining_Jacobian_reuses = 0;
+}
+
+bool 
+RichardSolver::ReusePreviousJacobian()
+{
+    --num_remaining_Jacobian_reuses;
+    if (ParallelDescriptor::IOProcessor() && num_remaining_Jacobian_reuses > 0) {
+        std::cout << "Reusing J, " << num_remaining_Jacobian_reuses << " reuses left." << std::endl;
+    }
+    return (num_remaining_Jacobian_reuses > 0);
+}
+
 int
 RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& nl_data)
 {
@@ -339,6 +378,8 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
       ierr = SNESLineSearchSetPostCheck(snes,PostCheck,(void *)(&check_ctx));CHKPETSC(ierr);  
   }
   ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULL); CHKPETSC(ierr);
+
+  UnsetRemainingJacobianReuses();
 
   RichardSolver::SetTheRichardSolver(this);
   dump_cnt = 0;
@@ -1247,7 +1288,7 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
   PetscFunctionReturn(0);
 } 
 
-void RecordSolve(std::string& record_file,Vec& x,Vec& y,Vec& w,Vec& F,Vec& G,CheckCtx* check_ctx)
+void RecordSolve(std::string& record_file,Vec& p,Vec& dp,Vec& pnew,Vec& F,Vec& G,CheckCtx* check_ctx)
 {
     if (ParallelDescriptor::IOProcessor())
         if (!BoxLib::UtilCreateDirectory(record_file, 0755))
@@ -1256,17 +1297,35 @@ void RecordSolve(std::string& record_file,Vec& x,Vec& y,Vec& w,Vec& F,Vec& G,Che
     RichardSolver* rs = check_ctx->rs;
     Layout& layout = check_ctx->rs->GetLayout();
     int nLevs = rs->GetNumLevels();
-    MFTower res(layout,MFTower::CC,1,0,nLevs);
-    std::string resfile=BoxLib::Concatenate(record_file + "/Res_undamped_",dump_cnt,2);
-    std::string updfile=BoxLib::Concatenate(record_file + "/Update_undamped_",dump_cnt,2);
+    MFTower res(layout,MFTower::CC,1,1,nLevs);
 
     PetscErrorCode ierr;
+    int timestep = rs->GetCurrentTimestep();
+    std::string step_file=BoxLib::Concatenate(record_file + "/Step_",timestep,2);
+    std::string resfile=BoxLib::Concatenate(step_file + "/Res_undamped_",dump_cnt,2);
+    std::string updfile=BoxLib::Concatenate(step_file + "/Update_undamped_",dump_cnt,2);
+    std::string poldfile=BoxLib::Concatenate(step_file + "/Pold_",dump_cnt,2);
+    std::string pnewfile=BoxLib::Concatenate(step_file + "/Pnew_undamped_",dump_cnt,2);
+
     ierr = layout.VecToMFTower(res,G,0);
     res.Write(resfile);
-    ierr = layout.VecToMFTower(res,y,0);
+    ierr = layout.VecToMFTower(res,dp,0);
     res.Write(updfile);
+    ierr = layout.VecToMFTower(res,p,0);
+    res.Write(poldfile);
+    ierr = layout.VecToMFTower(res,pnew,0);
+    res.Write(pnewfile);
+
+    MFTower& rhos = rs->GetAlpha(); //Handy data container
+    for (int lev=0; lev<nLevs; ++lev) {
+        rs->GetPMlevel(lev).calcInvPressure(rhos[lev],res[lev]);  
+    }
+
+    std::string rsnewfile=BoxLib::Concatenate(step_file + "/RSnew_undamped_",dump_cnt,2);
+    rhos.Write(rsnewfile);
+
     if (ParallelDescriptor::IOProcessor()) {
-        std::cout << ".......Residual and update written to " << resfile << " and " << updfile << std::endl;
+        std::cout << ".......Residual, dp, p_old, p_new, rs_new written to " << step_file << std::endl;
     }
     dump_cnt++;
 }
@@ -1319,8 +1378,6 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     (*func)(snes,w,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);    
 
-    bool record_entire_solve = false;
-    std::string record_file = "SNES";
     if (record_entire_solve) {
         RecordSolve(record_file,x,y,w,F,G,check_ctx);
     }
@@ -1522,8 +1579,6 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
     (*func)(snes,pnew,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);    
 
-    bool record_entire_solve = false;
-    std::string record_file = "SNES";
     if (record_entire_solve) {
         RecordSolve(record_file,p,dp,pnew,F,G,check_ctx);
     }
@@ -2081,6 +2136,11 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
 
   PetscFunctionBegin;
   PetscValidHeaderSpecific(color,MAT_FDCOLORING_CLASSID,6);
+
+  if (rs->ReusePreviousJacobian()) {
+      PetscFunctionReturn(0);
+  }
+
   *flag = SAME_NONZERO_PATTERN;
   ierr  = SNESGetFunction(snes,&f,(PetscErrorCode (**)(SNES,Vec,Vec,void*))&ff,0);CHKPETSC(ierr);
   ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULL);CHKPETSC(ierr);
@@ -2097,6 +2157,9 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
     ierr = MatAssemblyBegin(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
     ierr = MatAssemblyEnd(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   }
+
+  rs->ResetRemainingJacobianReuses();
+
   PetscFunctionReturn(0);
 }
 

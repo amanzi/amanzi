@@ -29,6 +29,7 @@ struct RSParams
     bool semi_analytic_J; // Explicitly use dPc/ds relationship in computing the Jacobian
     bool centered_diff_J; // Numerical J is computed with centered difference instead of forward
     Real variable_switch_saturation_threshold; // Newton iterate s if this is less than s, otherwise p
+    int max_num_Jacobian_reuses; // If > 0, will try to reuse J in NL solve, reset for each solve
 };
 
 class RichardSolver
@@ -112,6 +113,12 @@ public:
 	    int             timestep,
             RichardNLSdata& nl_data);
     
+  void ResetRemainingJacobianReuses();
+  void UnsetRemainingJacobianReuses();
+  bool ReusePreviousJacobian();
+
+  void SetCurrentTimestep(int step);
+  int GetCurrentTimestep() const; 
 
 protected:
   void BuildOpSkel(Mat& J);
@@ -176,6 +183,9 @@ protected:
   Array<Real> gravity;
   Array<Real> density;
   Real mytime, mydt;
+
+  int num_remaining_Jacobian_reuses;
+  int current_timestep;
 };
 
 #endif
