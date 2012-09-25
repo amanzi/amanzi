@@ -420,7 +420,6 @@ int Darcy_PK::Advance(double dT_MPC)
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
-  *pdot_cells = *solution_cells;
 
   int max_itrs = ti_specs_sss.ls_specs.max_itrs;
   double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
@@ -435,10 +434,13 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   // calculate time derivative and 2nd-order solution approximation
-  for (int c = 0; c < ncells_owned; c++) {
-    double p_prev = (*pdot_cells)[c];
-    (*pdot_cells)[c] = ((*solution)[c] - p_prev) / dT; 
-    (*solution)[c] = p_prev + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+  if (dT_method_ == FLOW_DT_ADAPTIVE) {
+    Epetra_Vector& pressure = FS->ref_pressure();  // pressure at t^n
+
+    for (int c = 0; c < ncells_owned; c++) {
+      (*pdot_cells)[c] = ((*solution)[c] - pressure[c]) / dT; 
+      (*solution)[c] = pressure[c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+    }
   }
 
   // estimate time multiplier
