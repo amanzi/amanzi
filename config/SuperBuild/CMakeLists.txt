@@ -183,6 +183,11 @@ endif()
 #     MPIEXEC_POSTFLAGS
 find_package(MPI)
 
+# The FindMPI package uses FindPackageHandleStandardArgs
+# to MPI_<lang>_FOUND. For consistency, I set MPI_FORTRAN_FOUND
+# to MPI_Fortran_FOUND
+set(MPI_Fortran_FOUND ${MPI_FORTRAN_FOUND})
+
 # Warn the user if MPI information is not found
 if ( NOT MPI_C_FOUND )
   message(WARNING "Failed to locate MPI C include and library files")
@@ -199,6 +204,7 @@ endif()
 # Add MPI to the build if any MPI_*_FOUND == FALSE
 if ( MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND )
   message(STATUS "Found MPI")
+  set(BUILD_MPI FALSE)
   set(mpi_var_list COMPILER COMPILE_FLAGS INCLUDE_PATH LINK_FLAGS LIBRARIES)
   foreach ( lang C CXX Fortran )
     foreach ( var ${mpi_var_list} )
@@ -276,8 +282,6 @@ endif()
 #     override the find package results.
 
 # - MPI execute binary
-print_variable(MPI_EXEC)
-print_variable(MPIEXEC)
 if (NOT MPI_EXEC)
 
   if ( MPIEXEC )

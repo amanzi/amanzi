@@ -226,6 +226,17 @@ echo "--------------------------------------------------------------------------
 echo ""
 
 # Configure (CMake) 
+#cmake \
+#    -D CMAKE_C_COMPILER:FILEPATH=`which cc` \
+#    -D CMAKE_CXX_COMPILER:FILEPATH=`which CC` \
+#    -D CMAKE_Fortran_COMPILER:FILEPATH=`which ftn` \
+#    -D TPL_INSTALL_PREFIX:PATH=${tpl_install_prefix} \
+#    -D CMAKE_BUILD_TYPE:STRING=${tpl_build_type} \
+#    -D MPI_EXEC:STRING='/usr/bin/aprun' \
+#    -D ENABLE_HYPRE:BOOL=TRUE \
+#    -D Trilinos_Build_Config_File:FILEPATH=${libsci_file} \
+#    ${tpl_project_root}
+
 cmake \
     -D CMAKE_C_COMPILER:FILEPATH=`which cc` \
     -D CMAKE_CXX_COMPILER:FILEPATH=`which CC` \
@@ -234,9 +245,10 @@ cmake \
     -D CMAKE_BUILD_TYPE:STRING=${tpl_build_type} \
     -D MPI_EXEC:STRING='/usr/bin/aprun' \
     -D ENABLE_HYPRE:BOOL=TRUE \
-    -D Trilinos_Build_Config_File:FILEPATH=${libsci_file} \
+    -D BLAS_LIBRARIES:STRING=" " \
+    -D LAPACK_LIBRARIES:STRING=" " \
     ${tpl_project_root}
-
+exit 0
 if [ $? -ne 0 ] ; then
     echo "CMake configure failed"
     exit $?
