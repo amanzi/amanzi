@@ -35,7 +35,8 @@ public:
 
   Teuchos::RCP<CompositeVector> field() { return field_; }
 
-  virtual void Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux) = 0;
+  virtual void Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux,
+                     bool include_bc_fluxes=true) = 0;
 
 protected:
   int num_dofs_;

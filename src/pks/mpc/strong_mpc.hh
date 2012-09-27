@@ -64,6 +64,8 @@ public:
   //    state.
   virtual void changed_solution();
 
+  // -- Admissibility of the solution.
+  virtual bool is_admissible(Teuchos::RCP<const TreeVector> u);
 
 private:
   // factory registration

@@ -90,6 +90,9 @@ void TwoPhase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   preconditioner_->InitPreconditioner(mfd_pc_plist);
+
+  // constraint on max delta T, which kicks us out of bad iterates faster?
+  dT_max_ = plist_.get<double>("maximum temperature change", 10.);
 };
 
 
@@ -203,6 +206,18 @@ void TwoPhase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& tem
     }
   }
 };
+
+bool TwoPhase::is_admissible(Teuchos::RCP<const TreeVector> up) {
+  Teuchos::RCP<const CompositeVector> temp = up->data();
+  Teuchos::RCP<const CompositeVector> temp0 = S_->GetFieldData("temperature");
+
+  for (int c=0; c!=temp->size("cell"); ++c) {
+    if (abs((*temp)("cell",c) - (*temp0)("cell",c)) > dT_max_) {
+      return false;
+    }
+  }
+  return true;
+}
 
 } // namespace Energy
 } // namespace Amanzi

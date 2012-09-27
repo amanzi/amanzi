@@ -22,10 +22,6 @@ namespace Amanzi {
 void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
   PKDefaultBase::setup(S);
 
-  // convergence criteria
-  atol_ = plist_.get<double>("absolute error tolerance",1.0);
-  rtol_ = plist_.get<double>("relative error tolerance",1.0);
-
   // timestep evolution
   dt_ = plist_.get<double>("initial time step", 1.);
   time_step_reduction_factor_ =

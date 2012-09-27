@@ -31,7 +31,8 @@ public:
                        const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   virtual void set_flux(const Teuchos::RCP<const CompositeVector>& flux);
-  virtual void Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux);
+  virtual void Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux,
+                     bool include_bc_fluxes=true);
 
 private:
   void IdentifyUpwindCells_();

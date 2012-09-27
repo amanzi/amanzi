@@ -112,7 +112,7 @@ void StrongMPC::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector
     // Fill the preconditioned u as the block-diagonal product using each sub-PK.
     (*pk)->precon(pk_u, pk_Pu);
   }
-  
+
 //   std::cout<<*(((Pu->SubVector("flow"))->data())->ViewComponent("cell", false));
 //   cout<<"Exit from StrongMPC precon\n";
 //   exit(0);
@@ -150,7 +150,7 @@ double StrongMPC::enorm(Teuchos::RCP<const TreeVector> u,
     norm = std::max(norm, tmp_norm);
   }
   cout<<"Norm from StrongMPC::enorm: "<<norm<<endl;
-  
+
   return norm;
 };
 
@@ -189,6 +189,28 @@ void StrongMPC::changed_solution() {
        pk != sub_pks_.end(); ++pk) {
     (*pk)->changed_solution();
   }
+};
+
+
+// -----------------------------------------------------------------------------
+// Compute a norm on u-du and returns the result.
+// For a Strong MPC, the enorm is just the max of the sub PKs enorms.
+// -----------------------------------------------------------------------------
+bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
+  // loop over sub-PKs
+  for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+
+    // pull out the u sub-vector
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
+    if (pk_u == Teuchos::null) {
+      Errors::Message message("MPC: vector structure does not match PK structure");
+      Exceptions::amanzi_throw(message);
+    }
+
+    if (!(*pk)->is_admissible(pk_u)) return false;
+  }
+  return true;
 };
 
 } // namespace

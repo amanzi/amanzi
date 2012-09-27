@@ -70,8 +70,9 @@ public:
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-  
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+
+  // problems with temperatures -- setting a range of admissible temps
+  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
 protected:
   // for now, several points of entry into the science, as I'm not sure where
@@ -98,11 +99,14 @@ protected:
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-//   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
 
   // models for evaluating BCs
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
+
+  // constraint on max dT
+  double dT_max_;
 
 private:
   // factory registration

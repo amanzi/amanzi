@@ -49,6 +49,14 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   //    state.
   virtual void changed_solution();
 
+ protected:
+  // error criteria
+  double atol_, rtol_;
+  double atol0_, rtol0_;
+  bool adapt_tols_to_h_;
+  double min_tol_h_;
+
+
 };
 
 

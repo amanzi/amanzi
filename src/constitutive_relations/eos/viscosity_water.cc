@@ -11,6 +11,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "errors.hh"
 #include "viscosity_water.hh"
 
 namespace Amanzi {
@@ -39,7 +40,14 @@ double ViscosityWater::Viscosity(double T) {
     double A = (kbv2_ + kcv2_*dT)*dT;
     xi = A/(T - 168.15);
   }
-  return 0.001 * pow(10.0, xi);
+  double visc = 0.001 * pow(10.0, xi);
+
+  if (visc < 1.e-16) {
+    std::cout << "Invalid temperature, T = " << T << std::endl;
+    Errors::Message m("Cut time step");
+    Exceptions::amanzi_throw(m);
+  }
+  return visc;
 };
 
 double ViscosityWater::DViscosityDT(double T) {

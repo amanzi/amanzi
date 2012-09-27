@@ -19,6 +19,7 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "wrm_richards_evaluator.hh"
 
 
 
@@ -268,7 +269,7 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
         if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
         ml_prec_->SetParameterList(ml_plist_);
         ml_prec_->ComputePreconditioner();
- 
+
 
 //         exit(0);
 };

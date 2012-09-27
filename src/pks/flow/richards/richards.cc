@@ -243,6 +243,31 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     matrix_->DeriveFlux(*pres, darcy_flux);
     AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
   }
+
+  // As a diagnostic, calculate the mass balance error
+  if (S_next_ != Teuchos::null) {
+    Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
+    Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData("water_content");
+    Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
+    CompositeVector error(*wc1);
+
+    for (int c=0; c!=error.size("cell"); ++c) {
+      error("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
+
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      error.mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int n=0; n!=faces.size(); ++n) {
+        error("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n] * dt;
+      }
+    }
+
+    double einf(0.0);
+    error.NormInf(&einf);
+    // VerboseObject stuff.
+    Teuchos::OSTab tab = getOSTab();
+    *out_ << "Final Mass Balance Error: " << einf << std::endl;
+  }
 };
 
 
@@ -378,13 +403,14 @@ void Richards::UpdateBoundaryConditionsPreconditioner_() {
   UpdateBoundaryConditions_();
 
   // Attempt of a hack to deal with zero rel perm
-  double eps = 1.e-16;
-  Teuchos::RCP<const CompositeVector> relperm =
-      S_next_->GetFieldData("numerical_rel_perm");
+  double eps = 1.e-12;
+  Teuchos::RCP<CompositeVector> relperm =
+      S_next_->GetFieldData("numerical_rel_perm", name_);
   for (int f=0; f!=relperm->size("face"); ++f) {
     if ((*relperm)("face",f) < eps) {
-      bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MFD_BC_FLUX;
       bc_values_[f] = 0.0;
+      (*relperm)("face",f) = 0.5*eps;
     }
   }
 };
