@@ -32,6 +32,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${DBG_SOURCE_DIR})
 
 
 # External (TPL) include directories

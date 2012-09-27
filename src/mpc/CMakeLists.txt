@@ -38,7 +38,7 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
-
+include_directories(${DBG_SOURCE_DIR})
 
 
 # Chemistry includes directory
@@ -67,7 +67,7 @@ list(REVERSE mpc_tpl_libs)
 file(GLOB mpc_inc_files "*.hpp")
 add_amanzi_library(mpc 
                    SOURCE MPC.cpp Unstructured_observations.cpp HEADERS ${mpc_inc_files}
-                   LINK_LIBS time_integration solvers output state simple_mesh mesh_data ${mpc_tpl_libs})
+                   LINK_LIBS time_integration solvers output state simple_mesh mesh_data dbg ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
 #if (0)
