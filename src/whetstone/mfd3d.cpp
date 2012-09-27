@@ -664,7 +664,7 @@ int MFD3D::stability_optimized(int cell,
     } else if (loop == 2) {
       double trace = 0.0;
       for (int k = 0; k < nrows; k++) trace += Mc(k, k);
-      for (int k = 0; k < mcols; k++) if (P(k, k) == 0.0) P(k, k) = trace / (d * nrows);
+      for (int k = 0; k < mcols; k++) if (P(k, k) == 0.0) P(k, k) = trace / (nrows * d);
     }
   }
 

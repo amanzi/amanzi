@@ -722,7 +722,7 @@ void Richards_PK::ComputePreconditionerMFD(
   // DEBUG
   // Matrix_Audit audit(mesh_, matrix_opeartor);
   // audit.InitAudit();
-  // audit.CheckSpectralBounds();
+  // audit.RunAudit();
 }
 
 
