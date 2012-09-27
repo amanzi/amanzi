@@ -115,7 +115,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   verbosity = FLOW_VERBOSITY_HIGH;
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
-  ini_with_darcy = 0;
+  ini_with_darcy = 1;
 }
 
 
@@ -286,8 +286,9 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 
   // make initial guess consistent with boundary conditions
   if (ini_with_darcy) {
-    ini_with_darcy = 1;
+    ini_with_darcy = 0;
     SolveFullySaturatedProblem(T0, *solution);
+    pressure = *solution_cells;
   }
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
@@ -326,8 +327,9 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 
   // make initial guess consistent with boundary conditions
   if (ini_with_darcy) {
-    ini_with_darcy = 1;
+    ini_with_darcy = 0;
     SolveFullySaturatedProblem(T0, *solution);
+    pressure = *solution_cells; 
   }
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
