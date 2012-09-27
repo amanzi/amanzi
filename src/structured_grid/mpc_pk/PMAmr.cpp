@@ -269,19 +269,6 @@ PMAmr::pm_timeStep (int  level,
     //
     // Advance grids at this level.
     //
-    if (verbose > 0 && ParallelDescriptor::IOProcessor())
-    {
-        std::cout << "ADVANCE grids at level "
-                  << level
-                  << " at time = " 
-                  << time
-                  << " with dt = "
-                  << dt_level[level]
-                  << std::endl;
-    }
-
-        //Real dt_new = amr_level[level].advance(time,dt_level[level],iteration,niter);
-
     Real dt_taken, dt_suggest;
     bool step_ok = dynamic_cast<PorousMedia&>(amr_level[level]).ml_step_driver(time,dt_level[level],dt_taken,dt_suggest);
 
@@ -309,6 +296,7 @@ PMAmr::pm_timeStep (int  level,
                   << amr_level[level].countCells()
                   << " cells at level "
                   << level
+		  << "    dt0_from_previous_advance is now " << dt0_from_previous_advance
                   << std::endl;
     }
 
@@ -332,10 +320,6 @@ PMAmr::pm_timeStep (int  level,
 
             for (int i = 1; i <= ncycle; i++)
                 pm_timeStep(lev_fine,time+(i-1)*dt_level[lev_fine],i,ncycle,stop_time);
-        }
-        else
-        {
-            pm_timeStep(lev_fine,time,1,1,stop_time);
         }
     }
 

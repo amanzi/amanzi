@@ -282,22 +282,20 @@ c ::: -----------------------------------------------------------
 c ::: Define variable porosity, phi
 c ::: ----------------------------------------------------------- 
       subroutine FORT_INITPHI2 (phidata,DIMS(phidata),
-     &     phi,DIMS(phi),lo,hi,currlev,maxlev,fratio)
+     &     phi,DIMS(phi),lo,hi,ratio)
 
       integer DIMDEC(phi)
       integer DIMDEC(phidata)
       integer lo(SDIM), hi(SDIM)
-      integer currlev,maxlev
-      integer fratio
+      integer ratio
       REAL_T  phi(DIMV(phi))
       REAL_T  phidata(DIMV(phidata))
 
-      integer   i,j,k,l,ratio,fi,fj
+      integer   i,j,k,l,fi,fj
 
-      ratio = fratio**(maxlev-currlev)
-      do j = lo(2)-3, hi(2)+3
+      do j = lo(2), hi(2)
          fj = ratio*j
-         do i = lo(1)-3, hi(1)+3         
+         do i = lo(1), hi(1)         
             fi = ratio*i
             phi(i,j) = zero
             do k = 0,ratio-1

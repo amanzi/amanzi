@@ -1184,6 +1184,7 @@ namespace Amanzi {
             std::map<std::string,ParameterList> rsublist_mat;
             std::string kp_file="kp";
             std::string pp_file="pp";
+	    std::string porosity_plotfile_in, porosity_plotfile_out;
 
             Array<std::string> reqL, reqP, nullList;
             for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i)
@@ -1500,10 +1501,20 @@ namespace Amanzi {
                         rock_list.set(underscore(shift_str),(int)use_shifted_kr_eval);
                     }
                     
-                    if (rlist.isParameter("Permeability Output File"))
-                        kp_file = rlist.get<std::string>("Permeability Output File");
-                    if (rlist.isParameter("Porosity Output File"))
-                        pp_file = rlist.get<std::string>("Porosity Output File");
+		    std::string porosity_input_plotfile_str = "Porosity Input PlotFile";
+		    std::string porosity_output_plotfile_str = "Porosity Output PlotFile";
+		    std::string porosity_output_multifab_file_str = "Porosity Output File";
+		    std::string permeability_output_multifab_file_str = "Permeability Output File";
+
+                    if (rlist.isParameter(permeability_output_multifab_file_str))
+                        kp_file = rlist.get<std::string>(permeability_output_multifab_file_str);
+                    if (rlist.isParameter(porosity_output_multifab_file_str))
+                        pp_file = rlist.get<std::string>(porosity_output_multifab_file_str);
+                    if (rlist.isParameter(porosity_output_plotfile_str))
+                        porosity_plotfile_out = rlist.get<std::string>(porosity_output_plotfile_str);
+                    if (rlist.isParameter(porosity_input_plotfile_str))
+                        porosity_plotfile_in = rlist.get<std::string>(porosity_input_plotfile_str);
+
                 }
             }
 
@@ -1592,7 +1603,8 @@ namespace Amanzi {
             rock_list.set("rock",arrayrock);
             rock_list.set("permeability_file",kp_file);
             rock_list.set("porosity_file",pp_file);
-
+            rock_list.set("porosity_plotfile_in",porosity_plotfile_in);
+            rock_list.set("porosity_plotfile_out",porosity_plotfile_out);
         } 
       
         StateDef::StateDef(const ParameterList& parameter_list)

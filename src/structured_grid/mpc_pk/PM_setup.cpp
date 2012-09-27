@@ -16,6 +16,7 @@
 #include <DERIVE_F.H>
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
+#include <AmrData.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -103,6 +104,7 @@ PArray<Rock> PorousMedia::rocks;
 bool        PorousMedia::material_is_layered;
 Real        PorousMedia::saturation_threshold_for_vg_Kr;
 int         PorousMedia::use_shifted_Kr_eval;
+DataServices* PorousMedia::phi_dataServices;
 //
 // Source.
 //
@@ -352,6 +354,8 @@ namespace
         for (std::map<std::string,EventCoord::Event*>::iterator it=defined_events.begin(); it!=defined_events.end(); ++it) {
             delete it->second;
         }
+
+	DataServices* phids = PorousMedia::PhiData(); delete phids; phids=0;
     }
 }
 
@@ -495,6 +499,7 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::kappadata = 0;
   PorousMedia::phidata   = 0;
+  PorousMedia::phi_dataServices = 0;
 
   PorousMedia::porosity_from_fine     = false;
   PorousMedia::permeability_from_fine = false;
@@ -1111,6 +1116,245 @@ bool check_if_layered(const Array<std::string>& material_region_names,
     return true;
 }
 
+#include <POROUS_F.H>
+void WritePlotfile(const std::string         &pfversion,
+                   const PArray<MultiFab>    &data,
+                   const Real                 time,
+                   const Array<Real>         &probLo,
+                   const Array<Real>         &probHi,
+                   const Array<int>          &refRatio,
+                   const Array<Box>          &probDomain,
+                   const Array<Array<Real> > &dxLevel,
+                   const int                  coordSys,
+                   const std::string         &oFile,
+                   const Array<std::string>  &names,
+                   const bool                 verbose,
+		   const bool                 isCartGrid,
+		   const Real                *vfeps,
+		   const int                 *levelSteps)
+{
+    if(ParallelDescriptor::IOProcessor()) {
+      if( ! BoxLib::UtilCreateDirectory(oFile,0755)) {
+         BoxLib::CreateDirectoryFailed(oFile);
+      }
+    }
+    //
+    // Force other processors to wait till directory is built.
+    //
+    ParallelDescriptor::Barrier();
+    
+    std::string oFileHeader(oFile);
+    oFileHeader += "/Header";
+    
+    VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
+    
+    std::ofstream os;
+    
+    //os.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
+    
+    if(verbose && ParallelDescriptor::IOProcessor()) {
+      std::cout << "Opening file = " << oFileHeader << '\n';
+    }
+    
+    os.open(oFileHeader.c_str(), std::ios::out|std::ios::binary);
+    
+    if(os.fail()) {
+      BoxLib::FileOpenFailed(oFileHeader);
+    }
+    //
+    // Start writing plotfile.
+    //
+    os << pfversion << '\n';
+    int n_var = data[0].nComp();
+    os << n_var << '\n';
+    for (int n = 0; n < n_var; n++) os << names[n] << '\n';
+    os << BL_SPACEDIM << '\n';
+    os << std::setprecision(30) << time << '\n';
+    const int finestLevel = data.size() - 1;
+    os << finestLevel << '\n';
+    for (int i = 0; i < BL_SPACEDIM; i++) os << probLo[i] << ' ';
+    os << '\n';
+    for (int i = 0; i < BL_SPACEDIM; i++) os << probHi[i] << ' ';
+    os << '\n';
+    for (int i = 0; i < finestLevel; i++) os << refRatio[i] << ' ';
+    os << '\n';
+    for (int i = 0; i <= finestLevel; i++) os << probDomain[i] << ' ';
+    os << '\n';
+    if(levelSteps != 0) {
+      for (int i = 0; i <= finestLevel; i++) os << levelSteps[i] << ' ';
+    } else {
+      for (int i = 0; i <= finestLevel; i++) os << 0 << ' ';
+    }
+    os << '\n';
+    for(int i = 0; i <= finestLevel; i++) {
+      for(int k = 0; k < BL_SPACEDIM; k++) {
+            os << dxLevel[i][k] << ' ';
+      }
+      os << '\n';
+    }
+    if(isCartGrid) {
+      for(int i(0); i <= finestLevel; i++) {
+        os << vfeps[i] << ' ';
+      }
+      os << '\n';
+    }
+    os << coordSys << '\n';
+    os << 0 << '\n';                  // --------------- The bndry data width.
+    //
+    // Write out level by level.
+    //
+    for(int iLevel(0); iLevel <= finestLevel; ++iLevel) {
+        //
+        // Write state data.
+        //
+        const BoxArray& ba = data[iLevel].boxArray();
+        int nGrids = ba.size();
+        char buf[64];
+        sprintf(buf, "Level_%d", iLevel);
+        
+        if(ParallelDescriptor::IOProcessor()) {
+            os << iLevel << ' ' << nGrids << ' ' << time << '\n';
+            if(levelSteps != 0) {
+              os << levelSteps[iLevel] << '\n';
+	    } else {
+              os << 0 << '\n';
+	    }
+            
+            for(int i(0); i < nGrids; ++i) {
+              const Box &b = ba[i];
+              for(int n(0); n < BL_SPACEDIM; ++n) {
+                Real glo = b.smallEnd()[n] * dxLevel[iLevel][n];
+                Real ghi = (b.bigEnd()[n]+1) * dxLevel[iLevel][n];
+                os << glo << ' ' << ghi << '\n';
+              }
+            }
+            //
+            // Build the directory to hold the MultiFabs at this level.
+            //
+            std::string Level(oFile);
+            Level += '/';
+            Level += buf;
+            
+            if( ! BoxLib::UtilCreateDirectory(Level, 0755)) {
+              BoxLib::CreateDirectoryFailed(Level);
+	    }
+        }
+        //
+        // Force other processors to wait till directory is built.
+        //
+        ParallelDescriptor::Barrier();
+        //
+        // Now build the full relative pathname of the MultiFab.
+        //
+        static const std::string MultiFabBaseName("MultiFab");
+        
+        std::string PathName(oFile);
+        PathName += '/';
+        PathName += buf;
+        PathName += '/';
+        PathName += MultiFabBaseName;
+        
+        if(ParallelDescriptor::IOProcessor()) {
+            //
+            // The full name relative to the Header file.
+            //
+            std::string RelativePathName(buf);
+            RelativePathName += '/';
+            RelativePathName += MultiFabBaseName;
+            os << RelativePathName << '\n';
+        }
+        VisMF::Write(data[iLevel], PathName);
+    }
+    
+    os.close();
+}
+
+
+void
+WritePorosityPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fRatio,
+		     const Array<Real>& problo, const Array<Real>& probhi, MultiFab* data,
+		     const std::string& filename, int nGrow)
+{
+  int nLevs = max_level + 1;
+  PArray<MultiFab> mlData(nLevs, PArrayNoManage);
+  mlData.set(max_level, data);
+
+  Array<Box> pd(nLevs), gpd(nLevs);
+  Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
+
+  pd[0] = Box(IntVect::TheZeroVector(),
+	      IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
+
+  int fineRatio = 1;
+  for (int lev=0; lev<=max_level; ++lev) {
+    if (lev>0) {
+      pd[lev] = Box(pd[lev-1]).refine(fRatio[lev-1]);
+      fineRatio *= fRatio[lev-1];
+    }
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      dxLevel[lev][d] = (Real)(probhi[d]-problo[d])/pd[lev].length(d);
+    }
+    gpd[lev] = Box(pd[lev]).grow(fineRatio*nGrow);
+  }
+  int nGrowFINE = fineRatio * nGrow;
+
+  Array<Real> gplo(BL_SPACEDIM), gphi(BL_SPACEDIM);
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    gplo[d] = problo[d] - dxLevel[0][d]*nGrow;
+    gphi[d] = probhi[d] + dxLevel[0][d]*nGrow;
+  }
+
+  int max_size = 64;
+  int ratioToFinest = 1;
+  for (int lev=max_level-1; lev>=0; --lev) {
+    ratioToFinest *= fRatio[lev];
+    
+    BoxArray bac(gpd[lev]);
+    bac.maxSize(max_size);
+    BoxArray baf = BoxArray(bac).refine(ratioToFinest);
+    BoxArray bafg = BoxArray(baf).grow(nGrowFINE);
+    MultiFab mffine_ng(bafg,1,0);      
+    mffine_ng.copy(mlData[max_level]); // parallel copy
+    
+    mlData.set(lev, new MultiFab(bac,1,nGrow));    
+    for (MFIter mfi(mlData[lev]); mfi.isValid(); ++mfi) {
+      const int* lo    = mfi.validbox().loVect();
+      const int* hi    = mfi.validbox().hiVect();
+      
+      const int* p_lo  = mlData[lev][mfi].loVect();
+      const int* p_hi  = mlData[lev][mfi].hiVect();
+      const Real* pdat = mlData[lev][mfi].dataPtr();
+      
+      const int*  mfp_lo = mffine_ng[mfi].loVect();
+      const int*  mfp_hi = mffine_ng[mfi].hiVect();
+      const Real* mfpdat = mffine_ng[mfi].dataPtr();
+      
+      FORT_INITPHI2 (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
+		     pdat,ARLIM(p_lo),ARLIM(p_hi),
+		     lo,hi,&ratioToFinest);
+    }    
+  }
+
+  std::string pfversion = "MaterialData-0.1";
+  Real t = 0;
+  int coordSys = 0;
+  bool verbose = false;
+  bool isCartGrid = false;
+  Real vfeps = 1.e-12;
+  int levelSteps = 0;
+  Array<std::string> names(1,"Porosity");
+  WritePlotfile(pfversion,mlData,t,gplo,gphi,fRatio,gpd,dxLevel,coordSys,
+		filename,names,verbose,isCartGrid,&vfeps,&levelSteps);
+
+  if (ParallelDescriptor::IOProcessor()) {
+    std::cout << "Porosity plotfile written: " << filename <<std::endl;
+  }
+
+  for (int lev=0; lev<max_level-1; ++lev) {
+    delete &(mlData[lev]);
+  }
+}
+
 void
 PorousMedia::read_rock(int do_chem)
 {
@@ -1424,7 +1668,7 @@ PorousMedia::read_rock(int do_chem)
         
         VisMF::Read(*phidata,pfile);
     }
-    
+
     // determine parameters needed to build kappadata and phidata
     int max_level;
     Array<int> n_cell, fratio;
@@ -1443,6 +1687,34 @@ PorousMedia::read_rock(int do_chem)
         gm.getarr("prob_hi",probhi,0,BL_SPACEDIM);
       }
     
+    std::string porosity_plotfile_in;
+    pp.query("porosity_plotfile_in", porosity_plotfile_in);
+    if (!porosity_plotfile_in.empty()) {
+      DataServices::SetBatchMode();
+      Amrvis::FileType fileType(Amrvis::NEWPLT);
+      phi_dataServices = new DataServices(porosity_plotfile_in, fileType);
+      if (!phi_dataServices->AmrDataOk())
+        DataServices::Dispatch(DataServices::ExitRequest, NULL);
+      AmrData& phi_amrData = phi_dataServices->AmrDataRef();
+      
+      // Verify phi data is compatible with current run
+      bool phi_is_compatible = phi_amrData.FinestLevel()>=max_level;
+      for (int lev=0; lev<max_level && phi_is_compatible; ++lev) {
+	phi_is_compatible &= phi_amrData.RefRatio()[lev] == fratio[lev];
+      }
+      if (phi_is_compatible) {
+	Box probDomain=Box(IntVect::TheZeroVector(),
+			   IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
+	probDomain.grow(3);
+	phi_is_compatible &= phi_amrData.ProbDomain()[0].contains(probDomain);
+      }
+      if (!phi_is_compatible) {
+	std::string str=porosity_plotfile_in 
+	  + " is not compatible with this run.  Must generate new file (use porosity_plotfile_out=<name>)";
+	BoxLib::Error(str.c_str());
+      }
+    }
+
     // construct permeability field based on the specified parameters
     if (build_full_kmap)
       {
@@ -1468,7 +1740,7 @@ PorousMedia::read_rock(int do_chem)
                 r.probhi = probhi;
                 r.build_kmap(*kappadata, gsfile);
             }
-            
+
             if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
                 std::cout << "   Finished building kmap on finest level.  Writing..." << std::endl;
             
@@ -1480,7 +1752,7 @@ PorousMedia::read_rock(int do_chem)
         }
       }
     
-    if (build_full_pmap)
+    if (phi_dataServices==0 && build_full_pmap)
     {
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
             std::cout << "Building pmap on finest level..." << std::endl;
@@ -1503,7 +1775,13 @@ PorousMedia::read_rock(int do_chem)
                 r.probhi = probhi;
                 r.build_pmap(*phidata, gsfile);
             }
-            
+
+	    std::string porosity_plotfile_out;
+	    pp.query("porosity_plotfile_out", porosity_plotfile_out);
+	    if (!porosity_plotfile_out.empty()) {
+	      WritePorosityPltFile(max_level,n_cell,fratio,problo,probhi,phidata,porosity_plotfile_out,3);
+	    }
+
             if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
                 std::cout << "   Finished building pmap on finest level.  Writing..." << std::endl;
             

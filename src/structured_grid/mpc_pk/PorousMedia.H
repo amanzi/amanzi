@@ -25,6 +25,7 @@
 #include <Source.H>
 #include <Observation.H>
 #include <RegionData.H>
+#include <DataServices.H>
 
 #include <PMAmr.H>
 class RichardSolver;
@@ -1033,7 +1034,7 @@ public:
 			MultiFab* vel);
 
   Real GetUserInputInitDt();
-
+  static DataServices* PhiData() {return phi_dataServices;}
 
 protected:
 
@@ -1057,11 +1058,11 @@ protected:
   static std::string gsfile;
   static MultiFab*   kappadata;
   static MultiFab*   phidata;
+  static DataServices* phi_dataServices;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
   static Real        saturation_threshold_for_vg_Kr;
   static int         use_shifted_Kr_eval;
-
 
   // Phases and components
   static int nphases;

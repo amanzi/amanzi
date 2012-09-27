@@ -24,9 +24,9 @@ static Real atol_DEF = 1e-10;
 static Real rtol_DEF = 1e-20;
 static Real stol_DEF = 1e-12;
 static bool scale_soln_before_solve_DEF = true;
-static bool semi_analytic_J_DEF = false;
+static bool semi_analytic_J_DEF = true;
 static bool centered_diff_J_DEF = true;
-static Real variable_switch_saturation_threshold_DEF = 0.9996;
+static Real variable_switch_saturation_threshold_DEF = -0.9999;
 
 static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
 static bool record_entire_solve = false;

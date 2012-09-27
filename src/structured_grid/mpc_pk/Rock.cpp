@@ -132,12 +132,10 @@ Rock::build_finest_data(int         max_level,
          IntVect(D_DECL(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1)));
   bx.grow(3);
 
+  BL_ASSERT(fratio.size()>=max_level);
   twoexp = 1;
-  if (max_level > 0) 
-  {
-      twoexp = fratio[0];
-      for (int ii = 1; ii<max_level;ii++)
-          twoexp *= fratio[0];
+  for (int ii = 1; ii<=max_level;ii++) {
+    twoexp *= fratio[ii-1];
   }
   bx.refine(twoexp);
   

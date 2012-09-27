@@ -84,8 +84,7 @@ extern "C" {
 		      const Real* rock_phi,
 		      ARLIM_P(p_lo), ARLIM_P(p_hi),
 		      const int* lo, const int* hi,
-		      const int* currlev, 
-		      const int* maxlev, int* fractio);
+		      const int* fratio);
 
   void FORT_INITKR (const Real* krdata, ARLIM_P(krd_lo), ARLIM_P(krd_hi),
 		    const Real* kr, ARLIM_P(kr_lo), ARLIM_P(kr_hi), 

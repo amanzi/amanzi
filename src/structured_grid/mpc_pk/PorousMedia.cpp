@@ -10,7 +10,6 @@
 #include <ArrayLim.H>
 #include <Profiler.H>
 #include <TagBox.H>
-#include <DataServices.H>
 #include <AmrData.H>
 #include <time.h> 
 #include <PMAmr.H>
@@ -2447,7 +2446,7 @@ PorousMedia::ml_step_driver(Real  t,
                             Real& dt_taken,
                             Real& dt_suggest)
 {
-    bool driver_ok = false;
+    bool driver_ok = true;
 
     if (level == 0) 
     {
@@ -2476,7 +2475,18 @@ PorousMedia::ml_step_driver(Real  t,
                 transport_tracers = t >= switch_time;
             }
             
+	    if (verbose > 0 && ParallelDescriptor::IOProcessor())
+	      {
+		std::cout << "ADVANCE grids at time = " 
+			  << t
+			  << ", attempting with dt = "
+			  << dt_this_attempt
+			  << std::endl;
+	      }
+	    
             step_ok = multilevel_advance(t,dt_this_attempt,iteration,ncycle,dt_suggest);
+	    ParallelDescriptor::ReduceBoolAnd(step_ok);
+	    ParallelDescriptor::ReduceRealMin(dt_suggest);
 
             if (step_ok) {
                 dt_taken = dt_this_attempt;
@@ -2488,9 +2498,18 @@ PorousMedia::ml_step_driver(Real  t,
             dt_iter++;
 
             continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
+	    ParallelDescriptor::ReduceBoolAnd(continue_dt_iteration);
         }
 
         driver_ok = step_ok && dt_taken >= dt_min &&  dt_iter < max_dt_iters;
+	ParallelDescriptor::ReduceBoolAnd(driver_ok);
+
+	if (driver_ok && verbose > 0 && ParallelDescriptor::IOProcessor())
+	  {
+	    std::cout << "MPC SUCCESS: grids advanced from time: " << t
+		      << ", with dt: " << dt_taken << ", suggested new dt: " << dt_suggest
+		      << std::endl;
+	  }
     }
 
     return driver_ok;
@@ -8144,102 +8163,113 @@ PorousMedia::init_rock_properties ()
   (*kpedge).FillBoundary();
    
   // porosity
-
-  if (porosity_from_fine) 
-    {      
-      BoxArray tba(grids);
-      tba.maxSize(new_grid_size);
-      MultiFab trock_phi(tba,1,3);
-      trock_phi.setVal(1.e40);
-
-      BoxArray ba(trock_phi.size());
-      BoxArray ba2(trock_phi.size());
-      for (int i = 0; i < ba.size(); i++)
-	{
-	  Box bx = trock_phi.box(i);
-	  bx.refine(twoexp);
-	  ba.set(i,bx);
-	  bx.grow(ng_twoexp);
-	  ba2.set(i,bx);
-	}
-
-      MultiFab mftmp(ba2,1,0);      
-      mftmp.copy(*phidata);     
-      
-      // mfbig has same CPU distribution as phi
-      MultiFab mfbig_phi(ba,1,ng_twoexp);
-      for (MFIter mfi(mftmp); mfi.isValid(); ++mfi)
-	mfbig_phi[mfi].copy(mftmp[mfi]);
-      mftmp.clear();
-      mfbig_phi.FillBoundary();
-      fgeom.FillPeriodicBoundary(mfbig_phi,true);
-
-      for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
-	{
-	  const int* lo    = mfi.validbox().loVect();
-	  const int* hi    = mfi.validbox().hiVect();
-
-	  const int* p_lo  = trock_phi[mfi].loVect();
-	  const int* p_hi  = trock_phi[mfi].hiVect();
-	  const Real* pdat = trock_phi[mfi].dataPtr();
-	  
-	  const int*  mfp_lo = mfbig_phi[mfi].loVect();
-	  const int*  mfp_hi = mfbig_phi[mfi].hiVect();
-	  const Real* mfpdat = mfbig_phi[mfi].dataPtr();
-	  
-	  FORT_INITPHI2 (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
-			 pdat,ARLIM(p_lo),ARLIM(p_hi),
-			 lo,hi,&level,&max_level, &fratio);
-	}
-      mfbig_phi.clear();
-
-      BoxArray tba2(trock_phi.boxArray());
-      tba2.grow(3);
-      MultiFab tmpgrow(tba2,1,0);
-      
-      for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
-	tmpgrow[mfi].copy(trock_phi[mfi]);
-      
-      trock_phi.clear();
-
-      tba2 = rock_phi->boxArray();
-      tba2.grow(3);
-      MultiFab tmpgrow2(tba2,1,0);
-
-      tmpgrow2.copy(tmpgrow);
-      tmpgrow.clear();
-
-      for (MFIter mfi(tmpgrow2); mfi.isValid(); ++mfi)
-	(*rock_phi)[mfi].copy(tmpgrow2[mfi]);
+  if (phi_dataServices!=0) {
+    AmrData& phi_amrData = phi_dataServices->AmrDataRef();
+    std::string name = "Porosity";
+    BoxArray bag = BoxArray(rock_phi->boxArray()).grow(rock_phi->nGrow());
+    MultiFab phig(bag,1,0);
+    int dComp = 0;
+    phi_amrData.FillVar(phig,level,name,dComp);
+    for (MFIter mfi(phig); mfi.isValid(); ++mfi) {
+      (*rock_phi)[mfi].copy(phig[mfi]);
     }
-  else
-    { 
+  } else {
+    if (porosity_from_fine) 
+      {      
+	BoxArray tba(grids);
+	tba.maxSize(new_grid_size);
+	MultiFab trock_phi(tba,1,3);
+	trock_phi.setVal(1.e40);
+	
+	BoxArray ba(trock_phi.size());
+	BoxArray ba2(trock_phi.size());
+	for (int i = 0; i < ba.size(); i++)
+	  {
+	    Box bx = trock_phi.box(i);
+	    bx.refine(twoexp);
+	    ba.set(i,bx);
+	    bx.grow(ng_twoexp);
+	    ba2.set(i,bx);
+	  }
+	
+	MultiFab mftmp(ba2,1,0);      
+	mftmp.copy(*phidata);     
+	
+	// mfbig has same CPU distribution as phi
+	MultiFab mfbig_phi(ba,1,ng_twoexp);
+	for (MFIter mfi(mftmp); mfi.isValid(); ++mfi)
+	  mfbig_phi[mfi].copy(mftmp[mfi]);
+	mftmp.clear();
+	mfbig_phi.FillBoundary();
+	fgeom.FillPeriodicBoundary(mfbig_phi,true);
+	
+	for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
+	  {
+	    const int* lo    = mfi.validbox().loVect();
+	    const int* hi    = mfi.validbox().hiVect();
+	    
+	    const int* p_lo  = trock_phi[mfi].loVect();
+	    const int* p_hi  = trock_phi[mfi].hiVect();
+	    const Real* pdat = trock_phi[mfi].dataPtr();
+	    
+	    const int*  mfp_lo = mfbig_phi[mfi].loVect();
+	    const int*  mfp_hi = mfbig_phi[mfi].hiVect();
+	    const Real* mfpdat = mfbig_phi[mfi].dataPtr();
+	    
+	    FORT_INITPHI2 (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
+			   pdat,ARLIM(p_lo),ARLIM(p_hi),
+			   lo,hi,&twoexp);
+	  }
+	mfbig_phi.clear();
+	
+	BoxArray tba2(trock_phi.boxArray());
+	tba2.grow(3);
+	MultiFab tmpgrow(tba2,1,0);
+	
+	for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
+	  tmpgrow[mfi].copy(trock_phi[mfi]);
+	
+	trock_phi.clear();
+	
+	tba2 = rock_phi->boxArray();
+	tba2.grow(3);
+	MultiFab tmpgrow2(tba2,1,0);
+	
+	tmpgrow2.copy(tmpgrow);
+	tmpgrow.clear();
+	
+	for (MFIter mfi(tmpgrow2); mfi.isValid(); ++mfi)
+	  (*rock_phi)[mfi].copy(tmpgrow2[mfi]);
+      }
+    else
+      { 
         BoxLib::Abort("!(porosity_from_fine) no yet supported");
 #if 0
-      int porosity_type = 0;
-      (*rock_phi).setVal(rock_array[0].porosity);
-
-      if (porosity_type != 0)
-	{
-	  int porosity_nlayer = rock_array.size();
-	  Array<Real> porosity_val(porosity_nlayer);
-	  for (int i=0;i<porosity_nlayer;i++)
-	    porosity_val[i]=rock_array[i].porosity;
-
-	  for (MFIter mfi(*rock_phi); mfi.isValid(); ++mfi)
-	    {
-	      const int* p_lo  = (*rock_phi)[mfi].loVect();
-	      const int* p_hi  = (*rock_phi)[mfi].hiVect();
-	      const Real* pdat = (*rock_phi)[mfi].dataPtr();
-	      
-	      FORT_INITPHI (pdat,ARLIM(p_lo),ARLIM(p_hi),
-			    domain_hi, dx, &porosity_type,
-			    porosity_val.dataPtr(),&porosity_nlayer);
-	    }
-	}
+	int porosity_type = 0;
+	(*rock_phi).setVal(rock_array[0].porosity);
+	
+	if (porosity_type != 0)
+	  {
+	    int porosity_nlayer = rock_array.size();
+	    Array<Real> porosity_val(porosity_nlayer);
+	    for (int i=0;i<porosity_nlayer;i++)
+	      porosity_val[i]=rock_array[i].porosity;
+	    
+	    for (MFIter mfi(*rock_phi); mfi.isValid(); ++mfi)
+	      {
+		const int* p_lo  = (*rock_phi)[mfi].loVect();
+		const int* p_hi  = (*rock_phi)[mfi].hiVect();
+		const Real* pdat = (*rock_phi)[mfi].dataPtr();
+		
+		FORT_INITPHI (pdat,ARLIM(p_lo),ARLIM(p_hi),
+			      domain_hi, dx, &porosity_type,
+			      porosity_val.dataPtr(),&porosity_nlayer);
+	      }
+	  }
 #endif
-    }
-  rock_phi->FillBoundary();
+      }
+    rock_phi->FillBoundary();
+  }
 
   if (model != model_list["single-phase"] && 
       model != model_list["single-phase-solid"] &&
