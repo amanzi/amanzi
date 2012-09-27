@@ -27,6 +27,8 @@
 
 #include "TimerManager.hh"
 
+#include "DataDebug.hh"
+
 namespace Amanzi {
 
 using amanzi::chemistry::Chemistry_State;
@@ -568,6 +570,10 @@ void MPC::cycle_driver() {
         case (FLOW_LIMITS):
           break;
       }
+
+      // DataDebug ddd(mesh_maps);
+      // ddd.write_region_data("Entire Domain",*S->get_pressure(),"pressure");
+      // ddd.write_region_statistics("Entire Domain",*S->get_pressure(),"pressure");
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);

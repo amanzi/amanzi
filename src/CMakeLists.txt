@@ -20,6 +20,9 @@ if (ENABLE_Unstructured)
   # Mesh
   add_subdirectory(mesh)
 
+  # Debug helpers
+  add_subdirectory(debug)
+
   # Mesh functions
   add_subdirectory(mesh_functions)
 
