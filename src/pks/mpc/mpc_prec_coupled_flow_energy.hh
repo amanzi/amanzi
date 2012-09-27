@@ -65,8 +65,8 @@ class MPCCoupledFlowEnergy : public StrongMPC {
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-  
-    // computes a norm on u-du and returns the result
+
+  // computes a norm on u-du and returns the result
   virtual double enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
   
   void ComputeShurComplementPK();

@@ -14,7 +14,7 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist) {

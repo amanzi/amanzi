@@ -87,7 +87,10 @@ void TwoPhase::AddAdvection_(const Teuchos::RCP<State> S,
   }
 
   // apply the advection operator and add to residual
-  advection_->Apply(bc_flux_);
+
+  // NOTE: all energy flux BCs are applied as diffusive fluxes, so the false
+  // indicates to not include the values, but instead place zeros here.
+  advection_->Apply(bc_flux_, false);
   if (negate) {
     for (int c=0; c!=g->size("cell"); ++c) {
       (*g)("cell",c) -= (*field)("cell",c);

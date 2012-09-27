@@ -9,6 +9,7 @@
 */
 
 #include <cmath>
+#include "errors.hh"
 #include "vapor_pressure_water.hh"
 
 namespace Amanzi {
@@ -26,10 +27,20 @@ VaporPressureWater::VaporPressureWater(Teuchos::ParameterList& plist) :
   kd_(2.433502) {}
 
 double VaporPressureWater::SaturatedVaporPressure(double T) {
+  if (T < 0. || T > 5000.0) {
+    std::cout << "Invalid temperature, T = " << T << std::endl;
+    Errors::Message m("Cut time step");
+    Exceptions::amanzi_throw(m);
+  }
   return 100.0*exp(ka0_ + ka_/T + (kb_ + kc_*T)*T + kd_*log(T));
 };
 
 double VaporPressureWater::DSaturatedVaporPressureDT(double T) {
+  if (T < 0. || T > 5000.0) {
+    std::cout << "Invalid temperature, T = " << T << std::endl;
+    Errors::Message m("Cut time step");
+    Exceptions::amanzi_throw(m);
+  }
   return SaturatedVaporPressure(T) * (-ka_/(T*T) + kb_ + 2.0*kc_*T + kd_/T);
 };
 

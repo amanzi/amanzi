@@ -76,7 +76,12 @@ double WRMVanGenuchten::d_saturation(double pc) {
  ****************************************************************** */
 double WRMVanGenuchten::capillaryPressure(double s) {
   double se = (s - sr_) / (1.0 - sr_);
-  return (pow(pow(se, -1.0/m_) - 1.0, 1/n_)) / alpha_;
+  se = std::min<double>(se, 1.0);
+  if (se < 1.e-8) {
+    return pow(se, -1.0/(m_*n_)) / alpha_;
+  } else {
+    return (pow(pow(se, -1.0/m_) - 1.0, 1/n_)) / alpha_;
+  }
 }
 
 

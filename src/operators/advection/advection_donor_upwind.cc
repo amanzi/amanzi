@@ -41,7 +41,8 @@ void AdvectionDonorUpwind::set_flux(const Teuchos::RCP<const CompositeVector>& f
 };
 
 
-  void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux) {
+void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>& bc_flux,
+                                 bool include_bc_fluxes) {
 
   field_->ScatterMasterToGhosted("cell"); // communicate the cells
 
@@ -65,10 +66,15 @@ void AdvectionDonorUpwind::set_flux(const Teuchos::RCP<const CompositeVector>& f
   // patch up Neumann bcs -- only works for 1 dof?
   for (Functions::BoundaryFunction::Iterator bc = bc_flux->begin();
        bc!=bc_flux->end(); ++bc) {
-    if ((*upwind_cell_)[bc->first] >= 0) {
-      (*field_)("face",0,bc->first) = bc->second*mesh_->face_area(bc->second);
+    if (include_bc_fluxes) {
+      if ((*upwind_cell_)[bc->first] >= 0) {
+        (*field_)("face",0,bc->first) = bc->second*mesh_->face_area(bc->second);
+      } else {
+        (*field_)("face",0,bc->first) = -bc->second*mesh_->face_area(bc->second);
+      }
     } else {
-      (*field_)("face",0,bc->first) = -bc->second*mesh_->face_area(bc->second);
+      // HACKED for fluxes included in diffusion term.  This needs rethought. --etc
+      (*field_)("face",0,bc->first) = 0.0;
     }
   }
 

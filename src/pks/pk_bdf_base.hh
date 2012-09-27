@@ -54,9 +54,6 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   double time_step_reduction_factor_;
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
 
-  // error criteria
-  double atol_, rtol_;
-
   // debugging
   bool catch_errors_;
 

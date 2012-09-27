@@ -69,33 +69,7 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
           << " " << (*res)("face",0,3) << std::endl;
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
           << " " << (*res)("face",0,497) << std::endl;
-
-    // dump mass balance as well
-    Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
-    Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
-    Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
-
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    wc0->mesh()->cell_get_faces_and_dirs(0, &faces, &dirs);
-    double flux = 0.0;
-    for (int lcv=0; lcv!=faces.size(); ++lcv) {
-      flux += dirs[lcv]*(*darcy_flux)("face",faces[lcv]);
-    }
-    *out_ << "  mass balance error0: " << (*wc1)("cell",0) - (*wc0)("cell",0) + h*flux
-          << std::endl;
-
-    faces.clear();
-    dirs.clear();
-    wc0->mesh()->cell_get_faces_and_dirs(nc, &faces, &dirs);
-    flux = 0.0;
-    for (int lcv=0; lcv!=faces.size(); ++lcv) {
-      flux += dirs[lcv]*(*darcy_flux)("face",faces[lcv]);
-    }
-    *out_ << "  mass balance error1: " << (*wc1)("cell",nc) - (*wc0)("cell",nc) + h*flux
-          << std::endl;
   }
-
 };
 
 // -----------------------------------------------------------------------------
@@ -198,13 +172,13 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   S_next_->set_time(t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
+  // update the rel perm according to the scheme of choice
+  UpdatePermeabilityData_(S_next_.ptr());
+
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditionsPreconditioner_();
-
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData("numerical_rel_perm");

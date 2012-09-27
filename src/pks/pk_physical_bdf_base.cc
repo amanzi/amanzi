@@ -25,6 +25,19 @@ void PKPhysicalBDFBase::setup(const Teuchos::Ptr<State>& S) {
   // call the meat of the base constructurs via Setup methods
   PKPhysicalBase::setup(S);
   PKBDFBase::setup(S);
+
+  // convergence criteria
+  atol_ = plist_.get<double>("absolute error tolerance",1.0);
+  rtol_ = plist_.get<double>("relative error tolerance",1.0);
+
+  // adapt the tolerances to fit the timestep
+  adapt_tols_to_h_ = plist_.get<bool>("adapt tolerances to timestep", "false");
+  if (adapt_tols_to_h_) {
+    atol0_ = atol_;
+    rtol0_ = rtol_;
+    min_tol_h_ = plist_.get<double>("cutoff timestep for adaptive tolerance", 100.0);
+  }
+
 };
 
 
@@ -50,6 +63,13 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "ENorm (Infnorm) of: " << name_ << ": ";
+  }
+
+  // adapt tolerances if needed
+  if (adapt_tols_to_h_) {
+    double h = S_next_->time() - S_inter_->time();
+    atol_ = atol0_ / h;
+    rtol_ = rtol0_ / h;
   }
 
   Teuchos::RCP<const CompositeVector> vec = u->data();
