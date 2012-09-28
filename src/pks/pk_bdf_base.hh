@@ -47,12 +47,21 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   //    starting value for the nonlinear solve in the time integrator.
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
+  // -- Return the max backtrack count paramter
+  //    for use in the bdf time integrator
+  int max_backtrack_count() { return max_backtrack_count_; }
+
+  // -- Return the backtrack damping paramter
+  double backtrack_damping() { return backtrack_damping_; }
+
  protected: // data
   // timestep control
   double dt_;
   double dt0_;
   double time_step_reduction_factor_;
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
+  int max_backtrack_count_;
+  double backtrack_damping_;
 
   // debugging
   bool catch_errors_;

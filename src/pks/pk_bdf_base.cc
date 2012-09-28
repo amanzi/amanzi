@@ -27,6 +27,10 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
   time_step_reduction_factor_ =
     plist_.get<double>("time step reduction factor", 1.);
 
+  // the default is no backtracking
+  max_backtrack_count_ = plist_.get<int>("max backtrack count", 0);
+  backtrack_damping_ = plist_.get<double>("backtrack damping", 1.0);
+
   // debugging option -- The BDF advance() method catches all errors, and then
   // re-throws ones it doesn't recognize.  Putting "false" in the PK PList
   // removes the catch, making debugging and debugger usage easier.
@@ -112,7 +116,7 @@ bool PKBDFBase::advance(double dt) {
 // -----------------------------------------------------------------------------
 // Allows a PK to reject solutions, which forces a timestep cut.
 // -----------------------------------------------------------------------------
-bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
+  bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
 
 // -----------------------------------------------------------------------------
