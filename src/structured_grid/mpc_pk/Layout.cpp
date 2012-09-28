@@ -411,7 +411,8 @@ Layout::Rebuild(int _nLevs)
             NodeFab& ifab = nodes[lev][fai];
             IntFab& nfab = nodeIds[lev][fai];
             const Box& box = fai.validbox() & gridArray[lev][fai.index()];
-	    grid_cnt[lev][fai.index()] = cnt;
+
+            int start_cnt = cnt;
             for (IntVect iv(box.smallEnd()); iv<=box.bigEnd(); box.next(iv))
             {
                 if (ifab(iv,0).type == Node::VALID)
@@ -421,14 +422,20 @@ Layout::Rebuild(int _nLevs)
                     nfab(iv,0) = cnt++;
                 }
             }
-	    grid_cnt[lev][fai.index()] = cnt - grid_cnt[lev][fai.index()];
+	    grid_cnt[lev][fai.index()] = cnt - start_cnt;
         }
 	ParallelDescriptor::ReduceIntSum(grid_cnt[lev].dataPtr(),grid_cnt[lev].size());
     }
     nNodes_local = cnt;
-    nNodes_global = nNodes_local;
 
 #if 0
+    // Note: This is an attemp to make the node number independent of the cpu partitioning.
+    //       It is not yet functional because it needs an accompanying local-to-global mapping
+    //       so that global numbers get mapped correctly to local numbers under the PETSc
+    //       covers.  I havet done that yet, partly because I havet yet figured out how to 
+    //       make sure the matrix is mapped the same way.  We punt for now, but leave the 
+    //       code here for future finishing....grep for VecSetValuesLocal elsewhere
+
     // Compute total number of nodes
     nNodes_global = 0;
     for (int lev=0; lev<nLevs; ++lev) {
@@ -437,6 +444,7 @@ Layout::Rebuild(int _nLevs)
       }
     }
 
+    // Replace grid_cnt with offset to first cell in box
     int n_offset = nNodes_global;
     for (int lev=nLevs-1; lev>=0; --lev) {
       for (int i=grid_cnt[lev].size()-1; i>=0; --i) {
@@ -445,16 +453,7 @@ Layout::Rebuild(int _nLevs)
       }
     }
 
-    if (ParallelDescriptor::IOProcessor()) {
-      for (int lev=0; lev<nLevs; ++lev) {
-	for (int i=0; i<grid_cnt[lev].size(); ++i) {
-	  std::cout << "l,g: " << lev << ", " << i << ": " << grid_cnt[lev][i] << std::endl;
-	}
-      }
-      std::cout << "total: " << nNodes_global << std::endl;
-    }
-
-    // Adjust node numbers 
+    // Adjust node numbers for cells I own
     for (int lev=0; lev<nLevs; ++lev)
     {
         for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
@@ -481,6 +480,8 @@ Layout::Rebuild(int _nLevs)
         }
     }
 #else
+
+    nNodes_global = nNodes_local;
 
 #if BL_USE_MPI
     // Adjust node numbers to be globally unique
@@ -526,44 +527,46 @@ Layout::Rebuild(int _nLevs)
     {
         if (lev>0) 
         {
-            BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(refRatio[lev-1]);
+            const IntVect& ref = refRatio[lev-1];
+            const IntVect refm = ref - IntVect::TheUnitVector();
+            BoxArray bndC = BoxArray(bndryCells[lev]).coarsen(ref);
         
             crseIds.set(lev-1,new MultiIntFab(bndC,1,0,Fab_allocate)); crseIds[lev-1].setVal(-1);
             crseIds[lev-1].copy(nodeIds[lev-1]); // parallel copy
 
-            // "refine" crseIds
+            // "refine" crseIds using piecewise constant
             MultiIntFab fineIds(bndryCells[lev],1,0); fineIds.setVal(-1);
-            const Box rangeBox = Box(IntVect::TheZeroVector(),
-                                     refRatio[lev-1] - IntVect::TheUnitVector());
             for (MFIter mfi(crseIds[lev-1]); mfi.isValid(); ++mfi)
             {
-                const Box& cbox = crseIds[lev-1][mfi].box();
+                const IntFab& cIds = crseIds[lev-1][mfi];
+                const Box& cbox = cIds.box();
+                IntFab& fIds = fineIds[mfi];
                 for (IntVect iv = cbox.smallEnd(), End=cbox.bigEnd(); iv<=End; cbox.next(iv)) {
-                    int nodeIdx = crseIds[lev-1][mfi](iv,0);
-                    const IntVect baseIV = refRatio[lev-1] * iv;
-                    for (IntVect ivt = rangeBox.smallEnd(), End=rangeBox.bigEnd(); ivt<=End;rangeBox.next(ivt))
-                        fineIds[mfi](baseIV + ivt,0) = nodeIdx;
+                    const IntVect ll = ref * iv;
+                    const Box fbox(ll,ll+refm);
+                    BL_ASSERT(fIds.box().contains(fbox));
+                    fIds.setVal(cIds(iv,0),fbox,0,1);
                 }
             }
 
-            nodeIds[lev].FillBoundary(0,1);
+            nodeIds[lev].FillBoundary(0,1); 
             BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
 
             MultiIntFab ng(BoxArray(nodeIds[lev].boxArray()).grow(nodeIds[lev].nGrow()),1,0);
-            for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
-            {
-                ng[mfi].copy(nodeIds[lev][mfi]); // get valid + f-f (+periodic f-f)
+            for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi) {
+                ng[mfi].copy(nodeIds[lev][mfi]); // get valid + f-f (+periodic f-f) but NOT bndryCells
             }
-        
-            ng.copy(fineIds); // Parallel copy to get c-f from bndryCells
+            ng.copy(fineIds); // Parallel copy to get c-f from bndryCells (only)
 
             for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
             {
                 nodeIds[lev][mfi].copy(ng[mfi]); // put it all back
             }
         }
-        nodeIds[lev].FillBoundary(0,1);
-        BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
+        else {
+            nodeIds[lev].FillBoundary(0,1);
+            BoxLib::FillPeriodicBoundary<IntFab>(geomArray[lev],nodeIds[lev],0,1);
+        }
     }
 
 #ifdef BL_USE_PETSC
@@ -673,6 +676,7 @@ Layout::MFTowerToVec(Vec&           V,
                 const Real* y = fab.dataPtr();
                 
                 ierr = VecSetValues(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);                
+                //ierr = VecSetValuesLocal(V,ni,ix,y,INSERT_VALUES); CHKPETSC(ierr);                
             }
         }
     }
