@@ -38,10 +38,6 @@ std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput
 extern amanzi::chemistry::ChemistryOutput* amanzi::chemistry::chem_out;
 #endif
 
-#define GEOM_GROW   1
-#define HYP_GROW    3
-#define PRESS_GROW  1
-
 #define SHOWVALARR(val)                        \
 {                                              \
     std::cout << #val << " = ";                \
@@ -375,7 +371,7 @@ PorousMedia::PorousMedia (Amr&            papa,
   // With AMANZI we only use the ntracers parts.  But by using ncomps+ntracers
   // we don't need to worry about the case when ntracers==0.
   //
-  aux_boundary_data_old(bl,HYP_GROW,ncomps+ntracers,level_geom),
+  aux_boundary_data_old(bl,nGrowHYP,ncomps+ntracers,level_geom),
   FillPatchedOldState_ok(true)
 {
     if (!initialized) {
@@ -648,7 +644,7 @@ PorousMedia::restart (Amr&          papa,
   // With AMANZI we only use the ntracers parts.  But by using ncomps+ntracers
   // we don't need to worry about the case when ntracers==0.
   //
-  aux_boundary_data_old.initialize(grids,HYP_GROW,ncomps+ntracers,Geom());
+  aux_boundary_data_old.initialize(grids,nGrowHYP,ncomps+ntracers,Geom());
 
   FillPatchedOldState_ok = true;
 
@@ -852,10 +848,10 @@ PorousMedia::buildMetrics ()
   //
   // Build volume and face area arrays.
   //
-  geom.GetVolume(volume,grids,GEOM_GROW);
+  geom.GetVolume(volume,grids,nGrowMG);
   for (int dir = 0; dir < BL_SPACEDIM; dir++)
     {
-      geom.GetFaceArea(area[dir],grids,dir,GEOM_GROW);
+      geom.GetFaceArea(area[dir],grids,dir,nGrowMG);
     }
 }
 
@@ -2582,7 +2578,7 @@ PorousMedia::advance (Real time,
 	    
 	    // Old state is chem-advanced in-place.  Hook set to get grow data
 	    //  from squirreled away data rather than via a vanilla fillpatch
-	    strang_chem(time,dt/2,HYP_GROW);
+	    strang_chem(time,dt/2,nGrowHYP);
 	    // FillPatchedOldState_ok = false;  FIXME: Reacted state not yet squirreled away anywhere
 	  }
       }
@@ -2722,7 +2718,7 @@ PorousMedia::multilevel_advance (Real  time,
               for (int lev = 0; lev <= parent->finestLevel() && step_ok; lev++)
 	      {
                   PorousMedia& pm_lev = getLevel(lev);
-                  pm_lev.strang_chem(time,dt/2,HYP_GROW);
+                  pm_lev.strang_chem(time,dt/2,nGrowHYP);
                   // FIXME: Have no code for chem-advancing grow cells
                   //FillPatchedOldState_ok = false;
                   step_ok = true; // assume the best!
@@ -2900,7 +2896,7 @@ PorousMedia::advance_incompressible (Real time,
       if (do_chem>0)
 	{
 	  if (do_full_strang)
-	    strang_chem(time,dt/2.0,HYP_GROW);
+	    strang_chem(time,dt/2.0,nGrowHYP);
 	}
       
       //
@@ -4279,7 +4275,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 	}
     }
   
-  for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),HYP_GROW,
+  for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
 			       prev_time,State_Type,fscalar,nscal);
        S_fpi.isValid();
        ++S_fpi)
@@ -4840,13 +4836,13 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
         }
     }
  
-  for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),HYP_GROW,
+  for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
 			       prev_time,State_Type,fscalar,nscal),
-	 Sn_fpi(*this,get_new_data(State_Type),HYP_GROW,
+	 Sn_fpi(*this,get_new_data(State_Type),nGrowHYP,
 		cur_time,State_Type,fscalar,nscal),
-	 St_fpi(*this,get_old_data(State_Type),HYP_GROW,  
+	 St_fpi(*this,get_old_data(State_Type),nGrowHYP,  
 		prev_time,State_Type,0,ncomps),
-	 Stn_fpi(*this,get_new_data(State_Type),HYP_GROW,  
+	 Stn_fpi(*this,get_new_data(State_Type),nGrowHYP,  
 		 cur_time,State_Type,0,ncomps);
        S_fpi.isValid() && Sn_fpi.isValid() && St_fpi.isValid() && Stn_fpi.isValid(); 
        ++S_fpi,++Sn_fpi,++St_fpi,++Stn_fpi)
@@ -4870,8 +4866,8 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       
       state_bc = getBCArray(State_Type,i,state_ind,1);
 
-      sat.resize(BoxLib::grow(grids[i],HYP_GROW),1);
-      satn.resize(BoxLib::grow(grids[i],HYP_GROW),1);
+      sat.resize(BoxLib::grow(grids[i],nGrowHYP),1);
+      satn.resize(BoxLib::grow(grids[i],nGrowHYP),1);
       sat.copy(St_fpi(),0,0,1);
       satn.copy(Stn_fpi(),0,0,1);
       sat.mult(1.0/density[0]);
@@ -7382,7 +7378,7 @@ PorousMedia::predictDT (MultiFab* u_macG)
   dt_eig = 1.e20; // FIXME: Need more robust
 
   Real eigmax[BL_SPACEDIM] = { D_DECL(0,0,0) };
-  for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),GEOM_GROW,
+  for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowEIGEST,
 			       cur_time,State_Type,0,ncomps);
        S_fpi.isValid();
        ++S_fpi)
@@ -7991,7 +7987,7 @@ PorousMedia::init_rock_properties ()
       if (ii >= level) twoexp *= parent->refRatio(ii)[0];
       ng_twoexp *= parent->refRatio(ii)[0];
     }	
-  ng_twoexp = ng_twoexp*3;
+  ng_twoexp = ng_twoexp*nGrowHYP;
 
   int curr_grid_size = parent->maxGridSize(level);
   int new_grid_size  = 4;
@@ -8005,7 +8001,7 @@ PorousMedia::init_rock_properties ()
   {
       BoxArray tba(grids);
       tba.maxSize(new_grid_size);
-      MultiFab tkappa(tba,1,3);
+      MultiFab tkappa(tba,1,nGrowHYP);
       tkappa.setVal(1.e40);
       
       MultiFab* tkpedge;
@@ -8085,7 +8081,7 @@ PorousMedia::init_rock_properties ()
       delete [] tkpedge;
       
       BoxArray tba2(tkappa.boxArray());
-      tba2.grow(3);
+      tba2.grow(nGrowHYP);
       MultiFab tmpgrow(tba2,1,0);
     
       for (MFIter mfi(tkappa); mfi.isValid(); ++mfi)
@@ -8094,7 +8090,7 @@ PorousMedia::init_rock_properties ()
       tkappa.clear();
 
       tba2 = kappa->boxArray();
-      tba2.grow(3);
+      tba2.grow(nGrowHYP);
       MultiFab tmpgrow2(tba2,1,0);
 
       tmpgrow2.copy(tmpgrow);
@@ -8178,7 +8174,7 @@ PorousMedia::init_rock_properties ()
       {      
 	BoxArray tba(grids);
 	tba.maxSize(new_grid_size);
-	MultiFab trock_phi(tba,1,3);
+	MultiFab trock_phi(tba,1,nGrowHYP);
 	trock_phi.setVal(1.e40);
 	
 	BoxArray ba(trock_phi.size());
@@ -8224,7 +8220,7 @@ PorousMedia::init_rock_properties ()
 	mfbig_phi.clear();
 	
 	BoxArray tba2(trock_phi.boxArray());
-	tba2.grow(3);
+	tba2.grow(nGrowHYP);
 	MultiFab tmpgrow(tba2,1,0);
 	
 	for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
@@ -8233,7 +8229,7 @@ PorousMedia::init_rock_properties ()
 	trock_phi.clear();
 	
 	tba2 = rock_phi->boxArray();
-	tba2.grow(3);
+	tba2.grow(nGrowHYP);
 	MultiFab tmpgrow2(tba2,1,0);
 	
 	tmpgrow2.copy(tmpgrow);
@@ -11761,7 +11757,7 @@ PorousMedia::derive (const std::string& name,
             const BoxArray& BA = mf.boxArray();
             BL_ASSERT(rec->deriveType() == BA[0].ixType());
             int ngrow = mf.nGrow();
-            BL_ASSERT(mf.nGrow()<=3); // rock_phi only has this many
+            BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
 
             int ncomp = 1; // Just water
             BL_ASSERT(rec->numDerive()==ncomp);
@@ -11851,7 +11847,7 @@ PorousMedia::derive (const std::string& name,
         int ngrow = mf.nGrow();
         int ncomp = 1; // just porosity
         BL_ASSERT(rec->numDerive()==ncomp);
-        BL_ASSERT(mf.nGrow()<=3); // rock_phi only has this many
+        BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
         MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
 
     } else {

@@ -286,6 +286,9 @@ int  PorousMedia::it_pressure;
 bool PorousMedia::do_any_diffuse;
 int  PorousMedia::do_cpl_advect;
 Real PorousMedia::ic_chem_relax_dt;
+int  PorousMedia::nGrowHYP;
+int  PorousMedia::nGrowMG;
+int  PorousMedia::nGrowEIGEST;
 
 int  PorousMedia::richard_solver_verbose;
 //
@@ -606,6 +609,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::tpc_maximum_time_steps.resize(0);
   PorousMedia::tpc_labels.resize(0);
   PorousMedia::solute_transport_limits_dt = false;
+  PorousMedia::nGrowHYP = 3;
+  PorousMedia::nGrowMG = 1;
+  PorousMedia::nGrowEIGEST = 1;
 
   PorousMedia::richard_solver_verbose = 1;
 
@@ -1705,7 +1711,7 @@ PorousMedia::read_rock(int do_chem)
       if (phi_is_compatible) {
 	Box probDomain=Box(IntVect::TheZeroVector(),
 			   IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
-	probDomain.grow(3);
+	probDomain.grow(nGrowHYP);
 	phi_is_compatible &= phi_amrData.ProbDomain()[0].contains(probDomain);
       }
       if (!phi_is_compatible) {
@@ -1722,7 +1728,8 @@ PorousMedia::read_rock(int do_chem)
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
             std::cout << "Building kmap on finest level..." << std::endl;
 
-        BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
+        int maxBaseGrid = 32; // FIXME: Should not be hardwired here
+        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
         
         if (kappadata == 0) {
 
@@ -1757,7 +1764,8 @@ PorousMedia::read_rock(int do_chem)
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
             std::cout << "Building pmap on finest level..." << std::endl;
 
-        BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
+        int maxBaseGrid = 32; // FIXME: Should not be hardwired here
+        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
         
         if (phidata == 0) {
 
@@ -1779,7 +1787,7 @@ PorousMedia::read_rock(int do_chem)
 	    std::string porosity_plotfile_out;
 	    pp.query("porosity_plotfile_out", porosity_plotfile_out);
 	    if (!porosity_plotfile_out.empty()) {
-	      WritePorosityPltFile(max_level,n_cell,fratio,problo,probhi,phidata,porosity_plotfile_out,3);
+	      WritePorosityPltFile(max_level,n_cell,fratio,problo,probhi,phidata,porosity_plotfile_out,nGrowHYP);
 	    }
 
             if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
