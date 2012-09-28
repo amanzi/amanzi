@@ -22,6 +22,7 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
+#include "source_from_subsurface_evaluator.hh"
 #include "wrm_richards_evaluator.hh"
 #include "rel_perm_evaluator.hh"
 #include "richards_water_content.hh"
@@ -91,6 +92,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // coupling
   coupled_to_surface_ = plist_.get<bool>("coupled to surface", false);
+  if (coupled_to_surface_) {
+    S->RequireField("overland_source_from_subsurface");
+  }
 
   // Create the upwinding method
   S->RequireField("numerical_rel_perm", name_)->SetMesh(S->GetMesh())->SetGhosted()
@@ -361,12 +365,14 @@ void Richards::UpdateBoundaryConditions_() {
       Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S_next_->GetMesh("surface"));
     Teuchos::RCP<const CompositeVector> source =
       S_next_->GetFieldData("overland_source_from_subsurface");
-    Teuchos::RCP<const CompositeVector> height =
-      S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> n_liq =
       S_next_->GetFieldData("molar_density_liquid");
 
     for (int c=0; c!=source->size("cell"); ++c) {
+      // this is wonky... using the subsurface's density... should be
+      // upwinded?  But for this to be upwinded correctly, we probably need
+      // the conserved quantity in overland flow to be moles water, not volume
+      // water as it currently is.
       AmanziMesh::Entity_ID f =
         surface->entity_get_parent(AmanziMesh::CELL, c);
       AmanziMesh::Entity_ID_List cells;
@@ -374,9 +380,7 @@ void Richards::UpdateBoundaryConditions_() {
       ASSERT(cells.size() == 1);
 
       bc_markers_[f] = Operators::MFD_BC_FLUX;
-      bc_values_[f] = std::max<double>((*source)("cell",c),
-              -abs((*height)("cell",c)) / (S_next_->time() - S_inter_->time()))
-              * (*n_liq)("cell", cells[0]);
+      bc_values_[f] = (*source)("cell",c) * (*n_liq)("cell",cells[0]);
     }
   }
 
