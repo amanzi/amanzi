@@ -508,14 +508,14 @@ RichardSolver::BuildOpSkel(Mat& J)
 	// Pack up the crseContribs for a parallel copy
 	const BoxArray& ba = gridArray[lev];
 	MultiSetFab& crseContribsFine = crseContribs[lev+1];
-	const DistributionMapping& dm = crseContribsFine.DistributionMap();
+        const DistributionMapping& dm = nodeLev.DistributionMap();
 	std::map<int,Array<int> > ccArrays;
 	for (MFIter mfi(crseContribsFine); mfi.isValid(); ++mfi) {
 	  const ISetFab& ccFab = crseContribsFine[mfi];
 	  const Box& vbox = mfi.validbox();
 	  std::vector< std::pair<int,Box> > isects = ba.intersections(vbox);
 	  for (int i=0; i<isects.size(); ++i) {
-	    int dst_proc = dm[isects[i].first];
+            int dst_proc = dm[isects[i].first];
 
             // HACK  This was originally written for parallel, but when I tried it in serial, the entire 
             // crseContribs structure was ignored!!  For now, set this up as a communication, even if 
@@ -693,6 +693,7 @@ RichardSolver::BuildOpSkel(Mat& J)
 		    cols[cnt++] = *it;
 		  }
 		}
+
 	      ierr = MatSetValues(J,num_rows,rows,num_cols,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
 	    }
 	  }
