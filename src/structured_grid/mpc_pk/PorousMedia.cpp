@@ -8205,8 +8205,9 @@ PorousMedia::init_rock_properties ()
 	
 	for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
 	  {
-	    const int* lo    = mfi.validbox().loVect();
-	    const int* hi    = mfi.validbox().hiVect();
+            const Box& gbox = trock_phi[mfi].box();
+	    const int* lo    = gbox.loVect();
+	    const int* hi    = gbox.hiVect();
 	    
 	    const int* p_lo  = trock_phi[mfi].loVect();
 	    const int* p_hi  = trock_phi[mfi].hiVect();
@@ -8240,6 +8241,7 @@ PorousMedia::init_rock_properties ()
 	
 	for (MFIter mfi(tmpgrow2); mfi.isValid(); ++mfi)
 	  (*rock_phi)[mfi].copy(tmpgrow2[mfi]);
+
       }
     else
       { 
