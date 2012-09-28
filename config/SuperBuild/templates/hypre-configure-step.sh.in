@@ -5,9 +5,9 @@
 
 
 # Useful environment variables
-export CC=@CMAKE_C_COMPILER@
-export CXX=@CMAKE_CXX_COMPILER@
-export F77=@CMAKE_Fortran_COMPILER@
+export CC=@CMAKE_C_COMPILER_USE@
+export CXX=@CMAKE_CXX_COMPILER_USE@
+export F77=@CMAKE_Fortran_COMPILER_USE@
 export CFLAGS='@Amanzi_COMMON_CFLAGS@'
 export CXXFLAGS='@Amanzi_COMMON_CXXFLAGS@'
 export FFLAGS='@Amanzi_COMMON_FCFLAGS@'

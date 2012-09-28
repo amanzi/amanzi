@@ -36,9 +36,9 @@ endif()
 
 # Point PETSc to the MPI build
 if ( "${MPI_BUILD}" )
-  set(petsc_mpi_flag "--with-mpi=${TPL_INSTALL_PREFIX}")
+  set(petsc_mpi_flag "--with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX}")
 else()
-  set(petsc_mpi_flag "--with-mpi")
+  set(petsc_mpi_flag "--with-mpi=1")
 endif()
 
 # --- Add external project build 
