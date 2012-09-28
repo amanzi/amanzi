@@ -27,6 +27,9 @@ class SourceFromSubsurfaceEvaluator :
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
+  // custom ensure compatibility as all data is not just on the same components
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+
 protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -38,8 +41,11 @@ protected:
 
   typedef std::pair<int, int> FaceDir;
   Teuchos::RCP<std::vector<FaceDir> > face_and_dirs_;
-  Key flux_key_;
+
   Key density_key_;
+  Key surface_density_key_;
+  Key pres_key_;
+  Key ponded_depth_key_;
 
   Key surface_mesh_key_;
   Key subsurface_mesh_key_;

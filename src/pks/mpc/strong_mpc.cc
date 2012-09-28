@@ -184,4 +184,25 @@ void StrongMPC::changed_solution() {
   }
 };
 
+// -----------------------------------------------------------------------------
+// Compute a norm on u-du and returns the result.
+// For a Strong MPC, the enorm is just the max of the sub PKs enorms.
+// -----------------------------------------------------------------------------
+bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
+  // loop over sub-PKs
+  for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+
+    // pull out the u sub-vector
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
+    if (pk_u == Teuchos::null) {
+      Errors::Message message("MPC: vector structure does not match PK structure");
+      Exceptions::amanzi_throw(message);
+    }
+
+    if (!(*pk)->is_admissible(pk_u)) return false;
+  }
+  return true;
+};
+
 } // namespace

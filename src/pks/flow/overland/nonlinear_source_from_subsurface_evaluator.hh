@@ -31,6 +31,7 @@ class NonlinearSourceFromSubsurfaceEvaluator :
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
+  Teuchos::RCP<Operators::MatrixMFD> get_operator() { return op_; }
   void set_operator(const Teuchos::RCP<Operators::MatrixMFD> op) { op_ = op; }
 
 protected:
@@ -52,6 +53,7 @@ protected:
 
   Key surface_mesh_key_;
   Key subsurface_mesh_key_;
+
 };
 
 } //namespace

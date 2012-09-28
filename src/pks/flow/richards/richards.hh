@@ -132,7 +132,6 @@ protected:
 
   // Richards has a friend in couplers...
   friend class Amanzi::MPCDiagonalFlowEnergy;
-
 };
 
 }  // namespace AmanziFlow
