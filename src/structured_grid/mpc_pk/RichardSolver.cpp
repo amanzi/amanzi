@@ -31,6 +31,7 @@ static Real variable_switch_saturation_threshold_DEF = -0.9999;
 static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
 static bool record_entire_solve = false;
 static std::string record_file = "SNES";
+static bool dump_Jacobian_and_exit = false;
 
 RSParams::RSParams()
 {
@@ -1879,6 +1880,20 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   ierr = PetscLogEventEnd(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
 
+  if (dump_Jacobian_and_exit) {
+    std::string viewer_filename="mat.output";
+    PetscViewer viewer;
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,viewer_filename.c_str(),&viewer);
+    ierr = MatView(J,viewer);
+    ierr = PetscViewerDestroy(&viewer);
+    ierr = VecGetSize(w2,&N);
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "There are " << N << " rows in the Jacobian" << std::endl;
+    }
+    std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
+    BoxLib::Abort(str.c_str());
+  }
+
   flg  = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
   if (flg) {
@@ -2113,6 +2128,20 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   ierr = PetscLogEventEnd(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
+
+  if (dump_Jacobian_and_exit) {
+    std::string viewer_filename="mat.output";
+    PetscViewer viewer;
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,viewer_filename.c_str(),&viewer);
+    ierr = MatView(J,viewer);
+    ierr = PetscViewerDestroy(&viewer);
+    ierr = VecGetSize(w2,&N);
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "There are " << N << " rows in the Jacobian" << std::endl;
+    }
+    std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
+    BoxLib::Abort(str.c_str());
+  }
 
   flg  = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);

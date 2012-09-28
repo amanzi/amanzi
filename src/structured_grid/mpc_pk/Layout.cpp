@@ -310,6 +310,7 @@ Layout::Rebuild(int _nLevs)
     crseNodes.resize(nLevs,PArrayManage);
 
     int cnt = 0; // local node counter
+    Array<Array<int> > grid_cnt(nLevs);
     for (int lev=0; lev<nLevs; ++lev)
     {
         nodes.set(lev,new MultiNodeFab(gridArray[lev],1,nGrow));
@@ -403,12 +404,14 @@ Layout::Rebuild(int _nLevs)
         }
 
         // Set nodeIds
+	grid_cnt[lev].resize(nodesLev.size(),0);
         nodeIds[lev].setVal(-1);
         for (MFIter fai(nodesLev); fai.isValid(); ++fai)
         {
             NodeFab& ifab = nodes[lev][fai];
             IntFab& nfab = nodeIds[lev][fai];
             const Box& box = fai.validbox() & gridArray[lev][fai.index()];
+	    grid_cnt[lev][fai.index()] = cnt;
             for (IntVect iv(box.smallEnd()); iv<=box.bigEnd(); box.next(iv))
             {
                 if (ifab(iv,0).type == Node::VALID)
@@ -418,10 +421,66 @@ Layout::Rebuild(int _nLevs)
                     nfab(iv,0) = cnt++;
                 }
             }
+	    grid_cnt[lev][fai.index()] = cnt - grid_cnt[lev][fai.index()];
         }
+	ParallelDescriptor::ReduceIntSum(grid_cnt[lev].dataPtr(),grid_cnt[lev].size());
     }
     nNodes_local = cnt;
     nNodes_global = nNodes_local;
+
+#if 0
+    // Compute total number of nodes
+    nNodes_global = 0;
+    for (int lev=0; lev<nLevs; ++lev) {
+      for (int i=0; i<grid_cnt[lev].size(); ++i) {
+	nNodes_global += grid_cnt[lev][i];
+      }
+    }
+
+    int n_offset = nNodes_global;
+    for (int lev=nLevs-1; lev>=0; --lev) {
+      for (int i=grid_cnt[lev].size()-1; i>=0; --i) {
+	n_offset -= grid_cnt[lev][i];
+	grid_cnt[lev][i] = n_offset;
+      }
+    }
+
+    if (ParallelDescriptor::IOProcessor()) {
+      for (int lev=0; lev<nLevs; ++lev) {
+	for (int i=0; i<grid_cnt[lev].size(); ++i) {
+	  std::cout << "l,g: " << lev << ", " << i << ": " << grid_cnt[lev][i] << std::endl;
+	}
+      }
+      std::cout << "total: " << nNodes_global << std::endl;
+    }
+
+    // Adjust node numbers 
+    for (int lev=0; lev<nLevs; ++lev)
+    {
+        for (MFIter mfi(nodeIds[lev]); mfi.isValid(); ++mfi)
+        {
+            IntFab& nfab = nodeIds[lev][mfi];
+            const Box& box = mfi.validbox() & gridArray[lev][mfi.index()];
+	    bool first = true;
+	    int offset;
+            for (IntVect iv(box.smallEnd()); iv<=box.bigEnd(); box.next(iv))
+            {
+                if (nfab(iv,0) >= 0)
+                {
+		  if (first) {
+		    first = false;
+		    offset = grid_cnt[lev][mfi.index()] - nfab(iv,0);
+		  }
+		  nfab(iv,0) += offset;
+		  if (nfab(iv,0) >= nNodes_global) {
+		    BoxLib::Error("Bad counting");
+		  }
+
+                }
+            }
+        }
+    }
+#else
 
 #if BL_USE_MPI
     // Adjust node numbers to be globally unique
@@ -457,6 +516,8 @@ Layout::Rebuild(int _nLevs)
     for (int i=0; i<ParallelDescriptor::NProcs(); ++i) {
         nNodes_global += num_nodes_p[i];
     }
+#endif
+
 #endif
 
     // Now communicate node numbering to neighbors grow cells
