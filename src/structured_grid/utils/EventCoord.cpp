@@ -110,13 +110,13 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
 
     if (type == SPS_CYCLES)
     {
-        if ( (stop > 0  &&  cycle > stop)  ||  (cycle < start) )
+        if ( (stop > 0  &&  cycle > stop)  ||  (cycle + dCycle < start) )
         {
             return false;
         }
         
         if ( ( ( stop < 0 ) || ( cycle <= stop ) )
-             && ( cycle >= start) )
+             && ( cycle + dCycle >= start) )
         {
             int cold_interval = (cycle - start)/period;
             int cnew_interval = (cycle + dCycle - start)/period;
@@ -128,7 +128,7 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
                 return true;
             }
 
-            int next_boundary = (cold_interval + 1)*period;
+            int next_boundary = (cold_interval + 1)*period + start;
 
             if (next_boundary <= cycle + dCycle) {
                 dCycle_red = std::min(dCycle, next_boundary - cycle);
@@ -155,7 +155,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
     dt_red = dt;
     if (type == SPS_TIMES)
     {
-        if ( (stop > 0  &&  t > stop)  ||  (t < start) )
+        if ( (stop > 0  &&  t > stop)  ||  (t + dt < start) )
         {
             return false;
         }
@@ -163,7 +163,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
         Real teps = period * 1.e-8;
 
         if ( ( ( stop < 0 ) || ( t + teps <= stop ) )
-             && ( t >= start - teps) )
+             && ( t + dt >= start - teps) )
         {
             // Is on interval boundary
             int told_interval = (t - start)/period;
@@ -191,7 +191,7 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
                 return true;
             }
 
-            Real next_boundary = (told_interval + 1)*period;
+            Real next_boundary = (told_interval + 1)*period + start;
 
             if (stop < 0  ||  next_boundary <= stop) {
                 dt_red = std::min(dt, next_boundary - t);
