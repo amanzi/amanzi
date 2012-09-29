@@ -141,7 +141,6 @@ int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTn
 
     solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs = solver->NumIters();
-    double linear_residual = solver->TrueResidual();
 
     // update d_krylov history
     m = std::min<int>(++m, mmax);
@@ -154,6 +153,7 @@ int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTn
     double error = ErrorNormPicardExperimental(*solution_old_cells, *solution_diff_cells);
 
     if (MyPID == 0) { // && verbosity >= FLOW_VERBOSITY_HIGH) {
+      double linear_residual = solver->ScaledResidual();
       std::printf("Picard:%4d   Pressure(error=%9.4e)  solver(%8.3e, %4d)\n",
           itrs, error, linear_residual, num_itrs);
     }

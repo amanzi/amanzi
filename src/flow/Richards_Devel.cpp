@@ -87,7 +87,6 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
 
     solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs = solver->NumIters();
-    double residual = solver->TrueResidual();
 
     // error estimates
     double sol_norm = FS->normLpCell(solution_new, 2.0);
@@ -99,8 +98,9 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
       dT /= 10;
       solution_new = solution_old;
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+        double linear_residual = solver->ScaledResidual();
         std::printf("Fail:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
-            itrs, L2error, sol_norm, residual, num_itrs, T_physics, dT);
+            itrs, L2error, sol_norm, linear_residual, num_itrs, T_physics, dT);
       }
       ifail++;
     } else {
@@ -108,8 +108,9 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
       solution_old = solution_new;
 
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+        double linear_residual = solver->ScaledResidual();
         std::printf("Step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
-            itrs, L2error, sol_norm, residual, num_itrs, T_physics, dT);
+            itrs, L2error, sol_norm, linear_residual, num_itrs, T_physics, dT);
       }
 
       ifail = 0;

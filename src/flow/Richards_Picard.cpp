@@ -66,7 +66,6 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
 
     solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs = solver->NumIters();
-    double linear_residual = solver->TrueResidual();
 
     // error analysis
     Epetra_Vector solution_diff(*solution_old_cells);
@@ -74,6 +73,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     double error = ErrorNormPicardExperimental(*solution_old_cells, solution_diff);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+      double linear_residual = solver->ScaledResidual();
       std::printf("Picard:%4d   Pressure(error=%9.4e)  solver(%8.3e, %4d)\n",
           itrs, error, linear_residual, num_itrs);
     }

@@ -274,9 +274,9 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    double pokay = 100 * matrix_->nokay() / double(ncells_owned);
-    double ppassed = 100 * matrix_->npassed() / double(ncells_owned);
-    std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
+    int nokay = matrix_->nokay();
+    int npassed = matrix_->npassed();
+    std::printf("Darcy PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
   // Well modeling
@@ -319,6 +319,12 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    int nokay = matrix_->nokay();
+    int npassed = matrix_->npassed();
+    std::printf("Darcy PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+  }
 
   // Well modeling
   if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
@@ -380,10 +386,10 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver->Iterate(max_itrs, convergence_tol);
 
   int num_itrs = solver->NumIters();
-  double linear_residual = solver->TrueResidual();
+  double linear_residual = solver->ScaledResidual();
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::printf("Darcy PK: fully saturated solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 }
 
@@ -452,7 +458,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver->NumIters();
-    double linear_residual = solver->TrueResidual();
+    double linear_residual = solver->ScaledResidual();
     std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
