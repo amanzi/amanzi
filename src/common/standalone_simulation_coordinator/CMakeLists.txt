@@ -135,26 +135,16 @@ add_amanzi_executable(amanzi
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 
-if (BUILD_TESTS)
+if (BUILD_TESTS) 
 
-  if (ENABLE_Structured)
-
-    add_amanzi_test(ssc-structured-test-0 amanzi "--xml_file=t0-structured.xml" KIND unit)
-    add_amanzi_test(ssc-structured-test-1 amanzi "--xml_file=t1-structured.xml" KIND unit)
-    add_amanzi_test(ssc-structured-test-2 amanzi "--xml_file=t2-structured.xml" KIND unit)
-
-    if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/Color.txt ${SSC_BINARY_DIR})
-
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/t0-structured.xml ${SSC_BINARY_DIR})
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/t1-structured.xml ${SSC_BINARY_DIR})
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/t2-structured.xml ${SSC_BINARY_DIR})
-
+    # Copy test directory files if an out of source build
+    if (NOT (${SSC_SOURCE_DIR} EQUAL ${SSC_BINARY_DIR}) )
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${SSC_SOURCE_DIR}/test ${SSC_BINARY_DIR}/test) 
     endif()
-  endif()
+
+    add_amanzi_test(ssc-structured-transport-0 amanzi "--xml_file=test/t0-structured.xml" KIND unit)
+    add_amanzi_test(ssc-structured-flow-1 amanzi "--xml_file=test/t1-structured.xml" KIND unit)
 
 endif()
+

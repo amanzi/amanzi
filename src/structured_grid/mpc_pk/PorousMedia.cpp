@@ -2674,7 +2674,9 @@ PorousMedia::multilevel_advance (Real  time,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::multilevel_advance()");
 
-  BL_ASSERT(do_multilevel_full);
+  if (level>0) {
+      BL_ASSERT(do_multilevel_full);
+  }
 
   dt_new = dt;
 
