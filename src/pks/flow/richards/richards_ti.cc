@@ -214,9 +214,12 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
   // Assemble and precompute the Schur complement for inversion.
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  preconditioner_->AssembleGlobalMatrices();
-  preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-  preconditioner_->UpdatePreconditioner();
+
+  if (assemble_preconditioner_) {
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    preconditioner_->UpdatePreconditioner();
+  }
 
   /*
   // dump the schur complement

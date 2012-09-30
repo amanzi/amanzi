@@ -90,6 +90,7 @@ void TwoPhase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   preconditioner_->InitPreconditioner(mfd_pc_plist);
+  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 
   // constraint on max delta T, which kicks us out of bad iterates faster?
   dT_max_ = plist_.get<double>("maximum temperature change", 10.);
