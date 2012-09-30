@@ -107,6 +107,8 @@ protected:
 
   // constraint on max dT
   double dT_max_;
+  bool assemble_preconditioner_;
+
 
 private:
   // factory registration

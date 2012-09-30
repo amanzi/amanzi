@@ -145,14 +145,15 @@ void TwoPhase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     //    Fc_cells[c] += (*de_dT)("cell",c) / h * (*temp)("cell",c);
   }
 
-  // -- assemble
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  preconditioner_->AssembleGlobalMatrices();
 
-  // -- form and prep the Schur complement for inversion
-  preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-  preconditioner_->UpdatePreconditioner();
-
+  if (assemble_preconditioner_) {
+    // -- assemble
+    preconditioner_->AssembleGlobalMatrices();
+    // -- form and prep the Schur complement for inversion
+    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    preconditioner_->UpdatePreconditioner();
+  }
 };
 
 } // namespace Energy
