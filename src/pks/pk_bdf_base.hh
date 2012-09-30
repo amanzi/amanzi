@@ -13,6 +13,8 @@ BDF.
 #ifndef AMANZI_PK_BDF_BASE_HH_
 #define AMANZI_PK_BDF_BASE_HH_
 
+#include "Teuchos_TimeMonitor.hpp"
+
 #include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
 #include "pk_default_base.hh"
@@ -56,6 +58,9 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
 
   // debugging
   bool catch_errors_;
+
+  // timing
+  Teuchos::RCP<Teuchos::Time> step_walltime_;
 
 };
 
