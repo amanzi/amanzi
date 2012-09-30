@@ -49,31 +49,25 @@ WRMPermafrostEvaluator::Clone() const {
 
 void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
-  Teuchos::Ptr<CompositeVector> sat = results[0];
-  Teuchos::Ptr<CompositeVector> sat_i = results[1];
-  Teuchos::Ptr<CompositeVector> sat_g = results[2];
-
-  Teuchos::RCP<const CompositeVector> one_on_A = S->GetFieldData(one_on_A_key_);
-  Teuchos::RCP<const CompositeVector> one_on_B = S->GetFieldData(one_on_B_key_);
-
   // Loop over names in the target and then owned entities in that name,
   // evaluating the evaluator to calculate saturations.
-  for (CompositeVector::name_iterator comp=sat->begin();
-       comp!=sat->end(); ++comp) {
-    for (int id=0; id!=sat->size(*comp); ++id) {
-      double s_l = 1.0 / (1.0/(*one_on_A)(*comp, id) + 1.0/(*one_on_B)(*comp, id) - 1.0);
-      (*sat)(*comp, id) = s_l;
-      (*sat_i)(*comp, id) = s_l * ( 1.0/(*one_on_A)(*comp, id) - 1.0);
-      (*sat_g)(*comp, id) = s_l * ( 1.0/(*one_on_B)(*comp, id) - 1.0);
+  for (CompositeVector::name_iterator comp=results[0]->begin();
+       comp!=results[0]->end(); ++comp) {
+    Epetra_MultiVector& sat = *results[0]->ViewComponent(*comp,false);
+    Epetra_MultiVector& sat_i = *results[1]->ViewComponent(*comp,false);
+    Epetra_MultiVector& sat_g = *results[2]->ViewComponent(*comp,false);
 
-#if DEBUG_FLAG
-      if (id==0) {
-        std::cout << " sat_l( 0) = " << s_l << ",    sat_i( 0) = " << (*sat_i)(*comp, id) << ",    sat_g( 0) = " << (*sat_g)(*comp, id) << std::endl;
-      }
-      if (id==99) {
-        std::cout << " sat_l(99) = " << s_l << ",    sat_i(99) = " << (*sat_i)(*comp, id) << ",    sat_g(99) = " << (*sat_g)(*comp, id) << std::endl;
-      }
-#endif
+    const Epetra_MultiVector& one_on_A =
+        *S->GetFieldData(one_on_A_key_)->ViewComponent(*comp,false);
+    const Epetra_MultiVector& one_on_B =
+        *S->GetFieldData(one_on_B_key_)->ViewComponent(*comp,false);
+
+    int count = results[0]->size(*comp, false);
+    for (int id=0; id!=count; ++id) {
+      double s_l = 1.0 / (1.0/one_on_A[0][id] + 1.0/one_on_B[0][id] - 1.0);
+      sat[0][id] = s_l;
+      sat_i[0][id] = s_l * (1.0/one_on_A[0][id] - 1.0);
+      sat_g[0][id] = s_l * (1.0/one_on_B[0][id] - 1.0);
     }
   }
 }
@@ -81,42 +75,58 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
-  Teuchos::Ptr<CompositeVector> dsat = results[0];
-  Teuchos::Ptr<CompositeVector> dsat_i = results[1];
-  Teuchos::Ptr<CompositeVector> dsat_g = results[2];
-
-  Teuchos::RCP<const CompositeVector> one_on_A = S->GetFieldData(one_on_A_key_);
-  Teuchos::RCP<const CompositeVector> one_on_B = S->GetFieldData(one_on_B_key_);
-  Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(s_l_key_);
-
   if (wrt_key == one_on_A_key_) {
-    for (CompositeVector::name_iterator comp=sat->begin();
-         comp!=sat->end(); ++comp) {
-      for (int id=0; id!=sat->size(*comp); ++id) {
-        double Ainv = (*one_on_A)(*comp, id);
+    for (CompositeVector::name_iterator comp=results[0]->begin();
+         comp!=results[0]->end(); ++comp) {
+      Epetra_MultiVector& dsat = *results[0]->ViewComponent(*comp,false);
+      Epetra_MultiVector& dsat_i = *results[1]->ViewComponent(*comp,false);
+      Epetra_MultiVector& dsat_g = *results[2]->ViewComponent(*comp,false);
+
+      const Epetra_MultiVector& sat =
+          *S->GetFieldData(s_l_key_)->ViewComponent(*comp,false);
+      const Epetra_MultiVector& one_on_A =
+          *S->GetFieldData(one_on_A_key_)->ViewComponent(*comp,false);
+      const Epetra_MultiVector& one_on_B =
+          *S->GetFieldData(one_on_B_key_)->ViewComponent(*comp,false);
+
+      int count = results[0]->size(*comp, false);
+      for (int id=0; id!=count; ++id) {
+        double Ainv = one_on_A[0][id];
         double A = 1.0 / Ainv;
         double dA = - A * A;
-        double B = 1.0 / (*one_on_B)(*comp, id);
-        double sl = (*sat)(*comp, id);
+        double B = 1.0 / one_on_B[0][id];
+        double sl = sat[0][id];
 
-        (*dsat)(*comp, id) = (- sl * sl) * dA;
-        (*dsat_i)(*comp, id) = sl*dA + (A - 1.0)*(*dsat)(*comp, id);
-        (*dsat_g)(*comp, id) = (B - 1.0)*(*dsat)(*comp, id);
+        dsat[0][id] = (- sl * sl) * dA;
+        dsat_i[0][id] = sl*dA + (A - 1.0)*dsat[0][id];
+        dsat_g[0][id] = (B - 1.0)*dsat[0][id];
       }
     }
   } else if (wrt_key == one_on_B_key_) {
-    for (CompositeVector::name_iterator comp=sat->begin();
-         comp!=sat->end(); ++comp) {
-      for (int id=0; id!=sat->size(*comp); ++id) {
-        double Binv = (*one_on_B)(*comp, id);
+    for (CompositeVector::name_iterator comp=results[0]->begin();
+         comp!=results[0]->end(); ++comp) {
+      Epetra_MultiVector& dsat = *results[0]->ViewComponent(*comp,false);
+      Epetra_MultiVector& dsat_i = *results[1]->ViewComponent(*comp,false);
+      Epetra_MultiVector& dsat_g = *results[2]->ViewComponent(*comp,false);
+
+      const Epetra_MultiVector& sat =
+          *S->GetFieldData(s_l_key_)->ViewComponent(*comp,false);
+      const Epetra_MultiVector& one_on_A =
+          *S->GetFieldData(one_on_A_key_)->ViewComponent(*comp,false);
+      const Epetra_MultiVector& one_on_B =
+          *S->GetFieldData(one_on_B_key_)->ViewComponent(*comp,false);
+
+      int count = results[0]->size(*comp, false);
+      for (int id=0; id!=count; ++id) {
+        double Binv = one_on_B[0][id];
         double B = 1.0 / Binv;
         double dB = - B * B;
-        double A = 1.0 / (*one_on_A)(*comp, id);
-        double sl = (*sat)(*comp, id);
+        double A = 1.0 / one_on_A[0][id];
+        double sl = sat[0][id];
 
-        (*dsat)(*comp, id) = (- sl * sl) * dB;
-        (*dsat_i)(*comp, id) = (A - 1.0)*(*dsat)(*comp, id);
-        (*dsat_g)(*comp, id) = sl*dB + (B - 1.0)*(*dsat)(*comp, id);
+        dsat[0][id] = (- sl * sl) * dB;
+        dsat_i[0][id] = (A - 1.0)*dsat[0][id];
+        dsat_g[0][id] = sl*dB + (B - 1.0)*dsat[0][id];
       }
     }
   } else {
