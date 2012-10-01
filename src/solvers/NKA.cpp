@@ -144,7 +144,8 @@ void nka::nka_restart ()
 ///////////////////////////////////////////////////////////////////////
 
 void nka::nka_correction (NOX::Abstract::Vector &dir, 
-			  const Teuchos::RCP<NOX::Abstract::Vector> f)
+			  const Teuchos::RCP<NOX::Abstract::Vector> f,
+			  double damp)
 {
   int i, j, k, nvec, new_v;
   double s, hkk, hkj, cj;
@@ -160,7 +161,8 @@ void nka::nka_correction (NOX::Abstract::Vector &dir,
       // next_v function difference w_1 
       wp = w[first_v];
       
-      
+
+
       wp->update(-1.0, *ff.get(), 1.0);
       
       s = wp->innerProduct(*wp);
@@ -183,7 +185,11 @@ void nka::nka_correction (NOX::Abstract::Vector &dir,
     {
       // Normalize w_1 and apply same factor to v_1. 
       vp = v[first_v];
-      
+     
+      // first damp if requested, the user will supply a damping factor != 1.0, if 
+      // the previously suggested NKA update was damped
+      if (damp != 1.0) vp->scale(damp);
+ 
       vp->scale(1.0/s);
       wp->scale(1.0/s);
       

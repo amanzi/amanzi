@@ -223,7 +223,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs_linear = solver->NumIters();
-    double linear_residual = solver->TrueResidual() / L2norm;
+    double linear_residual = solver->ScaledResidual();
 
     // update relaxation
     double relaxation;

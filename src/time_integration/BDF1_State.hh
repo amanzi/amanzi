@@ -31,6 +31,8 @@ struct BDF1State {
     eps = std::numeric_limits<double>::epsilon();
     hmax = std::numeric_limits<double>::max();
     
+    damp = 1.0;
+
     hlimit = 1e10;
     elimit = 1e15;
     maxpclag = 0;
@@ -78,6 +80,7 @@ struct BDF1State {
   double hmax;           // maximum step size used on a successful step
   double hinc;           // stepsize increase factor
   double hred;           // stepsize reduction factor
+  double damp;           // nka damping factor
 
   bdf_nonlinear_solver_t nonlinear_solver;
 

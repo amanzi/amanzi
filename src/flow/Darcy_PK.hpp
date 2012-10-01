@@ -148,7 +148,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  int mfd3d_method, preconditioner_method;
+  int mfd3d_method, ini_with_darcy;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 

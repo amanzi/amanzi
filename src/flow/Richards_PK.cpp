@@ -526,6 +526,12 @@ void Richards_PK::InitTransient(double T0, double dT0)
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
   preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    int nokay = matrix_->nokay();
+    int npassed = matrix_->npassed();
+    std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+  }
+
   // initialize pressure
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
@@ -722,7 +728,7 @@ void Richards_PK::ComputePreconditionerMFD(
   // DEBUG
   // Matrix_Audit audit(mesh_, matrix_opeartor);
   // audit.InitAudit();
-  // audit.CheckSpectralBounds();
+  // audit.RunAudit();
 }
 
 
