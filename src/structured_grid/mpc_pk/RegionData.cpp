@@ -43,12 +43,21 @@ RegionData::apply(FArrayBox&  fab,
                   const Real* dx, 
                   int         scomp,
                   int         ncomp,
-                  Real        time) const
+                  Real        t) const
 {
-    Array<Real> val = (*this)(time);
+    Array<Real> val = (*this)(t);
+    const Box& box = fab.box();
+    FArrayBox mask(box,1); mask.setVal(-1);
     for (int j=0; j<regions.size(); ++j)
     { 
-        regions[j].setVal(fab,val,dx,0,0,val.size());
+        regions[j].setVal(mask,1,0,dx,0);
+    }
+    for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv)) {
+        if (mask(iv,0) > 0) {
+            for (int n=0; n<ncomp; ++n) {
+                fab(iv,scomp+n) = val[n];
+            }
+        }
     }
 }
 

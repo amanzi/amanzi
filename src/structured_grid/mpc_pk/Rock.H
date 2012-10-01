@@ -106,19 +106,22 @@ public:
   //
   void set_constant_val(MultiFab&          mfdata, 
                         const Region&      region_local,
-			const Array<Real>& val) const;
+			const Array<Real>& val,
+                        int                nGrow) const;
   //
   // @ManDoc Set fab to constant values given by val.
   //
   void set_constant_val(FArrayBox&         fab, 
                         const Region&      region_local,
-			const Array<Real>& val) const;
+			const Array<Real>& val,
+                        int                nGrow) const;
 
   //
   // @ManDoc Set mfdata to constant permeability values.
   //
   void set_constant_kval(MultiFab&     mfdata, 
-			 const Region& region_local) const;
+			 const Region& region_local,
+                         int           nGrow) const;
 
   //
   // @ManDoc Set fab to constant permeability values.
@@ -130,7 +133,8 @@ public:
   // @ManDoc Set mfdata to constant porosity value.
   //
   void set_constant_pval(MultiFab&     mfdata, 
-			 const Region& region_local) const;
+			 const Region& region_local,
+                         int           nGrow) const;
 
   //
   // @ManDoc Set fab to constant porosity value.
@@ -149,10 +153,11 @@ public:
   void set_constant_cplval(FArrayBox&            fab, 
 			   const Real*           dx) const;
 
-  static BoxArray build_finest_data(int         max_level, 
-				    Array<int>& n_cell,
-				    Array<int>& fratio,
-				    int         maxBaseGrid = 32);
+  static BoxArray ba_for_finest_data(int         max_level, 
+                                     Array<int>& n_cell,
+                                     Array<int>& fratio,
+                                     int         maxBaseGrid,
+                                     int         nGrow);
 
 private:
   
