@@ -68,13 +68,14 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.hlimit = paramList_->get<double>("max time step");
   state.atol = paramList_->get<double>("error abs tol");
   state.rtol = paramList_->get<double>("error rel tol");
+  state.damp = paramList_->get<double>("nonlinear iteration damping factor",1.0);
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;
 
   state.nonlinear_solver = BDFNKA;
   
-  max_divergence_count_ = paramList_->get<int>("max divergent interations", MAX_DIVERGENT_ITERATIONS);
+  max_divergence_count_ = paramList_->get<int>("max divergent iterations", MAX_DIVERGENT_ITERATIONS);
 
   std::string nstype = paramList_->get<std::string>("nonlinear solver", "NKA");
   if (nstype == "NKA") {
@@ -182,6 +183,10 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
 		              3,
 		    "Maximum divergent nonlinear iterations the bdf1 time iterator will tolerate",
 		              &*pl);
+    setDoubleParameter("nka damping factor",
+		       1.0,
+		       "NKA damping factor.",
+		       &*pl);
     setupVerboseObjectSublist(&*pl);
     validParams = pl;
   }
@@ -389,11 +394,16 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
 
     // compute the accellerated correction
-    fpa->nka_correction(nev_du, preconditioned_f);
+    if (itr>1) {
+      fpa->nka_correction(nev_du, preconditioned_f, state.damp);
+    } else {
+      fpa->nka_correction(nev_du, preconditioned_f);
+    }
 
     // copy result into an Epetra_Vector.
     du = nev_du.getEpetraVector();  
-
+    
+    du.Scale(state.damp);
 
     // Check the solution iterate for admissibility.
     if ( ! fn.is_admissible(u) ) { // iterate is bad; bail.
@@ -458,8 +468,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 	state.currentpclag = std::max(state.currentpclag-1, 0);
         throw itr;
       }
-
-      if (divergence_count > 0) throw state.maxitr+1;
 
       return;
     }
@@ -527,30 +535,31 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   // Sublist for line search 
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
+  //searchParams.set("Method", "Backtrack");
   //searchParams.set("Method", "Interval Halving");
-//   searchParams.set("Method", "Polynomial");
-//   searchParams.set("Method", "NonlinearCG");
+  //searchParams.set("Method", "Polynomial");
+  //searchParams.set("Method", "NonlinearCG");
   //searchParams.set("Method", "Quadratic");
   //searchParams.set("Method", "More'-Thuente");
 
   // Sublist for direction
   Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
-//  dirParams.set("Method", "Modified-Newton");
-//  Teuchos::ParameterList& newtonParams = dirParams.sublist("Modified-Newton");
-//    newtonParams.set("Max Age of Jacobian", 2);
+  //dirParams.set("Method", "Modified-Newton");
+  //Teuchos::ParameterList& newtonParams = dirParams.sublist("Modified-Newton");
+  //newtonParams.set("Max Age of Jacobian", 2);
   dirParams.set("Method", "Newton");
   Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
-    newtonParams.set("Forcing Term Method", "Constant");
-//     newtonParams.set("Forcing Term Method", "Type 1");
-    //newtonParams.set("Forcing Term Method", "Type 2");
-//     newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
-    //newtonParams.set("Forcing Term Maximum Tolerance", 0.1);
+  newtonParams.set("Forcing Term Method", "Constant");
+  //newtonParams.set("Forcing Term Method", "Type 1");
+  //newtonParams.set("Forcing Term Method", "Type 2");
+  //newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
+  //newtonParams.set("Forcing Term Maximum Tolerance", 0.1);
   //dirParams.set("Method", "Steepest Descent");
   //Teuchos::ParameterList& sdParams = dirParams.sublist("Steepest Descent");
     //sdParams.set("Scaling Type", "None");
     //sdParams.set("Scaling Type", "2-Norm");
     //sdParams.set("Scaling Type", "Quadratic Model Min");
-  //dirParams.set("Method", "NonlinearCG");
+    //dirParams.set("Method", "NonlinearCG");
   //Teuchos::ParameterList& nlcgParams = dirParams.sublist("Nonlinear CG");
     //nlcgParams.set("Restart Frequency", 2000);
     //nlcgParams.set("Precondition", "On");
@@ -562,9 +571,9 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   lsParams.set("Aztec Solver", "GMRES");  
   lsParams.set("Max Iterations", 5);  
   lsParams.set("Tolerance", 1e-2); 
-//  lsParams.set("Preconditioner", "None");
-//   lsParams.set("Preconditioner", "Ifpack");
-    lsParams.set("Preconditioner", "User Defined");
+  //lsParams.set("Preconditioner", "None");
+  //lsParams.set("Preconditioner", "Ifpack");
+  lsParams.set("Preconditioner", "User Defined");
   lsParams.set("Max Age Of Prec", 1); 
 
   // Create the interface between the test problem and the nonlinear solver
@@ -584,9 +593,9 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   // 2. Matrix-Free (Epetra_Operator)
   Teuchos::RCP<NOX::Epetra::MatrixFree> MF = 
     Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, nox_u));
-//   3. Finite Difference (Epetra_RowMatrix)
-//   Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
-//       Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_u));
+  // 3. Finite Difference (Epetra_RowMatrix)
+  //Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
+  //    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, nox_u));
     
 ///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
 
@@ -609,7 +618,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
     Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, nox_u, 
                             linSys)); 
 //
-  // Create the convergence tests
+//   Create the convergence tests
 //   Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
 //     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-2));
 //   Teuchos::RCP<NOX::StatusTest::NormF> converged = 

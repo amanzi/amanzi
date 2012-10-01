@@ -161,9 +161,7 @@ void nka::nka_correction (NOX::Abstract::Vector &dir,
       // next_v function difference w_1 
       wp = w[first_v];
       
-      // first damp if requested, the user will supply a damping factor != 1.0, if 
-      // the previously suggested NKA update was damped
-      if (damp != 1.0) wp->scale(damp);
+
 
       wp->update(-1.0, *ff.get(), 1.0);
       
@@ -187,7 +185,11 @@ void nka::nka_correction (NOX::Abstract::Vector &dir,
     {
       // Normalize w_1 and apply same factor to v_1. 
       vp = v[first_v];
-      
+     
+      // first damp if requested, the user will supply a damping factor != 1.0, if 
+      // the previously suggested NKA update was damped
+      if (damp != 1.0) vp->scale(damp);
+ 
       vp->scale(1.0/s);
       wp->scale(1.0/s);
       
