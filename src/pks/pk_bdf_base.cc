@@ -23,16 +23,8 @@ namespace Amanzi {
 void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
   PKDefaultBase::setup(S);
 
-  // timestep evolution
+  // initial timestep
   dt_ = plist_.get<double>("initial time step", 1.);
-  time_step_reduction_factor_ =
-    plist_.get<double>("time step reduction factor", 1.);
-
-  // debugging option -- The BDF advance() method catches all errors, and then
-  // re-throws ones it doesn't recognize.  Putting "false" in the PK PList
-  // removes the catch, making debugging and debugger usage easier.
-  catch_errors_ = plist_.get<bool>("catch thrown errors", true);
-
 };
 
 
@@ -42,9 +34,12 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
   // set up the timestepping algorithm
   if (!plist_.get<bool>("strongly coupled PK", false)) {
-    // -- instantiate time stepper
+    // -- get the timestepper plist and grab what we need
     Teuchos::RCP<Teuchos::ParameterList> bdf_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(plist_.sublist("time integrator")));
+    backtracking_ = (bdf_plist_p->get<int>("max backtrack count",0) > 0);
+
+    // -- instantiate time stepper
     time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf_plist_p, solution_));
 
     // -- initialize time derivative
@@ -88,33 +83,65 @@ bool PKBDFBase::advance(double dt) {
     Teuchos::TimeMonitor::summarize();
   }
 
-  // commit the step as successful
-  time_stepper_->commit_solution(dt, solution_);
-  solution_to_state(solution_, S_next_);
-  commit_state(dt, S_next_);
+  if (!fail) {
+    // commit the step as successful
+    time_stepper_->commit_solution(dt, solution_);
+    solution_to_state(solution_, S_next_);
+    commit_state(dt, S_next_);
 
-  // update the timestep size
-  if (dt_solver < dt_ && dt_solver >= dt) {
-    // We took a smaller step than we recommended, and it worked fine (not
-    // suprisingly).  Likely this was due to constraints from other PKs or
-    // vis.  Do not reduce our recommendation.
+    // update the timestep size
+    if (dt_solver < dt_ && dt_solver >= dt) {
+      // We took a smaller step than we recommended, and it worked fine (not
+      // suprisingly).  Likely this was due to constraints from other PKs or
+      // vis.  Do not reduce our recommendation.
+    } else {
+      dt_ = dt_solver;
+    }
   } else {
+    // take the decreased timestep size
     dt_ = dt_solver;
   }
 
-  return false;
+  return fail;
 };
 
 
 // -----------------------------------------------------------------------------
-// Allows a PK to reject solutions, which forces a timestep cut.
+// Allows a PK to reject solutions, which forces a timestep cut, or invokes
+// backtracking.
 // -----------------------------------------------------------------------------
-  bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
+bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
+  if (!backtracking_) return true;
+
+  // const issues with BDF1 need cleaned up...
+  Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
+
+  // evaluate the residual
+  Teuchos::RCP<TreeVector> g = Teuchos::rcp(new TreeVector(*up));
+  fun(S_inter_->time(), S_next_->time(), Teuchos::null, up_nc, g);
+  double norm(0.);
+  int ierr = g->NormInf(&norm);
+
+  // ensure the new residual is smaller than the old residual
+  if (ierr || norm > residual_norm_) return false;
+
+  residual_norm_ = norm;
+  return true;
+}
 
 
 // -----------------------------------------------------------------------------
 // Allows a PK to modify the initial guess.
 // -----------------------------------------------------------------------------
-bool PKBDFBase::modify_predictor(double h, Teuchos::RCP<TreeVector> up) { return false; }
+bool PKBDFBase::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
+  if (backtracking_) {
+    // evaluate the residual
+    Teuchos::RCP<TreeVector> g = Teuchos::rcp(new TreeVector(*up));
+    fun(S_inter_->time(), S_next_->time(), Teuchos::null, up, g);
+    g->NormInf(&residual_norm_);
+  }
+  return false;
+}
+
 
 } // namespace
