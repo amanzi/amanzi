@@ -1009,7 +1009,7 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
                 -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
                 -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
-                -DENABLE_NETCDF4:BOOL=${netcdf4} \
+                -DENABLE_NetCDF4:BOOL=${netcdf4} \
                 -DENABLE_HYPRE:BOOL=${hypre} \
                 -DENABLE_PETSC:BOOL=${petsc} \
                 ${tpl_build_src_dir}

@@ -119,7 +119,7 @@ set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)      
 
 #
-# TPL: netCDF
+# TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 2)
@@ -142,12 +142,19 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 # TPL: ExodusII
 #
-set(ExodusII_VERSION_MAJOR 5)
-set(ExodusII_VERSION_MINOR 22)
+option(ENABLE_EXODUS498 "Use the 4.98 version of ExodusII" OFF)
+if ( ENABLE_EXODUS498 )
+  set(ExodusII_VERSION_MAJOR 4)
+  set(ExodusII_VERSION_MINOR 98)
+  set(ExodusII_MD5_SUM        4480e641d6ada58f5d8ecb7172e76791) 
+else()
+  set(ExodusII_VERSION_MAJOR 5)
+  set(ExodusII_VERSION_MINOR 22)
+  set(ExodusII_MD5_SUM        b5f537d7028f2c8cf6b4ba3e8a469dbe) 
+endif()
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
 set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
-set(ExodusII_MD5_SUM        b5f537d7028f2c8cf6b4ba3e8a469dbe) 
 
 #
 # TPL: MSTK

@@ -75,6 +75,11 @@ add_amanzi_library(output
                    SOURCE ${output_source_files} HEADERS ${output_inc_files}
                    LINK_LIBS simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list})
 
+foreach( lib ${output_tpl_list} )
+    print_variable(lib)
+    message(STATUS "DEBUG: lib=$lib")
+endforeach()
+
 #
 # Binaries
 #

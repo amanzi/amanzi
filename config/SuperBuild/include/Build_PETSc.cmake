@@ -34,6 +34,13 @@ else()
   set(petsc_debug_flag 1)
 endif()
 
+# Point PETSc to the MPI build
+if ( "${MPI_BUILD}" )
+  set(petsc_mpi_flag "--with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX}")
+else()
+  set(petsc_mpi_flag "--with-mpi=1")
+endif()
+
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}             # Package dependency target
@@ -46,15 +53,16 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR        ${PETSc_source_dir}          # Source directory
                     CONFIGURE_COMMAND
-		                <SOURCE_DIR>/configure
-				            --prefix=${TPL_INSTALL_PREFIX}
-                            --with-cc=${CMAKE_C_COMPILER_USE}
-                            --with-cxx=${CMAKE_CXX_COMPILER_USE}
-                            --with-fc=${CMAKE_Fortran_COMPILER_USE}
-					        --CFLAGS=${petsc_cflags}
-					        --CXXFLAGS=${petsc_cxxflags}
-                            --FFLAGS=${petsc_fcflags}
-					        --with-debugging=${petsc_debug_flag}
+	                <SOURCE_DIR>/configure
+			            --prefix=${TPL_INSTALL_PREFIX}
+                                    --with-cc=${CMAKE_C_COMPILER_USE}
+                                    --with-cxx=${CMAKE_CXX_COMPILER_USE}
+                                    --with-fc=${CMAKE_Fortran_COMPILER_USE}
+				    --CFLAGS=${petsc_cflags}
+				    --CXXFLAGS=${petsc_cxxflags}
+                                    --FFLAGS=${petsc_fcflags}
+				    --with-debugging=${petsc_debug_flag}
+				    ${petsc_mpi_flag}
                     # -- Build
                     BINARY_DIR        ${PETSc_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # Run the CMake script to build

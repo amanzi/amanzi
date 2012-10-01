@@ -100,8 +100,8 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
 if( ENABLE_HYPRE )
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
-              "-DHYPRE_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
-              "-DHYPRE_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+              "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
+              "-DHYPRE_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include")
 endif()
 
 #  - Addtional Trilinos CMake Arguments
