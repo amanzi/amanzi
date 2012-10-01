@@ -30,6 +30,14 @@ RegisteredPKFactory<StrongMPC> StrongMPC::reg_("strong MPC");
 void StrongMPC::setup(const Teuchos::Ptr<State>& S) {
   MPC<PKBDFBase>::setup(S);
   PKBDFBase::setup(S);
+
+  // Set the initial timestep as the min of the sub-pk sizes.
+  dt_ = 1.0e99;
+  for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    dt_ = std::min<double>(dt_, (*pk)->get_dt());
+  }
+
 };
 
 

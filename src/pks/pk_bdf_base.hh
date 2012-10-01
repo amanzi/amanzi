@@ -27,7 +27,9 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
 
   PKBDFBase(Teuchos::ParameterList& plist,
             const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution) {}
+      PKDefaultBase(plist,solution),
+      backtracking_(false),
+      residual_norm_(1.e99) {}
 
   // Default implementations of PK methods.
   // -- setup
@@ -52,12 +54,9 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
  protected: // data
   // timestep control
   double dt_;
-  double dt0_;
-  double time_step_reduction_factor_;
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
-
-  // debugging
-  bool catch_errors_;
+  bool backtracking_;
+  double residual_norm_;
 
   // timing
   Teuchos::RCP<Teuchos::Time> step_walltime_;

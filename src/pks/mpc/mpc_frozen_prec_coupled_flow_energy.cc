@@ -92,6 +92,9 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
     }
   }
 
+  // Now call the inherited version -- this sets the residual_norm for backtracking.
+  PKBDFBase::modify_predictor(h,u);
+
   return true;
 };
 
