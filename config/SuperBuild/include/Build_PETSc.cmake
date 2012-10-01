@@ -31,6 +31,20 @@ else()
   set(petsc_debug_flag 1)
 endif()
 
+# PETSc MPI flag
+set(petsc_mpi_flag --with-mpi=1)
+
+# PETSc SuperLU flags
+# For now we allow PETSc to download and build this package
+# It should be a separate TPL. Error with the download or
+# building of this package will appear to be an error in the
+# petsc-configure target. See the log files for more detailed
+# information.
+set(petsc_superlu_flags 
+         --download-superlu_dist
+	 --download-parmetis
+	 --download-superlu)
+
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}             # Package dependency target
@@ -43,14 +57,16 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR        ${PETSc_source_dir}          # Source directory
                     CONFIGURE_COMMAND
-		                <SOURCE_DIR>/configure
-				            --prefix=${TPL_INSTALL_PREFIX}
-					    --with-cc=${CMAKE_C_COMPILER}
-					    --with-cxx=${CMAKE_CXX_COMPILER}
-					    --with-fc=${CMAKE_Fortran_COMPILER}
-					    --CFLAGS=${petsc_cflags}
-					    --CXXFLAGS=${petsc_cxxflags}
-					    --with-debugging=${petsc_debug_flag}
+                              <SOURCE_DIR>/configure
+                                          --prefix=${TPL_INSTALL_PREFIX}
+                                          --with-cc=${CMAKE_C_COMPILER}
+                                          --with-cxx=${CMAKE_CXX_COMPILER}
+                                          --with-fc=${CMAKE_Fortran_COMPILER}
+                                          --CFLAGS=${petsc_cflags}
+                                          --CXXFLAGS=${petsc_cxxflags}
+                                          --with-debugging=${petsc_debug_flag}
+                                          ${petsc_mpi_flag}
+					  ${petsc_superlu_flags}
                     # -- Build
                     BINARY_DIR        ${PETSc_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # Run the CMake script to build

@@ -57,13 +57,10 @@ set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 1)
 set(CCSE_VERSION_PATCH 2)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
-#set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(AMANZI_DIR $ENV{AMANZI_DIR})
-set(CCSE_URL_STRING     "file://${AMANZI_DIR}/dist")
-#set(CCSE_URL_STRING     "https://ccse.lbl.gov/Software/tarfiles")
-set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz)
-#set(CCSE_MD5_SUM        04c255b7c022776f7ac88be096125534) 
-set(CCSE_MD5_SUM        )
+set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
+set(CCSE_MD5_SUM        0620e3d7cc07be6c5f4a13a1d0e3f2f9) 
 
 #
 # TPL: UnitTest
