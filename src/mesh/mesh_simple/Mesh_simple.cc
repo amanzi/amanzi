@@ -729,33 +729,6 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 
 }
 
-
-    
-//
-// Mesh Topology for viz  
-//----------------------
-//
-// We need a special function because certain types of degenerate
-// hexes will not be recognized as any standard element type (hex,
-// pyramid, prism or tet). The original topology of this element 
-// without any collapsed nodes will be returned by this call.
-
-
-// Original cell type 
-
-AmanziMesh::Cell_type Mesh_simple::cell_get_type_4viz(const AmanziMesh::Entity_ID cellid) const 
-{
-  return AmanziMesh::HEX;
-}
-    
-    
-// See cell_get_nodes for details on node ordering
-    
-void Mesh_simple::cell_get_nodes_4viz (const AmanziMesh::Entity_ID cellid, 
-                                       AmanziMesh::Entity_ID_List *nodeids) const 
-{
-  cell_get_nodes(cellid, nodeids);
-}
     
     
 const Epetra_Map& Mesh_simple::cell_epetra_map (bool include_ghost) const

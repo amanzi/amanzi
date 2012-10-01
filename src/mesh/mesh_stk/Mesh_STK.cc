@@ -472,29 +472,6 @@ void Mesh_STK::cell_get_node_adj_cells(const Entity_ID cellid,
 
 
 // -------------------------------------------------------------
-// Mesh_STK::cell_get_type_4viz
-// -------------------------------------------------------------
-Cell_type 
-Mesh_STK::cell_get_type_4viz(const Entity_ID cellid) const
-{
-  // FIXME: degenerate cells
-  return cell_get_type(cellid);
-}
-
-
-// -------------------------------------------------------------
-// Mesh_STK::cell_get_nodes_4viz
-// -------------------------------------------------------------
-void 
-Mesh_STK::cell_get_nodes_4viz (const Entity_ID cellid, 
-                               Entity_ID_List *nodeids) const
-{
-  // FIXME: degenerate cells
-  cell_get_nodes(cellid, nodeids);
-}
-
-
-// -------------------------------------------------------------
 // Mesh_STK::node_get_coordinates
 // -------------------------------------------------------------
 void 

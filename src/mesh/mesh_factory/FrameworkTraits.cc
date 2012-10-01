@@ -171,15 +171,6 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
                                Amanzi::AmanziMesh::Entity_ID_List *nadj_cellids) const
   {}
 
-  Amanzi::AmanziMesh::Cell_type 
-  cell_get_type_4viz(const Amanzi::AmanziMesh::Entity_ID cellid) const
-  { return Amanzi::AmanziMesh::UNKNOWN; }
-    
-  void 
-  cell_get_nodes_4viz (const Amanzi::AmanziMesh::Entity_ID cellid, 
-                       Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
-  {}
-
   void 
   node_get_coordinates (const Amanzi::AmanziMesh::Entity_ID nodeid, 
                         Amanzi::AmanziGeometry::Point *ncoord) const
@@ -374,7 +365,7 @@ struct FrameworkTraits {
           , mpl::bool_< FMT == Nemesis >
           , mpl::eval_if<
               mpl::bool_< M == MSTK >
-              , mpl::bool_< FMT == ExodusII >
+              , mpl::bool_< FMT == ExodusII || FMT == Nemesis >
               , mpl::false_
               >
           >
