@@ -1117,9 +1117,6 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
     for (int k = 0; k < fnode.size(); ++k)
       if (node_map.GID(fnode[k]) != gids(j,k)) { 
         bad_data = true;
-        std::cerr << comm.MyPID() << ": used face " << j << ", node " << k << ": " 
-                  << node_map.GID(fnode[k]) << " != " << gids(j,k)
-                  << std::endl;
       }
     if (bad_data) {
       // Determine just how bad the data is.
@@ -1132,12 +1129,38 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
       switch (n) {
       case 0: // completely bad -- different face
         bad_faces.push_back(j);
+
+        std::cerr << "P " << comm.MyPID() << ": ghost face " << j << ", has different nodes than its master " << std::endl;
+        std::cerr << "ghost face nodes (GIDs): ";
+        for (int k = 0; k < fnode.size(); ++k)
+          std::cerr << node_map.GID(fnode[k]);
+        std::cerr << std::endl;
+        std::cerr << "master face nodes (GIDs): ";
+        for (int k = 0; k < fnode_ref.size(); ++k)
+          std::cerr << fnode_ref[k];
+        std::cerr << std::endl;
         break;
       case -1: // very bad -- same face but wrong orientation
         bad_faces1.push_back(j);
+
+        std::cerr << "P " << comm.MyPID() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
+        std::cerr << "ghost face nodes (GIDs): ";
+        for (int k = 0; k < fnode.size(); ++k)
+          std::cerr << node_map.GID(fnode[k]);
+        std::cerr << std::endl;
+        std::cerr << "master face nodes (GIDs): ";
+        for (int k = 0; k < fnode_ref.size(); ++k)
+          std::cerr << fnode_ref[k];
+        std::cerr << std::endl;
         break;
-      case 1:  // not good -- same face and orientation, but not an exact copy
-        bad_faces2.push_back(j);
+      case 1:  
+        // This is fine because there is no way to ensure this for
+        // general meshes (think of building a tet mesh and defining
+        // the faces such that they return the same vertices in the
+        // same order (unpermuted) no matter which way the elements
+        // match up. You can only ensure this for hexahedral meshes
+        // As long as the faces have the same vertices and have the
+        // same direction, but the vertices are permuted, its fine
         break;
       }
     }
@@ -1155,12 +1178,6 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
     os << "ERROR: found mis-oriented ghost faces:";
     write_list(bad_faces1, MAX_OUT);
     error = true;
-  }
-
-  if (!bad_faces2.empty()) {
-    os << "WARNING: found ghost faces with the same orientation and nodes but face_get_nodes returns nodes in different order (1,2,3,4) vs (2,3,4,1)";
-    write_list(bad_faces2, MAX_OUT);
-    error = true; // some controversy whether this should be considered an error
   }
 
   return global_any(error);
@@ -1212,10 +1229,20 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
     bool bad_data = false;
     for (int k = 0; k < cnode.size(); ++k)
       if (node_map.GID(cnode[k]) != gids(j,k)) bad_data = true;
-    if (bad_data) bad_cells.push_back(j);
-    // for bad cells we could do a further check to see how bad they are.
-    // For example, maybe the GIDs are in a different order but the cell
-    // orientation is the same, etc.
+    if (bad_data) {
+      for (int k = 0; k < cnode.size(); ++k) {
+        bool found = false;
+        for (int l = 0; l < cnode.size(); ++l)
+          if (node_map.GID(cnode[k]) == gids(j,l)) {
+            found = true;
+            break;
+          }
+        if (!found) {
+          bad_cells.push_back(j);
+          break;
+        }
+      }
+    }
   }
 
   bool error = false;
@@ -1223,7 +1250,7 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
   if (!bad_cells.empty()) {
     os << "ERROR: found bad data for ghost cells:";
     write_list(bad_cells, MAX_OUT);
-    os << "       The ghost cells are not exact copies of their master." << endl;
+    os << "       The ghost cells don't have the same nodes as their respective masters." << endl;
     error = true;
   }
 
