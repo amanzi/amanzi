@@ -63,11 +63,6 @@ private:
   MSet_ptr AllCells, OwnedCells, GhostCells;
 
 
-  // Attribute handle to store cell_type and original cell_type
-
-  MAttrib_ptr celltype_att, orig_celltype_att, orig_celltopo_att;
-      
-
   // Local ID to MSTK handle map
 
   std::vector<MEntity_ptr> vtx_id_to_handle;

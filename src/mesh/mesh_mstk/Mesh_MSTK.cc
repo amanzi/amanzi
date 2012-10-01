@@ -958,26 +958,6 @@ Mesh_MSTK::~Mesh_MSTK() {
   if (OwnedCells) MSet_Delete(OwnedCells);
   if (GhostCells) MSet_Delete(GhostCells);
 
-  std::vector<Entity_ID> *orig_vids;
-  void *pval;
-  MRegion_ptr region;
-  int idx = 0;
-  while ((region = MESH_Next_Region(mesh,&idx))) {
-    MEnt_Get_AttVal(region,orig_celltopo_att,NULL,NULL,&pval);
-    orig_vids = (std::vector<Entity_ID> *) pval;
-    delete orig_vids;
-  }
-
-  MFace_ptr face;
-  idx = 0;
-  while ((face = MESH_Next_Face(mesh,&idx))) {
-    MEnt_Get_AttVal(face,orig_celltopo_att,NULL,NULL,&pval);
-    orig_vids = (std::vector<Entity_ID> *) pval;
-    delete orig_vids;
-  }
-
-  MAttrib_Delete(orig_celltopo_att);
-  MAttrib_Delete(orig_celltype_att);
   MAttrib_Delete(celltype_att);
   if (vparentatt) MAttrib_Delete(vparentatt);
   if (eparentatt) MAttrib_Delete(eparentatt);
@@ -2847,7 +2827,7 @@ void Mesh_MSTK::clear_internals_ ()
   AllFaces = OwnedFaces = NotOwnedFaces = NULL;
   AllCells = OwnedCells = GhostCells = NULL;
 
-  celltype_att = orig_celltype_att = orig_celltopo_att = NULL;
+  celltype_att = NULL;
   rparentatt = fparentatt = eparentatt = vparentatt = NULL;
   
 } // Mesh_MSTK::clear_internals
@@ -3277,7 +3257,6 @@ void Mesh_MSTK::init_set_info() {
 
 void Mesh_MSTK::collapse_degen_edges() {
   const int topoflag=1;
-  std::vector<Entity_ID> *orig_vids;
   int idx, idx2, evgid0, evgid1;
   MVertex_ptr ev0, ev1, vkeep, vdel;
   MEdge_ptr edge;
@@ -3288,15 +3267,6 @@ void Mesh_MSTK::collapse_degen_edges() {
   int ival;
   void *pval;
   Cell_type celltype;
-
-  if (cell_dimension() == 2) {
-    orig_celltype_att = MAttrib_New(mesh,"Orig_Cell_type",INT,MFACE);
-    orig_celltopo_att = MAttrib_New(mesh,"Orig_Cell_Topo",POINTER,MFACE);
-  }
-  else {
-    orig_celltype_att = MAttrib_New(mesh,"Orig_Cell_type",INT,MREGION);
-    orig_celltopo_att = MAttrib_New(mesh,"Orig_Cell_Topo",POINTER,MREGION);
-  }
 
   idx = 0;
   while ((edge = MESH_Next_Edge(mesh,&idx))) {
@@ -3344,62 +3314,6 @@ void Mesh_MSTK::collapse_degen_edges() {
       if (!vkeep) {
         Errors::Message mesg("Could not collapse degenerate edge. Expect computational issues with connected elements");
         amanzi_throw(mesg);
-      }
-
-
-      /* In the stored configuration of the original cell, replace the
-	 ID of the deleted vertex with the retained vertex */
-
-      std::vector<Entity_ID> new_vids;
-
-      vregs = MV_Regions(vkeep);
-      if (vregs) {
-
-	idx = 0;
-	while ((region = List_Next_Entry(vregs,&idx))) {
-	  MEnt_Get_AttVal(region,orig_celltopo_att,NULL,NULL,&pval);
-	  orig_vids = (std::vector<Entity_ID> *)pval;
-
-          if (!orig_vids) continue;
-
-          new_vids.clear();
-	  for (int i = 0; i < orig_vids->size(); i++) {            
-	    if ((*orig_vids)[i] == vdelid-1) {
-	      new_vids.push_back((Entity_ID) MV_ID(vkeep)-1);
-            }
-            else
-              new_vids.push_back((*orig_vids)[i]);
-          }
-          orig_vids->swap(new_vids);
-	}
-
-	List_Delete(vregs);
-      }
-      else {
-	
-	vfaces = MV_Faces(vkeep);
-	if (vfaces) {
-
-	  idx = 0;
-	  while ((face = List_Next_Entry(vfaces,&idx))) {
-	    MEnt_Get_AttVal(region,orig_celltopo_att,NULL,NULL,&pval);
-	    orig_vids = (std::vector<Entity_ID> *)pval;
-
-            if (!orig_vids) continue;
-
-            new_vids.clear();
-	    for (int i = 0; i < orig_vids->size(); i++) {
-	      if ((*orig_vids)[i] == vdelid-1) {
-		new_vids.push_back((Entity_ID) MV_ID(vkeep)-1);
-              }
-              else
-                new_vids.push_back((*orig_vids)[i]);
-            }
-            orig_vids->swap(new_vids);
-          }
-
-          List_Delete(vfaces);
-	}
       }
 
     }
