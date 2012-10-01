@@ -11,14 +11,11 @@ define_external_project_args(PETSc TARGET petsc BUILD_IN_SOURCE)
 # Use the common cflags, cxxflags
 include(BuildWhitespaceString)
 build_whitespace_string(petsc_cflags
-                       -I${TPL_INSTALL_PREFIX}/include
                        ${Amanzi_COMMON_CFLAGS})
 
 build_whitespace_string(petsc_cxxflags
-                       -I${TPL_INSTALL_PREFIX}/include
                        ${Amanzi_COMMON_CXXFLAGS})
 set(cpp_flag_list 
-    -I${TPL_INSTALL_PREFIX}/include
     ${Amanzi_COMMON_CFLAGS}
     ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flag_list)
@@ -45,6 +42,9 @@ set(petsc_superlu_flags
 	 --download-parmetis
 	 --download-superlu)
 
+# PETSc install directory
+set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
+
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}             # Package dependency target
@@ -58,7 +58,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     SOURCE_DIR        ${PETSc_source_dir}          # Source directory
                     CONFIGURE_COMMAND
                               <SOURCE_DIR>/configure
-                                          --prefix=${TPL_INSTALL_PREFIX}
+                                          --prefix=<INSTALL_DIR>
                                           --with-cc=${CMAKE_C_COMPILER}
                                           --with-cxx=${CMAKE_CXX_COMPILER}
                                           --with-fc=${CMAKE_Fortran_COMPILER}
@@ -72,6 +72,9 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     BUILD_COMMAND     $(MAKE)                      # Run the CMake script to build
                     BUILD_IN_SOURCE   ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}         # Install directory
+                    INSTALL_DIR      ${petsc_install_dir}  # Install directory, NOT in the usual directory
                     # -- Output control
                     ${PETSc_logging_args})
+
+# --- Useful variables for other packages that depend on PETSc
+set(PETSC_DIR ${petsc_install_dir})
