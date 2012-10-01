@@ -79,6 +79,7 @@ if (BUILD_TESTS)
                          test/Main.cc
                          test/test_hex_3x3x3_4P.cc
                          test/test_hex_3x3x3_sets_4P.cc
+			 test/test_hex_3x3x3_par_read_4P.cc
                          test/test_quad_gen_3x3_4P.cc
                          test/test_hex_gen_3x3x3_4P.cc
 			 test/test_extract_surface_4P.cc

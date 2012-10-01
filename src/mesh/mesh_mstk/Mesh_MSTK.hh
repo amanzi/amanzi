@@ -327,29 +327,6 @@ public:
 			       const Parallel_type ptype,
 			       Entity_ID_List *nadj_cellids) const;
 
-
-    
-  //
-  // Mesh Topology for viz  
-  //----------------------
-  //
-  // We need a special function because certain types of degenerate
-  // hexes will not be recognized as any standard element type (hex,
-  // pyramid, prism or tet). The original topology of this element 
-  // without any collapsed nodes will be returned by this call.
-    
-    
-  // Original cell type 
-    
-  Cell_type cell_get_type_4viz(const Entity_ID cellid) const;
-    
-    
-  // See cell_get_nodes for details on node ordering
-    
-  void cell_get_nodes_4viz (const Entity_ID cellid, 
-			    Entity_ID_List *nodeids) const;
-    
-    
     
   //
   // Mesh entity geometry

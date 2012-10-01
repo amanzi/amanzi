@@ -23,6 +23,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   mpicomm(incomm->GetMpiComm())
 {  
 
+  int numprocs = incomm->NumProc();
+
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
 
@@ -43,7 +45,40 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
 
   mesh = MESH_New(F1);
-  ok = MESH_ImportFromExodusII(mesh,filename,mpicomm);
+
+  int len = strlen(filename);
+  if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file 
+
+    if (numprocs == 1) {
+      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm);
+    }
+    else {
+      int opts[5] = {0,0,0,0,0};
+
+      opts[0] = 1;   // Partition the input mesh
+      opts[1] = 0;   // Use the default method for distributing the mesh
+      opts[2] = 1;   // Number of ghost layers
+      opts[3] = 1;   // Use Zoltan for partitioning if available
+
+      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm);
+    }
+
+  }
+  else if (len > 4 && strncmp(&(filename[len-4]),".par",4) == 0) { // Nemesis file 
+    int opts[5] = {0,0,0,0,0};
+
+    opts[0] = 1;     // Parallel weave distributed meshes
+    opts[1] = 1;     // Number of ghost layers
+
+    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm);
+
+  }
+  else {
+    std::stringstream mesg_stream;
+    mesg_stream << "Cannot identify file type from extension of input file " << filename << " on processor " << myprocid << std::endl;
+    Errors::Message mesg(mesg_stream.str());
+    amanzi_throw(mesg);
+  }
 
   if (!ok) {
     std::stringstream mesg_stream;
@@ -131,10 +166,39 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
   mesh = MESH_New(F1);
 
-  // This will automatically do the partitioning of the serial mesh or
-  // weaving of distributed meshes
+  int len = strlen(filename);
+  if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file
 
-  ok = MESH_ImportFromExodusII(mesh,filename,mpicomm);
+    if (numprocs == 1) {
+      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm);
+    }
+    else {
+      int opts[5] = {0,0,0,0,0};
+
+      opts[0] = 1;   // Partition the input mesh
+      opts[1] = 0;   // Use the default method for distributing the mesh
+      opts[2] = 1;   // Number of ghost layers
+      opts[3] = 1;   // Use Zoltan for partitioning if available
+
+      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm);
+    }
+
+  }
+  else if (len > 4 && strncmp(&(filename[len-4]),".par",4) == 0) { // Nemesis file 
+    int opts[5] = {0,0,0,0,0};
+
+    opts[0] = 1;     // Parallel weave distributed meshes
+    opts[1] = 1;     // Number of ghost layers
+
+    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm);
+
+  }
+  else {
+    std::stringstream mesg_stream;
+    mesg_stream << "Cannot identify file type from extension of input file " << filename << " on processor " << myprocid << std::endl;
+    Errors::Message mesg(mesg_stream.str());
+    amanzi_throw(mesg);
+  }
 
   if (!ok) {
     std::stringstream mesg_stream;
@@ -1728,64 +1792,6 @@ void Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
 
 
     
-//
-// Mesh Topology for viz  
-//----------------------
-//
-// We need a special function because certain types of degenerate
-// hexes will not be recognized as any standard element type (hex,
-// pyramid, prism or tet). The original topology of this element 
-// without any collapsed nodes will be returned by this call.
-
-
-// Get cell type for viz (will return original type if cell has been
-// modified)
-
-Cell_type Mesh_MSTK::cell_get_type_4viz(const Entity_ID cellid) const {
-  MEntity_ptr cell;
-  Cell_type celltype;
-  int ival;
-  
-  cell = cell_id_to_handle[cellid];
-  
-  MEnt_Get_AttVal(cell,orig_celltype_att,&ival,NULL,NULL);
-  celltype = (Cell_type) ival;
-
-  if (celltype == 0)
-    return cell_get_type(cellid);
-  else
-    return celltype;
-
-} // Mesh_MSTK::cell_get_type_4viz
-
-
-void Mesh_MSTK::cell_get_nodes_4viz (const Entity_ID cellid, 
-				     std::vector<Entity_ID> *nodeids) const
-{
-  MEntity_ptr cell;
-  std::vector<Entity_ID> *orig_vids;
-  void *pval;
-
-  assert(nodeids != NULL);
-
-  nodeids->clear();
-
-  cell = cell_id_to_handle[cellid];
-      
-  MEnt_Get_AttVal(cell,orig_celltopo_att,NULL,NULL,&pval);
-  if (pval) {
-    orig_vids = (std::vector<Entity_ID> *) pval;
-    *nodeids = *orig_vids; // copy content from *orig_vids to *nodeids
-  }
-  else
-    cell_get_nodes(cellid,nodeids);
-
-} // Mesh_MSTK::cell_get_nodes_4viz
-
-
-
-
-
 // Node coordinates - 3 in 3D and 2 in 2D
     
 void Mesh_MSTK::node_get_coordinates (const Entity_ID nodeid, AmanziGeometry::Point *ncoords) const
@@ -1864,7 +1870,7 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Amanzi
     List_Delete(fverts);
   }
 
-} // Mesh_MSTK::cell_get_coordinates_4viz
+} // Mesh_MSTK::cell_get_coordinates
 
 
 
@@ -3301,62 +3307,7 @@ void Mesh_MSTK::collapse_degen_edges() {
 
       /* Degenerate edge  - must collapse */
 
-      /* First record the cell configuration and store it for use by viz */
-
-      eregs = ME_Regions(edge);
-      if (eregs) {
-	       
-	idx2 = 0;
-	while ((region = List_Next_Entry(eregs,&idx2))) {
-
-	  orig_vids = new std::vector<Entity_ID>;
-
-          List_ptr rverts = MR_Vertices(region);
-          
-          MVertex_ptr rvert;
-          int idx3 = 0;
-          while ((rvert = List_Next_Entry(rverts,&idx3)))
-            orig_vids->push_back(MV_ID(rvert)-1);
-
-          List_Delete(rverts);
-          
-	  celltype = MRegion_Celltype(region);
-
-	  MEnt_Set_AttVal(region,orig_celltype_att,celltype,0.0,NULL);
-	  MEnt_Set_AttVal(region,orig_celltopo_att,0,0.0,orig_vids);
-	}
-
-	List_Delete(eregs);
-      }
-      else {
-
-	efaces = ME_Faces(edge);
-
-	idx2 = 0;
-	while ((face = List_Next_Entry(efaces,&idx2))) {
-
-	  orig_vids = new std::vector<Entity_ID>;
-
-          List_ptr fverts = MF_Vertices(face,1,0);
-          
-          MVertex_ptr fvert;
-          int idx3 = 0;
-          while ((fvert = List_Next_Entry(fverts,&idx3)))
-            orig_vids->push_back(MV_ID(fvert)-1);
-
-          List_Delete(fverts);
-          
-	  celltype = MFace_Celltype(face);
-
-	  MEnt_Set_AttVal(face,orig_celltype_att,celltype,0.0,NULL);
-	  MEnt_Set_AttVal(face,orig_celltopo_att,0,0.0,orig_vids);
-	}
-
-	List_Delete(efaces);
-      }
-      
-
-      /* Now collapse choosing the vertex to be deleted and vertex to
+      /* Collapse, choosing the vertex to be deleted and vertex to
 	 be kept consistently. If topological constraints permit,
 	 collapse the vertex with the higher global ID to the vertex
 	 with the lower global ID. If they do not, reverse the
