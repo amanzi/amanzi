@@ -1,9 +1,12 @@
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
 #include "PMAmr.H"
+#include "PMAMR_Labels.H"
 #include "PorousMedia.H"
 
 #include "ParmParseHelpers.H"
+
+static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
 void
 Structured_observations(const PArray<Observation>& observation_array,
@@ -11,7 +14,7 @@ Structured_observations(const PArray<Observation>& observation_array,
 {
   for (int i=0; i<observation_array.size(); ++i)
     {
-      std::string label = observation_array[i].name;
+      std::string label = AMR_to_Amanzi_label_map[observation_array[i].name];
       int ntimes = observation_array[i].times.size();
       std::vector<Amanzi::ObservationData::DataTriple> dt(ntimes);
       const std::map<int, Real> vals = observation_array[i].vals;
@@ -34,10 +37,39 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     int argc=0;
     char** argv;
 
+#ifdef BL_USE_PETSC
+    std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
+    std::string petsc_file_str = "Petsc Options File";
+    std::string petsc_options_file;
+    if (input_parameter_list.isParameter(petsc_file_str))
+    {
+	petsc_options_file = Teuchos::getParameter<std::string>(input_parameter_list, petsc_file_str);
+    }
+    PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
+#endif
+
     BoxLib::Initialize(argc,argv,false,mpi_comm);
+
+    bool pause_for_debug = false;
+    if (input_parameter_list.isParameter("Pause For Debug"))
+      {
+          pause_for_debug= Teuchos::getParameter<bool>(input_parameter_list, "Pause For Debug");
+      }
+
+    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
+        std::string junk;
+        std::cout << "Waiting to attach debugger.  Enter any string to continue ";
+        std::cin >> junk;
+    }
+    ParallelDescriptor::Barrier();
+
+    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
+        std::cout << "   continuing run..." << std::endl;
+    }
+
     if (input_parameter_list.isParameter("PPfile"))
       {
-	std::string PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
+	const std::string& PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
 	ParmParse::Initialize(argc,argv,PPfile.c_str());
       }
 
@@ -51,7 +83,11 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     else
       converted_parameter_list = input_parameter_list;
 
-    Teuchos::writeParameterListToXmlFile(converted_parameter_list,"tmpfile");
+    if (input_parameter_list.isParameter("EchoXMLfile"))
+      {
+        const std::string& EchoXMLfile = Teuchos::getParameter<std::string>(input_parameter_list, "EchoXMLfile");
+        Teuchos::writeParameterListToXmlFile(converted_parameter_list,EchoXMLfile);
+      }
 
     BoxLib::Initialize_ParmParse(converted_parameter_list);
 
@@ -97,11 +133,18 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         amrptr->RegridOnly(amrptr->cumTime());
     }
     
-    while ( amrptr->okToContinue()           &&
-           (amrptr->levelSteps(0) < max_step || max_step < 0) &&
-           (amrptr->cumTime() < stop_time || stop_time < 0.0) )
+    while ( amrptr->okToContinue() )
     {
         amrptr->coarseTimeStep(stop_time);
+    }
+
+    // Write final checkpoint and plotfile
+    if (amrptr->stepOfLastCheckPoint() < amrptr->levelSteps(0)) {
+        amrptr->checkPoint();
+    }
+
+    if (amrptr->stepOfLastPlotFile() < amrptr->levelSteps(0)) {
+        amrptr->writePlotFile();
     }
 
     // Process the observations
@@ -121,7 +164,11 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         std::cout << "Run time = " << run_stop << std::endl;
 	std::cout << "SCOMPLETED\n";
       }
+
     BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
+#ifdef BL_USE_PETSC
+    PetscFinalize();
+#endif
 
     return Amanzi::Simulator::SUCCESS;
 }

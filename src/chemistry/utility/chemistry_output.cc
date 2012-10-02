@@ -2,7 +2,6 @@
 #include "chemistry_output.hh"
 
 #include <iostream>
-#include <fstream>
 
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"

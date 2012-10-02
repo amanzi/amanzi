@@ -262,11 +262,6 @@ if (ENABLE_TESTS)
              -DUnitTest_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 endif()
 
-# METIS  
-include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
-append_set(Amanzi_TPL_CMAKE_ARGS 
-           -DMETIS_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-
 # CCSE
 set(CCSE_BL_SPACEDIM_DFLT 2)
 if(NOT CCSE_BL_SPACEDIM )
@@ -330,9 +325,14 @@ endif()
 
 # PETSc
 option(ENABLE_PETSC "Build the PETSc package" FALSE)
-if (ENABLE_PETSC)
+if (ENABLE_PETSC AND ENABLE_Structured)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
 endif()
+
+# METIS  
+include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS 
+           -DMETIS_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # Trilinos  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)

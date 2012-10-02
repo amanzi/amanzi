@@ -15,6 +15,7 @@
 #ifdef MG_USE_FBOXLIB
 #include <MGT_Solver.H>
 #include <mg_cpp_f.h>
+#include <stencil_types.H>
 #endif
 
 #define DEF_LIMITS(fab,fabdat,fablo,fabhi)   \
@@ -607,7 +608,7 @@ mac_level_driver (const PressBndry& mac_bndry,
 	}
       }
       
-      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
+      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal, CC_CROSS_STENCIL);
       mgt_solver.set_maxorder(4);
 
       const MultiFab* aa_p[1]; 
@@ -790,7 +791,7 @@ mac_sync_driver (const PressBndry& mac_bndry,
 	  xb[0][i] = 0.5*dx_crse[i];
 	}
       }
-      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
+      MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal, CC_CROSS_STENCIL);
 
       const MultiFab* aa_p[1];
       aa_p[0] = &(mac_op.aCoefficients());

@@ -482,7 +482,7 @@ extern "C" {
 		      const Real* wmac, ARLIM_P(wmlo), ARLIM_P(wmhi),
 #endif
 		      const Real* u   , ARLIM_P( ulo), ARLIM_P( uhi),
-		      const int* lo, const int* hi);
+		      const int* lo, const int* hi, const int* upwind_flag);
 
   void FORT_CPY_UMAC (const Real* umac, ARLIM_P(umlo), ARLIM_P(umhi),
 		      const Real* vmac, ARLIM_P(vmlo), ARLIM_P(vmhi),
@@ -521,7 +521,9 @@ extern "C" {
 			    const Real* kappa, ARLIM_P(klo), ARLIM_P(khi),
 			    const Real* krcoef, ARLIM_P(clo), ARLIM_P(chi), const int* nkrcoef,
 			    const Real* vel, ARLIM_P(vlo), ARLIM_P(vhi),
-			    const Real* dx, const int* nc, const Real* grav);
+			    const Real* mask, ARLIM_P(mlo), ARLIM_P(mhi),
+			    const Real* dx, const int* nc, const Real* grav,
+                            const int* lo, const int* hi);
   
   void FORT_PATCH_GHOST(const Real* p, ARLIM_P(p_lo), ARLIM_P(p_hi),
 			const int* ncomp, int* face, 

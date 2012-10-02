@@ -4,17 +4,21 @@
 #include <iostream>
 #include <iomanip>
 
+#include "sorption_isotherm.hh"
+
 namespace amanzi {
 namespace chemistry {
 
 SorptionIsothermLinear::SorptionIsothermLinear()
-    : SorptionIsotherm("linear"),
-      KD_(0.) {
+    : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
+      KD_(0.0),
+      params_(1, 0.0) {
 }  // end SorptionIsothermLinear() constructor
 
 SorptionIsothermLinear::SorptionIsothermLinear(const double KD)
-    : SorptionIsotherm("linear"),
-      KD_(KD) {
+    : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
+      KD_(KD),
+      params_(1, 0.0){
 }  // end SorptionIsothermLinear() constructor
 
 SorptionIsothermLinear::~SorptionIsothermLinear() {
@@ -24,10 +28,9 @@ void SorptionIsothermLinear::Init(const double KD) {
   set_KD(KD);
 }
 
-std::vector<double> SorptionIsothermLinear::GetParameters(void) const {
-  std::vector<double> params;
-  params.resize(1, KD());
-  return params;
+const std::vector<double>& SorptionIsothermLinear::GetParameters(void) {
+  params_.at(0) = KD();
+  return params_;
 }  // end GetParameters()
 
 void SorptionIsothermLinear::SetParameters(const std::vector<double>& params) {

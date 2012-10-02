@@ -8,53 +8,80 @@
 #include <Array.H>
 #include <REAL.H>
 
+#include <iostream>
 struct EventCoord
 {
-    struct CycleEvent
+    struct Event
     {
-        enum CycleType {SPS, CYCLES};
-        CycleEvent() {}
-        CycleEvent(int start, int period, int stop) 
-            : start(start), period(period), stop(stop), type(SPS) {}
-        CycleEvent(const Array<int>& cycles) 
-            : cycles(cycles), type(CYCLES) {}
-        CycleType Type() const {return type;}
-        bool ThisEventDue(int cycle, int dcycle) const;
+        Event() {}
+        Event(const Event& rhs) {}
+        virtual ~Event() {}
+        virtual bool IsCycle() const {return false;}
+        virtual bool IsTime() const {return false;}
+        virtual bool operator<(const Event& rhs) const
+            {return this < &rhs;}
+        virtual Event* Clone() const {return new Event(*this);}
+    };
 
-    protected:
+    struct CycleEvent
+        : public Event
+    {
+        enum CType {SPS_CYCLES, CYCLES, INVALID};
+        CycleEvent() {}
+        virtual ~CycleEvent() {}
+        CycleEvent(int start, int period, int stop)
+            : start(start), period(period), stop(stop), type(SPS_CYCLES) {}
+        CycleEvent(const Array<int>& cycles);
+        CycleEvent(const CycleEvent& rhs);
+        const CType& Type() const {return type;}
+        virtual bool IsCycle() const {return true;}
+        virtual bool IsTime() const {return false;}
+        bool ThisEventDue(int cycle, int dcycle) const;
+        virtual Event* Clone() const {return new CycleEvent(*this);}
+
         int start, period, stop;
         Array<int> cycles;
-        CycleType type;
+        CType type;
     };
 
     struct TimeEvent
+        : public Event
     {
-        enum TimeType {SPS, TIMES};
+        enum TType {SPS_TIMES, TIMES, INVALID};
         TimeEvent() {}
-        TimeEvent(Real start, Real period, Real stop) 
-            : start(start), period(period), stop(stop), type(SPS) {}
-        TimeEvent(const Array<Real>& times) 
-            : times(times), type(TIMES) {}
-        TimeType Type() const {return type;}
+        virtual ~TimeEvent() {}
+        TimeEvent(Real start, Real period, Real stop)
+            : start(start), period(period), stop(stop), type(SPS_TIMES) {}
+        TimeEvent(const Array<Real>& times);
+        TimeEvent(const TimeEvent& rhs);
+        const TType& Type() const {return type;}
+        virtual bool IsCycle() const {return false;}
+        virtual bool IsTime() const {return true;}
         bool ThisEventDue(Real time, Real dt, Real& dt_red) const;
+        virtual Event* Clone() const {return new TimeEvent(*this);}
 
-    protected:
         Real start, period, stop;
         Array<Real> times;
-        TimeType type;
+        TType type;
     };
 
+    ~EventCoord();
     std::pair<Real,Array<std::string> > NextEvent(Real time, Real dt, int  cycle, int dcycle) const;
-    void InsertCycleEvent(const std::string& label, int start, int period, int stop);
-    void InsertCycleEvent(const std::string& label, const Array<int>& cycles);
 
-    void InsertTimeEvent(const std::string& label, Real start, Real period, Real stop);
-    void InsertTimeEvent(const std::string& label, const Array<Real>& cycles);
-
+    void Register(const std::string& label, const Event*  event);
+    bool EventRegistered(const std::string& label) const;
+    const Event& operator[] (const std::string& label) const;
+    const std::map<std::string,Event*>& CycleEvents() const;
+    const std::map<std::string,Event*>& TimeEvents() const;
+    
 protected:
-    std::map<std::string,CycleEvent> cycleEvents;
-    std::map<std::string,TimeEvent> timeEvents;
+    std::map<std::string,Event*> cycleEvents;
+    std::map<std::string,Event*> timeEvents;
 };
+
+std::ostream& operator<< (std::ostream& os, const EventCoord::CycleEvent& rhs);
+std::ostream& operator<< (std::ostream& os, const EventCoord::TimeEvent& rhs);
+std::ostream& operator<< (std::ostream& os, const EventCoord& rhs);
 
 #endif
 

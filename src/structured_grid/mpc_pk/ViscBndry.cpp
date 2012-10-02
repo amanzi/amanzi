@@ -5,8 +5,8 @@
 
 void
 ViscBndry::setBndryConds (const BCRec&   bc,
-                          IntVect& ratio,
-			  int comp)
+                          const IntVect& ratio,
+			  int            comp)
 {
     //
     //  NOTE: ALL BCLOC VALUES ARE DEFINED AS A LENGTH IN PHYSICAL
@@ -17,7 +17,7 @@ ViscBndry::setBndryConds (const BCRec&   bc,
 
     for (OrientationIter fi; fi; ++fi)
     {
-        Array<Real>& bloc = bcloc[fi()];
+        BndryData::RealTuple& bloc = bcloc[fi()];
         Array< Array<BoundCond> >& bctag = bcond[fi()];
 
         int dir          = fi().coordDir();
@@ -76,7 +76,7 @@ ViscBndry::setScalarBndryConds (const BCRec&   bc,
 
     for (OrientationIter fi; fi; ++fi)
     {
-        Array<Real>& bloc = bcloc[fi()];
+        BndryData::RealTuple& bloc = bcloc[fi()];
         Array< Array<BoundCond> >& bctag = bcond[fi()];
 
         int dir          = fi().coordDir();

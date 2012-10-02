@@ -11,7 +11,7 @@
 
 namespace BoxLib {
 
-  void Initialize_ParmParse(const Teuchos::ParameterList& params);
+  void Initialize_ParmParse(Teuchos::ParameterList& params);
 
 }; // namespace BoxLib
 

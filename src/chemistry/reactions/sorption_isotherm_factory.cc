@@ -55,9 +55,10 @@ SorptionIsotherm* SorptionIsothermFactory::Create(
     if (parameters.size() != 2) {
       std::ostringstream error_stream;
       error_stream << "SorptionIsothermFactory::Create(): \n"
+                   << "  Freundlich isotherm: C_sorb = Kd * C^n"
                    << "  Freundlich isotherm requires exactly two parameters, received "
                    << parameters.size() << ".\n"
-                   << "    param_1 == Kd, param_2 == 1/n  .\n"; 
+                   << "    param_1 == Kd, param_2 == n  .\n"; 
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
     }
     SorptionIsothermFreundlich *freundlich_isotherm =

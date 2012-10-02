@@ -24,13 +24,14 @@ class SorptionIsothermLinear : public SorptionIsotherm {
   double KD(void) const { return KD_; }
   void set_KD(const double KD) { KD_ = KD; }
 
-  std::vector<double> GetParameters(void) const;
+  const std::vector<double>& GetParameters(void);
   void SetParameters(const std::vector<double>& params);
 
  private:
   // distribution coefficient
   // (currently) units = kg water/m^3 bulk
   double KD_; 
+  std::vector<double> params_;
 
 }; // SorptionIsothermLinear
 

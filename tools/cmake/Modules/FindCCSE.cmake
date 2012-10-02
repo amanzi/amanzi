@@ -15,6 +15,8 @@
 #    CCSE_LIBRARY_DIR      (PATH)       Path to the CCSE library
 #    CCSE_LIBRARIES        (LIST)       List of all required CCSE libraries
 #    CCSE_PERL_DIR         (PATH)       Path to CCSE Perl scripts
+#    CCSE_EXT_LIBRARIES    (LIST)
+#    CCSE_EXT_LIBRARY_DIRS (LIST)
 #
 # #############################################################################
 
@@ -24,6 +26,14 @@ include(FindPackageHandleStandardArgs)
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
 include(AddPackageDependency)
+
+if (ENABLE_PETSC)
+    find_package(X11 QUIET REQUIRED)
+    if (NOT X11_FOUND)
+        message(WARNING "If ENABLE_PETSC, need X11 but cmake failed to find"
+                        " Build will likely fail.")
+    endif()
+endif()
 
 include(CCSEOptions)
 
@@ -226,7 +236,25 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
 
     endif()
 
-   
+    if (ENABLE_PETSC)
+
+        set(PETSC_DIR $ENV{PETSC_DIR})
+        if ("${PETSC_DIR}" STREQUAL "")
+            message(SEND_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
+        endif()
+
+        message(STATUS "CCSE requires PETSc and X11 since ENABLE_PETSC=ON")
+        message(STATUS "     using PETSC_DIR=${PETSC_DIR}")
+
+        # NOTE: Not sure why we have to explicitly include X11 stuff, since FindX11 was supposed to do it...
+        set(CCSE_EXT_LIBRARIES petsc ${X11_LIBRARIES})
+        list(APPEND CCSE_INCLUDE_DIRS ${PETSC_DIR}/include ${X11_INCLUDE_DIR})
+
+    else()
+
+        set(CCSE_EXT_LIBRARIES "")
+
+    endif()
 
 endif(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)    
 

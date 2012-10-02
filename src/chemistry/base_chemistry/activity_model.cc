@@ -17,7 +17,9 @@ ActivityModel::ActivityModel()
       Z_(0.0),
       M_(0.0),
       verbosity_(kSilent),
-      name_("") {
+      name_(""),
+      num_species_(0),
+      gamma_() {
 }  // end ActivityModel constructor
 
 ActivityModel::~ActivityModel() {
@@ -27,8 +29,13 @@ void ActivityModel::Setup(
     const ActivityModelParameters& parameters,
     const std::vector<Species>& primary_species,
     const std::vector<AqueousEquilibriumComplex>& secondary_species) {
-
+  ResizeGamma(primary_species.size() + secondary_species.size());
 }  // end Setup()
+
+void ActivityModel::ResizeGamma(const int size) {
+  set_num_species(size);
+  gamma_.resize(num_species(), 1.0);  
+}
 
 void ActivityModel::CalculateIonicStrength(
     const std::vector<Species>& primarySpecies,
@@ -105,33 +112,33 @@ void ActivityModel::CalculateActivityCoefficients(
     Species* water) {
   // -----------------------------------------------------
   const  double r0(0.0e0), r1(1.0e0);
-  std::vector<double> gamma;
   double actw(r1);
-  int nsp(primarySpecies->size() + secondarySpecies->size());
-  gamma.resize(nsp, r1);
-  for (std::vector<double>::iterator i = gamma.begin(); i != gamma.end(); i++) {
-    (*i) = r1;
-  }
+  //std::vector<double> gamma;
+  // int nsp(primarySpecies->size() + secondarySpecies->size());
+  // gamma.resize(nsp, r1);
+  // for (std::vector<double>::iterator i = gamma.begin(); i != gamma.end(); i++) {
+  //   (*i) = r1;
+  // }
   // ----------------------------------------------------------------------
   // Compute activity coefficients
   // ----------------------------------------------------------------------
-  this->EvaluateVector(*primarySpecies, *secondarySpecies, &gamma, &actw);
+  this->EvaluateVector(*primarySpecies, *secondarySpecies, &gamma_, &actw);
   // ----------------------------------------------------------------------
   // Set activity coefficients
   // ----------------------------------------------------------------------
   int isp(-1);
   for (std::vector<Species>::iterator i = primarySpecies->begin();
-       i != primarySpecies->end(); i++) {
+       i != primarySpecies->end(); ++i) {
     isp++;
-    i->act_coef(gamma[isp]);
+    i->act_coef(gamma_[isp]);
     i->update();
   }
 
   // secondary aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::iterator i = secondarySpecies->begin();
-       i != secondarySpecies->end(); i++) {
+       i != secondarySpecies->end(); ++i) {
     isp++;
-    i->act_coef(gamma[isp]);
+    i->act_coef(gamma_[isp]);
     i->update();
   }
   // Set the water activity

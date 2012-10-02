@@ -17,9 +17,9 @@ public:
 		int             _ncomp,
 		const Geometry& _geom);
 
-    virtual void setBndryConds (const BCRec& phys_bc,
-                                IntVect&     ratio,
-                                int          comp=0);
+    virtual void setBndryConds (const BCRec&   phys_bc,
+                                const IntVect& ratio,
+                                int            comp=0);
 
     void setHomogValues (const BCRec& phys_bc,
 			 IntVect&     ratio,
