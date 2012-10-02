@@ -135,7 +135,7 @@ add_amanzi_executable(amanzi
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 
-if (BUILD_TESTS) 
+if (BUILD_TESTS AND ENABLE_Structured) 
 
     # Copy test directory files if an out of source build
     if (NOT (${SSC_SOURCE_DIR} EQUAL ${SSC_BINARY_DIR}) )
