@@ -22,8 +22,6 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 #include "wrm_richards_evaluator.hh"
 
 
-
-
 namespace Amanzi {
 
 #define DEBUG_FLAG 1
@@ -59,6 +57,14 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   
   coupled_pc_ = plist_.sublist("Coupled PC");
 //   ml_plist_ = coupled_pc_.sublist("ML Parameters");
+  
+  std::string prec_name = coupled_pc_.get<std::string>("preconditioner", "ILU");
+  if (prec_name == "ML")
+        prec_method_ = TRILINOS_ML;
+  else if (prec_name == "ILU") 
+          prec_method_ = TRILINOS_ILU;
+  else if (prec_name == "ILU_BLOCK") 
+          prec_method_ = TRILINOS_BLOCK_ILU;
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
@@ -265,10 +271,26 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
         
         ComputeShurComplementPK();
         
-
-        if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
-        ml_prec_->SetParameterList(ml_plist_);
-        ml_prec_->ComputePreconditioner();
+        if (prec_method_ == TRILINOS_ML) {
+                if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
+                ml_prec_->SetParameterList(ml_plist_);
+                ml_prec_->ComputePreconditioner();
+        }
+        else if (prec_method_ == TRILINOS_ILU) {
+                ilu_prec_ = Teuchos::rcp(new Ifpack_ILU(&*P2f2f_));
+                ilu_prec_->SetParameters(ilu_plist_);
+                ilu_prec_->Initialize();
+                ilu_prec_->Compute();
+        } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+                Ifpack factory;
+                std::string prectype("ILU");
+                int ovl = ifp_plist_.get<int>("overlap",0);
+                ifp_plist_.set<std::string>("schwarz: combine mode","Add");
+                ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*P2f2f_, ovl));
+                ifp_prec_->SetParameters(ifp_plist_);
+                ifp_prec_->Initialize();
+                ifp_prec_->Compute();
+        }
 
 
 //         exit(0);
@@ -295,37 +317,6 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK(){
         int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
         int faces_GID[MFD_MAX_FACES];
         
-        
-        
-//         Epetra_FEVbrMatrix test_crs(Copy, *double_fmap, 1);
-//         
-//         Epetra_Vector h1(*double_fmap);
-//         Epetra_Vector h2(*double_fmap);
-//         
-//         
-// //         double test_values[4];
-//         for (int i=0;i<251;i++){
-//                 double test_values[4];
-//                 Epetra_SerialDenseMatrix TTV(2,2);
-//                 test_values[0]=10;test_values[1]=0;test_values[2]=0;test_values[3]=10;
-//                 TTV(0,0)=i;TTV(1,0)=0;TTV(0,1)=0;TTV(1,1)=i;
-//                 faces_GID[0] = i;
-//                 P2f2f_->BeginInsertGlobalValues(faces_GID[0],1,faces_GID);
-// //                 P2f2f_->SubmitBlockEntry(test_values, 2, 2, 2);
-//                 P2f2f_->SubmitBlockEntry(TTV);
-//                 P2f2f_->EndSubmitEntries();
-// //                 test_crs.InsertGlobalValues(faces_GID[0], 1, &test_values, faces_GID);
-//         }
-// //         test_crs.FillComplete();
-//         P2f2f_->GlobalAssemble();
-//         h1.PutScalar(1.0);
-//         
-//         P2f2f_->Multiply(false, h1, h2);
-//         
-// //         cout<<*P2f2f_<<endl;
-//         cout<<h2<<endl;
-// //     
-//         exit(0);
 
         std::vector<Teuchos::SerialDenseMatrix<int, double> >& flow_Aff = flow_pk->preconditioner_->Aff_cells();
         std::vector<double>& flow_Acc = flow_pk->preconditioner_->Acc_cells();
@@ -347,17 +338,13 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK(){
         Cell_Couple_Inv_.clear(); 
         
         if (is_matrix_constructed) P2f2f_->PutScalar(0.0);
-//         cout<<(*P2f2f_);
-//         exit(0);
         
         for (int c=0; c < ncells; ++c){
                 
                 cell_GID = cmap->GID(c);
                 mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
                 
-//                 int nfaces = faces_LID.size();
-//                 std::cout<<nfaces<<std::endl;
-                
+               
                 double det_cell_couple = flow_Acc[c] * energy_Acc[c] - (*D_pT_)[0][c] * (*D_Tp_)[0][c];
                 
                                 
@@ -401,15 +388,13 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK(){
 //                         Apf(1,i) =           Couple_Inv(1, 0)*flow_Acf[c](i);
 //                         Apf(1,i + nfaces)  = Couple_Inv(1, 1)*energy_Afc[c](i);
                         Apf(0,i) =           flow_Acf[c](i);
-                        Apf(0,i + nfaces)  = 0;//energy_Afc[c](i);
+                        Apf(0,i + nfaces)  = 0;
                         Apf(1,i) =           0;
                         Apf(1,i + nfaces)  = energy_Afc[c](i);
                 }
                
                 Cell_Couple_Inv_.push_back(Couple_Inv); 
  
-//                 std::cout << "Cell "<<c<<std::endl;
-//                 std::cout << Schur<<std::endl<<std::endl;
                 int NumEntries = nfaces;
                 for (int i=0; i!=nfaces; ++i) {
                         faces_LID[i] = faces[i];
@@ -418,19 +403,13 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK(){
 
                 for (int i=0; i!=nfaces; ++i) {
                         P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], NumEntries, faces_GID);
-//                         cout<<NumEntries<<": "<<faces_GID[i]<<": ";
-//                         for (int j=0; j!=nfaces; ++j) cout<<faces_GID[j]<<" ";
-//                         cout<<endl;
-                        
+
                         for (int j=0; j!=nfaces; ++j){
                                 Values(0,0) = Schur(i,j);
                                 Values(0,1) = Schur(i,j + nfaces);
                                 Values(1,0) = Schur(i + nfaces,j);
                                 Values(1,1) = Schur(i+ nfaces,j+ nfaces);
-//                                 Values(0,0) = 10.;
-//                                 Values(0,1) = 0.;
-//                                 Values(1,0) = 0.;
-//                                 Values(1,1) = 10.;
+
                                 P2f2f_->SubmitBlockEntry(Values);
                         }
                         try {
@@ -442,15 +421,12 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK(){
                         }
                 }
 
-//                 cout<<"cell_GID "<<cell_GID<<endl;
-
                 A2f2p_->BeginReplaceGlobalValues(cell_GID, NumEntries, faces_GID);
                 for (int i=0; i!=nfaces; ++i) {
                         Values(0,0) = Apf(0,i);
                         Values(0,1) = Apf(0,i + nfaces);
                         Values(1,0) = Apf(1,i);
                         Values(1,1) = Apf(1,i + nfaces);
-//                         cout<<"Values "<<c<<"\n"<<Values<<endl;
                         A2f2p_->SubmitBlockEntry(Values);
                 }
                 try {
@@ -469,8 +445,6 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK(){
         
         is_matrix_constructed = true;
 
-//         cout<<(*P2f2f_);
-//         exit(0);
 
 }
 // -----------------------------------------------------------------------------
@@ -506,27 +480,12 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
   
   int ierr;
   
-  
-//   Epetra_MultiVector cl((u->data)->ViewComponent("cell", false));
-//   Epetra_MultiVector fc(*Y->ViewComponent("face", false));
-
-//   Teuchos::RCP<const CompositeVector> pres = (u->SubVector("pressure"))->data();
-//   Teuchos::RCP<const CompositeVector> temp = (u->SubVector("temperature"))->data();
-  
-//   Teuchos::RCP<const CompositeVector> pp = 
-//   Teuchos::RCP<Epetra_MultiVector> lp = Teuchos::rcp(new Epetra_MultiVector(*pres->ViewComponent("face", false))); 
-//   Teuchos::RCP<Epetra_MultiVector> tt = Teuchos::rcp(new Epetra_MultiVector(*temp->ViewComponent("cell", false))); 
-//   Teuchos::RCP<Epetra_MultiVector> lt = Teuchos::rcp(new Epetra_MultiVector(*temp->ViewComponent("face", false))); 
-  
   int ncells = pres_c.MyLength();
   int nfaces = pres_f.MyLength();
   double val = 0.;
   
 
-          
-//   cout<<temp_c<<endl;
-  
-  for (int c=0; c < ncells; ++c){
+ for (int c=0; c < ncells; ++c){
           double p_c = pres_c[0][c];
           double t_c = temp_c[0][c];
           val = -(Cell_Couple_Inv_[c](0,0)*p_c + Cell_Couple_Inv_[c](0,1)*t_c);
@@ -535,59 +494,27 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
           Tc.ReplaceMyValue(c, 1, 0, val);
   }
   
-//   cout<<Tc<<endl;
-//   for (int c=0; c < ncells; ++c){
-//           cout<<c<<" "<<Tc[0][2*c]<<endl;
-//   }
-// //   exit(0);
-//   
-//   cout<<(*A2f2p_)<<endl;
-
-
    A2f2p_->Multiply(true, Tc, Tf); // It performs the required parallel communications.
-  
-//    cout<<"Tf\n"<<endl;
-//    for (int f=0; f < nfaces; ++f){
-//            cout<<f<<" "<<Tf[0][2*f+1]<<" "<< temp_f[0][f]<<endl;
-//    }
-// //    cout<<Tf<<endl;
-//    
-//    exit(0);
+
  
   for (int f=0; f < nfaces; ++f){
   		Tf.SumIntoMyValue(f, 0, 0, pres_f[0][f]); 
   		Tf.SumIntoMyValue(f, 1, 0, temp_f[0][f]); 
   }  
+  
 
-
-//    cout<<"Tf\n"<<endl;
-//    for (int f=0; f < nfaces; ++f){
-//            cout<<f<<" "<<Tf[0][2*f+1]<<endl;
-//    }
-// //    cout<<Tf<<endl;
-//    
-//    exit(0);
   
-  ierr = ml_prec_->ApplyInverse(Tf, Pf);
+  if (prec_method_ == TRILINOS_ML) {
+        ierr = ml_prec_->ApplyInverse(Tf, Pf);
+//         cout<<"Done TRILINOS_ML***************************************\n";
+  } else if (prec_method_ == TRILINOS_ILU) {
+        ierr = ilu_prec_->ApplyInverse(Tf, Pf);
+//         cout<<"Done TRILINOS_ILU***************************************\n";
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+        ierr = ifp_prec_->ApplyInverse(Tf, Pf);
+//         cout<<"Done TRILINOS_BLOCK_ILU**********************************\n";
+  }
   
-  
-//   P2f2f_->Multiply(false, Pf, test_res);
-//   test_res.Update(-1,Tf, 1);
-//   
-//   double res;
-//   
-//   test_res.Norm2(&res);
-//   
-//   cout<<"Residual : "<<res<<endl;
-  
-//     cout<<"P2f2f_\n"<<*P2f2f_<<endl;
-    
-//    cout<<"Pf\n"<<endl;
-//    for (int f=0; f < nfaces; ++f){
-//            cout<<f<<" "<<Pf[0][2*f+1]<<endl;
-//    }
-    
-//     exit(0);
 
   Teuchos::RCP<TreeVector> Ppressure = Pu->SubVector("flow");
   Teuchos::RCP<CompositeVector> Ppressure_data = Ppressure->data();
@@ -595,11 +522,6 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
   Teuchos::RCP<TreeVector> Ptemp = Pu->SubVector("energy");
   Teuchos::RCP<CompositeVector> Ptemp_data = Ptemp->data();
   
-//   for (int c=0;c < ncells; ++c) (*Ppressure_data)("cell",c) = 100.;
-//   
-//   cout<<*Ppressure_data->ViewComponent("cell", false)<<endl;
-  
-//   exit(0);
   
 //   Teuchos::RCP<Epetra_MultiVector> Ppres_c = Ppressure_data->ViewComponent("cell", false);
 //   Teuchos::RCP<Epetra_MultiVector> Ptemp_c = temp_data->ViewComponent("cell", false);
@@ -607,21 +529,9 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 //   Teuchos::RCP<Epetra_MultiVector> Ppres_f = pressure_data->ViewComponent("face", false);
 //   Teuchos::RCP<Epetra_MultiVector> Ptemp_f = temp_data->ViewComponent("face", false);
   
-//   cout<<"Pf\n"<<endl;
-//    for (int f=0; f < nfaces; ++f){
-//            cout<<f<<" "<<Pf[0][2*f]<<endl;
-//    }
-  
-//   cout<<*A2f2p_<<endl;
-  
   ierr = A2f2p_->Multiply(false, Pf, Pc);
   
-//   cout<<"Pc\n"<<endl;
-//    for (int c=0; c < ncells; ++c){
-//            cout<<c<<" "<<Pc[0][2*c]<<endl;
-//    }
-//    exit(0);
-  
+ 
   
   for (int c=0; c < ncells; ++c){
           double p_c = -pres_c[0][c];
@@ -632,55 +542,38 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 
   Pc.Scale(-1.0);
   
-//    cout<<"Pc\n"<<endl;
-//    for (int c=0; c < ncells; ++c){
-//            cout<<c<<" "<<Pc[0][2*c]<<endl;
-//    }
-//    exit(0);
-
   for (int c=0; c < ncells; ++c){
         (*Ppressure_data)("cell",c) = Cell_Couple_Inv_[c](0,0)*Pc[0][2*c] + Cell_Couple_Inv_[c](0,1)*Pc[0][2*c + 1];
         (*Ptemp_data)("cell",c) = Cell_Couple_Inv_[c](1,0)*Pc[0][2*c] + Cell_Couple_Inv_[c](1,1)*Pc[0][2*c + 1];
+        
+//         cout<<c <<" "<<(*Ppressure_data)("cell",c)<<endl;
   }
   
   for (int f=0; f < nfaces; ++f){
        (*Ppressure_data)("face",f) = Pf[0][2*f];
        (*Ptemp_data)("face",f) = Pf[0][2*f + 1];   
   }
+//   exit(0);
   
-//   Ppressure_data->SetComponent("cell", Ppres_c);
-//   Ppressure_data->SetComponent("face", Ppres_f);
-  
-//   for (int c=0; c < ncells; ++c){
-//        cout<<pres_c[0][c]<<" "<<(*Ppres_c)[0][c]<<endl;
-//   }
-//     cout<<*(((Pu->SubVector("flow"))->data())->ViewComponent("cell", false));
-    
-// exit(0);
-
 };
 
 void MPCCoupledFlowEnergy::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
         
-   int NumPDEEqns = 5;
-
-   int i = 900;
-   
-   cout<<"Start ML example\n";
-   
       
    Epetra_RowMatrix *Pff = dynamic_cast<Epetra_RowMatrix*>(&*P2f2f_);  
    
-//   if (prec_method_ == TRILINOS_ML) {
-    ml_plist_ =  prec_plist.sublist("ML Parameters");
+  if (prec_method_ == TRILINOS_ML) {
+        ml_plist_ =  prec_plist.sublist("ML Parameters");
 //     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*P2f2f_, ml_plist_));
-    ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*P2f2f_, ml_plist_, false));
-    
-    
-//     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Pff));
-    
-    cout<<"Prec is created\n";
-    
+        ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*P2f2f_, ml_plist_, false));
+  }
+  else if (prec_method_ == TRILINOS_ILU) {
+    ilu_plist_ = prec_plist.sublist("ILU Parameters");
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    ifp_plist_ = prec_plist.sublist("Block ILU Parameters");
+  }
+  
+
 
 }
 
@@ -689,8 +582,7 @@ double MPCCoupledFlowEnergy::enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RC
         double norm ;
         
         norm = StrongMPC::enorm(u, du);
-        
-        cout<<"Enorm "<<norm<<endl;
+
         
         return norm;
 }
