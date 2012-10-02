@@ -45,6 +45,18 @@ set(petsc_superlu_flags
 # PETSc install directory
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
 
+if (DEFINED LAPACK_LIBRARIES) 
+  set(PETSC_LAPACK_OPTION "--with-lapack-lib=${LAPACK_LIBRARIES}")
+else()
+  set(PETSC_LAPACK_OPTION )
+endif()
+if (DEFINED BLAS_LIBRARIES) 
+  set(PETSC_BLAS_OPTION "--with-blas-lib=${BLAS_LIBRARIES}")
+else()
+  set(PETSC_BLAS_OPTION )
+endif()
+
+
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}             # Package dependency target
@@ -65,6 +77,8 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                                           --CFLAGS=${petsc_cflags}
                                           --CXXFLAGS=${petsc_cxxflags}
                                           --with-debugging=${petsc_debug_flag}
+                                          ${PETSC_LAPACK_OPTION}
+                                          ${PETSC_BLAS_OPTION}
                                           ${petsc_mpi_flag}
 					  ${petsc_superlu_flags}
                     # -- Build
