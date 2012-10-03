@@ -38,19 +38,22 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     *out_ << "----------------------------------------------------------------" << std::endl;
     *out_ << "Richards Residual calculation: T0 = " << t_old << " T1 = " << t_new << " H = " << h << std::endl;
     *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
-    *out_ << "  p1: " << (*u)("cell",0,nc) << " " << (*u)("face",0,497) << std::endl;
+    *out_ << "  p1: " << (*u)("cell",0,nc) << " " << (*u)("face",0,500) << std::endl;
   }
+
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
-
-  // calculate flux
-  UpdateFlux_(S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_();
+
+  // calculate flux
+  UpdateFlux_(S_next_);
+  Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
+  std::cout << "   ACTUAL FLUX: " << (*darcy_flux)("face",500) << std::endl;
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->data();
@@ -61,7 +64,7 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
 
     *out_ << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-    *out_ << "  res1 (after diffusion): " << (*res)("cell",0,nc) << " " << (*res)("face",0,497) << std::endl;
+    *out_ << "  res1 (after diffusion): " << (*res)("cell",0,nc) << " " << (*res)("face",0,500) << std::endl;
   }
 
   // accumulation term
@@ -71,7 +74,7 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0)
           << " " << (*res)("face",0,3) << std::endl;
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
-          << " " << (*res)("face",0,497) << std::endl;
+          << " " << (*res)("face",0,500) << std::endl;
   }
 };
 
@@ -89,7 +92,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
     *out_ << "  p0: " << (*u->data())("cell",0,0) << " "
           << (*u->data())("face",0,3) << std::endl;
     *out_ << "  p1: " << (*u->data())("cell",0,nc) << " "
-          << (*u->data())("face",0,497) << std::endl;
+          << (*u->data())("face",0,500) << std::endl;
   }
 
   // NaN checking
@@ -118,7 +121,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   *out_ << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
         << (*Pu->data())("face",0,3) << std::endl;
   *out_ << "  PC*p1: " << (*Pu->data())("cell",0,nc) << " "
-        << (*Pu->data())("face",0,497) << std::endl;
+        << (*Pu->data())("face",0,500) << std::endl;
   }
 
   // NaN checking of correction

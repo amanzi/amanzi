@@ -20,12 +20,12 @@ Authors: Gianmarco Manzini
 #include "composite_vector_function_factory.hh"
 #include "independent_variable_field_evaluator.hh"
 
+#include "upwinding.hh"
 #include "upwind_potential_difference.hh"
 #include "elevation_evaluator.hh"
 #include "meshed_elevation_evaluator.hh"
 #include "standalone_elevation_evaluator.hh"
 #include "manning_conductivity_evaluator.hh"
-#include "source_from_subsurface_evaluator.hh"
 
 #include "overland.hh"
 
@@ -165,15 +165,12 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::ParameterList source_plist = plist_.sublist("subsurface coupling evaluator");
     source_plist.set("surface mesh key", "surface");
     source_plist.set("subsurface mesh key", "domain");
-    source_plist.set("subsurface flux key", "darcy_flux");
-    source_plist.set("molar density key", "molar_density_liquid");
     // NOTE: this should change to "overland_molar_density_liquid" or
     // whatever when such a thing exists.
     source_plist.set("source key", "overland_source_from_subsurface");
 
     Teuchos::RCP<FieldEvaluator> source_evaluator =
-      Teuchos::rcp(new FlowRelations::SourceFromSubsurfaceEvaluator(source_plist));
-    S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
+        S->RequireFieldEvaluator("overland_source_from_subsurface", source_plist);
   }
 
 
@@ -446,13 +443,14 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S)
   }
 
   // Attempt of a hack to deal with zero rel perm
-  double eps = 1.e-16;
-  Teuchos::RCP<const CompositeVector> relperm =
-      S->GetFieldData("upwind_overland_conductivity");
+  double eps = 1.e-12;
+  Teuchos::RCP<CompositeVector> relperm =
+      S->GetFieldData("upwind_overland_conductivity", name_);
   for (int f=0; f!=relperm->size("face"); ++f) {
     if ((*relperm)("face",f) < eps) {
       bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
       bc_values_[f] = 0.0;
+      //      (*relperm)("face",f) = 1.0;
     }
   }
 };
@@ -473,14 +471,54 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 
 
 bool OverlandFlow::is_admissible(Teuchos::RCP<const TreeVector> up) {
-  Teuchos::RCP<const Epetra_MultiVector> depth = up->data()->ViewComponent("cell",false);
+  Teuchos::RCP<const Epetra_MultiVector> hcell = up->data()->ViewComponent("cell",false);
+  Teuchos::RCP<const Epetra_MultiVector> hface = up->data()->ViewComponent("face",false);
 
+  // check cells
   double minh(0.);
-  int ierr = depth->MinValue(&minh);
+  int ierr = hcell->MinValue(&minh);
   if (ierr || minh < 0.) {
     return false;
   }
+
+  // and faces
+  ierr = hface->MinValue(&minh);
+  if (ierr || minh < 0.) {
+    return false;
+  }
+
   return true;
+}
+
+
+// modify the predictor to ensure non-negativity of ponded depth
+bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
+  if (!is_admissible(up)) {
+    *up->data() = *S_next_->GetFieldData(key_);
+    return true;
+  }
+  return false;
+/*
+  if (!is_admissible(up)) {
+  Epetra_MultiVector& hcell = *up->data()->ViewComponent("cell",false);
+  for (int c=0; c!=hcell.MyLength(); ++c) {
+    if (abs(hcell[0][c]) <= 1.e-8) {
+      hcell[0][c] = 0.;
+    }
+    //    hcell[0][c] = std::max<double>(0.0, hcell[0][c]);
+  }
+
+  Epetra_MultiVector& hface = *up->data()->ViewComponent("face",false);
+  for (int f=0; f!=hface.MyLength(); ++f) {
+    if (abs(hface[0][f]) <= 1.e-8) {
+      hface[0][f] = 0.;
+    }
+    //    hface[0][f] = std::max<double>(0.0, hface[0][f]);
+  }
+  return true;
+  //}
+  //return false;
+  */
 }
 
 } // namespace

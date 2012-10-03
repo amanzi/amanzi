@@ -17,10 +17,6 @@
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
 
-// #include "mpc_prec_coupled_flow_energy.hh"
-
-// class Amanzi::MPCCoupledFlowEnergy;
-
 namespace Amanzi {
 
 // forward declarations
@@ -44,7 +40,10 @@ public:
            const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
       PKPhysicalBDFBase(plist, solution),
-      coupled_to_surface_(false) {
+      coupled_to_surface_via_source_(false),
+      coupled_to_surface_via_head_(false),
+      coupled_to_surface_via_flux_(false),
+      coupled_to_surface_via_residual_(false) {
     // set a few parameters before setup
     plist_.set("solution key", "pressure");
   }
@@ -118,7 +117,13 @@ protected:
   // control switches
   int Krel_method_;
   bool assemble_preconditioner_;
-  bool coupled_to_surface_;
+  bool coupled_to_surface_via_source_;
+  bool coupled_to_surface_via_head_;
+  bool coupled_to_surface_via_flux_;
+  bool coupled_to_surface_via_residual_;
+  double surface_head_cutoff_;
+  double surface_head_cutoff_alpha_;
+  double surface_head_eps_;
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability

@@ -105,7 +105,8 @@ void OverlandFlow::AddLoadValue_(const Teuchos::RCP<CompositeVector>& g) {
 
     int c_owned = g->size("cell");
     for (int c=0; c!=c_owned; ++c) {
-      (*g)("cell",c) -= std::max<double>((*source1)("cell",c), -abs((*pres)("cell",c)) / (S_next_->time() - S_inter_->time())) * (*cell_volume1)("cell",c);
+      //      (*g)("cell",c) -= std::max<double>((*source1)("cell",c), -abs((*pres)("cell",c)) / (S_next_->time() - S_inter_->time())) * (*cell_volume1)("cell",c);
+      (*g)("cell",c) -= (*source1)("cell",c) * (*cell_volume1)("cell",c);
     }
   }
 };

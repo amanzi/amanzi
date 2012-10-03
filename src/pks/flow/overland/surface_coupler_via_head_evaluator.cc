@@ -8,58 +8,58 @@
 */
 
 #include "Mesh_MSTK.hh"
-#include "source_from_subsurface_evaluator.hh"
+#include "surface_coupler_via_head_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-SourceFromSubsurfaceEvaluator::SourceFromSubsurfaceEvaluator(
+Utils::RegisteredFactory<FieldEvaluator,SurfaceCouplerViaHeadEvaluator>
+SurfaceCouplerViaHeadEvaluator::fac_("surface_coupler_via_head");
+
+SurfaceCouplerViaHeadEvaluator::SurfaceCouplerViaHeadEvaluator(
         Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("source key",
           "overland_source_from_subsurface");
   setLinePrefix(my_key_+std::string(" evaluator"));
 
-  pres_key_ = plist_.get<std::string>("pressure key", "pressure");
-  dependencies_.insert(pres_key_);
+  flux_key_ = plist_.get<std::string>("flux key", "darcy_flux");
 
-  density_key_ = plist_.get<std::string>("mass density key", "mass_density_liquid");
-  dependencies_.insert(density_key_);
+  // since we cannot have flux as a dependency (it has no model), we have to
+  // use pressure as a proxy.
+  Key pres_key = plist_.get<std::string>("pressure key", "pressure");
+  dependencies_.insert(pres_key);
 
-  ponded_depth_key_ = plist_.get<std::string>("ponded depth key", "ponded_depth");
-  dependencies_.insert(ponded_depth_key_);
-
-  //  surface_density_key_ = plist_.get<std::string>("surface mass density key", "surface_mass_density_liquid");
-  //  dependencies_.insert(surface_density_key_);
+  dens_key_ = plist_.get<std::string>("molar density key", "molar_density_liquid");
+  dependencies_.insert(dens_key_);
 
   surface_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");
   subsurface_mesh_key_ = plist_.get<std::string>("subsurface mesh key", "domain");
 }
 
-SourceFromSubsurfaceEvaluator::SourceFromSubsurfaceEvaluator(
-        const SourceFromSubsurfaceEvaluator& other) :
+SurfaceCouplerViaHeadEvaluator::SurfaceCouplerViaHeadEvaluator(
+        const SurfaceCouplerViaHeadEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    pres_key_(other.pres_key_),
-    density_key_(other.density_key_),
-    surface_density_key_(other.surface_density_key_),
-    ponded_depth_key_(other.ponded_depth_key_),
+    flux_key_(other.flux_key_),
+    dens_key_(other.dens_key_),
     surface_mesh_key_(other.surface_mesh_key_),
     subsurface_mesh_key_(other.subsurface_mesh_key_),
     face_and_dirs_(other.face_and_dirs_) {}
 
-Teuchos::RCP<FieldEvaluator> SourceFromSubsurfaceEvaluator::Clone() const {
-  return Teuchos::rcp(new SourceFromSubsurfaceEvaluator(*this));
+Teuchos::RCP<FieldEvaluator> SurfaceCouplerViaHeadEvaluator::Clone() const {
+  return Teuchos::rcp(new SurfaceCouplerViaHeadEvaluator(*this));
 }
 
 
-void SourceFromSubsurfaceEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+void SurfaceCouplerViaHeadEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // for now just passing... might do something later here?
   S->RequireField(my_key_, my_key_);
+  S->RequireField(flux_key_);
 }
 
 
-void SourceFromSubsurfaceEvaluator::IdentifyFaceAndDirection_(
+void SurfaceCouplerViaHeadEvaluator::IdentifyFaceAndDirection_(
         const Teuchos::Ptr<State>& S) {
   // grab the meshes
   Teuchos::RCP<const AmanziMesh::Mesh> subsurface = S->GetMesh(subsurface_mesh_key_);
@@ -87,7 +87,8 @@ void SourceFromSubsurfaceEvaluator::IdentifyFaceAndDirection_(
     std::vector<int> fdirs;
     subsurface->cell_get_faces_and_dirs(cells[0], &faces, &fdirs);
     int index = std::find(faces.begin(), faces.end(), domain_face) - faces.begin();
-    int direction = fdirs[index];
+    // note this direction does not include face surface area!
+    int direction = fdirs[index] > 0 ? 1 : -1;
 
     // Put (face,dir) into cached data.
     (*face_and_dirs_)[c] = std::make_pair(domain_face, direction);
@@ -95,7 +96,7 @@ void SourceFromSubsurfaceEvaluator::IdentifyFaceAndDirection_(
 }
 
 // Required methods from SecondaryVariableFieldEvaluator
-void SourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+void SurfaceCouplerViaHeadEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
   if (face_and_dirs_ == Teuchos::null) {
@@ -103,14 +104,8 @@ void SourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 
   Teuchos::RCP<const AmanziMesh::Mesh> subsurface = S->GetMesh(subsurface_mesh_key_);
-
-  //  Teuchos::RCP<const CompositeVector> surface_rho = S->GetFieldData(surface_density_key_);
-  Teuchos::RCP<const CompositeVector> surface_depth = S->GetFieldData(ponded_depth_key_);
-
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(density_key_);
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
-  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
-  const Epetra_Vector& gvec = *(S->GetConstantVectorData("gravity"));
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face",false);
+  const Epetra_MultiVector& dens = *S->GetFieldData(dens_key_)->ViewComponent("cell",false);
 
   int ncells = result->size("cell",false);
   for (int c=0; c!=ncells; ++c) {
@@ -118,26 +113,9 @@ void SourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     subsurface->face_get_cells((*face_and_dirs_)[c].first, AmanziMesh::OWNED, &cells);
     ASSERT(cells.size() == 1);
 
-    // surface head
-    // -- this will change to be the surface water density when that exists...
-    double surface_head = (*surface_depth)("cell",c);
-
-    // subsurface head
-    // -- this will change to be the boundary water density when that exists...
-    double subsurface_head = ((*pres)("face", (*face_and_dirs_)[c].first) - p_atm) /
-        ((*rho)("cell",cells[0])*(-gvec[2]));
-
-    // determine flux
-    double eps = 1.e-6;
-    double L = 0.01;
-    double coef = 1.e-5;
-
     // upwind head in the "rel perm" term, k = head*coef
-    if (surface_head > subsurface_head) {
-      (*result)("cell",c) = (subsurface_head - surface_head) / L * std::pow<double>(surface_head, 5./3.) * coef;
-    } else {
-      (*result)("cell",c) = (subsurface_head - surface_head) / L * std::pow<double>(subsurface_head, 5./3.) * coef;
-    }
+    (*result)("cell",c) = flux[0][(*face_and_dirs_)[c].first]*(*face_and_dirs_)[c].second
+        / dens[0][cells[0]];
 
     Teuchos::OSTab tab = getOSTab();
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
@@ -147,7 +125,7 @@ void SourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 }
 
-void SourceFromSubsurfaceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void SurfaceCouplerViaHeadEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   ASSERT(0);
   // this would require differentiating flux wrt pressure, which we
