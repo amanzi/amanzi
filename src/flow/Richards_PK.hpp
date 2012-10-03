@@ -162,11 +162,11 @@ class Richards_PK : public Flow_PK {
   Matrix_MFD* matrix_;
   Matrix_MFD* preconditioner_;
 
-  BDF2::Dae* bdf2_dae;  // Time intergrators
+  BDF2::Dae* bdf2_dae;  // Time integrators
   BDF1Dae* bdf1_dae;
   int block_picard;
   int error_control_;
-  double functional_max_norm;
+  double functional_max_norm, functional_cell_r;
 
   TI_Specs ti_specs_igs_;  // Tree time integration phases
   int ti_method_igs, error_control_igs_;
