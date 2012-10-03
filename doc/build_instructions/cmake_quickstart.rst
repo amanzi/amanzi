@@ -61,7 +61,12 @@ will deleve into subdirectories of this source directory if it finds a ``ADD_SUB
 command. CMake will continue down through each directory until it no longer detects a subdirectory to add,
 and then return to the root directory and continue processing the remaining directories. For example, if a
 ``CMakeLists.txt`` file had ``ADD_SUBDIRECTORY(dir1 dir2 dir3)`` and the ``CMakeLists.txt`` file in ``dir1``
-had ``ADD_SUBDIRECTORY(dirA dirB)``, the processing order would be: ``dir1,dir1/dirA,dir1/dirB,dir2,dir3``. CMake 
+had ``ADD_SUBDIRECTORY(dirA dirB)``, the processing order would be: ``dir1,dir1/dirA,dir1/dirB,dir2,dir3``. 
+The user controls the build configuration by declaring cache variables with the ``-D VAR:TYPE=VALUE`` option.
+Valid cache variable types are: ``PATH`` (directory), ``FILEPATH`` (full path name file), ``BOOL`` (boolean)
+or ``STRING``.  
+The 
+CMake 
 provides documentation of all the available commands from the command using the ``--help-html``, ``--help-full``
 and ``--help-man`` options. The table below list a few of the most common commands:
 
@@ -71,18 +76,20 @@ and ``--help-man`` options. The table below list a few of the most common comman
 | PROJECT(project_name [lang1 lang2 ...])       |   Set the project name to **project_name**, will also define           |
 |                                               |   ``<project_name>_SOURCE_DIR`` and ``<project_name>_BINARY_DIR``      |
 |                                               |   which are the full path names of ther source and build directories.  |
+|                                               |   If followed by a list of languages, triggers CMake language checks   |
+|                                               |   for each language.                                                   |
 +-----------------------------------------------+------------------------------------------------------------------------+
-| SET(<var_name> <var_value> ... )              |   Set CMake variable **var_name** to **var_value** additional options  |
+| SET(var_name var_value ... )                  |   Set CMake variable **var_name** to **var_value** additional options  |
 |                                               |   control the scope of this variable and it's definition as a          |
 |                                               |   cache variable. See the CMake documentation for details.             |
 +-----------------------------------------------+------------------------------------------------------------------------+
-| ADD_LIBRARY(<name> [OPTIONS] file1  ... )     |  Add a library to the project. Files ``file1 file2 ...`` are           |
+| ADD_LIBRARY(name [OPTIONS] file1  ... )       |  Add a library to the project. Files ``file1 file2 ...`` are           |
 |                                               |  project source files or headers required by the library. Creates a    | 
 |                                               |  target **name** that builds the library. The name of the              |
 |                                               |  library follows the platform conventions. This function is also       |
 |                                               |  use to create imported library targets.                               |
 +-----------------------------------------------+------------------------------------------------------------------------+
-| ADD_EXECUTABLE(<name> [OPTIONS] source1 ... ) |  Add executable to the project. Creates target **name** that           |
+| ADD_EXECUTABLE( name  [OPTIONS] source1 ... ) |  Add executable to the project. Creates target **name** that           |
 |                                               |  builds a stand-alone binary. Final executable name follows platform   |
 |                                               |  conventions.                                                          |
 +-----------------------------------------------+------------------------------------------------------------------------+
