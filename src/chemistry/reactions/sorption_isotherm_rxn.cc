@@ -28,7 +28,7 @@ SorptionIsothermRxn::SorptionIsothermRxn(const SpeciesName species_name,
 SorptionIsothermRxn::~SorptionIsothermRxn() {
 }
 
-std::vector<double> SorptionIsothermRxn::GetIsothermParameters(void) const {
+const std::vector<double>& SorptionIsothermRxn::GetIsothermParameters(void) const {
   return isotherm_->GetParameters();
 }
 

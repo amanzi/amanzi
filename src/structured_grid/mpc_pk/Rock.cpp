@@ -119,10 +119,11 @@ Rock::operator<< (std::ostream& os) const
 }
 
 BoxArray
-Rock::build_finest_data(int         max_level, 
-			Array<int>& n_cell,
-			Array<int>& fratio,
-			int         maxBaseGrid)
+Rock::ba_for_finest_data(int         max_level, 
+                         Array<int>& n_cell,
+                         Array<int>& fratio,
+                         int         maxBaseGrid,
+                         int         nGrow)
 {
   //
   // Create grids at finest level.
@@ -130,14 +131,12 @@ Rock::build_finest_data(int         max_level,
 
   Box bx(IntVect::TheZeroVector(),
          IntVect(D_DECL(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1)));
-  bx.grow(3);
+  bx.grow(nGrow);
 
+  BL_ASSERT(fratio.size()>=max_level);
   twoexp = 1;
-  if (max_level > 0) 
-  {
-      twoexp = fratio[0];
-      for (int ii = 1; ii<max_level;ii++)
-          twoexp *= fratio[0];
+  for (int ii = 1; ii<=max_level;ii++) {
+    twoexp *= fratio[ii-1];
   }
   bx.refine(twoexp);
   
@@ -150,11 +149,12 @@ Rock::build_finest_data(int         max_level,
 void Rock::build_kmap(MultiFab&             mfdata, 
 		      const std::string&    gsfile) const
 {
+    int nGrow = mfdata.nGrow();
     if (permeability_dist_type == rock_dist_map["uniform"]) {
 
         for (int i = 0; i<regions.size(); i++)
         {
-            set_constant_kval(mfdata,regions[i]);
+            set_constant_kval(mfdata,regions[i],nGrow);
         }
     }
     else if (permeability_dist_type == rock_dist_map["random"])
@@ -188,13 +188,13 @@ void Rock::build_kmap(MultiFab&             mfdata,
 void Rock::build_pmap(MultiFab&          mfdata, 
 		      const std::string& gsfile) const
 {
-    Array<Real> porosity_array(1);
-    porosity_array[0] = porosity;
+    int nGrow = mfdata.nGrow();
+    Array<Real> porosity_array(1,porosity);
     if (porosity_dist_type == rock_dist_map["uniform"])
     {
         for (int i= 0; i<regions.size(); i++)
         {
-            set_constant_pval(mfdata,regions[i]);
+            set_constant_pval(mfdata,regions[i],nGrow);
         }
     }
     else if (porosity_dist_type == rock_dist_map["random"])
@@ -225,17 +225,18 @@ void Rock::build_pmap(MultiFab&          mfdata,
 
 
 void Rock::set_constant_kval(MultiFab&     mfdata, 
-			     const Region& region_local) const
+			     const Region& region_local,
+                             int           nGrow) const
 {
-  set_constant_val(mfdata,region_local,permeability);
+    set_constant_val(mfdata,region_local,permeability,nGrow);
 }
 
 void Rock::set_constant_pval(MultiFab&     mfdata, 
-			     const Region& region_local) const
+			     const Region& region_local,
+                             int           nGrow) const
 {
-  Array<Real> porosity_array(1);
-  porosity_array[0] = porosity;
-  set_constant_val(mfdata,region_local,porosity_array);
+    Array<Real> porosity_array(1,porosity);
+    set_constant_val(mfdata,region_local,porosity_array,nGrow);
 }
 
 void Rock::set_constant_kval(FArrayBox&  fab, 
@@ -248,8 +249,7 @@ void Rock::set_constant_kval(FArrayBox&  fab,
 void Rock::set_constant_pval(FArrayBox&  fab, 
 			     const Real* dx) const
 {
-  Array<Real> porosity_array(1);
-  porosity_array[0] = porosity;
+  Array<Real> porosity_array(1,porosity);
   for (int ir=0; ir<regions.size(); ir++)
     regions[ir].setVal(fab,porosity_array,dx,0,0,1);
 }
@@ -282,10 +282,11 @@ void Rock::set_constant_cplval(FArrayBox&  fab,
 
 void Rock::set_constant_val(MultiFab&          mfdata, 
 			    const Region&      region_local,
-			    const Array<Real>& val) const
+			    const Array<Real>& val,
+                            int                nGrow) const
 {
     Array<Real> dx(BL_SPACEDIM);
-    int ng_twoexp = 3*twoexp;
+    int ng_twoexp = nGrow*twoexp;
     for (int i=0;i<BL_SPACEDIM; i++)  
         dx[i] = (probhi[i]-problo[i])/(n_cell[i]*twoexp);
   
@@ -295,10 +296,11 @@ void Rock::set_constant_val(MultiFab&          mfdata,
 
 void Rock::set_constant_val(FArrayBox&         fab, 
 			    const Region&      region_local,
-			    const Array<Real>& val) const
+			    const Array<Real>& val,
+                            int                nGrow) const
 {
     Array<Real> dx(BL_SPACEDIM);
-    int ng_twoexp = 3*twoexp;
+    int ng_twoexp = nGrow*twoexp;
     for (int i=0;i<BL_SPACEDIM; i++)  
         dx[i] = (probhi[i]-problo[i])/(n_cell[i]*twoexp);
 

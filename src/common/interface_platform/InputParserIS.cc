@@ -971,6 +971,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
             sti_bdf1_param.set<double>("error abs tol", num_list.get<double>("steady error abs tol",1.0));
             sti_bdf1_param.set<double>("error rel tol", num_list.get<double>("steady error rel tol",0.0));
             sti_bdf1_param.set<int>("max divergent iterations", num_list.get<int>("steady max divergent iterations",MAX_DIVERGENT_ITERATIONS));
+	    sti_bdf1_param.set<double>("nonlinear iteration damping factor",num_list.get<double>("steady nonlinear iteration damping factor",1.0));
           }
         }
         if (have_unstructured_algorithm_sublist == false) {
@@ -986,6 +987,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           sti_bdf1_param.set<double>("error abs tol", 1.0);
           sti_bdf1_param.set<double>("error rel tol", 0.0);
           sti_bdf1_param.set<int>("max divergent iterations",MAX_DIVERGENT_ITERATIONS);
+	  sti_bdf1_param.set<double>("nonlinear iteration damping factor",1.0);
         }
         // crerate sublists for the transient time integrator
         Teuchos::ParameterList& transient_time_integrator = richards_problem.sublist("transient time integrator");
@@ -1019,6 +1021,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
             tti_bdf1_param.set<double>("error abs tol", num_list.get<double>("transient error abs tol",1.0));
             tti_bdf1_param.set<double>("error rel tol", num_list.get<double>("transient error rel tol",0.0));
             tti_bdf1_param.set<int>("max divergent iterations", num_list.get<int>("transient max divergent iterations",MAX_DIVERGENT_ITERATIONS));
+	    tti_bdf1_param.set<double>("nonlinear iteration damping factor",num_list.get<double>("transient nonlinear iteration damping factor",1.0));
           }
         }
         if (have_unstructured_algorithm_sublist == false) {
@@ -1034,6 +1037,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           tti_bdf1_param.set<double>("error abs tol", 1.0);
           tti_bdf1_param.set<double>("error rel tol", 0.0);
           tti_bdf1_param.set<int>("max divergent iterations",MAX_DIVERGENT_ITERATIONS);
+	  tti_bdf1_param.set<double>("nonlinear iteration damping factor",1.0);
         }
 
 

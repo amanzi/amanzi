@@ -278,6 +278,8 @@ Usage:
 
    * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
 
+   * [U] `"steady nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping).
+
    * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor.
 
    * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor.
@@ -299,6 +301,8 @@ Usage:
    * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. 
 
    * [U] `"transient nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the transient computation.
+
+   * [U] `"transient nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping).
 
    * [U] `"transient time step reduction factor"` [double] When time step reduction is necessary during the transient calculation, use this factor.
 

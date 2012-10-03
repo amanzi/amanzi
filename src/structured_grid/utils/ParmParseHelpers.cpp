@@ -2,6 +2,7 @@
 #include <ParmParseHelpers.H>
 #include <ParallelDescriptor.H>
 #include <sstream>
+#include <strstream>
 
 #include "Teuchos_StrUtils.hpp"
 #include "Utility.H"
@@ -38,9 +39,9 @@ build_prefixed_name(const std::string& name)
 }
 
 void
-bldTable (const Teuchos::ParameterList& params,
+bldTable (Teuchos::ParameterList& params,
 	  std::list<ParmParse::PP_entry>& tab)
-{
+{    
   for (Teuchos::ParameterList::ConstIterator i=params.begin(); i!=params.end(); ++i)
     {
       const std::string& name = params.name(i);
@@ -53,14 +54,85 @@ bldTable (const Teuchos::ParameterList& params,
         }
       else
         {
-          const std::string string = toString(val.getAny());
-          std::string new_string = Teuchos::StrUtils::varSubstitute(string,"{","");
-          new_string = Teuchos::StrUtils::varSubstitute(new_string,"}","");
+            // FIXME: It is unfortunate that Teuchos only stores the converted
+            //  data, and this the Teuchos::toString methods apply an arbitrary 
+            //  formatting rules buried in the bowels of trilinos...
 
-          std::list<std::string> vals = split_string_to_list(new_string);
+            std::stringstream ppStr;
+            std::ios::fmtflags oflags = ppStr.flags();
+            ppStr.setf(std::ios::floatfield, std::ios::scientific);
+            int old_prec = ppStr.precision(15);
 
-          std::string prefixed_name = build_prefixed_name(name);
-          tab.push_back(ParmParse::PP_entry(prefixed_name,vals));
+            std::string prefixed_name = build_prefixed_name(name);
+            std::list<std::string> ppStrList;
+
+            Teuchos::ParameterEntry* entry = params.getEntryPtr(name);
+            if (entry->isType<double>()) {
+                double val = entry->getValue<double>(&val);
+                ppStr << val; 
+                ppStrList.push_back(ppStr.str());
+            }
+            else if (entry->isType<float>()) {
+                float val = entry->getValue<float>(&val);
+                ppStr << val;
+                ppStrList.push_back(ppStr.str());
+            }
+            else if (entry->isType<short>()) {
+                short val = entry->getValue<short>(&val);
+                ppStr << val;
+                ppStrList.push_back(ppStr.str());
+            }
+            else if (entry->isType<int>()) {
+                int val = entry->getValue<int>(&val);
+                ppStr << val;
+                ppStrList.push_back(ppStr.str());
+            }
+            else if (entry->isType<bool>()) {
+                bool val = entry->getValue<bool>(&val);
+                ppStr << val;
+                ppStrList.push_back(ppStr.str());
+            }
+            else if (entry->isType<std::string>()) {
+                std::string val = entry->getValue<std::string>(&val);
+                ppStr << val;
+                ppStrList.push_back(ppStr.str());
+            }
+            else if (entry->isType<Teuchos::Array<int> >()) {
+                Teuchos::Array<int> val = entry->getValue<Teuchos::Array<int> >(&val);
+                for (int i=0; i<val.size(); ++i) {
+                    ppStr.str(""); ppStr << val[i]; ppStrList.push_back(ppStr.str());
+                }
+            }
+            else if (entry->isType<Teuchos::Array<short> >()) {
+                Teuchos::Array<short> val = entry->getValue<Teuchos::Array<short> >(&val);
+                for (int i=0; i<val.size(); ++i) {
+                    ppStr.str(""); ppStr << val[i]; ppStrList.push_back(ppStr.str());
+                }
+            }
+            else if (entry->isType<Teuchos::Array<float> >()) {
+                Teuchos::Array<float> val = entry->getValue<Teuchos::Array<float> >(&val);
+                for (int i=0; i<val.size(); ++i) {
+                    ppStr.str(""); ppStr << val[i]; ppStrList.push_back(ppStr.str());
+                }
+            }
+            else if (entry->isType<Teuchos::Array<double> >()) {
+                Teuchos::Array<double> val = entry->getValue<Teuchos::Array<double> >(&val);
+                for (int i=0; i<val.size(); ++i) {
+                    ppStr.str(""); ppStr << val[i]; ppStrList.push_back(ppStr.str());
+                }
+            }
+            else if (entry->isType<Teuchos::Array<std::string> >()) {
+                Teuchos::Array<std::string> val = entry->getValue<Teuchos::Array<std::string> >(&val);
+                for (int i=0; i<val.size(); ++i) {
+                    ppStr.str(""); ppStr << val[i]; ppStrList.push_back(ppStr.str());
+                }
+            }
+            else {
+                BoxLib::Abort("Type is not supported");
+            }
+
+            tab.push_back(ParmParse::PP_entry(prefixed_name,ppStrList));
+
         }
     }
   if ( ! prefix.empty() )
@@ -102,7 +174,7 @@ print_table (const std::string& pfx, const ParmParse::Table& table)
 }
 
 void
-BoxLib::Initialize_ParmParse(const Teuchos::ParameterList& params)
+BoxLib::Initialize_ParmParse(Teuchos::ParameterList& params)
 {
   std::list<ParmParse::PP_entry> table;
   bldTable(params,table);

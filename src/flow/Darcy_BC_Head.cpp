@@ -170,12 +170,13 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
       p1 = edges[j + 1] - edges[j];
       p2 = xf - edges[j];
 
-      edge_length = L22(p1);
+      edge_length = p1[0] * p1[0] + p1[1] * p1[1];
       tol_edge = tol * edge_length;
 
-      a = (p1 * p2) / edge_length;
+      a = (p1[0] * p2[0] + p1[1] * p2[1]) / edge_length;
       b = fabs(p1[0] * p2[1] - p1[1] * p2[0]);
-      if (b < tol_edge && a > -tol && a < 1.0 + tol) {
+
+      if (b < tol_edge && a > -0.01 && a < 1.01) {
         double z = edges[j][dim - 1] + a * p1[dim - 1];
         (*shift_water_table_)[f] = z * rho_g;
         if (z > xf[2]) {

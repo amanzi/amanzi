@@ -113,9 +113,9 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
-  preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
   verbosity = FLOW_VERBOSITY_HIGH;
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
+  ini_with_darcy = 1;
 }
 
 
@@ -200,9 +200,18 @@ void Darcy_PK::InitPK()
   Krel_cells->PutScalar(1.0);
   Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
 
-  // Preconditioner
-  Teuchos::ParameterList ML_list = preconditioner_list_.sublist(ti_specs_sss.preconditioner_name).sublist("ML Parameters");
-  preconditioner_->InitPreconditioner(preconditioner_method, ML_list);
+  // Preconditioner = matrix for saturated flow
+  int method = ti_specs_sss.preconditioner_method;
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_sss.preconditioner_name);
+  Teuchos::ParameterList ML_list;
+  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
+    ML_list = tmp_list.sublist("ML Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
+    ML_list = tmp_list.sublist("Block ILU Parameters");
+  }
+  preconditioner_->InitPreconditioner(method, ML_list);
 
   // Allocate memory for wells
   if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
@@ -265,14 +274,21 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    double pokay = 100 * matrix_->nokay() / double(ncells_owned);
-    double ppassed = 100 * matrix_->npassed() / double(ncells_owned);
-    std::printf("Darcy PK: Successful plus passed matrices: %4.1f%% %4.1f%%\n", pokay, ppassed);   
+    int nokay = matrix_->nokay();
+    int npassed = matrix_->npassed();
+    std::printf("Darcy PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
   // Well modeling
   if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
+  // make initial guess consistent with boundary conditions
+  if (ini_with_darcy) {
+    ini_with_darcy = 0;
+    SolveFullySaturatedProblem(T0, *solution);
+    pressure = *solution_cells;
   }
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
@@ -288,6 +304,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
     std::printf("***********************************************************\n");
     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
     std::printf("Darcy PK: source/sink distribution method (id) %1d\n", src_sink_distribution);
+    std::printf("Darcy PK: time stepping strategy %2d\n", dT_method_);
     std::printf("***********************************************************\n");
   }
 
@@ -303,9 +320,22 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    int nokay = matrix_->nokay();
+    int npassed = matrix_->npassed();
+    std::printf("Darcy PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+  }
+
   // Well modeling
   if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
+  // make initial guess consistent with boundary conditions
+  if (ini_with_darcy) {
+    ini_with_darcy = 0;
+    SolveFullySaturatedProblem(T0, *solution);
+    pressure = *solution_cells; 
   }
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
@@ -356,11 +386,10 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver->Iterate(max_itrs, convergence_tol);
 
   int num_itrs = solver->NumIters();
-  double residual = solver->TrueResidual();
+  double linear_residual = solver->ScaledResidual();
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::cout << "Darcy solver performed " << num_itrs << " iterations." << std::endl
-              << "Norm of the true residual = " << residual << std::endl;
+    std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 }
 
@@ -420,7 +449,6 @@ int Darcy_PK::Advance(double dT_MPC)
   Epetra_Vector b(*rhs);
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
-  *pdot_cells = *solution_cells;
 
   int max_itrs = ti_specs_sss.ls_specs.max_itrs;
   double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
@@ -430,15 +458,18 @@ int Darcy_PK::Advance(double dT_MPC)
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver->NumIters();
-    double linear_residual = solver->TrueResidual();
+    double linear_residual = solver->ScaledResidual();
     std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
   // calculate time derivative and 2nd-order solution approximation
-  for (int c = 0; c < ncells_owned; c++) {
-    double p_prev = (*pdot_cells)[c];
-    (*pdot_cells)[c] = ((*solution)[c] - p_prev) / dT; 
-    (*solution)[c] = p_prev + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+  if (dT_method_ == FLOW_DT_ADAPTIVE) {
+    Epetra_Vector& pressure = FS->ref_pressure();  // pressure at t^n
+
+    for (int c = 0; c < ncells_owned; c++) {
+      (*pdot_cells)[c] = ((*solution)[c] - pressure[c]) / dT; 
+      (*solution)[c] = pressure[c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+    }
   }
 
   // estimate time multiplier

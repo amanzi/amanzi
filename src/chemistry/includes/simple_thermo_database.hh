@@ -24,6 +24,7 @@ class SimpleThermoDatabase : public Beaker {
   void ParsePrimarySpecies(const std::string& data);
   void ParseAqueousEquilibriumComplex(const std::string& data);
   void ParseGeneralKinetics(const std::string& data);
+  void ParseRadioactiveDecay(const std::string& data);
   void ParseMineral(const std::string& data);
   void ParseMineralKinetics(const std::string& data);
   void ParseIonExchangeSite(const std::string& data);
@@ -39,6 +40,7 @@ class SimpleThermoDatabase : public Beaker {
                      std::vector<int>* species_ids,
                      double* h2o_stoich);
   void ParseReactionString(const std::string reaction,
+                           const std::string arrow,
                            std::vector<SpeciesName>* species,
                            std::vector<double>* stoichiometries);
   int SpeciesNameToID(const std::string species_name);

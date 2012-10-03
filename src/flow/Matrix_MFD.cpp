@@ -474,8 +474,8 @@ void Matrix_MFD::UpdatePreconditioner()
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     Ifpack factory;
     std::string prectype("ILU");
-    int ovl = ifp_plist_.get<int>("overlap",0);
-    ifp_plist_.set<std::string>("schwarz: combine mode","Add");
+    int ovl = ifp_plist_.get<int>("overlap", 0);
+    ifp_plist_.set<std::string>("schwarz: combine mode", "Add");
     ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*Sff_, ovl));
     ifp_prec_->SetParameters(ifp_plist_);
     ifp_prec_->Initialize();

@@ -101,7 +101,7 @@ set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
 
 # PETSc
 set(ENABLE_PETSC @ENABLE_PETSC@ CACHE BOOL "Build PETSc interfaces")
-set(PETSC_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "PETSc installation prefix")
+set(PETSC_DIR @PETSC_DIR@ CACHE PATH "PETSc installation prefix")
 
 # HYPRE
 set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interface")

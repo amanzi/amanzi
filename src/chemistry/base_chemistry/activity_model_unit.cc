@@ -28,11 +28,11 @@ void ActivityModelUnit::EvaluateVector(
     const std::vector<AqueousEquilibriumComplex>& sec,
     std::vector<double>* gamma, 
     double* actw) {
-  const double r1(1.0e0);
-  for (std::vector<double>::iterator i = gamma->begin(); i != gamma->end(); i++) {
-    (*i) = r1;
+  //const double r1(1.0e0);
+  for (std::vector<double>::iterator i = gamma->begin(); i != gamma->end(); ++i) {
+    (*i) = 1.0;
   }
-  *actw = r1;
+  *actw = 1.0;
 }  // end EvaluateVector
 
 
