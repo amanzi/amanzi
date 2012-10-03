@@ -32,7 +32,10 @@ include_directories(${OUTPUT_SOURCE_DIR})
 
 
 # External (TPL) include directories
+# Although, it does not call HDF5 directly 
+# it does need HDF5 for the Vis.hpp file 
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 
 file(GLOB chem_inc_files "*hh")

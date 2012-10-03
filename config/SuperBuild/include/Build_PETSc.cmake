@@ -39,19 +39,20 @@ else()
 endif()
 
 # BLAS options
-if (DEFINED BLAS_LIBRARIES) 
+print_variable(BLAS_LIBRARIES)
+if (BLAS_LIBRARIES) 
   build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-  set(petsc_blas_option "--with-blas-lib=${petsc_blas_libs}")
+  set(petsc_blas_option "--with-blas-lib='${petsc_blas_libs}'")
 else()
   set(petsc_blas_option)
 endif()
 
 # LAPACK options
-if (DEFINED LAPACK_LIBRARIES) 
+if ( LAPACK_LIBRARIES ) 
   build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
-  set(petsc_blas_option "--with-lapack-lib=${petsc_lapack_libs}")
+  set(petsc_lapack_option "--with-lapack-lib='${petsc_lapack_libs}'")
 else()
-  set(petsc_blas_option)
+  set(petsc_lapack_option)
 endif()
 
 # PETSc SuperLU flags

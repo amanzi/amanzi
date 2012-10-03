@@ -31,7 +31,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DHDF5_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DNetCDF_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX} 
-                    -DZOLTAN_DIR:PATH=${TPL_INSTALL_PREFIX}
+                    -DZOLTAN_DIR:PATH=${Zoltan_INSTALL_PREFIX}
                     -DMetis_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DMETIS_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DMetis_LIB_DIR:PATH=${TPL_INSTALL_PREFIX}/lib 
