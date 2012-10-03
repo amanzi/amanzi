@@ -10,20 +10,21 @@
 #ifndef AMANZI_FLOWRELATIONS_SOURCE_FROM_SUBSURFACE_EVALUATOR_HH_
 #define AMANZI_FLOWRELATIONS_SOURCE_FROM_SUBSURFACE_EVALUATOR_HH_
 
+#include "field_evaluator_factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class SourceFromSubsurfaceEvaluator :
+class SurfaceCouplerViaSourceEvaluator :
     public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  SourceFromSubsurfaceEvaluator(Teuchos::ParameterList& plist);
+  SurfaceCouplerViaSourceEvaluator(Teuchos::ParameterList& plist);
 
-  SourceFromSubsurfaceEvaluator(const SourceFromSubsurfaceEvaluator& other);
+  SurfaceCouplerViaSourceEvaluator(const SurfaceCouplerViaSourceEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -49,6 +50,10 @@ protected:
 
   Key surface_mesh_key_;
   Key subsurface_mesh_key_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,SurfaceCouplerViaSourceEvaluator> fac_;
+
 };
 
 } //namespace
