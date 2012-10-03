@@ -13,7 +13,6 @@ Authors: Gianmarco Manzini
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "matrix_mfd.hh"
-#include "upwinding.hh"
 #include "boundary_function.hh"
 #include "composite_vector_function.hh"
 #include "bdf_time_integrator.hh"
@@ -23,6 +22,9 @@ Authors: Gianmarco Manzini
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
+
+namespace Operators { class Upwinding; }
+
 namespace Flow {
 
 class OverlandFlow : public PKPhysicalBDFBase {
@@ -61,8 +63,11 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  // admissible update
+  // admissible update -- ensure non-negativity of ponded depth
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
+
+  // modify the predictor to ensure non-negativity of ponded depth
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
 private:
   // setup methods

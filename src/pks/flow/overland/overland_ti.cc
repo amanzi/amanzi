@@ -165,13 +165,14 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   S_next_->set_time(t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
+  // update the rel perm according to the scheme of choice
+  UpdatePermeabilityData_(S_next_.ptr());
+
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_    ->Compute(S_next_->time());
   UpdateBoundaryConditionsNoElev_(S_next_.ptr());
 
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
 
@@ -280,7 +281,6 @@ void OverlandFlow::test_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   }
   std::cout << "Testing PC with FD.  Error: " << maxval << std::endl;
 };
-
 
 }  // namespace Flow
 }  // namespace Amanzi

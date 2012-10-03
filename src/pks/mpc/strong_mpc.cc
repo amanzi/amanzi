@@ -200,8 +200,7 @@ void StrongMPC::changed_solution() {
 };
 
 // -----------------------------------------------------------------------------
-// Compute a norm on u-du and returns the result.
-// For a Strong MPC, the enorm is just the max of the sub PKs enorms.
+// Check admissibility of each sub-pk
 // -----------------------------------------------------------------------------
 bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
   // loop over sub-PKs
@@ -218,6 +217,32 @@ bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
     if (!(*pk)->is_admissible(pk_u)) return false;
   }
   return true;
+};
+
+
+// -----------------------------------------------------------------------------
+// Modify predictor from each sub pk.
+// -----------------------------------------------------------------------------
+bool StrongMPC::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  // First call the PKBDFBase's modify_predictor, as that deals with potential
+  // backtracking.
+  PKBDFBase::modify_predictor(h,u);
+
+  // loop over sub-PKs
+  bool modified = false;
+  for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+
+    // pull out the u sub-vector
+    Teuchos::RCP<TreeVector> pk_u = u->SubVector((*pk)->name());
+    if (pk_u == Teuchos::null) {
+      Errors::Message message("MPC: vector structure does not match PK structure");
+      Exceptions::amanzi_throw(message);
+    }
+
+    modified |= (*pk)->modify_predictor(h,pk_u);
+  }
+  return modified;
 };
 
 } // namespace
