@@ -69,6 +69,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.atol = paramList_->get<double>("error abs tol");
   state.rtol = paramList_->get<double>("error rel tol");
   state.damp = paramList_->get<double>("nonlinear iteration damping factor",1.0);
+  state.uhist_size = paramList_->get<int>("nonlinear iteration initial guess extrapolation order",2);
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;
@@ -106,7 +107,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   fpa = new nka(maxv, vtol, init_vector);
 
   // create the solution history object
-  sh_ = new BDF2::SolutionHistory(2, map);
+  sh_ = new BDF2::SolutionHistory(state.uhist_size+1, map);
   state.init_solution_history(sh_);
   
   // Read the sublist for verbosity settings.
@@ -272,7 +273,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
   // Predicted solution (initial value for the nonlinear solver)
   Epetra_Vector up(map);
-//   Epetra_Vector utmp(map);
 
   if (state.uhist->history_size() > 1) {
     state.uhist->interpolate_solution(tnew,  up);
@@ -283,7 +283,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   // u at the start of the time step
   Epetra_Vector u0(map);
   u0 = u;
-//   utmp = u;
   
   if (state.pclagcount > state.maxpclag) {
     state.usable_pc = false;
