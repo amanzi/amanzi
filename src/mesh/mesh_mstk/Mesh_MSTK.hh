@@ -80,6 +80,9 @@ private:
   
   bool *faceflip;
 
+  // Attribute to precompute and store celltype
+
+  MAttrib_ptr celltype_att;
 
   // Parent entity attribute - populated if the mesh is derived from
   // another mesh
