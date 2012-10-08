@@ -45,6 +45,7 @@ class Richards_PK : public Flow_PK {
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
   void InitPicard(double T0);
+  void InitNextTI(double T0, double dT0, TI_Specs ti_specs);
 
   double CalculateFlowDt();
   int Advance(double dT_MPC); 
@@ -165,8 +166,10 @@ class Richards_PK : public Flow_PK {
   BDF2::Dae* bdf2_dae;  // Time integrators
   BDF1Dae* bdf1_dae;
   int block_picard;
+
   int error_control_;
-  double functional_max_norm, functional_cell_r;
+  double functional_max_norm, saturation_max_change;
+  int functional_max_cell, saturation_max_cell;
 
   TI_Specs ti_specs_igs_;  // Tree time integration phases
   int ti_method_igs, error_control_igs_;
@@ -203,6 +206,7 @@ class Richards_PK : public Flow_PK {
 
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
+  bool experimental_solver; 
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 
   double mass_bc, mass_amanzi;
