@@ -88,7 +88,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
 
-      ofstream xmlfile;
+      std::ofstream xmlfile;
       xmlfile.open(xmlFileName.c_str());
       xmlfile << XMLobj;
     }

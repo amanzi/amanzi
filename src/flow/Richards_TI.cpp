@@ -16,6 +16,8 @@ The routine implements interface to BDFx time integrators.
 #include <string>
 #include <vector>
 
+#include "exceptions.hh"
+
 #include "Richards_PK.hpp"
 
 namespace Amanzi {
@@ -33,8 +35,9 @@ void Richards_PK::fun(
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
-  functional_max_norm = 0.0;
-  functional_cell_r = 0;
+  functional_max_norm = saturation_max_change = 0.0;
+  functional_max_cell = saturation_max_cell = 0;
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -52,10 +55,16 @@ void Richards_PK::fun(
       double factor = rho * phi[c] * mesh_->cell_volume(c) / dTp;
       f[c] += (s1 - s2) * factor;
 
-      double tmp = fabs(f[c]) / factor;
+      double tmp = fabs(f[c]) / factor;  // calculate errors
       if (tmp > functional_max_norm) {
         functional_max_norm = tmp;
-        functional_cell_r = c;
+        functional_max_cell = c;
+      }
+
+      tmp = fabs(s1 - s2);
+      if (tmp > saturation_max_change) {
+        saturation_max_change = tmp;
+        saturation_max_cell = c;
       }
     }
   }
@@ -113,8 +122,8 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 ****************************************************************** */
 double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du)
 {
-  double error, error_p, error_s, error_r;
-  int cell_p, cell_s, cell_r;
+  double error, error_p, error_r;
+  int cell_p, cell_r;
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
@@ -130,31 +139,13 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
     error_p = 0.0;
   }
 
-  if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-    Epetra_Vector dSdP(mesh_->cell_map(false));
-    DerivedSdP(u, dSdP);
-
-    error_s = 0.0;
-    cell_s = 0;
-    for (int c = 0; c < ncells_owned; c++) {
-      double tmp = dSdP[c] * fabs(du[c]);
-      if (tmp > error_s) {
-        error_s = tmp;
-        cell_s = c;
-      } 
-    }
-  } else {
-    error_s = 0.0;
-  }
-  
   if (error_control_ & FLOW_TI_ERROR_CONTROL_RESIDUAL) {
     error_r = functional_max_norm;
   } else {
     error_r = 0.0;
   }
 
-  error = std::max<double>(error_s, error_p);
-  error = std::max<double>(error, error_r);
+  error = std::max<double>(error_r, error_p);
 
 #ifdef HAVE_MPI
   double buf = error;
@@ -165,17 +156,21 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
   if (verbosity >= FLOW_VERBOSITY_EXTREME) {
     if (error == buf) {
       printf("\nRichards PK: p =%4d: residual = %8.3g at point", MyPID, functional_max_norm);
-      for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(functional_cell_r)[i]);
+      for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(functional_max_cell)[i]);
       printf("\n");
       printf("                pressure error = %8.3g at point", error_p);
       for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(cell_p)[i]);
       printf("\n");
-      printf("              saturation error = %8.3g at point", error_s);
-      for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(cell_s)[i]);
+      printf("             saturation change = %8.3g at point", saturation_max_change);
+      for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(saturation_max_cell)[i]);
       printf("\n");
     }
   }
 
+  // if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
+  //  if (saturation_max_change > 0.125) throw 100;
+  // }
+  
   return error;
 }
 

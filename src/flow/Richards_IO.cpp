@@ -204,6 +204,9 @@ void Richards_PK::ProcessParameterList()
   // allowing developer to use non-standard simulation modes
   if (! rp_list_.isParameter("developer access granted")) AnalysisTI_Specs();
 
+  // experimental solver
+  experimental_solver = rp_list_.get<bool>("experimental solver", false);
+
   // optional debug output
   CalculateWRMcurves(rp_list_);
 }
