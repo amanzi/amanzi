@@ -83,9 +83,9 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
 { 
   Matrix_MFD::SymbolicAssembleGlobalMatrices(super_map);
 
-  const Epetra_Map& fmap = mesh_->face_map(false);
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_FACES : FLOW_HEX_FACES;
   Epetra_FECrsGraph pp_graph(Copy, cmap, avg_entries_row + 1);
@@ -106,7 +106,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
   pp_graph.GlobalAssemble();  // Symbolic graph is complete.
 
   // create global matrices
-  Dff_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  Dff_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
   Spp_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, pp_graph));
   Spp_->GlobalAssemble();
 }
@@ -123,43 +123,60 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   Dff_->PutScalar(0.0);
-  for (int c = 0; c < ncells; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+    int mfaces = faces.size();
 
-    for (int n = 0; n < nfaces; n++) {
+    for (int n = 0; n < mfaces; n++) {
       int f = faces[n];
       (*Dff_)[f] += Aff_cells_[c](n, n);
     }
   }
+  FS->CombineGhostFace2MasterFace(*Dff_, Add);
 
   // convert right-hand side to a cell-based vector
   const Epetra_Map& cmap = mesh_->cell_map(false);
   Epetra_Vector Tc(cmap);
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int f = 0; f < nfaces; f++) (*rhs_faces_)[f] /= (*Dff_)[f];
+  for (int f = 0; f < nfaces_owned; f++) (*rhs_faces_)[f] /= (*Dff_)[f];
   (*Acf_).Multiply(false, *rhs_faces_, Tc);
-  for (int c = 0; c < ncells; c++) (*rhs_cells_)[c] -= Tc[c];
+  for (int c = 0; c < ncells_owned; c++) (*rhs_cells_)[c] -= Tc[c];
   
   rhs_faces_->PutScalar(0.0);
 
-  // create a ghost version of Acc
+  // create a with-ghost copy of Acc
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   Epetra_Vector Dcc(cmap_wghost);
 
-  for (int c = 0; c < ncells; c++) Dcc[c] = (*Acc_)[c];
-  FS->CopyMasterFace2GhostFace(Dcc);
+  for (int c = 0; c < ncells_owned; c++) Dcc[c] = (*Acc_)[c];
+  FS->CopyMasterCell2GhostCell(Dcc);
 
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];
   double Acf_copy[2];
   
+  // create auxiliaty with-ghost copy of Acf_cells
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  Epetra_Vector Acf_parallel(fmap_wghost);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int mfaces = faces.size();
+
+    for (int i = 0; i < mfaces; i++) {
+      int f = faces[i];
+      if (f >= nfaces_owned) Acf_parallel[f] = Acf_cells_[c][i];
+    }
+  }
+  FS->CombineGhostFace2MasterFace(Acf_parallel, Add);
+
+  // populate the global matrix
   Spp_->PutScalar(0.0);
-  for (int f = 0; f < nfaces; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int mcells = cells.size();
 
@@ -171,8 +188,13 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int i = FindPosition<int>(faces, f);
-      Acf_copy[n] = Acf_cells_[c][i];
       Bpp(n, n) = Dcc[c] / faces.size();
+      if (c < ncells_owned) {
+        int i = FindPosition<int>(faces, f);
+        Acf_copy[n] = Acf_cells_[c][i];
+      } else {
+        Acf_copy[n] = Acf_parallel[f];
+      }
     }
 
     for (int n = 0; n < mcells; n++) {
@@ -184,7 +206,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
     
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
   }
-  (*Spp_).GlobalAssemble();
+  (*Spp_).GlobalAssemble(); 
 }
 
 
