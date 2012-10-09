@@ -356,8 +356,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   preconditioner_->InitPreconditioner(method, ML_list);
 
   // set up new time integration or solver
+  std::string ti_method_name(ti_specs.ti_method_name);
   if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
-    Teuchos::ParameterList tmp_list = rp_list_.sublist("steady state time integrator").sublist("BDF2").sublist("BDF2 parameters");
+    Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF2").sublist("BDF2 parameters");
     if (! tmp_list.isSublist("VerboseObject"))
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
@@ -366,7 +367,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     bdf2_dae->setParameterList(bdf2_list);
 
   } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    Teuchos::ParameterList tmp_list = rp_list_.sublist("steady state time integrator").sublist("BDF1").sublist("BDF1 parameters");
+    Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF1").sublist("BDF1 parameters");
     if (! tmp_list.isSublist("VerboseObject"))
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 

@@ -145,6 +145,7 @@ void Richards_PK::ProcessParameterList()
     std::string ti_method_name = igs_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_igs);
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
+    ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
 
     ti_specs_igs_.preconditioner_name = FindStringPreconditioner(igs_list);
     ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
@@ -166,6 +167,7 @@ void Richards_PK::ProcessParameterList()
     std::string ti_method_name = sss_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
+    ti_specs_sss_.ti_method_name = "steady state time integrator";
 
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
@@ -187,6 +189,7 @@ void Richards_PK::ProcessParameterList()
     string ti_method_name = trs_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
+    ti_specs_trs_.ti_method_name = "transient time integrator";
 
     ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
