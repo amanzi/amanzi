@@ -281,6 +281,9 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     up = u;
   }
 
+  // allow the pk to modify the predictor
+  bool predictor_modified = fn.modify_predictor(h,up);
+
   // u at the start of the time step
   Epetra_Vector u0(map);
   u0 = u;
@@ -403,6 +406,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // copy result into an Epetra_Vector.
     du = nev_du.getEpetraVector();  
     
+    // apply damping
     du.Scale(state.damp);
 
     // Check the solution iterate for admissibility.
@@ -412,10 +416,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       }
       throw std::string("solution iterate is inadmissible"); 
     }
-    
+
     // make sure that we do not diverge and cause numerical overflow
     // we use inf norms here
-
     previous_du_norm = du_norm;
     du.NormInf(&du_norm);
 
