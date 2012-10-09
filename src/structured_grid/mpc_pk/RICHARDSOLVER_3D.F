@@ -236,19 +236,21 @@
       end     
 
       subroutine FORT_RS_PDOTRES(Res,DIMS(Res),RSn,DIMS(RSn),
-     &     RSnp1,DIMS(RSnp1),Porosity,DIMS(Porosity),
-     &     rho,dt,lo,hi,nc)
+     &     RSnp1,DIMS(RSnp1),Porositynp1,DIMS(Porositynp1),
+     &     Porosityn,DIMS(Porosityn),dt,lo,hi,nc)
       implicit none      
       integer DIMDEC(Res)
       integer DIMDEC(RSn)
       integer DIMDEC(RSnp1)
-      integer DIMDEC(Porosity)
+      integer DIMDEC(Porositynp1)
+      integer DIMDEC(Porosityn)
       integer lo(SDIM),hi(SDIM)
       integer nc
       REAL_T  Res(DIMV(Res),nc)
       REAL_T  RSn(DIMV(RSn),nc)
       REAL_T  RSnp1(DIMV(RSnp1),nc)
-      REAL_T  Porosity(DIMV(Porosity))
+      REAL_T  Porositynp1(DIMV(Porositynp1))
+      REAL_T  Porosityn(DIMV(Porosityn))
       REAL_T  rho(nc)
       REAL_T  dt
       
@@ -259,10 +261,97 @@ c     On input, Res contains Div(DarcyVel)
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
                do i = lo(1),hi(1)
-                  Res(i,j,k,n) = Porosity(i,j,k)*(RSnp1(i,j,k,n) - RSn(i,j,k,n))/dt
-     &                 + rho(n)*Res(i,j,k,n)
+                  Res(i,j,k,n) = (Porositynp1(i,j,k)*RSnp1(i,j,k,n) - Porosityn(i,j,k)*RSn(i,j,k,n))/dt + Res(i,j,k,n)
                enddo
             enddo
          enddo
       enddo
+      end
+
+
+      subroutine FORT_RS_ALTUP(rhosat,DIMS(rhosat),p,DIMS(p),
+     &     dp,DIMS(dp),kappa,DIMS(kappa),coef,DIMS(coef),n_coef,
+     &     ls_factor,lo,hi,sTOL)
+
+      implicit none
+
+#include "probdata.H"
+
+      integer DIMDEC(rhosat)
+      integer DIMDEC(p)
+      integer DIMDEC(dp)
+      integer DIMDEC(kappa)
+      integer DIMDEC(coef)
+      integer n_coef
+      REAL_T  ls_factor
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  rhosat(DIMV(rhosat),ncomps)
+      REAL_T  p(DIMV(p),ncomps)
+      REAL_T  dp(DIMV(dp),ncomps)
+      REAL_T  kappa(DIMV(kappa))
+      REAL_T  coef(DIMV(coef),n_coef)
+      REAL_T  sTOL
+
+      integer i,j,k
+      integer l_cpl_type
+      REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpcdse, tphi, pcap_new
+      REAL_T  rs_old, s_old, s_new, ds, p_new, pcap_old, rs_new
+      logical is_saturated
+      REAL_T  saturated_s_thresh
+      parameter (saturated_s_thresh = 1.d0 - 1.d-8)
+
+      tphi = one
+      if (ncomps.ne.1) then
+         call bl_pd_abort('Richard solver only works for single comp')
+      endif
+
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+
+               l_cpl_type = nint(coef(i,j,k,1))
+               l_cpl_coef = coef(i,j,k,2)
+               l_sigma    = coef(i,j,k,3)
+               l_sat_res  = coef(i,j,k,4)
+               
+
+c     Get s^{k+1,*} = s^{k}  -  (ds/dp)^k . fac.dp,  ds/dp = - 1 / [(dpc/dse).(dse/ds)] 
+c     If s^{k+1,*} < sTOL, then s^{k+1} = s^{k+1,*}, p^{k+1} from s^{k+1}
+c       else p^{k+1} = p^{k} - fac.dp, s^{k+1} from p^{k+1}
+c
+c     Note: This routine modifies only dp, and only if s^{k}<sTOL
+
+               rs_old = rhosat(i,j,k,1) 
+               s_old = rs_old / rhoval(1)
+               is_saturated = (s_old .ge. saturated_s_thresh)
+               
+               if (.not. is_saturated) then
+                  call get_dcplds(dpcdse,rs_old,rhoval,tphi,kappa(i,j,k),
+     &                 l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
+                  ds = -ls_factor*(one-l_sat_res)*dp(i,j,k,1)/dpcdse
+                  s_new = s_old - ds
+                  s_new = MIN(one,MAX(zero,s_new))
+                  ds = s_new - s_old
+                  is_saturated = (s_new .ge. sTOL)
+               endif
+               
+               if (.not. is_saturated) then
+                  call get_cpl(pcap_old,rs_old,rhoval(1),tphi,
+     &                 kappa(i,j,k),l_sigma,ncomps,l_sat_res,l_cpl_type)
+                  
+                  rs_new = rhoval(1) * s_new
+
+                  call get_cpl(pcap_new,rs_new,rhoval(1),tphi,
+     &                 kappa(i,j,k),l_sigma,ncomps,l_sat_res,l_cpl_type)
+                  
+c                  if (abs(dp(i,j,k,1)-pcap_new+pcap_old).gt.1.d-2) then
+c                     print *,i,j,k,dp(i,j,k,1)-pcap_new+pcap_old
+c                  endif
+
+                  dp(i,j,k,1) = pcap_new - pcap_old
+
+               endif
+            end do
+         end do 
+      end do
       end
