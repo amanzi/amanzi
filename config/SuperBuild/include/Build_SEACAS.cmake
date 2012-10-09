@@ -9,7 +9,7 @@
 # MPI and to resolve links we need MPI compile wrappers.
 define_external_project_args(SEACAS
                              TARGET seacas
-                             DEPENDS ${MPI_PROJECT} HDF5 NetCDF)
+                             DEPENDS ${MPI_PROJECT} HDF5 NetCDF Trilinos)
 
 
 # --- Define the configure parameters
