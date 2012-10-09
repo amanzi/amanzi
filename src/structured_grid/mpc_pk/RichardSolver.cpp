@@ -29,7 +29,7 @@ static bool centered_diff_J_DEF = true;
 static Real variable_switch_saturation_threshold_DEF = -0.9999;
 
 static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
-static bool record_entire_solve = false;
+static bool record_entire_solve = true;
 static std::string record_file = "SNES";
 static bool dump_Jacobian_and_exit = false;
 
@@ -381,6 +381,12 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULL); CHKPETSC(ierr);
 
   UnsetRemainingJacobianReuses();
+
+  // Evaluate the function
+  PetscErrorCode (*func)(SNES,Vec,Vec,void*);
+  void *fctx;
+  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+  (*func)(snes,SolnV,RhsV,fctx);
 
   RichardSolver::SetTheRichardSolver(this);
   dump_cnt = 0;

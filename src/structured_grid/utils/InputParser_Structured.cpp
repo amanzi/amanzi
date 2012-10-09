@@ -186,6 +186,7 @@ namespace Amanzi {
             std::string tpc_str = "Time Period Control";
             std::string amr_str = "Adaptive Mesh Refinement Control";
             std::string prob_str = "Basic Algorithm Control";
+            std::string io_str = "IO Control";
             std::string it_str = "Iterative Linear Solver Control";
             std::string cg_str = "Conjugate Gradient Algorithm";
             std::string mg_str = "Multigrid Algorithm";
@@ -210,6 +211,7 @@ namespace Amanzi {
             ParameterList& mg_out_list      = struc_out_list.sublist("mg");
             ParameterList& mac_out_list     = struc_out_list.sublist("mac");
             ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
+            ParameterList& io_out_list      = struc_out_list.sublist("vismf");
 
             ParameterList& chem_out_list    = prob_out_list.sublist("amanzi");
 
@@ -559,21 +561,21 @@ namespace Amanzi {
             //
             // Verbosity implementation
             //
-            int prob_v, mg_v, cg_v, amr_v, diffuse_v;
+            int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v;
             if (v_val == "None") {
-                prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0;
+                prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0;
             }
             else if (v_val == "Low") {
-                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0;
+                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0;
             }
             else if (v_val == "Medium") {
-                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0;
+                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0;
             }
             else if (v_val == "High") {
-                prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0;
+                prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0;
             }
             else if (v_val == "Extreme") {
-                prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1;
+                prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1;
             }
 
             // 
@@ -883,7 +885,7 @@ namespace Amanzi {
             mg_out_list.set("v",mg_v);
             cg_out_list.set("v",cg_v);
             prob_out_list.set("v",prob_v);
-            diffuse_out_list.set("v",diffuse_v);
+            io_out_list.set("v",io_v);
             
             for (int i=0; i<optL.size(); ++i)
             {

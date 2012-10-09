@@ -637,8 +637,8 @@ PorousMedia::restart (Amr&          papa,
   //    getLevel(k).setTimeLevel(strt_time,dt,dt);
   //}
 
-  if (verbose && ParallelDescriptor::IOProcessor())
-    std::cout << "Estimated time step = " << dt_eig << '\n';
+  if (verbose>2 && ParallelDescriptor::IOProcessor())
+    std::cout << "Estimated time step from level " << level << " = " << dt_eig << '\n';
   //
   // Make room for ncomps+ntracers in aux_boundary_data_old.
   // With AMANZI we only use the ntracers parts.  But by using ncomps+ntracers
@@ -3142,6 +3142,7 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
     if (steady_use_PETSc_snes) 
     {
         rs->ResetRhoSat();
+        rs->SetCurrentTimestep(parent->levelSteps(0));
         int retCode = rs->Solve(t_flow+dt_flow, dt_flow, 1, nld);
         if (retCode > 0) {
             ret = RichardNLSdata::RICHARD_SUCCESS;
@@ -7569,8 +7570,11 @@ PorousMedia::computeNewDt (int                   finest_level,
           dt_init_local = GetUserInputInitDt();
       }
       else {
-          Real transient_start = (execution_mode=="init_to_steady" ? switch_time : start_time);
-          in_transient_period = cum_time > transient_start;
+        Real transient_start = (execution_mode=="init_to_steady" ? switch_time : start_time);
+        in_transient_period = cum_time >= transient_start;
+        if (cum_time == transient_start) {
+          dt_init_local = GetUserInputInitDt();
+        }
       }
   }
 
@@ -7598,7 +7602,7 @@ PorousMedia::computeNewDt (int                   finest_level,
           if (dt_grow_max >= 1) {
               dt_0 = std::min(dt_0, dt_grow_max * dt_0);
           }
-          if (dt_shrink_max <= 1) {
+          if (dt_shrink_max >0  && dt_shrink_max <= 1) {
               dt_0 = std::max(dt_0, dt_shrink_max * dt_0);
           }
           if (transient_richard_max_dt > 0) {
@@ -7779,7 +7783,7 @@ int
 PorousMedia::okToContinue ()
 {
     bool ret = true;
-    std::string reason_for_stopping;
+    std::string reason_for_stopping = "n/a";
     bool successfully_completed = false;
 
     if (level == 0) {
@@ -7801,11 +7805,15 @@ PorousMedia::okToContinue ()
             //
             // Print final solutions
             //
+          if (verbose && ParallelDescriptor::IOProcessor()) {
+            std::cout << "Reason for stopping: " << reason_for_stopping << std::endl;
+          }
+
             if (verbose > 3)
             {      
                 for (int lev = 0; lev <= parent->finestLevel(); lev++)
                 {
-                    if (verbose>2 && ParallelDescriptor::IOProcessor())
+                    if (ParallelDescriptor::IOProcessor())
                         std::cout << "Final solutions at level = " 
                                   << lev << '\n';
                     
