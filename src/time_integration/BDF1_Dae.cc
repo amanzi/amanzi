@@ -69,7 +69,8 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.atol = paramList_->get<double>("error abs tol");
   state.rtol = paramList_->get<double>("error rel tol");
   state.damp = paramList_->get<double>("nonlinear iteration damping factor",1.0);
-  state.uhist_size = paramList_->get<int>("nonlinear iteration initial guess extrapolation order",2);
+  state.uhist_size = paramList_->get<int>("nonlinear iteration initial guess extrapolation order",1);
+  state.uhist_size++;
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;
@@ -107,9 +108,9 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   fpa = new nka(maxv, vtol, init_vector);
 
   // create the solution history object
-  sh_ = new BDF2::SolutionHistory(state.uhist_size+1, map);
+  sh_ = new BDF2::SolutionHistory(state.uhist_size, map);
   state.init_solution_history(sh_);
-  
+
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 
