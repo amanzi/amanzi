@@ -32,17 +32,20 @@ else()
 endif()
 
 # Point PETSc to the MPI build
-if ( "${MPI_BUILD}" )
-  set(petsc_mpi_flag "--with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX}")
+print_variable(${MPI_PROJECT}_BUILD_TARGET)
+if ( "${${MPI_PROJECT}_BUILD_TARGET}" STREQUAL "" )
+  set(petsc_mpi_flags --with-mpi=1)
 else()
-  set(petsc_mpi_flag "--with-mpi=1")
+  set(petsc_mpi_flags 
+            --with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX})
 endif()
+print_variable(petsc_mpi_flags)
 
 # BLAS options
 print_variable(BLAS_LIBRARIES)
 if (BLAS_LIBRARIES) 
   build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-  set(petsc_blas_option "--with-blas-lib='${petsc_blas_libs}'")
+  set(petsc_blas_option --with-blas-lib='${petsc_blas_libs}')
 else()
   set(petsc_blas_option)
 endif()
@@ -50,7 +53,7 @@ endif()
 # LAPACK options
 if ( LAPACK_LIBRARIES ) 
   build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
-  set(petsc_lapack_option "--with-lapack-lib='${petsc_lapack_libs}'")
+  set(petsc_lapack_option --with-lapack-lib='${petsc_lapack_libs}')
 else()
   set(petsc_lapack_option)
 endif()
@@ -83,15 +86,15 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     CONFIGURE_COMMAND
                               <SOURCE_DIR>/configure
                                           --prefix=<INSTALL_DIR>
-                                          --with-cc=${CMAKE_C_COMPILER}
-                                          --with-cxx=${CMAKE_CXX_COMPILER}
-                                          --with-fc=${CMAKE_Fortran_COMPILER}
+                                          --with-cc=${CMAKE_C_COMPILER_USE}
+                                          --with-cxx=${CMAKE_CXX_COMPILER_USE}
+                                          --with-fc=${CMAKE_Fortran_COMPILER_USE}
                                           --CFLAGS=${petsc_cflags}
                                           --CXXFLAGS=${petsc_cxxflags}
                                           --with-debugging=${petsc_debug_flag}
+					  --with-mpi=1
                                           ${petsc_lapack_option}
                                           ${petsc_blas_option}
-                                          ${petsc_mpi_flag}
 					  ${petsc_superlu_flags}
                     # -- Build
                     BINARY_DIR        ${PETSc_build_dir}           # Build directory 

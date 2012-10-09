@@ -60,7 +60,7 @@ set(ENABLE_TESTS @ENABLE_TESTS@ CACHE BOOL "Build the tests")
 set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 
 # METIS  
-set(METIS_DIR  @TPL_INSTALL_PREFIX@ CACHE PATH "METIS installation prefix")
+set(METIS_DIR  @METIS_DIR@ CACHE PATH "METIS installation prefix")
 
 # CCSE
 set(CCSE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CCSE installation prefix")
