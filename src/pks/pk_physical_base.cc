@@ -63,23 +63,26 @@ void PKPhysicalBase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
 // Initialization of the PK data.
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
-  // initial conditions
-  // -- Get the IC function plist.
-  if (!plist_.isSublist("initial condition")) {
-    std::stringstream messagestream;
-    messagestream << name_ << " has no initial condition parameter list.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-  // -- Calculate the IC.
-  Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
-  field->Initialize(ic_plist);
 
-  // -- Update faces from cells if needed.
-  if (ic_plist.get<bool>("initialize faces from cells", false)) {
-    DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
+  if (!field->initialized()) {
+    // initial conditions
+    // -- Get the IC function plist.
+    if (!plist_.isSublist("initial condition")) {
+      std::stringstream messagestream;
+      messagestream << name_ << " has no initial condition parameter list.";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+
+    // -- Calculate the IC.
+    Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
+    field->Initialize(ic_plist);
+
+    // -- Update faces from cells if needed.
+    if (ic_plist.get<bool>("initialize faces from cells", false)) {
+      DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
+    }
   }
 
   // -- Push the data into the solution.
