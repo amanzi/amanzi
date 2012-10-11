@@ -135,6 +135,18 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
   Acf_cells_.clear();
   Acc_cells_.clear();
 
+
+  Teuchos::RCP<const Epetra_MultiVector> Krel_cell;
+  Teuchos::RCP<const Epetra_MultiVector> Krel_face;
+  if (Krel != Teuchos::null) {
+    if (Krel->has_component("cell")) {
+      Krel_cell = Krel->ViewComponent("cell",false);
+    }
+    if (Krel->has_component("face")) {
+      Krel_face = Krel->ViewComponent("face",true);
+    }
+  }
+
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -150,22 +162,22 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
           Bff(m, n) = Mff(m,n);
         }
       }
-    } else if (!Krel->has_component("face")) {
+    } else if (Krel_face == Teuchos::null) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * (*Krel)("cell",0,c);
+          Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c];
         }
       }
-    } else if (!Krel->has_component("cell")) {
+    } else if (Krel_cell == Teuchos::null) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * (*Krel)("face",0,faces[m]);
+          Bff(m, n) = Mff(m,n) * (*Krel_face)[0][faces[m]];
         }
       }
     } else {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * (*Krel)("cell",0,c) * (*Krel)("face",0,faces[m]);
+          Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c] * (*Krel_face)[0][faces[m]];
         }
       }
     }

@@ -56,8 +56,14 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int i=0; i!=result->size(*comp); ++i) {
-      (*result)(*comp, i) = tc_->ThermalConductivity((*poro)(*comp, i), (*sat)(*comp, i));
+    // much more efficient to pull out vectors first
+    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp,false);
+    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+    int ncomp = result->size(*comp, false);
+    for (int i=0; i!=ncomp; ++i) {
+      result_v[0][i] = tc_->ThermalConductivity(poro_v[0][i], sat_v[0][i]);
     }
   }
 }
