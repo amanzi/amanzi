@@ -51,9 +51,9 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
   // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
-  flux.ScatterMasterToGhosted("face");
 
-  // identify upwind/downwind cells for each face
+  // Identify upwind/downwind cells for each local face.  Note upwind/downwind
+  // may be a ghost cell.
   Epetra_IntVector upwind_cell(*face_coef->map("face",true));
   upwind_cell.PutValue(-1);
   Epetra_IntVector downwind_cell(*face_coef->map("face",true));
@@ -61,56 +61,72 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
-  for (int c=0; c!=cell_coef.size("cell",false); ++c) {
+  int nfaces_local = flux.size("face",false);
+
+  for (int c=0; c!=cell_coef.size("cell",true); ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
-      if (flux("face",f) * fdirs[n] >= 0) {
-        upwind_cell[f] = c;
-      } else {
-        downwind_cell[f] = c;
+
+      if (f < nfaces_local) {
+        if (flux("face",f) * fdirs[n] > 0) {
+          upwind_cell[f] = c;
+        } else if (flux("face",f) * fdirs[n] < 0) {
+          downwind_cell[f] = c;
+        } else {
+          // We don't care, but we have to get one into upwind and the other
+          // into downwind.
+          if (upwind_cell[f] == -1) {
+            upwind_cell[f] = c;
+          } else {
+            downwind_cell[f] = c;
+          }
+        }
       }
     }
   }
 
-  // Determine the face coefficient
-  AmanziMesh::Entity_ID_List cells;
+  // Determine the face coefficient of local faces.
+  // These parameters may be key to a smooth convergence rate near zero flux.
   double eps = 1.e-15;
-  double flow_eps_factor = 1.e-8;
+  double flow_eps_factor = 1.e-4;
 
   for (int f=0; f!=face_coef->size("face",false); ++f) {
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    int uw = upwind_cell[f];
+    int dw = downwind_cell[f];
 
-    if (cells.size() == 1) {
-      (*face_coef)("face",f) = cell_coef("cell",cells[0]);
+    if ((uw == -1) || (dw == -1)) {
+      int c = uw == -1 ? dw : uw;
+      ASSERT(c != -1);
+      // boundary face
+      (*face_coef)("face",f) = cell_coef("cell",c);
     } else {
+      ASSERT(uw != -1);
+      ASSERT(dw != -1);
+
       // Determine the size of the overlap region, a smooth transition region
       // near zero flux
       double flow_eps = 0.0;
-      if ((cell_coef("cell",cells[0]) > 0) || (cell_coef("cell",cells[1]) > 0)) {
-        flow_eps = (cell_coef("cell",cells[0]) * cell_coef("cell",cells[1]))
-            / (cell_coef("cell",cells[0]) + cell_coef("cell",cells[1]));
+      if ((cell_coef("cell",uw) > 0) || (cell_coef("cell",dw) > 0)) {
+        flow_eps = 2 * cell_coef("cell",uw) * cell_coef("cell",dw)
+            / (cell_coef("cell",uw) + cell_coef("cell",dw));
       }
-
-      // these parameters may be key!
       flow_eps = std::max(flow_eps*flow_eps_factor, eps);
 
       // Determine the coefficient
       if (abs(flux("face",f)) >= flow_eps) {
-        (*face_coef)("face",f) = cell_coef("cell", upwind_cell[f]);
+        int uw = upwind_cell[f];
+        ASSERT(uw != -1);
+        (*face_coef)("face",f) = cell_coef("cell", uw);
       } else {
         // Parameterization of a linear scaling between upwind and downwind.
-        double param;
-        if (flow_eps < 2*eps) {
-          param = 0.5;
-        } else {
-          param = abs(flux("face",f)) / (2*flow_eps) + 0.5;
-        }
-        ASSERT(param >= 0.0);
+        double param = abs(flux("face",f)) / (2*flow_eps) + 0.5;
+        ASSERT(param >= 0.5);
         ASSERT(param <= 1.0);
-        (*face_coef)("face",f) = cell_coef("cell", upwind_cell[f]) * param
-            + cell_coef("cell", downwind_cell[f]) * (1. - param);
+
+        (*face_coef)("face",f) = cell_coef("cell", uw) * param
+            + cell_coef("cell", dw) * (1. - param);
       }
     }
   }

@@ -25,6 +25,8 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+  ++niter_;
+
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
@@ -52,8 +54,6 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // calculate flux
   UpdateFlux_(S_next_);
-  Teuchos::RCP<const CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux");
-  std::cout << "   ACTUAL FLUX: " << (*darcy_flux)("face",500) << std::endl;
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->data();
@@ -76,6 +76,16 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
           << " " << (*res)("face",0,500) << std::endl;
   }
+
+#if DEBUG_FLAG
+  if (niter_ == 20) {
+    *S_next_->GetFieldData("residual_20",name_) = *res;
+  } else if (niter_ == 21) {
+    *S_next_->GetFieldData("residual_21",name_) = *res;
+  } else if (niter_ == 22) {
+    *S_next_->GetFieldData("residual_22",name_) = *res;
+  }
+#endif
 };
 
 // -----------------------------------------------------------------------------
@@ -250,6 +260,13 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
 double Richards::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
+  // update the tolerances if we are continuing from an crappy IC
+  if (continuation_to_ss_) {
+    atol_ = atol0_ + 1.e5*atol0_/(1.0 + S_next_->time());
+    rtol_ = rtol0_ + 1.e5*rtol0_/(1.0 + S_next_->time());
+  }
+
+  // cell error given by tolerances on water content
   S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
   const CompositeVector& wc = *S_next_->GetFieldData("water_content");
 
@@ -263,6 +280,7 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
+  // cell error given by tolerances on pressure
   double enorm_face(0.);
   int nfaces = res.size("face");
   for (int f=0; f!=nfaces; ++f) {

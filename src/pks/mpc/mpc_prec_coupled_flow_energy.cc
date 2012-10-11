@@ -554,7 +554,17 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
        (*Ptemp_data)("face",f) = Pf[0][2*f + 1];   
   }
 //   exit(0);
-  
+
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    Teuchos::OSTab tab = getOSTab();
+    *out_ << "Preconditioned Updates:" << std::endl;
+    *out_ << "  Pp0: " << (*Ppressure_data)("cell",0,0) << " " << (*Ppressure_data)("face",0,3) << std::endl;
+    *out_ << "  Pp1: " << (*Ppressure_data)("cell",0,99) << " " << (*Ppressure_data)("face",0,500) << std::endl;
+    *out_ << "  PT0: " << (*Ptemp_data)("cell",0,0) << " " << (*Ptemp_data)("face",0,3) << std::endl;
+    *out_ << "  PT1: " << (*Ptemp_data)("cell",0,99) << " " << (*Ptemp_data)("face",0,500) << std::endl;
+  }
+
 };
 
 void MPCCoupledFlowEnergy::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
@@ -586,5 +596,7 @@ double MPCCoupledFlowEnergy::enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RC
         
         return norm;
 }
+
+
 
 } //namespace
