@@ -43,7 +43,8 @@ public:
       coupled_to_surface_via_source_(false),
       coupled_to_surface_via_head_(false),
       coupled_to_surface_via_flux_(false),
-      coupled_to_surface_via_residual_(false) {
+      coupled_to_surface_via_residual_(false),
+      niter_(0) {
     // set a few parameters before setup
     plist_.set("solution key", "pressure");
   }
@@ -124,6 +125,7 @@ protected:
   double surface_head_cutoff_;
   double surface_head_cutoff_alpha_;
   double surface_head_eps_;
+  int niter_;
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability

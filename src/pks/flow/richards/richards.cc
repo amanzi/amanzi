@@ -30,6 +30,9 @@ Authors: Neil Carlson (version 1)
 
 #include "richards.hh"
 
+#define DEBUG_FLAG 0
+
+
 namespace Amanzi {
 namespace Flow {
 
@@ -64,6 +67,15 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   S->RequireField(key_, name_)->SetMesh(S->GetMesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
+
+#if DEBUG_FLAG
+  S->RequireField("residual_20", name_)->SetMesh(S->GetMesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField("residual_21", name_)->SetMesh(S->GetMesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField("residual_22", name_)->SetMesh(S->GetMesh())->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+#endif
 
   // -- secondary variables, no evaluator used
   S->RequireField("darcy_flux_direction", name_)->SetMesh(S->GetMesh())->SetGhosted()
@@ -233,6 +245,17 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
   PKPhysicalBDFBase::initialize(S);
 
+
+  // debugggin cruft
+#if DEBUG_FLAG
+  S->GetFieldData("residual_20",name_)->PutScalar(0.);
+  S->GetFieldData("residual_21",name_)->PutScalar(0.);
+  S->GetFieldData("residual_22",name_)->PutScalar(0.);
+  S->GetField("residual_20",name_)->set_initialized();
+  S->GetField("residual_21",name_)->set_initialized();
+  S->GetField("residual_22",name_)->set_initialized();
+#endif
+
   // initialize boundary conditions
   int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
@@ -272,6 +295,8 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  niter_ = 0;
+
   // Update flux if rel perm, density, or pressure have changed.
   UpdateFlux_(S);
 
@@ -358,10 +383,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<const CompositeVector> rel_perm =
         S->GetFieldData("relative_permeability");
 
-    for (int f=0; f!=uw_rel_perm->size("face"); ++f) {
+    for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
       AmanziMesh::Entity_ID_List cells;
       uw_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-      if (cells.size() < 2) {
+      if (cells.size() == 1) {
         // just grab the cell inside's perm... this will need to be fixed eventually.
         (*uw_rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
       }
@@ -375,12 +400,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   if (update_perm) {
     Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
     Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
-    for (int c=0; c!=uw_rel_perm->size("cell"); ++c) {
+    for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
       (*uw_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
     }
 
     // communicate
-    uw_rel_perm->ScatterMasterToGhosted("face");
+    uw_rel_perm->ScatterMasterToGhosted();
   }
 
   return update_perm;
@@ -661,15 +686,17 @@ void Richards::UpdateBoundaryConditions_() {
         }
       }
 
-      std::cout << "SURFACE BC: p = " << pres("cell",cells[0]) << " p_eff = " << pres("face",f) << std::endl;
-      std::cout << "            h = " << ponded_depth("cell",c) << std::endl;
-      std::cout << "            q_out = " << q_out << " Q_ss = " << Q_ss << std::endl;
-      if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
-        std::cout << "  RESULT:  flux, " << bc_values_[f] << std::endl;
-      } else {
-        std::cout << "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+        Teuchos::OSTab tab = getOSTab();
+        *out_<< "SURFACE BC: p = " << pres("cell",cells[0]) << " p_eff = " << pres("face",f) << std::endl;
+        *out_<< "            h = " << ponded_depth("cell",c) << std::endl;
+        *out_<< "            q_out = " << q_out << " Q_ss = " << Q_ss << std::endl;
+        if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
+          *out_<< "  RESULT:  flux, " << bc_values_[f] << std::endl;
+        } else {
+          *out_<< "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
+        }
       }
-
     }
   }
 };

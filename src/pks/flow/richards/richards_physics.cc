@@ -36,6 +36,9 @@ void Richards::UpdateFlux_(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
   AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
+
+  // communicate
+  darcy_flux->ScatterMasterToGhosted("face");
 }
 
 // -------------------------------------------------------------
