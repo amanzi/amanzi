@@ -26,7 +26,8 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
                     const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, solution),
       PKPhysicalBase(plist,solution),
-      PKBDFBase(plist,solution) {}
+      PKBDFBase(plist,solution),
+      continuation_to_ss_(false) {}
 
   virtual void setup(const Teuchos::Ptr<State>& S);
 
@@ -56,7 +57,7 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   bool adapt_tols_to_h_;
   double min_tol_h_;
 
-
+  bool continuation_to_ss_;
 };
 
 

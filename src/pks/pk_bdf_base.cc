@@ -117,11 +117,20 @@ bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   // const issues with BDF1 need cleaned up...
   Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
 
+  // update the preconditioner
+  update_precon(S_next_->time(), up, S_next_->time() - S_inter_->time());
+
   // evaluate the residual
   Teuchos::RCP<TreeVector> g = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> Pg = Teuchos::rcp(new TreeVector(*up));
   fun(S_inter_->time(), S_next_->time(), Teuchos::null, up_nc, g);
+
+  // apply the preconditioner
+  precon(g, Pg);
+
+  // ensure the new preconditioned residual is smaller than the old preconditioned residual
   double norm(0.);
-  int ierr = g->NormInf(&norm);
+  int ierr = Pg->Norm2(&norm);
 
   if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
     Teuchos::OSTab tab = getOSTab();
@@ -129,9 +138,19 @@ bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
           << norm << " old res: " << residual_norm_ << std::endl;
   }
 
-
-  // ensure the new residual is smaller than the old residual
-  if (ierr || norm > residual_norm_) return false;
+  if (ierr) {
+    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+      Teuchos::OSTab tab = getOSTab();
+      *out_ << "Inadmissible -- error in norm evaluation." << std::endl;
+    }
+    return false;
+  } else if (norm > residual_norm_) {
+    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+      Teuchos::OSTab tab = getOSTab();
+      *out_ << "Inadmissible -- increasing PC'd residual." << std::endl;
+    }
+    return false;
+  }
 
   residual_norm_ = norm;
   return true;
@@ -142,12 +161,6 @@ bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
 // Allows a PK to modify the initial guess.
 // -----------------------------------------------------------------------------
 bool PKBDFBase::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
-  if (backtracking_) {
-    // evaluate the residual
-    Teuchos::RCP<TreeVector> g = Teuchos::rcp(new TreeVector(*up));
-    fun(S_inter_->time(), S_next_->time(), Teuchos::null, up, g);
-    g->NormInf(&residual_norm_);
-  }
   return false;
 }
 
