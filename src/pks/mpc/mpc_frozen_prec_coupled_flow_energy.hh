@@ -24,6 +24,7 @@ class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
 
   // update the predictor to be physically consistent
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool modify_predictor_temp(double h, Teuchos::RCP<TreeVector> up);
 
  private:
   // factory registration

@@ -18,15 +18,62 @@ namespace Amanzi {
 RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> MPCFrozenCoupledFlowEnergy::reg_("frozen energy-flow preconditioner coupled");
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  PKBDFBase::modify_predictor(h,u);
+  Teuchos::RCP<CompositeVector> temp_guess = u->SubVector("energy")->data();
+  Teuchos::RCP<const CompositeVector> temp = S_next_->GetFieldData("temperature");
 
+  bool update_faces(false);
+
+  int ncells = temp->size("cell",true);
+  std::vector<bool> changed(ncells, false);
+  for (int c=0; c!=ncells; ++c) {
+    if ((*temp)("cell",c) >= 273.15 && (*temp_guess)("cell",c) < 273.15) {
+      // freezing
+      (*temp_guess)("cell",c) = 273.15 - 1.e-3;
+      changed[c] = true;
+      update_faces = true;
+    } else if ((*temp)("cell",c) <= 273.15 && (*temp_guess)("cell",c) > 273.15) {
+      // thawing
+      (*temp_guess)("cell",c) = 273.15 - 1.e-3;
+      changed[c] = true;
+      update_faces = true;
+    } else if (273.15 > (*temp)("cell",c) &&
+               (*temp)("cell",c) >= 273.1 &&
+               ((*temp)("cell",c) - (*temp_guess)("cell",c)) > 1.e-2) {
+      // catch the 2nd step in freezing -- after the 2nd step the
+      // extrapolation should be ok?
+      (*temp_guess)("cell",c) = (*temp)("cell",c);
+      changed[c] = true;
+      update_faces = true;
+    }
+  }
+
+  if (update_faces) {
+    AmanziMesh::Entity_ID_List cells;
+
+    int f_owned = temp_guess->size("face");
+    for (int f=0; f!=f_owned; ++f) {
+      cells.clear();
+      temp_guess->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      if (cells.size() == 2) {
+        if (changed[cells[0]] || changed[cells[1]]) {
+          (*temp_guess)("face",f) = ((*temp_guess)("cell",cells[0])
+                  + (*temp_guess)("cell",cells[1])) / 2.0;
+        }
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+bool MPCFrozenCoupledFlowEnergy::modify_predictor_temp(double h, Teuchos::RCP<TreeVector> u) {
   // modification of the initial guess occurs by updating T using this guess,
   // then calculating the p that would be required to keep the same water
   // mass.
 
   // Stuff temperature into state
   Teuchos::RCP<TreeVector> uT = u->SubVector("energy");
-  sub_pks_[1]->solution_to_state(uT, S_next_);
+  sub_pks_[1]->changed_solution();
 
 #if DEBUG_FLAG
   std::cout << std::endl;
@@ -94,8 +141,21 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
     }
   }
 
-  // Now call the inherited version -- this sets the residual_norm for backtracking.
-  PKBDFBase::modify_predictor(h,u);
+  AmanziMesh::Entity_ID_List cells;
+  pres->ScatterMasterToGhosted("cell");
+
+  int f_owned = pres->size("face");
+  for (int f=0; f!=f_owned; ++f) {
+    cells.clear();
+    pres->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += (*pres)("cell",cells[n]);
+    }
+    (*pres)("face",f) = face_value / ncells;
+  }
 
   return true;
 };
