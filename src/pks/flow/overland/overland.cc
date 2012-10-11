@@ -226,12 +226,15 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
     Teuchos::TimeMonitor timer(*meshtime);
 
     // Check that the surface mesh has a subset
-    std::string surface_sideset_name =
-      plist_.get<std::string>("Surface sideset name");
+    std::vector<std::string> setnames;
+    if (plist_.isParameter("surface sideset name")) {
+      setnames.push_back(plist_.get<std::string>("surface sideset name"));
+    } else {
+      setnames = plist_.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
+    }
 
     // -- Call the MSTK constructor to rip off the surface of the MSTK domain
     // -- mesh.
-    std::vector<std::string> setnames(1,surface_sideset_name);
     Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
     Teuchos::RCP<AmanziMesh::Mesh> surface_mesh =
