@@ -27,10 +27,14 @@ ThermalConductivityThreePhaseWetDry::ThermalConductivityThreePhaseWetDry(
 };
 
 double ThermalConductivityThreePhaseWetDry::ThermalConductivity(double poro,
-        double sat_liq, double sat_ice) {
+        double sat_liq, double sat_ice, double temp) {
+  double Ki = 831.51/(pow(temp, 1.0552));
+  double Kl = 0.5611;
+  double k_sat_f = k_sat_u_ * pow(Ki/Kl, poro);
+
   double kersten_u = pow(sat_liq + eps_, alpha_u_);
   double kersten_f = pow(sat_ice + eps_, alpha_f_);
-  return kersten_f * k_sat_f_ + kersten_u * k_sat_u_
+  return kersten_f * k_sat_f + kersten_u * k_sat_u_
     + (1.0 - kersten_f - kersten_u) * k_dry_;
 };
 
@@ -40,7 +44,6 @@ void ThermalConductivityThreePhaseWetDry::InitializeFromPlist_() {
   alpha_u_ = plist_.get<double>("unsaturated alpha unfrozen");
   alpha_f_ = plist_.get<double>("unsaturated alpha frozen");
   k_dry_ = plist_.get<double>("thermal conductivity, dry");
-  k_sat_f_ = plist_.get<double>("thermal conductivity, saturated (frozen)");
   k_sat_u_ = plist_.get<double>("thermal conductivity, saturated (unfrozen)");
 };
 

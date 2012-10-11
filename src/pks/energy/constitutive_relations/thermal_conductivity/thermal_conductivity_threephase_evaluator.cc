@@ -24,6 +24,9 @@ ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
   poro_key_ = plist_.get<std::string>("porosity key", "porosity");
   dependencies_.insert(poro_key_);
 
+  temp_key_ = plist_.get<std::string>("temperature key", "temperature");
+  dependencies_.insert(temp_key_);
+
   sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
   dependencies_.insert(sat_key_);
 
@@ -41,6 +44,7 @@ ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
       const ThermalConductivityThreePhaseEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     poro_key_(other.poro_key_),
+    temp_key_(other.temp_key_),
     sat_key_(other.sat_key_),
     sat2_key_(other.sat2_key_),
     tc_(other.tc_) {}
@@ -56,6 +60,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateField_(
       const Teuchos::Ptr<CompositeVector>& result) {
   // pull out the dependencies
   Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
   Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
   Teuchos::RCP<const CompositeVector> sat2 = S->GetFieldData(sat2_key_);
 
@@ -63,7 +68,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateField_(
        comp!=poro->end(); ++comp) {
     for (int i=0; i!=poro->size(*comp); ++i) {
       (*result)(*comp, i) = tc_->ThermalConductivity((*poro)(*comp, i),
-              (*sat)(*comp, i), (*sat2)(*comp,i));
+              (*sat)(*comp, i), (*sat2)(*comp,i), (*temp)(*comp,i));
     }
   }
 }

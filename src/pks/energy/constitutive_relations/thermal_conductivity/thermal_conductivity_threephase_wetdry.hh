@@ -45,7 +45,7 @@ class ThermalConductivityThreePhaseWetDry : public ThermalConductivityThreePhase
 public:
   ThermalConductivityThreePhaseWetDry(Teuchos::ParameterList& plist);
 
-  double ThermalConductivity(double porosity, double sat_liq, double sat_ice);
+  double ThermalConductivity(double porosity, double sat_liq, double sat_ice, double temp);
 
 private:
   void InitializeFromPlist_();
@@ -55,7 +55,6 @@ private:
   double eps_;
   double alpha_f_;
   double alpha_u_;
-  double k_sat_f_;
   double k_sat_u_;
   double k_dry_;
 

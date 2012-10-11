@@ -42,6 +42,7 @@ class ThermalConductivityThreePhaseEvaluator :
   Key poro_key_;
   Key sat_key_;
   Key sat2_key_;
+  Key temp_key_;
 };
 
 } // namespace
