@@ -51,88 +51,91 @@ TwoPhaseEnergyEvaluator::Clone() const {
 
 void TwoPhaseEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
-  Teuchos::RCP<const CompositeVector> phi = S->GetFieldData("porosity");
-  Teuchos::RCP<const CompositeVector> s_l = S->GetFieldData("saturation_liquid");
-  Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData("internal_energy_liquid");
-  Teuchos::RCP<const CompositeVector> s_g = S->GetFieldData("saturation_gas");
-  Teuchos::RCP<const CompositeVector> n_g = S->GetFieldData("molar_density_gas");
-  Teuchos::RCP<const CompositeVector> u_g = S->GetFieldData("internal_energy_gas");
+  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
+  const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell",false);
 
-  Teuchos::RCP<const CompositeVector> u_rock = S->GetFieldData("internal_energy_rock");
+  const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
+  const Epetra_MultiVector& u_g = *S->GetFieldData("internal_energy_gas")->ViewComponent("cell",false);
 
-  Teuchos::RCP<const CompositeVector> cell_volume = S->GetFieldData("cell_volume");
-  Teuchos::RCP<const double> rho_rock = S->GetScalarData("density_rock");
+  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
+  const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell",false);
+  const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
+  const double& rho_rock = *S->GetScalarData("density_rock");
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 
-
-  for (int c=0; c!=result->size("cell"); ++c) {
-    (*result)("cell",c) = (*phi)("cell",c) * (
-               (*s_l)("cell",c)*(*n_l)("cell",c)*(*u_l)("cell",c)
-               + (*s_g)("cell",c)*(*n_g)("cell",c)*(*u_g)("cell",c))
-      + (1.0 - (*phi)("cell",c)) * (*u_rock)("cell",c) * (*rho_rock);
-    (*result)("cell",c) *= (*cell_volume)("cell",c);
+  int ncells = result->size("cell", false);
+  for (int c=0; c!=ncells; ++c) {
+    result_v[0][c] = phi[0][c] * (
+        s_l[0][c] * n_l[0][c] * u_l[0][c]
+        + s_g[0][c] * n_g[0][c] * u_g[0][c])
+        + (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock;
+    result_v[0][c] *= cell_volume[0][c];
   }
 };
 
 
 void TwoPhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  Teuchos::RCP<const CompositeVector> phi = S->GetFieldData("porosity");
-  Teuchos::RCP<const CompositeVector> s_l = S->GetFieldData("saturation_liquid");
-  Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData("internal_energy_liquid");
-  Teuchos::RCP<const CompositeVector> s_g = S->GetFieldData("saturation_gas");
-  Teuchos::RCP<const CompositeVector> n_g = S->GetFieldData("molar_density_gas");
-  Teuchos::RCP<const CompositeVector> u_g = S->GetFieldData("internal_energy_gas");
+  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
+  const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell",false);
 
-  Teuchos::RCP<const CompositeVector> u_rock = S->GetFieldData("internal_energy_rock");
-  Teuchos::RCP<const double> rho_rock = S->GetScalarData("density_rock");
+  const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+  const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
+  const Epetra_MultiVector& u_g = *S->GetFieldData("internal_energy_gas")->ViewComponent("cell",false);
 
-  Teuchos::RCP<const CompositeVector> cell_volume = S->GetFieldData("cell_volume");
+  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
+  const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell",false);
+  const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
+  const double& rho_rock = *S->GetScalarData("density_rock");
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 
+  int ncells = result->size("cell",false);
   if (wrt_key == "porosity") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*s_l)("cell",c)*(*n_l)("cell",c)*(*u_l)("cell",c)
-        + (*s_g)("cell",c)*(*n_g)("cell",c)*(*u_g)("cell",c)
-        - (*rho_rock) * (*u_rock)("cell",c);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = s_l[0][c]*n_l[0][c]*u_l[0][c]
+          + s_g[0][c]*n_g[0][c]*u_g[0][c]
+          - rho_rock * u_rock[0][c];
     }
 
   } else if (wrt_key == "saturation_liquid") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*n_l)("cell",c)*(*u_l)("cell",c);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c]*n_l[0][c]*u_l[0][c];
     }
   } else if (wrt_key == "molar_density_liquid") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*s_l)("cell",c)*(*u_l)("cell",c);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c]*s_l[0][c]*u_l[0][c];
     }
   } else if (wrt_key == "internal_energy_liquid") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*s_l)("cell",c)*(*n_l)("cell",c);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c]*s_l[0][c]*n_l[0][c];
     }
 
   } else if (wrt_key == "saturation_gas") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*n_g)("cell",c)*(*u_g)("cell",c);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c]*n_g[0][c]*u_g[0][c];
     }
   } else if (wrt_key == "molar_density_gas") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*s_g)("cell",c)*(*u_g)("cell",c);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c]*s_g[0][c]*u_g[0][c];
     }
   } else if (wrt_key == "internal_energy_gas") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (*phi)("cell",c)*(*s_g)("cell",c)*(*n_g)("cell",c);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c]*s_g[0][c]*n_g[0][c];
     }
 
   } else if (wrt_key == "internal_energy_rock") {
-    for (int c=0; c!=result->size("cell"); ++c) {
-      (*result)("cell",c) = (1.0 - (*phi)("cell",c))*(*rho_rock);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = (1.0 - phi[0][c])*rho_rock;
     }
   } else {
     ASSERT(0);
   }
 
-  for (int c=0; c!=result->size("cell"); ++c) {
-    (*result)("cell",c) *= (*cell_volume)("cell",c);
+  for (int c=0; c!=ncells; ++c) {
+    result_v[0][c] *= cell_volume[0][c];
   }
 };
 

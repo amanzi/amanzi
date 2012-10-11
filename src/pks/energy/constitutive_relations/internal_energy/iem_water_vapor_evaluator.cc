@@ -73,9 +73,13 @@ void IEMWaterVaporEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    for (int i=0; i!=result->size(*comp); ++i) {
-      (*result)(*comp, i) =
-        iem_->InternalEnergy((*temp)(*comp, i), (*mol_frac)(*comp, i));
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+    const Epetra_MultiVector& molfrac_v = *mol_frac->ViewComponent(*comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+    int ncomp = result->size(*comp, false);
+    for (int i=0; i!=ncomp; ++i) {
+      result_v[0][i] = iem_->InternalEnergy(temp_v[0][i], molfrac_v[0][i]);
     }
   }
 }
@@ -90,17 +94,25 @@ void IEMWaterVaporEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
   if (wrt_key == temp_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
-      for (int i=0; i!=result->size(*comp); ++i) {
-        (*result)(*comp, i) =
-          iem_->DInternalEnergyDT((*temp)(*comp, i), (*mol_frac)(*comp, i));
+      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+      const Epetra_MultiVector& molfrac_v = *mol_frac->ViewComponent(*comp,false);
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = iem_->DInternalEnergyDT(temp_v[0][i], molfrac_v[0][i]);
       }
     }
   } else if (wrt_key == mol_frac_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
-      for (int i=0; i!=result->size(*comp); ++i) {
-        (*result)(*comp, i) =
-          iem_->DInternalEnergyDomega((*temp)(*comp, i), (*mol_frac)(*comp, i));
+      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+      const Epetra_MultiVector& molfrac_v = *mol_frac->ViewComponent(*comp,false);
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = iem_->DInternalEnergyDomega(temp_v[0][i], molfrac_v[0][i]);
       }
     }
   } else {
