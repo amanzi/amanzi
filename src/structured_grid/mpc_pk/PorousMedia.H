@@ -1050,7 +1050,6 @@ protected:
   static Real geometry_eps;
   static PArray<Region> regions;
   static std::string surf_file;
-  static bool material_is_layered;
 
   // Rock
   static PArray<Rock> rocks;
@@ -1059,6 +1058,7 @@ protected:
   static MultiFab*   kappadata;
   static MultiFab*   phidata;
   static DataServices* phi_dataServices;
+  static DataServices* kappa_dataServices;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
   static Real        saturation_threshold_for_vg_Kr;
