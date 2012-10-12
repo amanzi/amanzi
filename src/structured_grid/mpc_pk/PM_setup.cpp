@@ -7,6 +7,7 @@
 #include <TagBox.H>
 #include <DataServices.H>
 #include <AmrData.H>
+#include <Utility.H>
 #include <time.h> 
 
 #include <PorousMedia.H>
@@ -16,7 +17,6 @@
 #include <DERIVE_F.H>
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
-#include <AmrData.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -101,10 +101,10 @@ MultiFab*   PorousMedia::phidata;
 bool        PorousMedia::porosity_from_fine;
 bool        PorousMedia::permeability_from_fine;
 PArray<Rock> PorousMedia::rocks;
-bool        PorousMedia::material_is_layered;
 Real        PorousMedia::saturation_threshold_for_vg_Kr;
 int         PorousMedia::use_shifted_Kr_eval;
 DataServices* PorousMedia::phi_dataServices;
+DataServices* PorousMedia::kappa_dataServices;
 //
 // Source.
 //
@@ -503,6 +503,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::kappadata = 0;
   PorousMedia::phidata   = 0;
   PorousMedia::phi_dataServices = 0;
+  PorousMedia::kappa_dataServices = 0;
 
   PorousMedia::porosity_from_fine     = false;
   PorousMedia::permeability_from_fine = false;
@@ -1092,36 +1093,6 @@ void PorousMedia::read_geometry()
     }
 }
 
-bool check_if_layered(const Array<std::string>& material_region_names,
-                      const PArray<Region>&     regions,
-                      const Array<Real>&        plo,
-                      const Array<Real>&        phi)
-{
-    for (int i=0; i<material_region_names.size(); ++i)
-    {
-        const std::string& name = material_region_names[i];
-        for (int j=0; j<regions.size(); ++j)
-        {
-            const Region* r = &(regions[j]);
-            if (r->name == name) {
-                const boxRegion* testp = dynamic_cast<const boxRegion*>(r);
-                if (testp) {
-                    for (int d=0; d<BL_SPACEDIM-1; ++d) {
-                        if (testp->lo[d] > plo[d]  ||  testp->hi[d] < phi[d]) {
-                            return false;
-                        }
-                    }
-                }
-                else {
-                    std::cout << *r << std::endl;
-                    return false; // cant be layered if region is not a box
-                }
-            }
-        }
-    }
-    return true;
-}
-
 #include <POROUS_F.H>
 void WritePlotfile(const std::string         &pfversion,
                    const PArray<MultiFab>    &data,
@@ -1277,9 +1248,10 @@ void WritePlotfile(const std::string         &pfversion,
 
 
 void
-WritePorosityPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fRatio,
+WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fRatio,
 		     const Array<Real>& problo, const Array<Real>& probhi, MultiFab* data,
-		     const std::string& filename, int nGrow)
+		     const std::string& filename, int nGrow, const Array<int>& harmDir,
+                     const Array<std::string>& names)
 {
   int nLevs = max_level + 1;
   PArray<MultiFab> mlData(nLevs, PArrayNoManage);
@@ -1312,6 +1284,8 @@ WritePorosityPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
 
   int max_size = 64;
   int ratioToFinest = 1;
+  int nComp = harmDir.size(); BL_ASSERT(data->nComp()>=nComp);
+  
   for (int lev=max_level-1; lev>=0; --lev) {
     ratioToFinest *= fRatio[lev];
     
@@ -1319,25 +1293,21 @@ WritePorosityPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
     bac.maxSize(max_size);
     BoxArray baf = BoxArray(bac).refine(ratioToFinest);
     BoxArray bafg = BoxArray(baf).grow(nGrowFINE);
-    MultiFab mffine_ng(bafg,1,0);      
-    mffine_ng.copy(mlData[max_level]); // parallel copy
+    MultiFab mffine_ng(bafg,nComp,0);      
+    mffine_ng.copy(mlData[max_level],0,0,nComp); // parallel copy
     
-    mlData.set(lev, new MultiFab(bac,1,nGrow));    
+    mlData.set(lev, new MultiFab(bac,nComp,nGrow));    
     for (MFIter mfi(mlData[lev]); mfi.isValid(); ++mfi) {
       const int* lo    = mfi.validbox().loVect();
       const int* hi    = mfi.validbox().hiVect();
+      const FArrayBox& fine = mffine_ng[mfi];
+      FArrayBox& crse       = mlData[lev][mfi];
       
-      const int* p_lo  = mlData[lev][mfi].loVect();
-      const int* p_hi  = mlData[lev][mfi].hiVect();
-      const Real* pdat = mlData[lev][mfi].dataPtr();
-      
-      const int*  mfp_lo = mffine_ng[mfi].loVect();
-      const int*  mfp_hi = mffine_ng[mfi].hiVect();
-      const Real* mfpdat = mffine_ng[mfi].dataPtr();
-      
-      FORT_INITPHI2 (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
-		     pdat,ARLIM(p_lo),ARLIM(p_hi),
-		     lo,hi,&ratioToFinest);
+      for (int d=0; d<nComp; ++d) {
+        FORT_CRSENMAT (fine.dataPtr(d), ARLIM(fine.loVect()), ARLIM(fine.hiVect()),
+                       crse.dataPtr(d), ARLIM(crse.loVect()), ARLIM(crse.hiVect()),
+                       lo, hi, &ratioToFinest, &(harmDir[d]));
+      }
     }    
   }
 
@@ -1348,7 +1318,6 @@ WritePorosityPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
   bool isCartGrid = false;
   Real vfeps = 1.e-12;
   int levelSteps = 0;
-  Array<std::string> names(1,"Porosity");
   WritePlotfile(pfversion,mlData,t,gplo,gphi,fRatio,gpd,dxLevel,coordSys,
 		filename,names,verbose,isCartGrid,&vfeps,&levelSteps);
 
@@ -1388,10 +1357,20 @@ PorousMedia::read_rock(int do_chem)
         BL_ASSERT(rpermeability.size() == 2); // Horizontal, Vertical
 
         // The permeability is specified in mDa.  
-        // This needs to be multiplied with 1e-7 to be consistent 
-        // with the other units in the code
+        // This needs to be multiplied with 1e-10 to be consistent 
+        // with the other units in the code.  What this means is that
+        // we will be evaluating the darcy velocity as:
+        //
+        //  u_Darcy [m/s] = ( kappa [X . mD] / mu [Pa.s] ).Grad(p) [atm/m]
+        //
+        // where X is the factor necessary to have this formula be dimensionally
+        // consistent.  X here is 1.e-10, and can be combined with kappa for the 
+        // the moment because no other derived quantities depend directly on the 
+        // value of kappa  (NOTE: We will have to know that this is done however
+        // if kappa is used as a diagnostic or in some way for a derived quantity).
+        //
         for (int j=0; j<rpermeability.size(); ++j) {
-            rpermeability[j] *= 1.e-7;
+            rpermeability[j] *= 1.e-10;
         }
 
         // relative permeability: include kr_coef, sat_residual
@@ -1721,6 +1700,34 @@ PorousMedia::read_rock(int do_chem)
       }
     }
 
+    std::string permeability_plotfile_in;
+    pp.query("permeability_plotfile_in", permeability_plotfile_in);
+    if (!permeability_plotfile_in.empty()) {
+      DataServices::SetBatchMode();
+      Amrvis::FileType fileType(Amrvis::NEWPLT);
+      kappa_dataServices = new DataServices(permeability_plotfile_in, fileType);
+      if (!kappa_dataServices->AmrDataOk())
+        DataServices::Dispatch(DataServices::ExitRequest, NULL);
+      AmrData& kappa_amrData = kappa_dataServices->AmrDataRef();
+      
+      // Verify kappa data is compatible with current run
+      bool kappa_is_compatible = kappa_amrData.FinestLevel()>=max_level;
+      for (int lev=0; lev<max_level && kappa_is_compatible; ++lev) {
+	kappa_is_compatible &= kappa_amrData.RefRatio()[lev] == fratio[lev];
+      }
+      if (kappa_is_compatible) {
+	Box probDomain=Box(IntVect::TheZeroVector(),
+			   IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
+	probDomain.grow(nGrowHYP);
+	kappa_is_compatible &= kappa_amrData.ProbDomain()[0].contains(probDomain);
+      }
+      if (!kappa_is_compatible) {
+	std::string str=permeability_plotfile_in 
+	  + " is not compatible with this run.  Must generate new file (use permeability_plotfile_out=<name>)";
+	BoxLib::Error(str.c_str());
+      }
+    }
+
     // construct permeability field based on the specified parameters
     if (build_full_kmap)
       {
@@ -1747,6 +1754,20 @@ PorousMedia::read_rock(int do_chem)
                 r.probhi = probhi;
                 r.build_kmap(*kappadata, gsfile);
             }
+
+	    std::string permeability_plotfile_out;
+	    pp.query("permeability_plotfile_out", permeability_plotfile_out);
+	    if (!permeability_plotfile_out.empty()) {
+              Array<int> harmDir(BL_SPACEDIM); 
+              Array<std::string> names(harmDir.size(),"Permeability_");
+              for (int d=0; d<BL_SPACEDIM; ++d) {
+                harmDir[d] = d;
+                int num_digits = 1;
+                BoxLib::Concatenate(names[d],d,num_digits);
+              }
+	      WriteMaterialPltFile(max_level,n_cell,fratio,problo,probhi,phidata,
+                                   permeability_plotfile_out,nGrowHYP,harmDir,names);
+	    }
 
             if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
                 std::cout << "   Finished building kmap on finest level.  Writing..." << std::endl;
@@ -1787,7 +1808,10 @@ PorousMedia::read_rock(int do_chem)
 	    std::string porosity_plotfile_out;
 	    pp.query("porosity_plotfile_out", porosity_plotfile_out);
 	    if (!porosity_plotfile_out.empty()) {
-	      WritePorosityPltFile(max_level,n_cell,fratio,problo,probhi,phidata,porosity_plotfile_out,nGrowHYP);
+              Array<int> harmDir(1,0); 
+              Array<std::string> names(1,"Porosity");
+	      WriteMaterialPltFile(max_level,n_cell,fratio,problo,probhi,phidata,
+                                   porosity_plotfile_out,nGrowHYP,harmDir,names);
 	    }
 
             if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -1810,9 +1834,6 @@ PorousMedia::read_rock(int do_chem)
 	  std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
         }
       }
-
-    // Check if material is actually layered in the vertical coordinate
-    material_is_layered = check_if_layered(material_regions,regions,problo,probhi);
 
     // Check that at the coarse level material properties have been set over the entire domain
     BoxArray ba(Box(IntVect(D_DECL(0,0,0)),
@@ -2201,8 +2222,9 @@ void  PorousMedia::read_comp()
           cNames.push_back(p_cNames[j]);
       }
       Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
-      // FIXME: Assume visc given in mass units, George hardwired rho top 
-      Real p_visc; ppr.get("viscosity",p_visc); p_visc *= p_rho; muval.push_back(p_visc);
+      // viscosity in units of kg/(m.s)
+      //Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
+      Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
       Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
 
       // Only components have diffusion at the moment.  

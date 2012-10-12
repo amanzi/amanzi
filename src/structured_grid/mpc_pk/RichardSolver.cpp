@@ -29,7 +29,7 @@ static bool centered_diff_J_DEF = true;
 static Real variable_switch_saturation_threshold_DEF = -0.9999;
 
 static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
-static bool record_entire_solve = true;
+static bool record_entire_solve = false;
 static std::string record_file = "SNES";
 static bool dump_Jacobian_and_exit = false;
 
@@ -1007,7 +1007,6 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
   }
 }
 
-
 void
 RichardSolver::DpDtResidual(MFTower& residual,
 			    MFTower& pressure,
@@ -1040,16 +1039,6 @@ RichardSolver::DpDtResidual(MFTower& residual,
 		        &dt, vbox.loVect(), vbox.hiVect(), &nComp);
         }
     }
-
-#if 0
-  // Scale residual by cell volume/total volume
-  Real total_volume_inv = 1/TotalVolume();
-  for (int lev=0; lev<nLevs; ++lev)
-    {
-        MultiFab::Multiply(residual[lev],layout.Volume(lev),0,0,nComp,0);
-        residual[lev].mult(total_volume_inv,0,1);
-    }
-#endif
 }
 
 void RichardSolver::CreateJac(Mat& J, 
@@ -1234,6 +1223,18 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     Real t = rs->GetTime();
     Real dt = rs->GetDt();
     rs->DpDtResidual(fMFT,xMFT,t,dt);
+
+#if 1
+    // Scale residual by cell volume/sqrt(total volume)
+    Real sqrt_total_volume_inv = std::sqrt(1/TotalVolume());
+    int nComp = 1;
+    int nLevs = rs->GetNumLevels();
+    for (int lev=0; lev<nLevs; ++lev)
+    {
+      MultiFab::Multiply(fMFT[lev],layout.Volume(lev),0,0,nComp,0);
+      fMFT[lev].mult(sqrt_total_volume_inv,0,1);
+    }
+#endif
 
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 

@@ -1238,7 +1238,7 @@ namespace Amanzi {
 				}
                                 // convert from m^2 to mDa
                                 for (int k=0; k<2; k++) {
-                                    array_p[k] /= 9.869233e-16;
+                                    array_p[k] *= 1.01325e15;
                                 }
                                 rsublist.set("permeability",array_p);
                                 rsublist.set("permeability_dist","uniform");

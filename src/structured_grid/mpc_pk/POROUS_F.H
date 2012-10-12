@@ -6,6 +6,7 @@
 #    define FORT_INITKAPPA2  initkappa2
 #    define FORT_INITPHI     initphi
 #    define FORT_INITPHI2    initphi2
+#    define FORT_CRSENMAT    crsenmat
 #    define FORT_INITKR      initkr
 #    define FORT_MK_MACCOEF  mkmaccoef
 #    define FORT_TURN        turn
@@ -17,6 +18,7 @@
 #    define FORT_INITKAPPA2  INITKAPPA2
 #    define FORT_INITPHI     INITPHI
 #    define FORT_INITPHI2    INITPHI2
+#    define FORT_CRSENMAT    CRSENKMAT
 #    define FORT_INITKR      INITKR
 #    define FORT_MK_MACCOEF  MKMACCOEF
 #    define FORT_TURN        TURN
@@ -26,6 +28,7 @@
 #    define FORT_INITKAPPA   initkappa
 #    define FORT_INITPHI     initphi
 #    define FORT_INITPHI2    initphi2
+#    define FORT_CRSENMAT    crsenmat
 #    define FORT_INITKR      initkr
 #    define FORT_MK_MACCOEF  mkmaccoef
 #    define FORT_TURN        turn
@@ -36,6 +39,7 @@
 #    define FORT_INITKAPPA2  initkappa2_
 #    define FORT_INITPHI     initphi_
 #    define FORT_INITPHI2    initphi2_
+#    define FORT_CRSENMAT    crsenmat_
 #    define FORT_INITKR      initkr_
 #    define FORT_MK_MACCOEF  mkmaccoef_
 #    define FORT_TURN        turn_
@@ -85,6 +89,11 @@ extern "C" {
 		      ARLIM_P(p_lo), ARLIM_P(p_hi),
 		      const int* lo, const int* hi,
 		      const int* fratio);
+
+  void FORT_CRSENMAT (const Real* kfine, ARLIM_P(kflo), ARLIM_P(kfhi),
+                      const Real* kcrse, ARLIM_P(kclo), ARLIM_P(kchi),
+                      const int* lo, const int* hi, 
+                      const int* fratio, const int* harmdir);
 
   void FORT_INITKR (const Real* krdata, ARLIM_P(krd_lo), ARLIM_P(krd_hi),
 		    const Real* kr, ARLIM_P(kr_lo), ARLIM_P(kr_hi), 

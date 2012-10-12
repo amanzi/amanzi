@@ -8006,9 +8006,27 @@ PorousMedia::init_rock_properties ()
 
 
   // permeability
-  
-  if (permeability_from_fine)
+  if (kappa_dataServices!=0) {
+    AmrData& kappa_amrData = kappa_dataServices->AmrDataRef();
+    Array<std::string> names(BL_SPACEDIM,"Permeability_");
+    Array<int> dComps(BL_SPACEDIM);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      int num_digits = 1;
+      BoxLib::Concatenate(names[d],d,num_digits);
+      dComps[d] = d;
+    }
+    BoxArray bag = BoxArray(kappa->boxArray()).grow(kappa->nGrow());
+    MultiFab kappag(bag,BL_SPACEDIM,0);
+    kappa_amrData.FillVar(kappag,level,names,dComps);
+    for (MFIter mfi(kappag); mfi.isValid(); ++mfi) {
+      (*kappa)[mfi].copy(kappag[mfi]);
+    }
+    //} else {
+  } 
+  // FIXME: Can skip if the plotfile stuff works ok
   {
+    if (permeability_from_fine)
+    {
       BoxArray tba(grids);
       tba.maxSize(new_grid_size);
       MultiFab tkappa(tba,1,nGrowHYP);
@@ -8018,22 +8036,22 @@ PorousMedia::init_rock_properties ()
       tkpedge = new MultiFab[BL_SPACEDIM];
       for (int dir = 0; dir < BL_SPACEDIM; dir++)
       {
-	  BoxArray tbe(tba);
-	  tbe.surroundingNodes(dir).grow(1);
-	  tkpedge[dir].define(tbe,1,0,Fab_allocate);
-	  tkpedge[dir].setVal(1.e40);
+        BoxArray tbe(tba);
+        tbe.surroundingNodes(dir).grow(1);
+        tkpedge[dir].define(tbe,1,0,Fab_allocate);
+        tkpedge[dir].setVal(1.e40);
       }
       
       BoxArray ba(tkappa.size());
       BoxArray ba2(tkappa.size());
       for (int i = 0; i < ba.size(); i++)
       {
-	  Box bx = tkappa.box(i);
-	  bx.refine(twoexp);
-	  ba.set(i,bx);
+        Box bx = tkappa.box(i);
+        bx.refine(twoexp);
+        ba.set(i,bx);
           
-	  bx.grow(ng_twoexp);
-	  ba2.set(i,bx);
+        bx.grow(ng_twoexp);
+        ba2.set(i,bx);
       }
       
       MultiFab mftmp(ba2,BL_SPACEDIM,0);
@@ -8042,52 +8060,52 @@ PorousMedia::init_rock_properties ()
       // mfbig has same CPU distribution as kappa
       MultiFab mfbig_kappa(ba,BL_SPACEDIM,ng_twoexp); 
       for (MFIter mfi(mftmp); mfi.isValid(); ++mfi)
-          mfbig_kappa[mfi].copy(mftmp[mfi]);
+        mfbig_kappa[mfi].copy(mftmp[mfi]);
       mftmp.clear();
       mfbig_kappa.FillBoundary();
       fgeom.FillPeriodicBoundary(mfbig_kappa,true);
       
       for (MFIter mfi(tkappa); mfi.isValid(); ++mfi)
       {
-	  const int* lo    = mfi.validbox().loVect();
-	  const int* hi    = mfi.validbox().hiVect();
+        const int* lo    = mfi.validbox().loVect();
+        const int* hi    = mfi.validbox().hiVect();
           
-	  const int* k_lo  = tkappa[mfi].loVect();
-	  const int* k_hi  = tkappa[mfi].hiVect();
-	  const Real* kdat = tkappa[mfi].dataPtr();
+        const int* k_lo  = tkappa[mfi].loVect();
+        const int* k_hi  = tkappa[mfi].hiVect();
+        const Real* kdat = tkappa[mfi].dataPtr();
 
-	  const int* kx_lo  = tkpedge[0][mfi].loVect();
-	  const int* kx_hi  = tkpedge[0][mfi].hiVect();
-	  const Real* kxdat = tkpedge[0][mfi].dataPtr();
+        const int* kx_lo  = tkpedge[0][mfi].loVect();
+        const int* kx_hi  = tkpedge[0][mfi].hiVect();
+        const Real* kxdat = tkpedge[0][mfi].dataPtr();
 
-	  const int* ky_lo  = tkpedge[1][mfi].loVect();
-	  const int* ky_hi  = tkpedge[1][mfi].hiVect();
-	  const Real* kydat = tkpedge[1][mfi].dataPtr();
+        const int* ky_lo  = tkpedge[1][mfi].loVect();
+        const int* ky_hi  = tkpedge[1][mfi].hiVect();
+        const Real* kydat = tkpedge[1][mfi].dataPtr();
 
 #if(BL_SPACEDIM==3)
-	  const int* kz_lo  = tkpedge[2][mfi].loVect();
-	  const int* kz_hi  = tkpedge[2][mfi].hiVect();
-	  const Real* kzdat = tkpedge[2][mfi].dataPtr();
+        const int* kz_lo  = tkpedge[2][mfi].loVect();
+        const int* kz_hi  = tkpedge[2][mfi].hiVect();
+        const Real* kzdat = tkpedge[2][mfi].dataPtr();
 #endif
 
-	  const int* mf_lo  = mfbig_kappa[mfi].loVect();
-	  const int* mf_hi  = mfbig_kappa[mfi].hiVect();
-	  const Real* mfdat = mfbig_kappa[mfi].dataPtr();
+        const int* mf_lo  = mfbig_kappa[mfi].loVect();
+        const int* mf_hi  = mfbig_kappa[mfi].hiVect();
+        const Real* mfdat = mfbig_kappa[mfi].dataPtr();
 
-	  FORT_INITKAPPA2(mfdat,ARLIM(mf_lo),ARLIM(mf_hi),
-			  kdat,ARLIM(k_lo),ARLIM(k_hi),
-			  kxdat,ARLIM(kx_lo),ARLIM(kx_hi),
-			  kydat,ARLIM(ky_lo),ARLIM(ky_hi),
+        FORT_INITKAPPA2(mfdat,ARLIM(mf_lo),ARLIM(mf_hi),
+                        kdat,ARLIM(k_lo),ARLIM(k_hi),
+                        kxdat,ARLIM(kx_lo),ARLIM(kx_hi),
+                        kydat,ARLIM(ky_lo),ARLIM(ky_hi),
 #if(BL_SPACEDIM==3)
-			  kzdat,ARLIM(kz_lo),ARLIM(kz_hi),
+                        kzdat,ARLIM(kz_lo),ARLIM(kz_hi),
 #endif		      
-			  lo,hi,&level,&max_level, &fratio);
+                        lo,hi,&level,&max_level, &fratio);
       }
       
       mfbig_kappa.clear();
       
       for (int dir = 0; dir < BL_SPACEDIM; dir++)
-          kpedge[dir].copy(tkpedge[dir]);
+        kpedge[dir].copy(tkpedge[dir]);
       delete [] tkpedge;
       
       BoxArray tba2(tkappa.boxArray());
@@ -8095,7 +8113,7 @@ PorousMedia::init_rock_properties ()
       MultiFab tmpgrow(tba2,1,0);
     
       for (MFIter mfi(tkappa); mfi.isValid(); ++mfi)
-          tmpgrow[mfi].copy(tkappa[mfi]);
+        tmpgrow[mfi].copy(tkappa[mfi]);
 
       tkappa.clear();
 
@@ -8107,65 +8125,12 @@ PorousMedia::init_rock_properties ()
       tmpgrow.clear();
 
       for (MFIter mfi(tmpgrow2); mfi.isValid(); ++mfi)
-          (*kappa)[mfi].copy(tmpgrow2[mfi]);
+        (*kappa)[mfi].copy(tmpgrow2[mfi]);
+    }
   }
-
-  else 
-  {
-      BoxLib::Abort("rock layers not yet implemented");
-#if 0
-      int nlayer = rock_array.size();
-      Array<Real> kappaval_x(nlayer), kappaval_y(nlayer), kappaval_z(nlayer);
-      int mediumtype = 0;
-      for (int i=0;i<nlayer;i++)
-	{
-	  kappaval_x[i] = rock_array[i].permeability[0];
-	  kappaval_y[i] = rock_array[i].permeability[1];
-#if(BL_SPACEDIM==3)     
-	  kappaval_z[i] = rock_array[i].permeability[2];
-#endif
-	}
-
-      for (MFIter mfi(*kappa); mfi.isValid(); ++mfi)
-	{
-	  const int* lo    = mfi.validbox().loVect();
-	  const int* hi    = mfi.validbox().hiVect();
-	  
-	  const int* k_lo  = (*kappa)[mfi].loVect();
-	  const int* k_hi  = (*kappa)[mfi].hiVect();
-	  const Real* kdat = (*kappa)[mfi].dataPtr();
-	  
-	  const int* kx_lo  = kpedge[0][mfi].loVect();
-	  const int* kx_hi  = kpedge[0][mfi].hiVect();
-	  const Real* kxdat = kpedge[0][mfi].dataPtr();
-
-	  const int* ky_lo  = kpedge[1][mfi].loVect();
-	  const int* ky_hi  = kpedge[1][mfi].hiVect();
-	  const Real* kydat = kpedge[1][mfi].dataPtr();
-
-#if(BL_SPACEDIM==3)
-	  const int* kz_lo  = kpedge[2][mfi].loVect();
-	  const int* kz_hi  = kpedge[2][mfi].hiVect();
-	  const Real* kzdat = kpedge[2][mfi].dataPtr();
-#endif
-	  FORT_INITKAPPA(kdat,ARLIM(k_lo),ARLIM(k_hi),
-			 kxdat,ARLIM(kx_lo),ARLIM(kx_hi),
-			 kydat,ARLIM(ky_lo),ARLIM(ky_hi),
-#if(BL_SPACEDIM==3)
-			 kzdat,ARLIM(kz_lo),ARLIM(kz_hi),
-#endif		      
-			 lo,hi,dx,geom.ProbHi(),
-			 &level,&max_level,&mediumtype,
-			 kappaval_x.dataPtr(), kappaval_y.dataPtr(),
-#if (BL_SPACEDIM==3)
-			 kappaval_z.dataPtr(),
-#endif
-			 &nlayer, &fratio);
-        }
-#endif
-  }
-
   kappa->FillBoundary();
+
+
   (*kpedge).FillBoundary();
    
   // porosity
