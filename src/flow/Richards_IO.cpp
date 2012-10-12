@@ -139,9 +139,6 @@ void Richards_PK::ProcessParameterList()
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {
     Teuchos::ParameterList& igs_list = rp_list_.sublist("initial guess pseudo time integrator");
 
-    ti_specs_igs_.initialize_with_darcy = igs_list.get<bool>("initialize with darcy", false);
-    ti_specs_igs_.clip_saturation = igs_list.get<double>("clipping saturation value", 0.6);
-
     std::string ti_method_name = igs_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_igs);
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
@@ -160,9 +157,6 @@ void Richards_PK::ProcessParameterList()
   // Time integrator for period II, temporary called steady-state time integrator
   if (rp_list_.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
-
-    ti_specs_sss_.initialize_with_darcy = sss_list.get<bool>("initialize with darcy", false);
-    ti_specs_sss_.clip_saturation = sss_list.get<double>("clipping saturation value", 0.6);
 
     std::string ti_method_name = sss_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);

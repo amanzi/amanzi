@@ -119,6 +119,7 @@ class Richards_PK : public Flow_PK {
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
+  void PopulateMapC2MB();
 
   // initization members
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
@@ -168,8 +169,8 @@ class Richards_PK : public Flow_PK {
   int block_picard;
 
   int error_control_;
-  double functional_max_norm, saturation_max_change;
-  int functional_max_cell, saturation_max_cell;
+  double functional_max_norm;
+  int functional_max_cell;
 
   TI_Specs ti_specs_igs_;  // Tree time integration phases
   int ti_method_igs, error_control_igs_;
@@ -210,6 +211,9 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 
   double mass_bc, mass_amanzi;
+
+  // Debug
+  Teuchos::RCP<Epetra_Vector> map_c2mb;
 
  private:
   void operator=(const Richards_PK& RPK);

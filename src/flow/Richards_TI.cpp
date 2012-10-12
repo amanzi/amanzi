@@ -35,8 +35,8 @@ void Richards_PK::fun(
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
-  functional_max_norm = saturation_max_change = 0.0;
-  functional_max_cell = saturation_max_cell = 0;
+  functional_max_norm = 0.0;
+  functional_max_cell = 0;
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -58,13 +58,7 @@ void Richards_PK::fun(
       double tmp = fabs(f[c]) / factor;  // calculate errors
       if (tmp > functional_max_norm) {
         functional_max_norm = tmp;
-        functional_max_cell = c;
-      }
-
-      tmp = fabs(s1 - s2);
-      if (tmp > saturation_max_change) {
-        saturation_max_change = tmp;
-        saturation_max_cell = c;
+        functional_max_cell = c;        
       }
     }
   }
@@ -155,15 +149,21 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
   // maximum error is printed out only on one processor
   if (verbosity >= FLOW_VERBOSITY_EXTREME) {
     if (error == buf) {
-      printf("\nRichards PK: p =%4d: residual = %8.3g at point", MyPID, functional_max_norm);
-      for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(functional_max_cell)[i]);
+      int c = functional_max_cell;
+      const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
+
+      printf("\nRichards PK: residual = %9.3g at point", functional_max_norm);
+      for (int i = 0; i < dim; i++) printf(" %8.3g", xp[i]);
       printf("\n");
-      printf("                pressure error = %8.3g at point", error_p);
-      for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(cell_p)[i]);
-      printf("\n");
-      printf("             saturation change = %8.3g at point", saturation_max_change);
-      for (int i = 0; i < dim; i++) printf("%9.4g ", mesh_->cell_centroid(saturation_max_cell)[i]);
-      printf("\n");
+ 
+      c = cell_p;
+      const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
+      printf("       pressure error = %9.3g at point", error_p);
+      for (int i = 0; i < dim; i++) printf(" %8.3g", yp[i]);
+
+      int mb = (*map_c2mb)[c];
+      double s = WRM[mb]->saturation(atm_pressure - u[c]);
+      printf(",  saturation = %5.3g,  pressure = %9.3g\n", s, u[c]);
     }
   }
 

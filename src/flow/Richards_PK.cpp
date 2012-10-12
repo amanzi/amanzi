@@ -210,6 +210,12 @@ void Richards_PK::InitPK()
   // injected water mass
   mass_bc = 0.0;
 
+  // miscalleneous maps to easy output
+  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
+    map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap));
+    PopulateMapC2MB();
+  }
+
   flow_status_ = FLOW_STATUS_INIT;
 }
 
@@ -329,8 +335,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     std::printf("Richards PK: next TI phase at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
 
     if (ini_with_darcy) {
-      std::printf("Richards PK: initializing with a clipped Darcy pressure \n");
-      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
+      std::printf("Richards PK: initializing with a Darcy pressure \n");
+      if (clip_value > 0.0) 
+          std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
     }
     std::printf("***********************************************************\n");
   }
@@ -407,8 +414,10 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   if (ini_with_darcy) {
     SolveFullySaturatedProblem(T0, *solution);
-    double pmin = atm_pressure;
-    ClipHydrostaticPressure(pmin, clip_value, *solution);
+    if (clip_value > 0.0) {
+      double pmin = atm_pressure;
+      ClipHydrostaticPressure(pmin, clip_value, *solution);
+    }
     pressure = *solution_cells;
   }
   DeriveSaturationFromPressure(pressure, ws);

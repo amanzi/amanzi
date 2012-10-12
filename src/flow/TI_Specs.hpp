@@ -37,7 +37,7 @@ class TI_Specs {
   TI_Specs() { 
     ti_method = 0;
     ti_method_name = "steady state time integrator";
-    preconditioner_name = "Trilinos ML";
+    preconditioner_name = "Hypre AMG";
     preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
     num_itrs = max_itrs = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
