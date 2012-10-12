@@ -23,7 +23,6 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "dbc.hh"
-#include "errors.hh"
 #include "exceptions.hh"
 
 #include "Mesh.hh"
@@ -327,7 +326,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
-    std::printf("Richards PK: initializing next TI at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+    std::printf("Richards PK: next TI phase at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
 
     if (ini_with_darcy) {
       std::printf("Richards PK: initializing with a clipped Darcy pressure \n");
@@ -548,15 +547,26 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
 
 /* ******************************************************************
-* Estimate du/dt from the pressure equations, du/dt = g - A*u.
+* Estimate du/dt from the pressure equations, a du/dt = g - A*u.
 ****************************************************************** */
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   ComputePreconditionerMFD(u, matrix_, T, 0.0, false);  // Calculate only stiffness matrix.
   double norm_udot = matrix_->ComputeNegativeResidual(u, udot);
 
+  Epetra_Vector* udot_cells = FS->CreateCellView(udot);
+  const Epetra_Vector& phi = FS->ref_porosity();
+  Epetra_Vector dSdP(mesh_->cell_map(false));
+  DerivedSdP(u, dSdP);
+ 
+  for (int c = 0; c < ncells_owned; c++) {
+    double volume = mesh_->cell_volume(c);
+    if (dSdP[c] > 0.0) (*udot_cells)[c] /= volume * dSdP[c] * phi[c] * rho;
+  }
+
   Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
-  udot_faces->PutScalar(0.0);
+  DeriveFaceValuesFromCellValues(*udot_cells, *udot_faces);
+  // udot_faces->PutScalar(0.0);
 
   return norm_udot;
 }

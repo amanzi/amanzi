@@ -24,7 +24,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate f(u, du/dt) = d(s(u))/dt + A*u - g.                                         
+* Calculate f(u, du/dt) = a d(s(u))/dt + A*u - g.                                         
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
