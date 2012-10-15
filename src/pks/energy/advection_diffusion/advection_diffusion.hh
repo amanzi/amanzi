@@ -34,6 +34,9 @@ public:
       PKDefaultBase(plist,solution),
       PKPhysicalBDFBase(plist, solution) {}
 
+  // Virtual destructor
+  virtual ~AdvectionDiffusion() {}
+
   // AdvectionDiffusion is a PK
   // -- Setup data.
   virtual void setup(const Teuchos::Ptr<State>& S);

@@ -38,6 +38,9 @@ public:
       MPC<PKBDFBase>(plist,soln),
       PKBDFBase(plist,soln) {}
 
+  // Virtual destructor
+  virtual ~StrongMPC() {}
+
   virtual void setup(const Teuchos::Ptr<State>& S);
   virtual void initialize(const Teuchos::Ptr<State>& S);
 

@@ -39,6 +39,9 @@ public:
     plist_.set("solution key", "ponded_depth");
   }
 
+  // Virtual destructor
+  virtual ~OverlandFlow() {}
+
   // main methods
   // -- Initialize owned (dependent) variables.
   virtual void setup(const Teuchos::Ptr<State>& S);

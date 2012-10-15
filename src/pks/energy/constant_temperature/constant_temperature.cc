@@ -30,9 +30,11 @@ namespace Energy {
 RegisteredPKFactory<ConstantTemperature> ConstantTemperature::reg_("constant temperature energy");
 
 void ConstantTemperature::setup(const Teuchos::Ptr<State>& S) {
+  PKPhysicalBDFBase::setup(S);
+
   // require fields for the state and solution
   Teuchos::RCP<CompositeVectorFactory> factory =
-    S->RequireField("temperature", "energy");
+    S->RequireField(key_, name_);
 
   // Set up the data structure.
   // Since there is only one field, we'll do this manually.
@@ -42,20 +44,26 @@ void ConstantTemperature::setup(const Teuchos::Ptr<State>& S) {
 
   // Note that this the above lines are equivalent to the fancier/more concise
   // version:
-  //  S->RequireField("temperature", "energy")->SetMesh(S->GetMesh())->
+  //  S->RequireField(key_, name_)->SetMesh(S->GetMesh())->
   //            SetComponent("cell", AmanziMesh::CELL, 1)->SetGhosted(true);
 
-  S->GetField("temperature","energy")->set_io_vis(true);
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+  S->GetField(key_,name_)->set_io_vis(true);
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
 };
 
 // initialize ICs
 void ConstantTemperature::initialize(const Teuchos::Ptr<State>& S) {
   // This pk provides a constant temperature, given by the intial temp.
   // Therefore we store the initial temp to evaluate changes.
-  Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+  Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
   temp0_ = Teuchos::rcp(new CompositeVector(*temp));
   *temp0_ = *temp;
+
+  temp->PutScalar(273.65);
+  S->GetField(key_,name_)->set_initialized();
+
+  PKPhysicalBDFBase::initialize(S);
+
 };
 
 // Advance methods calculate the constant value

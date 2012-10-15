@@ -43,6 +43,9 @@ public:
   MPC(Teuchos::ParameterList& mpc_plist, const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(mpc_plist,soln) {}
 
+  // Virtual destructor
+  virtual ~MPC() {}
+
   // PK methods
   // -- setup
   virtual void setup(const Teuchos::Ptr<State>& S);

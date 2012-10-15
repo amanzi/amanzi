@@ -46,6 +46,9 @@ public:
     plist_.set("solution key", "temperature");
   }
 
+  // Virtual destructor
+  virtual ~TwoPhase() {}
+
   // TwoPhase is a PK
   // -- Setup data
   virtual void setup(const Teuchos::Ptr<State>& S);

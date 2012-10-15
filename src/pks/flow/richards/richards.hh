@@ -49,6 +49,9 @@ public:
     plist_.set("solution key", "pressure");
   }
 
+  // Virtual destructor
+  virtual ~Richards() {}
+
   // main methods
   // -- Setup data.
   virtual void setup(const Teuchos::Ptr<State>& S);

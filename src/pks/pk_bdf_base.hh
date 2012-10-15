@@ -31,6 +31,9 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
       backtracking_(false),
       residual_norm_(1.e99) {}
 
+  // Virtual destructor
+  virtual ~PKBDFBase() {}
+
   // Default implementations of PK methods.
   // -- setup
   virtual void setup(const Teuchos::Ptr<State>& S);

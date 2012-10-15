@@ -26,6 +26,9 @@ class MPCDiagonalFlowEnergy : public StrongMPC {
       PKDefaultBase(plist, soln),
       StrongMPC(plist, soln) {}
 
+  // Virtual destructor
+  virtual ~MPCDiagonalFlowEnergy() {}
+
   // initialize the preconditioner
   virtual void initialize(const Teuchos::Ptr<State>& S);
 

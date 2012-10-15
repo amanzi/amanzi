@@ -24,6 +24,9 @@ class PKPhysicalBase : public virtual PKDefaultBase {
                  const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution) {}
 
+  // Virtual destructor
+  virtual ~PKPhysicalBase() {}
+
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
   virtual void state_to_solution(const Teuchos::RCP<State>& S,

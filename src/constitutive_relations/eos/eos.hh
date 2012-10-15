@@ -16,6 +16,7 @@ namespace Relations {
 class EOS {
 
  public:
+  virtual ~EOS() {};
 
   // Virtual methods that form the EOS
   virtual double MassDensity(double T, double p) = 0;

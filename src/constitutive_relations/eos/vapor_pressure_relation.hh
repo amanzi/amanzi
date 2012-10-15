@@ -17,7 +17,7 @@ namespace Relations {
 class VaporPressureRelation {
 
 public:
-  // explicit VaporPressure(Teuchos::ParameterList& plist);
+  virtual ~VaporPressureRelation() {};
 
   virtual double SaturatedVaporPressure(double T) = 0;
   virtual double DSaturatedVaporPressureDT(double T) = 0;

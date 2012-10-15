@@ -28,6 +28,9 @@ class PKDefaultBase : public PK, public Teuchos::VerboseObject<PKDefaultBase> {
                 const Teuchos::RCP<TreeVector>& solution) :
       plist_(plist), solution_(solution) {}
 
+  // Virtual destructor
+  virtual ~PKDefaultBase() {}
+
   virtual void setup(const Teuchos::Ptr<State>& S);
 
   virtual void set_states(const Teuchos::RCP<const State>& S,

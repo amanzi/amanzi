@@ -36,7 +36,7 @@ namespace Amanzi {
 namespace Flow {
 
 class Permafrost : public Richards {
-        
+
 friend class MPCCoupledFlowEnergy;
 
 public:
@@ -44,6 +44,9 @@ public:
   Permafrost(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
       Richards(plist, solution) {}
+
+  // Virtual destructor
+  virtual ~Permafrost() {}
 
 protected:
   // Create of physical evaluators.
