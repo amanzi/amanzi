@@ -93,11 +93,9 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
   int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
   int faces_GID[MFD_MAX_FACES];
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
-
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = flow_pk->mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    flow_pk->mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n=0; n!=nfaces; ++n) {
@@ -129,7 +127,7 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
   // -- get the accumulation deriv
   const Epetra_MultiVector& dwc_dT =
       *S_next_->GetFieldData("dwater_content_dtemperature")->ViewComponent("cell",false);
-  int ncells = dwc_dT->size("cell",false);
+  int ncells = dwc_dT.MyLength();
   for (int c=0; c!=ncells; ++c) {
     if (!decoupled) {
       (*D_pT_)[0][c] = dwc_dT[0][c] / h;
@@ -184,8 +182,6 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
   Teuchos::RCP<const Epetra_BlockMap> cmap = pres->map("cell", false);
   Teuchos::RCP<const Epetra_BlockMap> fmap = pres->map("face", false);
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh();
-
   int ncells = pres->size("cell");
   int cell_GID ; 
 
@@ -220,7 +216,7 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
 
   for (int c=0; c < ncells; ++c){
     cell_GID = cmap->GID(c);
-    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    flow_pk->mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
     double det_cell_couple = flow_Acc[c] * energy_Acc[c] - (*D_pT_)[0][c] * (*D_Tp_)[0][c];
 
@@ -349,7 +345,7 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
   int ncells = pres_c.MyLength();
   int nfaces = pres_f.MyLength();
   double val = 0.;
- for (int c=0; c < ncells; ++c){
+ for (int c=0; c!=ncells; ++c){
    double p_c = pres_c[0][c];
    double t_c = temp_c[0][c];
    val = -(Cell_Couple_Inv_[c](0,0)*p_c + Cell_Couple_Inv_[c](0,1)*t_c);
@@ -373,10 +369,10 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
    ierr = ifp_prec_->ApplyInverse(Tf, Pf);
  }
 
- Epetra_MultiVector& Ppressure_c = Pu->SubVector("flow")->data()->ViewComponent("cell",false);
- Epetra_MultiVector& Ppressure_f = Pu->SubVector("flow")->data()->ViewComponent("face",false);
- Epetra_MultiVector& Ptemp_c = Pu->SubVector("energy")->data()->ViewComponent("cell",false);
- Epetra_MultiVector& Ptemp_f = Pu->SubVector("energy")->data()->ViewComponent("face",false);
+ Epetra_MultiVector& Ppressure_c = *Pu->SubVector("flow")->data()->ViewComponent("cell",false);
+ Epetra_MultiVector& Ppressure_f = *Pu->SubVector("flow")->data()->ViewComponent("face",false);
+ Epetra_MultiVector& Ptemp_c = *Pu->SubVector("energy")->data()->ViewComponent("cell",false);
+ Epetra_MultiVector& Ptemp_f = *Pu->SubVector("energy")->data()->ViewComponent("face",false);
  Teuchos::RCP<TreeVector> Ppressure = Pu->SubVector("flow");
  Teuchos::RCP<CompositeVector> Ppressure_data = Ppressure->data();
  Teuchos::RCP<TreeVector> Ptemp = Pu->SubVector("energy");
