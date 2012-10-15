@@ -28,6 +28,9 @@ public:
       PKDefaultBase(plist,soln),
       MPC<PK>(plist, soln) {};
 
+  // Virtual destructor
+  virtual ~WeakMPC() {}
+
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();

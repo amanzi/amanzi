@@ -25,6 +25,9 @@ class MPCSurfaceSubsurfaceWaterCoupler : public StrongMPC {
       PKDefaultBase(plist, soln),
       StrongMPC(plist, soln) {}
 
+  // Virtual destructor
+  virtual ~MPCSurfaceSubsurfaceWaterCoupler() {}
+
   // initialization
   virtual void setup(const Teuchos::Ptr<State>& S);
 

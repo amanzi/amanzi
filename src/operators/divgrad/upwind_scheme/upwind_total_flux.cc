@@ -52,6 +52,11 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
 
+  // pull out vectors
+  const Epetra_MultiVector& flux_v = *flux.ViewComponent("face",false);
+  Epetra_MultiVector& coef_faces = *face_coef->ViewComponent("face",false);
+  const Epetra_MultiVector& coef_cells = *cell_coef.ViewComponent("cell",true);
+
   // Identify upwind/downwind cells for each local face.  Note upwind/downwind
   // may be a ghost cell.
   Epetra_IntVector upwind_cell(*face_coef->map("face",true));
@@ -63,16 +68,17 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   std::vector<int> fdirs;
   int nfaces_local = flux.size("face",false);
 
-  for (int c=0; c!=cell_coef.size("cell",true); ++c) {
+  int ncells = cell_coef.size("cell",true);
+  for (int c=0; c!=ncells; ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
 
       if (f < nfaces_local) {
-        if (flux("face",f) * fdirs[n] > 0) {
+        if (flux_v[0][f] * fdirs[n] > 0) {
           upwind_cell[f] = c;
-        } else if (flux("face",f) * fdirs[n] < 0) {
+        } else if (flux_v[0][f] * fdirs[n] < 0) {
           downwind_cell[f] = c;
         } else {
           // We don't care, but we have to get one into upwind and the other
@@ -92,7 +98,8 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   double eps = 1.e-15;
   double flow_eps_factor = 1.e-4;
 
-  for (int f=0; f!=face_coef->size("face",false); ++f) {
+  int nfaces = face_coef->size("face",false);
+  for (int f=0; f!=nfaces; ++f) {
     int uw = upwind_cell[f];
     int dw = downwind_cell[f];
 
@@ -100,7 +107,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       int c = uw == -1 ? dw : uw;
       ASSERT(c != -1);
       // boundary face
-      (*face_coef)("face",f) = cell_coef("cell",c);
+      coef_faces[0][f] = coef_cells[0][c];
     } else {
       ASSERT(uw != -1);
       ASSERT(dw != -1);
@@ -108,25 +115,25 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       // Determine the size of the overlap region, a smooth transition region
       // near zero flux
       double flow_eps = 0.0;
-      if ((cell_coef("cell",uw) > 0) || (cell_coef("cell",dw) > 0)) {
-        flow_eps = 2 * cell_coef("cell",uw) * cell_coef("cell",dw)
-            / (cell_coef("cell",uw) + cell_coef("cell",dw));
+      if ((coef_cells[0][uw] > 0) || (coef_cells[0][dw] > 0)) {
+        flow_eps = 2 * coef_cells[0][uw] * coef_cells[0][dw]
+            / (coef_cells[0][uw] + coef_cells[0][dw]);
       }
       flow_eps = std::max(flow_eps*flow_eps_factor, eps);
 
       // Determine the coefficient
-      if (abs(flux("face",f)) >= flow_eps) {
+      if (abs(flux_v[0][f]) >= flow_eps) {
         int uw = upwind_cell[f];
         ASSERT(uw != -1);
-        (*face_coef)("face",f) = cell_coef("cell", uw);
+        coef_faces[0][f] = coef_cells[0][uw];
       } else {
         // Parameterization of a linear scaling between upwind and downwind.
-        double param = abs(flux("face",f)) / (2*flow_eps) + 0.5;
+        double param = abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
         ASSERT(param >= 0.5);
         ASSERT(param <= 1.0);
 
-        (*face_coef)("face",f) = cell_coef("cell", uw) * param
-            + cell_coef("cell", dw) * (1. - param);
+        coef_faces[0][f] = coef_cells[0][uw] * param
+            + coef_cells[0][dw] * (1. - param);
       }
     }
   }

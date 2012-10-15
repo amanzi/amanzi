@@ -36,7 +36,12 @@ public:
   ConstantTemperature(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
-      PKPhysicalBDFBase(plist, solution) {}
+      PKPhysicalBDFBase(plist, solution) {
+    plist_.set("solution key", "temperature");
+  }
+
+  // Virtual destructor
+  virtual ~ConstantTemperature() {}
 
   // ConstantTemperature is a PK
   // -- Setup data

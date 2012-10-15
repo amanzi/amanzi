@@ -28,6 +28,9 @@ public:
       PKDefaultBase(plist,solution),
       TwoPhase(plist, solution) {}
 
+  // Virtual destructor
+  virtual ~ThreePhase() {}
+
 protected:
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 

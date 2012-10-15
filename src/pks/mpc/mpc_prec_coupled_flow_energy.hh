@@ -44,9 +44,6 @@ block-diagonal coupler.
 #include "Ifpack_ILU.h"
 #include "Ifpack_AdditiveSchwarz.h"
 
-
-// class Amanzi::Flow::Richards;
-
 namespace Amanzi {
 
 class MPCCoupledFlowEnergy : public StrongMPC {
@@ -66,44 +63,34 @@ class MPCCoupledFlowEnergy : public StrongMPC {
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  // computes a norm on u-du and returns the result
-  virtual double enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
-  
-  void ComputeShurComplementPK();
-
  protected:
-//   void precon_version1(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-  void SymbolicAssembleGlobalMatrices(const Teuchos::Ptr<State>& S);
-  
+  void ComputeShurComplementPK_();
+  void SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<State>& S);
+  void InitPreconditioner_(Teuchos::ParameterList& prec_plist);
+
   Teuchos::RCP<Epetra_MultiVector> D_pT_;
   Teuchos::RCP<Epetra_MultiVector> D_Tp_;
 
-//   PreconMethod method_;
   double damping_;
 
- private:
-         
-  void InitPreconditioner(Teuchos::ParameterList& prec_plist);
-         
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   Teuchos::RCP<Epetra_FEVbrMatrix> P2f2f_;
   Teuchos::RCP<Epetra_VbrMatrix> A2f2p_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Cell_Couple_Inv_ ;
   Teuchos::RCP<const Epetra_Map> supermap_;
-  
+
   Teuchos::RCP<Amanzi::Flow::Richards> flow_pk;
   Teuchos::RCP<Amanzi::Energy::TwoPhase> energy_pk;
-  
+
   Teuchos::RCP<const Epetra_BlockMap> fmap_wghost;
   Teuchos::RCP<const Epetra_BlockMap> double_fmap;
   Teuchos::RCP<const Epetra_BlockMap> double_cmap;
   Teuchos::RCP<const Epetra_BlockMap> double_fmap_wghost;
-  
+
   bool is_matrix_constructed;
   bool decoupled;
-  
-   enum { TRILINOS_ML, TRILINOS_ILU, TRILINOS_BLOCK_ILU, HYPRE_AMG, HYPRE_EUCLID, HYPRE_PARASAILS } prec_method_; 
-  
+
+  enum { TRILINOS_ML, TRILINOS_ILU, TRILINOS_BLOCK_ILU, HYPRE_AMG, HYPRE_EUCLID, HYPRE_PARASAILS } prec_method_;
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_, coupled_pc_;
 
@@ -119,7 +106,7 @@ class MPCCoupledFlowEnergy : public StrongMPC {
 
   Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
   Teuchos::ParameterList ifp_plist_;
-  
+
   // factory registration
   static RegisteredPKFactory<MPCCoupledFlowEnergy> reg_;
 

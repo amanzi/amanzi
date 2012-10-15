@@ -160,8 +160,6 @@ double StrongMPC::enorm(Teuchos::RCP<const TreeVector> u,
     double tmp_norm = (*pk)->enorm(pk_u, pk_du);
     norm = std::max(norm, tmp_norm);
   }
-  cout<<"Norm from StrongMPC::enorm: "<<norm<<endl;
-
   return norm;
 };
 
@@ -184,7 +182,6 @@ void StrongMPC::update_precon(double t, Teuchos::RCP<const TreeVector> up, doubl
     }
 
     // update precons of each of the sub-PKs
-    std::cout << "Before update_precon in strong_mpc.cc\n";
     (*pk)->update_precon(t, pk_up, h);
   };
 };
