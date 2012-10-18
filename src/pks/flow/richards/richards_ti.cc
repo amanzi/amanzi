@@ -17,7 +17,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 // Richards is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -78,12 +78,14 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   }
 
 #if DEBUG_FLAG
-  if (niter_ == 20) {
-    *S_next_->GetFieldData("residual_20",name_) = *res;
-  } else if (niter_ == 21) {
-    *S_next_->GetFieldData("residual_21",name_) = *res;
-  } else if (niter_ == 22) {
-    *S_next_->GetFieldData("residual_22",name_) = *res;
+  if (niter_ < 23) {
+    std::stringstream namestream;
+    namestream << "residual_" << niter_;
+    *S_next_->GetFieldData(namestream.str(),name_) = *res;
+
+    std::stringstream solnstream;
+    solnstream << "solution_" << niter_;
+    *S_next_->GetFieldData(solnstream.str(),name_) = *u;
   }
 #endif
 };

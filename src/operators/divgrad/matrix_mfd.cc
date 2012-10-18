@@ -695,7 +695,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
   std::vector<double> dp;
   std::vector<int> dirs;
 
-  solution.ScatterMasterToGhosted("face");
+  solution.ScatterMasterToGhosted();
   flux->PutScalar(0.);
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -719,9 +719,13 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
       int f = faces[n];
       if (f < nfaces_owned && !flag[f]) {
         double s = 0.0;
-        for (int m=0; m!=nfaces; ++m) s += Aff_cells_[c](n, m) * dp[m];
+        for (int m=0; m!=nfaces; ++m) {
+          s += Aff_cells_[c](n, m) * dp[m];
+        }
+
         flux_v[0][f] = s * dirs[n];
         flag[f] = 1;
+
       }
     }
   }

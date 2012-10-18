@@ -20,7 +20,7 @@ void Richards::UpdateFlux_(const Teuchos::RCP<State>& S) {
   UpdatePermeabilityData_(S.ptr());
 
   // update if pressure or rho has changed too, since this means new fluxes
-  S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
+  //S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
   S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
 
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm");
@@ -29,8 +29,13 @@ void Richards::UpdateFlux_(const Teuchos::RCP<State>& S) {
 
   // derive the Darcy fluxes
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+  pres->ScatterMasterToGhosted();
+
   Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
+  Teuchos::RCP<CompositeVector> total_flux = S->GetFieldData("total_flux", name_);
   matrix_->DeriveFlux(*pres, darcy_flux);
+  *total_flux = *darcy_flux;
+
 
   // add in gravitational fluxes
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
@@ -39,6 +44,7 @@ void Richards::UpdateFlux_(const Teuchos::RCP<State>& S) {
 
   // communicate
   darcy_flux->ScatterMasterToGhosted("face");
+  total_flux->ScatterMasterToGhosted("face");
 }
 
 // -------------------------------------------------------------
@@ -48,16 +54,13 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& g) {
   // NOTE we always do this, even if the FieldEvaluators say we don't
   // need to update.  This is because previous calculations were done
-  // in a preconditioner, and therefore not put into matrix_.  Note
-  // that Fluxes have been updated already, so we can pick up where
-  // that left off.
-
-  // assemble the full system
+  // in a preconditioner, and therefore not put into matrix_.
+  UpdateFlux_(S);
   matrix_->CreateMFDrhsVectors();
 
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm");
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm");
   AddGravityFluxes_(gvec, rel_perm, rho, matrix_);
 
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
@@ -145,14 +148,14 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     int ncells = rho->size("cell",false);
     for (int c=0; c!=ncells; ++c) {
-      rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
       for (int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
         double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
             * rho_v[0][c];
@@ -250,10 +253,10 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<const Epetra_Vector>
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     int ncells = rho->size("cell",false);
     for (int c=0; c!=ncells; ++c) {
-      darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
         if (f<f_owned && !done[f]) {
           darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * rho_v[0][c];
           done[f] = true;
