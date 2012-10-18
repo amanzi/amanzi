@@ -14,6 +14,7 @@ Authors: Neil Carlson (version 1)
 
 #include "upwinding.hh"
 #include "Mesh_MSTK.hh"
+#include "Point.hh"
 #include "matrix_mfd.cc"
 
 #include "upwind_cell_centered.hh"
@@ -30,7 +31,7 @@ Authors: Neil Carlson (version 1)
 
 #include "richards.hh"
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 
 namespace Amanzi {
@@ -46,6 +47,84 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
+
+  int nbad_c = 0;
+  int ncells = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+  for (int c0=0; c0!=ncells; ++c0) {
+    AmanziGeometry::Point c0point = mesh_->cell_centroid(c0);
+    AmanziGeometry::Point sympoint(c0point);
+    sympoint[0] = 810.0 + (810.0 - c0point[0]);
+
+    bool done = false;
+    for (int c1=0; c1!=ncells; ++c1) {
+      AmanziGeometry::Point c1point = mesh_->cell_centroid(c1);
+      double diff = (sympoint - c1point)*(sympoint - c1point);
+      if (diff < 1.e-10) {
+        done = true;
+      }
+      if (done) break;
+    }
+
+    if (!done) {
+      std::cout << "Cell centroid " << c0point << " has no mirror image" << std::endl;
+      ++nbad_c;
+    }
+  }
+
+  std::cout << "Missing CELL symmetries: " << nbad_c << std::endl;
+
+
+  int nbad_f = 0;
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  for (int c0=0; c0!=nfaces; ++c0) {
+    AmanziGeometry::Point c0point = mesh_->face_centroid(c0);
+    AmanziGeometry::Point sympoint(c0point);
+    sympoint[0] = 810.0 + (810.0 - c0point[0]);
+
+    bool done = false;
+    for (int c1=0; c1!=nfaces; ++c1) {
+      AmanziGeometry::Point c1point = mesh_->face_centroid(c1);
+      double diff = (sympoint - c1point)*(sympoint - c1point);
+      if (diff < 1.e-10) {
+        done = true;
+      }
+      if (done) break;
+    }
+
+    if (!done) {
+      std::cout << "Face centroid " << c0point << " has no mirror image" << std::endl;
+      ++nbad_f;
+    }
+  }
+
+  std::cout << "Missing FACE symmetries: " << nbad_f << std::endl;
+
+  int nbad_n = 0;
+  int nnodes = mesh_->num_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
+  for (int c0=0; c0!=nnodes; ++c0) {
+    AmanziGeometry::Point c0point(3);
+    mesh_->node_get_coordinates(c0, &c0point);
+    AmanziGeometry::Point sympoint(c0point);
+    sympoint[0] = 810.0 + (810.0 - c0point[0]);
+
+    bool done = false;
+    for (int c1=0; c1!=nnodes; ++c1) {
+      AmanziGeometry::Point c1point(3);
+      mesh_->node_get_coordinates(c1, &c1point);
+      double diff = (sympoint - c1point)*(sympoint - c1point);
+      if (diff < 1.e-10) {
+        done = true;
+      }
+      if (done) break;
+    }
+
+    if (!done) {
+      std::cout << "Node centroid " << c0point << " has no mirror image" << std::endl;
+      ++nbad_n;
+    }
+  }
+
+  std::cout << "Missing NODE symmetries: " << nbad_n << std::endl;
 };
 
 
@@ -69,19 +148,27 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                     ->SetComponents(names2, locations2, num_dofs2);
 
 #if DEBUG_FLAG
-  S->RequireField("residual_20", name_)->SetMesh(S->GetMesh())->SetGhosted()
+  for (int i=1; i!=23; ++i) {
+    std::stringstream namestream;
+    namestream << "residual_" << i;
+    std::stringstream solnstream;
+    solnstream << "solution_" << i;
+    S->RequireField(namestream.str(), name_)->SetMesh(S->GetMesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("residual_21", name_)->SetMesh(S->GetMesh())->SetGhosted()
+    S->RequireField(solnstream.str(), name_)->SetMesh(S->GetMesh())->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("residual_22", name_)->SetMesh(S->GetMesh())->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
+  }
 #endif
 
   // -- secondary variables, no evaluator used
   S->RequireField("darcy_flux_direction", name_)->SetMesh(S->GetMesh())->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("total_flux", name_)->SetMesh(S->GetMesh())->SetGhosted()
+                                ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("darcy_flux", name_)->SetMesh(S->GetMesh())->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("total_velocity", name_)->SetMesh(S->GetMesh())->SetGhosted()
+                                ->SetComponent("cell", AmanziMesh::CELL, 3);
   S->RequireField("darcy_velocity", name_)->SetMesh(S->GetMesh())->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
@@ -245,33 +332,43 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
   PKPhysicalBDFBase::initialize(S);
 
-
   // debugggin cruft
 #if DEBUG_FLAG
-  S->GetFieldData("residual_20",name_)->PutScalar(0.);
-  S->GetFieldData("residual_21",name_)->PutScalar(0.);
-  S->GetFieldData("residual_22",name_)->PutScalar(0.);
-  S->GetField("residual_20",name_)->set_initialized();
-  S->GetField("residual_21",name_)->set_initialized();
-  S->GetField("residual_22",name_)->set_initialized();
+  for (int i=1; i!=23; ++i) {
+    std::stringstream namestream;
+    namestream << "residual_" << i;
+    S->GetFieldData(namestream.str(),name_)->PutScalar(0.);
+    S->GetField(namestream.str(),name_)->set_initialized();
+
+    std::stringstream solnstream;
+    solnstream << "solution_" << i;
+    S->GetFieldData(solnstream.str(),name_)->PutScalar(0.);
+    S->GetField(solnstream.str(),name_)->set_initialized();
+  }
+
 #endif
 
   // initialize boundary conditions
-  int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
-  // Set extra fields as initialized -- these don't currently have evaluators.
+  // Set extra fields as initialized -- these don't currently have evaluators,
+  // and will be initialized in the call to commit_state()
   S->GetFieldData("numerical_rel_perm",name_)->PutScalar(1.0);
   S->GetField("numerical_rel_perm",name_)->set_initialized();
 
   S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
   S->GetField("darcy_flux", name_)->set_initialized();
+  S->GetFieldData("total_flux", name_)->PutScalar(0.0);
+  S->GetField("total_flux", name_)->set_initialized();
   S->GetFieldData("darcy_flux_direction", name_)->PutScalar(0.0);
   S->GetField("darcy_flux_direction", name_)->set_initialized();
 
   S->GetFieldData("darcy_velocity", name_)->PutScalar(0.0);
   S->GetField("darcy_velocity", name_)->set_initialized();
+  S->GetFieldData("total_velocity", name_)->PutScalar(0.0);
+  S->GetField("total_velocity", name_)->set_initialized();
 
   if (coupled_to_surface_via_residual_) {
     S->GetFieldData("overland_source_from_subsurface", name_)->PutScalar(0.);
@@ -302,24 +399,28 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
   // As a diagnostic, calculate the mass balance error
   if (S_next_ != Teuchos::null) {
-    Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
-    Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData("water_content");
+    //    Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
+    //    Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData("water_content");
     Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
-    CompositeVector error(*wc1);
+    //    CompositeVector error(*wc1);
+    Teuchos::RCP<CompositeVector> wc1 = S_next_->GetFieldData("water_content", "water_content");
 
-    for (int c=0; c!=error.size("cell"); ++c) {
-      error("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
+    //    for (int c=0; c!=error.size("cell"); ++c) {
+    for (int c=0; c!=wc1->size("cell"); ++c) {
+      //      error("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
+      (*wc1)("cell",c) = 0.;
 
       AmanziMesh::Entity_ID_List faces;
       std::vector<int> dirs;
-      error.mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (int n=0; n!=faces.size(); ++n) {
-        error("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n] * dt;
+        (*wc1)("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n];// * dt;
       }
     }
 
     double einf(0.0);
-    error.NormInf(&einf);
+    //    error.NormInf(&einf);
+    wc1->NormInf(&einf);
     // VerboseObject stuff.
     Teuchos::OSTab tab = getOSTab();
     *out_ << "Final Mass Balance Error: " << einf << std::endl;
@@ -332,9 +433,13 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
-  Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("darcy_velocity", name_);
-  Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("darcy_flux");
-  matrix_->DeriveCellVelocity(*flux, velocity);
+  Teuchos::RCP<CompositeVector> darcy_velocity = S->GetFieldData("darcy_velocity", name_);
+  Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
+  matrix_->DeriveCellVelocity(*darcy_flux, darcy_velocity);
+
+  Teuchos::RCP<CompositeVector> total_velocity = S->GetFieldData("total_velocity", name_);
+  Teuchos::RCP<const CompositeVector> total_flux = S->GetFieldData("total_flux");
+  matrix_->DeriveCellVelocity(*total_flux, total_velocity);
 };
 
 
@@ -346,6 +451,8 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
+  update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
+  update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
 
   // requirements due to the upwinding method
   if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
@@ -394,9 +501,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   }
 
   // Scale cells by n/visc if needed.
-  update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
-  update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
-
   if (update_perm) {
     Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
     Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
@@ -407,7 +511,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // communicate
     uw_rel_perm->ScatterMasterToGhosted();
   }
-
   return update_perm;
 };
 

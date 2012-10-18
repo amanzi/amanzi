@@ -42,6 +42,31 @@ void OverlandFlow::setup(const Teuchos::Ptr<State>& S) {
   CreateMesh_(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
+
+  int nbad = 0;
+  int ncells = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+  for (int c0=0; c0!=ncells; ++c0) {
+    AmanziGeometry::Point c0point = mesh_->cell_centroid(c0);
+    AmanziGeometry::Point sympoint(c0point);
+    sympoint[0] = 810.0 + (810.0 - c0point[0]);
+
+    bool done = false;
+    for (int c1=0; c1!=ncells; ++c1) {
+      AmanziGeometry::Point c1point = mesh_->cell_centroid(c1);
+      double diff = (sympoint - c1point)*(sympoint - c1point);
+      if (diff < 1.e-10) {
+        done = true;
+      }
+      if (done) break;
+    }
+
+    if (!done) {
+      std::cout << "Cell centroid " << c0point << " has no mirror image" << std::endl;
+      ++nbad;
+    }
+  }
+
+  std::cout << "Missing symmetries: " << nbad << std::endl;
 }
 
 
