@@ -6,6 +6,33 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(PETSc TARGET petsc BUILD_IN_SOURCE)
 
+# --- Download packages PETSc needs
+set(petsc_packages ParMetis SuperLU SuperLUDist)
+get_filename_component(real_download_path ${TPL_DOWNLOAD_DIR} REALPATH)
+
+message(STATUS "Checking PETSc required packages: ${petsc_packages}")
+foreach ( _pack ${petsc_packages} )
+  set(_url      "${${_pack}_URL_STRING}")
+  set(_archive  "${${_pack}_ARCHIVE_FILE}")
+  set(_md5sum   "${${_pack}_MD5_SUM}")
+  if ( EXISTS "${real_download_path}/${_archive}" )
+    message(STATUS "\tFound ${_archive}")
+  else()
+    if (DISABLE_EXTERNAL_DOWNLOAD)
+      message(FATAL_ERROR "You have disabled external downloads, however"
+	                  " ${real_download_path}/${_archive} does not exist")
+    else()
+      message(STATUS "Downloading ${_archive} for PETSc")
+      file(DOWNLOAD  "${_url}/${_archive}" "${real_download_path}/${_archive}"
+                     SHOW_PROGRESS
+                     INACTIVITY_TIMEOUT 180
+                     EXPECTED_MD5SUM ${_md5sum})
+    endif()
+  endif()  
+endforeach()
+
+         
+
 # --- Define configure parameters
 
 # Use the common cflags, cxxflags
@@ -38,9 +65,9 @@ set(petsc_mpi_flag --with-mpi=1)
 # petsc-configure target. See the log files for more detailed
 # information.
 set(petsc_superlu_flags 
-         --download-superlu_dist
-	 --download-parmetis
-	 --download-superlu)
+         --download-superlu_dist=${real_download_path}/${SuperLUDist_ARCHIVE_FILE}
+         --download-parmetis=${real_download_path}/${ParMetis_ARCHIVE_FILE}
+         --download-superlu=${real_download_path}/${SuperLU_ARCHIVE_FILE})
 
 # PETSc install directory
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
@@ -80,7 +107,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                                           ${PETSC_LAPACK_OPTION}
                                           ${PETSC_BLAS_OPTION}
                                           ${petsc_mpi_flag}
-					  ${petsc_superlu_flags}
+                                          ${petsc_superlu_flags}
                     # -- Build
                     BINARY_DIR        ${PETSc_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # Run the CMake script to build
