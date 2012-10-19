@@ -282,6 +282,24 @@ void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g,
   }
 } 
 
+
+/* ******************************************************************
+* Debug: Auxiliary map.                                               
+****************************************************************** */
+void Richards_PK::PopulateMapC2MB()
+{
+  for (int mb = 0; mb < WRM.size(); mb++) {
+    std::string region = WRM[mb]->region();
+    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    AmanziMesh::Entity_ID_List block(ncells);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+
+    AmanziMesh::Entity_ID_List::iterator i;
+    for (i = block.begin(); i != block.end(); i++) (*map_c2mb)[*i] = mb;
+  }
+}
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

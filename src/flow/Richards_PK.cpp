@@ -23,12 +23,12 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "dbc.hh"
-#include "errors.hh"
 #include "exceptions.hh"
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "Matrix_Audit.hpp"
+// #include "Matrix_Audit.hpp"
+#include "Matrix_MFD_TPFA.hpp"
 
 #include "Flow_BC_Factory.hpp"
 #include "Flow_State.hpp"
@@ -133,6 +133,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 
   verbosity = FLOW_VERBOSITY_HIGH;
   internal_tests = 0;
+  experimental_solver = false;
 }
 
 
@@ -159,8 +160,16 @@ Richards_PK::~Richards_PK()
 ****************************************************************** */
 void Richards_PK::InitPK()
 {
-  matrix_ = new Matrix_MFD(FS, *super_map_);
-  preconditioner_ = new Matrix_MFD(FS, *super_map_);
+  ProcessParameterList();
+
+  // select proper matrix class
+  if (experimental_solver) { 
+    matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
+    preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
+  } else {
+    matrix_ = new Matrix_MFD(FS, *super_map_);
+    preconditioner_ = new Matrix_MFD(FS, *super_map_);
+  }
 
   // Create the solution (pressure) vector.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
@@ -168,9 +177,6 @@ void Richards_PK::InitPK()
   solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
   rhs = matrix_->rhs();  // import rhs from the matrix
-
-  // Get solver parameters from the flow parameter list.
-  ProcessParameterList();
 
   // Process boundary data
   bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
@@ -203,6 +209,12 @@ void Richards_PK::InitPK()
 
   // injected water mass
   mass_bc = 0.0;
+
+  // miscalleneous maps to easy output
+  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
+    map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap));
+    PopulateMapC2MB();
+  }
 
   flow_status_ = FLOW_STATUS_INIT;
 }
@@ -243,96 +255,23 @@ void Richards_PK::InitializeSteadySaturated()
 
 
 /* ******************************************************************
-* Initial guess is a problem for BDFx. To help launch BDFx, a special
-* initialization of an initial guess has been developed based on 
-* dynamically relaxed Picard iterations. 
+* Additional initialization of itial guess calculation.
 ****************************************************************** */
 void Richards_PK::InitPicard(double T0)
 {
-  bool ini_with_darcy = ti_specs_igs_.initialize_with_darcy;
-  double clip_value = ti_specs_igs_.clip_saturation;
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    std::printf("***********************************************************\n");
-    std::printf("Richards PK: initializing initial guess at T(sec)=%9.4e\n", T0);
-
-    if (ini_with_darcy) {
-      std::printf("Richards PK: re-initializing with a clipped Darcy pressure \n");
-      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
-    }
-    std::printf("***********************************************************\n");
-  }
-
-  // set up new preconditioner
-  int method = ti_specs_igs_.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_igs_.preconditioner_name);
-  Teuchos::ParameterList ML_list;
-  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    ML_list = tmp_list.sublist("ML Parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ML_list = tmp_list.sublist("Block ILU Parameters");
-  }
-
-  string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
-  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
-
-  preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(method, ML_list);
-
-  // set up new time integration or solver
-  solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
-  solver->SetAztecOption(AZ_solver, AZ_gmres);
-
-  // initialize mass matrices
-  SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-  matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
-  preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    int nokay = matrix_->nokay();
-    int npassed = matrix_->npassed();
-    std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
-  }
-
-  // (re)initialize pressure and saturation
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& lambda = FS->ref_lambda();
-  Epetra_Vector& ws = FS->ref_water_saturation();
-
-  *solution_cells = pressure;
-  *solution_faces = lambda;
-
-  // linear solver control options
-  max_itrs_linear = ti_specs_sss_.ls_specs.max_itrs;
-  convergence_tol_linear = ti_specs_sss_.ls_specs.convergence_tol;
-
-  if (ini_with_darcy) {
-    SolveFullySaturatedProblem(T0, *solution);
-    double pmin = atm_pressure;
-    ClipHydrostaticPressure(pmin, clip_value, *solution);
-    pressure = *solution_cells;
-  }
-  DeriveSaturationFromPressure(pressure, ws);
-
-  // nonlinear solver control options
-  set_time(T0, 0.0);  // overrides data provided in the input file
   ti_method = ti_method_igs;
-  num_itrs_nonlinear = 0;
-  block_picard = 0;
+
+  InitNextTI(T0, 0.0, ti_specs_igs_);
+
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
   error_control_ |= error_control_igs_;
 
-  // calculate initial guess: claening is required (lipnikov@lanl.gov)
+  // calculate initial guess: cleaning is required (lipnikov@lanl.gov)
   T_physics = ti_specs_igs_.T0;
   dT = ti_specs_igs_.dT0;
   AdvanceToSteadyState_Picard(ti_specs_igs_);
- 
+
+  Epetra_Vector& ws = FS->ref_water_saturation();
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
   DeriveSaturationFromPressure(*solution_cells, ws);
   ws_prev = ws;
@@ -342,110 +281,16 @@ void Richards_PK::InitPicard(double T0)
 
 
 /* ******************************************************************
-* Separate initialization of solver may be required for steady state
-* and transient runs. BDF2 and BDF1 will eventually merge but are 
-* separated strictly (no code optimization) for the moment.
+* Specific initialization of a steady state time integration phase.
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
-  bool ini_with_darcy = ti_specs_sss_.initialize_with_darcy;
-  double clip_value = ti_specs_sss_.clip_saturation;
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    std::printf("***********************************************************\n");
-    std::printf("Richards PK: initializing steady-state at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
-
-    if (ini_with_darcy) {
-      std::printf("Richards PK: initializing with a clipped Darcy pressure\n");
-      std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
-    }
-    std::printf("***********************************************************\n");
-  }
-
-  // set up new preconditioner
-  int method = ti_specs_sss_.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_sss_.preconditioner_name);
-  Teuchos::ParameterList ML_list;
-  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    ML_list = tmp_list.sublist("ML Parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ML_list = tmp_list.sublist("Block ILU Parameters");
-  }
-
-  string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
-  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
-
-  preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(method, ML_list);
-
-  // set up new time integration or solver
-  if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
-    Teuchos::ParameterList tmp_list = rp_list_.sublist("steady state time integrator").sublist("BDF2").sublist("BDF2 parameters");
-    if (! tmp_list.isSublist("VerboseObject"))
-        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
-
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(tmp_list));
-    if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
-    bdf2_dae->setParameterList(bdf2_list);
-
-  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
-    Teuchos::ParameterList tmp_list = rp_list_.sublist("steady state time integrator").sublist("BDF1").sublist("BDF1 parameters");
-    if (! tmp_list.isSublist("VerboseObject"))
-        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
-
-    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
-    if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
-    bdf1_dae->setParameterList(bdf1_list);
-
-  } else if (solver == NULL) {
-    solver = new AztecOO;
-    solver->SetUserOperator(matrix_);
-    solver->SetPrecOperator(preconditioner_);
-    solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
-  }
-
-  // initialize mass matrices
-  SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
-  matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
-  preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    int nokay = matrix_->nokay();
-    int npassed = matrix_->npassed();
-    std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
-  }
-
-  // linear solver control options
-  max_itrs_linear = ti_specs_sss_.ls_specs.max_itrs;
-  convergence_tol_linear = ti_specs_sss_.ls_specs.convergence_tol;
-
-  // (re)initialize pressure and saturation
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& lambda = FS->ref_lambda();
-  Epetra_Vector& water_saturation = FS->ref_water_saturation();
-
-  *solution_cells = pressure;
-  *solution_faces = lambda;
-
-  if (ini_with_darcy) {
-    SolveFullySaturatedProblem(T0, *solution);
-    double pmin = atm_pressure;
-    ClipHydrostaticPressure(pmin, clip_value, *solution);
-    pressure = *solution_cells;
-  }
-  DeriveSaturationFromPressure(pressure, water_saturation);
-
-  // nonlinear solver control options
-  set_time(T0, dT0);  // overrides data provided in the input file
   ti_method = ti_method_sss;
-  num_itrs_nonlinear = 0;
-  block_picard = 0;
+
+  InitNextTI(T0, dT0, ti_specs_sss_);
+
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
-                   FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+                   FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4;
   error_control_ |= error_control_sss_;
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
@@ -457,24 +302,49 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
 
 /* ******************************************************************
-* Initialization analyzes status of matrix/preconditioner pair. 
-* BDF2 and BDF1 will eventually merge but are separated strictly 
-* (no code optimization) for the moment.  
+* Specific initialization of a transient time integration phase.  
 * WARNING: Initialization of lambda is done in MPC and may be 
 * erroneous in pure transient mode.
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    std::printf("***********************************************************\n");
-    std::printf("Richards PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
-    std::printf("***********************************************************\n");
-  }
+  ti_method = ti_method_trs;
+
+  InitNextTI(T0, dT0, ti_specs_trs_);
+
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
+                   FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
+  error_control_ |= error_control_trs_;
+
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
+}
+
+
+/* ******************************************************************
+* Generic initialization of a next time integration phase.
+****************************************************************** */
+void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
+{
   set_time(T0, dT0);
 
+  bool ini_with_darcy = ti_specs.initialize_with_darcy;
+  double clip_value = ti_specs.clip_saturation;
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    std::printf("***********************************************************\n");
+    std::printf("Richards PK: next TI phase at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+
+    if (ini_with_darcy) {
+      std::printf("Richards PK: initializing with a Darcy pressure \n");
+      if (clip_value > 0.0) 
+          std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
+    }
+    std::printf("***********************************************************\n");
+  }
+
   // set up new preconditioner
-  int method = ti_specs_trs_.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_trs_.preconditioner_name);
+  int method = ti_specs.preconditioner_method;
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
   Teuchos::ParameterList ML_list;
   if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
     ML_list = tmp_list.sublist("ML Parameters"); 
@@ -491,33 +361,31 @@ void Richards_PK::InitTransient(double T0, double dT0)
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
   preconditioner_->InitPreconditioner(method, ML_list);
 
-  if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF2) {
-    if (bdf2_dae != NULL) delete bdf2_dae;  // The only way to reset BDF2 is to delete it.
-
-    Teuchos::ParameterList tmp_list = rp_list_.sublist("transient time integrator").sublist("BDF2").sublist("BDF2 parameters");
+  // set up new time integration or solver
+  std::string ti_method_name(ti_specs.ti_method_name);
+  if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
+    Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF2").sublist("BDF2 parameters");
     if (! tmp_list.isSublist("VerboseObject"))
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(tmp_list));
-    bdf2_dae = new BDF2::Dae(*this, *super_map_);
+    if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
 
-  } else if (ti_method_trs == FLOW_TIME_INTEGRATION_BDF1) {
-    if (bdf1_dae != NULL) delete bdf1_dae;  // the only way to reset BDF1 is to delete it
-
-    Teuchos::ParameterList tmp_list = rp_list_.sublist("transient time integrator").sublist("BDF1").sublist("BDF1 parameters");
+  } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+    Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF1").sublist("BDF1 parameters");
     if (! tmp_list.isSublist("VerboseObject"))
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
-    bdf1_dae = new BDF1Dae(*this, *super_map_);
+    if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
 
   } else if (solver == NULL) {
     solver = new AztecOO;
     solver->SetUserOperator(matrix_);
     solver->SetPrecOperator(preconditioner_);
-    solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
+    solver->SetAztecOption(AZ_solver, AZ_gmres);
   }
 
   // initialize mass matrices
@@ -532,28 +400,32 @@ void Richards_PK::InitTransient(double T0, double dT0)
     std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
-  // initialize pressure
+  // linear solver control options
+  max_itrs_linear = ti_specs.ls_specs.max_itrs;
+  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
+
+  // (re)initialize pressure and saturation
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
+  Epetra_Vector& ws = FS->ref_water_saturation();
+
   *solution_cells = pressure;
   *solution_faces = lambda;
 
-  // initialize saturations
-  Epetra_Vector& water_saturation = FS->ref_water_saturation();
-  DeriveSaturationFromPressure(pressure, water_saturation);
+  if (ini_with_darcy) {
+    SolveFullySaturatedProblem(T0, *solution);
+    if (clip_value > 0.0) {
+      double pmin = atm_pressure;
+      ClipHydrostaticPressure(pmin, clip_value, *solution);
+    }
+    pressure = *solution_cells;
+  }
+  DeriveSaturationFromPressure(pressure, ws);
 
-  // control options
-  ti_method = ti_method_trs;
+  // nonlinear solver control options
+  ti_method = ti_method;
   num_itrs_nonlinear = 0;
   block_picard = 0;
-  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
-                   FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
-  error_control_ |= error_control_trs_;
-
-  max_itrs_linear = ti_specs_trs_.ls_specs.max_itrs;
-  convergence_tol_linear = ti_specs_trs_.ls_specs.convergence_tol;
-
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
 
 
@@ -684,15 +556,26 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
 
 /* ******************************************************************
-* Estimate du/dt from the pressure equations, du/dt = g - A*u.
+* Estimate du/dt from the pressure equations, a du/dt = g - A*u.
 ****************************************************************** */
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   ComputePreconditionerMFD(u, matrix_, T, 0.0, false);  // Calculate only stiffness matrix.
   double norm_udot = matrix_->ComputeNegativeResidual(u, udot);
 
+  Epetra_Vector* udot_cells = FS->CreateCellView(udot);
+  const Epetra_Vector& phi = FS->ref_porosity();
+  Epetra_Vector dSdP(mesh_->cell_map(false));
+  DerivedSdP(u, dSdP);
+ 
+  for (int c = 0; c < ncells_owned; c++) {
+    double volume = mesh_->cell_volume(c);
+    if (dSdP[c] > 0.0) (*udot_cells)[c] /= volume * dSdP[c] * phi[c] * rho;
+  }
+
   Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
-  udot_faces->PutScalar(0.0);
+  DeriveFaceValuesFromCellValues(*udot_cells, *udot_faces);
+  // udot_faces->PutScalar(0.0);
 
   return norm_udot;
 }

@@ -382,6 +382,12 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   UnsetRemainingJacobianReuses();
 
+  // Evaluate the function
+  PetscErrorCode (*func)(SNES,Vec,Vec,void*);
+  void *fctx;
+  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+  (*func)(snes,SolnV,RhsV,fctx);
+
   RichardSolver::SetTheRichardSolver(this);
   dump_cnt = 0;
   ierr = SNESSolve(snes,PETSC_NULL,SolnV);
@@ -1001,7 +1007,6 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
   }
 }
 
-
 void
 RichardSolver::DpDtResidual(MFTower& residual,
 			    MFTower& pressure,
@@ -1034,16 +1039,6 @@ RichardSolver::DpDtResidual(MFTower& residual,
 		        &dt, vbox.loVect(), vbox.hiVect(), &nComp);
         }
     }
-
-#if 0
-  // Scale residual by cell volume/total volume
-  Real total_volume_inv = 1/TotalVolume();
-  for (int lev=0; lev<nLevs; ++lev)
-    {
-        MultiFab::Multiply(residual[lev],layout.Volume(lev),0,0,nComp,0);
-        residual[lev].mult(total_volume_inv,0,1);
-    }
-#endif
 }
 
 void RichardSolver::CreateJac(Mat& J, 
@@ -1228,6 +1223,18 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     Real t = rs->GetTime();
     Real dt = rs->GetDt();
     rs->DpDtResidual(fMFT,xMFT,t,dt);
+
+#if 1
+    // Scale residual by cell volume/sqrt(total volume)
+    Real sqrt_total_volume_inv = std::sqrt(1/TotalVolume());
+    int nComp = 1;
+    int nLevs = rs->GetNumLevels();
+    for (int lev=0; lev<nLevs; ++lev)
+    {
+      MultiFab::Multiply(fMFT[lev],layout.Volume(lev),0,0,nComp,0);
+      fMFT[lev].mult(sqrt_total_volume_inv,0,1);
+    }
+#endif
 
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 

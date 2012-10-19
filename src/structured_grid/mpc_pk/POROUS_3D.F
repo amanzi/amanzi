@@ -346,6 +346,121 @@ c     dummy for 2D problem
       end
 
 c ::: -----------------------------------------------------------
+c ::: Coarsen cc material property
+c ::: -----------------------------------------------------------
+      subroutine FORT_CRSENMAT (kfine,DIMS(kfine),
+     &     kcrse,DIMS(kcrse),lo,hi,ratio,harmdir)
+
+      implicit none
+      integer DIMDEC(kfine)
+      integer DIMDEC(kcrse)
+      integer lo(SDIM), hi(SDIM)
+      integer ratio, nc, harmdir
+      REAL_T  kfine(DIMV(kfine))
+      REAL_T  kcrse(DIMV(kcrse))
+
+      integer   n,ci,cj,ck,fi,fj,fk,ii,jj,kk
+      REAL      volInv, areaInv, tmp
+
+      areInv = 1.d0 / (ratio*ratio)
+      volInv = 1.d0 / (ratio*ratio*ratio)
+
+      kcrse = zero
+
+      if (harmdir.lt.0) then
+
+         do ck = lo(3), hi(3)
+            fk = ratio*ck
+            do cj = lo(2), hi(2)
+               fj = ratio*cj
+               do ci = lo(1), hi(1)
+                  fi = ratio*ci
+                  do kk = 0,ratio-1
+                     do jj = 0,ratio-1
+                        do ii = 0,ratio-1
+                           kcrse(ci,cj,ck) = kcrse(ci,cj,ck) + kfine(fi+ii,fj+jj,fk+kk)
+                        enddo
+                     enddo
+                  enddo
+                  kcrse(ci,cj,ck) = kcrse(ci,cj,ck) * volInv
+               enddo
+            enddo
+         enddo
+
+      else if (harmdir .eq. 0) then
+
+c     x - dir, harmonic in x + arithmetic in y and z
+         do ck = lo(3), hi(3)
+            fk = ratio*ck
+            do cj = lo(2), hi(2)
+               fj = ratio*cj
+               do ci = lo(1), hi(1)
+                  fi = ratio*ci
+                  do kk = 0,ratio-1
+                     do jj = 0,ratio-1
+                        tmp = 0.d0
+                        do ii = 0,ratio-1
+                           tmp = tmp + 1.d0 / kfine(fi+ii,fj+jj,fk+kk)
+                        enddo
+                        kcrse(ci,cj,ck) = kcrse(ci,cj,ck)  +  DBLE(ratio) / tmp
+                     enddo
+                  enddo
+               enddo
+               kcrse(ci,cj,ck) = kcrse(ci,cj,ck) * areaInv
+            enddo
+         enddo
+
+      else if (harmdir .eq. 1) then
+
+c     y - dir, harmonic in y + arithmetic in x and z
+         do ck = lo(3), hi(3)
+            fk = ratio*ck
+            do cj = lo(2), hi(2)
+               fj = ratio*cj
+               do ci = lo(1), hi(1)
+                  fi = ratio*ci
+                  do kk = 0,ratio-1
+                     do ii = 0,ratio-1
+                        tmp = 0.d0
+                        do jj = 0,ratio-1
+                           tmp = tmp + 1.d0 / kfine(fi+ii,fj+jj,fk+kk)
+                        enddo
+                        kcrse(ci,cj,ck) = kcrse(ci,cj,ck)  +  DBLE(ratio) / tmp
+                     enddo
+                  enddo
+                  kcrse(ci,cj,ck) = kcrse(ci,cj,ck) * areaInv
+               enddo
+            enddo
+         enddo
+
+      else if (harmdir .eq. 2) then
+
+c     z - dir, harmonic in z + arithmetic in x and y
+         do ck = lo(3), hi(3)
+            fk = ratio*ck
+            do cj = lo(2), hi(2)
+               fj = ratio*cj
+               do ci = lo(1), hi(1)
+                  fi = ratio*ci
+                  do jj = 0,ratio-1
+                     do ii = 0,ratio-1
+                        tmp = 0.d0
+                        do kk = 0,ratio-1
+                           tmp = tmp + 1.d0 / kfine(fi+ii,fj+jj,fk+kk)
+                        enddo
+                        kcrse(ci,cj,ck) = kcrse(ci,cj,ck)  +  DBLE(ratio) / tmp
+                     enddo
+                  enddo
+                  kcrse(ci,cj,ck) = kcrse(ci,cj,ck) * areaInv
+               enddo
+            enddo
+         enddo
+
+      endif
+
+      end
+
+c ::: -----------------------------------------------------------
 c ::: Define variable porosity, phi
 c ::: ----------------------------------------------------------- 
       subroutine FORT_INITPHI2 (phidata,DIMS(phidata),

@@ -7,38 +7,31 @@
 define_external_project_args(PETSc TARGET petsc DEPENDS ${MPI_PROJECT} BUILD_IN_SOURCE)
 
 # --- Download packages PETSc needs
-set(petsc_url_download http://software.lanl.gov/ascem/tpls)
+set(petsc_packages ParMetis SuperLU SuperLUDist)
 get_filename_component(real_download_path ${TPL_DOWNLOAD_DIR} REALPATH)
-set(petsc_archive_files)
-set(petsc_archive_md5sums)
-set(superlu_archive_file superlu_4.2.tar.gz)
-list(APPEND petsc_archive_files ${superlu_archive_file})
-list(APPEND petsc_archive_md5sums 565602cf69e425874c2525f8b96e9bb1)
-set(superludist_archive_file superlu_dist_2.5.tar.gz)
-list(APPEND petsc_archive_files ${superludist_archive_file})
-list(APPEND petsc_archive_md5sums 2194ae8f9786e396a721cf4d41045566)
 
-if (DISABLE_EXTERNAL_DOWNLOAD)
-    foreach ( _file ${petsc_archive_files} )
-      if (  NOT EXISTS "${real_download_path}/${_file}" ) 
-	message(FATAL_ERROR "PETSc build requires ${_file}. Not found in ${real_download_path}")
-      endif()
-    endforeach()
-else()
-    list(LENGTH petsc_archive_files num_archive_files)
-    set(list_idx 0)
-    while ( "${list_idx}" LESS "${num_archive_files}" )
-      list(GET petsc_archive_files ${list_idx} _file)
-      list(GET petsc_archive_md5sums ${list_idx} _md5sum)
-      message(STATUS "Downloading ${_file} for PETSC")
-      file(DOWNLOAD "${petsc_url_download}/${_file}"
-	            "${real_download_path}/${_file}"
-		    SHOW_PROGRESS
-		    INACTIVITY_TIMEOUT 180
-		    EXPECTED_MD5SUM "${_md5sum}")
-      math(EXPR list_idx "${list_idx}+1") 		  
-    endwhile()
-endif()    
+message(STATUS "Checking PETSc required packages: ${petsc_packages}")
+foreach ( _pack ${petsc_packages} )
+  set(_url      "${${_pack}_URL_STRING}")
+  set(_archive  "${${_pack}_ARCHIVE_FILE}")
+  set(_md5sum   "${${_pack}_MD5_SUM}")
+  if ( EXISTS "${real_download_path}/${_archive}" )
+    message(STATUS "\tFound ${_archive}")
+  else()
+    if (DISABLE_EXTERNAL_DOWNLOAD)
+      message(FATAL_ERROR "You have disabled external downloads, however"
+	                  " ${real_download_path}/${_archive} does not exist")
+    else()
+      message(STATUS "Downloading ${_archive} for PETSc")
+      file(DOWNLOAD  "${_url}/${_archive}" "${real_download_path}/${_archive}"
+                     SHOW_PROGRESS
+                     INACTIVITY_TIMEOUT 180
+                     EXPECTED_MD5SUM ${_md5sum})
+    endif()
+  endif()  
+endforeach()
+
+         
 
 # --- Define configure parameters
 
@@ -66,7 +59,6 @@ else()
 endif()
 
 # Point PETSc to the MPI build
-print_variable(${MPI_PROJECT}_BUILD_TARGET)
 if ( "${${MPI_PROJECT}_BUILD_TARGET}" STREQUAL "" )
   set(petsc_mpi_flags --with-mpi=1)
 else()
@@ -97,9 +89,9 @@ endif()
 # petsc-configure target. See the log files for more detailed
 # information.
 set(petsc_superlu_flags 
-         --download-superlu_dist=${real_download_path}/${superludist_archive_file}
-	 --download-parmetis
-	 --download-superlu=${real_download_path}/${superlu_archive_file})
+         --download-superlu_dist=${real_download_path}/${SuperLUDist_ARCHIVE_FILE}
+         --download-parmetis=${real_download_path}/${ParMetis_ARCHIVE_FILE}
+         --download-superlu=${real_download_path}/${SuperLU_ARCHIVE_FILE})
 
 # PETSc install directory
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
@@ -124,7 +116,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                                           --CFLAGS=${petsc_cflags}
                                           --CXXFLAGS=${petsc_cxxflags}
                                           --with-debugging=${petsc_debug_flag}
-					  --with-mpi=1
+					  ${petsc_mpi_flags}
                                           ${petsc_lapack_option}
                                           ${petsc_blas_option}
 					  ${petsc_superlu_flags}

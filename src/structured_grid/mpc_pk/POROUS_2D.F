@@ -279,6 +279,83 @@ c     dummy for 2D problem
       end
 
 c ::: -----------------------------------------------------------
+c ::: Coarsen cc material property
+c ::: -----------------------------------------------------------
+      subroutine FORT_CRSENMAT (kfine,DIMS(kfine),
+     &     kcrse,DIMS(kcrse),lo,hi,ratio,harmdir)
+
+      implicit none
+      integer DIMDEC(kfine)
+      integer DIMDEC(kcrse)
+      integer lo(SDIM), hi(SDIM)
+      integer ratio, nc, harmdir
+      REAL_T  kfine(DIMV(kfine))
+      REAL_T  kcrse(DIMV(kcrse))
+
+      integer   n,ci,cj,fi,fj,ii,jj
+      REAL      volInv, lenInv, tmp
+
+      lenInv = 1.d0 / ratio
+      volInv = lenInv * lenInv
+
+      kcrse = zero
+
+      if (harmdir.lt.0) then
+
+         do cj = lo(2), hi(2)
+            fj = ratio*cj
+            do ci = lo(1), hi(1)
+               fi = ratio*ci
+               do jj = 0,ratio-1
+                  do ii = 0,ratio-1
+                     kcrse(ci,cj) = kcrse(ci,cj) + kfine(fi+ii,fj+jj)
+                  enddo
+               enddo
+               kcrse(ci,cj) = kcrse(ci,cj) * volInv
+            enddo
+         enddo
+
+      else if (harmdir .eq. 0) then
+
+c     x - dir, harmonic in x + arithmetic in y
+         do cj = lo(2), hi(2)
+            fj = ratio*cj
+            do ci = lo(1), hi(1)
+               fi = ratio*ci
+               do jj = 0,ratio-1
+                  tmp = 0.d0
+                  do ii = 0,ratio-1
+                     tmp = tmp + 1.d0 / kfine(fi+ii,fj+jj)
+                  enddo
+                  kcrse(ci,cj) = kcrse(ci,cj)  +  DBLE(ratio) / tmp
+               enddo
+               kcrse(ci,cj) = kcrse(ci,cj) * lenInv
+            enddo
+         enddo
+
+      else if (harmdir .eq. 1) then
+
+c     y - dir, harmonic in y + arithmetic in x
+         do cj = lo(2), hi(2)
+            fj = ratio*cj
+            do ci = lo(1), hi(1)
+               fi = ratio*ci
+               do ii = 0,ratio-1
+                  tmp = 0.d0
+                  do jj = 0,ratio-1
+                     tmp = tmp + 1.d0 / kfine(fi+ii,fj+jj)
+                  enddo
+                  kcrse(ci,cj) = kcrse(ci,cj)  +  DBLE(ratio) / tmp
+               enddo
+               kcrse(ci,cj) = kcrse(ci,cj) * lenInv
+            enddo
+         enddo
+
+      endif
+
+      end
+
+c ::: -----------------------------------------------------------
 c ::: Define variable porosity, phi
 c ::: ----------------------------------------------------------- 
       subroutine FORT_INITPHI2 (phidata,DIMS(phidata),

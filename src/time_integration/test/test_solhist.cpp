@@ -142,3 +142,37 @@ TEST(SolutionHistory_2) {
   
 
 }
+
+
+TEST(SolutionHistory_3) {
+
+  cout << "Test: SolutionHistory_3" << endl;    
+  Epetra_Comm *comm = new Epetra_SerialComm();
+
+  // create an Epetra_Vector
+  Epetra_BlockMap map(10,1,0,*comm);
+  
+  Epetra_Vector x(map);
+  Epetra_Vector xdot(map);
+  
+  x.PutScalar(0.0);
+  xdot.PutScalar(0.0);
+  // create a solution history of size one
+  BDF2::SolutionHistory SH(1, 0.0, x, xdot);
+
+  x.PutScalar(1.0);
+  xdot.PutScalar(2.0);
+
+  SH.record_solution(1.0,x,xdot);
+  
+  Epetra_Vector y(map);
+
+  // interpolate 0th order
+  SH.interpolate_solution(0.5, y, 0);
+
+  double *norminf = new double[1];
+  x.PutScalar(1.0);
+  x.Update(-1.0,y,1.0);
+  x.NormInf(norminf);
+  CHECK_EQUAL(norminf[0],0.0);    
+}
