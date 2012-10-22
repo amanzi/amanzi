@@ -45,7 +45,8 @@ class TI_Specs {
     atol = rtol = 1e-3;
     residual_tol = 0.0;
     initialize_with_darcy = false;
-    clip_saturation = 0.6;
+    clip_saturation = -1.0;
+    clip_pressure = -1.0;
   }
   ~TI_Specs() {};
 
@@ -62,7 +63,7 @@ class TI_Specs {
   double atol, rtol, residual_tol; 
 
   bool initialize_with_darcy;  // initialization options
-  double clip_saturation;
+  double clip_saturation, clip_pressure;
 };
 
 }  // namespace AmanziFlow

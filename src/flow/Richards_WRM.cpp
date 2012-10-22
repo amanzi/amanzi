@@ -218,12 +218,12 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
     AmanziMesh::Entity_ID_List block(ncells);
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    double pc = atm_pressure - pmin;
-    double s0 = WRM[mb]->saturation(pc);
+    // double pc = atm_pressure - pmin;
+    // double s0 = WRM[mb]->saturation(pc);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
-      if (p[*i] < pmin) p[*i] = s0;
+      if (p[*i] < pmin) p[*i] = pmin;
     }
   }
 }

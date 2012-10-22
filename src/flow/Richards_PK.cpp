@@ -326,18 +326,19 @@ void Richards_PK::InitTransient(double T0, double dT0)
 void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 {
   set_time(T0, dT0);
-
   bool ini_with_darcy = ti_specs.initialize_with_darcy;
-  double clip_value = ti_specs.clip_saturation;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
     std::printf("Richards PK: next TI phase at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
 
     if (ini_with_darcy) {
-      std::printf("Richards PK: initializing with a Darcy pressure \n");
-      if (clip_value > 0.0) 
-          std::printf("Richards PK: clipping saturation value =%5.2g\n", clip_value);
+      std::printf("Richards PK: initializing with a saturated solution \n");
+      if (ti_specs.clip_saturation > 0.0) {
+        std::printf("Richards PK: clipping saturation value =%5.2g\n", ti_specs.clip_saturation);
+      } else if (ti_specs.clip_pressure > 0.0) {
+        std::printf("Richards PK: clipping pressure value =%5.2g\n", ti_specs.clip_pressure);
+      }
     }
     std::printf("***********************************************************\n");
   }
@@ -414,9 +415,14 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   if (ini_with_darcy) {
     SolveFullySaturatedProblem(T0, *solution);
-    if (clip_value > 0.0) {
+
+    if (ti_specs.clip_saturation > 0.0) {
       double pmin = atm_pressure;
-      ClipHydrostaticPressure(pmin, clip_value, *solution);
+      ClipHydrostaticPressure(pmin, ti_specs.clip_saturation, *solution_cells);
+      DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+    } else if (ti_specs.clip_pressure > 0.0) {
+      ClipHydrostaticPressure(ti_specs.clip_pressure, *solution_cells);
+      DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
     }
     pressure = *solution_cells;
   }

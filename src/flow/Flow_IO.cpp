@@ -35,6 +35,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
   if (list.isSublist(name)) {
     ti_specs.initialize_with_darcy = list.get<bool>("initialize with darcy", false);
     ti_specs.clip_saturation = list.get<double>("clipping saturation value", -1.0);
+    ti_specs.clip_pressure = list.get<double>("clipping pressure value", -1.0);
 
     Teuchos::ParameterList& tmp_list = list.sublist(name);
     ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
