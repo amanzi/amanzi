@@ -456,9 +456,9 @@
       <ParameterList name="BC For Top Surface Region (115.0_ 155.0_ 160.0_ 165.0_ 106.0_ 107.0)">
         <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Region (115.0_ 155.0_ 160.0_ 165.0_ 106.0_ 107.0)}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array(double)" value="{0.0, 6.5008656E10}"/>
-          <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-          <Parameter name="Inward Mass Flux" type="Array(double)" value="{1.9927561031257127E-6, 1.9927561031257127E-6}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656E10, 6.5008656E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+          <Parameter name="Inward Mass Flux" type="Array(double)" value="{1.5815524627981847E-7, 1.9927561031257127E-6, 1.9927561031257127E-6}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">
@@ -500,9 +500,9 @@
       <ParameterList name="BC For Top Surface Region (115.0_ 155.0_ 115.0_ 120.0_ 106.0_ 107.0)">
         <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Region (115.0_ 155.0_ 115.0_ 120.0_ 106.0_ 107.0)}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array(double)" value="{0.0, 6.5008656E10}"/>
-          <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-          <Parameter name="Inward Mass Flux" type="Array(double)" value="{1.9927561031257127E-6, 1.9927561031257127E-6}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 6.17266656E10, 6.5008656E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+          <Parameter name="Inward Mass Flux" type="Array(double)" value="{1.5815524627981847E-7, 1.9927561031257127E-6, 1.9927561031257127E-6}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">

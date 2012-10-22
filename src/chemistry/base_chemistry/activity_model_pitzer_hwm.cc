@@ -83,6 +83,14 @@ void ActivityModelPitzerHWM::Setup(
     const ActivityModelParameters& parameters,
     const std::vector<Species>& primary_species,
     const std::vector<AqueousEquilibriumComplex>& aqueous_complexes) {
+  //
+  // initialize storage in the base class:
+  //
+  ResizeGamma(primary_species.size() + aqueous_complexes.size());
+
+  //
+  // initialize the local stuff:
+  //
   set_verbosity(parameters.verbosity);
   // --------------------------------------------------------------------------
   // Store the J's functions approach name

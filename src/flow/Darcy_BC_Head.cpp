@@ -54,7 +54,7 @@ void Darcy_PK::ProcessShiftWaterTableList()
 ****************************************************************** */
 void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 {
-  double tol = 1e-10;
+  double tol = 1e-6;
   Errors::Message msg;
 
   if (dim == 2) {
@@ -165,6 +165,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
   for (int i = 0; i < n; i++) {
     int f = ss_faces[i];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
     int flag = 0;
     for (int j = 0; j < nedges; j += 2) {
       p1 = edges[j + 1] - edges[j];
@@ -177,7 +178,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
       b = fabs(p1[0] * p2[1] - p1[1] * p2[0]);
 
       if (b < tol_edge && a > -0.01 && a < 1.01) {
-        double z = edges[j][dim - 1] + a * p1[dim - 1];
+        double z = edges[j][2] + a * p1[2];
         (*shift_water_table_)[f] = z * rho_g;
         if (z > xf[2]) {
           flag = 1;
@@ -185,9 +186,21 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
         }
       }
     }
+
     if (flag == 0) {
-      msg << "Darcy PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
-      Exceptions::amanzi_throw(msg);
+      // msg << "Darcy PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
+      // Exceptions::amanzi_throw(msg);
+      // Instead, we take the closest mid-edge point with a higher z-coordinate.
+      double z, d, dmin = 1e+99;
+      for (int j = 0; j < nedges; j += 2) {
+        p1 = (edges[j] + edges[j + 1]) / 2;
+        d = L22(p1 - xf);
+        if (p1[2] > xf[2] && d < dmin) {
+          dmin = d;
+          z = p1[2];
+        }
+      }
+      (*shift_water_table_)[f] = z * rho_g;
     }
   }
 

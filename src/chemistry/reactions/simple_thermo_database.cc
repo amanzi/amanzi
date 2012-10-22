@@ -9,8 +9,11 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cassert>
 
 #include "aqueous_equilibrium_complex.hh"
+#include "general_rxn.hh"
+#include "radioactive_decay.hh"
 #include "mineral_kinetics_factory.hh"
 #include "mineral.hh"
 #include "surface_site.hh"
@@ -100,14 +103,16 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
 
   enum LineType { kCommentLine, kPrimarySpeciesLine,
                   kAqueousEquilibriumComplexLine,
-                  kMineralLine, kMineralKineticsLine, kGeneralKineticsLine,
+                  kMineralLine, kMineralKineticsLine,
+                  kGeneralKineticsLine, kRadioactiveDecayLine,
                   kIonExchangeSiteLine, kIonExchangeComplexLine,
                   kSurfaceComplexSiteLine, kSurfaceComplexLine,
                   kIsothermLine,
                   kUnknownLine
   };
   enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection,
-                     kMineralSection, kMineralKineticsSection, kGeneralKineticsSection,
+                     kMineralSection, kMineralKineticsSection,
+                     kGeneralKineticsSection, kRadioactiveDecaySection,
                      kIonExchangeSiteSection, kIonExchangeComplexSection,
                      kSurfaceComplexSiteSection, kSurfaceComplexSection,
                      kIsothermSection,
@@ -119,6 +124,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
   std::string kSectionMineral("<Minerals");
   std::string kSectionMineralKinetics("<Mineral Kinetics");
   std::string kSectionGeneralKinetics("<General Kinetics");
+  std::string kSectionRadioactiveDecay("<Radioactive Decay");
   std::string kSectionIonExchangeSites("<Ion Exchange Sites");
   std::string kSectionIonExchangeComplexes("<Ion Exchange Complexes");
   std::string kSectionSurfaceComplexSites("<Surface Complex Sites");
@@ -164,6 +170,9 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
       } else if (line == kSectionGeneralKinetics) {
         line_type = kGeneralKineticsLine;
         current_section = kGeneralKineticsSection;
+      } else if (line == kSectionRadioactiveDecay) {
+        line_type = kRadioactiveDecayLine;
+        current_section = kRadioactiveDecaySection;
       } else if (line == kSectionIonExchangeSites) {
         line_type = kIonExchangeSiteLine;
         current_section = kIonExchangeSiteSection;
@@ -204,6 +213,13 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
         } else {
           data_order_error = 1;
           error_section = "general kinetics";
+        }
+      } else if (current_section == kRadioactiveDecaySection) {
+        if (parsed_primaries) {
+          ParseRadioactiveDecay(line);
+        } else {
+          data_order_error = 1;
+          error_section = "radioactive decay";
         }
       } else if (current_section == kMineralSection) {
         if (parsed_primaries) {
@@ -407,14 +423,21 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
  **
  **  Thermodynamic database file format
  **
- **  <SorptionIsotherm
+ **  <Isotherms
+ **  primary species name ; type ; parameters
+ **
+ **  type is one of: linear, langmuir, freundlich
+ **
+ **  parameters is a space delimited list of numbers. The number of
+ **  parameters and their meaning depends on the isotherm type.
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "SimpleThermoDatabase::ParseSorptionIsotherm()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
-  }
+  std::stringstream message;
+  message << "SimpleThermoDatabase::ParseSorptionIsotherm()...." << std::endl
+          << "  data: " << data << std::endl;
+  chem_out->Write(kDebugInputFile, message);
+
   std::string semicolon(";");
   std::string space(" ");
   StringTokenizer no_spaces;
@@ -466,7 +489,7 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
   // parse main reaction string
   std::vector<SpeciesName> species;
   std::vector<double> stoichiometries;
-  ParseReactionString(substrings.at(0),&species,&stoichiometries);
+  ParseReactionString(substrings.at(0), lr_arrow, &species, &stoichiometries);
 
   std::vector<int> species_ids;
   for (std::vector<SpeciesName>::iterator s = species.begin();
@@ -558,15 +581,15 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
    Date: 07/28/11
    / ************************************************************************** */
 void SimpleThermoDatabase::ParseReactionString(const std::string reaction,
+                                               const std::string arrow,
                                                std::vector<std::string>* species,
                                                std::vector<double>* stoichiometries) {
   species->clear();
   stoichiometries->clear();
   std::string space(" ");
-  std::string lr_arrow("<->");
-  std::string::size_type offset = reaction.find(lr_arrow);
+  std::string::size_type offset = reaction.find(arrow);
   std::string reactants = reaction.substr(0, offset);
-  std::string products = reaction.substr(offset+lr_arrow.size(),
+  std::string products = reaction.substr(offset+arrow.size(),
                                          reaction.size());
   StringTokenizer list;
   // reactants
@@ -663,13 +686,131 @@ void SimpleThermoDatabase::RemoveLeadingAndTrailingSpaces(std::string* s) {
 **
 **  Thermodynamic database file format
 **
-**  <Mineral
+**  <Radioactive Decay
+**  parent --> (coeff species (+ coeff species...)); half_life XXXX units
 **
-**  Secondary Species Fields:
-**
-**  Name = coeff reactant ... ; log Keq ; gram molecular weight [g/mole] ; molar volume [cm^3/mole] ; specific surface area [cm^2 mineral / cm^3 bulk]
+**  The stoichiometric coefficient of the parent should always be one!
+** 
+**  where units is one of: years, days, hours, minutes, seconds
 **
 *******************************************************************************/
+void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
+
+  std::stringstream message;
+  message << "SimpleThermoDatabase::ParseRadioactiveDecay()....\n"
+          << "  data: " << data << std::endl;
+  chem_out->Write(kDebugInputFile, message);
+  
+  std::string semicolon(";");
+  std::string space(" ");
+  std::string right_arrow("-->");
+
+  StringTokenizer substrings(data, semicolon);
+  if (substrings.size() != 2) {
+    message.str("");
+    message << "ERROR: SimpleThermoDatabase::ParseRadioactiveDecay():\n"
+            << "  Radioactive decay data should be of the form: "
+            << "  'parent --> (coeff species (+ coeff species...)); half_life XXXX units'"
+            << "  where the reaction is seperated from the half life by a semicolon.\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
+  }
+
+  std::vector<SpeciesName> species;
+  std::vector<double> stoichiometry;
+  std::vector<int> species_ids;
+
+  // parse main reaction string
+  StringTokenizer split_rxn(substrings.at(0), right_arrow);
+  std::string parent = split_rxn.at(0);
+  utilities::RemoveLeadingAndTrailingWhitespace(&parent);
+  int parent_id = SpeciesNameToID(parent);
+  if (parent_id < 0) {
+    message.str("");
+    message << "ERROR: SimpleThermoDatabase::ParseRadioactiveDecay():\n"
+            << "  Unknown parent species '" << parent << "'.\n"
+            << "  Parent species must be in the primary species list.\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
+  }
+  species.push_back(parent);
+  species_ids.push_back(parent_id);
+  stoichiometry.push_back(-1.0);
+
+  std::string progeny_seperator(" + ");
+  std::string progeny_string(split_rxn.at(1));
+  utilities::RemoveLeadingAndTrailingWhitespace(&progeny_string);
+
+  // NOTE: we allow zero progeny
+  if (progeny_string.size() > 0) {
+    size_t begin = 0;
+    size_t end = 0;
+    do {
+      // grab the next progeny group
+      begin = progeny_string.find_first_not_of(progeny_seperator);
+      end = progeny_string.find(progeny_seperator, begin);
+      std::string data = progeny_string.substr(begin, end);
+      // remove the data we just grabbed
+      progeny_string.erase(begin, end);
+
+      // process the progeny group
+      utilities::RemoveLeadingAndTrailingWhitespace(&data);
+      StringTokenizer progeny_group(data, " ");
+      std::string name;
+      double coeff;
+      if (progeny_group.size() == 1) {
+        // no coeff provided, assume 1.0
+        coeff = 1.0;
+        name = progeny_group.at(0);
+      } else if (progeny_group.size() == 2) {
+        coeff = std::atof(progeny_group.at(0).c_str());
+        name = progeny_group.at(1);
+      } else {
+        message.str("");
+        message << "ERROR: SimpleThermoDatabase::ParseRadioactiveDecay():\n"
+                << "  Progeny group '" << name << "' is in an unrecognized format.\n"
+                << "  Progeny group format must be a name or 'coeff name'.\n";
+        Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
+      }
+      utilities::RemoveLeadingAndTrailingWhitespace(&name);  // needed?
+      int id = SpeciesNameToID(name);
+      if (id < 0) {
+        message.str("");
+        message << "ERROR: SimpleThermoDatabase::ParseRadioactiveDecay():\n"
+                << "  Unknown progeny species '" << name << "'.\n"
+                << "  Progeny species must be in the primary species list.\n";
+        Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
+      }
+      species.push_back(name);
+      species_ids.push_back(id);
+      stoichiometry.push_back(coeff);
+    } while (end != std::string::npos);
+  }
+  double half_life(0.0);
+  std::string half_life_units;
+  std::string half_life_data = substrings.at(1);
+
+  utilities::RemoveLeadingAndTrailingWhitespace(&half_life_data);
+  StringTokenizer hl(half_life_data, space);
+  assert(hl.size() == 3);
+  half_life = std::atof(hl.at(1).c_str());
+  half_life_units = hl.at(2);
+  
+  RadioactiveDecay rxn(species, species_ids, stoichiometry,
+                       half_life, half_life_units);
+  this->AddRadioactiveDecayRxn(rxn);
+
+}  // end ParseRadioactiveDecay()
+
+/*******************************************************************************
+ **
+ **  Thermodynamic database file format
+ **
+ **  <Mineral
+ **
+ **  Secondary Species Fields:
+ **
+ **  Name = coeff reactant ... ; log Keq ; gram molecular weight [g/mole] ; molar volume [cm^3/mole] ; specific surface area [cm^2 mineral / cm^3 bulk]
+ **
+ *******************************************************************************/
 void SimpleThermoDatabase::ParseMineral(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseMineral()...." << std::endl;

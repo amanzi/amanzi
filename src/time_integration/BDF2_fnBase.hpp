@@ -34,13 +34,21 @@ class fnBase {
   // access to Epetra Map
   virtual const Epetra_Map& super_map() = 0;
   
-  // Aplly Preconditioner
+  // Apply Preconditioner
   virtual int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) = 0;
     
   
   // check the admissibility of a solution
   // override with the actual admissibility check
   virtual bool is_admissible(const Epetra_Vector& up) { return true; }
+
+  // possibly modifies the predictor that is going to be used as a
+  // starting value for the nonlinear solve in the time integrator,
+  // the time integrator will pass the predictor that is computed
+  // using extrapolation and the time step that is used to compute
+  // this predictor this function returns true if the predictor was
+  // modified, false if not
+  virtual bool modify_predictor(double h, Epetra_Vector& up) { return false;}
 };
 
 }  // namespace BDF2

@@ -69,6 +69,8 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.atol = paramList_->get<double>("error abs tol");
   state.rtol = paramList_->get<double>("error rel tol");
   state.damp = paramList_->get<double>("nonlinear iteration damping factor",1.0);
+  state.uhist_size = paramList_->get<int>("nonlinear iteration initial guess extrapolation order",1);
+  state.uhist_size++;
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;
@@ -106,9 +108,9 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   fpa = new nka(maxv, vtol, init_vector);
 
   // create the solution history object
-  sh_ = new BDF2::SolutionHistory(2, map);
+  sh_ = new BDF2::SolutionHistory(state.uhist_size, map);
   state.init_solution_history(sh_);
-  
+
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 
@@ -272,7 +274,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
   // Predicted solution (initial value for the nonlinear solver)
   Epetra_Vector up(map);
-//   Epetra_Vector utmp(map);
 
   if (state.uhist->history_size() > 1) {
     state.uhist->interpolate_solution(tnew,  up);
@@ -280,10 +281,12 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     up = u;
   }
 
+  // allow the pk to modify the predictor
+  bool predictor_modified = fn.modify_predictor(h,up);
+
   // u at the start of the time step
   Epetra_Vector u0(map);
   u0 = u;
-//   utmp = u;
   
   if (state.pclagcount > state.maxpclag) {
     state.usable_pc = false;
@@ -403,6 +406,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // copy result into an Epetra_Vector.
     du = nev_du.getEpetraVector();  
     
+    // apply damping
     du.Scale(state.damp);
 
     // Check the solution iterate for admissibility.
@@ -412,10 +416,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       }
       throw std::string("solution iterate is inadmissible"); 
     }
-    
+
     // make sure that we do not diverge and cause numerical overflow
     // we use inf norms here
-
     previous_du_norm = du_norm;
     du.NormInf(&du_norm);
 

@@ -55,7 +55,7 @@ set(flow_src_files Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
                    Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp
                    Richards_SteadyState.cpp Richards_Picard.cpp Richards_AztecOO.cpp
                    Richards_Bundles.cpp Richards_Devel.cpp Richards_AndersonAcceleration.cpp
-                   Matrix_MFD.cpp Matrix_VAG.cpp 
+                   Matrix_MFD.cpp Matrix_MFD_TPFA.cpp Matrix_VAG.cpp 
                   WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )

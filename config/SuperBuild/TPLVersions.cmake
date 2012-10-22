@@ -54,13 +54,13 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 # TPL: CCSE
 #
 set(CCSE_VERSION_MAJOR 1)
-set(CCSE_VERSION_MINOR 0)
-set(CCSE_VERSION_PATCH 1)
+set(CCSE_VERSION_MINOR 1)
+set(CCSE_VERSION_PATCH 2)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
+set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz)
-set(CCSE_MD5_SUM        04c255b7c022776f7ac88be096125534) 
-
+set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
+set(CCSE_MD5_SUM        0620e3d7cc07be6c5f4a13a1d0e3f2f9) 
 
 #
 # TPL: UnitTest
@@ -185,6 +185,38 @@ set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION
 set(HYPRE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(HYPRE_ARCHIVE_FILE   hypre-${HYPRE_VERSION}.tar.gz)
 set(HYPRE_MD5_SUM        6b4db576c68d2072e48efbc00ea58489) 
+
+#
+# TPL: ParMetis (Built by PETSc!)
+#
+set(ParMetis_VERSION_MAJOR  3)
+set(ParMetis_VERSION_MINOR  2)
+set(ParMetis_VERSION_PATCH  0-p1)
+set(ParMetis_VERSION  ${ParMetis_VERSION_MAJOR}.${ParMetis_VERSION_MINOR}.${ParMetis_VERSION_PATCH})
+set(ParMetis_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(ParMetis_ARCHIVE_FILE   ParMetis-${ParMetis_VERSION}.tar.gz)
+set(ParMetis_MD5_SUM        f17ec2aeacc04f67f8b69f28cae4079f) 
+
+#
+# TPL: SuperLU (Built by PETSc!)
+#
+set(SuperLU_VERSION_MAJOR  4)
+set(SuperLU_VERSION_MINOR  2)
+set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR})
+set(SuperLU_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
+set(SuperLU_MD5_SUM        565602cf69e425874c2525f8b96e9bb1)
+ 
+#
+# TPL: SuperLU Distrib (Built by PETSc!)
+#
+set(SuperLUDist_VERSION_MAJOR  2)
+set(SuperLUDist_VERSION_MINOR  5)
+set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR})
+set(SuperLUDist_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(SuperLUDist_ARCHIVE_FILE   superlu_dist_${SuperLUDist_VERSION}.tar.gz)
+set(SuperLUDist_MD5_SUM        2194ae8f9786e396a721cf4d41045566)
+ 
 
 #
 # TPL: PETSc

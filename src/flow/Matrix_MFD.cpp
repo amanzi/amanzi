@@ -381,7 +381,6 @@ void Matrix_MFD::ComputeSchurComplement(
     (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
   }
   (*Sff_).GlobalAssemble();
-
 }
 
 
@@ -438,7 +437,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
 
 
 /* ******************************************************************
-* Rebuild ML preconditioner.                                                 
+* Rebuild the preconditioner.                                                 
 ****************************************************************** */
 void Matrix_MFD::UpdatePreconditioner()
 {
@@ -646,7 +645,6 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
     }
   }
 }
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

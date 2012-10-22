@@ -1,0 +1,206 @@
+:Description: Linear sorption + radioactive decay for transport of components
+:             A(aq), B(aq) and C(aq)
+
+:=========================== flow mode ========================================
+: Uniform velocity (see below). No flow mode specified.
+
+:=========================== useful tranport parameters ==================
+:UNIFORM_VELOCITY 3.170979d-8 0.d0 0.d0 ! 1. meter/yr
+UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0 ! 1. meter/yr
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    A(aq)
+    B(aq)
+    C(aq)
+  /
+  GENERAL_REACTION
+    REACTION A(aq) <-> B(aq)
+    ! Calculating forward rate from half life
+    
+    ! forward rate = -ln(0.5) / half life [1/sec]
+
+    FORWARD_RATE 1.75836d-9  ! 1/s  half life = 12.5 yrs
+    BACKWARD_RATE 0.d0
+  /
+  GENERAL_REACTION
+    REACTION B(aq) <-> C(aq)
+    FORWARD_RATE 8.7918d-10  ! 1/s  half life = 25. yrs
+    BACKWARD_RATE 0.d0
+  /
+  GENERAL_REACTION
+    ! Note that C(aq) simply decays with no daugher products
+    REACTION C(aq) <->
+    FORWARD_RATE 4.3959d-9  ! 1/s  half life = 5. yrs
+    BACKWARD_RATE 0.d0
+  /
+  SORPTION
+    ISOTHERM_REACTIONS
+      A(aq)
+        TYPE LINEAR
+        ! Calculating distribution coefficient (Kd) from retardation (R):
+
+        !   Kd = porosity*saturation*water_density*(R-1)
+
+        ! Assume:
+        !   Kd units = kg water/m^3 bulk volume
+        !   water_density = ~1000. (set above under REFERENCE_DENSITY) [kg/m^3]
+        !   saturation = 1.  [m^3 water/m^3 pore space]
+        !   porosity = 0.25 (from below)  [m^3 pore space/m^3 bulk volume]
+
+        ! R = 2, Kd = 0
+        DISTRIBUTION_COEFFICIENT 0.25d3 ! kg water/m^3 bulk
+      /
+      B(aq)
+        TYPE LINEAR
+        ! R = 1, Kd = 0
+        DISTRIBUTION_COEFFICIENT 0.d0 
+      /
+      C(aq)
+        TYPE LINEAR
+        ! R = 1.25, Kd = 0
+        DISTRIBUTION_COEFFICIENT 0.625d2
+      /
+    /
+  /
+  LOG_FORMULATION
+  DATABASE ./ABC_database.dat
+  OUTPUT
+    all
+    TOTAL_SORBED
+  /
+END
+
+:=========================== solver options ===================================
+LINEAR_SOLVER TRANSPORT
+  SOLVER DIRECT
+END
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  NXYZ 100 1 1
+  BOUNDS
+    0.d0 100.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+END
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.9025d-7 ! 4 m^2/yr
+END
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.25d0
+  TORTUOSITY 1.d0
+END
+
+:=========================== output options ===================================
+OUTPUT
+  PERIODIC TIME 5. y
+  PERIODIC_OBSERVATION TIMESTEP 1
+  FORMAT TECPLOT POINT
+  FORMAT HDF5
+END
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 50.d0 y
+  INITIAL_TIMESTEP_SIZE 1.d0 h
+  MAXIMUM_TIMESTEP_SIZE 2.5d-1 y
+END
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION west
+  FACE west
+  COORDINATES
+    0.d0 0.d0 0.d0
+    0.d0 1.d0 1.d0
+  /
+END
+
+REGION east
+  FACE east
+  COORDINATES
+    100.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION obs_pt
+  COORDINATE 50. 0.5 0.5
+END
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION obs_pt
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE zero_gradient
+  CONSTRAINT_LIST
+    0.d0 initial
+  /
+END
+
+TRANSPORT_CONDITION inlet
+  TYPE dirichlet_zero_gradient
+  CONSTRAINT_LIST
+    0.d0 inlet
+  /
+END
+
+:=========================== transport constraints ============================
+CONSTRAINT initial
+  CONCENTRATIONS
+    A(aq)  1.d-20     T
+    B(aq)  1.d-20     T
+    C(aq)  1.d-20     T
+  /
+END
+
+CONSTRAINT inlet
+  CONCENTRATIONS
+    A(aq)  1.d-1      T
+    B(aq)  1.d-20     T
+    C(aq)  1.d-20     T
+  /
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+BOUNDARY_CONDITION outlet
+  TRANSPORT_CONDITION initial
+  REGION east
+END
+
+BOUNDARY_CONDITION inlet
+  TRANSPORT_CONDITION inlet
+  REGION west
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+

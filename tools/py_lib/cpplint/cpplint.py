@@ -2125,9 +2125,9 @@ def CheckStyle(filename, clean_lines, linenum, file_extension, error):
     if line_width > 100:
       error(filename, linenum, 'whitespace/line_length', 4,
             'Lines should very rarely be longer than 100 characters')
-    elif line_width > 80:
-      error(filename, linenum, 'whitespace/line_length', 2,
-            'Lines should be <= 80 characters long')
+    # elif line_width > 80:
+    #  error(filename, linenum, 'whitespace/line_length', 2,
+    #        'Lines should be <= 80 characters long')
 
   if (cleansed_line.count(';') > 1 and
       # for loops are allowed two ;'s (and may run over two lines).

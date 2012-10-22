@@ -36,9 +36,17 @@ if (BL_DEBUG)
   list(APPEND BL_DEFINES BL_USE_MPI)
 endif()
 
+# Select the chemistry solver: AMANZI,COREREACT
+set(AMANZI_CHEMEVOL_PKG AMANZI)
+
 set(BL_DEFINES "BL_NOLINEVALUES;BL_PARALLEL_IO;BL_SPACEDIM=${AMANZI_SPACEDIM};BL_FORT_USE_${BL_FORTLINK};BL_${BL_MACHINE};BL_USE_${AMANZI_PRECISION};MG_USE_FBOXLIB;MG_USE_F90_SOLVERS;MG_USE_FBOXLIB")
 
+#set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g -O1 -Wall")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g -O1 -Wall")
+#set(CMAKE_Fortran_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g -O1 -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g")
+set(CMAKE_Fortran_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g")
 if (ENABLE_MPI)
   # bandre: I think the amanzi config requires that the mpi compilers
   # be set through the CC/CXX/FC environment variables before cmake is
@@ -81,6 +89,21 @@ if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
   list(APPEND BL_DEFINES "AMANZI")
 elseif (AMANZI_CHEMEVOL_PKG STREQUAL "COREREACT")
   list(APPEND BL_DEFINES "COREREACT")
+endif()
+
+if (ENABLE_PETSC)
+
+  set(PETSC_DIR $ENV{PETSC_DIR})
+  if ("${PETSC_DIR}" STREQUAL "")
+    message(FATAL_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
+  endif()
+
+  include_directories(${PETSC_DIR}/include)
+  list(APPEND BL_DEFINES BL_USE_PETSC)
+  set(PETSC_LIB_DIR ${PETSC_DIR}/lib)
+  link_directories(${PETSC_LIB_DIR})
+  set(PETSC_LIBS petsc)
+  set(PETSC_EXT_LIBS X11)
 endif()
 
 set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "${BL_DEFINES}")

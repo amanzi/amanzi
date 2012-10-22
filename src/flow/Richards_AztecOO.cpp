@@ -56,7 +56,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   Epetra_Vector b(*(matrix_->rhs()));
   solver_tmp->SetRHS(&b);
 
-  solver_tmp->SetLHS(&*solution);
+  solver_tmp->SetLHS(&u);
   solver_tmp->Iterate(max_itrs_linear, convergence_tol_linear);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {

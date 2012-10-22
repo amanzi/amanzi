@@ -9,12 +9,14 @@ provided in the top-level COPYRIGHT file.
 Authors: Neil Carlson (nnc@lanl.gov), 
          Konstantin Lipnikov (lipnikov@lanl.gov)
 
-The routine implement interface to BDFx time integrators.  
+The routine implements interface to BDFx time integrators.  
 */
 
 #include <algorithm>
 #include <string>
 #include <vector>
+
+#include "exceptions.hh"
 
 #include "Richards_PK.hpp"
 
@@ -22,7 +24,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate f(u, du/dt) = d(s(u))/dt + A*u - g.                                         
+* Calculate f(u, du/dt) = a d(s(u))/dt + A*u - g.                                         
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
@@ -34,6 +36,8 @@ void Richards_PK::fun(
   const Epetra_Vector& phi = FS->ref_porosity();
 
   functional_max_norm = 0.0;
+  functional_max_cell = 0;
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -51,7 +55,11 @@ void Richards_PK::fun(
       double factor = rho * phi[c] * mesh_->cell_volume(c) / dTp;
       f[c] += (s1 - s2) * factor;
 
-      functional_max_norm = std::max<double>(functional_max_norm, fabs(f[c]) / factor);
+      double tmp = fabs(f[c]) / factor;  // calculate errors
+      if (tmp > functional_max_norm) {
+        functional_max_norm = tmp;
+        functional_max_cell = c;        
+      }
     }
   }
 }
@@ -108,43 +116,61 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 ****************************************************************** */
 double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du)
 {
-  double error, error_p, error_s, error_r;
+  double error, error_p, error_r;
+  int cell_p, cell_r;
+
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
+    cell_p = 0;
     for (int c = 0; c < ncells_owned; c++) {
       double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
-      error_p = std::max<double>(error_p, tmp);
+      if (tmp > error_p) {
+        error_p = tmp;
+        cell_p = c;
+      } 
     }
   } else {
     error_p = 0.0;
   }
 
-  if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-    Epetra_Vector dSdP(mesh_->cell_map(false));
-    DerivedSdP(u, dSdP);
-
-    error_s = 0.0;
-    for (int c = 0; c < ncells_owned; c++) {
-      double tmp = dSdP[c] * fabs(du[c]);
-      error_s = std::max<double>(error_s, tmp);
-    }
-  } else {
-    error_s = 0.0;
-  }
-  
   if (error_control_ & FLOW_TI_ERROR_CONTROL_RESIDUAL) {
     error_r = functional_max_norm;
   } else {
     error_r = 0.0;
   }
 
-  error = std::max<double>(error_s, error_p);
-  error = std::max<double>(error, error_r);
+  error = std::max<double>(error_r, error_p);
 
 #ifdef HAVE_MPI
   double buf = error;
   du.Comm().MaxAll(&buf, &error, 1);  // find the global maximum
 #endif
+
+  // maximum error is printed out only on one processor
+  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
+    if (error == buf) {
+      int c = functional_max_cell;
+      const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
+
+      printf("\nRichards PK: residual = %9.3g at point", functional_max_norm);
+      for (int i = 0; i < dim; i++) printf(" %8.3g", xp[i]);
+      printf("\n");
+ 
+      c = cell_p;
+      const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
+      printf("       pressure error = %9.3g at point", error_p);
+      for (int i = 0; i < dim; i++) printf(" %8.3g", yp[i]);
+
+      int mb = (*map_c2mb)[c];
+      double s = WRM[mb]->saturation(atm_pressure - u[c]);
+      printf(",  saturation = %5.3g,  pressure = %9.3g\n", s, u[c]);
+    }
+  }
+
+  // if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
+  //  if (saturation_max_change > 0.125) throw 100;
+  // }
+  
   return error;
 }
 

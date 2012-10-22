@@ -33,6 +33,7 @@ public:
   };
 
   Region(std::string r_name, std::string r_purpose, std::string r_type);
+  virtual ~Region() {}
 
   void setVal(FArrayBox&         fab, 
 	      const Array<Real>& val, 
@@ -66,8 +67,9 @@ class pointRegion : public Region
 
 public: 
   
-    pointRegion (std::string r_name, std::string r_purpose, std::string r_type, const Array<Real>& coor)
+  pointRegion (std::string r_name, std::string r_purpose, std::string r_type, const Array<Real>& coor)
       : Region(r_name,r_purpose,r_type), coor(coor) {} ;
+  virtual ~pointRegion() {}
 
   virtual bool inregion (const Array<Real>& x) const;
   virtual std::ostream& operator<< (std::ostream& os) const;
@@ -82,9 +84,10 @@ class boxRegion : public Region
 
 public: 
   
-    boxRegion (std::string r_name, std::string r_purpose, std::string r_type,
+  boxRegion (std::string r_name, std::string r_purpose, std::string r_type,
                const Array<Real>& lo, const Array<Real>& hi)
       : Region(r_name,r_purpose,r_type), lo(lo), hi(hi) {} ;
+  virtual ~boxRegion() {}
 
   virtual bool inregion (const Array<Real>& x) const;
   virtual std::ostream& operator<< (std::ostream& os) const;
@@ -105,6 +108,7 @@ public:
                        std::string r_type,
 		       std::string file_name,
                        int         color_val);
+  virtual ~colorFunctionRegion() {delete m_color_map;}
 
   IntVect atIndex(Array<Real> x) const;
   virtual bool inregion (const Array<Real>& x) const;
@@ -125,9 +129,10 @@ class allRegion : public boxRegion
 
 public: 
   
-    allRegion (const Array<Real>& lo,
+  allRegion (const Array<Real>& lo,
                const Array<Real>& hi)
         : boxRegion("All","any","all",lo,hi) {};
+  virtual ~allRegion() {}
 
   virtual bool inregion (const Array<Real>& x) const;
 };
@@ -137,9 +142,10 @@ class allBCRegion : public boxRegion
 
 public: 
   
-    allBCRegion (int dir, int lo_or_hi,
+  allBCRegion (int dir, int lo_or_hi,
                  const Array<Real>& lo,
                  const Array<Real>& hi);
+  virtual ~allBCRegion() {}
 
   virtual bool inregion (const Array<Real>& x) const;
 

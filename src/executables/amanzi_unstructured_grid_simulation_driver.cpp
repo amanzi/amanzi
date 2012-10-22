@@ -74,8 +74,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
-  if ((comm->MyPID() == 0)&& (includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)))
-          Amanzi::AmanziInput::output_boundary_conditions(&new_list);
+  // if ((comm->MyPID() == 0) && (includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)))
+  //     Amanzi::AmanziInput::output_boundary_conditions(&new_list);
   
   if (! native && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) { 
     std::string xmlFileName = new_list.get<std::string>("input file name");
@@ -88,7 +88,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
 
-      ofstream xmlfile;
+      std::ofstream xmlfile;
       xmlfile.open(xmlFileName.c_str());
       xmlfile << XMLobj;
     }

@@ -60,6 +60,9 @@ const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
 const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
 const int FLOW_TI_MAX_ITERATIONS = 400;
 
+const int FLOW_MATRIX_MFD = 1;  // matrix to use in linear and nonlinear solvers 
+const int FLOW_MATRIX_MFD_TPFA = 2;
+
 const int FLOW_DT_ADAPTIVE = 1;
 const double FLOW_DT_ADAPTIVE_INCREASE = 4.0;
 const double FLOW_DT_ADAPTIVE_REDUCTION = 0.1;

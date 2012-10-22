@@ -101,6 +101,7 @@ void SolutionHistory::record_solution(double t, const Epetra_Vector& x, const Ep
   nvec++;
   if (nvec > d.size()) nvec = d.size();
 
+  if (d.size()>1) {
   // shift the divided differences, except the first; the new vector and
   // time index are the same as the most recent.
   Teuchos::RCP<Epetra_Vector> tmp = d[nvec-1];
@@ -119,6 +120,7 @@ void SolutionHistory::record_solution(double t, const Epetra_Vector& x, const Ep
     double div = 1.0/(times[0]-times[j]);
     d[j]->Update(div,*d[j-1],-div);
   }
+  }
 }
 
 
@@ -135,7 +137,7 @@ void SolutionHistory::interpolate_solution(double t, Epetra_Vector& x, int order
 {
   //ASSERT(x.Map().SameAs( (*d[0]).Map() ) );
   ASSERT(order<nvec);
-  ASSERT(order>0);
+  ASSERT(order>=0);
 
   x = *d[order];
   for (int k=order-1; k>=0; k--) {

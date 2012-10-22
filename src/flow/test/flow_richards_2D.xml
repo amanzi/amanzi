@@ -68,6 +68,7 @@
       <ParameterList name="steady state time integrator">
         <Parameter name="time integration method" type="string" value="BDF2"/>
         <Parameter name="initialize with darcy" type="bool" value="true"/>
+        <Parameter name="clipping saturation value" type="double" value="0.6"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
 

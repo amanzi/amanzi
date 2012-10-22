@@ -1,6 +1,11 @@
 /*
 This is the flow component of the Amanzi code. 
-License: BSD
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
@@ -44,13 +49,13 @@ class Matrix_MFD : public Epetra_Operator {
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDrhsVectors();
-  void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
+  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
   void ApplyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
-  void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
-  void AssembleGlobalMatrices();
-  void ComputeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+  virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
+  virtual void AssembleGlobalMatrices();
+  virtual void ComputeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
   double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
   double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
@@ -59,8 +64,8 @@ class Matrix_MFD : public Epetra_Operator {
                            const Epetra_Import& face_importer, 
                            Epetra_Vector& darcy_mass_flux);
 
-  void InitPreconditioner(int method, Teuchos::ParameterList& prec_list);
-  void UpdatePreconditioner();
+  virtual void InitPreconditioner(int method, Teuchos::ParameterList& prec_list);
+  virtual void UpdatePreconditioner();
 
   // required methods
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -94,7 +99,7 @@ class Matrix_MFD : public Epetra_Operator {
   int nokay() { return nokay_; }
   int npassed() { return npassed_; }
 
- private:
+ protected:
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map map;

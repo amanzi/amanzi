@@ -32,6 +32,7 @@ struct BDF1State {
     hmax = std::numeric_limits<double>::max();
     
     damp = 1.0;
+    uhist_size = 2;
 
     hlimit = 1e10;
     elimit = 1e15;
@@ -81,6 +82,7 @@ struct BDF1State {
   double hinc;           // stepsize increase factor
   double hred;           // stepsize reduction factor
   double damp;           // nka damping factor
+  int uhist_size;        // extrapolation order for initial guess
 
   bdf_nonlinear_solver_t nonlinear_solver;
 

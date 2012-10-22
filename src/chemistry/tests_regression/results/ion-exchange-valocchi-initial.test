@@ -119,7 +119,7 @@
            Mg++    1.11316e-02    1.11000e-02
             Cl-    1.45513e-01    1.45100e-01
 ---- Change Balance 
-                                  1.30451e-15
+                                 -1.44329e-15
 ---- Species 
            Name       Molality Activity Coeff       Activity
             Na+    8.67464e-02    1.00000e+00    8.67464e-02
