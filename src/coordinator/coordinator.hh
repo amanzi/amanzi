@@ -31,7 +31,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 namespace Amanzi {
 
-class Coordinator {
+class Coordinator : public VerboseObject {
 
 public:
   Coordinator(Teuchos::ParameterList parameter_list,
@@ -75,6 +75,10 @@ private:
   // vis and checkpointing
   std::vector<Teuchos::RCP<Visualization> > visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
+
+  // fancy OS
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::EVerbosityLevel verbosity_;
 };
 
 } // close namespace Amanzi
