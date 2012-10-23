@@ -34,10 +34,6 @@ public:
 protected:
   virtual void setup(const Teuchos::Ptr<State>& S);
 
-  // error monitor
-  virtual double enorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du);
-
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
   virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
