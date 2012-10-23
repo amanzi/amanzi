@@ -14,18 +14,23 @@ namespace Operators {
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     plist_(plist), mesh_(mesh) {
-  std::string methodstring = plist.get<string>("MFD method");
 
+  std::string methodstring = plist.get<string>("MFD method");
   if (methodstring == "polyhedra") {
     method_ = MFD_POLYHEDRA;
   } else if (methodstring == "polyhedra monotone") {
     method_ = MFD_POLYHEDRA_MONOTONE;
   } else if (methodstring == "hexahedra monotone") {
     method_ = MFD_HEXAHEDRA_MONOTONE;
+  } else if (methodstring == "two point flux") {
+    method_ = MFD_TWO_POINT_FLUX;
+  } else if (methodstring == "support operator") {
+    method_ = MFD_SUPPORT_OPERATOR;
+  } else if (methodstring == "optimized") {
+    method_ = MFD_OPTIMIZED;
   }
 
   std::string precmethodstring = plist.get<string>("preconditioner", "ML");
-  
   if (precmethodstring == "ML") {
     prec_method_ = TRILINOS_ML;
   } else if (precmethodstring == "ILU" ) {
