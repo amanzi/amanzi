@@ -1212,45 +1212,35 @@ void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
       MSTK_FreeMarker(mkid);
     }
     else {
-      int idx = 0;
-      MFace_ptr face;
-      int i = 0;
-      while ((face = List_Next_Entry(rfaces,&idx))) {
-
-        int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
-        
+      int nrf = List_Num_Entries(rfaces);
+      for (int i = 0; i < nrf; i++) {        
+        MFace_ptr face = List_Entry(rfaces,i);
 	int lid = MEnt_ID(face);
-        if (faceflip[lid-1]) fdir *= -1;
-
         faceids->push_back(lid-1);
-	face_dirs->push_back(fdir);
 
-        i++;
+        int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;        
+        if (faceflip[lid-1]) fdir *= -1;
+	face_dirs->push_back(fdir);
       }
     }
     
     List_Delete(rfaces);
   }
   else {  // cell_dimension() = 2; surface or 2D mesh
-
     List_ptr fedges = MF_Edges((MFace_ptr)cell,1,0);
+    int nfe = List_Num_Entries(fedges);
 
-    MEdge_ptr edge;
-    int idx = 0;
-    int i = 0;
-    while ((edge = List_Next_Entry(fedges,&idx))) {
-
-      int fdir = (MF_EdgeDir_i((MFace_ptr)cell,i) == 1) ? 1 : -1;
-
+    for (int i = 0; i < nfe; i++) { 
+      MEdge_ptr edge = List_Entry(fedges,i);
       int lid = MEnt_ID(edge);
-      if (faceflip[lid-1]) fdir *= -1;
-
       faceids->push_back(lid-1);
-      face_dirs->push_back(fdir);
 
-      i++;
+      int fdir = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1;
+      if (faceflip[lid-1]) fdir = -fdir;
+      face_dirs->push_back(fdir);
     }
     List_Delete(fedges);
+
   }
 
 }
@@ -2320,17 +2310,19 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
   /* Check if no processor got any mesh entities */
 
-  int nent_loc, nent_glob;
+  int nent_loc = MSet_Num_Entries(mset1);
 
-  nent_loc = MSet_Num_Entries(mset1);
+#ifdef DEBUG
+  int nent_glob;
+
   epcomm->SumAll(&nent_loc,&nent_glob,1);
-
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
     Errors::Message mesg(mesg_stream.str());
     Exceptions::amanzi_throw(mesg);
   }
+#endif
   
 
   mset = NULL;
@@ -2354,6 +2346,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
     
     nent_loc = mset ? MSet_Num_Entries(mset) : 0;
     
+#ifdef DEBUG
     epcomm->SumAll(&nent_loc,&nent_glob,1);
     
     if (nent_glob == 0) {
@@ -2362,6 +2355,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
       Errors::Message mesg(mesg_stream.str());
       Exceptions::amanzi_throw(mesg);
     }
+#endif
     
     /* If this processor has no entities, nothing else to do */
     
@@ -2395,6 +2389,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
  
     nent_loc = mset ? MSet_Num_Entries(mset) : 0;
 
+#ifdef DEBUG
     epcomm->SumAll(&nent_loc,&nent_glob,1);
 
     if (nent_glob == 0) {
@@ -2403,6 +2398,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
       Errors::Message mesg(mesg_stream.str());
       Exceptions::amanzi_throw(mesg);
     }
+#endif
 
     /* If this processor has no entities, nothing else to do */
 
@@ -2436,6 +2432,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
  
     nent_loc = mset ? MSet_Num_Entries(mset) : 0;
 
+#ifdef DEBUG
     epcomm->SumAll(&nent_loc,&nent_glob,1);
 
     if (nent_glob == 0) {
@@ -2444,6 +2441,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
       Errors::Message mesg(mesg_stream.str());
       Exceptions::amanzi_throw(mesg);
     }
+#endif
 
     /* If this processor has no entities, nothing else to do */
 
