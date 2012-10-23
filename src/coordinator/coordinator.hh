@@ -31,7 +31,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 namespace Amanzi {
 
-class Coordinator : public VerboseObject {
+class Coordinator : public Teuchos::VerboseObject<Coordinator> {
 
 public:
   Coordinator(Teuchos::ParameterList parameter_list,
