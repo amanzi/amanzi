@@ -15,6 +15,9 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include <iostream>
 #include "errors.hh"
 
+#include "global_verbosity.hh"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
 #include "coordinator.hh"
 
 namespace Amanzi {
@@ -26,6 +29,13 @@ Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
   mesh_(mesh),
   comm_(comm) {
   coordinator_init();
+
+  setLinePrefix("Coordinator");
+  setDefaultVerbLevel(ATS::VerbosityLevel::level_);
+  Teuchos::readVerboseObjectSublist(&parameter_list_,this);
+  // get the fancy output ??
+  verbosity_ = getVerbLevel();
+  out_ = getOStream();
 };
 
 void Coordinator::coordinator_init() {
@@ -200,82 +210,95 @@ void Coordinator::cycle_driver() {
   pk_->set_states(S_, S_inter_, S_next_); // note this does not allow subcycling
 
   // iterate process kernels
-  double dt;
-  bool fail = false;
-  while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
-    // get the physical step size
-    dt = pk_->get_dt();
+  try {
+    double dt;
+    bool fail = false;
+    while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
+      // get the physical step size
+      dt = pk_->get_dt();
 
-    // check if the step size has gotten too small
-    if (dt < min_dt_) {
-      Errors::Message message("Coordinator: error, timestep too small");
-      Exceptions::amanzi_throw(message);
-    }
+      // check if the step size has gotten too small
+      if (dt < min_dt_) {
+        Errors::Message message("Coordinator: error, timestep too small");
+        Exceptions::amanzi_throw(message);
+      }
 
-    // cap the max step size
-    if (dt > max_dt_) {
-      dt = max_dt_;
-    }
+      // cap the max step size
+      if (dt > max_dt_) {
+        dt = max_dt_;
+      }
 
-    // ask the step manager if this step is ok
-    dt = tsm->TimeStep(S_->time(), dt);
+      // ask the step manager if this step is ok
+      dt = tsm->TimeStep(S_->time(), dt);
 
-    if (comm_->MyPID() == 0) {
-      std::cout << "======================================================================"
-                << std::endl << std::endl;
-      std::cout << "Cycle = " << S_->cycle();
-      std::cout << ",  Time [days] = "<< S_->time() / (60*60*24);
-      std::cout << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
-      std::cout << "----------------------------------------------------------------------"
-                << std::endl;
-    }
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
+        Teuchos::OSTab tab = getOSTab();
+        *out_ << "======================================================================"
+                  << std::endl << std::endl;
+        *out_ << "Cycle = " << S_->cycle();
+        *out_ << ",  Time [days] = "<< S_->time() / (60*60*24);
+        *out_ << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+        *out_ << "----------------------------------------------------------------------"
+                  << std::endl;
+      }
 
-    S_next_->advance_time(dt);
-    fail = pk_->advance(dt);
+      S_next_->advance_time(dt);
+      fail = pk_->advance(dt);
 
-    // advance the iteration count
-    S_next_->advance_cycle();
+      // advance the iteration count
+      S_next_->advance_cycle();
 
-    if (!fail) {
-      // make observations
-      //      observations_->MakeObservations(*S_next_);
+      if (!fail) {
+        // make observations
+        //      observations_->MakeObservations(*S_next_);
 
-      // write visualization if requested
-      // this needs to be fixed...
-      bool dump = false;
-      for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-           vis!=visualization_.end(); ++vis) {
-        if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
-          dump = true;
+        // write visualization if requested
+        // this needs to be fixed...
+        bool dump = false;
+        for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+             vis!=visualization_.end(); ++vis) {
+          if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
+            dump = true;
+          }
         }
-      }
-      if (dump) {
-        pk_->calculate_diagnostics(S_next_);
-      }
-
-      for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-           vis!=visualization_.end(); ++vis) {
-        if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
-          WriteVis((*vis).ptr(), S_next_.ptr());
+        if (dump) {
+          pk_->calculate_diagnostics(S_next_);
         }
+
+        for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+             vis!=visualization_.end(); ++vis) {
+          if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
+            WriteVis((*vis).ptr(), S_next_.ptr());
+          }
+        }
+
+        if (checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
+          WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
+        }
+
+        // write restart dump if requested
+        // restart->dump_state(*S_next_);
+
+        // we're done with this time step, copy the state
+        *S_ = *S_next_;
+        *S_inter_ = *S_next_;
+
+      } else {
+        // Failed the timestep.  The timestep sizes have been updated, so we can
+        // try again.
+        *S_next_ = *S_;
       }
+    } // while not finished
 
-      if (checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-        WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
-      }
-
-      // write restart dump if requested
-      // restart->dump_state(*S_next_);
-
-      // we're done with this time step, copy the state
-      *S_ = *S_next_;
-      *S_inter_ = *S_next_;
-    } else {
-      // Failed the timestep.  The timestep sizes have been updated, so we can
-      // try again.
-      *S_next_ = *S_;
-    }
-  } // while not finished
+  } catch (Exceptions::Amanzi_exception &e) {
+    // catch errors to dump two checkpoints -- one as a "last good" checkpoint
+    // and one as a "debugging data" checkpoint.
+    checkpoint_->set_filebasename("last_good_checkpoint");
+    WriteCheckpoint(checkpoint_.ptr(), S_.ptr());
+    checkpoint_->set_filebasename("error_checkpoint");
+    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
+    throw e;
+  }
 
   // force visualization and checkpoint at the end of simulation
   // this needs to be fixed -- should not force, but ask if we want to checkpoint/vis at end
@@ -287,6 +310,7 @@ void Coordinator::cycle_driver() {
     WriteVis((*vis).ptr(), S_next_.ptr());
   }
 
+  checkpoint_->set_filebasename("final_checkpoint");
   WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
 
   // dump observations
