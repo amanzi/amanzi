@@ -86,8 +86,7 @@ void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
   Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
 
-  // Water content only has cells, while the residual has cells and faces, so
-  // this requires a little care.
+  // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
           -1.0/dt, *wc0->ViewComponent("cell",false), 1.0);
 };

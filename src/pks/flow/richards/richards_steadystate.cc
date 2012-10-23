@@ -3,7 +3,7 @@
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 RegisteredPKFactory<RichardsSteadyState> RichardsSteadyState::reg_("richards steady state");
 
@@ -13,15 +13,6 @@ void RichardsSteadyState::setup(const Teuchos::Ptr<State>& S) {
 
   Richards::setup(S);
 }
-
-double RichardsSteadyState::enorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du) {
-
-  // this hack is to allow a non-converged solution... we're not too picky at this point
-  if (niter_ > max_iters_) return 0.;
-  return PKPhysicalBDFBase::enorm(u,du);
-};
-
 
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
