@@ -74,7 +74,7 @@ target_link_libraries(ats
                       ${amanzi_state}
                       )
 
-install(TARGETS ats DESTINATION ${ATS_SOURCE_DIR}/bin)
+install(TARGETS ats DESTINATION bin)
 
 
 

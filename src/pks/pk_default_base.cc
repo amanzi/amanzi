@@ -27,7 +27,6 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
   // get the fancy output ??
   verbosity_ = getVerbLevel();
   out_ = getOStream();
-  Teuchos::OSTab tab = getOSTab();
 }
 
 

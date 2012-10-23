@@ -79,8 +79,6 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Teuchos::FancyOStream> fos;
   Teuchos::readVerboseObjectSublist(&driver_parameter_list,&fos,&ATS::VerbosityLevel::level_);
 
-  std::cout << ATS::VerbosityLevel::level_ << std::endl;
-
   const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
 
   // Read the "Framework" from the "Mesh" parameter list so that we know which
