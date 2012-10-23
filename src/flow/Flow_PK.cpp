@@ -161,11 +161,11 @@ void Flow_PK::ProcessBoundaryConditions(
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
-      std::printf("Richards PK: new number of influx seepage faces is %9d\n", nseepage);
+      std::printf("Flow PK: new number of influx seepage faces is %9d\n", nseepage);
     }
   }
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Richards PK: assigned zero flux boundary condition to%7d faces\n", missed);
+    std::printf("Flow PK: assigned zero flux boundary condition to%7d faces\n", missed);
   }
   nseepage_prev = nseepage;
 }

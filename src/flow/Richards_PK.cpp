@@ -336,8 +336,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
       std::printf("Richards PK: initializing with a saturated solution \n");
       if (ti_specs.clip_saturation > 0.0) {
         std::printf("Richards PK: clipping saturation value =%5.2g\n", ti_specs.clip_saturation);
-      } else if (ti_specs.clip_pressure > 0.0) {
-        std::printf("Richards PK: clipping pressure value =%5.2g\n", ti_specs.clip_pressure);
+      } else if (ti_specs.clip_pressure > -5 * atm_pressure) {
+        std::printf("Richards PK: clipping pressure value =%9.4g\n", ti_specs.clip_pressure);
       }
     }
     std::printf("***********************************************************\n");
@@ -420,7 +420,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
       double pmin = atm_pressure;
       ClipHydrostaticPressure(pmin, ti_specs.clip_saturation, *solution_cells);
       DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-    } else if (ti_specs.clip_pressure > 0.0) {
+    } else if (ti_specs.clip_pressure > -5 * atm_pressure) {
       ClipHydrostaticPressure(ti_specs.clip_pressure, *solution_cells);
       DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
     }

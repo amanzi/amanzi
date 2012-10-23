@@ -32,7 +32,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->CreateCellView(solution_new));
 
   if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
-  solver->SetAztecOption(AZ_output, AZ_none);
+  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
 
   int max_itrs_nonlinear = ti_specs_sss_.max_itrs;
   double T1 = ti_specs_sss_.T1;

@@ -404,7 +404,7 @@ int Darcy_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-  solver->SetAztecOption(AZ_output, AZ_none);
+  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
 
   // update boundary conditions and source terms
   time = T_physics;
@@ -476,7 +476,12 @@ int Darcy_PK::Advance(double dT_MPC)
   if (dT_method_ == FLOW_DT_ADAPTIVE) {
     double dTfactor;
     ErrorEstimate(&dTfactor);
-    dT_desirable_ = std::min<double>(dT_desirable_ * dTfactor, ti_specs_sss.dTmax);
+    // dT_desirable_ = std::min<double>(dT_desirable_ * dTfactor, ti_specs_sss.dTmax);
+    dT_desirable_ = std::min<double>(dT_MPC * dTfactor, ti_specs_sss.dTmax);
+#ifdef HAVE_MPI
+    double dT_tmp = dT_desirable_;
+    rhs->Comm().MinAll(&dT_tmp, &dT_desirable_, 1);  // find the global minimum
+#endif
   } else {
     dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
   }
