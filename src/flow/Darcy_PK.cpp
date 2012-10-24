@@ -474,14 +474,10 @@ int Darcy_PK::Advance(double dT_MPC)
 
   // estimate time multiplier
   if (dT_method_ == FLOW_DT_ADAPTIVE) {
-    double dTfactor;
-    ErrorEstimate(&dTfactor);
-    // dT_desirable_ = std::min<double>(dT_desirable_ * dTfactor, ti_specs_sss.dTmax);
+    double err, dTfactor;
+    err = ErrorEstimate(&dTfactor);
+    if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
     dT_desirable_ = std::min<double>(dT_MPC * dTfactor, ti_specs_sss.dTmax);
-#ifdef HAVE_MPI
-    double dT_tmp = dT_desirable_;
-    rhs->Comm().MinAll(&dT_tmp, &dT_desirable_, 1);  // find the global minimum
-#endif
   } else {
     dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
   }
