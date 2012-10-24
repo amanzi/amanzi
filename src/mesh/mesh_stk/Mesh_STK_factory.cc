@@ -974,7 +974,8 @@ void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricM
         {
         case AmanziGeometry::BOX: { 
 
-          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate()) {            
+          int ndeg=0;
+          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate(&ndeg) && ndeg == 1) {            
             add_side_set_(greg->name(), greg->id());
           }
           else {
@@ -1057,7 +1058,8 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
           ASSERT (part);
 	  parts_to_add.push_back(part);
 
-          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate()) {
+          int ndeg = 0;
+          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate(&ndeg)) {
 
             ASSERT (part->primary_entity_rank () == face_rank_);
 

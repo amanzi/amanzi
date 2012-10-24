@@ -106,7 +106,6 @@ public:
   /// Get the extents of the Region
   /// void extents(Point *pmin, Point *pmax) const;
 
-
 private:
   
   // Topological dimension of region (0, 1, 2, 3)

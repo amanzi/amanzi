@@ -10,6 +10,7 @@
 
 #include "BoxRegion.hh"
 #include "dbc.hh"
+#include "errors.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -26,7 +27,15 @@ BoxRegion::BoxRegion(const std::string name,
 				     const Point& p0, const Point& p1)
   : Region(name,id,p0.dim()), p0_(p0), p1_(p1)
 {
-  ASSERT(p0_.dim() == p1_.dim());
+
+#ifdef ENABLE_DBC
+  if (p0_.dim() != p1_.dim()) {
+    std::stringstream tempstr;
+    tempstr << "\nMismatch in dimensions of corner points of BoxRegion \"" << Region::name() << "\"\n Perhaps the region is improperly defined?\n";
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
   
   // Check if this is a reduced dimensionality box (e.g. even though
   // it is in 3D space it is a 2D box)
@@ -42,7 +51,15 @@ BoxRegion::BoxRegion(const char *name, const unsigned int id,
 				     const Point& p0, const Point& p1)
   : Region(name,id,p0.dim()), p0_(p0), p1_(p1)
 {
-  ASSERT(p0_.dim() == p1_.dim());
+
+#ifdef ENABLE_DBC
+  if (p0_.dim() != p1_.dim()) {
+    std::stringstream tempstr;
+    tempstr << "\nMismatch in dimensions of corner points of BoxRegion \"" << Region::name() << "\"\nPerhaps the region is improperly defined?\n";
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
 
   // Check if this is a reduced dimensionality box (e.g. even though
   // it is in 3D space it is a 2D box)
@@ -81,7 +98,16 @@ BoxRegion::between_(const double& x, const double& x0, const double& x1)
 bool
 BoxRegion::inside(const Point& p) const
 {
-  ASSERT(p.dim() == p0_.dim());
+
+#ifdef ENABLE_DBC
+  if (p.dim() != p0_.dim()) {
+    std::stringstream tempstr;
+    tempstr << "\nMismatch in corner dimension of BoxRegion \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
+
   bool result(true);
   for (int i = 0; i < p.dim(); ++i) {
     result = result && between_(p[i], p0_[i], p1_[i]);
@@ -90,14 +116,16 @@ BoxRegion::inside(const Point& p) const
 }
 
 // -------------------------------------------------------------
-// BoxRegion::is_degenerate
+// BoxRegion::is_degenerate (also indicate in how many dimensions)
 // -------------------------------------------------------------
 bool
-BoxRegion::is_degenerate() const
+BoxRegion::is_degenerate(int *ndeg) const
 {
+  *ndeg = 0;
   for (int i = 0; i < p0_.dim(); ++i) {
-    if (p0_[i] == p1_[i]) return true;
+    if (p0_[i] == p1_[i]) (*ndeg)++;    
   }
+  if (*ndeg) return true;
 
   return false;
 }

@@ -52,7 +52,6 @@ Region::~Region(void)
   // empty
 }
 
-
 // Get the extents of the Region
 
 // void Region::extents(Point *pmin, Point *pmax) const
