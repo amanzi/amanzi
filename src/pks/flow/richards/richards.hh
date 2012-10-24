@@ -80,6 +80,9 @@ public:
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
+  // setting the solution as changed should also communicate faces
+  virtual void changed_solution();
+
 protected:
   // Create of physical evaluators.
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);

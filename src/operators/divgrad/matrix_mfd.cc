@@ -692,6 +692,9 @@ void MatrixMFD::UpdatePreconditioner() {
  * WARNING: Since diffusive flux is not continuous, we derive it only
  * once (using flag) and in exactly the same manner as in routine
  * Flow_PK::addGravityFluxes_DarcyFlux.
+ *
+ * WARNING: THIS ASSUMES solution has previously be communicated to update
+ * ghost faces.
  ****************************************************************** */
 void MatrixMFD::DeriveFlux(const CompositeVector& solution,
                            const Teuchos::RCP<CompositeVector>& flux) const {
@@ -700,7 +703,6 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
   std::vector<double> dp;
   std::vector<int> dirs;
 
-  solution.ScatterMasterToGhosted();
   flux->PutScalar(0.);
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

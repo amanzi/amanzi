@@ -370,6 +370,7 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
+
   update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
 
@@ -526,12 +527,15 @@ void Richards::UpdateBoundaryConditions_() {
         bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
         bc_values_[f] = p_eff;
       }
+
+      /*
       std::cout << "SURFACE BC: p = " << p << " p_eff = " << p_eff << " h = " << h << std::endl;
       if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
         std::cout << "  RESULT:  flux, " << bc_values_[f] << std::endl;
       } else {
         std::cout << "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
       }
+      */
 
     }
   }
@@ -606,13 +610,14 @@ void Richards::UpdateBoundaryConditions_() {
       bc_markers_[f] = Operators::MFD_BC_FLUX;
       bc_values_[f] = std::max<double>(flux, -h/(S_next_->time() - S_inter_->time())*dens("cell",cells[0]));
 
+      /*
       std::cout << "SURFACE BC: p = " << pres("cell",cells[0]) << " p_eff = " << p_eff << " h = " << h << std::endl;
       if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
         std::cout << "  RESULT:  flux, " << bc_values_[f] << std::endl;
       } else {
         std::cout << "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
       }
-
+      */
     }
   }
 
@@ -756,6 +761,16 @@ Richards::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres) {
   }
 };
 
+
+// -----------------------------------------------------------------------------
+// Experimental approach -- calling this indicates that the time
+// integration scheme is changing the value of the solution in
+// state.
+// -----------------------------------------------------------------------------
+void Richards::changed_solution() {
+  solution_evaluator_->SetFieldAsChanged();
+  S_next_->GetFieldData(key_)->ScatterMasterToGhosted("face");
+};
 
 } // namespace
 } // namespace

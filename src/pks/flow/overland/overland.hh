@@ -72,6 +72,9 @@ public:
   // modify the predictor to ensure non-negativity of ponded depth
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
+  // setting the solution as changed should also communicate faces
+  virtual void changed_solution();
+
 private:
   // setup methods
   virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);
