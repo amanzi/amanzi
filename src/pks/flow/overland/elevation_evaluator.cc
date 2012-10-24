@@ -13,7 +13,8 @@ namespace Flow {
 namespace FlowRelations {
 
 ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariablesFieldEvaluator(plist) {
+    SecondaryVariablesFieldEvaluator(plist),
+    updated_once_(false) {
   my_keys_.push_back(plist_.get<std::string>("elevation key", "elevation"));
   my_keys_.push_back(plist_.get<std::string>("slope magnitude key", "slope_magnitude"));
   my_keys_.push_back(plist_.get<std::string>("potential key", "pres_elev"));
