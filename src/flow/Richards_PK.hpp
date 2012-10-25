@@ -101,6 +101,7 @@ class Richards_PK : public Flow_PK {
   void AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp, Epetra_Vector& p, bool add_preconditioner);
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
   void SolveTransientProblem(double T, double dT, Epetra_Vector& u);
+  void EnforceConstraints_MFD(double Tp, Epetra_Vector& u);
 
   // io members
   void ProcessParameterList();

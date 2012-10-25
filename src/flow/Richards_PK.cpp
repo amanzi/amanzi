@@ -405,16 +405,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   max_itrs_linear = ti_specs.ls_specs.max_itrs;
   convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
 
-  // (re)initialize pressure and saturation
+  // initialize pressure and lambda
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
-  Epetra_Vector& ws = FS->ref_water_saturation();
-
-  *solution_cells = pressure;
-  *solution_faces = lambda;
 
   if (ini_with_darcy) {
-    SolveFullySaturatedProblem(T0, *solution);
+    SolveFullySaturatedProblem(T0, *solution);  // It gives consistent hydrostatic solution.
 
     if (ti_specs.clip_saturation > 0.0) {
       double pmin = atm_pressure;
@@ -425,8 +421,20 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
       DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
     }
     pressure = *solution_cells;
+  } else {
+    *solution_cells = pressure;
+    *solution_faces = lambda;
   }
+
+  // initialize saturation
+  Epetra_Vector& ws = FS->ref_water_saturation();
   DeriveSaturationFromPressure(pressure, ws);
+ 
+  // re-initialize lambda (experimental)
+  if (ti_specs.pressure_lambda_constraints) {
+    double Tp = T0 + dT0;
+    EnforceConstraints_MFD(Tp, *solution);
+  }
 
   // nonlinear solver control options
   ti_method = ti_method;
@@ -461,6 +469,7 @@ int Richards_PK::Advance(double dT_MPC)
   if (num_itrs_nonlinear == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     ComputeUDot(time, *solution, udot);
+
     if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
 
@@ -476,6 +485,7 @@ int Richards_PK::Advance(double dT_MPC)
 
     int ierr;
     update_precon(time, *solution, dT, ierr);
+    num_itrs_nonlinear++;
   }
 
   if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
@@ -598,7 +608,7 @@ void Richards_PK::ComputePreconditionerMFD(
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
-  // call bundeled code
+  // use code from Richards_Bundles.cpp (lipnikov@lanl.gov)
   CalculateRelativePermeability(u);
   UpdateBoundaryConditions(Tp, *u_faces);
 

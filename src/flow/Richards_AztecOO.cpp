@@ -89,11 +89,12 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
       bc_markers, bc_values);
 
   // calculate and assemble elemental stiffness matrices
+  CalculateRelativePermeability(u);
   AssembleTransientProblem_MFD(matrix_, dTp, u, false);
   AssembleTransientProblem_MFD(preconditioner_, dTp, u, true);
   preconditioner_->UpdatePreconditioner();
 
-  // solve symmetric problem
+  // solve non-symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
   solver_tmp->SetUserOperator(matrix_);
@@ -112,6 +113,58 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->ScaledResidual();
     std::printf("Richards PK: transient pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+  }
+
+  delete solver_tmp;
+}
+
+
+/* ******************************************************************
+* Enforce constraints at time Tp by solving diagonalized MFD problem.
+* Algorithm is based on de-coupling pressure-lambda system.
+****************************************************************** */
+void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
+{
+  Epetra_Vector utmp(u);
+  Epetra_Vector* u_faces = FS->CreateFaceView(u);
+  Epetra_Vector* utmp_faces = FS->CreateFaceView(utmp);
+
+  // update boundary conditions
+  bc_pressure->Compute(Tp);
+  bc_head->Compute(Tp);
+  bc_flux->Compute(Tp);
+  bc_seepage->Compute(Tp);
+  ProcessBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *u_faces, atm_pressure,
+      bc_markers, bc_values);
+
+  // calculate and assemble elemental stiffness matrices
+  CalculateRelativePermeability(u);
+  AssembleSteadyStateProblem_MFD(preconditioner_, true);
+  preconditioner_->ReduceGlobalSystem2LambdaSystem(u);
+  preconditioner_->UpdatePreconditioner();
+
+  // solve non-symmetric problem
+  AztecOO* solver_tmp = new AztecOO;
+
+  solver_tmp->SetUserOperator(preconditioner_);
+  solver_tmp->SetPrecOperator(preconditioner_);
+  solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
+  solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
+  solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
+
+  Epetra_Vector b(*(preconditioner_->rhs()));
+  solver_tmp->SetRHS(&b);
+
+  solver_tmp->SetLHS(&utmp);
+  solver_tmp->Iterate(max_itrs_linear, convergence_tol_linear);
+  *u_faces = * utmp_faces;
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    int num_itrs = solver_tmp->NumIters();
+    double linear_residual = solver_tmp->ScaledResidual();
+    std::printf("Richards PK: pressure solver enforcing constraints(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
   delete solver_tmp;

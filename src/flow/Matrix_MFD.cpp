@@ -596,6 +596,38 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 
 
 /* ******************************************************************
+* Reduce the pressure-lambda-system to lambda-system via ellimination
+* of the known pressure. Structure of the global system is preserved
+* but off-diagola blocks are zeroed-out.                                               
+****************************************************************** */
+int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u)
+{
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  const Epetra_Map& cmap = mesh_->cell_map(false);
+  const Epetra_Map& fmap = mesh_->face_map(false);
+
+  // Create views of u and rhs
+  double **c_ptrs = u.Pointers();
+  double **f_ptrs = rhs_->Pointers();
+
+  Epetra_Vector uc(View, cmap, c_ptrs[0]);
+  Epetra_Vector gf(View, fmap, f_ptrs[0] + ncells);
+
+  // Update RHS: rhs = rhs - Afc * uc
+  Epetra_Vector tf(fmap);
+  Afc_->Multiply(true, uc, tf);  // Afc is kept in the transpose form.
+  gf.Update(-1.0, tf, 1.0);
+
+  // Decomple pressure-lambda system
+  *Sff_ = *Aff_;
+  Afc_->PutScalar(0.0);
+  Acf_->PutScalar(0.0);
+
+  return 0;
+}
+
+
+/* ******************************************************************
 * WARNING: Routines requires original mass matrices (Aff_cells), i.e.
 * before boundary conditions were imposed.
 *

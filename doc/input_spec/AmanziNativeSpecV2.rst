@@ -177,12 +177,11 @@ An example of the van Genuchten model specification is:
        <Parameter name="regularization interval" type="double" value="0.0"/>
        <Parameter name="relative permeability model" type="string" value="Burdine"/>
     </ParameterList>
-    <Parameter name="calculate krel-pc curves" type="Array double" value="{0.0, 0.1, 1000.0}"/>
 
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
 The relative permeability curves can be calculated and saved in the file krel_pc.txt
-and krel_sat.txt using the following optional commands:
+and krel_sat.txt using the following optional commands (that go to `"Richards Problem`" list):
 
 .. code-block:: xml
 
@@ -344,6 +343,7 @@ nonlinear solvers during calculation of the initial guess time integration. Here
    <ParameterList name="initial guess pseudo time integrator">
      <Parameter name="time integration method" type="string" value="Picard"/>
      <Parameter name="initialize with darcy" type="bool" value="true"/>
+     <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
      <Parameter name="clipping saturation value" type="double" value="0.9"/>
      <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
@@ -368,6 +368,7 @@ nonlinear solvers during steady state time integration. Here is an example:
      <Parameter name="time integration method" type="string" value="BDF1"/>
      <Parameter name="initialize with darcy" type="string" value="yes"/>
      <Parameter name="clipping saturation value" type="double" value="0.98"/>
+     <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
      <Parameter name="preconditoner" type="string" value="Trilinos ML"/>
      <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
      <Parameter name="error control options" type="Array string" value="{pressure, saturation}"/>
@@ -383,14 +384,20 @@ The parameters used here are
 * `"time integration method`" [string] defines a time integration method.
   The available options are `"BDF1`", `"BDF2`", `"Picard`", and `"backward Euler`".
 
-* `"initialize with darcy`" [string] solves the fully saturated problem with the 
-  boundary continious avaluated at time T=0. The solution defines a new pressure
-  and saturation.
+* `"initialize with darcy`" [bool] solves the fully saturated problem to get an
+  initial pressure field consistent with the boundary conditions.
 
 * `"clipping saturation value`" [double] is an experimental option. It is used 
-  after re-initialization described in the previous bullet to cut-off small values 
-  of pressure. By default, the pressure threshold is equal to the atmospheric pressure.
-  The new pressure is calculated based of the defined saturation value. Default is 0.6.
+  after pressure initialization to cut-off small values of pressure. By default, the 
+  pressure threshold is equal to the atmospheric pressure.
+  The new pressure is calculated based of the provided saturation value. Default is 0.6.
+
+* `"clipping pressure value`" [double] is an experimental option. It is used 
+  after pressure initialization to cut-off small values of pressure below the provided
+  value.
+
+* `"enforce pressure-lambda constraints`" [bool] each time the time integrator is 
+  restarted, we may re-enforce the pressure-lambda relationship for new boundary conditions. 
 
 * `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".
 

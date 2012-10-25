@@ -53,6 +53,7 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
 
 /* ******************************************************************
 * A wrapper for generating a steady state problem. 
+* Warning: Krel must be initialized before calling this routine. 
 ****************************************************************** */
 void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner)
 { 
@@ -74,7 +75,8 @@ void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bo
 
 
 /* ******************************************************************
-* A wrapper for generating a transient problem.  
+* A wrapper for generating a transient problem. 
+* Warning: Krel must be initialized before calling this routine. 
 ****************************************************************** */
 void Richards_PK::AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp,
                                                Epetra_Vector& p, bool add_preconditioner)
