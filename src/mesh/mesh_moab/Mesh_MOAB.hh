@@ -151,6 +151,25 @@ public:
   Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL);
+
+  // Construct a mesh by extracting a subset of entities from another
+  // mesh. In some cases like extracting a surface mesh from a volume
+  // mesh, constructor can be asked to "flatten" the mesh to a lower
+  // dimensional space or to extrude the mesh to give higher
+  // dimensional cells
+
+  Mesh_MOAB(const Mesh *inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
+
+  Mesh_MOAB(const Mesh_MOAB& inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
+
   ~Mesh_MOAB();
   
   void update ();

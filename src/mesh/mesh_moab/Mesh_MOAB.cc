@@ -164,6 +164,31 @@ namespace AmanziMesh
 
 }
 
+//--------------------------------------
+// Constructor - Construct a new mesh from a subset of an existing mesh
+//--------------------------------------
+
+Mesh_MOAB::Mesh_MOAB (const Mesh *inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_MOAB::Mesh_MOAB (const Mesh_MOAB& inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+
 
 Mesh_MOAB::~Mesh_MOAB() {
   delete cell_map_wo_ghosts_;

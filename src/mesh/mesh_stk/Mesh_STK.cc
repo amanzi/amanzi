@@ -27,6 +27,8 @@ namespace bl = boost::lambda;
 #include "Mesh_STK_Impl.hh"
 #include "Mesh_STK.hh"
 #include "stk_mesh_error.hh"
+#include "dbc.hh"
+#include "errors.hh"
 
 static const int ZERO = 0;
 
@@ -57,6 +59,29 @@ Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
   build_maps_();
 }
 
+//--------------------------------------
+// Constructor - Construct a new mesh from a subset of an existing mesh
+//--------------------------------------
+
+Mesh_STK::Mesh_STK (const Mesh *inmesh, 
+                    const std::vector<std::string>& setnames, 
+                    const Entity_kind setkind,
+                    const bool flatten,
+                    const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_STK::Mesh_STK (const Mesh_STK& inmesh, 
+                    const std::vector<std::string>& setnames, 
+                    const Entity_kind setkind,
+                    const bool flatten,
+                    const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
 
 Mesh_STK::~Mesh_STK(void)
 {

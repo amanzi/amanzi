@@ -487,14 +487,12 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 // Constructor - Construct a new mesh from a subset of an existing mesh
 //--------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh, 
-                      const std::vector<std::string>& setnames, 
-                      const Entity_kind setkind,
-                      const bool flatten,
-                      const bool extrude) :
-  mpicomm(inmesh.get_comm()->GetMpiComm())
-{  
-
+void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
+                                  const std::vector<std::string>& setnames, 
+                                  const Entity_kind setkind,
+                                  const bool flatten,
+                                  const bool extrude) {
+                         
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
 
@@ -935,9 +933,33 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
 
 }
 
+Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude) :
+  mpicomm(inmesh->get_comm()->GetMpiComm())
+{  
+
+  extract_mstk_mesh(*((Mesh_MSTK *) inmesh),setnames,setkind,flatten,extrude);
+
+}
+
+Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude) :
+  mpicomm(inmesh.get_comm()->GetMpiComm())
+{  
+
+  extract_mstk_mesh(inmesh,setnames,setkind,flatten,extrude);
+
+}
 
 
 
+// Destructor with cleanup
 
 Mesh_MSTK::~Mesh_MSTK() {
   delete cell_map_wo_ghosts_;

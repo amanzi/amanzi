@@ -104,6 +104,25 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
+  // Construct a mesh by extracting a subset of entities from another
+  // mesh. In some cases like extracting a surface mesh from a volume
+  // mesh, constructor can be asked to "flatten" the mesh to a lower
+  // dimensional space or to extrude the mesh to give higher
+  // dimensional cells
+
+  Mesh_STK(const Mesh *inmesh,
+           const std::vector<std::string>& setnames,
+           const Entity_kind setkind,
+           const bool flatten = false,
+           const bool extrude = false);
+
+  Mesh_STK(const Mesh_STK& inmesh,
+           const std::vector<std::string>& setnames,
+           const Entity_kind setkind,
+           const bool flatten = false,
+           const bool extrude = false);
+
+
   /// Destructor
   ~Mesh_STK(void);
 

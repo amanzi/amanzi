@@ -125,6 +125,13 @@ private:
 			     int ny, int nz);
   int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
 			     double x1, double y1, int nx, int ny);
+
+  void extract_mstk_mesh(const Mesh_MSTK& inmesh,
+                         const std::vector<std::string>& setnames,
+                         const Entity_kind setkind,
+                         const bool flatten = false,
+                         const bool extrude = false);
+
 public:
 
   // Constructors that read the mesh from a file
@@ -168,6 +175,12 @@ public:
   // mesh, constructor can be asked to "flatten" the mesh to a lower
   // dimensional space or to extrude the mesh to give higher
   // dimensional cells
+
+  Mesh_MSTK(const Mesh *inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
 
   Mesh_MSTK(const Mesh_MSTK& inmesh,
             const std::vector<std::string>& setnames,

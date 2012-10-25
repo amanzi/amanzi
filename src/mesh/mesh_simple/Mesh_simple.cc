@@ -44,7 +44,7 @@ Mesh_simple::Mesh_simple (double x0, double y0,
                           const Epetra_MpiComm *communicator,
                           const AmanziGeometry::GeometricModelPtr &gm) 
 {
-  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generated 2D meshes"));
+  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
   
 
@@ -70,6 +70,30 @@ Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
     Mesh::set_geometric_model(gm);
 
   generate_(gspec);
+}
+
+//--------------------------------------
+// Constructor - Construct a new mesh from a subset of an existing mesh
+//--------------------------------------
+
+Mesh_simple::Mesh_simple (const Mesh *inmesh, 
+                          const std::vector<std::string>& setnames, 
+                          const Entity_kind setkind,
+                          const bool flatten,
+                          const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_simple::Mesh_simple (const Mesh_simple& inmesh, 
+                          const std::vector<std::string>& setnames, 
+                          const Entity_kind setkind,
+                          const bool flatten,
+                          const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
 }
 
 
