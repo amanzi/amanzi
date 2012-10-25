@@ -46,7 +46,8 @@ class TI_Specs {
     residual_tol = 0.0;
     initialize_with_darcy = false;
     clip_saturation = -1.0;
-    clip_pressure = -1.0;
+    clip_pressure = -1e+10;
+    pressure_lambda_constraints = false;
   }
   ~TI_Specs() {};
 
@@ -64,6 +65,7 @@ class TI_Specs {
 
   bool initialize_with_darcy;  // initialization options
   double clip_saturation, clip_pressure;
+  bool pressure_lambda_constraints;
 };
 
 }  // namespace AmanziFlow

@@ -17,7 +17,8 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Extract information from Diffusion Problem parameter list.
+* Estimate dT increase factor by comparing the 1st and 2nd order
+* time approximations.
 ****************************************************************** */
 double Darcy_PK::ErrorEstimate(double* dTfactor)
 {
@@ -27,17 +28,25 @@ double Darcy_PK::ErrorEstimate(double* dTfactor)
   *dTfactor = 100.0;
   for (int c = 0; c < ncells_owned; c++) {
     error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
-    error_max = std::max<double>(error_max, error);
-
     tol = ti_specs_sss.rtol * fabs((*solution)[c]) + ti_specs_sss.atol;
+
     dTfactor_cell = sqrt(tol / std::max<double>(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
     *dTfactor = std::min<double>(*dTfactor, dTfactor_cell);
+
+    error_max = std::max<double>(error_max, error - tol);
   }
 
   *dTfactor *= FLOW_DT_ADAPTIVE_SAFETY_FACTOR;
   *dTfactor = std::min<double>(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
   *dTfactor = std::max<double>(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
 
+#ifdef HAVE_MPI
+    double dT_tmp = *dTfactor;
+    solution->Comm().MinAll(&dT_tmp, dTfactor, 1);  // find the global minimum
+ 
+    double error_tmp = error_max;
+    solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
+#endif
   return error_max;
 }
 

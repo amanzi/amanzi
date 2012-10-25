@@ -226,7 +226,7 @@ set(PETSc_VERSION_MINOR  2)
 set(PETSc_VERSION_PATCH  7)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}-p${PETSc_VERSION_PATCH})
-set(PETSc_URL_STRING     "http://ftp.mcs.anl.gov/pub/petsc/release-snapshots")
+set(PETSc_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(PETSc_ARCHIVE_FILE   petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
 set(PETSc_MD5_SUM        b9b5b42ffb6c619e4f7ee6b29134dc5f) 
 

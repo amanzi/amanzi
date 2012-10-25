@@ -81,6 +81,9 @@ class Matrix_MFD : public Epetra_Operator {
   double NormInf() const { return 0.0; }
   bool HasNormInf() const { return false; }
 
+  // development methods
+  int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
+
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
   std::vector<Epetra_SerialDenseVector>& Acf_cells() { return Acf_cells_; }
