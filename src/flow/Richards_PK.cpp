@@ -409,6 +409,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
 
+  *solution_cells = pressure;
+  *solution_faces = lambda;
+
   if (ini_with_darcy) {
     SolveFullySaturatedProblem(T0, *solution);  // It gives consistent hydrostatic solution.
 
@@ -421,9 +424,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
       DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
     }
     pressure = *solution_cells;
-  } else {
-    *solution_cells = pressure;
-    *solution_faces = lambda;
   }
 
   // initialize saturation
