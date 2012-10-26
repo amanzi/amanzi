@@ -60,7 +60,7 @@ set(ENABLE_TESTS @ENABLE_TESTS@ CACHE BOOL "Build the tests")
 set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 
 # METIS  
-set(METIS_DIR  @TPL_INSTALL_PREFIX@ CACHE PATH "METIS installation prefix")
+set(METIS_DIR  @METIS_DIR@ CACHE PATH "METIS installation prefix")
 
 # CCSE
 set(CCSE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CCSE installation prefix")
@@ -107,4 +107,4 @@ set(PETSC_DIR @PETSC_DIR@ CACHE PATH "PETSc installation prefix")
 set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interface")
 
 # Trilinos
-set(Trilinos_INSTALL_PREFIX @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
+set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")

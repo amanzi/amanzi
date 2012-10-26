@@ -194,8 +194,10 @@ set(Trilinos_CMAKE_LANG_ARGS
 #LPRITCH   		   
 #LPRITCHendif()  
 #print_variable(Trilinos_PATCH_COMMAND)
-print_variable(Trilinos_CMAKE_LANG_ARGS)
-print_variable(Trilinos_CMAKE_ARGS)
+
+# --- Define the Trilinos location
+set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})
+
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     DEPENDS   ${Trilinos_PACKAGE_DEPENDS}             # Package dependency target
@@ -219,6 +221,10 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   ${Trilinos_BUILD_IN_SOURCE}  # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${Trilinos_install_dir}        # Install directory
                     # -- Output control
                     ${Trilinos_logging_args})
+
+# --- Useful variables for packages that depends on Trilinos
+set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})
+set(Zoltan_INSTALL_PREFIX "${Trilinos_install_dir}")

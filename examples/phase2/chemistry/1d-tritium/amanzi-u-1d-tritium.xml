@@ -1,7 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
   <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="Unstructured grid, 1D constant velocify flow and transport with tritium decay"/>
+    <Parameter name="Model ID" type="string" value="1D Flow and Transport with tritium decay"/>
   </ParameterList>
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
@@ -53,7 +53,6 @@
           <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 1}"/>
           <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0,  0.0}" />
           <Parameter name="Domain High Corner" type="Array(double)" value="{100.0, 1.0, 1.0}" />
-          <Parameter name="Number of Cells" type="Array int" value="{100, 1, 1}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -111,7 +110,7 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
       <ParameterList name="IC: Uniform Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Value" type="double" value="101325.0"/>
+        <Parameter name="Value" type="double" value="201325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
@@ -119,7 +118,6 @@
             <ParameterList name="Tritium">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
@@ -176,11 +174,6 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Output">
-    <ParameterList name="Cycle Macros">
-      <ParameterList name="Every_100_steps">
-	<Parameter name="Start_Period_Stop" type="Array int" value="{0., 100, -1}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Time Macros">
       <ParameterList name="Every_0.05_year">
 	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0., 1.5768e6, -1}"/>
@@ -190,10 +183,10 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="unstructured_data/tritium"/>
+      <Parameter name="File Name Base" type="string" value="tritium"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
       <Parameter name="Time Macro" type="Array(string)" value="{Every_year}"/>
-<!-- 	<Parameter name="Time Macro" type="Array string" value="{Every_0.05_year}"/> -->
+<!-- 	<Parameter name="Time Macro" type="string" value="Every_0.05_year"/> -->
     </ParameterList>
   </ParameterList>
 

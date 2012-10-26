@@ -49,8 +49,8 @@ list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(petsc_cppflags ${cpp_flags_list})
 
 build_whitespace_string(petsc_fcflags
-                       -I${TPL_INSTALL_PREFIX}/include
                        ${Amanzi_COMMON_FCFLAGS})
+
 # Set PETSc debug flag
 if ( "${CMAKE_BUILD_TYPE}" STREQUAL "Release" )
   set(petsc_debug_flag 0)
@@ -58,8 +58,29 @@ else()
   set(petsc_debug_flag 1)
 endif()
 
-# PETSc MPI flag
-set(petsc_mpi_flag --with-mpi=1)
+# Point PETSc to the MPI build
+if ( "${${MPI_PROJECT}_BUILD_TARGET}" STREQUAL "" )
+  set(petsc_mpi_flags --with-mpi=1)
+else()
+  set(petsc_mpi_flags 
+            --with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX})
+endif()
+
+# BLAS options
+if (BLAS_LIBRARIES) 
+  build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
+  set(petsc_blas_option --with-blas-lib='${petsc_blas_libs}')
+else()
+  set(petsc_blas_option)
+endif()
+
+# LAPACK options
+if ( LAPACK_LIBRARIES ) 
+  build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
+  set(petsc_lapack_option --with-lapack-lib='${petsc_lapack_libs}')
+else()
+  set(petsc_lapack_option)
+endif()
 
 # PETSc SuperLU flags
 # For now we allow PETSc to download and build this package
@@ -75,18 +96,6 @@ set(petsc_superlu_flags
 # PETSc install directory
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
 
-if (DEFINED LAPACK_LIBRARIES) 
-  set(PETSC_LAPACK_OPTION "--with-lapack-lib=${LAPACK_LIBRARIES}")
-else()
-  set(PETSC_LAPACK_OPTION )
-endif()
-if (DEFINED BLAS_LIBRARIES) 
-  set(PETSC_BLAS_OPTION "--with-blas-lib=${BLAS_LIBRARIES}")
-else()
-  set(PETSC_BLAS_OPTION )
-endif()
-
-
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}             # Package dependency target
@@ -100,18 +109,17 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     SOURCE_DIR        ${PETSc_source_dir}          # Source directory
                     CONFIGURE_COMMAND
                               <SOURCE_DIR>/configure
-			            --prefix=${TPL_INSTALL_PREFIX}
-                                    --with-cc=${CMAKE_C_COMPILER_USE}
-                                    --with-cxx=${CMAKE_CXX_COMPILER_USE}
-                                    --with-fc=${CMAKE_Fortran_COMPILER_USE}
+                                          --prefix=<INSTALL_DIR>
+                                          --with-cc=${CMAKE_C_COMPILER_USE}
+                                          --with-cxx=${CMAKE_CXX_COMPILER_USE}
+                                          --with-fc=${CMAKE_Fortran_COMPILER_USE}
                                           --CFLAGS=${petsc_cflags}
                                           --CXXFLAGS=${petsc_cxxflags}
-                                    --FFLAGS=${petsc_fcflags}
                                           --with-debugging=${petsc_debug_flag}
-                                          ${PETSC_LAPACK_OPTION}
-                                          ${PETSC_BLAS_OPTION}
-                                          ${petsc_mpi_flag}
-                                          ${petsc_superlu_flags}
+					  ${petsc_mpi_flags}
+                                          ${petsc_lapack_option}
+                                          ${petsc_blas_option}
+					  ${petsc_superlu_flags}
                     # -- Build
                     BINARY_DIR        ${PETSc_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # Run the CMake script to build
