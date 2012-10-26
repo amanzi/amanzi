@@ -42,7 +42,7 @@ BDF1Dae::~BDF1Dae() {
 
 void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList) {
 
-  TEST_FOR_EXCEPT(is_null(paramList),std::exception,"Parameter list is null");
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(paramList),std::runtime_error,"Parameter list is null");
 
   // Validate and set the parameter defaults.  Here, the parameters are
   // validated and the state of *this is not changed unless the parameter
