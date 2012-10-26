@@ -58,7 +58,7 @@ TestInput::TestInput(int x0, double x1, bool x2)
 void TestInput::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const
                                     &plist)
 {
-  TEST_FOR_EXCEPT(is_null(plist));
+  TEST_FOR_EXCEPTION(is_null(plist),std::exception,"Parameter list is null");
 
   /* Validate the incoming list */
   Teuchos::RCP<const Teuchos::ParameterList> plist_valid = getValidParameters();
