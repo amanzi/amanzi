@@ -28,7 +28,9 @@ namespace po = boost::program_options;
 #include <Epetra_Vector.h>
 #include <Isorropia_EpetraPartitioner.hpp>
 #include <Epetra_MpiComm.h>
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
+#include "Teuchos_ParameterXMLFileReader.hpp"
+// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -284,8 +286,9 @@ main(int argc, char **argv)
     int ierr(0), aerr(0);
 
     try {
-      Teuchos::ParameterList all_parameter_list;
-      Teuchos::updateParametersFromXmlFile(inname, &all_parameter_list);
+      Teuchos::ParameterXMLFileReader xmlreader(inname);
+      Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());      
+      // DEPRECATED      Teuchos::updateParametersFromXmlFile(inname, &all_parameter_list);
       Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("Mesh");
       parameter_list = mesh_parameter_list.sublist("Generate");
     } catch (const std::runtime_error& e) {

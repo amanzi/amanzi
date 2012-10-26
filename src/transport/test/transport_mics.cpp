@@ -13,7 +13,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Mesh_simple.hh"
 #include "MeshAudit.hh"
@@ -42,7 +43,10 @@ TEST(CONSTRUCTOR) {
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/transport_mics.xml";
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  parameter_list = xmlreader.getParameters();  
  
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");

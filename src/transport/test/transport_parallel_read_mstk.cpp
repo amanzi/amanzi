@@ -10,7 +10,8 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
 
 double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) { 
@@ -36,7 +37,10 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL_READ) {
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_parallel_read_mstk.xml";
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
+
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  parameter_list = xmlreader.getParameters();
 
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");

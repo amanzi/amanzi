@@ -17,7 +17,8 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
 
@@ -54,7 +55,10 @@ class DarcyProblem {
 
   void Init(const string xmlFileName, const char* meshExodus) {
     Teuchos::ParameterList parameter_list;
-    updateParametersFromXmlFile(xmlFileName, &parameter_list);
+    // DEPRECATED    updateParametersFromXmlFile(xmlFileName, &parameter_list);
+
+    Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+    parameter_list = xmlreader.getParameters();
 
     // create an SIMPLE mesh framework
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");

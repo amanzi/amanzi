@@ -9,7 +9,8 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+// #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 
 #include "InputParserIS.hh"
@@ -67,8 +68,11 @@ SUITE(GeochemistryTestsChemistryPK) {
     
     // get the parameter list from the input file.
     std::string xml_input_filename("test_chemistry_pk.xml");
-    Teuchos::ParameterList input_spec;
-    Teuchos::updateParametersFromXmlFile(xml_input_filename, &input_spec);
+    
+    Teuchos::ParameterXMLFileReader xmlreader(xml_input_filename);
+    Teuchos::ParameterList input_spec(xmlreader.getParameters());
+
+    // DEPRECATED    Teuchos::updateParametersFromXmlFile(xml_input_filename, &input_spec);
 
     // Chemistry uses the official input spec, not the unstructured
     // native, but we need to translate for state.

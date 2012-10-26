@@ -18,7 +18,8 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
 
@@ -111,7 +112,10 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
   Teuchos::ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_convergence.xml";
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  parameter_list = xmlreader.getParameters();
 
   // convergence estimate
   std::vector<double> h, p_error, v_error;
