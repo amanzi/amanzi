@@ -37,7 +37,9 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
     // -- get the timestepper plist and grab what we need
     Teuchos::RCP<Teuchos::ParameterList> bdf_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(plist_.sublist("time integrator")));
-    backtracking_ = (bdf_plist_p->get<int>("max backtrack count",0) > 0);
+
+    backtracking_iterations_ = bdf_plist_p->get<int>("max backtrack count",0);
+    backtracking_ = (backtracking_iterations_ > 0);
     bdf_plist_p->set("initial time", S->time());
 
     // -- instantiate time stepper
@@ -67,7 +69,7 @@ double PKBDFBase::get_dt() { return dt_; }
 // -----------------------------------------------------------------------------
 bool PKBDFBase::advance(double dt) {
   state_to_solution(S_next_, solution_);
-  residual_norm_ = 1.e99;
+  backtracking_count_ = 0;
 
   // take a bdf timestep
   double dt_solver;
@@ -88,7 +90,6 @@ bool PKBDFBase::advance(double dt) {
   if (!fail) {
     // commit the step as successful
     time_stepper_->commit_solution(dt, solution_);
-    solution_to_state(solution_, S_next_);
     commit_state(dt, S_next_);
 
     // update the timestep size
@@ -113,7 +114,10 @@ bool PKBDFBase::advance(double dt) {
 // backtracking.
 // -----------------------------------------------------------------------------
 bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
-  if (!backtracking_) return true;
+  return true;
+
+  /*
+  //  if (!backtracking_) return true;
 
   // const issues with BDF1 need cleaned up...
   Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
@@ -155,6 +159,7 @@ bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
 
   residual_norm_ = norm;
   return true;
+  */
 }
 
 

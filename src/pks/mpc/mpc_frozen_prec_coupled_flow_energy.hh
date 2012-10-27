@@ -53,12 +53,12 @@ protected:
   virtual bool modify_predictor_ewc(double h, Teuchos::RCP<TreeVector> up);
 
   double the_res_norm_;
+  bool modify_thaw_to_prev_;
   PredictorType predictor_type_;
 
 private:
   // factory registration
   static RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> reg_;
-
 
 };
 } // namespace

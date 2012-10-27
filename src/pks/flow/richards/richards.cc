@@ -72,9 +72,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 #if DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
-    namestream << "residual_" << i;
+    namestream << "flow_residual_" << i;
     std::stringstream solnstream;
-    solnstream << "solution_" << i;
+    solnstream << "flow_solution_" << i;
     S->RequireField(namestream.str(), name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
     S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)->SetGhosted()
@@ -243,12 +243,12 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 #if DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
-    namestream << "residual_" << i;
+    namestream << "flow_residual_" << i;
     S->GetFieldData(namestream.str(),name_)->PutScalar(0.);
     S->GetField(namestream.str(),name_)->set_initialized();
 
     std::stringstream solnstream;
-    solnstream << "solution_" << i;
+    solnstream << "flow_solution_" << i;
     S->GetFieldData(solnstream.str(),name_)->PutScalar(0.);
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
@@ -354,7 +354,7 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
-
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
 
@@ -394,9 +394,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     upwinding_->Update(S);
 
     // patch up the BCs -- FIX ME --etc
-    Teuchos::RCP<const CompositeVector> rel_perm =
-        S->GetFieldData("relative_permeability");
-
     for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
       AmanziMesh::Entity_ID_List cells;
       uw_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -431,6 +428,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // communicate
     uw_rel_perm->ScatterMasterToGhosted();
   }
+
   return update_perm;
 };
 
@@ -607,25 +605,6 @@ void Richards::UpdateBoundaryConditions_() {
 
 };
 
-
-// -----------------------------------------------------------------------------
-// Evaluate boundary conditions at the current time.
-// -----------------------------------------------------------------------------
-void Richards::UpdateBoundaryConditionsPreconditioner_() {
-  UpdateBoundaryConditions_();
-
-  // Attempt of a hack to deal with zero rel perm
-  double eps = 1.e-12;
-  Teuchos::RCP<CompositeVector> relperm =
-      S_next_->GetFieldData("numerical_rel_perm", name_);
-  for (int f=0; f!=relperm->size("face"); ++f) {
-    if ((*relperm)("face",f) < eps) {
-      bc_markers_[f] = Operators::MFD_BC_FLUX;
-      bc_values_[f] = 0.0;
-      (*relperm)("face",f) = 0.5*eps;
-    }
-  }
-};
 
 // -----------------------------------------------------------------------------
 // Add a boundary marker to owned faces.
