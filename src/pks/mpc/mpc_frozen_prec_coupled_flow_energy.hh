@@ -16,7 +16,8 @@ block-diagonal coupler.
 
 namespace Amanzi {
 class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
- public:
+
+public:
   MPCFrozenCoupledFlowEnergy(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
@@ -30,18 +31,35 @@ class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
 
   // update the predictor to be physically consistent
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
-  virtual bool modify_predictor_temp(double h, Teuchos::RCP<TreeVector> up);
+
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // -- Initialize owned (dependent) variables.
+  virtual void setup(const Teuchos::Ptr<State>& S);
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
- private:
+protected:
+  enum PredictorType {
+    PREDICTOR_NONE = 0,
+    PREDICTOR_HEURISTIC = 1,
+    PREDICTOR_EWC = 2,
+    PREDICTOR_TEMP = 3,
+  };
+
+  virtual bool modify_predictor_heuristic(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool modify_predictor_temp(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool modify_predictor_ewc(double h, Teuchos::RCP<TreeVector> up);
+
+  double the_res_norm_;
+  PredictorType predictor_type_;
+
+private:
   // factory registration
   static RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> reg_;
 
-  double res_norm_;
+
 };
 } // namespace
 

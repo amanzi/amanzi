@@ -18,6 +18,25 @@ namespace Amanzi {
 RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> MPCFrozenCoupledFlowEnergy::reg_("frozen energy-flow preconditioner coupled");
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  if (predictor_type_ == PREDICTOR_HEURISTIC) {
+    return modify_predictor_heuristic(h,u);
+  } else if (predictor_type_ == PREDICTOR_EWC) {
+    return modify_predictor_ewc(h,u);
+  }
+  return false;
+};
+
+
+bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<TreeVector> u) {
+  Teuchos::RCP<CompositeVector> temp_guess = u->SubVector("energy")->data();
+  Teuchos::RCP<CompositeVector> pres_guess = u->SubVector("flow")->data();
+  *temp_guess = *S_next_->GetFieldData("temperature_prediction");
+  *pres_guess = *S_next_->GetFieldData("pressure_prediction");
+  return true;
+}
+
+
+bool MPCFrozenCoupledFlowEnergy::modify_predictor_heuristic(double h, Teuchos::RCP<TreeVector> u) {
   Teuchos::RCP<CompositeVector> temp_guess = u->SubVector("energy")->data();
   Epetra_MultiVector& guess_cells = *temp_guess->ViewComponent("cell",false);
   Epetra_MultiVector& guess_faces = *temp_guess->ViewComponent("face",false);
@@ -175,10 +194,167 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_temp(double h, Teuchos::RCP<Tr
 };
 
 
-// -- Initialize owned (dependent) variables.
-void MPCFrozenCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
+void MPCFrozenCoupledFlowEnergy::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+
+  if (predictor_type_ == PREDICTOR_EWC) {
+    // work is done in S_inter -- get the T and p evaluators
+    Teuchos::RCP<FieldEvaluator> Teval_fe = S_inter_->GetFieldEvaluator("temperature");
+    Teuchos::RCP<FieldEvaluator> peval_fe = S_inter_->GetFieldEvaluator("pressure");
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> Teval =
+      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(Teval_fe);
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> peval =
+      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(peval_fe);
+
+    // project energy and water content
+    double dt_next = dt_;
+    double dt_prev = S_next_->time() - S_inter_->time();
+
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+      *out_ << "Projecting Energy and WC, dt_prev = " << dt_prev
+            << ", dt_next = " << dt_next << std::endl;
+    }
+
+    // -- get wc and energy data
+    Teuchos::RCP<CompositeVector> wc0 = S_inter_->GetFieldData("water_content", "water_content");
+    Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content", "water_content");
+    Teuchos::RCP<CompositeVector> e0 = S_inter_->GetFieldData("energy", "energy");
+    Teuchos::RCP<const CompositeVector> e1 = S_next_->GetFieldData("energy", "energy");
+
+    // -- work vectors for wc and energy
+    CompositeVector wc2(*wc0), e2(*e0);
+    wc2 = *wc0;
+    e2 = *e0;
+    CompositeVector cor_wc(*wc0), cor_e(*e0);
+
+    // -- project
+    double dt_ratio = (dt_next + dt_prev) / dt_prev;
+    wc2.Update(1.0 - dt_ratio, *wc1, dt_ratio);
+    e2.Update(1.0 - dt_ratio, *e1, dt_ratio);
+
+    // -- copy guess for T,p, and the resulting e,wc into S_inter_, which we will use for this
+    Teuchos::RCP<CompositeVector> T0 = S_inter_->GetFieldData("temperature", energy_pk->name());
+    Teuchos::RCP<CompositeVector> p0 = S_inter_->GetFieldData("pressure", flow_pk->name());
+    Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData("temperature");
+    Teuchos::RCP<const CompositeVector> p1 = S_next_->GetFieldData("pressure");
+    *T0 = *T1;
+    *p0 = *p1;
+
+    // -- pull out derivatives from S_inter_, and copy the values from S_next_
+    Teuchos::RCP<CompositeVector> de_dT = S_inter_->GetFieldData("denergy_dtemperature", "energy");
+    *de_dT = *S_next_->GetFieldData("denergy_dtemperature");
+    Teuchos::RCP<CompositeVector> de_dp = S_inter_->GetFieldData("denergy_dpressure", "energy");
+    *de_dp = *S_next_->GetFieldData("denergy_dpressure");
+    Teuchos::RCP<CompositeVector> dwc_dT = S_inter_->GetFieldData("dwater_content_dtemperature", "water_content");
+    *dwc_dT = *S_next_->GetFieldData("dwater_content_dtemperature");
+    Teuchos::RCP<CompositeVector> dwc_dp = S_inter_->GetFieldData("dwater_content_dpressure", "water_content");
+    *dwc_dp = *S_next_->GetFieldData("dwater_content_dpressure");
+
+    // initialize the nonlinear solve, evaluate the residual (stored in 0)
+    *e0 = *e1;
+    e0->Update(-1., e2, 1.);
+    *wc0 = *wc1;
+    wc0->Update(-1., wc2, 1.);
+
+    int ncells = e0->size("cell",false);
+    bool converged = false;
+
+    // iterate nonlinear solve
+    while (!converged) {
+      // cor <-- J^-1 * res
+      for (int c=0; c!=ncells; ++c) {
+        double dedp = (*de_dp)("cell",c);
+        double dedT = (*de_dT)("cell",c);
+        double dwcdp = (*dwc_dp)("cell",c);
+        double dwcdT = (*dwc_dT)("cell",c);
+
+        double detJ = dedT*dwcdp - dedp*dwcdT;
+        if (detJ < 1.e-14) {
+          ASSERT(0);
+        }
+
+        double res_e = (*e0)("cell",c);
+        double res_wc = (*wc0)("cell",c);
+
+        cor_wc("cell",c) = (dedT*res_wc - dwcdT*res_e) / detJ;
+        cor_e("cell",c) = (-dedp*res_wc + dwcdp*res_e) / detJ;
+      }
+
+      // x_n+1 = x_n - cor
+      T0->Update(-1.0, cor_e, 1.0);
+      p0->Update(-1.0, cor_wc, 1.0);
+
+      // evaluate e(p,T), wc(p,T)
+      Teval->SetFieldAsChanged();
+      peval->SetFieldAsChanged();
+      S_inter_->GetFieldEvaluator("water_content")->HasFieldChanged(S_inter_.ptr(),name_);
+      S_inter_->GetFieldEvaluator("energy")->HasFieldChanged(S_inter_.ptr(),name_);
+
+      // e(p,T) - e2, the desired solution
+      // e0/wc0 now have the updated values
+      for (int c=0; c!=ncells; ++c) {
+        (*e0)("cell",c) = ( (*e0)("cell",c) - e2("cell",c)) / e2("cell",c);
+        (*wc0)("cell",c) = ( (*wc0)("cell",c) - wc2("cell",c)) / wc2("cell",c);
+      }
+
+      // evaulate convergence
+      double norm_e, norm_wc, norm;
+      wc0->NormInf(&norm_wc);
+      e0->NormInf(&norm_e);
+      norm = std::min(norm_e, norm_wc);
+      converged = (norm < 1.e-4);
+
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+        *out_ << "   Solve for T,p: res = " << norm << std::endl;
+      }
+
+      if (converged) {
+        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+          *out_ << " Converged." << std::endl;
+        }
+        // copy solution into the result
+        *S_next_->GetFieldData("pressure_prediction",name_) = *p0;
+        *S_next_->GetFieldData("temperature_prediction",name_) = *T0;
+
+      } else {
+        // update derivatives
+        S_inter_->GetFieldEvaluator("dwater_content_dtemperature")
+          ->HasFieldDerivativeChanged(S_inter_.ptr(),name_,"temperature");
+        S_inter_->GetFieldEvaluator("dwater_content_dpressure")
+          ->HasFieldDerivativeChanged(S_inter_.ptr(),name_,"pressure");
+        S_inter_->GetFieldEvaluator("denergy_dtemperature")
+          ->HasFieldDerivativeChanged(S_inter_.ptr(),name_,"temperature");
+        S_inter_->GetFieldEvaluator("denergy_dpressure")
+          ->HasFieldDerivativeChanged(S_inter_.ptr(),name_,"pressure");
+      }
+    }
+  }
+};
+
+void MPCFrozenCoupledFlowEnergy::setup(const Teuchos::Ptr<State>& S) {
+  MPCCoupledFlowEnergy::setup(S);
   flow_pk = Teuchos::rcp_dynamic_cast<Amanzi::Flow::Richards>(sub_pks_[0]);
   energy_pk = Teuchos::rcp_dynamic_cast<Amanzi::Energy::TwoPhase>(sub_pks_[1]);
+
+  std::string predictor_string = plist_.get<std::string>("predictor type", "heuristic");
+  if (predictor_string == "none") {
+    predictor_type_ = PREDICTOR_NONE;
+  } else if (predictor_string == "heuristic") {
+    predictor_type_ = PREDICTOR_HEURISTIC;
+  } else if (predictor_string == "ewc") {
+    predictor_type_ = PREDICTOR_EWC;
+    S->RequireField("pressure_prediction",name_)->SetMesh(S->GetMesh())->SetGhosted(false)
+      ->SetComponent("cell",AmanziMesh::CELL,1);
+    S->RequireField("temperature_prediction",name_)->SetMesh(S->GetMesh())->SetGhosted(false)
+      ->SetComponent("cell",AmanziMesh::CELL,1);
+  } else {
+    Errors::Message message(std::string("Invalid predictor type ")+predictor_string);
+    Exceptions::amanzi_throw(message);
+  }
+}
+
+// -- Initialize owned (dependent) variables.
+void MPCFrozenCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
 
   if (plist_.get<bool>("initialize from frozen column", false)) {
     int npoints = 100;
@@ -250,7 +426,7 @@ void MPCFrozenCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
 void MPCFrozenCoupledFlowEnergy::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
          Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   MPCCoupledFlowEnergy::fun(t_old, t_new, u_old, u_new, g);
-  g->Norm2(&res_norm_);
+  g->Norm2(&the_res_norm_);
 }
 
 bool MPCFrozenCoupledFlowEnergy::is_admissible(Teuchos::RCP<const TreeVector> up) {
@@ -259,10 +435,11 @@ bool MPCFrozenCoupledFlowEnergy::is_admissible(Teuchos::RCP<const TreeVector> up
   }
 
   if (backtracking_) {
-    double res_prev = res_norm_;
+    double res_prev = the_res_norm_;
     Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
-    fun(S_inter_->time(), S_next_->time(), Teuchos::null, up_nc);
-    if (res_norm_ <= res_prev) {
+    Teuchos::RCP<TreeVector> g = Teuchos::rcp(new TreeVector(*up));
+    fun(S_inter_->time(), S_next_->time(), Teuchos::null, up_nc, g);
+    if (the_res_norm_ <= res_prev) {
       return true;
     } else {
       return false;
