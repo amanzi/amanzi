@@ -246,4 +246,30 @@ void MPCFrozenCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   MPCCoupledFlowEnergy::initialize(S);
 }
 
+
+void MPCFrozenCoupledFlowEnergy::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+  MPCCoupledFlowEnergy::fun(t_old, t_new, u_old, u_new, g);
+  g->Norm2(&res_norm_);
+}
+
+bool MPCFrozenCoupledFlowEnergy::is_admissible(Teuchos::RCP<const TreeVector> up) {
+  if (!MPCCoupledFlowEnergy::is_admissible(up)) {
+    return false;
+  }
+
+  if (backtracking_) {
+    double res_prev = res_norm_;
+    Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
+    fun(S_inter_->time(), S_next_->time(), Teuchos::null, up_nc);
+    if (res_norm_ <= res_prev) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 } // namespace
