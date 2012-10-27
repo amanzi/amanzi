@@ -16,7 +16,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 // TwoPhase is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -24,6 +24,8 @@ namespace Energy {
 // -----------------------------------------------------------------------------
 void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+  ++niter_;
+
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
@@ -64,11 +66,24 @@ void TwoPhase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   }
 
   // advection term, implicit
-  AddAdvection_(S_next_, res, false);
+  AddAdvection_(S_inter_, res, false);
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  res0 (after advection): " << (*res)("cell",0) << " " << (*res)("face",3) << std::endl;
     *out_ << "  res1 (after advection): " << (*res)("cell",99) << " " << (*res)("face",497) << std::endl;
   }
+
+#if DEBUG_FLAG
+  if (niter_ < 23) {
+    std::stringstream namestream;
+    namestream << "energy_residual_" << niter_;
+    *S_next_->GetFieldData(namestream.str(),name_) = *res;
+
+    std::stringstream solnstream;
+    solnstream << "energy_solution_" << niter_;
+    *S_next_->GetFieldData(solnstream.str(),name_) = *u;
+  }
+#endif
+
 };
 
 
@@ -174,12 +189,13 @@ double TwoPhase::enorm(Teuchos::RCP<const TreeVector> u,
   }
 
   double enorm_face(0.);
+  /*
   int nfaces = res.size("face");
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = abs(res("face",f)) / (atol_+rtol_*273.15);
+    double tmp = abs(h*res("face",f)) / (atol_+rtol_*273.15);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
-
+  */
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     double infnorm_c, infnorm_f;
     res.ViewComponent("cell",false)->NormInf(&infnorm_c);
