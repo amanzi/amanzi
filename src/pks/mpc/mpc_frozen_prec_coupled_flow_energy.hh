@@ -40,21 +40,29 @@ public:
 
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next);
+
 protected:
   enum PredictorType {
     PREDICTOR_NONE = 0,
     PREDICTOR_HEURISTIC = 1,
     PREDICTOR_EWC = 2,
-    PREDICTOR_TEMP = 3,
+    PREDICTOR_EWC_HEURISTIC = 3,
+    PREDICTOR_TEMP = 4
   };
 
   virtual bool modify_predictor_heuristic(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool modify_predictor_ewc_heuristic(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_temp(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_ewc(double h, Teuchos::RCP<TreeVector> up);
 
   double the_res_norm_;
   bool modify_thaw_to_prev_;
   PredictorType predictor_type_;
+
+  Teuchos::RCP<State> S_work_;
 
 private:
   // factory registration
