@@ -44,6 +44,7 @@ public:
       coupled_to_surface_via_head_(false),
       coupled_to_surface_via_flux_(false),
       coupled_to_surface_via_residual_(false),
+      infiltrate_only_if_unfrozen_(false),
       niter_(0) {
     // set a few parameters before setup
     plist_.set("solution key", "pressure");
@@ -132,6 +133,7 @@ protected:
   double surface_head_cutoff_alpha_;
   double surface_head_eps_;
   int niter_;
+  bool infiltrate_only_if_unfrozen_;
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability
@@ -147,6 +149,8 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
 
