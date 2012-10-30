@@ -706,8 +706,9 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
   flux->PutScalar(0.);
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  std::vector<int> flag(solution.ViewComponent("face", true)->MyLength(), 0);
+  int nfaces_owned = flux->size("face",false);
+
+  std::vector<bool> flag(nfaces_owned, false);
   const Epetra_MultiVector& soln_cells = *solution.ViewComponent("cell",false);
   const Epetra_MultiVector& soln_faces = *solution.ViewComponent("face",true);
   Epetra_MultiVector& flux_v = *flux->ViewComponent("face",false);
@@ -731,11 +732,17 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
         }
 
         flux_v[0][f] = s * dirs[n];
-        flag[f] = 1;
+        flag[f] = true;
 
       }
     }
   }
+
+  // ensure post-condition - we got them all
+  for (int f=0; f!=nfaces_owned; ++f) {
+    ASSERT(flag[f]);
+  }
+
 }
 
 
