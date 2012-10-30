@@ -5,7 +5,7 @@
 #include "Epetra_SerialComm.h"
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -75,7 +75,8 @@ int main(int argc, char *argv[])
 
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
-  Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+  Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
+  driver_parameter_list = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::FancyOStream> fos;
   Teuchos::readVerboseObjectSublist(&driver_parameter_list,&fos,&ATS::VerbosityLevel::level_);
 
