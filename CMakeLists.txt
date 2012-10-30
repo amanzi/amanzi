@@ -67,6 +67,7 @@ include_directories(${Amanzi_INCLUDE_DIR})
 # Amanzi_TPL_Teuchos_INCLUDE_DIRS => Include paths for Teuchos AND TPLs that Teuchos depends on
 # Amanzi_TPL_Teuchos_LIBRARY_DIRS => Library paths for Teuchos library and TPL libraries Teuchos calls
 # See AmanziConfigTPL.cmake for the entire list
+
 include_directories(${Amanzi_TPL_Teuchos_INCLUDE_DIRS})
 include_directories(${Amanzi_TPL_Epetra_INCLUDE_DIRS})
 include_directories(${Amanzi_TPL_ASCEMIO_INCLUDE_DIRS})

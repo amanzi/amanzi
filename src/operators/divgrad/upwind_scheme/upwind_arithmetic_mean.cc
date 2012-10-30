@@ -56,7 +56,8 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
 
   int c_used = cell_coef.size("cell", true);
   for (int c=0; c!=c_used; ++c) {
-    mesh->cell_get_faces(c, &faces);
+    std::vector<int> fdirs;
+    mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
