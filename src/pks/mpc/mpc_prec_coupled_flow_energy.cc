@@ -103,6 +103,7 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
   int avg_entries_row = 6;
   Epetra_CrsGraph cf_graph(Copy, *double_cmap, *double_fmap_wghost, avg_entries_row, false);
   Epetra_FECrsGraph ff_graph(Copy, *double_fmap, 2*avg_entries_row - 1, false);
+  //  Epetra_FECrsGraph ff_graph(Copy, *double_fmap_wghost, 2*avg_entries_row - 1, false);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -120,14 +121,17 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
       faces_GID[n] = double_fmap_wghost->GID(faces_LID[n]);
     }
     cf_graph.InsertMyIndices(c, nfaces, faces_LID);
-    ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    int ierr = ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    ASSERT(!ierr);
   }
   cf_graph.FillComplete(*double_fmap, *double_cmap);
-  ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  int ierr = ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  ASSERT(!ierr);
 
   A2f2p_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, cf_graph));
-  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, ff_graph));
-  P2f2f_->GlobalAssemble();
+  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, ff_graph, false));
+  ierr = P2f2f_->GlobalAssemble();
+  ASSERT(!ierr);
 
   InitPreconditioner_(coupled_pc_);
 }
@@ -334,7 +338,11 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
     }
 
     for (int i=0; i!=nfaces; ++i) {
-      P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], NumEntries, faces_GID);
+      int ierr = P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], NumEntries, faces_GID);
+      std::cout << "Begin submit: " << i << ", " << faces_LID[i]
+                << ", " << faces_GID[i] << " submit: " << NumEntries
+                << " results in " << ierr << std::endl;
+      ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
         Values(0,0) = Schur(i,j);
@@ -342,15 +350,16 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
         Values(1,0) = Schur(i + nfaces,j);
         Values(1,1) = Schur(i+ nfaces,j+ nfaces);
 
-        P2f2f_->SubmitBlockEntry(Values);
+        ierr = P2f2f_->SubmitBlockEntry(Values);
+
+        std::cout << "  Submission of " << i << "(" << faces_GID[i] << "), "
+                  << j << "(" << faces_GID[j]
+                  << ") of total " << NumEntries << " results in " << ierr << std::endl;
+        ASSERT(!ierr);
       }
-      try {
-        P2f2f_->EndSubmitEntries();
-      }
-      catch (int err){
-        cout<<"An Exception occured. P2f2f_ Exception Nr. "<<err<<endl;
-        exit(0);
-      }
+
+      ierr = P2f2f_->EndSubmitEntries();
+      ASSERT(!ierr);
     }
 
     A2f2p_->BeginReplaceGlobalValues(cell_GID, NumEntries, faces_GID);
@@ -372,7 +381,8 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
   }
 
   A2f2p_->FillComplete(*double_fmap, *double_cmap);
-  P2f2f_->GlobalAssemble();
+  int ierr = P2f2f_->GlobalAssemble();
+  ASSERT(!ierr);
 
   is_matrix_constructed = true;
 }
