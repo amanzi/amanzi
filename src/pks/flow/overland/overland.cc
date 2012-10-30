@@ -72,6 +72,12 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
 
+  // coupling to subsurface
+  coupled_to_surface_via_residual_ = plist_.get<bool>("coupled to surface via residual", false);
+  if (coupled_to_surface_via_residual_) {
+    surface_head_eps_ = plist_.get<double>("surface head epsilon", 0.);
+  }
+  
   // rel perm upwinding
   S->RequireField("upwind_overland_conductivity", name_)
                 ->SetMesh(S->GetMesh("surface"))->SetGhosted()
@@ -477,17 +483,23 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 bool OverlandFlow::is_admissible(Teuchos::RCP<const TreeVector> up) {
   Teuchos::RCP<const Epetra_MultiVector> hcell = up->data()->ViewComponent("cell",false);
   Teuchos::RCP<const Epetra_MultiVector> hface = up->data()->ViewComponent("face",false);
-
+  
   // check cells
   double minh(0.);
   int ierr = hcell->MinValue(&minh);
-  if (ierr || minh < 0.) {
+  if (ierr || minh < -surface_head_eps_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "Inadmissible overland ponded depth: " << minh << std::endl;
+    }
     return false;
   }
 
   // and faces
   ierr = hface->MinValue(&minh);
-  if (ierr || minh < 0.) {
+  if (ierr || minh < -surface_head_eps_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "Inadmissible overland ponded depth constraint: " << minh << std::endl;
+    }
     return false;
   }
 
