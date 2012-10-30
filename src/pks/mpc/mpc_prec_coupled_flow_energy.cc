@@ -38,12 +38,29 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   coupled_pc_ = plist_.sublist("Coupled PC");
 
   std::string prec_name = coupled_pc_.get<std::string>("preconditioner", "ILU");
-  if (prec_name == "ML")
-        prec_method_ = TRILINOS_ML;
-  else if (prec_name == "ILU")
-          prec_method_ = TRILINOS_ILU;
-  else if (prec_name == "ILU_BLOCK")
-          prec_method_ = TRILINOS_BLOCK_ILU;
+  if (prec_name == "ML") {
+    prec_method_ = TRILINOS_ML;
+  } else if (prec_name == "ILU") {
+    prec_method_ = TRILINOS_ILU;
+  } else if (prec_name == "Block ILU") {
+    prec_method_ = TRILINOS_BLOCK_ILU;
+#ifdef HAVE_HYPRE
+  } else if (prec_name == "HYPRE AMG") {
+    prec_method_ = HYPRE_AMG;
+  } else if (prec_name == "HYPRE Euclid") {
+    prec_method_ = HYPRE_EUCLID;
+  } else if (prec_name == "HYPRE ParaSails") {
+    prec_method_ = HYPRE_EUCLID;
+#endif
+  } else {
+#ifdef HAVE_HYPRE
+    Errors::Message msg("Matrix_MFD: The specified preconditioner "+prec_name+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
+#else
+    Errors::Message msg("Matrix_MFD: The specified preconditioner "+prec_name+" is not supported, we only support ML, and ILU");
+#endif
+    Exceptions::amanzi_throw(msg);
+  }
+
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
@@ -53,10 +70,10 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   D_pT_ = Teuchos::rcp(new Epetra_MultiVector(*pres->ViewComponent("cell", false)));
   D_Tp_ = Teuchos::rcp(new Epetra_MultiVector(*temp->ViewComponent("cell", false)));
 
-  SymbolicAssembleGlobalMatrices_(S);
-
   flow_pk = Teuchos::rcp_dynamic_cast<Amanzi::Flow::Richards>(sub_pks_[0]);
   energy_pk = Teuchos::rcp_dynamic_cast<Amanzi::Energy::TwoPhase>(sub_pks_[1]);
+
+  SymbolicAssembleGlobalMatrices_(S);
 };
 
 void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<State>& S) {
@@ -66,8 +83,8 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
   Teuchos::RCP<const Epetra_BlockMap> fmap = pres->map("face", false);
   fmap_wghost = pres->map("face", true);
 
-  int num_global = (*fmap).NumGlobalPoints(); std::cout<<"num_global "<<num_global<<std::endl;
-  int nummypoint = (*fmap).NumMyPoints(); std::cout<<"num_global "<<nummypoint<<std::endl;
+  int num_global = (*fmap).NumGlobalPoints(); //std::cout<<"num_global "<<num_global<<std::endl;
+  int nummypoint = (*fmap).NumMyPoints(); //std::cout<<"num_mine "<<nummypoint<<std::endl;
 
   double_fmap = Teuchos::rcp(new Epetra_BlockMap((*fmap).NumGlobalPoints(),
           (*fmap).NumMyPoints(), (*fmap).MyGlobalElements(), 2,
@@ -173,8 +190,55 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
     ifp_prec_->SetParameters(ifp_plist_);
     ifp_prec_->Initialize();
     ifp_prec_->Compute();
-  }
+#ifdef HAVE_HYPRE
+  } else if (prec_method_ == HYPRE_AMG) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*P2f2f_));
+    Teuchos::RCP<FunctionParameter> functs[8];
+    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
+    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
+    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
+    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_)); 
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_)); 
+    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
+    
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", BoomerAMG);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 8);
+    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs); 
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();
+  } else if (prec_method_ == HYPRE_EUCLID) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*P2f2f_));
 
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", Euclid);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 0);
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();    
+  } else if (prec_method_ == HYPRE_PARASAILS) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*P2f2f_));
+
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", ParaSails);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 0);
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();    
+#endif
+  }
 };
 
 void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
@@ -182,7 +246,7 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
   Teuchos::RCP<const Epetra_BlockMap> cmap = pres->map("cell", false);
   Teuchos::RCP<const Epetra_BlockMap> fmap = pres->map("face", false);
 
-  int ncells = pres->size("cell");
+  int ncells = pres->size("cell",false);
   int cell_GID ; 
 
   AmanziMesh::Entity_ID_List faces;
@@ -367,6 +431,10 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
    ierr = ilu_prec_->ApplyInverse(Tf, Pf);
  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
    ierr = ifp_prec_->ApplyInverse(Tf, Pf);
+#ifdef HAVE_HYPRE
+ } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
+   ierr != IfpHypre_Sff_->ApplyInverse(Tf, Pf);
+#endif
  }
 
  Epetra_MultiVector& Ppressure_c = *Pu->SubVector("flow")->data()->ViewComponent("cell",false);

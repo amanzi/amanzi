@@ -23,7 +23,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
 
   bool update_faces(false);
 
-  int ncells = temp->size("cell",true);
+  int ncells = temp->size("cell",false);
   std::vector<bool> changed(ncells, false);
   for (int c=0; c!=ncells; ++c) {
     if ((*temp)("cell",c) >= 273.15 && (*temp_guess)("cell",c) < 273.15) {
@@ -114,16 +114,17 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_temp(double h, Teuchos::RCP<Tr
     pres->mesh()->get_set_entities(name, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      if ((*pres)("cell",*c) < *p_atm) {
-        double A_minus_one = (1.0/(*one_on_A)("cell",*c) - 1.0);
+      double p = (*pres)("cell",*c);
+      double A_minus_one = (1.0/(*one_on_A)("cell",*c) - 1.0);
+
+      double wc = (*wc0)("cell",*c) / (*cv)("cell",*c);
+      double sstar = (wc - (*n_g)("cell",*c)*(*omega_g)("cell",*c)*(*phi)("cell",*c)) /
+          ((*phi)("cell",*c) * ((*n_l)("cell",*c) - (*n_g)("cell",*c)*(*omega_g)("cell",*c)
+                  + (*n_i)("cell",*c)*A_minus_one) - A_minus_one*wc);
+
+      if (sstar > 0.) {
         if (*c==0) std::cout << "   A-1(0) = " << A_minus_one << std::endl;
         if (*c==99) std::cout << "   A-1(99) = " << A_minus_one << std::endl;
-
-        double wc = (*wc0)("cell",*c) / (*cv)("cell",*c);
-        double sstar = (wc - (*n_g)("cell",*c)*(*omega_g)("cell",*c)*(*phi)("cell",*c)) /
-            ((*phi)("cell",*c) * ((*n_l)("cell",*c) - (*n_g)("cell",*c)*(*omega_g)("cell",*c)
-                    + (*n_i)("cell",*c)*A_minus_one) - A_minus_one*wc);
-
         if (*c==0) std::cout << "   S*(0) = " << sstar << std::endl;
         if (*c==99) std::cout << "   S*(99) = " << sstar << std::endl;
 
