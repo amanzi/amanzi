@@ -95,8 +95,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
   // Determine the face coefficient of local faces.
   // These parameters may be key to a smooth convergence rate near zero flux.
-  double eps = 1.e-15;
-  double flow_eps_factor = 1.e-4;
+  double flow_eps_factor = 1.e-6;
 
   int nfaces = face_coef->size("face",false);
   for (int f=0; f!=nfaces; ++f) {
@@ -114,26 +113,22 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
       // Determine the size of the overlap region, a smooth transition region
       // near zero flux
-      double flow_eps = 0.0;
-      if ((coef_cells[0][uw] > 0) || (coef_cells[0][dw] > 0)) {
-        flow_eps = 2 * coef_cells[0][uw] * coef_cells[0][dw]
-            / (coef_cells[0][uw] + coef_cells[0][dw]);
-      }
-      flow_eps = std::max(flow_eps*flow_eps_factor, eps);
+      double cuw = coef_cells[0][uw];
+      double cdw = coef_cells[0][dw];
+      double flow_eps = ( 1.0 - std::abs(cuw - cdw) ) * std::sqrt(cuw * cdw) * flow_eps_factor;
 
       // Determine the coefficient
       if (abs(flux_v[0][f]) >= flow_eps) {
         int uw = upwind_cell[f];
         ASSERT(uw != -1);
-        coef_faces[0][f] = coef_cells[0][uw];
+        coef_faces[0][f] = cuw;
       } else {
         // Parameterization of a linear scaling between upwind and downwind.
         double param = abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
         ASSERT(param >= 0.5);
         ASSERT(param <= 1.0);
 
-        coef_faces[0][f] = coef_cells[0][uw] * param
-            + coef_cells[0][dw] * (1. - param);
+        coef_faces[0][f] = cuw * param + cdw * (1. - param);
       }
     }
   }

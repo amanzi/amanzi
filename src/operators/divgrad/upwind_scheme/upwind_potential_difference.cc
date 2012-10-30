@@ -69,10 +69,12 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
     } else {
       // Determine the size of the overlap region, a smooth transition region
       // near zero potential difference.
+      double ol0 = std::max(0., overlap("cell",cells[0]));
+      double ol1 = std::max(0., overlap("cell",cells[1]));
+
       double flow_eps = 0.0;
-      if ((overlap("cell",cells[0]) > 0) || (overlap("cell",cells[1]) > 0)) {
-        flow_eps = (overlap("cell",cells[0]) * overlap("cell",cells[1]))
-            / (overlap("cell",cells[0]) + overlap("cell",cells[1]));
+      if ((ol0 > 0) || (ol1 > 0)) {
+        flow_eps = (ol0 * ol1) / (ol0 + ol1);
       }
       flow_eps = std::max(flow_eps, eps);
 
