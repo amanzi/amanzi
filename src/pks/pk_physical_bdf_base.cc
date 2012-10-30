@@ -89,7 +89,6 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
   for (CompositeVector::name_iterator comp=vec->begin();
        comp!=vec->end(); ++comp) {
     double enorm_comp = 0.0;
-    double infnorm_comp = 0.0;
     for (int id=0; id!=vec->size(*comp,false); ++id) {
       if (boost::math::isnan<double>((*dvec)(*comp,id))) {
         std::cout << "Cutting time step due to NaN in correction." << std::endl;
@@ -99,11 +98,16 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
 
       double tmp = abs((*dvec)(*comp,id)) / (atol_+rtol_*abs((*vec)(*comp,id)));
       enorm_comp = std::max<double>(enorm_comp, tmp);
-      infnorm_comp = std::max<double>(infnorm_comp, abs((*dvec)(*comp,id)));
     }
 
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << *comp << " = " << enorm_comp << " (" << infnorm_comp << ")  ";
+      double buf(0.);
+      MPI_Allreduce(&enorm_comp, &buf, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+      double infnorm_comp;
+      dvec->ViewComponent(*comp,false)->NormInf(&infnorm_comp);
+
+      *out_ << *comp << " = " << buf << " (" << infnorm_comp << ")  ";
     }
     enorm_val = std::max<double>(enorm_val, enorm_comp);
   }
