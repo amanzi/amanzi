@@ -77,6 +77,7 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
 };
 
 void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<State>& S) {
+  int ierr(0);
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
 
   Teuchos::RCP<const Epetra_BlockMap> cmap = pres->map("cell", false);
@@ -121,11 +122,11 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
       faces_GID[n] = double_fmap_wghost->GID(faces_LID[n]);
     }
     cf_graph.InsertMyIndices(c, nfaces, faces_LID);
-    int ierr = ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    ierr = ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
     ASSERT(!ierr);
   }
   cf_graph.FillComplete(*double_fmap, *double_cmap);
-  int ierr = ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  ierr = ff_graph.GlobalAssemble();  // Symbolic graph is complete.
   ASSERT(!ierr);
 
   A2f2p_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, cf_graph));
@@ -139,6 +140,7 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
 void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
   StrongMPC::update_precon(t, up, h);
+  int ierr(0);
 
   // d pressure_residual / d T
   // -- update the accumulation derivative
@@ -246,6 +248,8 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
 };
 
 void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
+  int ierr(0);
+
   Teuchos::RCP<const CompositeVector> pres = S_->GetFieldData("pressure");
   Teuchos::RCP<const Epetra_BlockMap> cmap = pres->map("cell", false);
   Teuchos::RCP<const Epetra_BlockMap> fmap = pres->map("face", false);
@@ -338,10 +342,7 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
     }
 
     for (int i=0; i!=nfaces; ++i) {
-      int ierr = P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], NumEntries, faces_GID);
-      std::cout << "Begin submit: " << i << ", " << faces_LID[i]
-                << ", " << faces_GID[i] << " submit: " << NumEntries
-                << " results in " << ierr << std::endl;
+      ierr = P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], NumEntries, faces_GID);
       ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
@@ -350,11 +351,8 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
         Values(1,0) = Schur(i + nfaces,j);
         Values(1,1) = Schur(i+ nfaces,j+ nfaces);
 
-        ierr = P2f2f_->SubmitBlockEntry(Values);
-
-        std::cout << "  Submission of " << i << "(" << faces_GID[i] << "), "
-                  << j << "(" << faces_GID[j]
-                  << ") of total " << NumEntries << " results in " << ierr << std::endl;
+        //ierr = P2f2f_->SubmitBlockEntry(Values);
+        ierr = P2f2f_->SubmitBlockEntry(Values.A(), Values.LDA(), Values.M(), Values.N());
         ASSERT(!ierr);
       }
 
@@ -362,27 +360,27 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
       ASSERT(!ierr);
     }
 
-    A2f2p_->BeginReplaceGlobalValues(cell_GID, NumEntries, faces_GID);
+    ierr = A2f2p_->BeginReplaceGlobalValues(cell_GID, NumEntries, faces_GID);
+    ASSERT(!ierr);
     for (int i=0; i!=nfaces; ++i) {
       Values(0,0) = Apf(0,i);
       Values(0,1) = Apf(0,i + nfaces);
       Values(1,0) = Apf(1,i);
       Values(1,1) = Apf(1,i + nfaces);
-      A2f2p_->SubmitBlockEntry(Values);
+      ierr = A2f2p_->SubmitBlockEntry(Values);
+      ASSERT(!ierr);
     }
-    try {
-      A2f2p_->EndSubmitEntries();
-    }
-    catch (int err){
-      cout<<"An Exception occured. A2f2p_ Exception Nr. "<<err<<endl;
-      exit(0);
-    }
+    ierr = A2f2p_->EndSubmitEntries();
+    ASSERT(!ierr);
 
   }
 
-  A2f2p_->FillComplete(*double_fmap, *double_cmap);
-  int ierr = P2f2f_->GlobalAssemble();
+  ierr = A2f2p_->FillComplete(*double_fmap, *double_cmap);
   ASSERT(!ierr);
+
+  ierr = P2f2f_->GlobalAssemble();
+  ASSERT(!ierr);
+
 
   is_matrix_constructed = true;
 }
@@ -414,7 +412,7 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 
   Epetra_MultiVector test_res(*double_fmap, 1);
 
-  int ierr;
+  int ierr(0);
 
   int ncells = pres_c.MyLength();
   int nfaces = pres_f.MyLength();
@@ -423,16 +421,21 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
    double p_c = pres_c[0][c];
    double t_c = temp_c[0][c];
    val = -(Cell_Couple_Inv_[c](0,0)*p_c + Cell_Couple_Inv_[c](0,1)*t_c);
-   Tc.ReplaceMyValue(c, 0, 0, val);
+   ierr = Tc.ReplaceMyValue(c, 0, 0, val);
+   ASSERT(!ierr);
    val = -(Cell_Couple_Inv_[c](1,0)*p_c + Cell_Couple_Inv_[c](1,1)*t_c);
-   Tc.ReplaceMyValue(c, 1, 0, val);
+   ierr = Tc.ReplaceMyValue(c, 1, 0, val);
+   ASSERT(!ierr);
  }
 
- A2f2p_->Multiply(true, Tc, Tf); // It performs the required parallel communications.
+ ierr = A2f2p_->Multiply(true, Tc, Tf); // It performs the required parallel communications.
+ ASSERT(!ierr);
 
  for (int f=0; f!=nfaces; ++f){
-   Tf.SumIntoMyValue(f, 0, 0, pres_f[0][f]);
-   Tf.SumIntoMyValue(f, 1, 0, temp_f[0][f]);
+   ierr = Tf.SumIntoMyValue(f, 0, 0, pres_f[0][f]);
+   ASSERT(!ierr);
+   ierr = Tf.SumIntoMyValue(f, 1, 0, temp_f[0][f]);
+   ASSERT(!ierr);
  }
 
  if (prec_method_ == TRILINOS_ML) {
@@ -443,9 +446,13 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
    ierr = ifp_prec_->ApplyInverse(Tf, Pf);
 #ifdef HAVE_HYPRE
  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
-   ierr != IfpHypre_Sff_->ApplyInverse(Tf, Pf);
+   ierr = IfpHypre_Sff_->ApplyInverse(Tf, Pf);
 #endif
+ } else {
+   ASSERT(0);
  }
+ ASSERT(!ierr);
+
 
  Epetra_MultiVector& Ppressure_c = *Pu->SubVector("flow")->data()->ViewComponent("cell",false);
  Epetra_MultiVector& Ppressure_f = *Pu->SubVector("flow")->data()->ViewComponent("face",false);
@@ -457,6 +464,8 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
  Teuchos::RCP<CompositeVector> Ptemp_data = Ptemp->data();
 
  ierr = A2f2p_->Multiply(false, Pf, Pc);
+ ASSERT(!ierr);
+
  for (int c=0; c!=ncells; ++c){
    double p_c = -pres_c[0][c];
    double t_c = -temp_c[0][c];
