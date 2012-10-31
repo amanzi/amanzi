@@ -1,4 +1,4 @@
-
+#include "mpi.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "ObservationData.H"
