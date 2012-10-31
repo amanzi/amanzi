@@ -1570,7 +1570,7 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
   }
 
   // Get the set.
-  AmanziMesh::Set_ID_List set;
+  AmanziMesh::Entity_ID_List set;
   try {
     mesh->get_set_entities(sid, kind, ptype, &set);  // this may fail
   } catch (...) {
@@ -1627,7 +1627,7 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
     // In serial, the owned and used sets should be identical.
 
     int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
-    AmanziMesh::Set_ID_List set_own;
+    AmanziMesh::Entity_ID_List set_own;
     mesh->get_set_entities(sid, kind, AmanziMesh::OWNED, &set_own);
 
     // Set sizes had better be the same.
@@ -1638,7 +1638,7 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
     }
 
     // Verify that the two sets are identical.
-    AmanziMesh::Set_ID_List set_use;
+    AmanziMesh::Entity_ID_List set_use;
     mesh->get_set_entities(sid, kind, AmanziMesh::USED, &set_use);
     bool bad_data = false;
     for (int j = 0; j < n; ++j)
@@ -1653,11 +1653,11 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
   } else {
 
     int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
-    AmanziMesh::Set_ID_List set_own;
+    AmanziMesh::Entity_ID_List set_own;
     mesh->get_set_entities(sid, kind, AmanziMesh::OWNED, &set_own);
 
     n = mesh->get_set_size(sid, kind, AmanziMesh::USED);
-    AmanziMesh::Set_ID_List set_use(n);
+    AmanziMesh::Entity_ID_List set_use(n);
     mesh->get_set_entities(sid, kind, AmanziMesh::USED,  &set_use);
 
     // Tag all LIDs in the used map that should belong to the used set;
