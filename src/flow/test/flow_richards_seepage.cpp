@@ -19,7 +19,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "Mesh_MSTK.hh"
 #include "gmv_mesh.hh"
@@ -46,7 +46,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_seepage.xml";
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  parameter_list = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
