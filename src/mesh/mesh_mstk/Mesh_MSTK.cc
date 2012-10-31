@@ -2781,7 +2781,7 @@ void Mesh_MSTK::init_node_map ()
 
 // Global ID of any entity
 
-unsigned int Mesh_MSTK::GID(const Entity_ID lid, const Entity_kind kind) const
+Entity_ID Mesh_MSTK::GID(const Entity_ID lid, const Entity_kind kind) const
 {
   MEntity_ptr ent;
   unsigned int gid;

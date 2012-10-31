@@ -92,7 +92,7 @@ public:
     
   // Global ID of any entity
     
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
     
@@ -285,18 +285,18 @@ public:
   void get_set_entities (const Set_ID setid, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
+			 Entity_ID_List *entids) const; 
 
   void get_set_entities (const Set_Name setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
+			 Entity_ID_List *entids) const; 
 
 
   void get_set_entities (const char *setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
+			 Entity_ID_List *entids) const; 
 
 
 
@@ -344,7 +344,7 @@ private:
   // after the class construction even though the class is instantiated
   // as a constant class
 
-  mutable std::vector<std::vector<Set_ID> > side_sets_;
+  mutable std::vector<std::vector<Entity_ID> > side_sets_;
   mutable std::vector<std::vector<Entity_ID> > element_blocks_;
   mutable std::vector<std::vector<Entity_ID> > node_sets_;
   mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;

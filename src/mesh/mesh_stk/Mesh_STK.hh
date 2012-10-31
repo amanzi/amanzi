@@ -144,7 +144,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                              const Parallel_type ptype) const;
     
   // Global ID of any entity
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
   /// Get entity local id (0-based) given a global id (0-based)
   Entity_ID LID(const Entity_ID& gid, const Entity_kind& kind) const;

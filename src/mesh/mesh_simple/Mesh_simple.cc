@@ -438,7 +438,7 @@ AmanziMesh::Cell_type Mesh_simple::cell_get_type(const AmanziMesh::Entity_ID cel
 }
         
     
-unsigned int Mesh_simple::GID(const AmanziMesh::Entity_ID lid, 
+Entity_ID Mesh_simple::GID(const AmanziMesh::Entity_ID lid, 
 			      const AmanziMesh::Entity_kind kind) const
 {
   return lid;  // Its a serial code
@@ -806,7 +806,7 @@ unsigned int Mesh_simple::get_set_size (const std::string setname,
 void Mesh_simple::get_set_entities (const AmanziMesh::Set_ID set_id, 
 				    const AmanziMesh::Entity_kind kind, 
 				    const AmanziMesh::Parallel_type ptype, 
-				    AmanziMesh::Set_ID_List *setents) const
+				    AmanziMesh::Entity_ID_List *setents) const
 {
   AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
   AmanziGeometry::RegionPtr rgn = gm->FindRegion(set_id);
@@ -817,7 +817,7 @@ void Mesh_simple::get_set_entities (const AmanziMesh::Set_ID set_id,
 void Mesh_simple::get_set_entities (const char *setname, 
 				    const AmanziMesh::Entity_kind kind, 
 				    const AmanziMesh::Parallel_type ptype, 
-				    AmanziMesh::Set_ID_List *setents) const
+				    AmanziMesh::Entity_ID_List *setents) const
 {
   std::string setname1(setname);
   get_set_entities(setname1,kind,ptype,setents);
@@ -826,7 +826,7 @@ void Mesh_simple::get_set_entities (const char *setname,
 void Mesh_simple::get_set_entities (const std::string setname, 
 				    const AmanziMesh::Entity_kind kind, 
 				    const AmanziMesh::Parallel_type ptype, 
-				    AmanziMesh::Set_ID_List *setents) const
+				    AmanziMesh::Entity_ID_List *setents) const
 {
   // we ignore ptype since this is a serial implementation
 
@@ -838,7 +838,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
   switch (kind) {
     case AmanziMesh::FACE:
       {
-      std::vector<Set_ID> ss;
+      Entity_ID_List ss;
 
       // Does this set exist?
 
@@ -1080,7 +1080,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
       }
     case AmanziMesh::CELL:
       {
-      std::vector<Set_ID> cs; // cell set
+      Entity_ID_List cs; // cell set
           
       int ncs = element_blocks_.size();
       bool found = false;
@@ -1145,7 +1145,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
       }
   case AmanziMesh::NODE:
     {
-      std::vector<Set_ID> ns;
+      Entity_ID_List ns;
 
       // Does this set exist?
 

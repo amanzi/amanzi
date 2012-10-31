@@ -133,7 +133,7 @@ class Mesh
   // Global ID of any entity
 
   virtual
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const = 0;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const = 0;
 
 
 

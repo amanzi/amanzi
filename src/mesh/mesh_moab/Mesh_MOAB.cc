@@ -1956,7 +1956,7 @@ void Mesh_MOAB::init_node_map ()
 }
 
 
-unsigned int Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const {
+Entity_ID Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const {
   MBEntityHandle ent;
   Entity_ID gid;
 

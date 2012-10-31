@@ -224,7 +224,7 @@ public:
     
   // Global ID of any entity
     
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
     
