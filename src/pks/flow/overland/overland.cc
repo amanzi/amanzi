@@ -216,6 +216,8 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 
 
 void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
+  bool running_timers(false);
+
   // Create mesh
   if (S->GetMesh()->space_dimension() == 3) {
     // The domain mesh is a 3D volume mesh or a 3D surface mesh -- construct
@@ -228,10 +230,13 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
       Errors::Message message("Overland Flow PK requires surface mesh, which is currently only supported by MSTK.  Make the domain mesh an MSTK mesh.");
       Exceptions::amanzi_throw(message);
     }
-    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
-    Teuchos::TimeMonitor timer(*meshtime);
 
-    // Check that the surface mesh has a subset
+    // -- Start the clock
+    running_timers = true;
+    //    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
+    //    Teuchos::TimeMonitor timer(*meshtime);
+
+    // -- Check that the surface mesh has a subset
     std::vector<std::string> setnames;
     if (plist_.isParameter("surface sideset name")) {
       setnames.push_back(plist_.get<std::string>("surface sideset name"));
@@ -246,7 +251,7 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<AmanziMesh::Mesh> surface_mesh =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
 
-    // push the mesh into state
+    // -- push the mesh into state
     S->RegisterMesh("surface", surface_mesh);
     S->RegisterMesh("surface_3d", surface_mesh_3d);
     mesh_ = surface_mesh;
@@ -263,8 +268,10 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-  Teuchos::TimeMonitor::summarize();
-  Teuchos::TimeMonitor::zeroOutTimers();
+  //  if (running_timers) {
+  //    Teuchos::TimeMonitor::summarize();
+  //    Teuchos::TimeMonitor::zeroOutTimers();
+  //  }
 };
 
 
