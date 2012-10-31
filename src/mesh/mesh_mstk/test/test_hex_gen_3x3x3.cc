@@ -39,7 +39,7 @@ TEST(MSTK_HEX_GEN_3x3x3)
   CHECK_EQUAL(NC,nc);
 
 
-  std::vector<Amanzi::AmanziMesh::Set_ID>  c2f(6);
+  Amanzi::AmanziMesh::Entity_ID_List  c2f(6);
   std::vector<int> c2fdirs(6);
   Epetra_Map cell_map(mesh->cell_epetra_map(false));
   Epetra_Map face_map(mesh->face_epetra_map(false));
