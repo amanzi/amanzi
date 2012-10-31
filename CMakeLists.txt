@@ -39,8 +39,12 @@ endif()
 # --------------------------------------------------------------------------- #
 #  Define the compilers
 # --------------------------------------------------------------------------- #
-#set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
-#set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
+set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
+set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
+set(CMAKE_Fortran_COMPILER ${Amanzi_Fortran_COMPILER})
+set(CMAKE_C_FLAGS ${Amanzi_C_COMPILER_FLAGS})
+set(CMAKE_CXX_FLAGS ${Amanzi_CXX_COMPILER_FLAGS})
+set(CMAKE_Fortran_FLAGS ${Amanzi_Fortran_COMPILER_FLAGS})
 if (${PROFILE_FLAGS})
   set(CMAKE_BUILD_TYPE Release)
   add_definitions("-g -O3")
