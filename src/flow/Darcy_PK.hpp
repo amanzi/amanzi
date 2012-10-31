@@ -94,8 +94,9 @@ class Darcy_PK : public Flow_PK {
   AmanziGeometry::Point& gravity() { return gravity_; }
 
   // extension of STL
-  void set_intersection(const std::vector<int>& v1, 
-                        const std::vector<int>& v2, std::vector<int>* vv);
+  void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 
+                        const std::vector<AmanziMesh::Entity_ID>& v2, 
+                        std::vector<AmanziMesh::Entity_ID>* vv);
 
  private:
   Teuchos::ParameterList dp_list_;
