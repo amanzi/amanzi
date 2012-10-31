@@ -134,7 +134,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                 const Amanzi::AmanziMesh::Parallel_type ptype) const
   { return 0; }
 
-  unsigned int 
+  Amanzi::AmanziMesh::Entity_ID
   GID(const Amanzi::AmanziMesh::Entity_ID lid, 
       const Amanzi::AmanziMesh::Entity_kind kind) const
   { return 0; }
