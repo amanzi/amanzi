@@ -1,0 +1,10 @@
+export CXX=`which mpiCC`
+export CC=`which mpicc`
+export BOOST_ROOT=/usr
+
+AMANZI_INSTALL_DIR=${AMANZI_DIR}
+
+cmake -D \
+    Amanzi_DIR=${AMANZI_INSTALL_DIR}/lib  \
+    ATS_INSTALL_DIR=${ATS_DIR}/build \
+    ..
