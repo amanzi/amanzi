@@ -20,7 +20,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "coordinator.hh"
 
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 namespace Amanzi {
 
