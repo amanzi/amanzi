@@ -35,7 +35,9 @@ public:
       PKPhysicalBDFBase(plist, solution),
       standalone_mode_(false),
       is_source_term_(false),
-      is_coupling_term_(false) {
+      is_coupling_term_(false),
+      coupled_to_surface_via_residual_(false),
+      surface_head_eps_(0.) {
     plist_.set("solution key", "ponded_depth");
   }
 
@@ -116,6 +118,8 @@ private:
   double slope_regularization_;
   bool is_source_term_;
   bool is_coupling_term_;
+  bool coupled_to_surface_via_residual_;
+  double surface_head_eps_;
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;

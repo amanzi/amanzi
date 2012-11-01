@@ -51,7 +51,7 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   // set up the wallclock timer
-  step_walltime_ = Teuchos::TimeMonitor::getNewCounter(name_+std::string(" BDF step timer"));
+  //  step_walltime_ = Teuchos::TimeMonitor::getNewCounter(name_+std::string(" BDF step timer"));
 };
 
 
@@ -74,14 +74,14 @@ bool PKBDFBase::advance(double dt) {
   if (true) { // this is here simply to create a context for timer,
               // which stops the clock when it is destroyed at the
               // closing brace.
-    Teuchos::TimeMonitor timer(*step_walltime_);
+    //    Teuchos::TimeMonitor timer(*step_walltime_);
     fail = time_stepper_->time_step(dt, dt_solver, solution_);
   }
 
   // VerboseObject stuff.
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     Teuchos::OSTab tab = getOSTab();
-    Teuchos::TimeMonitor::summarize();
+    //    Teuchos::TimeMonitor::summarize();
   }
 
   if (!fail) {

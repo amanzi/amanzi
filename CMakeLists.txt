@@ -39,8 +39,12 @@ endif()
 # --------------------------------------------------------------------------- #
 #  Define the compilers
 # --------------------------------------------------------------------------- #
-#set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
-#set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
+set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
+set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
+set(CMAKE_Fortran_COMPILER ${Amanzi_Fortran_COMPILER})
+set(CMAKE_C_FLAGS ${Amanzi_C_COMPILER_FLAGS})
+set(CMAKE_CXX_FLAGS ${Amanzi_CXX_COMPILER_FLAGS})
+set(CMAKE_Fortran_FLAGS ${Amanzi_Fortran_COMPILER_FLAGS})
 if (${PROFILE_FLAGS})
   set(CMAKE_BUILD_TYPE Release)
   add_definitions("-g -O3")
@@ -67,6 +71,7 @@ include_directories(${Amanzi_INCLUDE_DIR})
 # Amanzi_TPL_Teuchos_INCLUDE_DIRS => Include paths for Teuchos AND TPLs that Teuchos depends on
 # Amanzi_TPL_Teuchos_LIBRARY_DIRS => Library paths for Teuchos library and TPL libraries Teuchos calls
 # See AmanziConfigTPL.cmake for the entire list
+
 include_directories(${Amanzi_TPL_Teuchos_INCLUDE_DIRS})
 include_directories(${Amanzi_TPL_Epetra_INCLUDE_DIRS})
 include_directories(${Amanzi_TPL_ASCEMIO_INCLUDE_DIRS})

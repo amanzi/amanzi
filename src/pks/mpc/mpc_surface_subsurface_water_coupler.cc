@@ -51,6 +51,10 @@ void MPCSurfaceSubsurfaceWaterCoupler::fun(double t_old, double t_new,
   // Stuff the residual value into the source term.  This is the mass
   // imbalance on the surface, and is used in the subsurface PK.
   *source->ViewComponent("cell",false) = *overland_g->data()->ViewComponent("cell",false);
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    Teuchos::OSTab tab = getOSTab();
+    source->Print(*out_);
+  }
 
   // Evaluate the Richards residual, which will update the source with the true value.
   Teuchos::RCP<TreeVector> richards_u_new = u_new->SubVector(richards_pk->name());
@@ -60,7 +64,10 @@ void MPCSurfaceSubsurfaceWaterCoupler::fun(double t_old, double t_new,
   // Update the overland residual with this new source term, res = res - Q
   overland_g->data()->ViewComponent("cell",false)->Update(-1.,
           *source->ViewComponent("cell",false), 1.0);
-  source->Print(std::cout);
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    Teuchos::OSTab tab = getOSTab();
+    source->Print(*out_);
+  }
 
 }
 

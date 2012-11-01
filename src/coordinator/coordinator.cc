@@ -20,6 +20,8 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "coordinator.hh"
 
+#define DEBUG_MODE 1
+
 namespace Amanzi {
 
 Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
@@ -197,6 +199,7 @@ void Coordinator::cycle_driver() {
        vis!=visualization_.end(); ++vis) {
     WriteVis((*vis).ptr(), S_.ptr());
   }
+  WriteCheckpoint(checkpoint_.ptr(), S_.ptr());
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -210,7 +213,9 @@ void Coordinator::cycle_driver() {
   pk_->set_states(S_, S_inter_, S_next_); // note this does not allow subcycling
 
   // iterate process kernels
+#if !DEBUG_MODE
   try {
+#endif
     double dt;
     bool fail = false;
     while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
@@ -290,7 +295,11 @@ void Coordinator::cycle_driver() {
       }
     } // while not finished
 
-  } catch (Exceptions::Amanzi_exception &e) {
+
+#if !DEBUG_MODE
+  }
+
+  catch (Exceptions::Amanzi_exception &e) {
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("last_good_checkpoint");
@@ -299,6 +308,7 @@ void Coordinator::cycle_driver() {
     WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
     throw e;
   }
+#endif
 
   // force visualization and checkpoint at the end of simulation
   // this needs to be fixed -- should not force, but ask if we want to checkpoint/vis at end

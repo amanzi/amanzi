@@ -36,7 +36,7 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
   int nc = u->size("cell") - 1;
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "----------------------------------------------------------------" << std::endl;
     *out_ << "Richards Residual calculation: T0 = " << t_old << " T1 = " << t_new << " H = " << h << std::endl;
     *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
@@ -61,7 +61,7 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
 
     *out_ << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
     *out_ << "  res1 (after diffusion): " << (*res)("cell",0,nc) << " " << (*res)("face",0,500) << std::endl;
@@ -70,7 +70,7 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   // accumulation term
   AddAccumulation_(res);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0)
           << " " << (*res)("face",0,3) << std::endl;
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
@@ -99,7 +99,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 
   // Dump residual
   int nc = u->data()->size("cell") - 1;
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Precon application:" << std::endl;
     *out_ << "  p0: " << (*u->data())("cell",0,0) << " "
           << (*u->data())("face",0,3) << std::endl;
@@ -128,7 +128,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   preconditioner_->ApplyInverse(*u->data(), Pu->data());
 
   // Dump correction
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
 
   *out_ << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
         << (*Pu->data())("face",0,3) << std::endl;
@@ -182,7 +182,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
   }
 
@@ -291,11 +291,19 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   }
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    double infnorm_c, infnorm_f;
+    double infnorm_c(0.), infnorm_f(0.);
     res.ViewComponent("cell",false)->NormInf(&infnorm_c);
     res.ViewComponent("face",false)->NormInf(&infnorm_f);
-    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
-    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
+
+    double buf_c(0.), buf_f(0.);
+    MPI_Allreduce(&enorm_cell, &buf_c, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&enorm_face, &buf_f, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+    Teuchos::OSTab tab = getOSTab();
+    *out_ << "ENorm (Infnorm) of: " << name_ << ": "
+          << "cell = " << buf_c << " (" << infnorm_c << ")  "
+          << "face = " << buf_f << " (" << infnorm_f << ")  " << std::endl;
+
   }
 
   double enorm_val(std::max<double>(enorm_face, enorm_cell));

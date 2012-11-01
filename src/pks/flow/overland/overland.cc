@@ -72,6 +72,13 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
 
+  // coupling to subsurface
+  coupled_to_surface_via_residual_ = plist_.get<bool>("coupled to surface via residual", false);
+
+  // Admissibility allows negative heights of magnitude < surface_head_eps for
+  // non-monotonic methods.
+  surface_head_eps_ = plist_.get<double>("surface head epsilon", 0.);
+
   // rel perm upwinding
   S->RequireField("upwind_overland_conductivity", name_)
                 ->SetMesh(S->GetMesh("surface"))->SetGhosted()
@@ -96,7 +103,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
 
-  steptime_ = Teuchos::TimeMonitor::getNewCounter("overland flow advance time");
+  //  steptime_ = Teuchos::TimeMonitor::getNewCounter("overland flow advance time");
 
 };
 
@@ -210,6 +217,8 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 
 
 void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
+  bool running_timers(false);
+
   // Create mesh
   if (S->GetMesh()->space_dimension() == 3) {
     // The domain mesh is a 3D volume mesh or a 3D surface mesh -- construct
@@ -222,10 +231,13 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
       Errors::Message message("Overland Flow PK requires surface mesh, which is currently only supported by MSTK.  Make the domain mesh an MSTK mesh.");
       Exceptions::amanzi_throw(message);
     }
-    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
-    Teuchos::TimeMonitor timer(*meshtime);
 
-    // Check that the surface mesh has a subset
+    // -- Start the clock
+    running_timers = true;
+    //    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
+    //    Teuchos::TimeMonitor timer(*meshtime);
+
+    // -- Check that the surface mesh has a subset
     std::vector<std::string> setnames;
     if (plist_.isParameter("surface sideset name")) {
       setnames.push_back(plist_.get<std::string>("surface sideset name"));
@@ -240,7 +252,7 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<AmanziMesh::Mesh> surface_mesh =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
 
-    // push the mesh into state
+    // -- push the mesh into state
     S->RegisterMesh("surface", surface_mesh);
     S->RegisterMesh("surface_3d", surface_mesh_3d);
     mesh_ = surface_mesh;
@@ -257,8 +269,10 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-  Teuchos::TimeMonitor::summarize();
-  Teuchos::TimeMonitor::zeroOutTimers();
+  //  if (running_timers) {
+  //    Teuchos::TimeMonitor::summarize();
+  //    Teuchos::TimeMonitor::zeroOutTimers();
+  //  }
 };
 
 
@@ -481,15 +495,21 @@ bool OverlandFlow::is_admissible(Teuchos::RCP<const TreeVector> up) {
   // check cells
   double minh(0.);
   int ierr = hcell->MinValue(&minh);
-  if (ierr || minh < 0.) {
+  if (ierr || minh < -surface_head_eps_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "Inadmissible overland ponded depth: " << minh << std::endl;
+    }
     return false;
   }
 
   // and faces
-  ierr = hface->MinValue(&minh);
-  if (ierr || minh < 0.) {
-    return false;
-  }
+  //  ierr = hface->MinValue(&minh);
+  //  if (ierr || minh < -surface_head_eps_) {
+  //    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  //      *out_ << "Inadmissible overland ponded depth constraint: " << minh << std::endl;
+  //    }
+  //    return false;
+  //  }
 
   return true;
 }

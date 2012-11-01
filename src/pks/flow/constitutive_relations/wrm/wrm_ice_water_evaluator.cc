@@ -80,12 +80,12 @@ void WRMIceWaterEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     std::string name = region->first;
     int ncells = results[0]->mesh()->get_set_size(name,
             AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<int> cells(ncells);
+    AmanziMesh::Entity_ID_List cells(ncells);
     results[0]->mesh()->get_set_entities(name,
             AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
-    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
       double pc = pc_->CapillaryPressure(temp[0][*c], dens[0][*c]);
       sat[0][*c] = region->second->saturation(pc);
     }
@@ -107,12 +107,12 @@ void WRMIceWaterEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
       std::string name = region->first;
       int ncells = results[0]->mesh()->get_set_size(name,
               AmanziMesh::CELL, AmanziMesh::OWNED);
-      std::vector<int> cells(ncells);
+      AmanziMesh::Entity_ID_List cells(ncells);
       results[0]->mesh()->get_set_entities(name,
               AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
       // use the wrm to evaluate saturation on each cell in the region
-      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
         double pc = pc_->CapillaryPressure(temp[0][*c], dens[0][*c]);
         dsat[0][*c] = region->second->d_saturation(pc)
             * pc_->DCapillaryPressureDT(temp[0][*c], dens[0][*c]);
@@ -124,12 +124,12 @@ void WRMIceWaterEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
       std::string name = region->first;
       int ncells = results[0]->mesh()->get_set_size(name,
               AmanziMesh::CELL, AmanziMesh::OWNED);
-      std::vector<int> cells(ncells);
+      AmanziMesh::Entity_ID_List cells(ncells);
       results[0]->mesh()->get_set_entities(name,
               AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
       // use the wrm to evaluate saturation on each cell in the region
-      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
         double pc = pc_->CapillaryPressure(temp[0][*c], dens[0][*c]);
         dsat[0][*c] = region->second->d_saturation(pc)
             * pc_->DCapillaryPressureDRho(temp[0][*c], dens[0][*c]);

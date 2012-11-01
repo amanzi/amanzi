@@ -38,12 +38,29 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   coupled_pc_ = plist_.sublist("Coupled PC");
 
   std::string prec_name = coupled_pc_.get<std::string>("preconditioner", "ILU");
-  if (prec_name == "ML")
-        prec_method_ = TRILINOS_ML;
-  else if (prec_name == "ILU")
-          prec_method_ = TRILINOS_ILU;
-  else if (prec_name == "ILU_BLOCK")
-          prec_method_ = TRILINOS_BLOCK_ILU;
+  if (prec_name == "ML") {
+    prec_method_ = TRILINOS_ML;
+  } else if (prec_name == "ILU") {
+    prec_method_ = TRILINOS_ILU;
+  } else if (prec_name == "Block ILU") {
+    prec_method_ = TRILINOS_BLOCK_ILU;
+#ifdef HAVE_HYPRE
+  } else if (prec_name == "HYPRE AMG") {
+    prec_method_ = HYPRE_AMG;
+  } else if (prec_name == "HYPRE Euclid") {
+    prec_method_ = HYPRE_EUCLID;
+  } else if (prec_name == "HYPRE ParaSails") {
+    prec_method_ = HYPRE_EUCLID;
+#endif
+  } else {
+#ifdef HAVE_HYPRE
+    Errors::Message msg("Matrix_MFD: The specified preconditioner "+prec_name+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
+#else
+    Errors::Message msg("Matrix_MFD: The specified preconditioner "+prec_name+" is not supported, we only support ML, and ILU");
+#endif
+    Exceptions::amanzi_throw(msg);
+  }
+
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
@@ -53,21 +70,22 @@ void MPCCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
   D_pT_ = Teuchos::rcp(new Epetra_MultiVector(*pres->ViewComponent("cell", false)));
   D_Tp_ = Teuchos::rcp(new Epetra_MultiVector(*temp->ViewComponent("cell", false)));
 
-  SymbolicAssembleGlobalMatrices_(S);
-
   flow_pk = Teuchos::rcp_dynamic_cast<Amanzi::Flow::Richards>(sub_pks_[0]);
   energy_pk = Teuchos::rcp_dynamic_cast<Amanzi::Energy::TwoPhase>(sub_pks_[1]);
+
+  SymbolicAssembleGlobalMatrices_(S);
 };
 
 void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<State>& S) {
+  int ierr(0);
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
 
   Teuchos::RCP<const Epetra_BlockMap> cmap = pres->map("cell", false);
   Teuchos::RCP<const Epetra_BlockMap> fmap = pres->map("face", false);
   fmap_wghost = pres->map("face", true);
 
-  int num_global = (*fmap).NumGlobalPoints(); std::cout<<"num_global "<<num_global<<std::endl;
-  int nummypoint = (*fmap).NumMyPoints(); std::cout<<"num_global "<<nummypoint<<std::endl;
+  int num_global = (*fmap).NumGlobalPoints(); //std::cout<<"num_global "<<num_global<<std::endl;
+  int nummypoint = (*fmap).NumMyPoints(); //std::cout<<"num_mine "<<nummypoint<<std::endl;
 
   double_fmap = Teuchos::rcp(new Epetra_BlockMap((*fmap).NumGlobalPoints(),
           (*fmap).NumMyPoints(), (*fmap).MyGlobalElements(), 2,
@@ -86,6 +104,7 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
   int avg_entries_row = 6;
   Epetra_CrsGraph cf_graph(Copy, *double_cmap, *double_fmap_wghost, avg_entries_row, false);
   Epetra_FECrsGraph ff_graph(Copy, *double_fmap, 2*avg_entries_row - 1, false);
+  //  Epetra_FECrsGraph ff_graph(Copy, *double_fmap_wghost, 2*avg_entries_row - 1, false);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -103,14 +122,17 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
       faces_GID[n] = double_fmap_wghost->GID(faces_LID[n]);
     }
     cf_graph.InsertMyIndices(c, nfaces, faces_LID);
-    ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    ierr = ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    ASSERT(!ierr);
   }
   cf_graph.FillComplete(*double_fmap, *double_cmap);
-  ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  ierr = ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  ASSERT(!ierr);
 
   A2f2p_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, cf_graph));
-  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, ff_graph));
-  P2f2f_->GlobalAssemble();
+  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, ff_graph, false));
+  ierr = P2f2f_->GlobalAssemble();
+  ASSERT(!ierr);
 
   InitPreconditioner_(coupled_pc_);
 }
@@ -118,6 +140,7 @@ void MPCCoupledFlowEnergy::SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<St
 void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
   StrongMPC::update_precon(t, up, h);
+  int ierr(0);
 
   // d pressure_residual / d T
   // -- update the accumulation derivative
@@ -173,16 +196,65 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
     ifp_prec_->SetParameters(ifp_plist_);
     ifp_prec_->Initialize();
     ifp_prec_->Compute();
-  }
+#ifdef HAVE_HYPRE
+  } else if (prec_method_ == HYPRE_AMG) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*P2f2f_));
+    Teuchos::RCP<FunctionParameter> functs[8];
+    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
+    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
+    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
+    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_)); 
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_)); 
+    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
+    
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", BoomerAMG);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 8);
+    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs); 
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();
+  } else if (prec_method_ == HYPRE_EUCLID) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*P2f2f_));
 
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", Euclid);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 0);
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();    
+  } else if (prec_method_ == HYPRE_PARASAILS) {
+    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*P2f2f_));
+
+    Teuchos::ParameterList hypre_list;
+    hypre_list.set("Preconditioner", ParaSails);
+    hypre_list.set("SolveOrPrecondition", Preconditioner);
+    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("NumFunctions", 0);
+    
+    IfpHypre_Sff_->SetParameters(hypre_list);
+    IfpHypre_Sff_->Initialize();
+    IfpHypre_Sff_->Compute();    
+#endif
+  }
 };
 
 void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
+  int ierr(0);
+
   Teuchos::RCP<const CompositeVector> pres = S_->GetFieldData("pressure");
   Teuchos::RCP<const Epetra_BlockMap> cmap = pres->map("cell", false);
   Teuchos::RCP<const Epetra_BlockMap> fmap = pres->map("face", false);
 
-  int ncells = pres->size("cell");
+  int ncells = pres->size("cell",false);
   int cell_GID ; 
 
   AmanziMesh::Entity_ID_List faces;
@@ -270,7 +342,8 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
     }
 
     for (int i=0; i!=nfaces; ++i) {
-      P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], NumEntries, faces_GID);
+      ierr = P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], NumEntries, faces_GID);
+      ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
         Values(0,0) = Schur(i,j);
@@ -278,37 +351,36 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
         Values(1,0) = Schur(i + nfaces,j);
         Values(1,1) = Schur(i+ nfaces,j+ nfaces);
 
-        P2f2f_->SubmitBlockEntry(Values);
+        //ierr = P2f2f_->SubmitBlockEntry(Values);
+        ierr = P2f2f_->SubmitBlockEntry(Values.A(), Values.LDA(), Values.M(), Values.N());
+        ASSERT(!ierr);
       }
-      try {
-        P2f2f_->EndSubmitEntries();
-      }
-      catch (int err){
-        cout<<"An Exception occured. P2f2f_ Exception Nr. "<<err<<endl;
-        exit(0);
-      }
+
+      ierr = P2f2f_->EndSubmitEntries();
+      ASSERT(!ierr);
     }
 
-    A2f2p_->BeginReplaceGlobalValues(cell_GID, NumEntries, faces_GID);
+    ierr = A2f2p_->BeginReplaceGlobalValues(cell_GID, NumEntries, faces_GID);
+    ASSERT(!ierr);
     for (int i=0; i!=nfaces; ++i) {
       Values(0,0) = Apf(0,i);
       Values(0,1) = Apf(0,i + nfaces);
       Values(1,0) = Apf(1,i);
       Values(1,1) = Apf(1,i + nfaces);
-      A2f2p_->SubmitBlockEntry(Values);
+      ierr = A2f2p_->SubmitBlockEntry(Values);
+      ASSERT(!ierr);
     }
-    try {
-      A2f2p_->EndSubmitEntries();
-    }
-    catch (int err){
-      cout<<"An Exception occured. A2f2p_ Exception Nr. "<<err<<endl;
-      exit(0);
-    }
+    ierr = A2f2p_->EndSubmitEntries();
+    ASSERT(!ierr);
 
   }
 
-  A2f2p_->FillComplete(*double_fmap, *double_cmap);
-  P2f2f_->GlobalAssemble();
+  ierr = A2f2p_->FillComplete(*double_fmap, *double_cmap);
+  ASSERT(!ierr);
+
+  ierr = P2f2f_->GlobalAssemble();
+  ASSERT(!ierr);
+
 
   is_matrix_constructed = true;
 }
@@ -340,7 +412,7 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 
   Epetra_MultiVector test_res(*double_fmap, 1);
 
-  int ierr;
+  int ierr(0);
 
   int ncells = pres_c.MyLength();
   int nfaces = pres_f.MyLength();
@@ -349,16 +421,21 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
    double p_c = pres_c[0][c];
    double t_c = temp_c[0][c];
    val = -(Cell_Couple_Inv_[c](0,0)*p_c + Cell_Couple_Inv_[c](0,1)*t_c);
-   Tc.ReplaceMyValue(c, 0, 0, val);
+   ierr = Tc.ReplaceMyValue(c, 0, 0, val);
+   ASSERT(!ierr);
    val = -(Cell_Couple_Inv_[c](1,0)*p_c + Cell_Couple_Inv_[c](1,1)*t_c);
-   Tc.ReplaceMyValue(c, 1, 0, val);
+   ierr = Tc.ReplaceMyValue(c, 1, 0, val);
+   ASSERT(!ierr);
  }
 
- A2f2p_->Multiply(true, Tc, Tf); // It performs the required parallel communications.
+ ierr = A2f2p_->Multiply(true, Tc, Tf); // It performs the required parallel communications.
+ ASSERT(!ierr);
 
  for (int f=0; f!=nfaces; ++f){
-   Tf.SumIntoMyValue(f, 0, 0, pres_f[0][f]);
-   Tf.SumIntoMyValue(f, 1, 0, temp_f[0][f]);
+   ierr = Tf.SumIntoMyValue(f, 0, 0, pres_f[0][f]);
+   ASSERT(!ierr);
+   ierr = Tf.SumIntoMyValue(f, 1, 0, temp_f[0][f]);
+   ASSERT(!ierr);
  }
 
  if (prec_method_ == TRILINOS_ML) {
@@ -367,7 +444,15 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
    ierr = ilu_prec_->ApplyInverse(Tf, Pf);
  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
    ierr = ifp_prec_->ApplyInverse(Tf, Pf);
+#ifdef HAVE_HYPRE
+ } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
+   ierr = IfpHypre_Sff_->ApplyInverse(Tf, Pf);
+#endif
+ } else {
+   ASSERT(0);
  }
+ ASSERT(!ierr);
+
 
  Epetra_MultiVector& Ppressure_c = *Pu->SubVector("flow")->data()->ViewComponent("cell",false);
  Epetra_MultiVector& Ppressure_f = *Pu->SubVector("flow")->data()->ViewComponent("face",false);
@@ -379,6 +464,8 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
  Teuchos::RCP<CompositeVector> Ptemp_data = Ptemp->data();
 
  ierr = A2f2p_->Multiply(false, Pf, Pc);
+ ASSERT(!ierr);
+
  for (int c=0; c!=ncells; ++c){
    double p_c = -pres_c[0][c];
    double t_c = -temp_c[0][c];
