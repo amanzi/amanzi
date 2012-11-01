@@ -157,9 +157,7 @@ if ( Trilinos_FOUND )
       message(STATUS "Located Trilinos package ${tri_package}: ${${tri_package}_DIR}")
       # Update the <PACKAGE>_INCLUDE_DIRS variable 
       foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
-	  if ( "${_inc}" )
-	      list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
-	  endif()
+	list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
       endforeach()
 
     endforeach()
