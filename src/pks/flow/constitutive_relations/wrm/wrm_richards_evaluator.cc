@@ -71,12 +71,12 @@ void WRMRichardsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       std::string name = region->first;
       int ncells = results[0]->mesh()->get_set_size(name,
               AmanziMesh::CELL, AmanziMesh::OWNED);
-      std::vector<int> cells(ncells);
+      AmanziMesh::Entity_ID_List cells(ncells);
       results[0]->mesh()->get_set_entities(name,
               AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
       // use the wrm to evaluate saturation on each cell in the region
-      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
         double s = region->second->saturation(p_atm - pres[0][*c]);
         sat[0][*c] = s;
         sat_g[0][*c] = 1.0 - s;
@@ -88,12 +88,12 @@ void WRMRichardsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       std::string name = region->first;
       int ncells = results[0]->mesh()->get_set_size(name,
               AmanziMesh::CELL, AmanziMesh::OWNED);
-      std::vector<int> cells(ncells);
+      AmanziMesh::Entity_ID_List cells(ncells);
       results[0]->mesh()->get_set_entities(name,
               AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
       // use the wrm to evaluate saturation on each cell in the region
-      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
         sat[0][*c] = region->second->saturation(p_atm - pres[0][*c]);
       }
     }
@@ -118,12 +118,12 @@ void WRMRichardsEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
       std::string name = region->first;
       int ncells = results[0]->mesh()->get_set_size(name,
               AmanziMesh::CELL, AmanziMesh::OWNED);
-      std::vector<int> cells(ncells);
+      AmanziMesh::Entity_ID_List cells(ncells);
       results[0]->mesh()->get_set_entities(name,
               AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
       // use the wrm to evaluate saturation on each cell in the region
-      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
         double ds = region->second->d_saturation(p_atm - pres[0][*c]);
         dsat[0][*c] = -ds;
         dsat_g[0][*c] = ds;
@@ -135,12 +135,12 @@ void WRMRichardsEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
       std::string name = region->first;
       int ncells = results[0]->mesh()->get_set_size(name,
               AmanziMesh::CELL, AmanziMesh::OWNED);
-      std::vector<int> cells(ncells);
+      AmanziMesh::Entity_ID_List cells(ncells);
       results[0]->mesh()->get_set_entities(name,
               AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
       // use the wrm to evaluate saturation on each cell in the region
-      for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
         double ds = region->second->d_saturation(p_atm - pres[0][*c]);
         dsat[0][*c] = -ds;
       }

@@ -65,12 +65,12 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     std::string name = region->first;
     int ncells = sat->mesh()->get_set_size(name,
             AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<int> cells(ncells);
+    AmanziMesh::Entity_ID_List cells(ncells);
     sat->mesh()->get_set_entities(name,
             AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     // use the wrm to evaluate saturation on each cell in the region
-    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
       double pc = region->second->capillaryPressure((*sat)("cell", *c));
       (*result)("cell", *c) = region->second->k_relative(pc);
     }

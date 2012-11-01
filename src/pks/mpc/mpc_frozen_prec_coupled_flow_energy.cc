@@ -110,10 +110,10 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_temp(double h, Teuchos::RCP<Tr
        region!=wrms->end(); ++region) {
     std::string name = region->first;
     int ncells = pres->mesh()->get_set_size(name, AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<int> cells(ncells);
+    AmanziMesh::Entity_ID_List cells(ncells);
     pres->mesh()->get_set_entities(name, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
-    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
       double p = (*pres)("cell",*c);
       double A_minus_one = (1.0/(*one_on_A)("cell",*c) - 1.0);
 

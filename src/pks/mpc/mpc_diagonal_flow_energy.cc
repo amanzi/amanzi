@@ -119,10 +119,10 @@ bool MPCDiagonalFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVector> 
        region!=wrms->end(); ++region) {
     std::string name = region->first;
     int ncells = pres->mesh()->get_set_size(name, AmanziMesh::CELL, AmanziMesh::OWNED);
-    std::vector<int> cells(ncells);
+    AmanziMesh::Entity_ID_List cells(ncells);
     pres->mesh()->get_set_entities(name, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
-    for (std::vector<int>::iterator c=cells.begin(); c!=cells.end(); ++c) {
+    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
       if ((*pres)("cell",*c) < *p_atm) {
         double A_minus_one = (1.0/(*one_on_A)("cell",*c) - 1.0);
         if (*c==0) std::cout << "   A-1(0) = " << A_minus_one << std::endl;
