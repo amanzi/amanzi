@@ -214,15 +214,16 @@ bool TwoPhase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   Teuchos::RCP<const CompositeVector> temp = up->data();
 
   const Epetra_MultiVector& temp_v = *temp->ViewComponent("cell",false);
-  int ncells = temp->size("cell",false);
-  for (int c=0; c!=ncells; ++c) {
-    if ((temp_v[0][c] > 300.0) || (temp_v[0][c] < 200.0)) {
-      if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
-        Teuchos::OSTab tab = getOSTab();
-        *out_ << "Energy PK is inadmissible, as it is not within bounds of constitutive models: T = " << temp_v[0][c] << std::endl;
-      }
-      return false;
+  double minT(0.), maxT(0.);
+  int ierr = temp_v.MinValue(&minT);
+  ierr |= temp_v.MaxValue(&maxT);
+
+  if (ierr || minT < 200.0 || maxT > 300.0) {
+    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+      Teuchos::OSTab tab = getOSTab();
+      *out_ << "Energy PK is inadmissible, as it is not within bounds of constitutive models: min(T) = " << minT << ", max(T) = " << maxT << std::endl;
     }
+    return false;
   }
   return true;
 }
