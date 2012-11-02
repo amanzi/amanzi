@@ -124,7 +124,9 @@ if ! mkdir "$tmpdir"; then
     exit 3
 fi
 
-# for nem_spread
+# for nem_slice
+# The "INPUT EXODUSII FILE" line does not seem to be doing much 
+# We will leave it in there but specify the input file on the command line 
 
 outpath="$thetmpdir/start"
 
@@ -137,7 +139,7 @@ DECOMPOSITION METHOD            = INERTIAL,KL, NUM_SECTS=1, CNCTD_DOM
 OUTPUT VISUALIZATION FILE       = false
 EOF
 
-"$nem_slice" -a nem_slice.inp 
+"$nem_slice" -a nem_slice.inp $infile
 
 
 cat > nem_spread.inp <<EOF
