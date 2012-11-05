@@ -35,7 +35,7 @@ public:
  private:
   void InitializeFromPlist_();
 
-  Teuchos::ParameterList plist_;
+  Teuchos::ParameterList& plist_;
 
   double m_;  // van Genuchten parameters: m, n, alpha
   double n_;

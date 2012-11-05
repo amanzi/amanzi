@@ -360,6 +360,8 @@ void Coordinator::cycle_driver() {
   checkpoint_->set_filebasename("final_checkpoint");
   WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
 
+  delete &*tsm;  // not sure if this is the correct way to dispose of this pointer (valgrind likes it)
+
   // dump observations
   //  output_observations_.print(std::cout);
 } // cycle driver
