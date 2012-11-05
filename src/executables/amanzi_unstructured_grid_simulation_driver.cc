@@ -212,6 +212,8 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
 
   mesh.reset();
   delete comm;
+  delete simdomain_ptr;
+  delete geom_model_ptr;
   return Amanzi::Simulator::SUCCESS;
 }
 
