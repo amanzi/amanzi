@@ -18,6 +18,10 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "global_verbosity.hh"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+#include "time_step_manager.hh"
+#include "visualization.hh"
+#include "checkpoint.hh"
+
 #include "coordinator.hh"
 
 #define DEBUG_MODE 0
@@ -29,7 +33,8 @@ Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
                          Epetra_MpiComm* comm ) :
   parameter_list_(parameter_list),
   mesh_(mesh),
-  comm_(comm) {
+  comm_(comm),
+  restart_(false) {
   coordinator_init();
 
   setLinePrefix("Coordinator");
@@ -38,6 +43,9 @@ Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
   // get the fancy output ??
   verbosity_ = getVerbLevel();
   out_ = getOStream();
+
+  // the time step manager coordinates all non-physical timesteps
+  tsm_ = Teuchos::rcp(new TimeStepManager());
 };
 
 void Coordinator::coordinator_init() {
@@ -86,6 +94,19 @@ void Coordinator::initialize() {
 
   // commit the initial conditions.
   pk_->commit_state(0., S_);
+
+  // Check if this is actually a restart, and load the checkpoint file.  Note
+  // that if this is so, we can probably ignore some of the above initialize()
+  // calls and the commit_state() call, but I'm afraid to try that and break
+  // all the PKs.
+  // Currently not a true restart -- for a true restart this should also get:
+  // -- timestep size dt
+  // -- BDF history to allow projection to continue correctly.
+  if (restart_) {
+    ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
+    t0_ = S_->time();
+    cycle0_ = S_->cycle();
+  }
 
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
@@ -158,7 +179,40 @@ void Coordinator::read_parameter_list() {
 
   max_dt_ = coordinator_plist_.get<double>("max time step size", 1.0e99);
   min_dt_ = coordinator_plist_.get<double>("min time step size", 1.0e-12);
-  end_cycle_ = coordinator_plist_.get<int>("end cycle",-1);
+  cycle0_ = coordinator_plist_.get<int>("start cycle",0);
+  cycle1_ = coordinator_plist_.get<int>("end cycle",-1);
+
+  // restart control
+  restart_ = coordinator_plist_.isParameter("restart from checkpoint file");
+  if (restart_) {
+    restart_filename_ = coordinator_plist_.get<std::string>("restart from checkpoint file");
+    // likely should ensure the file exists here? --etc
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+// acquire the chosen timestep size
+// -----------------------------------------------------------------------------
+double Coordinator::get_dt() {
+  // get the physical step size
+  double dt = pk_->get_dt();
+
+  // check if the step size has gotten too small
+  if (dt < min_dt_) {
+    Errors::Message message("Coordinator: error, timestep too small");
+    Exceptions::amanzi_throw(message);
+  }
+
+  // cap the max step size
+  if (dt > max_dt_) {
+    dt = max_dt_;
+  }
+
+  // ask the step manager if this step is ok
+  dt = tsm_->TimeStep(S_->time(), dt);
+  return dt;
 }
 
 
@@ -170,36 +224,22 @@ void Coordinator::cycle_driver() {
   // problem, this should include advancing flow to steady state (which should
   // be done by flow_pk->initialize_state(S)
   S_->set_time(t0_);
-  S_->set_cycle(0);
+  S_->set_cycle(cycle0_);
   initialize();
   S_->set_time(t0_); // in case steady state solve changed this
-  S_->set_cycle(0);
+  S_->set_cycle(cycle0_);
 
-  // the time step manager coordinates all non-physical timesteps
-  Teuchos::Ptr<TimeStepManager> tsm = Teuchos::ptr(new TimeStepManager());
-
-  // register times with the tsm
+  // register times with the tsm_
   // -- register visualization times
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
-    (*vis)->RegisterWithTimeStepManager(tsm);
+    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
   }
 
   // -- register observation times
   //if (observations_) observations_->register_with_time_step_manager(TSM);
   // -- register the final time
-  tsm->RegisterTimeEvent(t1_);
-
-  // make observations
-  //  observations_->MakeObservations(*S_);
-
-  // write visualization if requested at IC
-  pk_->calculate_diagnostics(S_);
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    WriteVis((*vis).ptr(), S_.ptr());
-  }
-  WriteCheckpoint(checkpoint_.ptr(), S_.ptr());
+  tsm_->RegisterTimeEvent(t1_);
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -212,30 +252,26 @@ void Coordinator::cycle_driver() {
   //Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
   pk_->set_states(S_, S_inter_, S_next_); // note this does not allow subcycling
 
+  // get the intial timestep -- note, this would have to be fixed for a true restart
+  double dt = get_dt();
+
+  // make observations
+  //  observations_->MakeObservations(*S_);
+
+  // write visualization if requested at IC
+  pk_->calculate_diagnostics(S_);
+  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+       vis!=visualization_.end(); ++vis) {
+    WriteVis((*vis).ptr(), S_.ptr());
+  }
+  WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
+
   // iterate process kernels
 #if !DEBUG_MODE
   try {
 #endif
-    double dt;
     bool fail = false;
-    while ((S_->time() < t1_) && ((end_cycle_ == -1) || (S_->cycle() <= end_cycle_))) {
-      // get the physical step size
-      dt = pk_->get_dt();
-
-      // check if the step size has gotten too small
-      if (dt < min_dt_) {
-        Errors::Message message("Coordinator: error, timestep too small");
-        Exceptions::amanzi_throw(message);
-      }
-
-      // cap the max step size
-      if (dt > max_dt_) {
-        dt = max_dt_;
-      }
-
-      // ask the step manager if this step is ok
-      dt = tsm->TimeStep(S_->time(), dt);
-
+    while ((S_->time() < t1_) && ((cycle1_ == -1) || (S_->cycle() <= cycle1_))) {
       if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
         Teuchos::OSTab tab = getOSTab();
         *out_ << "======================================================================"
@@ -250,8 +286,9 @@ void Coordinator::cycle_driver() {
       S_next_->advance_time(dt);
       fail = pk_->advance(dt);
 
-      // advance the iteration count
+      // advance the iteration count and timestep size
       S_next_->advance_cycle();
+      dt = get_dt();
 
       if (!fail) {
         // make observations
@@ -278,7 +315,7 @@ void Coordinator::cycle_driver() {
         }
 
         if (checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-          WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
+          WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
         }
 
         // write restart dump if requested
@@ -303,9 +340,9 @@ void Coordinator::cycle_driver() {
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("last_good_checkpoint");
-    WriteCheckpoint(checkpoint_.ptr(), S_.ptr());
+    WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
     checkpoint_->set_filebasename("error_checkpoint");
-    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
+    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
     throw e;
   }
 #endif
@@ -321,7 +358,7 @@ void Coordinator::cycle_driver() {
   }
 
   checkpoint_->set_filebasename("final_checkpoint");
-  WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr());
+  WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
 
   // dump observations
   //  output_observations_.print(std::cout);
