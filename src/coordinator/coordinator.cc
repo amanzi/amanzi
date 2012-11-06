@@ -86,6 +86,22 @@ void Coordinator::initialize() {
   // Set up the state, creating all data structures.
   S_->Setup();
 
+  // Restart from checkpoint, part 1.
+
+  // This is crufty -- blame the BDF1 time integrator, whose solution history
+  // needs to be updated to accept the new time as its initial time.
+
+  // Note that if this is so, we can probably ignore some of the above
+  // initialize() calls and the commit_state() call, but I'm afraid to try
+  // that and break all the PKs.
+  // Currently not a true restart -- for a true restart this should also get:
+  // -- timestep size dt
+  // -- BDF history to allow projection to continue correctly.
+  if (restart_) {
+    t0_ = ReadCheckpointInitialTime(comm_, restart_filename_);
+    S_->set_time(t0_);
+  }
+
   // Initialize the process kernels (initializes all independent variables)
   pk_->initialize(S_.ptr());
 
@@ -95,13 +111,7 @@ void Coordinator::initialize() {
   // commit the initial conditions.
   pk_->commit_state(0., S_);
 
-  // Check if this is actually a restart, and load the checkpoint file.  Note
-  // that if this is so, we can probably ignore some of the above initialize()
-  // calls and the commit_state() call, but I'm afraid to try that and break
-  // all the PKs.
-  // Currently not a true restart -- for a true restart this should also get:
-  // -- timestep size dt
-  // -- BDF history to allow projection to continue correctly.
+  // Restart from checkpoint, part 2.
   if (restart_) {
     ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
     t0_ = S_->time();
@@ -211,7 +221,7 @@ double Coordinator::get_dt() {
   }
 
   // ask the step manager if this step is ok
-  dt = tsm_->TimeStep(S_->time(), dt);
+  dt = tsm_->TimeStep(S_next_->time(), dt);
   return dt;
 }
 
@@ -349,7 +359,6 @@ void Coordinator::cycle_driver() {
 
   // force visualization and checkpoint at the end of simulation
   // this needs to be fixed -- should not force, but ask if we want to checkpoint/vis at end
-  S_next_->advance_cycle(); // hackery to make the vis stop whining
   pk_->calculate_diagnostics(S_next_);
 
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -359,8 +368,6 @@ void Coordinator::cycle_driver() {
 
   checkpoint_->set_filebasename("final_checkpoint");
   WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
-
-  delete &*tsm;  // not sure if this is the correct way to dispose of this pointer (valgrind likes it)
 
   // dump observations
   //  output_observations_.print(std::cout);
