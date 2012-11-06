@@ -38,6 +38,7 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<Teuchos::ParameterList> bdf_plist_p =
       Teuchos::rcp(new Teuchos::ParameterList(plist_.sublist("time integrator")));
     backtracking_ = (bdf_plist_p->get<int>("max backtrack count",0) > 0);
+    bdf_plist_p->set("initial time", S->time());
 
     // -- instantiate time stepper
     time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf_plist_p, solution_));

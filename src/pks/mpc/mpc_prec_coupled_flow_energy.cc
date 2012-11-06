@@ -505,6 +505,19 @@ void MPCCoupledFlowEnergy::InitPreconditioner_(Teuchos::ParameterList& prec_plis
     ilu_plist_ = prec_plist.sublist("ILU Parameters");
   } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
     ifp_plist_ = prec_plist.sublist("Block ILU Parameters");
+#ifdef HAVE_HYPRE
+  } else if (prec_method_ == HYPRE_AMG) {
+    // read some boomer amg parameters
+    hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
+    hypre_ncycles_ = hypre_plist_.get<int>("number of cycles",5);
+    hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
+    hypre_tol_ = hypre_plist_.get<double>("tolerance",0.0);
+    hypre_strong_threshold_ = hypre_plist_.get<double>("strong threshold",0.25);
+  } else if (prec_method_ == HYPRE_EUCLID) {
+    hypre_plist_ = prec_plist.sublist("HYPRE Euclid Parameters");
+  } else if (prec_method_ == HYPRE_PARASAILS) {
+    hypre_plist_ = prec_plist.sublist("HYPRE ParaSails Parameters");
+#endif
   }
 }
 
