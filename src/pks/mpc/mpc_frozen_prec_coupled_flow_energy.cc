@@ -13,41 +13,50 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 
 namespace Amanzi {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> MPCFrozenCoupledFlowEnergy::reg_("frozen energy-flow preconditioner coupled");
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   Teuchos::RCP<CompositeVector> temp_guess = u->SubVector("energy")->data();
+  Epetra_MultiVector& guess_cells = *temp_guess->ViewComponent("cell",false);
+  Epetra_MultiVector& guess_faces = *temp_guess->ViewComponent("face",false);
+
   Teuchos::RCP<const CompositeVector> temp = S_next_->GetFieldData("temperature");
+  const Epetra_MultiVector& temp_cells = *temp->ViewComponent("cell",false);
 
   bool update_faces(false);
+
+#if DEBUG_FLAG
+  std::cout << "--- Modifying Guess: ---" << std::cout;
+#endif
 
   int ncells = temp->size("cell",false);
   std::vector<bool> changed(ncells, false);
   for (int c=0; c!=ncells; ++c) {
-    if ((*temp)("cell",c) >= 273.15 && (*temp_guess)("cell",c) < 273.15) {
+    if (temp_cells[0][c] >= 273.15 && guess_cells[0][c] < 273.15) {
       // freezing
-      (*temp_guess)("cell",c) = 273.15 - 1.e-3;
+      guess_cells[0][c] = 273.15 - 1.e-4;
       changed[c] = true;
       update_faces = true;
-    } else if ((*temp)("cell",c) <= 273.15 && (*temp_guess)("cell",c) > 273.15) {
+    } else if (temp_cells[0][c] <= 273.15 && guess_cells[0][c] > 273.15) {
       // thawing
-      (*temp_guess)("cell",c) = 273.15 - 1.e-3;
+      guess_cells[0][c] = 273.15 - 1.e-3;
       changed[c] = true;
       update_faces = true;
-    } else if (273.15 > (*temp)("cell",c) &&
-               (*temp)("cell",c) >= 273.1 &&
-               ((*temp)("cell",c) - (*temp_guess)("cell",c)) > 1.e-2) {
+    } else if (273.15 > temp_cells[0][c] &&
+               temp_cells[0][c] >= 273.1 &&
+               (temp_cells[0][c] - guess_cells[0][c]) > 1.e-2) {
       // catch the 2nd step in freezing -- after the 2nd step the
       // extrapolation should be ok?
-      (*temp_guess)("cell",c) = (*temp)("cell",c);
+      guess_cells[0][c] = temp_cells[0][c];
       changed[c] = true;
       update_faces = true;
     }
   }
 
   if (update_faces) {
+    temp_guess->ScatterMasterToGhosted("cell");
     AmanziMesh::Entity_ID_List cells;
 
     int f_owned = temp_guess->size("face");
@@ -56,8 +65,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
       temp_guess->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
       if (cells.size() == 2) {
         if (changed[cells[0]] || changed[cells[1]]) {
-          (*temp_guess)("face",f) = ((*temp_guess)("cell",cells[0])
-                  + (*temp_guess)("cell",cells[1])) / 2.0;
+          guess_faces[0][f] = (guess_cells[0][cells[0]]
+                  + guess_cells[0][cells[1]]) / 2.0;
         }
       }
     }
