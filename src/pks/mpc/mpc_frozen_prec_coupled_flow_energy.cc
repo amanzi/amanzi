@@ -55,8 +55,10 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
     }
   }
 
+  // unclear... could do an AllReduce() on update_faces and not communicate if
+  // not necessary, but AllReduces() suck... maybe more than extra Scatters?
+  temp_guess->ScatterMasterToGhosted("cell");
   if (update_faces) {
-    temp_guess->ScatterMasterToGhosted("cell");
     AmanziMesh::Entity_ID_List cells;
 
     int f_owned = temp_guess->size("face");
