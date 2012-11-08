@@ -445,7 +445,7 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
    ierr = ifp_prec_->ApplyInverse(Tf, Pf);
 #ifdef HAVE_HYPRE
- } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
+ } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID || prec_method_ == HYPRE_PARASAILS) {
    ierr = IfpHypre_Sff_->ApplyInverse(Tf, Pf);
 #endif
  } else {
