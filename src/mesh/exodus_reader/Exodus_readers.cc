@@ -176,7 +176,7 @@ AmanziMesh::Data::Node_set* read_node_set (Exodus_file file, int set_id)
     // when no node set name is stored with the node set
     // Since amanzi is not using names to identify node sets, it is disabled
     
-    char name_data [MAX_STR_LENGTH] = "NONAME";
+    char name_data [MAX_STR_LENGTH] = "";
     //    ret_val = ex_get_name (file.id, EX_NODE_SET, set_id, name_data);
     //    if (ret_val < 0) {
     //       std::string msg =
@@ -224,14 +224,15 @@ AmanziMesh::Data::Side_set* read_side_set (Exodus_file file, int set_id)
     // when no side set name is stored for the side set
     // Since amanzi is not using names to identify side sets, it is disabled
     
-    char name_data [MAX_STR_LENGTH] = "NONAME";
+    char name_data [MAX_STR_LENGTH] = "";
     //    ret_val = ex_get_name (file.id, EX_SIDE_SET, set_id, name_data);
     //    if (ret_val < 0) {
     //        std::string msg =
     //        boost::str(boost::format("%s: error: cannot read side set name %d (%d)") %
     //                  file.filename % set_id % ret_val);
     //       Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
-    //   }
+    //    }
+    
     
 
     std::string name (name_data);
