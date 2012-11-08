@@ -112,7 +112,11 @@ option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
 option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
-# OpenMP Search
+# OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
+# WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
+# THE UNSTRUCTURED SIDE
+
+if ( Enable_Structured )
 option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
 if ( ENABLE_OpenMP )
   find_package(OpenMP)
@@ -127,6 +131,7 @@ if ( ENABLE_OpenMP )
     message(SEND_ERROR "Failed to determine the OpenMP compiler flags. Will deactivate.")
     set(ENABLE_OpenMP FALSE CACHE BOOL "Enable OpenMP compile directives" FORCE)
   endif()
+endif()
 endif()
 
 

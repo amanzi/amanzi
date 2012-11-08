@@ -27,17 +27,18 @@ set(cpp_flag_list
 list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(hypre_cppflags ${cpp_flags_list})
 
+# Disable OpenMP with HYPRE for now
 # Is OpenMP available
-if ( ENABLE_OpenMP )
- find_package(OpenMP)
+#if ( ENABLE_OpenMP )
+# find_package(OpenMP)
 
  set(hypre_openmp_opt)
- if ( OPENMP_FOUND )
-   set(hypre_openmp_opt --with-openmp)
- endif()
-else()
+# if ( OPENMP_FOUND )
+#   set(hypre_openmp_opt --with-openmp)
+# endif()
+#else()
  set(hypre_openmp_opt --without-openmp)
-endif()
+#endif()
 print_variable(hypre_openmp_opt)
 
 # Locate LAPACK and BLAS
