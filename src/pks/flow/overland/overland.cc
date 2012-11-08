@@ -262,14 +262,24 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
 
     // -- Call the MSTK constructor to rip off the surface of the MSTK domain
     // -- mesh.
-    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
-    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
+    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh;
+
+    if (mesh->cell_dimension() == 3) {
+      Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d = Teuchos::rcp(
+          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
+      S->RegisterMesh("surface_3d", surface_mesh_3d);
+
+      surface_mesh = Teuchos::rcp(
+          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
+    } else {
+      S->RegisterMesh("surface_3d", mesh);
+
+      surface_mesh = Teuchos::rcp(
+          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::CELL,true,false));
+    }
 
     // -- push the mesh into state
     S->RegisterMesh("surface", surface_mesh);
-    S->RegisterMesh("surface_3d", surface_mesh_3d);
     mesh_ = surface_mesh;
     standalone_mode_ = false;
 
