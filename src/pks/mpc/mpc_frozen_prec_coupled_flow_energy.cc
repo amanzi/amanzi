@@ -36,7 +36,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
   for (int c=0; c!=ncells; ++c) {
     if (temp_cells[0][c] >= 273.15 && guess_cells[0][c] < 273.15) {
       // freezing
-      guess_cells[0][c] = 273.15 - 1.e-4;
+      guess_cells[0][c] = 273.15 - 1.e-3;
       changed[c] = true;
       update_faces = true;
     } else if (temp_cells[0][c] <= 273.15 && guess_cells[0][c] > 273.15) {
@@ -57,6 +57,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
 
   // unclear... could do an AllReduce() on update_faces and not communicate if
   // not necessary, but AllReduces() suck... maybe more than extra Scatters?
+  /*
   temp_guess->ScatterMasterToGhosted("cell");
   if (update_faces) {
     AmanziMesh::Entity_ID_List cells;
@@ -74,7 +75,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
     }
     return true;
   }
-  return false;
+  */
+  return true;
 }
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor_temp(double h, Teuchos::RCP<TreeVector> u) {
