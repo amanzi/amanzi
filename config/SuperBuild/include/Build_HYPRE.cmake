@@ -55,6 +55,8 @@ if ( LAPACK_FOUND )
   set(hypre_lapack_opt --with-lapack)
 endif()
 
+set(hypre_fortran_opt --disable-fortran)
+
 # Build the configure script
 set(HYPRE_sh_configure ${HYPRE_prefix_dir}/hypre-configure-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-configure-step.sh.in
