@@ -29,6 +29,9 @@ class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_temp(double h, Teuchos::RCP<TreeVector> up);
 
+  // -- Initialize owned (dependent) variables.
+  virtual void initialize(const Teuchos::Ptr<State>& S);
+
  private:
   // factory registration
   static RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> reg_;
