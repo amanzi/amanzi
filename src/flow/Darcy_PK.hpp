@@ -121,7 +121,6 @@ class Darcy_PK : public Flow_PK {
 
   int num_itrs_trs;  // Parameters for transient solver
   double dT_desirable_;
-  int dT_method_;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

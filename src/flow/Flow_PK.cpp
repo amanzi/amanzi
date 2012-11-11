@@ -165,7 +165,7 @@ void Flow_PK::ProcessBoundaryConditions(
     }
   }
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Flow PK: assigned zero flux boundary condition to%7d faces\n", missed);
+    std::printf("Flow PK: assign zero flux boundary condition to%7d faces\n", missed);
   }
   nseepage_prev = nseepage;
 }

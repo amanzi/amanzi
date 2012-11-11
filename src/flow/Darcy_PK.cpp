@@ -303,8 +303,8 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
-    std::printf("Darcy PK: source/sink distribution method (id) %1d\n", src_sink_distribution);
-    std::printf("Darcy PK: time stepping strategy %2d\n", dT_method_);
+    std::printf("          source/sink distribution method (id) %1d\n", src_sink_distribution);
+    std::printf("          time stepping strategy %2d\n", ti_specs_sss.dT_method);
     std::printf("***********************************************************\n");
   }
 
@@ -463,7 +463,7 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   // calculate time derivative and 2nd-order solution approximation
-  if (dT_method_ == FLOW_DT_ADAPTIVE) {
+  if (ti_specs_sss.dT_method == FLOW_DT_ADAPTIVE) {
     Epetra_Vector& pressure = FS->ref_pressure();  // pressure at t^n
 
     for (int c = 0; c < ncells_owned; c++) {
@@ -472,8 +472,8 @@ int Darcy_PK::Advance(double dT_MPC)
     }
   }
 
-  // estimate time multiplier
-  if (dT_method_ == FLOW_DT_ADAPTIVE) {
+  // estimate time step multiplier
+  if (ti_specs_sss.dT_method == FLOW_DT_ADAPTIVE) {
     double err, dTfactor;
     err = ErrorEstimate(&dTfactor);
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)

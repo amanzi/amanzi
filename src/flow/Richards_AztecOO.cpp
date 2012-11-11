@@ -129,15 +129,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
   Epetra_Vector* utmp_faces = FS->CreateFaceView(utmp);
 
-  // update boundary conditions
-  bc_pressure->Compute(Tp);
-  bc_head->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_seepage->Compute(Tp);
-  ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *u_faces, atm_pressure,
-      bc_markers, bc_values);
+  UpdateBoundaryConditions(Tp, *u_faces);
 
   // calculate and assemble elemental stiffness matrices
   CalculateRelativePermeability(u);
@@ -159,7 +151,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
 
   solver_tmp->SetLHS(&utmp);
   solver_tmp->Iterate(max_itrs_linear, convergence_tol_linear);
-  *u_faces = * utmp_faces;
+  *u_faces = *utmp_faces;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();
