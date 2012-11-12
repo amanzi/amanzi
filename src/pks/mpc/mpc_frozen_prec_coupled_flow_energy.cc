@@ -18,64 +18,170 @@ namespace Amanzi {
 RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> MPCFrozenCoupledFlowEnergy::reg_("frozen energy-flow preconditioner coupled");
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = getOSTab();
+
   Teuchos::RCP<CompositeVector> temp_guess = u->SubVector("energy")->data();
   Epetra_MultiVector& guess_cells = *temp_guess->ViewComponent("cell",false);
   Epetra_MultiVector& guess_faces = *temp_guess->ViewComponent("face",false);
 
   Teuchos::RCP<const CompositeVector> temp = S_next_->GetFieldData("temperature");
+  Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData("pressure");
   const Epetra_MultiVector& temp_cells = *temp->ViewComponent("cell",false);
+  const Epetra_MultiVector& temp_faces = *temp->ViewComponent("face",false);
 
   bool update_faces(false);
 
-#if DEBUG_FLAG
-  std::cout << "--- Modifying Guess: ---" << std::cout;
-#endif
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    double minT,maxT,minTL,maxTL;
+    guess_cells.MinValue(&minT);
+    guess_cells.MaxValue(&maxT);
+    guess_faces.MinValue(&minTL);
+    guess_faces.MaxValue(&maxTL);
+
+    *out_ << "--- Modifying Guess: ---" << std::endl;
+    *out_ << "  T_min = " << minT << "     T_max = " << maxT << std::endl;
+    *out_ << "  Lambda_min = " << minTL << "     Lambda_max = " << maxTL << std::endl;
+  }
+
 
   int ncells = temp->size("cell",false);
   std::vector<bool> changed(ncells, false);
+
   for (int c=0; c!=ncells; ++c) {
     if (temp_cells[0][c] >= 273.15 && guess_cells[0][c] < 273.15) {
+      //      if (includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+        std::cout << "Freezing cell " << c << std::endl;
+        std::cout << "   T_prev = " << temp_cells[0][c]
+              << ",  T_guess = " << guess_cells[0][c]
+              << ",  T_corrected = " << 273.15 - 1.e-3 << std::endl;
+
+        //      }
       // freezing
       guess_cells[0][c] = 273.15 - 1.e-3;
       changed[c] = true;
       update_faces = true;
-    } else if (temp_cells[0][c] <= 273.15 && guess_cells[0][c] > 273.15) {
-      // thawing
-      guess_cells[0][c] = 273.15 - 1.e-3;
-      changed[c] = true;
-      update_faces = true;
+
     } else if (273.15 > temp_cells[0][c] &&
                temp_cells[0][c] >= 273.1 &&
                (temp_cells[0][c] - guess_cells[0][c]) > 1.e-2) {
+      //      if (includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+        std::cout << "2nd Freezing step cell " << c << std::endl;
+        std::cout << "   T_prev = " << temp_cells[0][c]
+              << ",  T_guess = " << guess_cells[0][c]
+              << ",  T_corrected = " << 273.15 - 1.e-3 << std::endl;
+        //      }
+
       // catch the 2nd step in freezing -- after the 2nd step the
       // extrapolation should be ok?
       guess_cells[0][c] = temp_cells[0][c];
       changed[c] = true;
       update_faces = true;
+
+    } else if (temp_cells[0][c] <= 273.15 && guess_cells[0][c] > 273.15) {
+      //      if (includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+        std::cout << "Thawing cell " << c << std::endl;
+        std::cout << "   T_prev = " << temp_cells[0][c]
+                  << ",  T_guess = " << guess_cells[0][c]
+                  << ",  T_corrected = " << temp_cells[0][c] << std::endl;
+        //      }
+
+      // thawing
+      guess_cells[0][c] = temp_cells[0][c];
+      changed[c] = true;
+      update_faces = true;
     }
+
   }
 
-  // unclear... could do an AllReduce() on update_faces and not communicate if
-  // not necessary, but AllReduces() suck... maybe more than extra Scatters?
-  /*
-  temp_guess->ScatterMasterToGhosted("cell");
-  if (update_faces) {
-    AmanziMesh::Entity_ID_List cells;
 
-    int f_owned = temp_guess->size("face");
-    for (int f=0; f!=f_owned; ++f) {
-      cells.clear();
-      temp_guess->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-      if (cells.size() == 2) {
-        if (changed[cells[0]] || changed[cells[1]]) {
-          guess_faces[0][f] = (guess_cells[0][cells[0]]
-                  + guess_cells[0][cells[1]]) / 2.0;
+  // update pressure to be consistent with the new temperature and fixed mass
+  // Stuff temperature into state
+  Teuchos::RCP<CompositeVector> temp_from_state = S_next_->GetFieldData("temperature", energy_pk->name());
+  S_next_->SetData("temperature",energy_pk->name(),temp_guess);
+  energy_pk->changed_solution();
+
+  // update water content, which will get all the needed vals updated at the new temp.
+  S_next_->GetFieldEvaluator("water_content")
+      ->HasFieldChanged(S_next_.ptr(), "richards_pk");
+
+  // get the needed vals
+  Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
+  Teuchos::RCP<const CompositeVector> cv = S_inter_->GetFieldData("cell_volume");
+  Teuchos::RCP<const CompositeVector> phi = S_next_->GetFieldData("porosity");
+  Teuchos::RCP<const CompositeVector> n_g = S_next_->GetFieldData("molar_density_gas");
+  Teuchos::RCP<const CompositeVector> omega_g = S_next_->GetFieldData("mol_frac_gas");
+  Teuchos::RCP<const CompositeVector> n_l = S_next_->GetFieldData("molar_density_liquid");
+  Teuchos::RCP<const CompositeVector> n_i = S_next_->GetFieldData("molar_density_ice");
+  Teuchos::RCP<const CompositeVector> one_on_A = S_next_->GetFieldData("wrm_permafrost_one_on_A");
+  Teuchos::RCP<const double> p_atm = S_next_->GetScalarData("atmospheric_pressure");
+
+  // get the WRMs
+  Teuchos::RCP<FieldEvaluator> wrm_B_eval_base = S_next_->GetFieldEvaluator("wrm_permafrost_one_on_B");
+  Teuchos::RCP<Flow::FlowRelations::WRMRichardsEvaluator> wrm_B_eval =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMRichardsEvaluator>(wrm_B_eval_base);
+  Teuchos::RCP<Flow::FlowRelations::WRMRegionPairList> wrms = wrm_B_eval->get_WRMs();
+
+  // get the result pressure
+  Teuchos::RCP<CompositeVector> pres_guess = u->SubVector("flow")->data();
+  for (Flow::FlowRelations::WRMRegionPairList::iterator region=wrms->begin();
+       region!=wrms->end(); ++region) {
+    std::string name = region->first;
+    int ncells = pres_guess->mesh()->get_set_size(name, AmanziMesh::CELL, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List cells(ncells);
+    pres_guess->mesh()->get_set_entities(name, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      if (changed[*c]) {
+        double A_minus_one = (1.0/(*one_on_A)("cell",*c) - 1.0);
+
+        double wc = (*wc0)("cell",*c) / (*cv)("cell",*c);
+        double sstar = (wc - (*n_g)("cell",*c)*(*omega_g)("cell",*c)*(*phi)("cell",*c)) /
+            ((*phi)("cell",*c) * ((*n_l)("cell",*c) - (*n_g)("cell",*c)*(*omega_g)("cell",*c)
+                    + (*n_i)("cell",*c)*A_minus_one) - A_minus_one*wc);
+
+        if (sstar > 0.) {
+          double pc = region->second->capillaryPressure(sstar);
+
+          //          if (includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+            std::cout << "   p_prev = " << (*pres)("cell",*c)
+                  << "   p_guess = " << (*pres_guess)("cell",*c)
+                  << "   p_corrected = " << *p_atm - pc << std::endl;
+            std::cout << "  (based upon T = " << (*temp)("cell",*c) << ")" << std::endl;
+            //          }
+
+          (*pres_guess)("cell",*c) = *p_atm - pc;
+
         }
       }
     }
-    return true;
   }
-  */
+
+
+  // unclear... could do an AllReduce() on update_faces and not communicate if
+  // not necessary, but AllReduces() suck... maybe more than extra Scatters?
+  temp_guess->ScatterMasterToGhosted("cell");
+  pres_guess->ScatterMasterToGhosted("cell");
+  AmanziMesh::Entity_ID_List cells;
+
+  int f_owned = temp_guess->size("face");
+  for (int f=0; f!=f_owned; ++f) {
+    cells.clear();
+    temp_guess->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (cells.size() == 2) {
+      (*temp_guess)("face",f) = ((*temp_guess)("cell",cells[0]) +
+              (*temp_guess)("cell",cells[1])) / 2.0;
+      (*pres_guess)("face",f) = ((*pres_guess)("cell",cells[0]) +
+              (*pres_guess)("cell",cells[1])) / 2.0;
+    } else {
+      (*temp_guess)("face",f) = (*temp_guess)("cell",cells[0]);
+      (*pres_guess)("face",f) = (*pres_guess)("cell",cells[0]);
+    }
+  }
+
+  // clean up -- undo the change of vectors in state
+  S_next_->SetData("temperature",energy_pk->name(),temp_from_state);
+
   return true;
 }
 

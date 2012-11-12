@@ -209,6 +209,7 @@ void TwoPhase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& tem
 };
 
 bool TwoPhase::is_admissible(Teuchos::RCP<const TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
   // For some reason, wandering PKs break most frequently with an unreasonable
   // temperature.  This simply tries to catch that before it happens.
   Teuchos::RCP<const CompositeVector> temp = up->data();
@@ -218,9 +219,12 @@ bool TwoPhase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   int ierr = temp_v.MinValue(&minT);
   ierr |= temp_v.MaxValue(&maxT);
 
+  if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_EXTREME,true)) {
+    *out_ << "Admissible T? (min/max): " << minT << ",  " << maxT << std::endl;
+  }
+
   if (ierr || minT < 200.0 || maxT > 300.0) {
     if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
-      Teuchos::OSTab tab = getOSTab();
       *out_ << "Energy PK is inadmissible, as it is not within bounds of constitutive models: min(T) = " << minT << ", max(T) = " << maxT << std::endl;
     }
     return false;

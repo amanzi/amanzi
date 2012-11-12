@@ -71,6 +71,15 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAccumulation_(res);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    Teuchos::RCP<const CompositeVector> satl1 = S_next_->GetFieldData("saturation_liquid");
+    Teuchos::RCP<const CompositeVector> satl0 = S_inter_->GetFieldData("saturation_liquid");
+    Teuchos::RCP<const CompositeVector> sati1 = S_next_->GetFieldData("saturation_ice");
+    Teuchos::RCP<const CompositeVector> sati0 = S_inter_->GetFieldData("saturation_ice");
+    *out_ << "  sat_old_0: " << (*satl0)("cell",0) << ", " << (*sati0)("cell",0) << std::endl;
+    *out_ << "  sat_new_0: " << (*satl1)("cell",0) << ", " << (*sati1)("cell",0) << std::endl;
+    *out_ << "  sat_old_1: " << (*satl0)("cell",nc) << ", " << (*sati0)("cell",nc) << std::endl;
+    *out_ << "  sat_new_1: " << (*satl1)("cell",nc) << ", " << (*sati1)("cell",nc) << std::endl;
+
     *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0)
           << " " << (*res)("face",0,3) << std::endl;
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
