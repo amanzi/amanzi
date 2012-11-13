@@ -52,20 +52,12 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_();
 
-  // calculate flux
-  UpdateFlux_(S_next_);
-
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->data();
   res->PutScalar(0.0);
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_, res);
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-
-    *out_ << "  res0 (after diffusion): " << (*res)("cell",0,0) << " " << (*res)("face",0,3) << std::endl;
-    *out_ << "  res1 (after diffusion): " << (*res)("cell",0,nc) << " " << (*res)("face",0,500) << std::endl;
-  }
 
   // accumulation term
   AddAccumulation_(res);
@@ -89,11 +81,11 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 #if DEBUG_FLAG
   if (niter_ < 23) {
     std::stringstream namestream;
-    namestream << "residual_" << niter_;
+    namestream << "flow_residual_" << niter_;
     *S_next_->GetFieldData(namestream.str(),name_) = *res;
 
     std::stringstream solnstream;
-    solnstream << "solution_" << niter_;
+    solnstream << "flow_solution_" << niter_;
     *S_next_->GetFieldData(solnstream.str(),name_) = *u;
   }
 #endif
@@ -189,6 +181,8 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+  Teuchos::RCP<CompositeVector> uw_rel_perm = S_next_->GetFieldData("numerical_rel_perm", name_);
+
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
@@ -205,19 +199,33 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditionsPreconditioner_();
+  UpdateBoundaryConditions_();
 
+  // Attempt of a hack to deal with zero rel perm
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData("numerical_rel_perm");
+  Teuchos::RCP<CompositeVector> hacked_rel_perm =
+      Teuchos::rcp(new CompositeVector(*rel_perm));
+  *hacked_rel_perm = *rel_perm;
+
+  double eps = 1.e-12;
+  for (int f=0; f!=hacked_rel_perm->size("face"); ++f) {
+    if ((*hacked_rel_perm)("face",f) < eps) {
+      bc_markers_[f] = Operators::MFD_BC_FLUX;
+      bc_values_[f] = 0.0;
+      (*hacked_rel_perm)("face",f) = 0.5*eps;
+    }
+  }
+
   Teuchos::RCP<const CompositeVector> rho =
       S_next_->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
-  preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  preconditioner_->CreateMFDstiffnessMatrices(hacked_rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
+  AddGravityFluxes_(gvec, hacked_rel_perm, rho, preconditioner_);
 
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
@@ -265,7 +273,6 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   *out_ << "UPWINDED REL PERM: " << std::endl;
   rel_perm->Print(*out_);
   */
-
 };
 
 
@@ -293,12 +300,14 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
 
   // cell error given by tolerances on pressure
   double enorm_face(0.);
+  /*
   int nfaces = res.size("face");
   for (int f=0; f!=nfaces; ++f) {
     double tmp = abs(res("face",f)) / (atol_+rtol_*101325.0);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
-
+  */
+  
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     double infnorm_c(0.), infnorm_f(0.);
     res.ViewComponent("cell",false)->NormInf(&infnorm_c);
@@ -306,7 +315,7 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
 
     double buf_c(0.), buf_f(0.);
     MPI_Allreduce(&enorm_cell, &buf_c, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&enorm_face, &buf_f, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    //MPI_Allreduce(&enorm_face, &buf_f, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     Teuchos::OSTab tab = getOSTab();
     *out_ << "ENorm (Infnorm) of: " << name_ << ": "

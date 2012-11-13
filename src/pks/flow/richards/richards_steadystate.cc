@@ -29,22 +29,36 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditionsPreconditioner_();
+  UpdateBoundaryConditions_();
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
 
+  // Attempt of a hack to deal with zero rel perm
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData("numerical_rel_perm");
+  Teuchos::RCP<CompositeVector> hacked_rel_perm =
+      Teuchos::rcp(new CompositeVector(*rel_perm));
+  *hacked_rel_perm = *rel_perm;
+
+  double eps = 1.e-12;
+  for (int f=0; f!=hacked_rel_perm->size("face"); ++f) {
+    if ((*hacked_rel_perm)("face",f) < eps) {
+      bc_markers_[f] = Operators::MFD_BC_FLUX;
+      bc_values_[f] = 0.0;
+      (*hacked_rel_perm)("face",f) = 0.5*eps;
+    }
+  }
+
   Teuchos::RCP<const CompositeVector> rho =
       S_next_->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
-  preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  preconditioner_->CreateMFDstiffnessMatrices(hacked_rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
+  AddGravityFluxes_(gvec, hacked_rel_perm, rho, preconditioner_);
 
   // Assemble and precompute the Schur complement for inversion.
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
