@@ -41,7 +41,8 @@ class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
   // factory registration
   static RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> reg_;
 
-  double res_norm_;
+  double the_res_norm_;
+  bool modify_thaw_to_prev_;
 };
 } // namespace
 

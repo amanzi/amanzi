@@ -25,6 +25,9 @@ Author: Ethan Coon
 #include "thermal_conductivity_twophase_evaluator.hh"
 #include "two_phase.hh"
 
+#define DEBUG_FLAG 0
+
+
 namespace Amanzi {
 namespace Energy {
 
@@ -55,6 +58,19 @@ void TwoPhase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   S->RequireField(key_, name_)->SetMesh(S->GetMesh())
     ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+
+#if DEBUG_FLAG
+  for (int i=1; i!=23; ++i) {
+    std::stringstream namestream;
+    namestream << "energy_residual_" << i;
+    std::stringstream solnstream;
+    solnstream << "energy_solution_" << i;
+    S->RequireField(namestream.str(), name_)->SetMesh(mesh_)->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+    S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+  }
+#endif
 
   // Get data for non-field quanitites.
   S->RequireFieldEvaluator("cell_volume");
@@ -139,6 +155,22 @@ void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
   PKPhysicalBDFBase::initialize(S);
 
+#if DEBUG_FLAG
+  for (int i=1; i!=23; ++i) {
+    std::stringstream namestream;
+    namestream << "energy_residual_" << i;
+    S->GetFieldData(namestream.str(),name_)->PutScalar(0.);
+    S->GetField(namestream.str(),name_)->set_initialized();
+
+    std::stringstream solnstream;
+    solnstream << "energy_solution_" << i;
+    S->GetFieldData(solnstream.str(),name_)->PutScalar(0.);
+    S->GetField(solnstream.str(),name_)->set_initialized();
+  }
+
+#endif
+
+
   // initialize boundary conditions
   int nfaces = S->GetMesh()->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
@@ -169,7 +201,9 @@ void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {};
+void TwoPhase::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  niter_ = 0;
+};
 
 
 // -----------------------------------------------------------------------------
