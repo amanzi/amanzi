@@ -13,6 +13,6 @@ export CXXFLAGS='@Amanzi_COMMON_CXXFLAGS@'
 export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 
 cd @HYPRE_source_dir@/src
-./configure --prefix=@TPL_INSTALL_PREFIX@ --with-MPI
+./configure --prefix=@TPL_INSTALL_PREFIX@ --with-MPI --disable-fortran
 
 exit $?

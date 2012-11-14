@@ -178,6 +178,10 @@ void Richards_PK::InitPK()
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
   rhs = matrix_->rhs();  // import rhs from the matrix
 
+  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+  pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
+  pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
+
   // Process boundary data
   bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
   bc_values.resize(nfaces_wghost, 0.0);
@@ -192,11 +196,11 @@ void Richards_PK::InitPK()
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
 
   // Allocate data for relative permeability
-  const Epetra_Map& cmap = mesh_->cell_map(true);
-  const Epetra_Map& fmap = mesh_->face_map(true);
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
-  Krel_cells = Teuchos::rcp(new Epetra_Vector(cmap));
-  Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap));
+  Krel_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
 
   Krel_cells->PutScalar(1.0);  // we start with fully saturated media
   Krel_faces->PutScalar(1.0);
@@ -212,7 +216,7 @@ void Richards_PK::InitPK()
 
   // miscalleneous maps to easy output
   if (verbosity >= FLOW_VERBOSITY_EXTREME) {
-    map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap));
+    map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
     PopulateMapC2MB();
   }
 
@@ -330,14 +334,15 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
-    std::printf("Richards PK: next TI phase at T(sec)=%9.4e dT(sec)=%9.4e \n", T0, dT0);
+    std::printf("Richards PK: next TI phase at T(sec)=%14.9e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("             time stepping strategy %2d\n", ti_specs.dT_method);
 
     if (ini_with_darcy) {
-      std::printf("Richards PK: initializing with a saturated solution \n");
+      std::printf("             initializing with a saturated solution \n");
       if (ti_specs.clip_saturation > 0.0) {
-        std::printf("Richards PK: clipping saturation value =%5.2g\n", ti_specs.clip_saturation);
+        std::printf("             clipping saturation value =%5.2g\n", ti_specs.clip_saturation);
       } else if (ti_specs.clip_pressure > -5 * atm_pressure) {
-        std::printf("Richards PK: clipping pressure value =%9.4g\n", ti_specs.clip_pressure);
+        std::printf("             clipping pressure value =%9.4g\n", ti_specs.clip_pressure);
       }
     }
     std::printf("***********************************************************\n");
@@ -437,7 +442,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   }
 
   // nonlinear solver control options
-  ti_method = ti_method;
   num_itrs_nonlinear = 0;
   block_picard = 0;
 }
@@ -510,6 +514,23 @@ int Richards_PK::Advance(double dT_MPC)
       dTnext = dT;
     }
   }
+
+  // Calculate time derivative and 2nd-order solution approximation.
+  // Estimate of a time step multiplier overrides the above estimate.
+  if (ti_specs_trs_.dT_method == FLOW_DT_ADAPTIVE) {
+    Epetra_Vector& pressure = FS->ref_pressure();  // pressure at t^n
+
+    for (int c = 0; c < ncells_owned; c++) {
+      (*pdot_cells)[c] = ((*solution)[c] - pressure[c]) / dT; 
+      (*solution)[c] = pressure[c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+    }
+
+    double err, dTfactor;
+    err = AdaptiveTimeStepEstimate(&dTfactor);
+    if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
+    dTnext = std::min<double>(dT_MPC * dTfactor, ti_specs_trs_.dTmax);
+  }
+
   num_itrs_nonlinear++;
   return 0;
 }
@@ -542,6 +563,9 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
+
+  // update time derivative
+  *pdot_cells_prev = *pdot_cells;
 
   // update mass balance
   // ImproveAlgebraicConsistency(flux, ws_prev, ws);
@@ -700,6 +724,42 @@ void Richards_PK::AddTimeDerivative_MFD(
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
+}
+
+
+/* ******************************************************************
+* Estimate dT increase factor by comparing the 1st and 2nd order
+* time approximations. 
+* WARNING: it is implmented for transient phase only.
+****************************************************************** */
+double Richards_PK::AdaptiveTimeStepEstimate(double* dTfactor)
+{
+  double tol, error, error_max = 0.0;
+  double dTfactor_cell;
+
+  *dTfactor = 100.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
+    tol = ti_specs_trs_.rtol * fabs((*solution)[c]) + ti_specs_trs_.atol;
+
+    dTfactor_cell = sqrt(tol / std::max<double>(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
+    *dTfactor = std::min<double>(*dTfactor, dTfactor_cell);
+
+    error_max = std::max<double>(error_max, error - tol);
+  }
+
+  *dTfactor *= FLOW_DT_ADAPTIVE_SAFETY_FACTOR;
+  *dTfactor = std::min<double>(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
+  *dTfactor = std::max<double>(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
+
+#ifdef HAVE_MPI
+    double dT_tmp = *dTfactor;
+    solution->Comm().MinAll(&dT_tmp, dTfactor, 1);  // find the global minimum
+ 
+    double error_tmp = error_max;
+    solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
+#endif
+  return error_max;
 }
 
 

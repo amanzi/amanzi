@@ -94,10 +94,6 @@ void Darcy_PK::ProcessParameterList()
   std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
   LinearSolver_Specs& ls_specs = ti_specs_sss.ls_specs;
   ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
-
-  dT_method_ = 0;
-  std::string dT_name = sss_list.get<string>("time stepping strategy", "simple");
-  if (dT_name == "adaptive") dT_method_ = FLOW_DT_ADAPTIVE;
 }
 
 

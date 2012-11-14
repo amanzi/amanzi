@@ -411,6 +411,12 @@ void Richards_PK::AnalysisTI_Specs()
       Exceptions::amanzi_throw(msg);
     }
   }
+
+  if (ti_specs_igs_.dT_method == FLOW_DT_ADAPTIVE || 
+      ti_specs_sss_.dT_method == FLOW_DT_ADAPTIVE) {
+    msg << "Richards PK: adaptive time stepping is allowed only for transient phase.";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 

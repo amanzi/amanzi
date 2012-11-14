@@ -271,6 +271,7 @@ namespace Amanzi {
             }
             else if (chem_mode == "On") {
                 prob_out_list.set("do_chem",1);
+                prob_out_list.set("n_chem_interval",1); // One chemistry step every cycle (no Strang, no subcycle, no super-cycling)
                 do_chem = true;
                 const ParameterList& chem_list = parameter_list.sublist(chem_str);
                 reqP.clear(); reqL.clear();

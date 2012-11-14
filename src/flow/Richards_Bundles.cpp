@@ -48,6 +48,10 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
       bc_pressure, bc_head, bc_flux, bc_seepage,
       p_faces, atm_pressure,
       bc_markers, bc_values);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
+     std::printf("Richards PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
+  }
 }
 
 

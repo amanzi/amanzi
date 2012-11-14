@@ -2473,7 +2473,7 @@ PorousMedia::ml_step_driver(Real  t,
             
 	    if (verbose > 0 && ParallelDescriptor::IOProcessor())
 	      {
-		std::cout << "ADVANCE grids at time = " 
+		std::cout << "MPC_MLSTEP: ADVANCE grids at time = " 
 			  << t
 			  << ", attempting with dt = "
 			  << dt_this_attempt
@@ -2502,7 +2502,7 @@ PorousMedia::ml_step_driver(Real  t,
 
 	if (driver_ok && verbose > 0 && ParallelDescriptor::IOProcessor())
 	  {
-	    std::cout << "MPC SUCCESS: grids advanced from time: " << t
+	    std::cout << "MPC_MLSTEP: SUCCESS: grids advanced from time: " << t
 		      << ", with dt: " << dt_taken << ", suggested new dt: " << dt_suggest
 		      << std::endl;
 	  }
@@ -2701,14 +2701,23 @@ PorousMedia::multilevel_advance (Real  time,
           P_new.setVal(0.);
           MultiFab::Copy(S_new,S_old,0,0,ncomps+ntracers,S_old.nGrow()); 
           MultiFab::Copy(P_new,P_old,0,0,1,P_old.nGrow());
-          
+
           Real pcTime = pm_lev.state[State_Type].curTime();
           int ncomp_fill_bndry = transport_tracers>0 ? ncomps+ntracers : ncomps;
           pm_lev.FillStateBndry (pcTime,State_Type,0,ncomp_fill_bndry);
           pm_lev.FillStateBndry (pcTime,Press_Type,0,1);
           
-          if (have_capillary)	pm_lev.calcCapillary(pcTime);
-          
+          if (have_capillary) {
+            pm_lev.calcCapillary(pcTime);
+          }
+
+          if (do_chem && ntracers > 0)
+          {
+            MultiFab& A_new = pm_lev.get_new_data(Aux_Chem_Type);
+            MultiFab& A_old = pm_lev.get_old_data(Aux_Chem_Type);
+            A_new.setVal(0.);
+            MultiFab::Copy(A_new,A_old,0,0,A_new.nComp(),A_new.nGrow());
+          }
       }
       
       // If do_chem==0, then no reaction.
@@ -3134,7 +3143,7 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
     nld.ResetJacobianCounter();
     
     if (richard_solver_verbose > 1 && ParallelDescriptor::IOProcessor())
-        std::cout << "  FLOW: TIME from " << t_flow 
+        std::cout << "  PK: ML_RICHARD_FLOW TIME from " << t_flow 
                   << " to " << t_flow + dt_flow 
                   << ", DT: " << dt_flow  
                   << std::endl;
@@ -3230,8 +3239,8 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
                     Real tnew_subcycle_transport = t_subcycle_transport + dt_subcycle_transport;
                     Real next_dt_subcycle_transport = std::min(fine_lev.dt_eig,tmax_subcycle_transport - tnew_subcycle_transport);
 
-                    if (richard_solver_verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
-                        std::cout << "    TRANSPORT: Subcycle: " << n_subcycle_transport
+                    if (richard_solver_verbose > 2 &&  ParallelDescriptor::IOProcessor()) {
+                        std::cout << "  PK: ML_RICHARD_TRANSPORT Subcycle: " << n_subcycle_transport
                                   << " TIME from " << t_subcycle_transport
                                   << " to " <<  tnew_subcycle_transport
                                   << ", DT_SUB = " << dt_subcycle_transport  << std::endl;
@@ -3272,7 +3281,7 @@ PorousMedia::advance_multilevel_richard (Real  t_flow,
     {
         std::string resultStr = (step_ok ? "SUCCESS" : "FAIL");
         
-        std::cout << "  FLOW: " << resultStr << ". (iters: " << nld.NLIterationsTaken() 
+        std::cout << "  PK: RICHARD_FLOW " << resultStr << ". (iters: " << nld.NLIterationsTaken() 
                   << "). Suggest next dt: " << dt_flow_new << std::endl;
     }
   }
@@ -3309,7 +3318,8 @@ PorousMedia::advance_multilevel_saturated (Real  time,
       {
 	PorousMedia& fine_lev = getLevel(lev);	
 
-	// Set velocity (u_mac_curr) from bc at t+dt
+	// Set velocity (u_mac_curr) from bc at t+dt 
+        //  -- FIXME: For steady, velocity update should be removed
 	fine_lev.set_vel_from_bcs(time+dt,fine_lev.u_mac_curr);
 
 	if (lev == 0) 
@@ -3325,6 +3335,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
 	
         int ltracer = ncomps+ntracers-1;
 	
+        //  -- FIXME: For steady, saturation will not change, this rescale should be removed
         MultiFab& S_new = fine_lev.get_new_data(State_Type);
         MultiFab& S_old = fine_lev.get_old_data(State_Type);
         MultiFab Stmp(grids,1,1); 
@@ -3339,6 +3350,7 @@ PorousMedia::advance_multilevel_saturated (Real  time,
 
 
         fine_lev.predictDT(fine_lev.u_macG_trac); // updates dt_eig
+        //  -- FIXME: For steady, dt from predictDT will be constant
         int n_subcycle_transport = 0;
 	Real t_subcycle_transport = time;
 	Real tmax_subcycle_transport = time + dt;
@@ -3356,9 +3368,9 @@ PorousMedia::advance_multilevel_saturated (Real  time,
         bool continue_subcycle_transport = true;
 
         if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
-            std::cout << "  TRANSPORT: "
-                      << " TIME from " << t_subcycle_transport
-                      << " to " <<  tmax_subcycle_transport << std::endl;
+          std::cout << "  PK ML_SATURATED_TRANSPORT dt = " 
+                    << tmax_subcycle_transport - t_subcycle_transport 
+                    << std::endl;
         }
 
         while (continue_subcycle_transport)
@@ -3378,8 +3390,8 @@ PorousMedia::advance_multilevel_saturated (Real  time,
             fine_lev.setTimeLevel(t_subcycle_transport+dt_subcycle_transport,
 				  dt_subcycle_transport,dt_subcycle_transport);
 	    
-	    if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
-	      std::cout << "    TRANSPORT: Subcycle: " << n_subcycle_transport
+	    if (verbose > 2 &&  ParallelDescriptor::IOProcessor()) {
+	      std::cout << "    PK: ML_SATURATED_TRANSPORT Subcycle: " << n_subcycle_transport
 			<< " TIME from " << t_subcycle_transport
 			<< " to " <<  t_subcycle_transport + dt_subcycle_transport
 			<< ", DT_SUB = " << dt_subcycle_transport  << std::endl;
@@ -5146,8 +5158,8 @@ PorousMedia::strang_chem (Real time,
   const TimeLevel whichTime = which_time(State_Type,time);
   MultiFab& S    = (whichTime == AmrOldTime ? get_old_data(State_Type)     : get_new_data(State_Type));
   MultiFab& Fcnt = (whichTime == AmrOldTime ? get_old_data(FuncCount_Type) : get_new_data(FuncCount_Type));
-  //MultiFab& Aux  = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type)  : get_new_data(Aux_Chem_Type));
-  MultiFab& Aux  = get_new_data(Aux_Chem_Type);
+  MultiFab& Aux  = (whichTime == AmrOldTime ? get_old_data(Aux_Chem_Type)  : get_new_data(Aux_Chem_Type));
+  //MultiFab& Aux  = get_new_data(Aux_Chem_Type);
 
 #if defined(AMANZI)
   //
@@ -5308,6 +5320,9 @@ PorousMedia::strang_chem (Real time,
     setPhysBoundaryValues(stateTemp[mfi],State_Type,time,0,0,ncomps+ntracers);
   }
 
+  if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
+    std::cout << "  PK CHEMISTRY              dt = " << dt << std::endl;
+  }
 
   // Grab the auxiliary chemistry data
   for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi)
