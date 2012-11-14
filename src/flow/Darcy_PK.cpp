@@ -115,7 +115,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   verbosity = FLOW_VERBOSITY_HIGH;
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
-  ini_with_darcy = 1;
 }
 
 
@@ -285,8 +284,8 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   }
 
   // make initial guess consistent with boundary conditions
-  if (ini_with_darcy) {
-    ini_with_darcy = 0;
+  if (ti_specs_sss.initialize_with_darcy) {
+    ti_specs_sss.initialize_with_darcy = false;
     SolveFullySaturatedProblem(T0, *solution);
     pressure = *solution_cells;
   }
@@ -303,8 +302,10 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
-    std::printf("Darcy PK: source/sink distribution method (id) %1d\n", src_sink_distribution);
-    std::printf("Darcy PK: time stepping strategy %2d\n", dT_method_);
+    std::printf("          source/sink distribution method (id) %1d\n", src_sink_distribution);
+    std::printf("          time stepping strategy %2d\n", dT_method_);
+    if (ti_specs_sss.initialize_with_darcy)
+        std::printf("          enforce consistency of initial solution and boundary data\n");
     std::printf("***********************************************************\n");
   }
 
@@ -332,8 +333,8 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   }
 
   // make initial guess consistent with boundary conditions
-  if (ini_with_darcy) {
-    ini_with_darcy = 0;
+  if (ti_specs_sss.initialize_with_darcy) {
+    ti_specs_sss.initialize_with_darcy = 0;
     SolveFullySaturatedProblem(T0, *solution);
     pressure = *solution_cells; 
   }
