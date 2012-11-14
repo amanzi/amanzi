@@ -91,6 +91,7 @@ class Flow_PK : public BDF2::fnBase {
   
   // miscallenous members
   Epetra_Map* CreateSuperMap();
+  void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
   void IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
   // io members

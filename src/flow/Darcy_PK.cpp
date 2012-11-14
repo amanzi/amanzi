@@ -228,10 +228,10 @@ void Darcy_PK::InitPK()
 ****************************************************************** */
 void Darcy_PK::InitializeAuxiliaryData()
 {
-  // pressures (lambda is not important)
+  // pressures (lambda is not important when solver is very accurate)
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
-  lambda.PutScalar(1.0);
+  DeriveFaceValuesFromCellValues(pressure, lambda);
 
   // saturations
   Epetra_Vector& ws = FS->ref_water_saturation();
@@ -286,6 +286,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   // make initial guess consistent with boundary conditions
   if (ti_specs_sss.initialize_with_darcy) {
     ti_specs_sss.initialize_with_darcy = false;
+    DeriveFaceValuesFromCellValues(pressure, *solution_faces);
     SolveFullySaturatedProblem(T0, *solution);
     pressure = *solution_cells;
   }
@@ -303,9 +304,9 @@ void Darcy_PK::InitTransient(double T0, double dT0)
     std::printf("***********************************************************\n");
     std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
     std::printf("          source/sink distribution method (id) %1d\n", src_sink_distribution);
-    std::printf("          time stepping strategy %2d\n", ti_specs_sss.dT_method);
+    std::printf("          time stepping strategy is %2d\n", ti_specs_sss.dT_method);
     if (ti_specs_sss.initialize_with_darcy)
-        std::printf("          enforce consistency of initial solution and boundary data\n");
+        std::printf("          will enforce consistency of initial and boundary data\n");
     std::printf("***********************************************************\n");
   }
 
@@ -334,9 +335,10 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 
   // make initial guess consistent with boundary conditions
   if (ti_specs_sss.initialize_with_darcy) {
-    ti_specs_sss.initialize_with_darcy = 0;
+    ti_specs_sss.initialize_with_darcy = false;
+    DeriveFaceValuesFromCellValues(pressure, *solution_faces);
     SolveFullySaturatedProblem(T0, *solution);
-    pressure = *solution_cells; 
+    pressure = *solution_cells;
   }
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
@@ -365,7 +367,8 @@ int Darcy_PK::AdvanceToSteadyState()
 ****************************************************************** */
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 {
-  solver->SetAztecOption(AZ_output, AZ_none);
+  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // calculate and assemble elemental stifness matrices
   matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
@@ -406,6 +409,7 @@ int Darcy_PK::Advance(double dT_MPC)
   if (time >= 0.0) T_physics = time;
 
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // update boundary conditions and source terms
   time = T_physics;

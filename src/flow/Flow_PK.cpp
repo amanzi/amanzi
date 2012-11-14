@@ -270,6 +270,29 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 }
 
 
+/* ******************************************************************
+* BDF methods need a good initial guess.
+* This method gives a less smoother solution than in Flow 1.0.
+* WARNING: Each owned face must have at least one owned cell. 
+* Probability that this assumption is violated is close to zero. 
+* Even when it happens, the code will not crash.
+****************************************************************** */
+void Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    cells.clear();
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
+    ufaces[f] = face_value / ncells;
+  }
+}
+
+
 /* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
 * and sign of the Darcy velocity. 
