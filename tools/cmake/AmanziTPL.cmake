@@ -112,7 +112,7 @@ if ( NOT Trilinos_INSTALL_PREFIX )
                   " to define the Trilinos installation location"
 		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilnos directory>\n")
 endif()
-set(Trilinos_MINIMUM_VERSION 10.12.2)
+set(Trilinos_MINIMUM_VERSION 11.0.3)
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATHS ${Trilinos_INSTALL_PREFIX}
              PATH_SUFFIXES include)

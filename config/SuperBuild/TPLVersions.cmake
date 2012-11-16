@@ -233,21 +233,21 @@ set(PETSc_MD5_SUM        b9b5b42ffb6c619e4f7ee6b29134dc5f)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 10)
-set(Trilinos_VERSION_MINOR 12)
-set(Trilinos_VERSION_PATCH 2)
+set(Trilinos_VERSION_MAJOR 11)
+set(Trilinos_VERSION_MINOR 0)
+set(Trilinos_VERSION_PATCH 3)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.gz)
-set(Trilinos_MD5_SUM        eafdfb5d702b7ae1ce6146db2233bc94) 
+set(Trilinos_MD5_SUM        41368eb4c589e07a7f8e7de635ca234a) 
 
 #
 # TPL: SEACAS
 #  SEACAS is available in Trilinos 10.8 and above
-set(SEACAS_VERSION_MAJOR 10)
-set(SEACAS_VERSION_MINOR 12)
-set(SEACAS_VERSION_PATCH 2)
+set(SEACAS_VERSION_MAJOR 11)
+set(SEACAS_VERSION_MINOR 0)
+set(SEACAS_VERSION_PATCH 3)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}.${SEACAS_VERSION_MINOR}.${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.gz)
-set(SEACAS_MD5_SUM        eafdfb5d702b7ae1ce6146db2233bc94) 
+set(SEACAS_MD5_SUM        41368eb4c589e07a7f8e7de635ca234a) 
