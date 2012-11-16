@@ -20,11 +20,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
@@ -48,7 +46,6 @@ TEST(FLOW_3D_RICHARDS) {
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_bc_cribs.xml";
-  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
@@ -61,9 +58,6 @@ TEST(FLOW_3D_RICHARDS) {
   ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
   Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
-  // std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
-  // Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
-  // RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0, 64.5,103.2, 1,516, &comm, gm));
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");

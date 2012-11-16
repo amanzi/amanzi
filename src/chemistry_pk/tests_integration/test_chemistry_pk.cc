@@ -10,11 +10,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 
 #include "InputParserIS.hh"
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include "GenerationSpec.hh"
 #include "State.hpp"
 
@@ -72,8 +71,6 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::ParameterXMLFileReader xmlreader(xml_input_filename);
     Teuchos::ParameterList input_spec(xmlreader.getParameters());
 
-    // DEPRECATED    Teuchos::updateParametersFromXmlFile(xml_input_filename, &input_spec);
-
     // Chemistry uses the official input spec, not the unstructured
     // native, but we need to translate for state.
     Teuchos::ParameterList parameter_list;
@@ -92,7 +89,14 @@ SUITE(GeochemistryTestsChemistryPK) {
     gm_ = 
         new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_);
   
-    mesh_ = Teuchos::rcp(new am::Mesh_simple(g, (const Epetra_MpiComm *)comm_, gm_));
+    am::FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(am::Simple);
+
+    am::MeshFactory meshfactory((Epetra_MpiComm *)comm_);
+    meshfactory.preference(pref);
+
+    mesh_ = meshfactory(mesh_parameter_list, gm_);
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");

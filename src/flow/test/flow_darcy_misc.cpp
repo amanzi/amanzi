@@ -18,12 +18,11 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
 
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Darcy_PK.hpp"
 
@@ -55,16 +54,22 @@ class DarcyProblem {
 
   void Init(const string xmlFileName, const char* meshExodus) {
     Teuchos::ParameterList parameter_list;
-    // DEPRECATED    updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
     parameter_list = xmlreader.getParameters();
 
-    // create an SIMPLE mesh framework
+    // create a MSTK mesh framework
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-    // mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, -0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm, gm));
-    mesh = Teuchos::rcp(new Mesh_MSTK(meshExodus, comm, gm));
+
+    FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(MSTK);
+    
+    MeshFactory meshfactory(comm);
+    meshfactory.preference(pref);
+
+    mesh = meshfactory(meshExodus, gm);
 
     // MeshAudit audit(mesh);
     // audit.Verify();

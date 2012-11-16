@@ -28,9 +28,6 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
 
-# Need to move this to roo level -- lpritch
-add_definitions("-DUSE_MPI")
-
 #
 # Library: solvers
 #

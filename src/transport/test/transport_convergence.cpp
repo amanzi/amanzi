@@ -8,9 +8,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Epetra_SerialComm.h"
 
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "Point.hh"
 
@@ -61,7 +61,13 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     // create an MSTK mesh framework 
     ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 2, (const Epetra_MpiComm *)comm, gm));
+    FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(Simple);
+    
+    MeshFactory meshfactory((Epetra_MpiComm *)comm);
+    meshfactory.preference(pref);
+    RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 2, gm);
 
     // create a transport state with one component 
     int num_components = 1;
@@ -135,7 +141,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/transport_convergence.xml";
-  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
   
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
@@ -149,7 +154,13 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   std::vector<double> L1error, L2error;
 
   for (int nx=20; nx<161; nx*=2 ) {
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, (const Epetra_MpiComm *)comm, gm)); 
+    FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(Simple);
+    
+    MeshFactory meshfactory((Epetra_MpiComm *)comm);
+    meshfactory.preference(pref);
+    RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
 
     // create a transport states with one component
     int num_components = 1;

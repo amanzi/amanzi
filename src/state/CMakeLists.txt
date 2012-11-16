@@ -24,9 +24,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
-include_directories(${STK_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 
@@ -35,9 +33,6 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
-
-# Need to move this up to the root -- lpritch
-add_definitions("-DUSE_MPI")
 
 
 # This state library will move to a new location 
@@ -53,7 +48,7 @@ file(GLOB state_inc_files "*.hpp" "*.hh")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
                    SOURCE State.cpp Restart.cpp Vis.cpp chemistry_data.cc HEADERS ${state_inc_files}
-                   LINK_LIBS atk functions output simple_mesh mesh_data ${state_tpl_libs})
+                   LINK_LIBS atk functions output mesh ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 
@@ -71,6 +66,9 @@ if (BUILD_TESTS)
     # Add State include directory. 
     include_directories(${STATE_SOURCE_DIR})
 
+    # Mesh factory includes
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
+
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
@@ -86,7 +84,7 @@ if (BUILD_TESTS)
 	  	          test/Main.cc
 	 		  test/test_restart.cpp
 	 		  test/test_vis.cpp
-                      LINK_LIBS state stk_mesh ${UnitTest_LIBRARIES})
+                      LINK_LIBS state mesh_factory mesh ${UnitTest_LIBRARIES})
     endif()
 
 endif()

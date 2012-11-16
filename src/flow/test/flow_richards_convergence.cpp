@@ -19,12 +19,12 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
 
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
+#include "MeshFactory.hh"
 #include "Richards_PK.hpp"
 
 using namespace Amanzi;
@@ -123,7 +123,14 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   for (int n = 40; n < 321; n*=2) {
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-    Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, -10.0, 1.0, 1.0, 0.0, 1, 1, n, comm, gm));
+    
+    FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(MSTK);
+
+    MeshFactory meshfactory(comm);
+    meshfactory.preference(pref);
+    Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, -10.0, 1.0, 1.0, 0.0, 1, 1, n, gm);
 
     // create Richards process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");

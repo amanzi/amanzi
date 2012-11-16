@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
 #include "Mesh.hh"
@@ -40,7 +40,14 @@ TEST(DARCY_MASS) {
 #endif
 
   int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, comm)); 
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
  
   MFD3D mfd(mesh);
 
@@ -79,7 +86,13 @@ TEST(DARCY_INVERSE_MASS) {
 #endif
 
   int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, comm)); 
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory factory(comm);
+  factory.preference(pref);
+  RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
  
   MFD3D mfd(mesh);
 

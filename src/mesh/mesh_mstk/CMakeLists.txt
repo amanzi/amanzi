@@ -22,8 +22,6 @@ project(MSTK)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 
@@ -34,7 +32,7 @@ include_directories(${MSTK_INCLUDE_DIRS})
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
-add_definitions("-DUSE_MPI -DMSTK_HAVE_MPI")
+add_definitions("-DMSTK_HAVE_MPI")
 
 #
 # Library: mstk_mesh
@@ -43,7 +41,7 @@ set(mstk_mesh_files Mesh_MSTK.cc)
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
-                   LINK_LIBS geometry mesh mesh_data ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES})
+                   LINK_LIBS geometry mesh ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES})
 
 if (BUILD_TESTS)
     

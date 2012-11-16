@@ -114,8 +114,9 @@ class Mesh
   virtual
   Cell_type cell_get_type(const Entity_ID cellid) const = 0;
 
+  // Cell type name
 
-
+  std::string cell_type_to_name(const Cell_type type);
 
   //
   // General mesh information

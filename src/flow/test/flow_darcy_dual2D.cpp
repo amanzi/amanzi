@@ -20,9 +20,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_MSTK.hh"
+#include "MeshFactory.hh"
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
@@ -47,14 +46,19 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   ParameterList parameter_list;
   string xmlFileName = "test/flow_darcy_dual2D.xml";
 
-  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
+  // create a MSTK mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/dual2D.exo", &comm, gm));
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory("test/dual2D.exo", gm);
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));

@@ -20,9 +20,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_simple.hh"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
 
 #include "State.hpp"
 #include "Flow_State.hpp"
@@ -48,7 +48,6 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_tensor.xml";
-  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
@@ -56,7 +55,14 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm, gm));
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, gm);
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");

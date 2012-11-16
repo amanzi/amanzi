@@ -316,7 +316,6 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   amanzi_throw(e);
 }
 
-
 /** 
  * This creates a mesh by extracting subsets of entities from an existing
  * mesh possibly flattening it by removing the last dimension or (in the 

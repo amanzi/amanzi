@@ -35,9 +35,6 @@ include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
-include_directories(${MESH_SIMPLE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${EXO_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
@@ -79,9 +76,6 @@ if(ENABLE_STK_Mesh)
 endif()
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
-
-# Need to move this up to the root -- lpritch
-add_definitions("-DUSE_MPI")
 
 # Copy input files to build directory if out of source build
  if (NOT (EXEC_SOURCE_DIR STREQUAL EXEC_BINARY_DIR))
@@ -158,17 +152,6 @@ if ( ENABLE_CGNS )
     set_target_properties(verify_hex PROPERTIES
                           COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")
 endif()
-
-#
-# Binary: stk_mesh_test_hex
-#
-#if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
-#    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
-#    target_link_libraries(stk_mesh_test_hex 
-#                         exodus_reader mesh_data stk_mesh output mesh_audit
-#                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
-#    add_install_binary(stk_mesh_test_hex)		     
-#endif()
 
 #
 # Binary: verify_deform

@@ -22,12 +22,10 @@ project(TRANSPORT)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${EXO_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
@@ -40,10 +38,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
-
-# Need to move this to the root level -- lpritch
-add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
-
 #
 # Library: transport
 #
@@ -54,7 +48,7 @@ set(transport_src_files Transport_PK.cpp Transport_State.cpp Transport_TI.cpp
                         Reconstruction.cpp)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
-                   LINK_LIBS geometry mesh mesh_data error_handling state time_integration ${Epetra_LIBRARIES})
+                   LINK_LIBS geometry mesh error_handling state time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes
@@ -67,9 +61,8 @@ if ( BUILD_TESTS )
 
     include_directories(${TRANSPORT_SOURCE_DIR})
     include_directories(${Boost_INCLUDE_DIRS})
-    include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone mesh_functions)
+    set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions)
 
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics
@@ -92,10 +85,7 @@ if ( BUILD_TESTS )
     # add_amanzi_test(transport_dispersion transport_dispersion KIND unit)
 
     if ( ENABLE_MSTK_Mesh )
-        include_directories(${MSTK_INCLUDE_DIRS})
-        include_directories(${MSTK_SOURCE_DIR})
-
-        set(amanzi_libs geometry mesh mesh_audit mstk_mesh state transport whetstone output mesh_functions)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions)
 
         add_amanzi_test(transport_advance_mstk transport_advance_mstk
 	                KIND unit
@@ -136,10 +126,7 @@ if ( BUILD_TESTS )
     endif()    
 
     if ( ENABLE_STK_Mesh )
-        include_directories(${STK_INCLUDE_DIRS})
-        include_directories(${STK_SOURCE_DIR})
-
-        set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus_reader state transport whetstone mesh_functions)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions)
 
         add_amanzi_test(transport_advance_stk transport_advance_stk
 	                KIND unit

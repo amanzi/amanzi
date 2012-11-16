@@ -14,9 +14,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
 #include "State.hpp"
@@ -51,7 +50,14 @@ TEST(CONSTRUCTOR) {
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, comm, gm)); 
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory factory(comm);
+  factory.preference(pref);
+  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, gm); 
  
   //MeshAudit audit(mesh);
   //audit.Verify();

@@ -74,9 +74,6 @@ if ( ENABLE_Unstructured )
   if(ENABLE_CGNS)
       include_directories(${CGNS_INCLUDE_DIRS})
   endif()    
-
-  # Need to move this up to the root -- lpritch
-  add_definitions("-DUSE_MPI")
 endif()
 
 

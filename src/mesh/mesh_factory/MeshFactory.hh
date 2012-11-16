@@ -92,7 +92,6 @@ class MeshFactory {
                             const AmanziGeometry::GeometricModelPtr &gm = 
                             (AmanziGeometry::GeometricModelPtr) NULL);
 
-  
   /// Create a mesh by extract subsets of entities from an existing mesh
   Teuchos::RCP<Mesh> create(const Mesh *inmesh,
                             const std::vector<std::string> setnames,

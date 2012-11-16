@@ -4,10 +4,7 @@
 #include "UnitTest++.h"
 #include <vector>
 
-#include "Mesh_STK.hh"
-#include "Exodus_readers.hh"
-#include "Parallel_Exodus_file.hh"
-
+#include "MeshFactory.hh"
 #include "State.hpp"
 #include "Transport_PK.hpp"
 
@@ -50,7 +47,14 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_STK("test/cube_4x4x4.par", comm, gm));
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(STKMESH);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory("test/cube_4x4x4.par", gm);
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();

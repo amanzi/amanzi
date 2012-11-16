@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterXMLFileReader.hpp"
 // DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
 #include "State.hpp"
@@ -65,7 +65,13 @@ TEST(ADVANCE_WITH_SIMPLE) {
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 20, 2, comm, gm)); 
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 20, 2, gm); 
   
   // create a transport state with one component 
   int num_components = 1;

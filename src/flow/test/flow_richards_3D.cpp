@@ -20,9 +20,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_STK.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
@@ -56,7 +55,14 @@ TEST(FLOW_3D_RICHARDS) {
   // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
-  RCP<Mesh> mesh = rcp(new Mesh_STK(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, &comm, gm));
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(STKMESH);
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, gm);
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
