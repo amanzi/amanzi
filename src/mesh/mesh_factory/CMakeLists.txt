@@ -27,12 +27,14 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${STK_INCLUDE_DIRS})
 include_directories(${ExodusII_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+
 
 #
 # Library: mesh_factory
@@ -41,6 +43,8 @@ set(mesh_factory_files
     MeshFileType.cc MeshFramework.cc 
     MeshFactory.cc FrameworkTraits.cc) 
 file(GLOB mesh_factory_inc_files "*.hh")
+
+list(APPEND mesh_factory_frameworks simple_mesh)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
@@ -62,7 +66,7 @@ endif()
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} simple_mesh)
+                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
 
 if (BUILD_TESTS)
 
