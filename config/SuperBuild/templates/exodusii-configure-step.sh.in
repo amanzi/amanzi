@@ -34,6 +34,6 @@ cd ${exodusii_build_dir}
       -D NETCDF_NCDUMP=${netcdf_ncdump} \
       -D HDF5_LIBRARY=${hdf5_library} \
       -D HDF5HL_LIBRARY=${hdf5hl_library} \
-      -D BUILD_TESTING:BOOL=OFF \
+      -D BUILD_TESTING:BOOL=ON \
       ${exodusii_src_dir}
 exit $?
