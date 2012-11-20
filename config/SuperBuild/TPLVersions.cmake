@@ -238,8 +238,8 @@ set(Trilinos_VERSION_MINOR 0)
 set(Trilinos_VERSION_PATCH 3)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.gz)
-set(Trilinos_MD5_SUM        41368eb4c589e07a7f8e7de635ca234a) 
+set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.bz2)
+set(Trilinos_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7) 
 
 #
 # TPL: SEACAS
@@ -249,5 +249,5 @@ set(SEACAS_VERSION_MINOR 0)
 set(SEACAS_VERSION_PATCH 3)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}.${SEACAS_VERSION_MINOR}.${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.gz)
-set(SEACAS_MD5_SUM        41368eb4c589e07a7f8e7de635ca234a) 
+set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.bz2)
+set(SEACAS_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7) 
