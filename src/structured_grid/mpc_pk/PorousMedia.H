@@ -427,7 +427,7 @@ public:
   // This code assumes that the physical domain size of the current
   // problem is the same as that of the one that generated the pltfile.
   // It also assumes that the pltfile has at least as many levels as does
-  // the current problem, and that the reference ratios between levels are
+  // the current problem, and that the refinement ratios between levels are
   // the same for the current problem.
   //
   void fill_from_plotfile (MultiFab&          mf,

@@ -432,8 +432,7 @@ PMAmr::coarseTimeStep (Real stop_time)
                   << cumtime
                   << " DT = "
                   << dt_level[0]
-                  << '\n'
-                  << std::endl;
+                  << '\n';
     }
     if (record_run_info && ParallelDescriptor::IOProcessor())
     {

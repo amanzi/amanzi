@@ -1352,7 +1352,22 @@ PorousMedia::read_rock(int do_chem)
         ParmParse ppr(prefix.c_str());
         
         Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
-        Real rporosity; ppr.get("porosity",rporosity);    
+
+        Real rporosity = -1;
+        if (ppr.countval("porosity.val")) {
+          ppr.get("porosity.val",rporosity);
+        } else if (ppr.countval("porosity.vals")) {
+//FIXME
+          Array<Real> pvals;
+          ppr.getarr("porosity.vals",pvals,0,ppr.countval("porosity.vals"));
+          if (pvals.size()>1) {
+            BoxLib::Abort("Multiple porosity values not yet supported");
+          }
+          rporosity = pvals[0];
+        } else {
+          BoxLib::Abort(std::string("No porosity function specified for rock: \""+rname).c_str());
+        }
+
         Array<Real> rpermeability; ppr.getarr("permeability",rpermeability,0,ppr.countval("permeability"));
         BL_ASSERT(rpermeability.size() == 2); // Horizontal, Vertical
 
@@ -1394,23 +1409,28 @@ PorousMedia::read_rock(int do_chem)
             material_regions.push_back(region_names[j]);
         }
 
-        std::string porosity_dist; ppr.get("porosity_dist",porosity_dist);
+#if 1
+        if (ppr.countval("porosity_dist_param")>0) {
+          BoxLib::Abort("porosity_dist_param not currently supported");
+        }
+#endif
+        std::string porosity_dist="uniform"; ppr.query("porosity_dist",porosity_dist);
         int rporosity_dist_type = Rock::rock_dist_map[porosity_dist];
         Array<Real> rporosity_dist_param;
-        if (rporosity_dist_type > 1) {
-            ppr.getarr("porosity_dist_param",rporosity_dist_param,
-                       0,ppr.countval("porosity_dist_param"));
+        if (porosity_dist!="uniform") {
+          BoxLib::Abort("porosity_dist != uniform not current supported");
+          ppr.getarr("porosity_dist_param",rporosity_dist_param,
+                     0,ppr.countval("porosity_dist_param"));
         }
         
-        std::string permeability_dist; ppr.get("permeability_dist",permeability_dist);
+        std::string permeability_dist="uniform"; ppr.get("permeability_dist",permeability_dist);
         int rpermeability_dist_type = Rock::rock_dist_map[permeability_dist];
         Array<Real> rpermeability_dist_param;
-        if (rpermeability_dist_type > 1)
+        if (permeability_dist != "uniform")
         {
-            ppr.getarr("permeability_dist_param",rpermeability_dist_param,
-                       0,ppr.countval("permeability_dist_param"));
+          ppr.getarr("permeability_dist_param",rpermeability_dist_param,
+                     0,ppr.countval("permeability_dist_param"));
         }
-
         rocks.set(i, new Rock(rname,rdensity,rporosity,rporosity_dist_type,rporosity_dist_param,
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
                               rkrType,rkrParam,rcplType,rcplParam,rregions));

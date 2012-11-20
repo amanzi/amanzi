@@ -2569,6 +2569,14 @@ PorousMedia::advance (Real time,
     FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
     FillStateBndry (pcTime,Press_Type,0,1);
 
+    if (do_chem && ntracers > 0)
+    {
+      MultiFab& A_new = get_new_data(Aux_Chem_Type);
+      MultiFab& A_old = get_old_data(Aux_Chem_Type);
+      A_new.setVal(0.);
+      MultiFab::Copy(A_new,A_old,0,0,A_new.nComp(),A_new.nGrow());
+    }
+
     if (do_chem>0)
       {
 	if (do_full_strang)
@@ -3318,36 +3326,35 @@ PorousMedia::advance_multilevel_saturated (Real  time,
       {
 	PorousMedia& fine_lev = getLevel(lev);	
 
-	// Set velocity (u_mac_curr) from bc at t+dt 
+        // Set velocity (u_mac_curr) from bc at t+dt 
         //  -- FIXME: For steady, velocity update should be removed
-	fine_lev.set_vel_from_bcs(time+dt,fine_lev.u_mac_curr);
+        fine_lev.set_vel_from_bcs(time+dt,fine_lev.u_mac_curr);
+        
+        if (lev == 0) 
+          fine_lev.create_umac_grown(fine_lev.u_mac_curr,
+                                     fine_lev.u_macG_trac);
+        else 
+        {
+          PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+          fine_lev.GetCrseUmac(u_macG_crse,time);
+          fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
+                                     fine_lev.u_macG_trac); 
+        }
 
-	if (lev == 0) 
-	  fine_lev.create_umac_grown(fine_lev.u_mac_curr,
-				     fine_lev.u_macG_trac);
-	else 
-	  {
-	    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-	    fine_lev.GetCrseUmac(u_macG_crse,time);
-	    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
-				       fine_lev.u_macG_trac); 
-	  }
-	
         int ltracer = ncomps+ntracers-1;
-	
+
         //  -- FIXME: For steady, saturation will not change, this rescale should be removed
         MultiFab& S_new = fine_lev.get_new_data(State_Type);
         MultiFab& S_old = fine_lev.get_old_data(State_Type);
         MultiFab Stmp(grids,1,1); 
         for (int i=ncomps;i<=ltracer;i++)
         {
-            MultiFab::Copy(Stmp,S_old,i,0,1,1);
-            MultiFab::Multiply(Stmp,S_old,0,0,1,1);
-            Stmp.divide(S_new,0,1,1);
-            MultiFab::Copy(S_old,Stmp,0,i,1,1);
+          MultiFab::Copy(Stmp,S_old,i,0,1,1);
+          MultiFab::Multiply(Stmp,S_old,0,0,1,1);
+          Stmp.divide(S_new,0,1,1);
+          MultiFab::Copy(S_old,Stmp,0,i,1,1);
         }
         MultiFab::Copy(S_old,S_new,0,0,1,1);
-
 
         fine_lev.predictDT(fine_lev.u_macG_trac); // updates dt_eig
         //  -- FIXME: For steady, dt from predictDT will be constant
@@ -7373,7 +7380,9 @@ PorousMedia::initialTimeStep (MultiFab* u_mac)
         dt_0 = estTimeStep(u_mac);
     }
 
-    std::cout << "initialTimeStep:  dt_0: " << dt_0 << ", " << dt_init << std::endl;
+    if (verbose>2 && ParallelDescriptor::IOProcessor()) {
+      std::cout << "initialTimeStep:  dt_0: " << dt_0 << ", " << dt_init << std::endl;
+    }
 
     const Real cur_time = state[State_Type].curTime();
     if (stop_time > cur_time) {
@@ -9702,7 +9711,9 @@ PorousMedia::richard_sync ()
 
   if (err_nwt > max_err_nwt) {
       retVal = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
-      std::cout << "     **************** Newton failed in richard_sync: too many iterations\n"; 
+      if (verbose>2 && ParallelDescriptor::IOProcessor()) {
+        std::cout << "     **************** Newton failed in richard_sync: too many iterations\n"; 
+      }
   }
 
   if (retVal == RichardNLSdata::RICHARD_SUCCESS)
