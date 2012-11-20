@@ -656,33 +656,6 @@ void Richards_PK::ComputePreconditionerMFD(
 
 
 /* ******************************************************************
-* BDF methods need a good initial guess.
-* This method gives a less smoother solution than in Flow 1.0.
-* WARNING: Each owned face must have at least one owned cell. 
-* Probability that this assumption is violated is close to zero. 
-* Even when it happens, the code will not crash.
-****************************************************************** */
-void Richards_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    cells.clear();
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    int ncells = cells.size();
-
-    if (ncells > 0) {
-      double face_value = 0.0;
-      for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
-      ufaces[f] = face_value / ncells;
-    } else {
-      ufaces[f] = atm_pressure;
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Temporary convertion from double to tensor.                                               
 ****************************************************************** */
 void Richards_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
