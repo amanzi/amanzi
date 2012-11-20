@@ -95,6 +95,7 @@ class Richards_PK : public Flow_PK {
                                 double Tp, double dTp, bool flag_update_ML);
 
   void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
+  double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers
   void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner);
@@ -123,7 +124,6 @@ class Richards_PK : public Flow_PK {
   void PopulateMapC2MB();
 
   // initization members
-  void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
@@ -173,7 +173,7 @@ class Richards_PK : public Flow_PK {
   double functional_max_norm;
   int functional_max_cell;
 
-  TI_Specs ti_specs_igs_;  // Tree time integration phases
+  TI_Specs ti_specs_igs_;  // Three time integration phases
   int ti_method_igs, error_control_igs_;
   TI_Specs ti_specs_sss_;
   int ti_method_sss, error_control_sss_;
@@ -189,6 +189,9 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
   Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
   Teuchos::RCP<Epetra_Vector> rhs_faces;
+
+  Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
+  Teuchos::RCP<Epetra_Vector> pdot_cells;
 
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
 

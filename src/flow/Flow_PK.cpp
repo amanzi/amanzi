@@ -165,7 +165,7 @@ void Flow_PK::ProcessBoundaryConditions(
     }
   }
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Flow PK: assigned zero flux boundary condition to%7d faces\n", missed);
+    std::printf("Flow PK: assign zero flux boundary condition to%7d faces\n", missed);
   }
   nseepage_prev = nseepage;
 }
@@ -266,6 +266,29 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
         flag[f] = 1;
       }
     }
+  }
+}
+
+
+/* ******************************************************************
+* BDF methods need a good initial guess.
+* This method gives a less smoother solution than in Flow 1.0.
+* WARNING: Each owned face must have at least one owned cell. 
+* Probability that this assumption is violated is close to zero. 
+* Even when it happens, the code will not crash.
+****************************************************************** */
+void Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    cells.clear();
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
+    ufaces[f] = face_value / ncells;
   }
 }
 

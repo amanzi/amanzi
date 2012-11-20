@@ -122,7 +122,6 @@ class Darcy_PK : public Flow_PK {
 
   int num_itrs_trs;  // Parameters for transient solver
   double dT_desirable_;
-  int dT_method_;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
@@ -149,7 +148,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  int mfd3d_method, ini_with_darcy;
+  int mfd3d_method;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 

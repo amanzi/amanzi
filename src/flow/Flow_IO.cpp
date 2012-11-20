@@ -39,6 +39,10 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
     ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints", false);
 
+    ti_specs.dT_method = 0;
+    std::string dT_name = list.get<string>("time stepping strategy", "simple");
+    if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
+
     Teuchos::ParameterList& tmp_list = list.sublist(name);
     ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
     ti_specs.max_itrs = tmp_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
