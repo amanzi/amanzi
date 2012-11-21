@@ -4,6 +4,8 @@
 
 EventCoord PMAmr::event_coord;
 Layout PMAmr::layout;
+int PMAmr::plot_file_digits;
+int PMAmr::chk_file_digits;
 
 namespace
 {
@@ -35,6 +37,12 @@ PMAmr::PMAmr()
         use_efficient_regrid     = 0;
         plotfile_on_restart      = 0;
         compute_new_dt_on_regrid = 0;
+        plot_file_digits         = file_name_digits;
+        chk_file_digits          = file_name_digits;
+
+        ParmParse pp("amr");
+        pp.query("plot_file_digits",plot_file_digits);
+        pp.query("chk_file_digits",chk_file_digits);
 
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         pmamr_initialized = true;
@@ -134,11 +142,17 @@ PMAmr::init (Real t_start,
                        cumtime, dt_level[0], level_steps[0], 0);
 
         if (write_plot) {
+            int file_name_digits_tmp = file_name_digits;
+            file_name_digits = plot_file_digits;
             writePlotFile();
+            file_name_digits = file_name_digits_tmp;
         }
 
         if (write_check) {
+            int file_name_digits_tmp = file_name_digits;
+            file_name_digits = chk_file_digits;
             checkPoint();
+            file_name_digits = file_name_digits_tmp;
         }
     }
 }
@@ -478,12 +492,18 @@ PMAmr::coarseTimeStep (Real stop_time)
 
     if (write_check || (to_checkpoint==1))
     {
+        int file_name_digits_tmp = file_name_digits;
+        file_name_digits = chk_file_digits;
         checkPoint();
+        file_name_digits = file_name_digits_tmp;
     }
 
     if (write_plot)
     {
+        int file_name_digits_tmp = file_name_digits;
+        file_name_digits = plot_file_digits;
         writePlotFile();
+        file_name_digits = file_name_digits_tmp;
     }
 
     if (to_stop)
