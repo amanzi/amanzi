@@ -3052,7 +3052,7 @@ namespace Amanzi {
             amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
             amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
             amr_list.set<std::string>("plot_file",vis_file);
-            amr_list.set<int>("file_name_digits",vis_digits);
+            amr_list.set<int>("plot_file_digits",vis_digits);
 
 
             // chk data
@@ -3106,7 +3106,7 @@ namespace Amanzi {
             }
             amr_list.set<Array<std::string> >("chk_cycle_macros",chk_cMacroNames);
             amr_list.set<std::string>("check_file",chk_file);
-            amr_list.set<int>("file_name_digits",check_digits);
+            amr_list.set<int>("chk_file_digits",check_digits);
 
         
             // observation

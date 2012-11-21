@@ -41,6 +41,8 @@ protected:
     static Layout layout;
     static EventCoord event_coord;
     static void CleanupStatics ();
+    static int plot_file_digits;
+    static int chk_file_digits;
 
 private:
     //
