@@ -479,7 +479,10 @@ void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
                                      const std::string& region)
 {
   if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
-    throw std::exception();
+    std::stringstream tempstr;
+    tempstr << "\n" << "Region " << region << " required by state does not define a valid cell set" << std::endl;
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
   }
 
   unsigned int mesh_block_size = mesh_maps->get_set_size(region,
@@ -506,7 +509,10 @@ void State::set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
                                      const std::string& region) {
 
   if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
-    throw std::exception();
+    std::stringstream tempstr;
+    tempstr << "\n" << "Region " << region << " required by State does not define a valid cell set" << std::endl;
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
   }
 
   unsigned int mesh_block_size = mesh_maps->get_set_size(region,
@@ -530,7 +536,10 @@ void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector&
                                      const std::string& region)
 {
   if (!mesh_maps->valid_set_name(region, Amanzi::AmanziMesh::CELL)) {
-    throw std::exception();
+    std::stringstream tempstr;
+    tempstr << "\n" << "Region " << region << " required by State does not define a valid cell set" << std::endl;
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
   }
 
   unsigned int mesh_block_size = mesh_maps->get_set_size(region,
@@ -552,7 +561,10 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
                                          int mesh_block_id)
 {
   if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
-    throw std::exception();
+    std::stringstream tempstr;
+    tempstr << "\n" << "Mesh block " << mesh_block_id << " required by State does not define a valid cell set" << std::endl;
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
   }
 
   unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
@@ -576,7 +588,10 @@ void State::set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const int mes
 {
   // Epetra_Map face_map = mesh_maps->face_map(false);
   if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
-    throw std::exception();
+    std::stringstream tempstr;
+    tempstr << "\n" << "Mesh block " << mesh_block_id << " required by State does not define a valid cell set" << std::endl;
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
   }
 
   unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
@@ -610,7 +625,10 @@ void State::set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const int mes
 void State::set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const std::string region)
 {
   if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
-    throw std::exception();
+    std::stringstream tempstr;
+    tempstr << "\n" << "Region " << region << " required by State does not define a valid cell set" << std::endl;
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
   }
 
   unsigned int mesh_block_size = mesh_maps->get_set_size(region,

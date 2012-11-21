@@ -19,7 +19,7 @@
 
       <ParameterList name="source terms">
         <ParameterList name="SRC 0">
-          <Parameter name="regions" type="Array string" value="{Well}"/>
+          <Parameter name="regions" type="Array(string)" value="{Well}"/>
           <ParameterList name="sink">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="-0.1"/>
@@ -31,7 +31,7 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array string" value="{Top side, Bottom side}"/>
+            <Parameter name="regions" type="Array(string)" value="{Top side, Bottom side}"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0"/>
@@ -41,7 +41,7 @@
         </ParameterList>
         <ParameterList name="static head">
           <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array string" value="{Left side, Right side}"/>
+            <Parameter name="regions" type="Array(string)" value="{Left side, Right side}"/>
             <ParameterList name="water table elevation">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
@@ -90,38 +90,38 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{-10.0,-5.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{10.0,0.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-10.0,-5.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{10.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{-0.1,-5.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{0.1,0.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.1,-5.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.1,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{-10.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{-1.0,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-10.0,-5.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{10.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{1.0,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{10.0,-5.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{-10.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,-1.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-10.0,-5.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,1.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

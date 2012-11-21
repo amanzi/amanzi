@@ -11,6 +11,7 @@
 
 #include "LabeledSetRegion.hh"
 #include "dbc.hh"
+#include "errors.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -66,8 +67,8 @@ LabeledSetRegion::~LabeledSetRegion(void)
 bool
 LabeledSetRegion::inside(const Point& p) const
 {
-  std::cerr << "In/out check not implemented for labeled sets" << std::endl;
-  throw std::exception();
+  Errors::Message mesg("In/out check not implemented for labeled sets");
+  Exceptions::amanzi_throw(mesg);
 }
 
 } // namespace AmanziGeometry

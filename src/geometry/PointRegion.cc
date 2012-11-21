@@ -10,6 +10,7 @@
 
 #include "PointRegion.hh"
 #include "dbc.hh"
+#include "errors.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -51,7 +52,16 @@ PointRegion::~PointRegion(void)
 bool
 PointRegion::inside(const Point& p) const
 {
-  ASSERT(p.dim() == p_.dim());
+
+#ifdef ENABLE_DBC
+  if (p.dim() != p_.dim()) {
+    std::stringstream tempstr;
+    tempstr << "\nMismatch in dimension of PointRegion \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
+
   bool result(true);
 
   for (int i = 0; i < p.dim(); ++i) 

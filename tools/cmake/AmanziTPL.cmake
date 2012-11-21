@@ -30,6 +30,19 @@ endif()
 ##############################################################################
 # Boost
 ##############################################################################
+
+# CMake 2.8.6 FindBoost stops at version 1.46
+# Add more versions to the search see cmake --help-module FindBoost for
+# more information.
+set(Boost_ADDITIONAL_VERSIONS 
+    1.47 1.47.0
+    1.48 1.48.0
+    1.49 1.49.0
+    1.50 1.50.0
+    1.51 1.51.0
+    1.52 1.52.0
+    1.53 1.53.0
+    1.54 1.55.0)
 find_package( Boost COMPONENTS system filesystem program_options regex REQUIRED)
 set_feature_info(Boost
                  "C++ Extension library"
@@ -42,6 +55,20 @@ if ( Boost_VERSION)
     message(WARNING "Found Boost version ${Boost_VERSION} which"
                     " is older than the supported (1.46) version.")
   endif()
+
+  # The Boost filesystem library changed and deprecated some functions.
+  # This define should be used when packages include boost/filesystem.hpp
+  # and packages any of these new or deprecated functions.
+  # The change from version 2 to 3 occurred with the 1.49 Boost release.
+  # Please refer to the online documentation at www.boost.org.
+  if ( "${Boost_VERSION}" VERSION_LESS "1.34" )
+    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=1")
+  elseif ( "${Boost_VERSION}" VERSION_LESS "1.49" )
+    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=2")
+  else()
+    set(Boost_FILESYSTEM_DEFINES "BOOST_FILESYSTEM_VERSION=3")
+  endif()  
+
 
 endif()
 
@@ -80,14 +107,25 @@ endif()
 ##############################################################################
 # This command alters Trilinos_DIR. If it finds the configuration file
 # Trilinos_DIR is set to the path the configuration file was found.
-find_package(Trilinos 10.6 REQUIRED
-             HINTS ${Trilinos_DIR}
+if ( NOT Trilinos_INSTALL_PREFIX )
+  message(WARNING "Use Trilinos_INSTALL_PREFIX"
+                  " to define the Trilinos installation location"
+		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilnos directory>\n")
+endif()
+set(Trilinos_MINIMUM_VERSION 11.0.3)
+find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
+             PATHS ${Trilinos_INSTALL_PREFIX}
              PATH_SUFFIXES include)
-trilinos_package_enabled_tpls(Trilinos)           
             
 if ( Trilinos_FOUND )
 
-    message(STATUS "Found Trilinos: ${Trilinos_LIBRARY_DIR}")
+    message(STATUS "Found Trilinos: ${Trilinos_DIR} (${Trilinos_VERSION})")
+    trilinos_package_enabled_tpls(Trilinos)           
+
+    if ( "${Trilinos_VERSION}" VERSION_LESS ${Trilinos_MINIMUM_VERSION} ) 
+      message(FATAL_ERROR "Trilinos version ${Trilinos_VERSION} is not sufficient."
+	                  " Amanzi requires at least version ${Trilinos_MINIMUM_VERSION}")
+    endif()
 
     # Amanzi uses Epetra and Teuchos utils throughout the code. 
     # This find_package call defines Epetra_* variables.
@@ -113,14 +151,14 @@ if ( Trilinos_FOUND )
     foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
       find_package(${tri_package} REQUIRED
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib)
       trilinos_package_enabled_tpls(${tri_package})
-      # For some reason, Trilinos defines dependent TPLs in *_TPL_LIBRARIES not
-      # in *_LIBRARIES. We update the variables so the usage of these variables
-      # is consistent with other FindXXX modules.
-      list(APPEND ${tri_package}_LIBRARIES  "${${tri_package}_TPL_LIBRARIES}")
-      list(APPEND ${tri_package}_INCLUDE_DIRS "${${tri_package}_TPL_INCLUDE_DIRS}")
+      message(STATUS "Located Trilinos package ${tri_package}: ${${tri_package}_DIR}")
+      # Update the <PACKAGE>_INCLUDE_DIRS variable 
+      foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
+	list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
+      endforeach()
 
     endforeach()
 
@@ -130,12 +168,14 @@ if ( Trilinos_FOUND )
     if ( ENABLE_STK_Mesh )
       find_package(STK
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib)
       if (STK_FOUND)
+	message(STATUS "Located Trilinos package STK: ${STK_DIR}")
         trilinos_package_enabled_tpls(STK)
-        list(APPEND STK_LIBRARIES "${STK_TPL_LIBRARIES}")
-        list(APPEND STK_INCLUDE_DIRS "${STK_TPL_INCLUDE_DIRS}")
+	foreach( _inc "${STK_TPL_INCLUDE_DIRS}")
+	    list(APPEND STK_INCLUDE_DIRS "${_inc}")
+	endforeach()
       else()  
         message(WARNING "Could not locate STK in ${Trilinos_DIR}. Will not enable STK_Mesh")
         set(ENABLE_STK_Mesh OFF CACHE BOOL "Disable STK Mesh capability" FORCE)
@@ -147,12 +187,14 @@ if ( Trilinos_FOUND )
     if ( ENABLE_MSTK_Mesh )
       find_package(Zoltan
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib)
-      if (STK_FOUND)
+      if (Zoltan_FOUND)
+	message(STATUS "Located Trilinos package Zoltan: ${Zoltan_DIR}")
         trilinos_package_enabled_tpls(Zoltan)
-        list(APPEND Zoltan_LIBRARIES "${Zoltan_TPL_LIBRARIES}")
-        list(APPEND Zoltan_INCLUDE_DIRS "${Zoltan_TPL_INCLUDE_DIRS}")
+	foreach( _inc "${ZOLTAN_TPL_INCLUDE_DIRS}")
+	    list(APPEND ZOLTAN_INCLUDE_DIRS "${_inc}")
+	endforeach()
       else()  
         message(WARNING "Could not locate Zoltan in ${Trilinos_DIR}. Will not enable MSTK_Mesh")
         set(ENABLE_MSTK_Mesh OFF CACHE BOOL "Disable MSTK Mesh capability" FORCE)
@@ -167,13 +209,15 @@ if ( Trilinos_FOUND )
       # Ifpack - preconditioner package that serves as a wrapper for HYPRE
       find_package(Ifpack 
                    NO_MODULE
-                   HINTS ${Trilinos_DIR}
+                   HINTS ${Trilinos_INSTALL_PREFIX}
                    PATH_SUFFIXES include lib
                    )
-      list(APPEND Ifpack_LIBRARIES "${Ifpack_TPL_LIBRARIES}")
-      list(APPEND Ifpack_INCLUDE_DIRS "${Ifpack_TPL_INCLUDE_DIRS}")
-      if (Ifpack_FOUND)      
+      if (Ifpack_FOUND)
+	message(STATUS "Located Triilnos package Ifpack: ${Ifpack_DIR}")
         trilinos_package_enabled_tpls(Ifpack)
+	foreach( _inc "${Ifpack_TPL_INCLUDE_DIRS}")
+	    list(APPEND Ifpack_INCLUDE_DIRS "${_inc}")
+	endforeach()
       else()
         message(SEND_ERROR "Trilinos in ${Trilinos_DIR} does not have the Ifpack package")
       endif()
@@ -186,22 +230,15 @@ if ( Trilinos_FOUND )
     endif()
        
     # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
-    list(APPEND Trilinos_LIBRARIES "${Trilinos_TPL_LIBRARIES}")
-    list(APPEND Trilinos_INCLUDE_DIRS "${Trilinos_TPL_INCLUDE_DIRS}")
+    foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
+      list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
+    endforeach()
 
 else()
     message(FATAL_ERROR "Can not locate Trilinos configuration file\n"
                         " Please define the location of your Trilinos installation\n"
                         "using -D Trilinos_DIR:FILEPATH=<install path>\n")
 endif()    
-
-# Trilinos can contain 20 or more libraries (packages). The variable Trilinos_LIBRARIES
-# does not have full path names only library names. I suspect if it did include
-# full path names the link command would exceed the command line character limit on
-# many platforms, thus we need to add Trilinos library path to the link to find these
-# libraries. Since Amanzi calls many Trilinos packages directly we'll add Trilinos
-# to all link commands here. Yes, this is overkill. We'll have wrappers someday.
-link_directories(${Trilinos_LIBRARY_DIRS})
 
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/

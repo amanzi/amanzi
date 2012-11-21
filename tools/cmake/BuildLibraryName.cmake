@@ -14,7 +14,7 @@ include(PrintVariable)
 function(BUILD_LIBRARY_NAME library output_name)
 
   set(options "SHARED;STATIC")
-  set(oneValue "")
+  set(oneValue "APPEND_PATH")
   set(multiValue "")
   cmake_parse_arguments(PARSE "${options}" "${oneValue}" "${multiValue}" ${ARGN})
 
@@ -33,7 +33,12 @@ function(BUILD_LIBRARY_NAME library output_name)
     set(lib_prefix ${CMAKE_STATIC_LIBRARY_PREFIX})
   endif()
 
-  set(${output_name} "${lib_prefix}${library}${lib_suffix}" PARENT_SCOPE)
+  if ( PARSE_APPEND_PATH )
+    set(${output_name} "${PARSE_APPEND_PATH}/${lib_prefix}${library}${lib_suffix}" PARENT_SCOPE)
+  else()  
+    set(${output_name} "${lib_prefix}${library}${lib_suffix}" PARENT_SCOPE)
+  endif()  
+
 
 endfunction(BUILD_LIBRARY_NAME)
                      

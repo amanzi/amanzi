@@ -10,6 +10,7 @@
 
 #include "PlaneRegion.hh"
 #include "dbc.hh"
+#include "errors.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -26,14 +27,32 @@ PlaneRegion::PlaneRegion(const std::string name,
 			 const Point& p, const Point& normal)
   : Region(name,id,p.dim()-1), p_(p), n_(normal)
 {
-  ASSERT(p_.dim() == n_.dim());
+
+#ifdef ENABLE_DBC
+  if (p_.dim() != n_.dim()) {
+    std::stringstream tempstr;
+    tempstr << "\nMismatch in point and normal dimensions of PlaneRegion " << Region::name() << "Perhaps the region is improperly defined?\n";
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
+
 }
 
 PlaneRegion::PlaneRegion(const char *name, const unsigned int id,
 			 const Point& p, const Point& normal)
   : Region(name,id,p.dim()-1), p_(p), n_(normal)
 {
-  ASSERT(p_.dim() == n_.dim());
+
+#ifdef ENABLE_DBC
+  if (p_.dim() != n_.dim()) {
+    std::stringstream tempstr;
+    tempstr << "\nMismatch in point and normal dimensions of PlaneRegion " << Region::name() << "Perhaps the region is improperly defined?\n";
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
+
 }
 
 PlaneRegion::PlaneRegion(const PlaneRegion& old)
@@ -53,7 +72,15 @@ PlaneRegion::~PlaneRegion(void)
 bool
 PlaneRegion::inside(const Point& p) const
 {
-  ASSERT(p.dim() == p_.dim());
+#ifdef ENABLE_DBC
+  if (p.dim() != p_.dim()) {
+    std::stringstream tempstr;
+    tempstr << "\nMismatch in point dimension of PlaneRegion \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
+    Errors::Message mesg(tempstr.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
+
   bool result(true);
 
   double d(0.0), res(0.0);

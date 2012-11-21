@@ -46,65 +46,65 @@
 
     <ParameterList name="Mesh">	   
       <ParameterList name="Structured">
-	<Parameter name="Number of Cells" type="Array int" value="{432, 256}"/>
-	<Parameter name="Domain Low Corner" type="Array double" value="{0.0,  0.0}" />
-	<Parameter name="Domain High Corner" type="Array double" value="{216.0, 107.52}" />
+	<Parameter name="Number of Cells" type="Array(int)" value="{432, 256}"/>
+	<Parameter name="Domain Low Corner" type="Array(double)" value="{0.0,  0.0}" />
+	<Parameter name="Domain High Corner" type="Array(double)" value="{216.0, 107.52}" />
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Regions">
       <ParameterList name="Bottom Surface All">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{216.0,0.0}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{216.0,0.0}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 0 and Plane Surface 1">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{216.0,39.9}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{216.0,39.9}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 1 and Plane Surface 2">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,39.9}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{216.0,80.22}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,39.9}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{216.0,80.22}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 2 and Plane Surface 3">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,80.22}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{216.0,107.52}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,80.22}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{216.0,107.52}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Top Surface Crib_216-B-17">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{74.5,107.52}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{78.5,107.52}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{74.5,107.52}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{78.5,107.52}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Top Surface Crib_216-B-18">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{143.5,107.52}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{147.5,107.52}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{143.5,107.52}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{147.5,107.52}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Top Surface Recharge_Boundary_westOfCribs">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{0.0,107.52}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{74.5,107.52}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,107.52}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{74.5,107.52}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Top Surface Recharge_Boundary_btwnCribs">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{78.5,107.52}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{143.5,107.52}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{78.5,107.52}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{143.5,107.52}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Top Surface Recharge_Boundary_eastOfCribs">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array double" value="{147.5,107.52}"/>
-          <Parameter name="High Coordinate" type="Array double" value="{216.0,107.52}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{147.5,107.52}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{216.0,107.52}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -123,7 +123,7 @@
           <Parameter name="m" type="double" value="0.2294"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
-        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
       </ParameterList>
       <ParameterList name="Facies_2">
         <ParameterList name="Porosity: Uniform">
@@ -139,7 +139,7 @@
           <Parameter name="m" type="double" value="0.2136"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
-        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
       </ParameterList>
       <ParameterList name="Facies_3">
         <ParameterList name="Porosity: Uniform">
@@ -155,7 +155,7 @@
           <Parameter name="m" type="double" value="0.3006"/>
           <Parameter name="Relative Permeability" type="string" value="Mualem"/>
         </ParameterList>
-        <Parameter name="Assigned Regions" type="Array string" value="{Region between Plane Surface 2 and Plane Surface 3}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 2 and Plane Surface 3}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Phase Definitions">
@@ -170,19 +170,19 @@
         </ParameterList>
         <ParameterList name="Phase Components">
           <ParameterList name="Water">
-            <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
+            <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Initial Conditions">
       <ParameterList name="ALL">
-        <Parameter name="Assigned Regions" type="Array string" value="{ALL}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{ALL}"/>
         <ParameterList name="IC: Linear Pressure">
           <Parameter name="Phase" type="string" value="Aqueous"/>
           <Parameter name="Reference Value" type="double" value="101325 "/>
-          <Parameter name="Reference Coordinate" type="Array double" value="{0,0}"/>
-          <Parameter name="Gradient Value" type="Array double" value="{0,-9793.5192 }"/>
+          <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
+          <Parameter name="Gradient Value" type="Array(double)" value="{0,-9793.5192 }"/>
         </ParameterList>
         <ParameterList name="Solute IC">
           <ParameterList name="Aqueous">
@@ -200,20 +200,20 @@
     </ParameterList>
     <ParameterList name="Boundary Conditions">
       <ParameterList name="BC For Bottom Surface All">
-        <Parameter name="Assigned Regions" type="Array string" value="{Bottom Surface All}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Bottom Surface All}"/>
         <ParameterList name="BC: Uniform Pressure">
-          <Parameter name="Times" type="Array double" value="{0.0, 9.4672798E10}"/>
-          <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-          <Parameter name="Values" type="Array double" value="{101325., 101325.}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+          <Parameter name="Values" type="Array(double)" value="{101325., 101325.}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">
             <ParameterList name="Water">
               <ParameterList name="Tc-99">
                 <ParameterList name="BC: Uniform Concentration">
-                  <Parameter name="Times" type="Array double" value="{0.0, 9.4672798E10}"/>
-                  <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                  <Parameter name="Values" type="Array double" value="{0.0, 0.0}"/>
+                  <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                  <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
                 </ParameterList>
                 <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
@@ -222,20 +222,20 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="BC For Top Surface Crib_216-B-17">
-        <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Crib_216-B-17}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Crib_216-B-17}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 6.1729346E10, 9.4672798E10}"/>
-          <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant}"/>
-          <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 0.00254022E-3, 1.48666E-9, 1.48666E-9}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 6.1729346E10, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
+          <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071E-10, 0.00254022E-3, 1.48666E-9, 1.48666E-9}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">
             <ParameterList name="Water">
               <ParameterList name="Tc-99">
                 <ParameterList name="BC: Uniform Concentration">
-                  <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 6.1729346E10, 9.4672798E10}"/>
-                  <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant}"/>
-                  <Parameter name="Values" type="Array double" value="{0.0, 1.881389E-06, 0.0, 0.0}"/>
+                  <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 6.1729346E10, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
+                  <Parameter name="Values" type="Array(double)" value="{0.0, 1.881389E-06, 0.0, 0.0}"/>
                 </ParameterList>
                 <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
@@ -244,20 +244,20 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="BC For Top Surface Crib_216-B-18">
-        <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Crib_216-B-18}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Crib_216-B-18}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
-          <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant, Constant}"/>
-          <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 1.48666E-9, 0.00330423E-3, 1.48666E-9, 1.48666E-9}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
+          <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071E-10, 1.48666E-9, 0.00330423E-3, 1.48666E-9, 1.48666E-9}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">
             <ParameterList name="Water">
               <ParameterList name="Tc-99">
                 <ParameterList name="BC: Uniform Concentration">
-                  <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
-                  <Parameter name="Time Functions" type="Array string" value="{Constant, Constant, Constant, Constant}"/>
-                  <Parameter name="Values" type="Array double" value="{0.0, 0.0, 2.266885E-06, 0.0, 0.0}"/>
+                  <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
+                  <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 2.266885E-06, 0.0, 0.0}"/>
                 </ParameterList>
                 <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
@@ -266,20 +266,20 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="BC For Top Surface Recharge_Boundary_westOfCribs">
-        <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Recharge_Boundary_westOfCribs}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Recharge_Boundary_westOfCribs}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
-          <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-          <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+          <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">
             <ParameterList name="Water">
               <ParameterList name="Tc-99">
                 <ParameterList name="BC: Uniform Concentration">
-                  <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
-                  <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-                  <Parameter name="Values" type="Array double" value="{0.0, 0.0, 0.0}"/>
+                  <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                  <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
                 <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
@@ -288,20 +288,20 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="BC For Top Surface Recharge_Boundary_btwnCribs">
-        <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Recharge_Boundary_btwnCribs}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Recharge_Boundary_btwnCribs}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
-          <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-          <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+          <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">
             <ParameterList name="Water">
               <ParameterList name="Tc-99">
                 <ParameterList name="BC: Uniform Concentration">
-                  <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
-                  <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-                  <Parameter name="Values" type="Array double" value="{0.0, 0.0, 0.0}"/>
+                  <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                  <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
                 <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
@@ -310,20 +310,20 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="BC For Top Surface Recharge_Boundary_eastOfCribs">
-        <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Recharge_Boundary_eastOfCribs}"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Recharge_Boundary_eastOfCribs}"/>
         <ParameterList name="BC: Flux">
-          <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
-          <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-          <Parameter name="Inward Volumetric Flux" type="Array double" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
+          <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+          <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{1.1071E-10, 1.48666E-9, 1.48666E-9}"/>
         </ParameterList>
         <ParameterList name="Solute BC">
           <ParameterList name="Aqueous">
             <ParameterList name="Water">
               <ParameterList name="Tc-99">
                 <ParameterList name="BC: Uniform Concentration">
-                  <Parameter name="Times" type="Array double" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
-                  <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-                  <Parameter name="Values" type="Array double" value="{0.0, 0.0, 0.0}"/>
+                  <Parameter name="Times" type="Array(double)" value="{0.0, 6.1726667E10, 9.4672798E10}"/>
+                  <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
+                  <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
                 <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
@@ -336,7 +336,7 @@
       <ParameterList name="Time Macros"/>
       <ParameterList name="Cycle Macros">
         <ParameterList name="Every_1.0_1000.0_-1">
-          <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
+          <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Variable Macros"/>

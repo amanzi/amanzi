@@ -22,8 +22,6 @@ project(MSTK)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 
@@ -34,7 +32,7 @@ include_directories(${MSTK_INCLUDE_DIRS})
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
-add_definitions("-DUSE_MPI -DMSTK_HAVE_MPI")
+add_definitions("-DMSTK_HAVE_MPI")
 
 #
 # Library: mstk_mesh
@@ -43,7 +41,7 @@ set(mstk_mesh_files Mesh_MSTK.cc)
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
-                   LINK_LIBS geometry mesh mesh_data ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES})
+                   LINK_LIBS geometry mesh ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES})
 
 if (BUILD_TESTS)
     
@@ -62,14 +60,14 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE
                          test/Main.cc 
-                         test/test_hex_2x2x2.cc
-                         test/test_hex_3x3x2.cc
-                         test/test_hex_4x4x4.cc
-                         test/test_hex_4x4x4_sets.cc
-                         test/test_hex_gen_4x4x4.cc
-                         test/test_quad_gen_4x4.cc
+                         test/test_hex_1x1x1.cc
+                         test/test_hex_2x2x1.cc
+                         test/test_hex_3x3x3.cc
+                         test/test_hex_3x3x3_sets.cc
+                         test/test_hex_gen_3x3x3.cc
+                         test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
-                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES}) 
+                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES}) 
 
     # Test: mstk_mesh_parallel
     add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh
@@ -77,12 +75,13 @@ if (BUILD_TESTS)
                     NPROCS 4
                     SOURCE
                          test/Main.cc
-                         test/test_hex_4x4x4_4P.cc
-                         test/test_hex_4x4x4_sets_4P.cc
-                         test/test_quad_gen_4x4_4P.cc
-                         test/test_hex_gen_4x4x4_4P.cc
+                         test/test_hex_3x3x3_4P.cc
+                         test/test_hex_3x3x3_sets_4P.cc
+			 test/test_hex_3x3x3_par_read_4P.cc
+                         test/test_quad_gen_3x3_4P.cc
+                         test/test_hex_gen_3x3x3_4P.cc
 			 test/test_extract_surface_4P.cc
-                    LINK_LIBS mstk_mesh ${UnitTest_LIBRARIES})
+                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES})
 
 endif()
 

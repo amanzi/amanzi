@@ -4,7 +4,7 @@
 #include "dbc.hh"
 #include "MeshDefs.hh"
 
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <map>
@@ -24,46 +24,48 @@ namespace STK {
 class Entity_map
 {
 
-    unsigned int dimension_;
+  const stk::mesh::fem::FEMMetaData *meta_data_;
 
-    stk::mesh::EntityRank ranks_  [3];
-    Entity_kind kinds_ [3];
+  unsigned int dimension_;
 
-    std::map<stk::mesh::EntityRank, Entity_kind> rank_to_kind_;
-    std::map<Entity_kind, stk::mesh::EntityRank> kind_to_rank_;
-
-    static bool valid_dimension_ (unsigned int dimension);
-
-    inline void create_maps_ ();
+  stk::mesh::EntityRank ranks_  [3];
+  Entity_kind kinds_ [3];
+  
+  std::map<stk::mesh::EntityRank, Entity_kind> rank_to_kind_;
+  std::map<Entity_kind, stk::mesh::EntityRank> kind_to_rank_;
+  
+  inline void create_maps_ ();
 
 public:
+  
+  Entity_map (const stk::mesh::fem::FEMMetaData *meta_data) : meta_data_ (meta_data),
+                                                              dimension_(meta_data_->spatial_dimension())
+  {
+    create_maps_ ();
+  }
+  
+  bool valid_dimension_(unsigned int dimension);
 
-    Entity_map (int dimension) : dimension_ (dimension)
-    {
-        ASSERT (valid_dimension_ (dimension));
-        create_maps_ ();
-    }
-
-    unsigned int dimension () const { return dimension_; }
-
-    stk::mesh::EntityRank  kind_to_rank (Entity_kind kind) const;
-    Entity_kind rank_to_kind (stk::mesh::EntityRank   rank) const;
-
+  unsigned int dimension () const { return dimension_; }
+  
+  stk::mesh::EntityRank  kind_to_rank (Entity_kind kind) const;
+  Entity_kind rank_to_kind (stk::mesh::EntityRank   rank) const;
+  
 };
 
 void Entity_map::create_maps_ ()
 {
 
-    rank_to_kind_ [stk::mesh::Node] = NODE;
-    rank_to_kind_ [stk::mesh::Edge] = (dimension_ == 2) ? FACE : EDGE;
-    rank_to_kind_ [stk::mesh::Face] = (dimension_ == 2) ? CELL : FACE;
-    rank_to_kind_ [stk::mesh::Element] = CELL;
+  rank_to_kind_ [meta_data_->node_rank()] = NODE;
+  rank_to_kind_ [meta_data_->edge_rank()] = (dimension_ == 2) ? FACE : EDGE;
+  rank_to_kind_ [meta_data_->face_rank()] = (dimension_ == 2) ? CELL : FACE;
+  rank_to_kind_ [meta_data_->volume_rank()] = CELL;
 
 
-    kind_to_rank_ [NODE] = stk::mesh::Node;
-    kind_to_rank_ [EDGE] = stk::mesh::Edge;
-    kind_to_rank_ [FACE] = (dimension_ == 2) ? stk::mesh::Edge : stk::mesh::Face;
-    kind_to_rank_ [CELL] = (dimension_ == 2) ? stk::mesh::Face : stk::mesh::Element;
+  kind_to_rank_ [NODE] = meta_data_->node_rank();
+  kind_to_rank_ [EDGE] = meta_data_->edge_rank();
+  kind_to_rank_ [FACE] = (dimension_ == 2) ? meta_data_->edge_rank() : meta_data_->face_rank();
+  kind_to_rank_ [CELL] = (dimension_ == 2) ? meta_data_->face_rank() : meta_data_->volume_rank();
 
 }
 

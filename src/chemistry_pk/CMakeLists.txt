@@ -27,12 +27,14 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 
 
 # External (TPL) include directories
+# Although, it does not call HDF5 directly 
+# it does need HDF5 for the Vis.hpp file 
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 
 file(GLOB chem_inc_files "*hh")

@@ -184,6 +184,22 @@ function( CREATE_TPL_EXPORT_FILE )
 	_write_cmake_variable(${_write_var_name} ${_var_name})
       endforeach(_append_name)	
 
+#
+#     Also include CMake configuration files for the packages so that 
+#     any recursive dependencies are discovered for linking
+#
+
+      find_file(${_package}_config_file NAMES ${_package}Config.cmake PATHS ${${_package}_DIR} NO_DEFAULT_PATH)
+      if (${_package}_config_file-NOTFOUND)
+	find_file(${_package}_config_file NAMES ${_package}-config.cmake PATHS ${${_package}_DIR} NO_DEFAULT_PATH)
+      endif()
+
+      if (${_package}_config_file)
+#	message(status "${_package} config dir ------ ${${_package}_DIR}")
+#	message(status "${_package} config file ------ ${${_package}_config_file}")
+	file(APPEND ${BUILD_TPL_OUTFILE} "include(\"${${_package}_config_file}\")")
+      endif()
+
     else()
 
       file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_enabled_flag_var} OFF)\n")

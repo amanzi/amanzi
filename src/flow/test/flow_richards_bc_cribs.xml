@@ -109,7 +109,7 @@
                 <Parameter name="value" type="double" value="-1.1076e-07"/>
               </ParameterList>
             </ParameterList>
-            <Parameter name="regions" type="Array string" value="{Top Surface Region}"/>
+            <Parameter name="regions" type="Array(string)" value="{Top Surface Region}"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="pressure">
@@ -121,12 +121,12 @@
               </ParameterList>
               -->
               <ParameterList name="function-tabular">
-                <Parameter name="forms" type="Array string" value="{linear}"/>
-                <Parameter name="x values" type="Array double" value="{0, 1e+9}"/>
-                <Parameter name="y values" type="Array double" value="{101325, 101325}"/>
+                <Parameter name="forms" type="Array(string)" value="{linear}"/>
+                <Parameter name="x values" type="Array(double)" value="{0, 1e+9}"/>
+                <Parameter name="y values" type="Array(double)" value="{101325, 101325}"/>
               </ParameterList>
             </ParameterList>
-            <Parameter name="regions" type="Array string" value="{Bottom Surface Region}"/>
+            <Parameter name="regions" type="Array(string)" value="{Bottom Surface Region}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -152,9 +152,9 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array int" value="{1, 1, 516}"/>
-        <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-        <Parameter name="Domain High Corner" type="Array double" value="{64.5, 1.0, 103.2}" />
+        <Parameter name="Number of Cells" type="Array(int)" value="{1, 1, 516}"/>
+        <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+        <Parameter name="Domain High Corner" type="Array(double)" value="{64.5, 1.0, 103.2}" />
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -163,93 +163,93 @@
   <ParameterList name="Regions">
     <ParameterList name="90 Meter Plane Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array double" value="{0, 0, 1}"/>
-        <Parameter name="Location" type="Array double" value="{0, 0, 90}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, 0, 1}"/>
+        <Parameter name="Location" type="Array(double)" value="{0, 0, 90}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bfr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 103.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 96.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 96.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hcsr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 96.0}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 82.2}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 96.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 82.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hfsr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 82.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 23.4}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 82.2}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 23.4}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hgr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 23.4}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 22.2}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 23.4}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 22.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="CCuzr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 22.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 18.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 22.2}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="CCugr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 18.0}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 11.4}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 18.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 11.4}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Rlmr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 11.4}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 6.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 11.4}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 6.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Rwiar">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 6.0}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 6.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Bottom Surface Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array double" value="{0, 0, -1}"/>
-        <Parameter name="Location" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, 0, -1}"/>
+        <Parameter name="Location" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="East Surface Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array double" value="{1, 0, 0}"/>
-        <Parameter name="Location" type="Array double" value="{64.5, 0, 0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{1, 0, 0}"/>
+        <Parameter name="Location" type="Array(double)" value="{64.5, 0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="North Surface Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array double" value="{0, 1, 0}"/>
-        <Parameter name="Location" type="Array double" value="{0, 1, 0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, 1, 0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0, 1, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="South Surface Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array double" value="{0, -1, 0}"/>
-        <Parameter name="Location" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, -1, 0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Region">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 103.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 103.2}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 103.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="West Surface Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array double" value="{-1, 0, 0}"/>
-        <Parameter name="Location" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1, 0, 0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -291,7 +291,7 @@
 
   <!--  STATE:  -->
   <ParameterList name="State">
-    <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
+    <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
     <Parameter name="Constant viscosity" type="double" value="0.00089"/>
     <Parameter name="Constant water density" type="double" value="998"/>
     <Parameter name="Constant water saturation" type="double" value="0.5"/>
@@ -305,8 +305,8 @@
       <Parameter name="Constant porosity" type="double" value="0.158"/>
       <Parameter name="Region" type="string" value="Bfr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -317,8 +317,8 @@
       <Parameter name="Constant porosity" type="double" value="0.364"/>
       <Parameter name="Region" type="string" value="Hcsr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -329,8 +329,8 @@
       <Parameter name="Constant porosity" type="double" value="0.388"/>
       <Parameter name="Region" type="string" value="Hfsr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -341,8 +341,8 @@
       <Parameter name="Constant porosity" type="double" value="0.237"/>
       <Parameter name="Region" type="string" value="Hgr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -353,8 +353,8 @@
       <Parameter name="Constant porosity" type="double" value="0.36"/>
       <Parameter name="Region" type="string" value="CCuzr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -365,8 +365,8 @@
       <Parameter name="Constant porosity" type="double" value="0.237"/>
       <Parameter name="Region" type="string" value="CCugr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -377,8 +377,8 @@
       <Parameter name="Constant porosity" type="double" value="0.36"/>
       <Parameter name="Region" type="string" value="Rlmr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -389,8 +389,8 @@
       <Parameter name="Constant porosity" type="double" value="0.267"/>
       <Parameter name="Region" type="string" value="Rwiar"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, 0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 0, 0}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
@@ -404,10 +404,10 @@
     <Parameter name="CFL" type="double" value="1"/>
     <ParameterList name="Transport BCs">
       <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array double" value="{0, 0}"/>
-        <Parameter name="Regions" type="Array string" value="{Top Surface Region}"/>
-        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Times" type="Array double" value="{0, 1}"/>
+        <Parameter name="Component 0" type="Array(double)" value="{0, 0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Top Surface Region}"/>
+        <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0, 1}"/>
       </ParameterList>
       <Parameter name="number of BCs" type="int" value="1"/>
     </ParameterList>

@@ -114,8 +114,9 @@ class Mesh
   virtual
   Cell_type cell_get_type(const Entity_ID cellid) const = 0;
 
+  // Cell type name
 
-
+  std::string cell_type_to_name(const Cell_type type);
 
   //
   // General mesh information
@@ -133,7 +134,7 @@ class Mesh
   // Global ID of any entity
 
   virtual
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const = 0;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const = 0;
 
 
 
@@ -267,30 +268,6 @@ class Mesh
   Entity_ID cell_get_cell_above(const Entity_ID cellid) const;
 
   Entity_ID cell_get_cell_below(const Entity_ID cellid) const;
-
-
-  //
-  // Mesh Topology for viz
-  //----------------------
-  //
-  // We need a special function because certain types of degenerate
-  // hexes will not be recognized as any standard element type (hex,
-  // pyramid, prism or tet). The original topology of this element
-  // without any collapsed nodes will be returned by this call.
-
-
-  // Original cell type
-
-  virtual
-  Cell_type cell_get_type_4viz(const Entity_ID cellid) const = 0;
-
-
-  // See cell_get_nodes for details on node ordering
-
-  virtual
-  void cell_get_nodes_4viz (const Entity_ID cellid,
-                            Entity_ID_List *nodeids) const = 0;
-
 
 
   //

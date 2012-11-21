@@ -90,6 +90,28 @@ int main(int argc, char *argv[])
   transport.getParameterList()->print(cout,PLPrintOptions().showTypes(true).showDoc(true));
   print_line();
 
+  // Simple Array double example
+  Teuchos::RCP<Teuchos::ParameterList> dummy_list;  
+  Teuchos::Array<double> dummy =  Teuchos::Array<double>(10,1.0);
+  Teuchos::ParameterEntry entry;
+
+  dummy_list=Teuchos::rcp(new Teuchos::ParameterList("Dummy List"));
+  dummy_list->set("Test array", dummy, "Some doc goes here");
+
+  std::string dummy_string = "filename.txt";
+   dummy_list->set("Test String", dummy_string, "More doc goes here");
+
+  print_line();
+  dummy_list->print(cout,PLPrintOptions().showTypes(true).showDoc(true));
+  std::ostringstream output(std::ostream::in);
+  Teuchos::writeParameterListToXmlOStream(*dummy_list,output);
+  std::cout << output.str() << std::endl;
+  print_line();
+
+                                  
+                               
+
+
 
   return 0;
 }    

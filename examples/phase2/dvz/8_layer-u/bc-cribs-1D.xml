@@ -10,14 +10,14 @@
   <ParameterList name="Regions">
     <ParameterList name="bottom side"> <!-- outward orientation -->
       <ParameterList name="Region: Plane">
-        <Parameter name="Coordinate" type="Array double" value="{0.0, 0.0, 0.0}" />
-        <Parameter name="Direction"  type="Array double" value="{0.0, 0.0, -1.0}" />
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+        <Parameter name="Direction"  type="Array(double)" value="{0.0, 0.0, -1.0}" />
       </ParameterList>
     </ParameterList>
     <ParameterList name="top side"> <!-- outward orientation -->
       <ParameterList name="Region: Plane">
-        <Parameter name="Coordinate" type="Array double" value="{0.0, 0.0, 103.2}" />
-        <Parameter name="Direction"  type="Array double" value="{0.0, 0.0, 1.0}" />
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0, 0.0, 103.2}" />
+        <Parameter name="Direction"  type="Array(double)" value="{0.0, 0.0, 1.0}" />
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -27,7 +27,7 @@
       <Parameter name="state id" type="string" value="water"/>
       <Parameter name="region" type="string" value="all"/>
       <Parameter name="functional" type="string" value="integral"/>
-      <Parameter name="times" type="Array double" value="{0.0}"/>
+      <Parameter name="times" type="Array(double)" value="{0.0}"/>
     </ParameterList>
   </ParameterList>
 
@@ -317,7 +317,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
              static pressure head conditions which are treated specially -->
         <ParameterList name="pressure">
           <ParameterList name="bottom">
-            <Parameter name="regions" type="Array int" value="{bottom side}" />
+            <Parameter name="regions" type="Array(int)" value="{bottom side}" />
             <ParameterList name="boundary pressure">
               <ParameterList name="function-smooth-step">
                 <!-- Drop the water table from z=103.2 (top) to z=0 (bottom)
@@ -332,7 +332,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           </ParameterList>
           <!-- you can define this BC in as many pieces as necessary
           <ParameterList name="another piece">
-            <Parameter name="regions" type="Array string" value="{...}" />
+            <Parameter name="regions" type="Array(string)" value="{...}" />
             <ParameterList name="boundary pressure">
               ...
             </ParameterList>
@@ -344,7 +344,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <!-- This specification is equivalent to the "bottom" specification
                given in the "pressure" list and is probably preferable.
           <ParameterList name="bottom">
-            <Parameter name="regions" type="Array string" value="{bottom side}" />
+            <Parameter name="regions" type="Array(string)" value="{bottom side}" />
             <ParameterList name="water table elevation">
               <ParameterList name="function-smooth-step">
                 <Parameter name="x0" type="double" value="0.0" />
@@ -356,7 +356,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           </ParameterList> -->
           <!-- you can define this BC in as many pieces as necessary
           <ParameterList name="some other piece">
-            <Parameter name="regions" type="Array string" value="{...}" />
+            <Parameter name="regions" type="Array(string)" value="{...}" />
             <ParameterList name="water table elevation">
               ...
             </ParameterList>
@@ -366,7 +366,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
         <!-- All the mass flux conditions go in this list -->
         <ParameterList name="mass flux">
           <ParameterList name="top surface">
-            <Parameter name="regions" type="Array string" value="{top side}" />
+            <Parameter name="regions" type="Array(string)" value="{top side}" />
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
                 <!-- 3.5mm/yr = 1.109842719e-10 m/s = 0.0035/3.1536e7 -->
@@ -378,7 +378,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <!-- Eventually we will require explicit BC on entire boundary, but
                for now "no flow" is the default.
           <ParameterList name="vertical sides">
-            <Parameter name="regions" type="Array string" value="{...}" />
+            <Parameter name="regions" type="Array(string)" value="{...}" />
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0" />

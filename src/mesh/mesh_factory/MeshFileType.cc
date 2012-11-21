@@ -19,8 +19,7 @@
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 #include <boost/regex.hpp>
-
-#define BOOST_FILESYSTEM_VERSION 2
+#define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
 namespace bfs = boost::filesystem;
 

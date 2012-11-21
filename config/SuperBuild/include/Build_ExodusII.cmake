@@ -7,7 +7,7 @@
 # --- Define all the directories and common external project flags
 define_external_project_args(ExodusII 
                              TARGET exodusii
-                             DEPENDS NetCDF)
+                             DEPENDS ${MPI_PROJECT} NetCDF)
 
 # --- Define the configure command
 
@@ -15,7 +15,8 @@ define_external_project_args(ExodusII
 include(BuildWhitespaceString)
 build_whitespace_string(common_cmake_args
                        ${Amanzi_CMAKE_C_COMPILER_ARGS}
-		       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+                       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 
 # Build the configure script
 set(ExodusII_sh_configure ${ExodusII_prefix_dir}/exodusii-configure-step.sh)
@@ -44,14 +45,14 @@ ExternalProject_Add(${ExodusII_BUILD_TARGET}
                     CONFIGURE_COMMAND  ${ExodusII_CONFIGURE_COMMAND}
                     # -- Build
                     BINARY_DIR        ${ExodusII_build_dir}           # Build directory 
-		    BUILD_COMMAND     $(MAKE)
+                    BUILD_COMMAND     $(MAKE)
                     BUILD_IN_SOURCE   ${ExodusII_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}            # Install directory
                     # -- Output control
                     ${ExodusII_logging_args})
 
-# --- Add the nemsis build step		  
+# --- Add the nemsis build step  
 
 # Configure the build script
 #EXODUS-5.xset(NEMESIS_sh_build ${ExodusII_prefix_dir}/nemesis-build.sh)

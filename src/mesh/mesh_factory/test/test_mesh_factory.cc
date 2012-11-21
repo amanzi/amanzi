@@ -412,7 +412,9 @@ SUITE (MeshFramework)
     
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
-    if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) && parallel) {
+    if ((Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) ||
+         Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::MSTK)) && 
+        parallel) {
       mesh = mesh_factory(NEMESIS_TEST_FILE);
       CHECK(!mesh.is_null());
     } else {
@@ -420,6 +422,120 @@ SUITE (MeshFramework)
                   Amanzi::AmanziMesh::Message);
     }
   }      
+
+
+  TEST (Extract3)
+  {
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    bool parallel(comm.NumProc() > 1);
+    
+    Amanzi::AmanziMesh::FrameworkPreference pref;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, newmesh;
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+
+    double x0( 0.0), y0( 0.0), z0( 0.0);
+    double x1(10.0), y1(10.0), z1(10.0);
+    int nx(10), ny(10), nz(10);
+
+
+ 
+  // create a sublist name Regions and put a reference to it in
+  // reg_spec and other sublists as references. Turns out it is
+  // important to define reg_spec and other lists below as references
+  // - otherwise, a new copy is made of the sublist that is retrieved
+
+    Teuchos::ParameterList parameterlist;
+
+    Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  
+    Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
+    Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
+    Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,10.0);
+    Teuchos::Array<double> dir1 = Teuchos::tuple(0.0,0.0,-1.0);
+    top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
+    top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
+
+    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3,reg_spec,&comm);
+
+    std::string topsurfname("Top Surface");
+    std::vector<std::string> setnames;
+    setnames.push_back(topsurfname);
+
+    bool flatten = true;
+    bool extrude = false;
+
+    // Simple mesh CANNOT extract a mesh from another mesh
+
+    pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
+    mesh_factory.preference(pref);
+
+    if (parallel) {
+      CHECK_THROW(mesh = mesh_factory(x0, y0, z0,
+                                      x1, y1, z1,
+                                      nx, ny, nz,gm),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+    } else {
+      mesh = mesh_factory(x0, y0, z0,
+                          x1, y1, z1,
+                          nx, ny, nz);
+
+      CHECK_THROW(newmesh = mesh_factory(mesh.get(),setnames,
+                                         Amanzi::AmanziMesh::FACE,
+                                         flatten,extrude),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+      newmesh.reset();
+    }
+
+    // The STK, if available, framework will always generate
+
+    if (framework_available(Amanzi::AmanziMesh::STKMESH)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::STKMESH);
+      mesh_factory.preference(pref);
+      mesh = mesh_factory(x0, y0, z0,
+                          x1, y1, z1,
+                          nx, ny, nz,gm);
+      CHECK(!mesh.is_null());
+
+      CHECK_THROW(newmesh = mesh_factory(mesh.get(),setnames,
+                                         Amanzi::AmanziMesh::FACE,
+                                         flatten,extrude),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+      newmesh.reset();
+    }
+
+    // The MSTK framework, if available, will always generate
+
+    if (framework_available(Amanzi::AmanziMesh::MSTK)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::MSTK);
+      mesh_factory.preference(pref);
+      mesh = mesh_factory(x0, y0, z0,
+                          x1, y1, z1,
+                          nx, ny, nz,gm);
+      CHECK(!mesh.is_null());
+
+      newmesh = mesh_factory(mesh.get(),setnames,Amanzi::AmanziMesh::FACE,
+                             flatten,extrude);
+      CHECK(!newmesh.is_null());
+      mesh.reset();
+      newmesh.reset();
+    }
+
+    // The MOAB framework cannot generate
+
+
+    if (framework_available(Amanzi::AmanziMesh::MOAB)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::MOAB);
+      mesh_factory.preference(pref);
+      CHECK_THROW(mesh = mesh_factory(x0, y0, z0,
+                                      x1, y1, z1,
+                                      nx, ny, nz,gm),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+    }
+  }
 
     
 }

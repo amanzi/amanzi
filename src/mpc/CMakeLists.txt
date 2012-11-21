@@ -24,8 +24,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${STK_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
@@ -52,10 +50,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
-# Need to move this up to the root -- lpritch
-add_definitions("-DUSE_MPI")
-
-
 #
 # Library: mpc
 #
@@ -67,12 +61,12 @@ list(REVERSE mpc_tpl_libs)
 file(GLOB mpc_inc_files "*.hpp")
 add_amanzi_library(mpc 
                    SOURCE MPC.cpp Unstructured_observations.cpp HEADERS ${mpc_inc_files}
-                   LINK_LIBS time_integration solvers output state simple_mesh mesh_data dbg ${mpc_tpl_libs})
+                   LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
 #if (0)
 
-  include_directories(${MESH_SIMPLE_SOURCE_DIR})
+  include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     
     # Add UnitTest includes
@@ -87,21 +81,16 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit mstk_mesh state mpc flow transport chemistry whetstone)
+    set(amanzi_libs geometry mesh mesh_audit mesh_factory state mpc flow transport chemistry whetstone)
     
     if ( ENABLE_MSTK_Mesh )
-        include_directories(${MSTK_INCLUDE_DIRS})
-        include_directories(${MSTK_SOURCE_DIR})
-
-	add_definitions("-DMSTK_HAVE_MPI")
-
         # Test: mpc-mstk
 	add_amanzi_test(mpc-mstk test_mpc_mstk
 	                KIND      int
 			SOURCE    test/Main.cc test/test_driver.cpp
 			LINK_LIBS mpc
 			          mesh
-				  mstk_mesh
+				  mesh_factory
 				  chemistry_pk
 				  flow
 				  transport

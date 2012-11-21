@@ -316,5 +316,54 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   amanzi_throw(e);
 }
 
+/** 
+ * This creates a mesh by extracting subsets of entities from an existing
+ * mesh possibly flattening it by removing the last dimension or (in the 
+ * future) extruding it when it makes sense
+ * 
+ * @param inmesh
+ * @param setnames
+ * @param setkind
+ * @param flatten
+ * @param extrude
+ * 
+ * @return 
+ */
+Teuchos::RCP<Mesh> 
+MeshFactory::create(const Mesh *inmesh, 
+                    const std::vector<std::string> setnames,
+                    const Entity_kind setkind,
+                    const bool flatten, const bool extrude)
+{
+  Teuchos::RCP<Mesh> result;
+  Message e("MeshFactory::create: error: ");
+  int ierr[1], aerr[1];
+  ierr[0] = 0;
+  aerr[0] = 0;
+
+  int dim = inmesh->cell_dimension();
+
+  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
+       i != my_preference.end(); i++) {
+    if (framework_extracts(*i, my_comm->NumProc() > 1, dim)) {
+      try {
+        result = framework_extract(my_comm, *i, inmesh, setnames, setkind, flatten, extrude);
+        return result;
+      } catch (const Message& msg) {
+        ierr[0] += 1;
+        e.add_data(msg.what());
+      } catch (const std::exception& stde) {
+        ierr[0] += 1;
+        e.add_data("internal error: ");
+        e.add_data(stde.what());
+      }
+      my_comm->SumAll(ierr, aerr, 1);
+      if (aerr[0] > 0) amanzi_throw(e);
+    }
+  }
+  e.add_data("unable to extract mesh");
+  amanzi_throw(e);
+}
+
 } // namespace AmanziMesh
 } // namespace Amanzi

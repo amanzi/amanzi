@@ -2,7 +2,7 @@
 #include "stdlib.h"
 #include "math.h"
 #include "UnitTest++.h"
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
@@ -17,8 +17,13 @@ TEST(GMV) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  Teuchos::RCP<Mesh_simple> MMS = 
-    Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 4, 2, comm ));
+  Amanzi::AmanziMesh::FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Amanzi::AmanziMesh::Simple);
+
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> MMS =  meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 4, 2);
 
   State S(1,MMS);
 

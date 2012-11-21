@@ -8,14 +8,12 @@
 #include "Epetra_SerialComm.h"
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "State.hpp"
 #include "MPC.hpp"
 
-// #include "Mesh_MOAB.hh"
-#include "Mesh_MSTK.hh"
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include "Mesh.hh"
 
 
@@ -37,7 +35,8 @@ TEST(DRIVER) {
   
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
-  Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+  Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
+  driver_parameter_list = xmlreader.getParameters();
   
 
 
@@ -60,17 +59,20 @@ TEST(DRIVER) {
   cout << "Using mesh framework " << mesh_class << endl;
 
   if (mesh_class == "MSTK")  
-    {
-      
+    {      
       Teuchos::ParameterList mstk_mesh_parameter_list = 
       	mesh_parameter_list.sublist("MSTK Mesh Parameters");
       
       string filename = mstk_mesh_parameter_list.get<string>("Exodus file name");
 
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> MMM = 
-      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(filename.c_str(), comm, geom_model_ptr));      
-      mesh = MMM;
-
+      Amanzi::AmanziMesh::FrameworkPreference pref;
+      pref.clear();
+      pref.push_back(Amanzi::AmanziMesh::MSTK);
+      
+      Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+      meshfactory.preference(pref);
+ 
+      mesh = meshfactory(filename.c_str(), geom_model_ptr);      
     }
   else
     {

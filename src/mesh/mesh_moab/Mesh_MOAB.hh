@@ -151,6 +151,25 @@ public:
   Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL);
+
+  // Construct a mesh by extracting a subset of entities from another
+  // mesh. In some cases like extracting a surface mesh from a volume
+  // mesh, constructor can be asked to "flatten" the mesh to a lower
+  // dimensional space or to extrude the mesh to give higher
+  // dimensional cells
+
+  Mesh_MOAB(const Mesh *inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
+
+  Mesh_MOAB(const Mesh_MOAB& inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
+
   ~Mesh_MOAB();
   
   void update ();
@@ -180,7 +199,7 @@ public:
     
   // Global ID of any entity
     
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
     
@@ -295,29 +314,6 @@ public:
 			       const Parallel_type ptype,
 			       Entity_ID_List *nadj_cellids) const;
 
-
-    
-  //
-  // Mesh Topology for viz  
-  //----------------------
-  //
-  // We need a special function because certain types of degenerate
-  // hexes will not be recognized as any standard element type (hex,
-  // pyramid, prism or tet). The original topology of this element 
-  // without any collapsed nodes will be returned by this call.
-    
-    
-  // Original cell type 
-    
-  Cell_type cell_get_type_4viz(const Entity_ID cellid) const;
-    
-    
-  // See cell_get_nodes for details on node ordering
-    
-  void cell_get_nodes_4viz (const Entity_ID cellid, 
-			    Entity_ID_List *nodeids) const;
-    
-    
     
   //
   // Mesh entity geometry

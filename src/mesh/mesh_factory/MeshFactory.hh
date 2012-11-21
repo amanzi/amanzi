@@ -92,6 +92,14 @@ class MeshFactory {
                             const AmanziGeometry::GeometricModelPtr &gm = 
                             (AmanziGeometry::GeometricModelPtr) NULL);
 
+  /// Create a mesh by extract subsets of entities from an existing mesh
+  Teuchos::RCP<Mesh> create(const Mesh *inmesh,
+                            const std::vector<std::string> setnames,
+                            const Entity_kind setkind,
+                            const bool flatten = false,
+                            const bool extrude = false);
+
+
   /// Create a mesh by reading the specified file (or set of files) -- operator
   Teuchos::RCP<Mesh> operator() (const std::string& filename, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
@@ -128,6 +136,14 @@ class MeshFactory {
     return create(parameter_list, gm);
   }
 
+  /// Create a mesh by extract subsets of entities from an existing mesh
+  Teuchos::RCP<Mesh> operator() (const Mesh *inmesh,
+                                 const std::vector<std::string> setnames,
+                                 const Entity_kind setkind,
+                                 const bool flatten = false,
+                                 const bool extrude = false) {
+    return create(inmesh, setnames, setkind, flatten, extrude);
+  }
 
 };
 

@@ -220,8 +220,8 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 /* ******************************************************************
 * New implementation of the STL function.                                              
 ****************************************************************** */
-void Darcy_PK::set_intersection(const std::vector<int>& v1,
-                                const std::vector<int>& v2, std::vector<int>* vv)
+  void Darcy_PK::set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,
+                                  const std::vector<AmanziMesh::Entity_ID>& v2, std::vector<AmanziMesh::Entity_ID>* vv)
 {
   int i(0), j(0), n1, n2;
 

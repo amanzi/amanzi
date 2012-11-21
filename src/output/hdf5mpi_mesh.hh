@@ -3,16 +3,7 @@
 
 #include <string>
 
-//#ifdef HAVE_MOAB_MESH
-//#include "Mesh_moab.hh"
-//#endif
-//#ifdef HAVE_STK_MESH
-//#include "Mesh_STK.hh"
-//#include "Mesh_maps_stk.hh"
-//#endif
-
 #include "Mesh.hh"
-#include "Element_types.hh"
 #include "MeshDefs.hh"
 #include "errors.hh"
 #include "dbc.hh"

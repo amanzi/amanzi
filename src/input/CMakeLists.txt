@@ -33,7 +33,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 #
 # Library: input
 #
-set(input_src_files input_base_class.cc simple_mesh_input.cc
+set(input_src_files input_base_class.cc simple_mesh_input.cc test_input.cc
                     transport_input.cc)
 file(GLOB include_files "*.hh")
 add_amanzi_library(input 

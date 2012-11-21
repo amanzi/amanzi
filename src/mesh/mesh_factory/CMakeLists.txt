@@ -27,12 +27,14 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${STK_INCLUDE_DIRS})
 include_directories(${ExodusII_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+
 
 #
 # Library: mesh_factory
@@ -41,6 +43,8 @@ set(mesh_factory_files
     MeshFileType.cc MeshFramework.cc 
     MeshFactory.cc FrameworkTraits.cc) 
 file(GLOB mesh_factory_inc_files "*.hh")
+
+list(APPEND mesh_factory_frameworks simple_mesh)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
@@ -62,7 +66,7 @@ endif()
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} simple_mesh)
+                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
 
 if (BUILD_TESTS)
 
@@ -71,8 +75,8 @@ if (BUILD_TESTS)
     # files in the exodus test directory always seem to be available
 
     set(EXODUS_FILE_DIR "${EXO_BINARY_DIR}/test_files")
-    set(test_file_flags "-DEXODUS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/hex_4x4x4_ss.exo\\\"\" ")
-    set(test_file_flags "${test_file_flags} -DNEMESIS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/split1/hex_11x11x11_ss.par\\\"\" ")
+    set(test_file_flags "-DEXODUS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/hex_3x3x3_ss.exo\\\"\" ")
+    set(test_file_flags "${test_file_flags} -DNEMESIS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/split1/hex_10x10x10_ss.par\\\"\" ")
     set(test_file_flags "${test_file_flags} -DBOGUS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/bogus.exo\\\"\" ")
 
     # If the MOAB framework is not available, MOAB_SOURCE_DIR is not
@@ -80,9 +84,9 @@ if (BUILD_TESTS)
     # it be better to have a single place where we put all
     # example/test meshes?
     if(ENABLE_MOAB_Mesh)
-        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${MOAB_SOURCE_DIR}/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
+        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${MOAB_SOURCE_DIR}/test/hex_3x3x3_ss_4P.h5m\\\"\" ")
     else()
-        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${AMANZI_SOURCE_DIR}/src/mesh/mesh_moab/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
+        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${AMANZI_SOURCE_DIR}/src/mesh/mesh_moab/test/hex_3x3x3_ss_4P.h5m\\\"\" ")
     endif()
         
     set_source_files_properties(test/test_mesh_file.cc PROPERTIES 

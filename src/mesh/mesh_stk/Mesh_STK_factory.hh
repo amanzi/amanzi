@@ -15,9 +15,9 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+// #include <stk_mesh/fem/FieldDeclarations.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <Epetra_MpiComm.h>
 
@@ -115,7 +115,7 @@ class Mesh_STK_factory {
   // Temporary information for the mesh currently under construction.
 
   stk::mesh::BulkData *bulk_data_;
-  stk::mesh::MetaData *meta_data_;
+  stk::mesh::fem::FEMMetaData *meta_data_;
   Entity_map          *entity_map_;
 
 

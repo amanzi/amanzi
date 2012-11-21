@@ -51,7 +51,7 @@ clobber=FALSE
 amanzi_build_type=Debug
 
 # Amanzi branch type
-amanzi_branch=default
+amanzi_branch=
 
 # Amanzi production install
 amanzi_production=FALSE
@@ -99,7 +99,7 @@ Options: [Defaults in brackets]
     --build-type=STRING     amanzi build type where STRING=Debug or Release ['"${amanzi_build_type}"']
     --init-file=FILE        initialize the CMake cache with FILE
     --prg-env=STRING        load PrgEnv module STRING ['"${prg_env}"']         
-    --branch=STRING         build Amanzi branch STRING ['"${amanzi_branch}"']
+    --branch=STRING         build Amanzi branch STRING. Does not update branch if not set. ['"${amanzi_branch}"']
     --clobber               remove CMakeCache.txt file and clean the build directory before running cmake ['"${clobber}"']
     --batch                 submit this build script as a batch job
 '
@@ -382,11 +382,14 @@ if [ ${batch_build} == "TRUE" ]; then
 fi
 
 # Load modules
+echo "Loading program environment: ${prg_env}"
 . $ASCEM_HOME/modules/init/ascem.bashrc ${prg_env}
 
 # Define the init file 
 if [ -z $init_file ]; then
     default_init_file
+else
+    echo "Use CMake initialization file: ${init_file}"
 fi
 
 # Check init file existence
@@ -395,7 +398,9 @@ if [ ! -e $init_file ]; then
 fi
 
 # Update the repository branch
-update_repository_branch ${amanzi_source_dir} ${amanzi_branch}
+if [ ! -z "${amanzi_branch}"]; then
+    update_repository_branch ${amanzi_source_dir} ${amanzi_branch}
+fi
 
 # Define the production install directory
 if [[ "${amanzi_install_dir}" == "production" ]]; then

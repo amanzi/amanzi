@@ -99,7 +99,6 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm,
                    const double& zdelta,
                    const AmanziGeometry::GeometricModelPtr& gm) 
     : mesh_(), 
-      entity_map_ (3), 
       map_owned_(), map_used_()
       
 {
@@ -114,7 +113,6 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
                    const Epetra_MpiComm *comm,
                    const AmanziGeometry::GeometricModelPtr& gm)
   : mesh_(), 
-    entity_map_ (3), 
     map_owned_(), map_used_()
       
 {
@@ -143,7 +141,6 @@ Mesh_STK::Mesh_STK (const double x0,
                     const Epetra_MpiComm *communicator,
                     const AmanziGeometry::GeometricModelPtr &gm) 
   : mesh_(),
-    entity_map_ (2),
     map_owned_(), map_used_()
 {
   Exceptions::amanzi_throw(Errors::Message("STKMesh mesh cannot generate 2D meshes"));
@@ -156,7 +153,6 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
                    const Epetra_MpiComm *comm,
                    const AmanziGeometry::GeometricModelPtr& gm)
   : mesh_(), 
-    entity_map_ (3), 
     map_owned_(), map_used_()
 {
   Mesh::set_comm(comm);
@@ -171,7 +167,6 @@ Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
                    const Epetra_MpiComm *comm,
                    const AmanziGeometry::GeometricModelPtr& gm)
   : mesh_(), 
-    entity_map_ (3), 
     map_owned_(), map_used_()
 {
   Mesh::set_comm(comm);

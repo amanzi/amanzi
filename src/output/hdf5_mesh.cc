@@ -52,7 +52,7 @@ namespace Amanzi
 
   // get number of nodes per element and element type
   ctype_ = mesh_maps.cell_get_type(0); 
-  cname_ = AmanziMesh::Data::type_to_name(ctype_);
+  cname_ = mesh_maps.cell_type_to_name(ctype_);
   AmanziMesh::Entity_ID_List nodeids;
   unsigned int cellid = 0;
   mesh_maps.cell_get_nodes(cellid,&nodeids);

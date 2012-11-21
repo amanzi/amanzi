@@ -52,7 +52,7 @@ Required Libraries
 ------------------
 
 Boost:
-        :Versions: 1.48.0
+        :Versions: 1.51.0
         :Description: C++ Library which extends the capabilibies of the standard library.
         :Role: Specific Boost libraries are used in various parts of the Amanzi code base.
 
@@ -92,7 +92,7 @@ HDF5:
         :Information: http://www.hdfgroup.org/HDF5/
 
 ASCEM-IO:
-        :Versions: 2.1 
+        :Versions: 2.2 
         :Description: Parallel IO load balance libary
         :Role: Used by Amanzi output of problem data and restarts.
         :Dependencies: HDF5, MPI
@@ -100,7 +100,7 @@ ASCEM-IO:
 
 
 netCDF:
-        :Versions: 4.1.3
+        :Versions: 4.2.1.1
         :Description: File format libary
         :Role: Used by Amanzi for input and output of mesh data.
         :Dependencies:  cURL, HDF5
@@ -108,7 +108,7 @@ netCDF:
 
 
 ExodusII:
-        :Versions: 4.98
+        :Versions: 5.22
         :Description: Mesh data base libary
         :Role: Used by Amanzi to describe mesh geometry for import.
         :Dependencies: netCDF
@@ -122,17 +122,18 @@ METIS:
         :Information: http://glaros.dtc.umn.edu/gkhome/views/metis/
 
 Trilinos:
-        :Versions: 10.6.4
+        :Versions: 10.12.2
         :Description: Library collection of tools for numberic computing in C++
         :Role: Used throughout Amanzi for data structures and algotithms
         
         - ``Epetra``: a parallel-aware array libarary
-        - ``STKmesh``: a mesh database libary (optional)
         - ``NOX``: Nonlinear Object-Oriented Solutions package  
         - ``Zoltan``: Load balance library (required if MSTK is enabled)
+        - ``STK``: Mesh toolkit (required if STK is enabled)
+        - ``Ifpack``: Interface package (required if HYPRE is enabled)
 
-        :Dependencies: ExodusII, (if STKmesh used), Hypre (optional), CMake, MPI
-                       LAPACK and BLAS
+        :Dependencies: Hypre (optional), NetCDF (if STK Enabled), CMake, MPI
+                       Boost, LAPACK and BLAS
         :Information: http://trilinos.sandia.gov/
 
 CCSE:

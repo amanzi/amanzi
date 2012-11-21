@@ -19,9 +19,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "Mesh_MSTK.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
@@ -46,12 +46,22 @@ TEST(FLOW_2D_DARCY_WELL) {
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_darcy_well.xml";
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  // create an SIMPLE mesh framework
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  parameter_list = xmlreader.getParameters();
+
+  // create an MSTK mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK(-10.0, -5.0, 10.0, 0.0, 200, 50, &comm, gm));
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+
+  RCP<Mesh> mesh = meshfactory(-10.0, -5.0, 10.0, 0.0, 200, 50, gm);
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
