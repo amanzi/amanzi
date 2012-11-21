@@ -29,6 +29,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 
 # External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 
 #
