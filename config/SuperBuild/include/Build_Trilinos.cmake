@@ -113,19 +113,23 @@ set(Trilinos_CMAKE_EXTRA_ARGS
 if ( CMAKE_BUILD_TYPE )
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
+  message(DEBUG "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+  message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 if ( BUILD_SHARED_LIBS )
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
     "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+  message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 
 #  - Add CMake configuration file
 if(Trilinos_Build_Config_File)
-    list(APPEND Trilinos_CMAKE_EXTRA_ARGS
+    list(APPEND Trilinos_Config_File_ARGS
         "-C${Trilinos_Build_Config_File}")
     message(STATUS "Will add ${Trilinos_Build_Config_File} to the Trilinos configure")    
+    message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()    
 
 
@@ -211,7 +215,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
-		    CMAKE_ARGS          ${Trilnos_Config_File_ARGS}
+		    CMAKE_ARGS          ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS    ${Trilinos_CMAKE_LANG_ARGS} 
                                         ${Trilinos_CMAKE_ARGS}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
