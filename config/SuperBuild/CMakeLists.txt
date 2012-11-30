@@ -538,7 +538,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
-           -DTrilinos_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX})
+           -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
 
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
