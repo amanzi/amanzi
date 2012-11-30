@@ -177,22 +177,23 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
     list(APPEND _MSTK_DEP_LIBS ${ExodusII_LIBRARY})
 
     # And METIS
-    if (ENABLE_METIS)
+#    if (ENABLE_METIS)
       find_package(METIS QUIET REQUIRED)
       list(APPEND MSTK_INCLUDE_DIR ${METIS_INCLUDE_DIRS})
       list(APPEND _MSTK_DEP_LIBS ${METIS_LIBRARIES})
-    endif()
+#    endif()
 
     # And Zoltan
-    if (ENABLE_ZOLTAN)
+#    if (ENABLE_ZOLTAN)
       find_package(Zoltan QUIET REQUIRED)
-      list(APPEND MSTK_INCLUDE_DIR ${ZOLTAN_INCLUDE_DIRS})
-      list(APPEND _MSTK_DEP_LIBS ${ZOLTAN_LIBRARIES})
-    endif()
+      list(APPEND MSTK_INCLUDE_DIR ${Zoltan_INCLUDE_DIRS})
+      list(APPEND _MSTK_DEP_LIBS ${Zoltan_LIBRARIES})
+#    endif()
 
 
     set_target_properties(${MSTK_LIBRARY} PROPERTIES
                           IMPORTED_LINK_INTERFACE_LIBRARIES "${_MSTK_DEP_LIBS}")
+
 
     # MSTK requires METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
     #add_package_dependency(MSTK DEPENDS_ON METIS)
