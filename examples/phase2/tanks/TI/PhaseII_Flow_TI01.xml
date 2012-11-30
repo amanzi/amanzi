@@ -90,7 +90,6 @@
           <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
-          <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
 	  <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
 	  <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-3, 1.e-4, 1.e-5}"/>
           <Parameter name="verbose" type="double" value="2"/>
