@@ -532,7 +532,7 @@ endif()
 # METIS  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS 
-           -DMETIS_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+           -DMETIS_DIR:FILEPATH=${METIS_DIR})
 
 # Trilinos  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
