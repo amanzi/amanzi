@@ -203,7 +203,7 @@ if ( Trilinos_FOUND )
     endif()
 
 
-    option(ENABLE_HYPRE "Enable HYPRE APIs in flow" OFF)
+    option(ENABLE_HYPRE "Enable HYPRE APIs in flow" ON)
     if ( ENABLE_HYPRE )
 
       # Ifpack - preconditioner package that serves as a wrapper for HYPRE
