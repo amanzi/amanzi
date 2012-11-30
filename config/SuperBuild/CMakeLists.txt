@@ -518,7 +518,7 @@ if ( ENABLE_MOAB_Mesh )
 endif()
 
 # HYPRE
-option(ENABLE_HYPRE "Build the HYPRE solver package" FALSE)
+option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
 if ( ENABLE_HYPRE )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
 endif()
@@ -579,7 +579,7 @@ if ( BUILD_DOCS )
 endif()
 
 # Build the Amanzi build script
-option(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)
+option(BUILD_Amanzi "Add Amanzi to the build stack" TRUE)
 if ( BUILD_Amanzi )
 
   set(Amanzi_CMAKE_ARGS ${Amanzi_CMAKE_COMPILER_ARGS})
