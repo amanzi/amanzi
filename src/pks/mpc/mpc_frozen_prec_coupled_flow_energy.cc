@@ -18,22 +18,32 @@ namespace Amanzi {
 RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> MPCFrozenCoupledFlowEnergy::reg_("frozen energy-flow preconditioner coupled");
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  bool modified = false;
   if (predictor_type_ == PREDICTOR_HEURISTIC) {
-    return modify_predictor_heuristic(h,u);
+    modified = modify_predictor_heuristic(h,u);
   } else if (predictor_type_ == PREDICTOR_EWC) {
     if (S_->time() == 0.) { // this needs to be fixed!
       return false;
     } else {
-      return modify_predictor_ewc(h,u);
+      modified = modify_predictor_ewc(h,u);
     }
   } else if (predictor_type_ == PREDICTOR_EWC_HEURISTIC) {
     if (S_->time() == 0.) { // this needs to be fixed!
       return false;
     } else {
-      return modify_predictor_ewc_heuristic(h,u);
+      modified = modify_predictor_ewc_heuristic(h,u);
     }
   }
-  return false;
+
+  if (modified) {
+    // calculate consistent faces
+    Teuchos::RCP<TreeVector> temp_guess = u->SubVector("energy");
+    Teuchos::RCP<TreeVector> pres_guess = u->SubVector("flow");
+    flow_pk->modify_predictor(h, pres_guess);
+    energy_pk->modify_predictor(h, temp_guess);
+  }
+
+  return modified;
 };
 
 bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teuchos::RCP<TreeVector> u) {
@@ -452,6 +462,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
       }
     }
 
+    /*
     // update faces from cells
     temp_guess->ScatterMasterToGhosted("cell");
     pres_guess->ScatterMasterToGhosted("cell");
@@ -471,7 +482,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
         (*pres_guess)("face",f) = (*pres_guess)("cell",cells[0]);
       }
     }
-
+    */
     return true;
   } else {
     return false;
@@ -779,6 +790,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
       }
     }
 
+    /*
     // update faces from cells
     temp_guess->ScatterMasterToGhosted("cell");
     pres_guess->ScatterMasterToGhosted("cell");
@@ -798,6 +810,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
         (*pres_guess)("face",f) = (*pres_guess)("cell",cells[0]);
       }
     }
+    */
 
     return true;
   } else {
