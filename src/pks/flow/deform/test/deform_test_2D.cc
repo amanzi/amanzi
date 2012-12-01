@@ -46,28 +46,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   // create and initialize the deform mesh class
   DeformMesh deform_test(plist,mesh);
-
-#if 0
-  // VTK output, starting mesh
-  deform_test.print_VTK_unstructured_mesh( string("mesh_0") );
-
-  // check nodal coordinates
-  deform_test.check_mesh_nodes();
-  LINE(--);
-
-  // move a single node (top, middle)
-  //deform_test.move_a_single_node();
-  deform_test.move_a_node_column();
-
-  // check again the nodal coordinates
-  deform_test.check_mesh_nodes();
-  LINE(--);
-
-  // VTK output, final mesh
-  deform_test.print_VTK_unstructured_mesh( string("mesh_1") );
-#endif
-
-  deform_test.parabolic_profile();
+  deform_test.bell_shaped_profile();
 
   // say goodbye and exit
   deform_test.print_goodbye();

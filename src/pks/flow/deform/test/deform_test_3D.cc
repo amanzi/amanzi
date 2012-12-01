@@ -18,7 +18,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   using namespace Amanzi::AmanziGeometry;
 
   // first message
-  std::cout << "Test: DeformMesh using a simple quadrilateral mesh" << endl;
+  std::cout << "Test: DeformMesh using a mesh from Exodus file" << endl;
 
   // sequential/parallel communicator object
 #ifdef HAVE_MPI
@@ -41,35 +41,34 @@ TEST(ADVANCE_WITH_SIMPLE) {
   GeometricModelPtr gm = 
     new GeometricModel(dim3D, region_list, (Epetra_MpiComm *)comm);
   
-  // intantiate the mesh: build the geometric model
-  int nx(20), ny(20), nz(20);
-  Teuchos::RCP<Mesh> mesh = 
-    Teuchos::rcp(new Mesh_MSTK( 0., 0., 0., 1., 1., 1., nx, ny, nz, comm, gm));
+  // intantiate the mesh: build the geometric model (big domain by default)
+  string fname = string("./test/tmp_proto_fs.exo") ;
+  
+  // select a small subset of the domain
+  bool do_subset_flag = false ;
+  if ( do_subset_flag ) {
+    fname = string("./test/poly0_subset_proto_fs.exo");
+  }
+  
+  // this version uses three meshes:
+  // mesh0 : starting mesh
+  // mesh1 : final mesh (which is input from file fname)
+  // mesh  : current mesh
+  Teuchos::RCP<Mesh> mesh0 = 
+    Teuchos::rcp(new Mesh_MSTK(fname.c_str(), comm, gm));
+
+  Teuchos::RCP<Mesh> mesh1 = 
+    Teuchos::rcp(new Mesh_MSTK(fname.c_str(), comm, gm));
+
+  Teuchos::RCP<Mesh> mesh  = 
+    Teuchos::rcp(new Mesh_MSTK(fname.c_str(), comm, gm));
 
   // create and initialize the deform mesh class
-  DeformMesh deform_test(plist,mesh);
-
-  deform_test.parabolic_profile();
-
-#if 0
-  // VTK output, starting mesh
-  deform_test.print_VTK_unstructured_mesh( string("mesh_0") );
-
-  // check nodal coordinates
-  deform_test.check_mesh_nodes();
-  LINE(--);
-
-  // move a single node (top, middle)
-  //deform_test.move_a_single_node();
-  deform_test.move_a_node_column();
-
-  // check again the nodal coordinates
-  deform_test.check_mesh_nodes();
-  LINE(--);
-
-  // VTK output, final mesh
-  deform_test.print_VTK_unstructured_mesh( string("mesh_1") );
-#endif
+  DeformMesh deform_test(plist,mesh0,mesh1,mesh);
+  
+  // get the list of nodes on the top
+  //deform_test.mesh_deformation();
+  //deform_test.analyze_final_mesh();
 
   // say goodbye and exit
   deform_test.print_goodbye();
