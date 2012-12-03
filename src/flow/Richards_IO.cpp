@@ -250,6 +250,8 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
     *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (name == "arithmetic mean") {
     *method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+  } else if (name == "upwind experimental") {
+    *method = AmanziFlow::FLOW_RELATIVE_PERM_EXPERIMENTAL;
   } else {
     msg << "Richards Problem: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);

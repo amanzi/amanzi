@@ -95,9 +95,12 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_Vector>& rhs_faces() { return rhs_faces_; }
 
   Teuchos::RCP<Epetra_FECrsMatrix>& Aff() { return Aff_; }
+  Teuchos::RCP<Epetra_FECrsMatrix>& Sff() { return Sff_; }
   Teuchos::RCP<Epetra_Vector>& Acc() { return Acc_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
+
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff() { return IfpHypre_Sff_; }
 
   int nokay() { return nokay_; }
   int npassed() { return npassed_; }
@@ -134,13 +137,13 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
   Teuchos::ParameterList ifp_plist_;
 
+  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
+
 #ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
   double hypre_tol, hypre_strong_threshold;
   int hypre_nsmooth, hypre_ncycles;
 #endif
-
-  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 
  private:
   void operator=(const Matrix_MFD& matrix);

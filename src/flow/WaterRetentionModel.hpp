@@ -20,7 +20,8 @@ class WaterRetentionModel {
   virtual double dSdPc(double pc) = 0;  // derivative of saturation w.r.t. to capillary pressure
   virtual double capillaryPressure(double s) = 0;
   virtual double residualSaturation() = 0;
-  
+  virtual double dKdPc(double pc) { return 0.0; }
+
   const std::string region() { return region_; };
 
  protected:

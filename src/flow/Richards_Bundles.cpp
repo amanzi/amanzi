@@ -25,9 +25,14 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
-  if (!is_matrix_symmetric) {
+  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
+      Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
+      Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     CalculateRelativePermeabilityFace(*u_cells);
     Krel_cells->PutScalar(1.0);
+  } if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+    CalculateRelativePermeabilityFace(*u_cells);
+    Krel_faces->PutScalar(1.0);
   } else {
     CalculateRelativePermeabilityCell(*u_cells);
     Krel_faces->PutScalar(1.0);

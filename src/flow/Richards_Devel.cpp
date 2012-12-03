@@ -31,7 +31,10 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->CreateCellView(solution_old));
   Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->CreateCellView(solution_new));
 
-  if (! is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
+  if (is_matrix_symmetric) 
+      solver->SetAztecOption(AZ_solver, AZ_cg);
+  else 
+      solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
 
   int max_itrs_nonlinear = ti_specs_sss_.max_itrs;
@@ -42,10 +45,15 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
-    if (!is_matrix_symmetric) {  // Define K and Krel_faces
+    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
+        Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
+        Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
-    } else {  // Define K and Krel_cells, Krel_faces is always one
+    } if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+      CalculateRelativePermeabilityFace(*solution_cells);
+      Krel_faces->PutScalar(1.0);
+    } else {
       CalculateRelativePermeabilityCell(*solution_cells);
       Krel_faces->PutScalar(1.0);
     }

@@ -238,6 +238,36 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 
 
 /* ******************************************************************
+*                                             
+****************************************************************** */
+void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
+                                  const Epetra_Vector& Krel_faces,
+                                  const Epetra_Vector& pressure_faces,
+                                  const Epetra_Vector& flux,
+                                  Matrix_MFD* matrix_operator)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    Epetra_SerialDenseVector& Bcf = matrix_operator->Acf_cells()[c];
+    double& Fc = matrix_operator->Fc_cells()[c];
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      double factor = flux[f] * dirs[n] * dKdP_faces[f] / Krel_faces[f];
+
+      Bcf[n] += factor;
+      Fc += factor * pressure_faces[f];
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
 void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,

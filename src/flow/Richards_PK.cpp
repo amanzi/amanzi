@@ -28,6 +28,7 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 #include "Mesh.hh"
 #include "Point.hh"
 // #include "Matrix_Audit.hpp"
+#include "Matrix_MFD_PLambda.hpp"
 #include "Matrix_MFD_TPFA.hpp"
 
 #include "Flow_BC_Factory.hpp"
@@ -164,8 +165,10 @@ void Richards_PK::InitPK()
 
   // select proper matrix class
   if (experimental_solver) { 
-    matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
-    preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
+    matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
+    preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
+    // matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
+    // preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
   } else {
     matrix_ = new Matrix_MFD(FS, *super_map_);
     preconditioner_ = new Matrix_MFD(FS, *super_map_);
@@ -191,7 +194,7 @@ void Richards_PK::InitPK()
 
   // Process other fundamental structures
   K.resize(ncells_owned);
-  is_matrix_symmetric = (Krel_method == FLOW_RELATIVE_PERM_CENTERED);
+  is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
 
@@ -219,6 +222,10 @@ void Richards_PK::InitPK()
     map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
     PopulateMapC2MB();
   }
+
+  // data for Picard-Newton
+  dKdP_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  dKdP_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
 
   flow_status_ = FLOW_STATUS_INIT;
 }
@@ -733,6 +740,20 @@ double Richards_PK::AdaptiveTimeStepEstimate(double* dTfactor)
     solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
 #endif
   return error_max;
+}
+
+
+/* ******************************************************************
+* Identify type of the matrix.
+****************************************************************** */
+bool Richards_PK::SetSymmetryProperty()
+{
+  bool sym = false;
+  if ((Krel_method == FLOW_RELATIVE_PERM_CENTERED) ||
+      (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL)) sym = true;
+  if (experimental_solver) sym = false;
+
+  return sym;
 }
 
 

@@ -37,7 +37,8 @@ void Flow_PK::ProcessSublistTimeIntegration(
     ti_specs.clip_saturation = list.get<double>("clipping saturation value", -1.0);
     ti_specs.clip_pressure = list.get<double>("clipping pressure value", -1e+10);
 
-    ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints", false);
+    if (list.isParameter("enforce pressure-lambda constraints"))
+        ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints");
 
     ti_specs.dT_method = 0;
     std::string dT_name = list.get<string>("time stepping strategy", "simple");

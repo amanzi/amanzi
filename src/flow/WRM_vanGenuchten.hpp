@@ -30,8 +30,6 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   double dSdPc(double pc);  
   double capillaryPressure(double saturation);
   double residualSaturation() { return sr_; }
-
- private:
   double dKdPc(double pc);
 
  private:

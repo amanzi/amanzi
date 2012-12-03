@@ -88,7 +88,10 @@ int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTn
   Teuchos::SerialDenseMatrix<int, double> A(mmax + 1, mmax + 1);
 
   // create solver
-  if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
+  if (is_matrix_symmetric) 
+      solver->SetAztecOption(AZ_solver, AZ_cg);
+  else
+      solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
