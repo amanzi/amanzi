@@ -48,7 +48,7 @@ class TI_Specs {
     initialize_with_darcy = false;
     clip_saturation = -1.0;
     clip_pressure = -1e+10;
-    pressure_lambda_constraints = false;
+    pressure_lambda_constraints = true;
   }
   ~TI_Specs() {};
 

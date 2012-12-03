@@ -55,6 +55,10 @@ void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     CalculateRelativePermeabilityArithmeticMean(p);
+
+  } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+    CalculateRelativePermeabilityUpwindGravity(p);
+    AverageRelativePermeability();
   }
 }
 
@@ -144,6 +148,68 @@ void Richards_PK::CalculateRelativePermeabilityArithmeticMean(const Epetra_Vecto
 
 
 /* ******************************************************************
+* Defines upwinded relative permeabilities for faces using gravity. 
+****************************************************************** */
+void Richards_PK::AverageRelativePermeability()
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    double factor = 0.0;
+    for (int n = 0; n < nfaces; n++) factor += (*Krel_faces)[faces[n]];
+    (*Krel_cells)[c] = factor / nfaces;
+  } 
+}
+
+
+/* ******************************************************************
+* Wrapper for various ways to define dKdP on faces.
+****************************************************************** */
+void Richards_PK::CalculateDerivativePermeabilityFace(const Epetra_Vector& p)
+{
+  DerivedKdP(p, *dKdP_cells);  // populates cell-based permeabilities
+  FS->CopyMasterCell2GhostCell(*dKdP_cells);
+
+  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
+    CalculateDerivativePermeabilityUpwindGravity(p);
+  }
+}
+
+
+/* ******************************************************************
+* Defines upwind value of dKdP on faces using gravity. 
+****************************************************************** */
+void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vector& p)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  dKdP_faces->PutScalar(0.0);
+
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+
+      if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
+        (*dKdP_faces)[f] = (*dKdP_cells)[c];  // The upwind face.
+      } else if (bc_markers[f] != FLOW_BC_FACE_NULL) {
+        (*dKdP_faces)[f] = (*dKdP_cells)[c];  // The boundary face.
+      } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
+        (*dKdP_faces)[f] += (*dKdP_cells)[c] / 2;  // Almost vertical face.
+      } 
+    }
+  }
+}
+/* ******************************************************************
 * Use analytical formula for derivative dS/dP.                                               
 ****************************************************************** */
 void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
@@ -159,6 +225,27 @@ void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
     for (i = block.begin(); i != block.end(); i++) {
       double pc = atm_pressure - p[*i];
       ds[*i] = -WRM[mb]->dSdPc(pc);  // Negative sign indicates that dSdP = -dSdPc.
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Use analytical formula for derivative dK/dP.                                               
+****************************************************************** */
+void Richards_PK::DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk)
+{
+  for (int mb = 0; mb < WRM.size(); mb++) {
+    std::string region = WRM[mb]->region();
+    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    AmanziMesh::Entity_ID_List block(ncells);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+
+    AmanziMesh::Entity_ID_List::iterator i;
+    for (i = block.begin(); i != block.end(); i++) {
+      double pc = atm_pressure - p[*i];
+      dk[*i] = -WRM[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
     }
   }
 }

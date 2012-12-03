@@ -118,7 +118,7 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];
     } else {
       for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c] * Krel_faces[faces[m]];
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
     }
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -288,8 +288,7 @@ void Matrix_MFD::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 
 
 /* ******************************************************************
-* Convert elemental mass matrices into stiffness matrices and 
-* assemble them into four global matrices. 
+* Assebmle elemental mass matrices into four global matrices. 
 * We need an auxiliary GHOST-based vector to assemble the RHS.
 ****************************************************************** */
 void Matrix_MFD::AssembleGlobalMatrices()
@@ -313,13 +312,13 @@ void Matrix_MFD::AssembleGlobalMatrices()
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
     (*Acc_)[c] = Acc_cells_[c];
-    (*Acf_).ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
-    (*Aff_).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
+    Acf_->ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
+    Aff_->SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
 
     if (!flag_symmetry_)
-        (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
+        Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
   }
-  (*Aff_).GlobalAssemble();
+  Aff_->GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
   Epetra_Vector rhs_faces_wghost(fmap_wghost);
@@ -424,7 +423,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE
-    // read some boomer amg parameters
+    // read some Boomer AMG parameters
     hypre_ncycles = prec_list.get<int>("cycle applications", 5);
     hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
     hypre_tol = prec_list.get<double>("tolerance", 0.0);
@@ -484,7 +483,7 @@ void Matrix_MFD::UpdatePreconditioner()
 
 
 /* ******************************************************************
-* Parallel matvec product Aff_cells * X.                                              
+* Parallel matvec product A * X.                                              
 ****************************************************************** */
 int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {

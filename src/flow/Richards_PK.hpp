@@ -54,6 +54,7 @@ class Richards_PK : public Flow_PK {
   void InitializeSteadySaturated();
 
   int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF2(TI_Specs& ti_specs);
@@ -84,6 +85,10 @@ class Richards_PK : public Flow_PK {
   void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
   void CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
   void CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
+  void AverageRelativePermeability();
+
+  void CalculateDerivativePermeabilityFace(const Epetra_Vector& p);
+  void CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vector& p);
 
   void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
@@ -118,7 +123,8 @@ class Richards_PK : public Flow_PK {
   void AnalysisTI_Specs();
 
   // water retention models
-  void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
+  void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds);
+  void DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
   void PopulateMapC2MB();
@@ -140,6 +146,7 @@ class Richards_PK : public Flow_PK {
   AmanziGeometry::Point& gravity() { return gravity_; }
 
   // developement members
+  bool SetSymmetryProperty();
   void ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
                                    const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
@@ -207,7 +214,9 @@ class Richards_PK : public Flow_PK {
 
   int Krel_method;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
-  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability
+  Teuchos::RCP<Epetra_Vector> Krel_faces;
+  Teuchos::RCP<Epetra_Vector> dKdP_cells;  // derivative of realitive permeability 
+  Teuchos::RCP<Epetra_Vector> dKdP_faces;
 
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;

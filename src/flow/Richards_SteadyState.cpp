@@ -153,7 +153,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
-  if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
+  if (is_matrix_symmetric)
+      solver->SetAztecOption(AZ_solver, AZ_cg);
+  else
+      solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -180,9 +183,14 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
         *solution_faces, atm_pressure,
         bc_markers, bc_values);
 
-    if (!is_matrix_symmetric) {
+    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
+        Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
+        Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
+    } if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+      CalculateRelativePermeabilityFace(*solution_cells);
+      Krel_faces->PutScalar(1.0);
     } else {
       CalculateRelativePermeabilityCell(*solution_cells);
       Krel_faces->PutScalar(1.0);
@@ -221,7 +229,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    solver->Iterate(max_itrs_linear, convergence_tol_linear);
+    solver->Iterate((long long)max_itrs_linear, convergence_tol_linear);
     int num_itrs_linear = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
 
@@ -239,6 +247,126 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
       solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
       solution_old[c] = solution_new[c];
     }
+
+    T_physics += dT;
+    itrs++;
+  }
+
+  ti_specs.num_itrs = itrs;
+  return 0;
+}
+
+
+/* ******************************************************************
+* Calculates steady-state solution using the Picard Newton method.                                                 
+****************************************************************** */
+int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
+{
+  Epetra_Vector  solution_old(*solution);
+  Epetra_Vector& solution_new = *solution;
+  Epetra_Vector  residual(*solution);
+
+  Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
+  Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
+
+  Epetra_Vector& flux = FS->ref_darcy_flux();
+
+  if (is_matrix_symmetric)
+      solver->SetAztecOption(AZ_solver, AZ_cg);
+  else 
+      solver->SetAztecOption(AZ_solver, AZ_gmres);
+  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
+  solver->SetAztecOption(AZ_conv, AZ_rhs);
+
+  // update steady state boundary conditions
+  double time = T_physics;
+  bc_pressure->Compute(time);
+  bc_flux->Compute(time);
+  bc_head->Compute(time);
+
+  int max_itrs_nonlinear = ti_specs.max_itrs;
+  double residual_tol_nonlinear = ti_specs.residual_tol;
+
+  max_itrs_linear = ti_specs.ls_specs.max_itrs;
+  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
+
+  int itrs = 0;
+  double L2norm, L2error = 1.0;
+
+  while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
+    // update dynamic boundary conditions
+    bc_seepage->Compute(time);
+    ProcessBoundaryConditions(
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_faces, atm_pressure,
+        bc_markers, bc_values);
+
+    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
+        Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
+        Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
+      CalculateRelativePermeabilityFace(*solution_cells);
+      Krel_cells->PutScalar(1.0);
+      CalculateDerivativePermeabilityFace(*solution_cells);
+    } if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+      CalculateRelativePermeabilityFace(*solution_cells);
+      Krel_faces->PutScalar(1.0);
+    } else {
+      CalculateRelativePermeabilityCell(*solution_cells);
+      Krel_faces->PutScalar(1.0);
+    }
+
+    // create algebraic problem
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_faces, flux, matrix_);
+    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->AssembleGlobalMatrices();
+    rhs = matrix_->rhs();  // export RHS from the matrix class
+
+    // create preconditioner
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDrhsVectors();
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->UpdatePreconditioner();
+
+    // check convergence of non-linear residual
+    L2error = matrix_->ComputeResidual(solution_new, residual);
+    residual.Norm2(&L2error);
+    rhs->Norm2(&L2norm);
+    L2error /= L2norm;
+
+    // call AztecOO solver
+    Epetra_Vector b(*rhs);
+    solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
+    solver->SetLHS(&*solution);  // initial solution guess
+
+    solver->Iterate((long long int)max_itrs_linear, convergence_tol_linear);
+    int num_itrs_linear = solver->NumIters();
+    double linear_residual = solver->ScaledResidual();
+
+    // update relaxation
+    double relaxation;
+    relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
+
+    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+      std::printf("Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
+          itrs, L2error, relaxation, linear_residual, num_itrs_linear);
+    }
+
+    int ndof = ncells_owned + nfaces_owned;
+    for (int c = 0; c < ndof; c++) {
+      solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
+      solution_old[c] = solution_new[c];
+    }
+
+    // flux
+    // CommitState(FS); WriteGMVfile(FS);
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
 
     T_physics += dT;
     itrs++;
