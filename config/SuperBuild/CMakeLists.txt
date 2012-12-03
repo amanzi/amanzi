@@ -525,7 +525,8 @@ endif()
 
 # PETSc
 option(ENABLE_PETSC "Build the PETSc package" FALSE)
-if (ENABLE_PETSC AND ENABLE_Structured)
+if (ENABLE_Structured)
+  set(ENABLE_PETSC TRUE)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
 endif()
 
@@ -579,7 +580,10 @@ if ( BUILD_DOCS )
 endif()
 
 # Build the Amanzi build script
-option(BUILD_Amanzi "Add Amanzi to the build stack" TRUE)
+option(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)
+if (Amanzi_INSTALL_PREFIX)
+  set(BUILD_Amanzi TRUE)
+endif()
 if ( BUILD_Amanzi )
 
   set(Amanzi_CMAKE_ARGS ${Amanzi_CMAKE_COMPILER_ARGS})
