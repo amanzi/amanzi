@@ -50,7 +50,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
         Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_cells->PutScalar(1.0);
-    } if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+    } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
       CalculateRelativePermeabilityFace(*solution_cells);
       Krel_faces->PutScalar(1.0);
     } else {

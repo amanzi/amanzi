@@ -30,7 +30,7 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
       Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     CalculateRelativePermeabilityFace(*u_cells);
     Krel_cells->PutScalar(1.0);
-  } if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+  } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
     CalculateRelativePermeabilityFace(*u_cells);
     Krel_faces->PutScalar(1.0);
   } else {
