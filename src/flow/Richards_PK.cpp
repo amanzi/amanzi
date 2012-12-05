@@ -208,7 +208,8 @@ void Richards_PK::InitPK()
   Krel_cells->PutScalar(1.0);  // we start with fully saturated media
   Krel_faces->PutScalar(1.0);
 
-  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
+  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY || 
+      Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
     // Kgravity_unit.resize(ncells_wghost);  Resize does not work properly.
     SetAbsolutePermeabilityTensor(K);
     CalculateKVectorUnit(gravity_, Kgravity_unit);
@@ -566,9 +567,9 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // calculate Darcy flux as diffusive part + advective part.
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);  // We remove dT from mass matrices.
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);  // We remove dT from mass matrices.
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
+  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
 
   // update time derivative
@@ -644,9 +645,9 @@ void Richards_PK::ComputePreconditionerMFD(
   UpdateBoundaryConditions(Tp, *u_faces);
 
   // setup a new algebraic problem
-  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
   matrix_operator->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_operator);
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_operator);
   if (flag_update_ML) AddTimeDerivative_MFD(*u_cells, dTp, matrix_operator);
   matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_operator->AssembleGlobalMatrices();

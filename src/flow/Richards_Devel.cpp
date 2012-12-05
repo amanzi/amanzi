@@ -70,17 +70,17 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
         bc_markers, bc_values);
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     AddTimeDerivative_MFDfake(*solution_cells, dT, matrix_);
     matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
     matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();

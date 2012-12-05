@@ -371,9 +371,9 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // calculate and assemble elemental stifness matrices
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->ComputeSchurComplement(bc_markers, bc_values);
@@ -438,9 +438,9 @@ int Darcy_PK::Advance(double dT_MPC)
       bc_markers, bc_values);
 
   // calculate and assemble elemental stifness matrices
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, matrix_);
   AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix_);
   AddTimeDerivativeSpecificYield(*solution_cells, dT, matrix_);
   matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
@@ -501,9 +501,9 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // calculate darcy mass flux
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
+  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 
   // update time derivative

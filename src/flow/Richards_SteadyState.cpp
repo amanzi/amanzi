@@ -197,17 +197,17 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     }
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();  // export RHS from the matrix class
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
@@ -316,18 +316,18 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     }
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_faces, flux, matrix_);
     matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();  // export RHS from the matrix class
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
@@ -366,7 +366,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     // flux
     // CommitState(FS); WriteGMVfile(FS);
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, flux);
+    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
 
     T_physics += dT;
     itrs++;

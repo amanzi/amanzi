@@ -68,14 +68,14 @@ class Flow_PK : public BDF2::fnBase {
   double WaterVolumeChangePerSecond(std::vector<int>& bc_markers, Epetra_Vector& darcy_flux);
 
   // gravity members
-  void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
-                            const Epetra_Vector& Krel_cells,
-                            const Epetra_Vector& Krel_faces, 
-                            Matrix_MFD* matrix);
-  void AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
-                                  const Epetra_Vector& Krel_cells,
-                                  const Epetra_Vector& Krel_faces,
-                                  Epetra_Vector& darcy_mass_flux);
+  void AddGravityFluxes_MFD(
+      std::vector<WhetStone::Tensor>& K,
+      const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+      Matrix_MFD* matrix);
+  void AddGravityFluxes_DarcyFlux(
+      std::vector<WhetStone::Tensor>& K,
+      const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+      Epetra_Vector& darcy_mass_flux);
 
   // Picard-Newton members
   void AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,

@@ -32,7 +32,6 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
     Krel_cells->PutScalar(1.0);
   } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
     CalculateRelativePermeabilityFace(*u_cells);
-    Krel_faces->PutScalar(1.0);
   } else {
     CalculateRelativePermeabilityCell(*u_cells);
     Krel_faces->PutScalar(1.0);
@@ -66,9 +65,9 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
 ****************************************************************** */
 void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner)
 { 
-  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
   matrix_operator->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_operator);
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_operator);
   matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_operator->AssembleGlobalMatrices();
 
@@ -90,9 +89,9 @@ void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bo
 void Richards_PK::AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp,
                                                Epetra_Vector& p, bool add_preconditioner)
 { 
-  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
   matrix_operator->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_operator);
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_operator);
   AddTimeDerivative_MFD(p, dTp, matrix_operator);
   matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
   matrix_operator->AssembleGlobalMatrices();

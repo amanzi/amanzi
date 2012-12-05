@@ -92,7 +92,8 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
 void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
-                                            Epetra_Vector& Krel_faces)
+                                            Epetra_Vector& Krel_faces,
+                                            int method)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
@@ -113,12 +114,17 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (Krel_cells[c] == 1.0) {
-      for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];
-    } else {
+    if (method == FLOW_RELATIVE_PERM_NONE) {
+      double* braw = Bff.values();
+      double* mraw = Mff.values();
+      for (int n = 0; n < nfaces * nfaces; n++) braw[n] = mraw[n];
+    } else if (method == FLOW_RELATIVE_PERM_CENTERED ||
+               method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {  // centered permeability for diffusion
       for (int n = 0; n < nfaces; n++)
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
+    } else {
+      for (int n = 0; n < nfaces; n++)
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];
     }
 
     double matsum = 0.0;  // elimination of mass matrix

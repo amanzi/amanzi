@@ -206,10 +206,10 @@ void Flow_PK::AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 * Routine updates elemental discretization matrices and must be 
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
-                                   const Epetra_Vector& Krel_cells,
-                                   const Epetra_Vector& Krel_faces,
-                                   Matrix_MFD* matrix_operator)
+void Flow_PK::AddGravityFluxes_MFD(
+    std::vector<WhetStone::Tensor>& K,
+    const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+    Matrix_MFD* matrix_operator)
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim);
@@ -229,7 +229,12 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * gravity) * normal) * dirs[n] * Krel_cells[c] * Krel_faces[f];
+      double outward_flux = ((K[c] * gravity) * normal) * dirs[n]; 
+      if (method == FLOW_RELATIVE_PERM_CENTERED) {
+        outward_flux *= Krel_cells[c];
+      } else {
+        outward_flux *= Krel_faces[f];
+      }
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
     }
@@ -270,10 +275,10 @@ void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
 /* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
-                                         const Epetra_Vector& Krel_cells,
-                                         const Epetra_Vector& Krel_faces,
-                                         Epetra_Vector& darcy_mass_flux)
+void Flow_PK::AddGravityFluxes_DarcyFlux(
+    std::vector<WhetStone::Tensor>& K,
+    const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+    Epetra_Vector& darcy_mass_flux)
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim);
@@ -284,6 +289,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
+    // AmanziGeometry::Point Kg = K[c] * gravity;
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -292,7 +298,13 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       if (f < nfaces_owned && !flag[f]) {
-        darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c] * Krel_faces[f];
+        if (method == FLOW_RELATIVE_PERM_NONE) {
+           darcy_mass_flux[f] += ((K[c] * gravity) * normal);
+        } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
+          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c];
+        } else {
+          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
+        }
         flag[f] = 1;
       }
     }

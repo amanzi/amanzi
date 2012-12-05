@@ -44,18 +44,18 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     UpdateBoundaryConditions(time, *solution_old_faces);
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix_);
     matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
     preconditioner_->AssembleGlobalMatrices();
