@@ -186,8 +186,9 @@ void Richards_PK::InitPK()
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
 
   // Process boundary data
+  bc_tuple zero = {0.0, 0.0};
   bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
-  bc_values.resize(nfaces_wghost, 0.0);
+  bc_values.resize(nfaces_wghost, zero);
 
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;

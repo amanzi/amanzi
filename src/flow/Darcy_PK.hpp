@@ -137,7 +137,7 @@ class Darcy_PK : public Flow_PK {
   BoundaryFunction* bc_flux;
   BoundaryFunction* bc_seepage;
   std::vector<int> bc_markers;  // Used faces marked with boundary conditions
-  std::vector<double> bc_values;
+  std::vector<bc_tuple> bc_values;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
   DomainFunction* src_sink;  // Source and sink terms

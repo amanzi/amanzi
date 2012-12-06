@@ -32,6 +32,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "mfd3d.hpp"
 
 #include "Flow_State.hpp"
+#include "Flow_typedefs.hpp"
 
 #include "Ifpack.h" 
 // note that if trilinos is compiled with hypre support, then
@@ -51,11 +52,11 @@ class Matrix_MFD : public Epetra_Operator {
   void CreateMFDrhsVectors();
   virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
-  void ApplyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+  void ApplyBoundaryConditions(std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values);
 
   virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   virtual void AssembleGlobalMatrices();
-  virtual void ComputeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+  virtual void ComputeSchurComplement(std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values);
 
   double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
   double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);

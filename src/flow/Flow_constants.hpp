@@ -24,7 +24,8 @@ const int FLOW_STATUS_TRANSIENT_STATE = 8;
 
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
-const int FLOW_BC_FACE_HEAD = 2; 
+const int FLOW_BC_FACE_PRESSURE_SEEPAGE = 2; 
+const int FLOW_BC_FACE_HEAD = 3; 
 const int FLOW_BC_FACE_FLUX = 4; 
 
 const int FLOW_TIME_INTEGRATION_PICARD = 1;

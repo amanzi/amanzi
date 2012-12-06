@@ -41,7 +41,7 @@ class Matrix_MFD_PLambda : public Matrix_MFD {
 
   const char* Label() const { return strdup("Matrix MFD_PLambda"); }
 
- private:
+ protected:
   Teuchos::RCP<Epetra_FECrsMatrix> APLambda_;
 
  private:

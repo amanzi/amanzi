@@ -165,8 +165,9 @@ void Darcy_PK::InitPK()
   ProcessParameterList();
 
   // Process boundary data
+  bc_tuple zero = {0.0, 0.0};
   bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
-  bc_values.resize(nfaces_wghost, 0.0);
+  bc_values.resize(nfaces_wghost, zero);
 
   ProcessShiftWaterTableList();
 

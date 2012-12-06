@@ -83,33 +83,34 @@ void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_faces, const double atm_pressure,
-    std::vector<int>& bc_markers, std::vector<double>& bc_values)
+    std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values)
 {
   int flag_essential_bc = 0;
+  bc_tuple zero = {0.0, 0.0};
   for (int n = 0; n < bc_markers.size(); n++) {
     bc_markers[n] = FLOW_BC_FACE_NULL;
-    bc_values[n] = 0.0;
+    bc_values[n] = zero;
   }
 
   Amanzi::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_PRESSURE;
-    bc_values[f] = bc->second;
+    bc_values[f][0] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_HEAD;
-    bc_values[f] = bc->second;
+    bc_values[f][0] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_FLUX;
-    bc_values[f] = bc->second;
+    bc_values[f][0] = bc->second;
   }
 
   int nseepage = 0;
@@ -118,11 +119,12 @@ void Flow_PK::ProcessBoundaryConditions(
 
     if (pressure_faces[f] < atm_pressure) {
       bc_markers[f] = FLOW_BC_FACE_FLUX;
-      bc_values[f] = bc->second;
+      bc_values[f][0] = bc->second;
       nseepage++;
     } else {
-      bc_markers[f] = FLOW_BC_FACE_PRESSURE;
-      bc_values[f] = atm_pressure;
+      bc_markers[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
+      bc_values[f][0] = atm_pressure;
+      bc_values[f][1] = bc->second;
       flag_essential_bc = 1;
     }
   }
@@ -138,7 +140,7 @@ void Flow_PK::ProcessBoundaryConditions(
 
       if (ncells == 1) {
         bc_markers[f] = FLOW_BC_FACE_FLUX;
-        bc_values[f] = 0.0;
+        bc_values[f][0] = 0.0;
         missed++;
       }
     }
@@ -181,6 +183,7 @@ void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_markers,
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) {
     if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
+        bc_markers[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
         bc_markers[f] == FLOW_BC_FACE_HEAD) {
       pressure_faces[f] = bc_values[f];
     }

@@ -31,7 +31,6 @@ void Matrix_MFD_PLambda::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_FACES : FLOW_HEX_FACES;
-  avg_entries_row++;
   Epetra_FECrsGraph graph(Copy, super_map, 2*avg_entries_row);
 
   AmanziMesh::Entity_ID_List faces;
@@ -145,7 +144,7 @@ int Matrix_MFD_PLambda::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
     MLprec->ApplyInverse(X, Y);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
 #ifdef HAVE_HYPRE
-    IfpHypre_Sff_->ApplyInverse(X, Y);
+    IfpHypre_Sff_->ApplyInverse(static_cast<Epetra_MultiVector>(X), Y);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ifp_prec_->ApplyInverse(X, Y);

@@ -24,6 +24,7 @@ Usage:
 
 #include "Flow_State.hpp"
 #include "Flow_constants.hpp"
+#include "Flow_typedefs.hpp"
 #include "Matrix_MFD.hpp"
 #include "TI_Specs.hpp"
 
@@ -57,7 +58,7 @@ class Flow_PK : public BDF2::fnBase {
       BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
       BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
       const Epetra_Vector& pressure_faces, const double atm_pressure,
-      std::vector<int>& bc_markers, std::vector<double>& bc_values);
+      std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values);
 
   void ApplyBoundaryConditions(std::vector<int>& bc_markers,
                                std::vector<double>& bc_values,
