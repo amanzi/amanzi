@@ -49,7 +49,7 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
   bc_head->Compute(Tp);
   bc_seepage->Compute(Tp);
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
+      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
       p_faces, atm_pressure,
       bc_markers, bc_values);
 

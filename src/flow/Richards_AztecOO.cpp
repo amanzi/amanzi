@@ -31,7 +31,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   bc_flux->Compute(Tp);
   bc_seepage->Compute(Tp);
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
+      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
       *u_faces, atm_pressure,
       bc_markers, bc_values);
 
@@ -84,7 +84,7 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
   bc_flux->Compute(Tp);
   bc_seepage->Compute(Tp);
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
+      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
       *u_faces, atm_pressure,
       bc_markers, bc_values);
 

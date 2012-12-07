@@ -85,7 +85,7 @@ TEST_FIXTURE(bits_and_pieces, pressure_empty)
   BoundaryFunction bf(mesh);
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
   FlowBCFactory bc_fact(mesh, params);
-  BoundaryFunction* bc = bc_fact.createPressure();
+  BoundaryFunction* bc = bc_fact.CreatePressure();
   bc->Compute(0.0);
   CHECK(bc->end() == bc->begin());
   delete bc;
@@ -101,7 +101,7 @@ TEST_FIXTURE(bits_and_pieces, pressure)
   dir.sublist("foo").set("regions", foo_reg).sublist("boundary pressure").sublist("function-constant").set("value", 1.0);
   dir.sublist("bar").set("regions", bar_reg).sublist("boundary pressure").sublist("function-constant").set("value", 2.0);
   FlowBCFactory bc_fact(mesh, params);
-  BoundaryFunction* bc = bc_fact.createPressure();
+  BoundaryFunction* bc = bc_fact.CreatePressure();
   bc->Compute(0.0);
   CHECK_EQUAL(12, bc->size());
   delete bc;
@@ -114,8 +114,8 @@ SUITE(pressure_bad_param) {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
     params->set("pressure", 0);  // wrong -- this should be a sublist
     FlowBCFactory bc_fact(mesh, params);
-    // BoundaryFunction *bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction *bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
@@ -123,8 +123,8 @@ SUITE(pressure_bad_param) {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
     params->sublist("pressure").set("fubar", 0);  // wrong -- expecting only sublists
     FlowBCFactory bc_fact(mesh, params);
-    // BoundaryFunction *bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction *bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_region)
@@ -134,11 +134,11 @@ SUITE(pressure_bad_param) {
     foo.sublist("boundary pressure").sublist("function-constant").set("value", 0.0);
     // wrong - missing Regions parameter
     FlowBCFactory bc_fact(mesh, params);
-    // BoundaryFunction* bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction* bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
     foo.set("regions", 0.0);  // wrong -- type should be Array<string>
-    // BoundaryFunction* bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction* bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_function)
@@ -149,15 +149,15 @@ SUITE(pressure_bad_param) {
     foo.set("regions", foo_reg);
     // wrong - missing boundary pressure list
     FlowBCFactory bc_fact(mesh, params);
-    // BoundaryFunction* bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction* bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
     foo.set("boundary pressure", 0);  // wrong - not a sublist
     // BoundaryFunction *bc = bc_fact.CreatePressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
     foo.remove("boundary pressure");
     foo.sublist("boundary pressure").sublist("function-constant");  // incomplete
-    // BoundaryFunction* bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction* bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 }
 
@@ -169,7 +169,7 @@ TEST_FIXTURE(bits_and_pieces, mass_flux_empty)
   BoundaryFunction bf(mesh);
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
   FlowBCFactory bc_fact(mesh, params);
-  BoundaryFunction* bc = bc_fact.createPressure();
+  BoundaryFunction* bc = bc_fact.CreatePressure();
   bc->Compute(0.0);
   CHECK(bc->end() == bc->begin());
 }
@@ -183,7 +183,7 @@ TEST_FIXTURE(bits_and_pieces, mass_flux)
   dir.sublist("foo").set("regions", foo_reg).sublist("boundary pressure").sublist("function-constant").set("value", 1.0);
   dir.sublist("bar").set("regions", bar_reg).sublist("boundary pressure").sublist("function-constant").set("value", 2.0);
   FlowBCFactory bc_fact(mesh, params);
-  BoundaryFunction* bc = bc_fact.createPressure();
+  BoundaryFunction* bc = bc_fact.CreatePressure();
   bc->Compute(0.0);
   CHECK_EQUAL(12, bc->size());
 }
@@ -194,7 +194,7 @@ SUITE(mass_flux_bad_param) {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
     params->set("pressure", 0);  // wrong -- this should be a sublist
     FlowBCFactory bc_fact(mesh, params);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
@@ -202,7 +202,7 @@ SUITE(mass_flux_bad_param) {
     Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
     params->sublist("pressure").set("fubar", 0);  // wrong -- expecting only sublists
     FlowBCFactory bc_fact(mesh, params);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_region)
@@ -212,9 +212,9 @@ SUITE(mass_flux_bad_param) {
     foo.sublist("boundary pressure").sublist("function-constant").set("value", 0.0);
     // wrong - missing Regions parameter
     FlowBCFactory bc_fact(mesh, params);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
     foo.set("regions", 0.0);  // wrong -- type should be Array<string>
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_function)
@@ -225,15 +225,15 @@ SUITE(mass_flux_bad_param) {
     foo.set("regions", foo_reg);
     // wrong - missing boundary pressure list
     FlowBCFactory bc_fact(mesh, params);
-    // BoundaryFunction* bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction* bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
     foo.set("boundary pressure", 0);  // wrong - not a sublist
-    // BoundaryFunction* bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction* bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
     foo.remove("boundary pressure");
     foo.sublist("boundary pressure").sublist("function-constant");  // incomplete
-    // BoundaryFunction* bc = bc_fact.createPressure();
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createPressure(), Errors::Message);
+    // BoundaryFunction* bc = bc_fact.CreatePressure();
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(), Errors::Message);
   }
 }
 
@@ -243,7 +243,7 @@ TEST_FIXTURE(bits_and_pieces, static_head_empty)
   FlowBCFactory bc_fact(mesh, params);
   AmanziGeometry::Point gravity(0.0, 0.0, -1.0);
 
-  BoundaryFunction* bc = bc_fact.createStaticHead(1.0, 1.0, gravity);
+  BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, gravity);
   bc->Compute(0.0);
   CHECK(bc->end() == bc->begin());
 }
@@ -259,10 +259,10 @@ TEST_FIXTURE(bits_and_pieces, static_head)
   FlowBCFactory bc_fact(mesh, params);
   AmanziGeometry::Point g2(0.0, 0.0, -2.0), g1(0.0, 0.0, -1.0);
 
-  BoundaryFunction* bc0 = bc_fact.createStaticHead(0.0, 1.0, g2);
-  BoundaryFunction* bc1 = bc_fact.createStaticHead(1.0, 1.0, g2);
-  BoundaryFunction* bc2 = bc_fact.createStaticHead(0.0, 2.0, g1);
-  BoundaryFunction *bc3 = bc_fact.createStaticHead(0.0, 2.0, g2);
+  BoundaryFunction* bc0 = bc_fact.CreateStaticHead(0.0, 1.0, g2);
+  BoundaryFunction* bc1 = bc_fact.CreateStaticHead(1.0, 1.0, g2);
+  BoundaryFunction* bc2 = bc_fact.CreateStaticHead(0.0, 2.0, g1);
+  BoundaryFunction *bc3 = bc_fact.CreateStaticHead(0.0, 2.0, g2);
   bc0->Compute(0.0);
   CHECK_EQUAL(12, bc0->size());
 
@@ -289,7 +289,7 @@ SUITE(static_head_bad_param) {
     params->set("static head", 0);  // wrong -- this should be a sublist
     FlowBCFactory bc_fact(mesh, params);
     AmanziGeometry::Point g(0.0, 0.0, -1.0);
-    CHECK_THROW(BoundaryFunction*bc = bc_fact.createStaticHead(1.0, 1.0, g), Errors::Message);
+    CHECK_THROW(BoundaryFunction*bc = bc_fact.CreateStaticHead(1.0, 1.0, g), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
@@ -298,7 +298,7 @@ SUITE(static_head_bad_param) {
     params->sublist("static head").set("fubar", 0);  // wrong -- expecting only sublists
     FlowBCFactory bc_fact(mesh, params);
     AmanziGeometry::Point g(0.0, 0.0, -1.0);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createStaticHead(1.0, 1.0, g), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_region)
@@ -309,9 +309,9 @@ SUITE(static_head_bad_param) {
     // wrong - missing Regions parameter
     FlowBCFactory bc_fact(mesh, params);
     AmanziGeometry::Point g(0.0, 0.0, -1.0);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createStaticHead(1.0, 1.0, g), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g), Errors::Message);
     foo.set("regions", 0.0);  // wrong -- type should be Array<string>
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createStaticHead(1.0, 1.0, g), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_function)
@@ -323,12 +323,12 @@ SUITE(static_head_bad_param) {
     // wrong - missing water table elevation list
     FlowBCFactory bc_fact(mesh, params);
     AmanziGeometry::Point g(0.0, 0.0, -1.0);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createStaticHead(1.0, 1.0, g), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g), Errors::Message);
     foo.set("water table elevation", 0);  // wrong - not a sublist
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createStaticHead(1.0, 1.0, g), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g), Errors::Message);
     foo.remove("water table elevation");
     foo.sublist("water table elevation").sublist("function-constant");  // incomplete
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.createStaticHead(1.0, 1.0, g), Errors::Message);
+    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g), Errors::Message);
   }
 }
 

@@ -179,7 +179,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage,
+        bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
         *solution_faces, atm_pressure,
         bc_markers, bc_values);
 
@@ -297,7 +297,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage,
+        bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
         *solution_faces, atm_pressure,
         bc_markers, bc_values);
 

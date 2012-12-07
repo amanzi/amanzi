@@ -58,10 +58,10 @@ void Richards_PK::ProcessParameterList()
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list_.sublist("boundary conditions", true)));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
-  bc_pressure = bc_factory.createPressure();
-  bc_head = bc_factory.createStaticHead(atm_pressure, rho, gravity_);
-  bc_flux = bc_factory.createMassFlux();
-  bc_seepage = bc_factory.createSeepageFace();
+  bc_pressure = bc_factory.CreatePressure();
+  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho, gravity_);
+  bc_flux = bc_factory.CreateMassFlux(rainfall_factor);
+  bc_seepage = bc_factory.CreateSeepageFace();
 
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
 

@@ -205,7 +205,9 @@ conditions are supported:
 
 * `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a surface region.
   This is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
-  boundary condition is used implicitly.
+  boundary condition is used implicitly. A boolean parameter `"rainfall`" indicates that 
+  the mass flux is defined with respect to the gravity vector and the actual influx depends
+  on boundary slope. Default value is `"false`".
 
 * `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a surface region.
 
@@ -234,6 +236,7 @@ of the other available functions:
        <ParameterList name="mass flux">
          <ParameterList name="BC 1">
            <Parameter name="regions" type="Array string" value="{North side, South side}"/>
+           <Parameter name="rainfall" type="bool" value="false"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="0.0"/>

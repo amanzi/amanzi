@@ -208,6 +208,7 @@ class Richards_PK : public Flow_PK {
   BoundaryFunction* bc_seepage;  // Seepage face BC.
   std::vector<int> bc_markers;  // Used faces are marked with boundary conditions.
   std::vector<bc_tuple> bc_values;
+  std::vector<double> rainfall_factor;
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg

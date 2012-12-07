@@ -82,6 +82,7 @@ Epetra_Map* Flow_PK::CreateSuperMap()
 void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+    const std::vector<double>& rainfall_factor,
     const Epetra_Vector& pressure_faces, const double atm_pressure,
     std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values)
 {
@@ -110,7 +111,7 @@ void Flow_PK::ProcessBoundaryConditions(
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
     bc_markers[f] = FLOW_BC_FACE_FLUX;
-    bc_values[f][0] = bc->second;
+    bc_values[f][0] = bc->second * rainfall_factor[f];
   }
 
   int nseepage = 0;

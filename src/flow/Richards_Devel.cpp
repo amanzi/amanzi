@@ -65,7 +65,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     bc_head->Compute(time);
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage,
+        bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
         *solution_faces, atm_pressure,
         bc_markers, bc_values);
 

@@ -184,7 +184,7 @@ void Darcy_PK::InitPK()
     bc_head->ComputeShift(time, shift_water_table_->Values());
   }
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
+      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
       *solution_faces, atm_pressure,
       bc_markers, bc_values);
 
@@ -434,7 +434,7 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
+      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
       *solution_faces, atm_pressure,
       bc_markers, bc_values);
 

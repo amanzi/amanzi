@@ -92,6 +92,8 @@ the surface (x, y, h(t,x,y)).
 The gravitational acceleration is assumed to be directed in the negative z-direction.
 */
 
+#include <vector>
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -109,22 +111,22 @@ class FlowBCFactory {
      : mesh_(mesh), params_(params) {}
   ~FlowBCFactory() {};
   
-  BoundaryFunction* createPressure() const;
-  BoundaryFunction* createMassFlux() const;
-  BoundaryFunction* createStaticHead(double, double, AmanziGeometry::Point&) const;
-  BoundaryFunction* createSeepageFace() const;
+  BoundaryFunction* CreatePressure() const;
+  BoundaryFunction* CreateMassFlux(std::vector<double>&) const;
+  BoundaryFunction* CreateStaticHead(double, double, AmanziGeometry::Point&) const;
+  BoundaryFunction* CreateSeepageFace() const;
 
  private:
-  void processPressureList(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processPressureSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processMassFluxList(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processMassFluxSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processStaticHeadList(double p0, double rho, AmanziGeometry::Point& gravity, 
+  void ProcessPressureList(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void ProcessPressureSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void ProcessMassFluxList(Teuchos::ParameterList&, std::vector<double>&, BoundaryFunction*) const;
+  void ProcessMassFluxSpec(Teuchos::ParameterList&, std::vector<double>&, BoundaryFunction*) const;
+  void ProcessStaticHeadList(double p0, double rho, AmanziGeometry::Point& gravity, 
                              Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processStaticHeadSpec(double p0, double rho, AmanziGeometry::Point& gravity, 
+  void ProcessStaticHeadSpec(double p0, double rho, AmanziGeometry::Point& gravity, 
                              Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processSeepageFaceList(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processSeepageFaceSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void ProcessSeepageFaceList(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void ProcessSeepageFaceSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
      
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
