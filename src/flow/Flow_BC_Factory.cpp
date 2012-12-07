@@ -262,7 +262,7 @@ void FlowBCFactory::ProcessMassFluxSpec(
       for (int m = 0; m < nfaces; m++) {
         int f = faces[m];
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        rainfall_factor[f] = normal[dim - 1] / mesh_->face_area(f);
+        rainfall_factor[f] = fabs(normal[dim - 1]) / mesh_->face_area(f);
       }
     }
   }
