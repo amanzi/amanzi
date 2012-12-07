@@ -240,7 +240,7 @@ void Matrix_MFD::ApplyBoundaryConditions(
 
       // Additional work required for seepage boundary condition.
       if (bc_markers[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
-        Fc += bc_values[f][1] * mesh_->face_area(f);
+        Fc -= bc_values[f][1] * mesh_->face_area(f);
       }
     }
   }
