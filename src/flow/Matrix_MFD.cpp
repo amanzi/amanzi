@@ -58,17 +58,17 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.darcy_mass_inverse_hex(c, K[c], Mff);
+        ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
       else
-        ok = mfd.darcy_mass_inverse(c, K[c], Mff);
+        ok = mfd.DarcyMassInverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.darcy_mass_inverse_diagonal(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.darcy_mass_inverse_SO(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
-      ok = mfd.darcy_mass_inverse_optimized(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
     } else {
-      ok = mfd.darcy_mass_inverse(c, K[c], Mff);
+      ok = mfd.DarcyMassInverse(c, K[c], Mff);
     }
 
     Mff_cells_.push_back(Mff);
@@ -201,7 +201,7 @@ void Matrix_MFD::CreateMFDrhsVectors()
 * creates elemental rigth-hand-sides.                                           
 ****************************************************************** */
 void Matrix_MFD::ApplyBoundaryConditions(
-    std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values)
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
@@ -222,9 +222,9 @@ void Matrix_MFD::ApplyBoundaryConditions(
       int f = faces[n];
       double value = bc_values[f][0];
 
-      if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_markers[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
-          bc_markers[f] == FLOW_BC_FACE_HEAD) {
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
+          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
+          bc_model[f] == FLOW_BC_FACE_HEAD) {
         for (int m = 0; m < nfaces; m++) {
           Ff[m] -= Bff(m, n) * value;
           Bff(n, m) = Bff(m, n) = 0.0;
@@ -234,12 +234,12 @@ void Matrix_MFD::ApplyBoundaryConditions(
 
         Bff(n, n) = 1.0;
         Ff[n] = value;
-      } else if (bc_markers[f] == FLOW_BC_FACE_FLUX) {
+      } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
         Ff[n] -= value * mesh_->face_area(f);
       }
 
       // Additional work required for seepage boundary condition.
-      if (bc_markers[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
         Fc -= bc_values[f][1] * mesh_->face_area(f);
       }
     }
@@ -358,7 +358,7 @@ void Matrix_MFD::AssembleGlobalMatrices()
 * Compute the face Schur complement of 2x2 block matrix.
 ****************************************************************** */
 void Matrix_MFD::ComputeSchurComplement(
-    std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values)
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   Sff_->PutScalar(0.0);
 
@@ -382,9 +382,9 @@ void Matrix_MFD::ComputeSchurComplement(
 
     for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
       int f = faces_LID[n];
-      if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_markers[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
-          bc_markers[f] == FLOW_BC_FACE_HEAD) {
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
+          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
+          bc_model[f] == FLOW_BC_FACE_HEAD) {
         for (int m = 0; m < nfaces; m++) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }

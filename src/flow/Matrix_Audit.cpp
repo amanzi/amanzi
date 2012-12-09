@@ -150,6 +150,7 @@ int Matrix_Audit::CheckSpectralBoundsExtended()
       Acell(n, i) = Acf[i];
       for (int j = 0; j < n; j++) Acell(i, j) = Aff(i, j);
     }
+    Teuchos::SerialDenseMatrix<int, double> Acopy(Acell);
 
     if (Acc <= 0.0) {
       cout << Acell << endl;

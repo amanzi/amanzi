@@ -214,7 +214,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 * Compute the face Schur complement of 2x2 block matrix.
 ****************************************************************** */
 void Matrix_MFD_TPFA::ComputeSchurComplement(
-    std::vector<int>& bc_markers, std::vector<double>& bc_values)
+    std::vector<int>& bc_model, std::vector<double>& bc_values)
 {
 }
 

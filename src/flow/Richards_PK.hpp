@@ -26,6 +26,7 @@ Authors: Neil Carlson (version 1)
 
 #include "Flow_PK.hpp"
 #include "Flow_BC_Factory.hpp"
+#include "Flow_Source_Factory.hpp"
 #include "Matrix_MFD.hpp"
 #include "WaterRetentionModel.hpp"
 #include "TI_Specs.hpp"
@@ -100,6 +101,7 @@ class Richards_PK : public Flow_PK {
                                 double Tp, double dTp, bool flag_update_ML);
 
   void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
+  void UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces);
   double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers
@@ -206,11 +208,15 @@ class Richards_PK : public Flow_PK {
   BoundaryFunction* bc_head;  // Static pressure head BC.
   BoundaryFunction* bc_flux;  // Outward mass flux BC.
   BoundaryFunction* bc_seepage;  // Seepage face BC.
-  std::vector<int> bc_markers;  // Used faces are marked with boundary conditions.
+  std::vector<int> bc_model, bc_submodel; 
   std::vector<bc_tuple> bc_values;
   std::vector<double> rainfall_factor;
 
+  DomainFunction* src_sink;  // Source and sink terms
+  int src_sink_distribution; 
+
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
+  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
   std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
 
   int Krel_method;  // method for calculating relative permeability

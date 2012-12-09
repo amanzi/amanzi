@@ -42,6 +42,36 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
 /* ******************************************************************
 * A wrapper for updating boundary conditions.
 ****************************************************************** */
+void Richards_PK::UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces)
+{
+  if (src_sink != NULL) {
+    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
+      src_sink->Compute(Tp);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
+      src_sink->ComputeDistribute(Tp);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+      src_sink->ComputeDistribute(Tp, Kxy->Values());
+    } 
+  }
+
+  bc_pressure->Compute(Tp);
+  bc_flux->Compute(Tp);
+  bc_head->Compute(Tp);
+  bc_seepage->Compute(Tp);
+  ProcessBoundaryConditions(
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      p_faces, atm_pressure, rainfall_factor,
+      bc_submodel, bc_model, bc_values);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
+     std::printf("Richards PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
+  }
+}
+
+
+/* ******************************************************************
+* A wrapper for updating boundary conditions.
+****************************************************************** */
 void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
 {
   bc_pressure->Compute(Tp);
@@ -49,9 +79,9 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
   bc_head->Compute(Tp);
   bc_seepage->Compute(Tp);
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-      p_faces, atm_pressure,
-      bc_markers, bc_values);
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      p_faces, atm_pressure, rainfall_factor,
+      bc_submodel, bc_model, bc_values);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
      std::printf("Richards PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
@@ -68,11 +98,11 @@ void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bo
   matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
   matrix_operator->CreateMFDrhsVectors();
   AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_operator);
-  matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_operator->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_operator->AssembleGlobalMatrices();
 
   if (add_preconditioner) {
-    matrix_operator->ComputeSchurComplement(bc_markers, bc_values);
+    matrix_operator->ComputeSchurComplement(bc_model, bc_values);
   }
 
   // DEBUG
@@ -93,11 +123,11 @@ void Richards_PK::AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, doub
   matrix_operator->CreateMFDrhsVectors();
   AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_operator);
   AddTimeDerivative_MFD(p, dTp, matrix_operator);
-  matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_operator->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_operator->AssembleGlobalMatrices();
 
   if (add_preconditioner) {
-    matrix_operator->ComputeSchurComplement(bc_markers, bc_values);
+    matrix_operator->ComputeSchurComplement(bc_model, bc_values);
   }
 }
 

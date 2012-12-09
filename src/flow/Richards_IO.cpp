@@ -58,18 +58,33 @@ void Richards_PK::ProcessParameterList()
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list_.sublist("boundary conditions", true)));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
-  bc_pressure = bc_factory.CreatePressure();
-  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho, gravity_);
-  bc_flux = bc_factory.CreateMassFlux(rainfall_factor);
-  bc_seepage = bc_factory.CreateSeepageFace();
+  bc_pressure = bc_factory.CreatePressure(bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho, gravity_, bc_submodel);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(bc_submodel);
 
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
+  ProcessStaticBCsubmodels(bc_submodel, rainfall_factor);
 
+  /*
   double time = T_physics;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
+  */
+
+  // Create the source object if any
+  if (rp_list_.isSublist("source terms")) {
+    string distribution_method_name = rp_list_.get<string>("source and sink distribution method", "none");
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(rp_list_.sublist("source terms", true));
+    FlowSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.createSource();
+  } else {
+    src_sink = NULL;
+  }
 
   // Create water retention models
   if (! rp_list_.isSublist("Water retention models")) {

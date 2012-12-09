@@ -41,14 +41,14 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     CalculateRelativePermeability(solution_old);
 
     double time = Tp + dTp;
-    UpdateBoundaryConditions(time, *solution_old_faces);
+    UpdateSourceBoundaryData(time, *solution_old_faces);
 
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix_);
-    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();
 
@@ -57,9 +57,9 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     preconditioner_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
-    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // call AztecOO solver

@@ -133,6 +133,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
 
   verbosity = FLOW_VERBOSITY_HIGH;
+  src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
   internal_tests = 0;
   experimental_solver = false;
 }
@@ -161,9 +162,18 @@ Richards_PK::~Richards_PK()
 ****************************************************************** */
 void Richards_PK::InitPK()
 {
+  // Allocate memory for boundary data. It must go first.
+  bc_tuple zero = {0.0, 0.0};
+  bc_values.resize(nfaces_wghost, zero);
+  bc_model.resize(nfaces_wghost, 0);
+  bc_submodel.resize(nfaces_wghost, 0);
+
+  rainfall_factor.resize(nfaces_owned, 1.0);
+
+  // Read flow list and populate various structures. 
   ProcessParameterList();
 
-  // select proper matrix class
+  // Select a proper matrix class
   if (experimental_solver) { 
     matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
     preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
@@ -185,15 +195,11 @@ void Richards_PK::InitPK()
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
 
-  // Process boundary data
-  bc_tuple zero = {0.0, 0.0};
-  bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
-  bc_values.resize(nfaces_wghost, zero);
-
+  // Initialize times.
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-  // Process other fundamental structures
+  // Process other fundamental structures.
   K.resize(ncells_owned);
   is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
@@ -214,6 +220,11 @@ void Richards_PK::InitPK()
     // Kgravity_unit.resize(ncells_wghost);  Resize does not work properly.
     SetAbsolutePermeabilityTensor(K);
     CalculateKVectorUnit(gravity_, Kgravity_unit);
+  }
+
+  // Allocate memory for wells
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
   // injected water mass
@@ -246,7 +257,7 @@ void Richards_PK::InitializeAuxiliaryData()
   DeriveFaceValuesFromCellValues(pressure, lambda);
 
   double time = T_physics;
-  UpdateBoundaryConditions(time, lambda);
+  UpdateSourceBoundaryData(time, lambda);
 
   // saturations
   Epetra_Vector& ws = FS->ref_water_saturation();
@@ -415,6 +426,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
+  // Well modeling
+  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+    CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
   // linear solver control options
   max_itrs_linear = ti_specs.ls_specs.max_itrs;
   convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
@@ -581,7 +597,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && flow_status_ >= FLOW_STATUS_TRANSIENT_STATE) {
     Epetra_Vector& phi = FS_MPC->ref_porosity();
-    double mass_bc_dT = WaterVolumeChangePerSecond(bc_markers, flux) * rho * dT;
+    double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho * dT;
 
     mass_amanzi = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
@@ -643,18 +659,21 @@ void Richards_PK::ComputePreconditionerMFD(
 
   // use code from Richards_Bundles.cpp (lipnikov@lanl.gov)
   CalculateRelativePermeability(u);
-  UpdateBoundaryConditions(Tp, *u_faces);
+  UpdateSourceBoundaryData(Tp, *u_faces);
 
   // setup a new algebraic problem
   matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
   matrix_operator->CreateMFDrhsVectors();
   AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_operator);
   if (flag_update_ML) AddTimeDerivative_MFD(*u_cells, dTp, matrix_operator);
-  matrix_operator->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_operator->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_operator->AssembleGlobalMatrices();
   if (flag_update_ML) {
-    matrix_operator->ComputeSchurComplement(bc_markers, bc_values);
+    matrix_operator->ComputeSchurComplement(bc_model, bc_values);
     matrix_operator->UpdatePreconditioner();
+  } else {
+    rhs = matrix_operator->rhs();
+    if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
   }
 
   // DEBUG

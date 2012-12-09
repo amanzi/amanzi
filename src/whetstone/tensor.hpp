@@ -34,11 +34,12 @@ class Tensor {
 
   // primary members
   int init(const int d, const int rank);
-  double trace();
+  double trace() const;
   double det();
   void inverse();
   void transpose();
   double determinant();
+  void spectral_bounds(double* lower, double* upper) const;
 
   // elementary operators
   Tensor& operator*=(const double& c);

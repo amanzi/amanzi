@@ -143,6 +143,18 @@ Darcy_PK::~Darcy_PK()
 ****************************************************************** */
 void Darcy_PK::InitPK()
 {
+  // Allocate memory for boundary data. It must go first.
+  bc_tuple zero = {0.0, 0.0};
+  bc_values.resize(nfaces_wghost, zero);
+  bc_model.resize(nfaces_wghost, 0);
+  bc_submodel.resize(nfaces_wghost, 0);
+
+  rainfall_factor.resize(nfaces_owned, 1.0);
+
+  // Read flow list and populate various structures. 
+  ProcessParameterList();
+
+  // Select a proper matrix class. No options at the moment.
   matrix_ = new Matrix_MFD(FS, *super_map_);
   preconditioner_ = matrix_;
 
@@ -161,18 +173,12 @@ void Darcy_PK::InitPK()
   solver->SetPrecOperator(preconditioner_);
   solver->SetAztecOption(AZ_solver, AZ_cg);
 
-  // Get parameters from the flow parameter list.
-  ProcessParameterList();
-
-  // Process boundary data
-  bc_tuple zero = {0.0, 0.0};
-  bc_markers.resize(nfaces_wghost, FLOW_BC_FACE_NULL);
-  bc_values.resize(nfaces_wghost, zero);
-
-  ProcessShiftWaterTableList();
-
+  // Initialize times.
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
+
+  // Initialize boundary condtions. 
+  ProcessShiftWaterTableList();
 
   time = T_physics;
   bc_pressure->Compute(time);
@@ -184,9 +190,9 @@ void Darcy_PK::InitPK()
     bc_head->ComputeShift(time, shift_water_table_->Values());
   }
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-      *solution_faces, atm_pressure,
-      bc_markers, bc_values);
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *solution_faces, atm_pressure, rainfall_factor,
+      bc_submodel, bc_model, bc_values);
 
   // Process other fundamental structures
   K.resize(ncells_owned);
@@ -375,9 +381,9 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
   matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, matrix_);
-  matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
-  matrix_->ComputeSchurComplement(bc_markers, bc_values);
+  matrix_->ComputeSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
@@ -434,9 +440,9 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-      *solution_faces, atm_pressure,
-      bc_markers, bc_values);
+      bc_pressure, bc_head, bc_flux, bc_seepage, 
+      *solution_faces, atm_pressure, rainfall_factor,
+      bc_submodel, bc_model, bc_values);
 
   // calculate and assemble elemental stifness matrices
   matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
@@ -444,9 +450,9 @@ int Darcy_PK::Advance(double dT_MPC)
   AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, matrix_);
   AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix_);
   AddTimeDerivativeSpecificYield(*solution_cells, dT, matrix_);
-  matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+  matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
-  matrix_->ComputeSchurComplement(bc_markers, bc_values);
+  matrix_->ComputeSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
@@ -532,20 +538,6 @@ void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
       for (int i = 0; i < dim-1; i++) K[c](i, i) = horizontal_permeability[c];
       K[c](dim-1, dim-1) = vertical_permeability[c];
     }
-  }
-}
-
-
-/* ******************************************************************
-*  Calculate inner product e^T K e in each cell.                                               
-****************************************************************** */
-void Darcy_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)
-{
-  for (int c = 0; c < K.size(); c++) {
-    Kxy[c] = 0.0;
-    int idim = std::max<int>(1, K[c].size() - 1);
-    for (int i = 0; i < idim; i++) Kxy[c] += K[c](i, i);
-    Kxy[c] /= idim;
   }
 }
 

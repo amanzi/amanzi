@@ -67,7 +67,6 @@ class Darcy_PK : public Flow_PK {
   void ProcessShiftWaterTableList();
   void CalculateShiftWaterTable(const std::string region);
 
-  void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
   double ErrorEstimate(double* dTfactor);
 
   // linear solvers
@@ -77,7 +76,6 @@ class Darcy_PK : public Flow_PK {
   // io members
   void ProcessParameterList();
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
-  void ProcessStringSourceDistribution(const std::string name, int* method);
 
   // control methods
   void PrintStatistics() const;
@@ -136,7 +134,8 @@ class Darcy_PK : public Flow_PK {
   BoundaryFunction* bc_head;
   BoundaryFunction* bc_flux;
   BoundaryFunction* bc_seepage;
-  std::vector<int> bc_markers;  // Used faces marked with boundary conditions
+
+  std::vector<int> bc_model, bc_submodel;  // Support of boundary conditions.
   std::vector<bc_tuple> bc_values;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
   std::vector<double> rainfall_factor;

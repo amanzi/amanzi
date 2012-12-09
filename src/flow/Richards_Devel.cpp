@@ -65,16 +65,16 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     bc_head->Compute(time);
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-        *solution_faces, atm_pressure,
-        bc_markers, bc_values);
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_faces, atm_pressure, rainfall_factor,
+        bc_submodel, bc_model, bc_values);
 
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     AddTimeDerivative_MFDfake(*solution_cells, dT, matrix_);
-    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
@@ -82,9 +82,9 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     preconditioner_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner_);
-    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // call AztecOO solver

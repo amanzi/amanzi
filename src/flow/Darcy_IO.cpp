@@ -46,12 +46,13 @@ void Darcy_PK::ProcessParameterList()
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list_.sublist("boundary conditions", true));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
-  bc_pressure = bc_factory.CreatePressure();
-  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho_, gravity_);
-  bc_flux = bc_factory.CreateMassFlux(rainfall_factor);
-  bc_seepage = bc_factory.CreateSeepageFace();
+  bc_pressure = bc_factory.CreatePressure(bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho_, gravity_, bc_submodel);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(bc_submodel);
 
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
+  ProcessStaticBCsubmodels(bc_submodel, rainfall_factor);
 
   double time = T_physics;
   bc_pressure->Compute(time);
@@ -113,25 +114,6 @@ void Darcy_PK::ProcessStringLinearSolver(
   Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
   *max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
   *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
-}
-
-
-/* ****************************************************************
-* Process string for the linear solver.
-**************************************************************** */
-void Darcy_PK::ProcessStringSourceDistribution(const std::string name, int* method)
-{
-  Errors::Message msg;
-  if (name == "none") {
-    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_NONE;
-  } else if (name == "volume") {
-    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_VOLUME;
-  } else if (name == "permeability") {
-    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_PERMEABILITY;
-  } else {
-    msg << "Darcy PK: unknown source normalization method has been specified.";
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 

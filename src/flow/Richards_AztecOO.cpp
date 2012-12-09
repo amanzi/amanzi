@@ -31,9 +31,9 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   bc_flux->Compute(Tp);
   bc_seepage->Compute(Tp);
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-      *u_faces, atm_pressure,
-      bc_markers, bc_values);
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *u_faces, atm_pressure, rainfall_factor,
+      bc_submodel, bc_model, bc_values);
 
   // set fully saturated media
   Krel_cells->PutScalar(1.0);
@@ -84,9 +84,9 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
   bc_flux->Compute(Tp);
   bc_seepage->Compute(Tp);
   ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-      *u_faces, atm_pressure,
-      bc_markers, bc_values);
+      bc_pressure, bc_head, bc_flux, bc_seepage,
+      *u_faces, atm_pressure, rainfall_factor,
+      bc_submodel, bc_model, bc_values);
 
   // calculate and assemble elemental stiffness matrices
   CalculateRelativePermeability(u);
@@ -129,7 +129,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
   Epetra_Vector* utmp_faces = FS->CreateFaceView(utmp);
 
-  UpdateBoundaryConditions(Tp, *u_faces);
+  UpdateSourceBoundaryData(Tp, *u_faces);
 
   // calculate and assemble elemental stiffness matrices
   CalculateRelativePermeability(u);

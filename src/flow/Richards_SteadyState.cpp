@@ -166,6 +166,17 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   bc_flux->Compute(time);
   bc_head->Compute(time);
 
+  // update steady state source conditons
+  if (src_sink != NULL) {
+    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
+      src_sink->Compute(time);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
+      src_sink->ComputeDistribute(time);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+      src_sink->ComputeDistribute(time, Kxy->Values());
+    } 
+  }
+
   int max_itrs_nonlinear = ti_specs.max_itrs;
   double residual_tol_nonlinear = ti_specs.residual_tol;
 
@@ -179,9 +190,9 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-        *solution_faces, atm_pressure,
-        bc_markers, bc_values);
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_faces, atm_pressure, rainfall_factor,
+        bc_submodel, bc_model, bc_values);
 
     if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
         Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
@@ -200,17 +211,18 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
-    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();  // export RHS from the matrix class
+    if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
-    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // DEBUG
@@ -297,9 +309,9 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage, rainfall_factor,
-        *solution_faces, atm_pressure,
-        bc_markers, bc_values);
+        bc_pressure, bc_head, bc_flux, bc_seepage,
+        *solution_faces, atm_pressure, rainfall_factor,
+        bc_submodel, bc_model, bc_values);
 
     if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
         Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
@@ -320,7 +332,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_faces, flux, matrix_);
-    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();  // export RHS from the matrix class
 
@@ -328,9 +340,9 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
-    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // check convergence of non-linear residual

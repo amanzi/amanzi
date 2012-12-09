@@ -75,6 +75,21 @@ Epetra_Map* Flow_PK::CreateSuperMap()
 
 
 /* ******************************************************************
+* Process 
+****************************************************************** */
+void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
+                                       std::vector<double>& rainfall_factor)
+{
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_submodel[f] & FLOW_BC_SUBMODEL_RAINFALL) {
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      rainfall_factor[f] = fabs(normal[dim - 1]) / mesh_->face_area(f);
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Add a boundary marker to used faces.
 * WARNING: we can skip update of ghost boundary faces, b/c they 
 * should be always owned. 
@@ -82,35 +97,36 @@ Epetra_Map* Flow_PK::CreateSuperMap()
 void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
-    const std::vector<double>& rainfall_factor,
     const Epetra_Vector& pressure_faces, const double atm_pressure,
-    std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values)
+    const std::vector<double>& rainfall_factor,
+    const std::vector<int>& bc_submodel,
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   int flag_essential_bc = 0;
   bc_tuple zero = {0.0, 0.0};
-  for (int n = 0; n < bc_markers.size(); n++) {
-    bc_markers[n] = FLOW_BC_FACE_NULL;
+  for (int n = 0; n < bc_model.size(); n++) {
+    bc_model[n] = FLOW_BC_FACE_NULL;
     bc_values[n] = zero;
   }
 
   Amanzi::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
-    bc_markers[f] = FLOW_BC_FACE_PRESSURE;
+    bc_model[f] = FLOW_BC_FACE_PRESSURE;
     bc_values[f][0] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
-    bc_markers[f] = FLOW_BC_FACE_HEAD;
+    bc_model[f] = FLOW_BC_FACE_HEAD;
     bc_values[f][0] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
-    bc_markers[f] = FLOW_BC_FACE_FLUX;
+    bc_model[f] = FLOW_BC_FACE_FLUX;
     bc_values[f][0] = bc->second * rainfall_factor[f];
   }
 
@@ -118,15 +134,18 @@ void Flow_PK::ProcessBoundaryConditions(
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
 
-    if (pressure_faces[f] < atm_pressure) {
-      bc_markers[f] = FLOW_BC_FACE_FLUX;
-      bc_values[f][0] = bc->second;
-      nseepage++;
-    } else {
-      bc_markers[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
-      bc_values[f][0] = atm_pressure;
-      bc_values[f][1] = bc->second;
-      flag_essential_bc = 1;
+    if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
+      if (pressure_faces[f] < atm_pressure) {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        bc_values[f][0] = bc->second * rainfall_factor[f];
+        nseepage++;
+      } else {
+        bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
+        bc_values[f][0] = atm_pressure;
+        bc_values[f][1] = bc->second * rainfall_factor[f];
+        flag_essential_bc = 1;
+      }
+    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_STOMP) {
     }
   }
 
@@ -134,13 +153,13 @@ void Flow_PK::ProcessBoundaryConditions(
   AmanziMesh::Entity_ID_List cells;
   int missed = 0;
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers[f] == FLOW_BC_FACE_NULL) {
+    if (bc_model[f] == FLOW_BC_FACE_NULL) {
       cells.clear();
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_markers[f] = FLOW_BC_FACE_FLUX;
+        bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = 0.0;
         missed++;
       }
@@ -177,17 +196,31 @@ void Flow_PK::ProcessBoundaryConditions(
 /* ******************************************************************
 * Add a boundary marker to owned faces.                                          
 ****************************************************************** */
-void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_markers,
+void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_model,
                                       std::vector<double>& bc_values,
                                       Epetra_Vector& pressure_faces)
 {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
-        bc_markers[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
-        bc_markers[f] == FLOW_BC_FACE_HEAD) {
+    if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
+        bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
+        bc_model[f] == FLOW_BC_FACE_HEAD) {
       pressure_faces[f] = bc_values[f];
     }
+  }
+}
+
+
+/* ******************************************************************
+*  Calculate inner product e^T K e in each cell.                                               
+****************************************************************** */
+void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)
+{
+  for (int c = 0; c < K.size(); c++) {
+    Kxy[c] = 0.0;
+    int idim = std::max<int>(1, K[c].size() - 1);
+    for (int i = 0; i < idim; i++) Kxy[c] += K[c](i, i);
+    Kxy[c] /= idim;
   }
 }
 
@@ -372,7 +405,7 @@ void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 /* ******************************************************************
 * Calculate change of water volume per second due to boundary flux.                                          
 ****************************************************************** */
-double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers, Epetra_Vector& darcy_flux)
+double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Vector& darcy_flux)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
@@ -383,7 +416,7 @@ double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers, Epetra_
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if (bc_markers[f] != FLOW_BC_FACE_NULL && f < nfaces_owned) {
+      if (bc_model[f] != FLOW_BC_FACE_NULL && f < nfaces_owned) {
         if (fdirs[i] >= 0) {
           volume -= darcy_flux[f];
         } else {

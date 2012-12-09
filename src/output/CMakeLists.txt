@@ -71,7 +71,7 @@ add_amanzi_library(output
 
 foreach( lib ${output_tpl_list} )
     print_variable(lib)
-    message(STATUS "DEBUG: lib=$lib")
+    # message(STATUS "DEBUG: lib=$lib")
 endforeach()
 
 #

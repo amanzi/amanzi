@@ -205,9 +205,7 @@ conditions are supported:
 
 * `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a surface region.
   This is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
-  boundary condition is used implicitly. A boolean parameter `"rainfall`" indicates that 
-  the mass flux is defined with respect to the gravity vector and the actual influx depends
-  on boundary slope. Default value is `"false`".
+  boundary condition is used implicitly. 
 
 * `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a surface region.
 
@@ -267,6 +265,39 @@ of the other available functions:
          </ParameterList>
        </ParameterList>
      </ParameterList>
+
+The above boundary conditions are the four major models supported by Amanzi. In addition to
+that each model may support a few submodels. A submodel is defined by additional
+parameters described below. Mix and match of parameters is allowed.
+
+* `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
+  vector and the actual influx depends on boundary slope. Default value is `"false`".
+
+* `"relative to the top`" [bool] indicates that the static head is defined with respect
+  to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+  Default falue is `"false`". 
+
+* `"submodel`" [string] indicates different models for seepage face boundary condition.
+  It can take values `"pflotran`" and `"stomp`". The first option leads to discontinous
+  change of boundary condition type, influx to pressure. The second option is described
+  in the document of mathematical models.
+
+Here is an examle:
+
+.. code-block:: xml
+
+       <ParameterList name="seepage face">
+         <ParameterList name="BC 3">
+           <Parameter name="regions" type="Array(string)" value="{Foo}"/>
+           <Parameter name="rainfall" type="bool" value="true"/>
+           <Parameter name="submodel" type="string" value="pflotran"/>
+           <ParameterList name="outward mass flux">
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="1.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
 
 
 Sources and Sinks

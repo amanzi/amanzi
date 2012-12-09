@@ -27,10 +27,10 @@ namespace WhetStone {
 * value is a convex combination of two neighboring cell-based 
 * prossures.
 ****************************************************************** */
-void MFD3D::calculate_harmonic_points(int face,
-                                      std::vector<Tensor>& T,
-                                      AmanziGeometry::Point& harmonic_point,
-                                      double& harmonic_point_weight)
+void MFD3D::CalculateHarmonicPoints(int face,
+                                    std::vector<Tensor>& T,
+                                    AmanziGeometry::Point& harmonic_point,
+                                    double& harmonic_point_weight)
 {
   int d = mesh_->space_dimension();
 
@@ -76,13 +76,11 @@ void MFD3D::calculate_harmonic_points(int face,
 * The case of Dirichlet-Neumann corner has to be implemented 
 * separately using array bc_face_id().(lipnikov@lanl.gov).
 ****************************************************************** */
-int MFD3D::dispersion_corner_fluxes(int node,
-                                    int cell,
-                                    Tensor& dispersion,
-                                    std::vector<AmanziGeometry::Point>& corner_points,
-                                    double cell_value,
-                                    std::vector<double>& corner_values,
-                                    std::vector<double>& corner_fluxes)
+int MFD3D::DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
+                                  std::vector<AmanziGeometry::Point>& corner_points,
+                                  double cell_value,
+                                  std::vector<double>& corner_values,
+                                  std::vector<double>& corner_fluxes)
 {
   int d = mesh_->space_dimension();
 
