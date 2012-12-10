@@ -146,6 +146,24 @@ void Flow_PK::ProcessBoundaryConditions(
         flag_essential_bc = 1;
       }
     } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_STOMP) {
+      double preg = atm_pressure / FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+      double pmin = atm_pressure + preg / 2;
+      double pmax = atm_pressure + 1.5 * preg;
+      if (pressure_faces[f] < pmax) {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        bc_values[f][0] = bc->second * rainfall_factor[f];
+        nseepage++;
+      } else if (pressure_faces[f] > pmin) {
+        bc_model[f] = FLOW_BC_FACE_MIXED;
+        bc_values[f][0] = atm_pressure;
+        bc_values[f][1] = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+      } else {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        double f = 2.0 - 2 * (pressure_faces[f] - atm_pressure) / preg;
+        double q = (7.0 - 2 * f - f * f) / 8;
+        bc_values[f][0] = q * bc->second; 
+        nseepage++;
+      }
     }
   }
 

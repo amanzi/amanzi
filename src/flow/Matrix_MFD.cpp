@@ -236,6 +236,10 @@ void Matrix_MFD::ApplyBoundaryConditions(
         Ff[n] = value;
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
         Ff[n] -= value * mesh_->face_area(f);
+      } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
+        double area = mesh_->face_area(f);
+        Ff[n] += value * area;
+        Bff(n, n) += bc_values[f][1] * area;
       }
 
       // Additional work required for seepage boundary condition.
