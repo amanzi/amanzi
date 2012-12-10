@@ -103,6 +103,21 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
 
+  // how often to update the fluxes?
+  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
+  if (updatestring == "iteration") {
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  } else if (updatestring == "timestep") {
+    update_flux_ = UPDATE_FLUX_TIMESTEP;
+  } else if (updatestring == "vis") {
+    update_flux_ = UPDATE_FLUX_VIS;
+  } else if (updatestring == "never") {
+    update_flux_ = UPDATE_FLUX_NEVER;
+  } else {
+    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
+    Exceptions::amanzi_throw(message);
+  }
+
   //  steptime_ = Teuchos::TimeMonitor::getNewCounter("overland flow advance time");
 
 };
@@ -247,14 +262,24 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
 
     // -- Call the MSTK constructor to rip off the surface of the MSTK domain
     // -- mesh.
-    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
-    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
+    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh;
+
+    if (mesh->cell_dimension() == 3) {
+      Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d = Teuchos::rcp(
+          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
+      S->RegisterMesh("surface_3d", surface_mesh_3d);
+
+      surface_mesh = Teuchos::rcp(
+          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
+    } else {
+      S->RegisterMesh("surface_3d", mesh);
+
+      surface_mesh = Teuchos::rcp(
+          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::CELL,true,false));
+    }
 
     // -- push the mesh into state
     S->RegisterMesh("surface", surface_mesh);
-    S->RegisterMesh("surface_3d", surface_mesh_3d);
     mesh_ = surface_mesh;
     standalone_mode_ = false;
 
@@ -288,7 +313,8 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   bool update = UpdatePermeabilityData_(S.ptr());
   update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
 
-  if (update) {
+  if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
+      (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
     // update the stiffness matrix with the new rel perm
     Teuchos::RCP<const CompositeVector> conductivity =
         S->GetFieldData("upwind_overland_conductivity");
@@ -307,15 +333,32 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
-  Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", name_);
-  Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
-  Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);
-  matrix_->DeriveCellVelocity(*flux, velocity);
 
-  int ncells = velocity->size("cell");
-  for (int c=0; c!=ncells; ++c) {
-    (*velocity)("cell",0,c) /= std::max( (*pressure)("cell",c) , 1e-7);
-    (*velocity)("cell",1,c) /= std::max( (*pressure)("cell",c) , 1e-7);
+  if (update_flux_ == UPDATE_FLUX_VIS) {
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux",name_);
+    Teuchos::RCP<const CompositeVector> conductivity =
+        S->GetFieldData("upwind_overland_conductivity");
+    matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
+
+    // derive the fluxes
+    Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
+    matrix_->DeriveFlux(*potential, flux);
+  }
+
+  if (update_flux_ != UPDATE_FLUX_NEVER) {
+    Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
+    Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", name_);
+    matrix_->DeriveCellVelocity(*flux, velocity);
+
+    Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);
+    const Epetra_MultiVector& pres_cells = *pressure->ViewComponent("cell",false);
+    Epetra_MultiVector& vel_cells = *velocity->ViewComponent("cell",false);
+
+    int ncells = velocity->size("cell");
+    for (int c=0; c!=ncells; ++c) {
+      vel_cells[0][c] /= std::max( pres_cells[0][c] , 1e-7);
+      vel_cells[1][c] /= std::max( pres_cells[0][c] , 1e-7);
+    }
   }
 };
 

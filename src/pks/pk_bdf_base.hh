@@ -28,8 +28,7 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   PKBDFBase(Teuchos::ParameterList& plist,
             const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
-      backtracking_(false),
-      residual_norm_(1.e99) {}
+      backtracking_(false) {}
 
   // Virtual destructor
   virtual ~PKBDFBase() {}
@@ -59,7 +58,8 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   double dt_;
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
   bool backtracking_;
-  double residual_norm_;
+  int backtracking_count_;
+  int backtracking_iterations_;
 
   // timing
   Teuchos::RCP<Teuchos::Time> step_walltime_;

@@ -24,12 +24,13 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "state.hh"
 #include "PK.hh"
 #include "pk_factory.hh"
-#include "ObservationData.H"
-#include "unstructured_observations.hh"
-#include "visualization.hh"
-#include "checkpoint.hh"
 
 namespace Amanzi {
+
+class TimeStepManager;
+class Visualization;
+class Checkpoint;
+
 
 class Coordinator : public Teuchos::VerboseObject<Coordinator> {
 
@@ -42,6 +43,7 @@ public:
   // PK methods
   void initialize();
   void cycle_driver();
+  double get_dt();
 
 private:
   void coordinator_init();
@@ -56,6 +58,9 @@ private:
   Teuchos::RCP<State> S_next_;
   Teuchos::RCP<TreeVector> soln_;
 
+  // time step manager
+  Teuchos::RCP<TimeStepManager> tsm_;
+
   // misc setup information
   Teuchos::ParameterList parameter_list_;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
@@ -63,7 +68,7 @@ private:
 
   double t0_, t1_;
   double max_dt_, min_dt_;
-  int end_cycle_;
+  int cycle0_, cycle1_;
 
   // Epetra communicator
   Epetra_MpiComm* comm_;
@@ -75,6 +80,8 @@ private:
   // vis and checkpointing
   std::vector<Teuchos::RCP<Visualization> > visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
+  bool restart_;
+  std::string restart_filename_;
 
   // fancy OS
   Teuchos::RCP<Teuchos::FancyOStream> out_;

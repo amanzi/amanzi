@@ -25,14 +25,24 @@ class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
   // Virtual destructor
   virtual ~MPCFrozenCoupledFlowEnergy() {}
 
+  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
+
   // update the predictor to be physically consistent
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_temp(double h, Teuchos::RCP<TreeVector> up);
+
+  // -- Initialize owned (dependent) variables.
+  virtual void initialize(const Teuchos::Ptr<State>& S);
+
+  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
  private:
   // factory registration
   static RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> reg_;
 
+  double the_res_norm_;
+  bool modify_thaw_to_prev_;
 };
 } // namespace
 
