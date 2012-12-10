@@ -72,9 +72,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 #if DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
-    namestream << "residual_" << i;
+    namestream << "flow_residual_" << i;
     std::stringstream solnstream;
-    solnstream << "solution_" << i;
+    solnstream << "flow_solution_" << i;
     S->RequireField(namestream.str(), name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
     S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)->SetGhosted()
@@ -243,12 +243,12 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 #if DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
-    namestream << "residual_" << i;
+    namestream << "flow_residual_" << i;
     S->GetFieldData(namestream.str(),name_)->PutScalar(0.);
     S->GetField(namestream.str(),name_)->set_initialized();
 
     std::stringstream solnstream;
-    solnstream << "solution_" << i;
+    solnstream << "flow_solution_" << i;
     S->GetFieldData(solnstream.str(),name_)->PutScalar(0.);
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
@@ -354,7 +354,7 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
-
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
 
@@ -394,9 +394,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     upwinding_->Update(S);
 
     // patch up the BCs -- FIX ME --etc
-    Teuchos::RCP<const CompositeVector> rel_perm =
-        S->GetFieldData("relative_permeability");
-
     for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
       AmanziMesh::Entity_ID_List cells;
       uw_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -431,6 +428,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // communicate
     uw_rel_perm->ScatterMasterToGhosted();
   }
+
   return update_perm;
 };
 
@@ -558,7 +556,7 @@ void Richards::UpdateBoundaryConditions_() {
                      - ponded_depth("cell",c) * surface_cell_volume("cell",c) / dt)
           * dens("cell",cells[0]); // residual mismatch, plus water available on surface
 
-      if (q_out >= 0.) {
+      if (q_out >= 0. || Q_ss >= 0.) {
         // Flux is outward, use the Dirichlet condition and the calculated flux
         bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
         bc_values_[f] = pres("face",f);
@@ -568,7 +566,9 @@ void Richards::UpdateBoundaryConditions_() {
           // Flux wants to be inward and the subsurface
           // can accomodate all water on the surface.
           bc_markers_[f] = Operators::MFD_BC_FLUX;
-          bc_values_[f] = Q_ss / surface_cell_volume("cell",c);
+
+          // note these are NOT the same necessarily!
+          bc_values_[f] = Q_ss / mesh_->face_area(f); //surface_cell_volume("cell",c);
           (*source)("cell",c) = Q_ss / dens("cell",cells[0]);
         } else {
           // Flux wants to be inward, but the subsurface cannot handle the
@@ -579,17 +579,18 @@ void Richards::UpdateBoundaryConditions_() {
         }
       }
 
-      /*
+
       //      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
 
-        if (ponded_depth("cell",c) < 0) {
-          AmanziGeometry::Point c_surf_point = surface->cell_centroid(c);
-          AmanziGeometry::Point f_point = mesh_->face_centroid(f);
-          AmanziGeometry::Point c_sub_point = mesh_->cell_centroid(cells[0]);
+      if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
+          //          AmanziGeometry::Point c_surf_point = surface->cell_centroid(c);
+          //          AmanziGeometry::Point f_point = mesh_->face_centroid(f);
+          //          AmanziGeometry::Point c_sub_point = mesh_->cell_centroid(cells[0]);
 
           Teuchos::OSTab tab = getOSTab();
           std::cout<< "SURFACE BC: c_surf: " << c << " f: " << f << " c_sub: " << cells[0] << std::endl;
-          std::cout<< "    c_surf: " << c_surf_point << "    f: " << f_point << "    c_sub: " << c_sub_point << std::endl;
+          std::cout<< "   sizes:  cell_area: " << surface_cell_volume("cell",c) << "  face area: " << mesh_->face_area(f) << std::endl;
+          //          std::cout<< "    c_surf: " << c_surf_point << "    f: " << f_point << "    c_sub: " << c_sub_point << std::endl;
           std::cout<< "            p = " << pres("cell",cells[0]) << " p_eff = " << pres("face",f) << std::endl;
           std::cout<< "            h = " << ponded_depth("cell",c) << ", q_out = " << q_out << ", Q_ss = " << Q_ss << std::endl;
           if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
@@ -599,31 +600,11 @@ void Richards::UpdateBoundaryConditions_() {
           }
         }
         // }
-        */
     }
   }
 
 };
 
-
-// -----------------------------------------------------------------------------
-// Evaluate boundary conditions at the current time.
-// -----------------------------------------------------------------------------
-void Richards::UpdateBoundaryConditionsPreconditioner_() {
-  UpdateBoundaryConditions_();
-
-  // Attempt of a hack to deal with zero rel perm
-  double eps = 1.e-12;
-  Teuchos::RCP<CompositeVector> relperm =
-      S_next_->GetFieldData("numerical_rel_perm", name_);
-  for (int f=0; f!=relperm->size("face"); ++f) {
-    if ((*relperm)("face",f) < eps) {
-      bc_markers_[f] = Operators::MFD_BC_FLUX;
-      bc_values_[f] = 0.0;
-      (*relperm)("face",f) = 0.5*eps;
-    }
-  }
-};
 
 // -----------------------------------------------------------------------------
 // Add a boundary marker to owned faces.

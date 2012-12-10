@@ -116,9 +116,9 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
         cross[1] += normals[lcv][2]*normals[lcv+1][0] - normals[lcv][0]*normals[lcv+1][2];
         cross[2] += normals[lcv][0]*normals[lcv+1][1] - normals[lcv][1]*normals[lcv+1][0];
       }
-      cross[0] += normals[count][1]*normals[0][2] - normals[count][2]*normals[0][1];
-      cross[1] += normals[count][2]*normals[0][0] - normals[count][0]*normals[0][2];
-      cross[2] += normals[count][0]*normals[0][1] - normals[count][1]*normals[0][0];
+      cross[0] += normals[count-1][1]*normals[0][2] - normals[count-1][2]*normals[0][1];
+      cross[1] += normals[count-1][2]*normals[0][0] - normals[count-1][0]*normals[0][2];
+      cross[2] += normals[count-1][0]*normals[0][1] - normals[count-1][1]*normals[0][0];
       cross /= count;
 
       // -- S = || n - (n dot z) z || / | n dot z |

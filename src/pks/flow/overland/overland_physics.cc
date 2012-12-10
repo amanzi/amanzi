@@ -31,9 +31,10 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   // update the potential
   update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
 
-  // derive fluxes
+  // derive fluxes -- this gets done independently fo update as precon does
+  // not calculate fluxes.
   Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
-  if (update) {
+  if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("overland_flux", name_);
     matrix_->DeriveFlux(*pres_elev, flux);

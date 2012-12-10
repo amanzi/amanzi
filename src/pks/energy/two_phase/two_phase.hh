@@ -42,7 +42,8 @@ class TwoPhase : public PKPhysicalBDFBase {
 public:
   TwoPhase(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
-      PKPhysicalBDFBase(plist, solution) {
+      PKPhysicalBDFBase(plist, solution),
+      niter_(0) {
     plist_.set("solution key", "temperature");
   }
 
@@ -81,7 +82,7 @@ public:
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
-protected:
+ protected:
   // for now, several points of entry into the science, as I'm not sure where
   // things will settle for a Phalanx-like system
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
@@ -97,6 +98,8 @@ protected:
           const Teuchos::RCP<CompositeVector> f);
 
 protected:
+  int niter_;
+
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/#* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
