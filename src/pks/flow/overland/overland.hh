@@ -30,14 +30,15 @@ namespace Flow {
 class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandFlow(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBDFBase(plist, solution),
-      standalone_mode_(false),
-      is_source_term_(false),
-      is_coupling_term_(false),
-      coupled_to_surface_via_residual_(false),
-      surface_head_eps_(0.) {
+  OverlandFlow(Teuchos::ParameterList& plist, 
+               const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, solution),
+    PKPhysicalBDFBase(plist, solution),
+    standalone_mode_(false),
+    is_source_term_(false),
+    is_coupling_term_(false),
+    coupled_to_surface_via_residual_(false),
+    surface_head_eps_(0.) {
     plist_.set("solution key", "ponded_depth");
   }
 
