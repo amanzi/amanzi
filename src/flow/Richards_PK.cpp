@@ -174,7 +174,7 @@ void Richards_PK::InitPK()
   ProcessParameterList();
 
   // Select a proper matrix class
-  if (experimental_solver) { 
+  if (experimental_solver) {
     matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
     preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
     // matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);

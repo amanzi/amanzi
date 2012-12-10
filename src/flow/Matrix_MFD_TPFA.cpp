@@ -211,15 +211,6 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 
 
 /* ******************************************************************
-* Compute the face Schur complement of 2x2 block matrix.
-****************************************************************** */
-void Matrix_MFD_TPFA::ComputeSchurComplement(
-    std::vector<int>& bc_model, std::vector<double>& bc_values)
-{
-}
-
-
-/* ******************************************************************
 * Initialization of the preconditioner                                                 
 ****************************************************************** */
 void Matrix_MFD_TPFA::InitPreconditioner(int method, Teuchos::ParameterList& prec_list)

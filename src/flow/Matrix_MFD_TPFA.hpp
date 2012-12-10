@@ -35,7 +35,7 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
   void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   void AssembleGlobalMatrices();
-  void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<double>& bc_values);
+  void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
 
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
