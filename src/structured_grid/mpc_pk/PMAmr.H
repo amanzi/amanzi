@@ -23,6 +23,9 @@ public:
     virtual void initialInit (Real strt_time,
                               Real stop_time);
 
+    virtual void writePlotFile ();
+    virtual void checkPoint ();
+
     void pm_timeStep (int  level,
                       Real time,
                       int  iteration,
@@ -41,6 +44,8 @@ protected:
     static Layout layout;
     static EventCoord event_coord;
     static void CleanupStatics ();
+    static int plot_file_digits;
+    static int chk_file_digits;
 
 private:
     //

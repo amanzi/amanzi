@@ -66,14 +66,17 @@
             -->                   
       <Parameter name="Start Times" type="Array double" value="{6.17266656e+10, 6.1729344E10, 6.173178481E10, 6.173705521E10}"/>
       <Parameter name="Maximum Time Step" type="Array double" value="{5.e4, 1.e9, 5.e4, 1.e10}"/>
+      <Parameter name="Maximum Time Step" type="Array double" value="{5.e7, 1.e9, 5.e7, 1.e10}"/>
       <Parameter name="Initial Time Step" type="Array double" value="{10, 10, 10, 10}"/>
     </ParameterList>
-    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00044"/> -->
+    <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00527"/>
 
     <ParameterList name="Numerical Control Parameters">
 
       <ParameterList name="Basic Algorithm Control">
         <ParameterList name="Expert Settings">
+
+          <Parameter name="max_n_subcycle_transport" type="int" value="20"/>
 
           <Parameter name="do_multilevel_full" type="int" value="1"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="0"/>
@@ -106,14 +109,14 @@
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
           <Parameter name="steady_grid_sequence_new_level_dt_factor" type="double" value="1.e-3"/>
 
-          <Parameter name="richard_solver_verbose" type="int" value="2"/>
+          <Parameter name="richard_solver_verbose" type="int" value="3"/>
           <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
           <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="5"/>
           <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
-          <Parameter name="richard_monitor_line_search" type="int" value="1"/>
+          <Parameter name="richard_monitor_line_search" type="int" value="0"/>
 
           <Parameter name="richard_use_fd_jac" type="int" value="1"/>
           <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-8"/>
@@ -122,6 +125,7 @@
           <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
+          <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
           <Parameter name="richard_variable_switch_saturation_threshold" type="double" value="0.9996"/>
 
           <Parameter name="verbose" type="int" value="2"/>

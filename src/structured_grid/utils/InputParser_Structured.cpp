@@ -212,6 +212,7 @@ namespace Amanzi {
             ParameterList& mac_out_list     = struc_out_list.sublist("mac");
             ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
             ParameterList& io_out_list      = struc_out_list.sublist("vismf");
+            ParameterList& fab_out_list     = struc_out_list.sublist("fabarray");
 
             ParameterList& chem_out_list    = prob_out_list.sublist("amanzi");
 
@@ -390,6 +391,9 @@ namespace Amanzi {
                 }
 
                 if (step_max>=0) {
+		  if (step_max<0) {
+		    MyAbort("Negative value specified for \""+Max_Step_str+"\"");
+		  }
                     struc_out_list.set<int>("max_step", step_max);
                 }
                 
@@ -480,6 +484,11 @@ namespace Amanzi {
                 }
                 for (std::map<std::string,int>::const_iterator it=optPi.begin(); it!=optPi.end(); ++it) {
 		  if (it->first==Max_Step_str) {
+		    int max_step = it->second;
+		    if (max_step<0) {
+		      std::cout << "Negative value specified for \""+Max_Step_str+"\": " << max_step << std::endl;
+		      MyAbort("");
+		    }
 		    struc_out_list.set<int>("max_step", it->second);
 		  } else {
                     prob_out_list.set<int>(underscore(it->first), it->second);
@@ -523,7 +532,7 @@ namespace Amanzi {
             //
             int num_levels = 1;
             int max_level = num_levels-1;
-            bool do_amr_subcycling = false;                            
+            bool do_amr_subcycling = true;                            
             int ref_ratio_DEF = 2;
             Array<int> ref_ratio(max_level,ref_ratio_DEF);
             int regrid_int_DEF = 2;
@@ -561,21 +570,21 @@ namespace Amanzi {
             //
             // Verbosity implementation
             //
-            int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v;
+            int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
             if (v_val == "None") {
-                prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0;
+	      prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "Low") {
-                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0;
+	      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "Medium") {
-                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0;
+	      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "High") {
-                prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0;
+	      prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "Extreme") {
-                prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1;
+	      prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
             }
 
             // 
@@ -886,6 +895,7 @@ namespace Amanzi {
             cg_out_list.set("v",cg_v);
             prob_out_list.set("v",prob_v);
             io_out_list.set("v",io_v);
+            fab_out_list.set("verbose",fab_v);
             
             for (int i=0; i<optL.size(); ++i)
             {
@@ -1052,7 +1062,6 @@ namespace Amanzi {
         }
 
 
-        static std::string RlabelDEF[7] = {"XLOBC", "YLOBC", "ZLOBC", "XHIBC", "YHIBC", "ZHIBC", "ALL"};
         Array<std::string>
         generate_default_regions(ParameterList& rsublist)
         {
@@ -1063,8 +1072,8 @@ namespace Amanzi {
             std::string blabel = "Region: Box";
             t2PL.set(blabel,t1PL);
             convert_Region_Box(t2PL,blabel,t3PL);
-            rsublist.set(RlabelDEF[6],t3PL);
-            def_regionNames.push_back(RlabelDEF[6]);
+            rsublist.set(PMAMR::RlabelDEF[6],t3PL);
+            def_regionNames.push_back(PMAMR::RlabelDEF[6]);
 
             std::string dir_name = "Direction";
             std::string loc_name = "Location";
@@ -1076,8 +1085,8 @@ namespace Amanzi {
                     rsslist.set(loc_name,loc);
                     rslist.set("Region: Plane",rsslist);
                     convert_Region_Plane(rslist,"Region: Plane",tmp);
-                    rsublist.set(RlabelDEF[i],tmp);
-                    def_regionNames.push_back(RlabelDEF[i]);
+                    rsublist.set(PMAMR::RlabelDEF[i],tmp);
+                    def_regionNames.push_back(PMAMR::RlabelDEF[i]);
                 }
             }   
             return def_regionNames;
@@ -1159,6 +1168,35 @@ namespace Amanzi {
             return ret;
         }
 
+      void convert_PorosityUniform(const ParameterList& fPLin,
+                                   ParameterList&       fPLout)
+      {
+        Array<std::string> nullList, reqP;
+        if (fPLin.isParameter("Values")) {
+            const std::string val_name="Values"; reqP.push_back(val_name);
+            const std::string time_name="Times"; reqP.push_back(time_name);
+            const std::string form_name="Time Functions"; reqP.push_back(form_name);
+            PLoptions opt(fPLin,nullList,reqP,true,true); 
+            const Array<double>& vals = fPLin.get<Array<double> >(val_name);
+            fPLout.set<Array<double> >("vals",vals);
+            if (vals.size()>1) {
+              fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+              fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+            }
+          }
+          else if (fPLin.isParameter("Value")) {
+            const std::string val_name="Value"; reqP.push_back(val_name);
+            PLoptions opt(fPLin,nullList,reqP,true,true); 
+            double val = fPLin.get<double>(val_name);
+            fPLout.set<double>("val",val);
+          }
+          else {
+            std::string str = "Unrecognized porosity function parameters";
+            std::cout << fPLin << std::endl;
+            BoxLib::Abort(str.c_str());
+          }
+      }
+
         //
         // convert material to structured format
         //
@@ -1171,11 +1209,16 @@ namespace Amanzi {
         
             const ParameterList& rlist = parameter_list.sublist("Material Properties");
 
-            std::string mineralogy_str = "Mineralogy";
-            std::string complexation_str = "Surface Complexation Sites";
-            std::string isotherm_str = "Sorption Isotherms";
-            std::string cation_exchange_str = "Cation Exchange Capacity";
+            const std::string mineralogy_str = "Mineralogy";
+            const std::string complexation_str = "Surface Complexation Sites";
+            const std::string isotherm_str = "Sorption Isotherms";
+            const std::string cation_exchange_str = "Cation Exchange Capacity";
             state.getSolid().has_cation_exchange = false; // until we encounter the keyword for a material
+
+            const std::string porosity_file_str = "Porosity: Input File";
+            const std::string porosity_uniform_str = "Porosity: Uniform";
+            const std::string perm_file_str = "Intrinsic Permeability: Input File";
+            const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
 
             Array<std::string> arrayrock;
 
@@ -1218,12 +1261,26 @@ namespace Amanzi {
                     
                         if (rentry.isList())
                         {
-
                             const ParameterList& rsslist = rslist.sublist(rlabel);
+#if 0
+
+                            if (rlabel==porosity_file_str || rlabel==porosity_uniform_str){
+                              if (mtest["Porosity"]) {
+                                std::string str = "More than one of: (\""+porosity_file_str+"\", \""+porosity_uniform_str+
+                                  "\") specified for material \""+label+"\"";
+                                BoxLib::Abort(str.c_str());
+                              }
+                              ParameterList psublist;
+                              convert_PorosityUniform(rsslist,psublist);
+                              rsublist.set("porosity",psublist);
+                              mtest["Porosity"] = true;
+#else
                             if (rlabel=="Porosity: Uniform"){
                                 rsublist.setEntry("porosity",rsslist.getEntry("Value"));
                                 rsublist.set("porosity_dist","uniform");
                                 mtest["Porosity"] = true;
+
+#endif
                             }
                             else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
 				     rlabel=="Intrinsic Permeability: Uniform") {
@@ -2908,10 +2965,11 @@ namespace Amanzi {
             const std::string vis_var_str = "Variables";
             const std::string vis_cycle_str = "Cycle Macros";
             const std::string vis_time_str = "Time Macros";
+            const std::string vis_digits_str = "File Name Digits";
             bool vis_vars_set = false;
             Array<std::string> visNames, vis_cMacroNames, vis_tMacroNames;
-            int vis_digits = 5;
             std::string vis_file = "plt";
+            int vis_digits = 5;
             if (rlist.isSublist(vis_data_str)) {                
                 const ParameterList& vlist = rlist.sublist(vis_data_str);
                 for (ParameterList::ConstIterator i=vlist.begin(); i!=vlist.end(); ++i)
@@ -2986,6 +3044,12 @@ namespace Amanzi {
                             }
                         }
                     }
+                    else if (name == vis_digits_str) {
+                      vis_digits = vlist.get<int>(vis_digits_str);
+                      if (vis_digits<=0) {
+                        MyAbort("Output -> \""+vis_digits_str+"\" must be > 0");
+                      }
+                    }
                     else {
                         MyAbort("Unrecognized entry in \""+vis_data_str+"\" parameter list: \""+name+"\"");
                     }
@@ -3004,6 +3068,7 @@ namespace Amanzi {
             amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
             amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
             amr_list.set<std::string>("plot_file",vis_file);
+            amr_list.set<int>("plot_file_digits",vis_digits);
 
 
             // chk data
@@ -3013,6 +3078,7 @@ namespace Amanzi {
             const std::string chk_digits_str = "File Name Digits";
             bool cycle_macro_set = false;
             std::string chk_file = "chk";
+            int check_digits = 5;
             Array<std::string> chk_cMacroNames;
             if (rlist.isSublist(chk_data_str)) {                
                 const ParameterList& clist = rlist.sublist(chk_data_str);
@@ -3043,6 +3109,12 @@ namespace Amanzi {
                             }
                         }
                     }
+                    else if (name == chk_digits_str) {
+                      check_digits = clist.get<int>(chk_digits_str);
+                      if (check_digits<=0) {
+                        MyAbort("Output -> \""+chk_digits_str+"\" must be > 0");
+                      }
+                    }
                     else {
                         MyAbort("Unrecognized entry in \""+chk_data_str+"\" parameter list: \""+name+"\"");
                     }
@@ -3050,17 +3122,7 @@ namespace Amanzi {
             }
             amr_list.set<Array<std::string> >("chk_cycle_macros",chk_cMacroNames);
             amr_list.set<std::string>("check_file",chk_file);
-
-            const std::string file_name_digits_str = "File Name Digits";
-            int file_name_digits = 5;
-            if (rlist.isParameter(file_name_digits_str)) {
-                file_name_digits = rlist.get<int>(file_name_digits_str);
-                if (file_name_digits<=0) {
-                    MyAbort("Output -> \""+file_name_digits_str+"\" must be > 0");
-                }
-            }
-            amr_list.set<int>("file_name_digits",file_name_digits);
-
+            amr_list.set<int>("chk_file_digits",check_digits);
 
         
             // observation

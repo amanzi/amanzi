@@ -228,6 +228,8 @@ namespace Amanzi {
 
       struct Solid
       {
+          Solid() : has_cation_exchange(false) {}
+
           bool IsAMineral(const std::string& name) const {
               for (int i=0; i<mineral_names.size(); ++i) {
                   if (name==mineral_names[i]) return true;
