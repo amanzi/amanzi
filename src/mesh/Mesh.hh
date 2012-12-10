@@ -329,10 +329,12 @@ class Mesh
   // stored, then call recompute_geometric_quantities). 
   //
   // If cellid is not specified, the normal is the natural normal of
-  // the face. If cellid is specified, the normal is the outward normal
-  // with respect to the cell. In planar and solid meshes, the normal
-  // with respect to the cell on one side of the face is just the
-  // negative of the normal with respect to the cell on the other
+  // the face. This means that at boundaries, the normal may point in
+  // or out of the domain depending on how the face is defined. On the
+  // other hand, if cellid is specified, the normal is the outward
+  // normal with respect to the cell. In planar and solid meshes, the
+  // normal with respect to the cell on one side of the face is just
+  // the negative of the normal with respect to the cell on the other
   // side. In general surfaces meshes, this will not be true at C1
   // discontinuities
 
