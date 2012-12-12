@@ -90,7 +90,7 @@ void Transport_PK::ProcessParameterList()
   // control parameter
   internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";
   tests_tolerance = transport_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
-  dT_debug = transport_list.get<double>("maximal time step", TRANSPORT_LARGE_TIME_STEP);
+  dT_debug = transport_list.get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
   // extract list of lists of boundary conditions
   Teuchos::ParameterList BCs_list;

@@ -201,7 +201,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
       Krel_cells->PutScalar(1.0);
     } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
       CalculateRelativePermeabilityFace(*solution_cells);
-      Krel_faces->PutScalar(1.0);
     } else {
       CalculateRelativePermeabilityCell(*solution_cells);
       Krel_faces->PutScalar(1.0);
@@ -321,7 +320,6 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
       CalculateDerivativePermeabilityFace(*solution_cells);
     } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
       CalculateRelativePermeabilityFace(*solution_cells);
-      Krel_faces->PutScalar(1.0);
     } else {
       CalculateRelativePermeabilityCell(*solution_cells);
       Krel_faces->PutScalar(1.0);
@@ -331,7 +329,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
-    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_faces, flux, matrix_);
+    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_faces, flux, static_cast<Matrix_MFD_PLambda*>(matrix_));
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();  // export RHS from the matrix class
@@ -365,8 +363,8 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
-          itrs, L2error, relaxation, linear_residual, num_itrs_linear);
+      std::printf("%5s Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
+          "", itrs, L2error, relaxation, linear_residual, num_itrs_linear);
     }
 
     int ndof = ncells_owned + nfaces_owned;
@@ -375,8 +373,6 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
       solution_old[c] = solution_new[c];
     }
 
-    // flux
-    // CommitState(FS); WriteGMVfile(FS);
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
     AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
 

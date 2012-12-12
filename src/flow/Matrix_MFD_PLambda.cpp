@@ -33,11 +33,12 @@ void Matrix_MFD_PLambda::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_
   int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_FACES : FLOW_HEX_FACES;
   Epetra_FECrsGraph graph(Copy, super_map, 2*avg_entries_row);
 
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
   int dof_LID[FLOW_MAX_FACES + 1];  // Contigious memory is required.
   int dof_GID[FLOW_MAX_FACES + 1];
 
+  // diffusion part
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -49,6 +50,17 @@ void Matrix_MFD_PLambda::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_
     for (int n = 0; n < ndof; n++) dof_GID[n] = super_map.GID(dof_LID[n]);
   
     graph.InsertGlobalIndices(ndof, dof_GID, ndof, dof_GID);
+  }
+
+  // advection part
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; n++) dof_GID[n] = cells[n];
+
+    graph.InsertGlobalIndices(ncells, dof_GID, ncells, dof_GID);
   }
   graph.GlobalAssemble();  // Symbolic graph is complete.
 
@@ -75,12 +87,14 @@ void Matrix_MFD_PLambda::AssembleGlobalMatrices()
   APLambda_->PutScalar(0.0);
   const Epetra_Map& Amap = APLambda_->RowMap();
 
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   int dof_LID[FLOW_MAX_FACES + 1];
   int dof_GID[FLOW_MAX_FACES + 1];
 
+  // diffusion part
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
   for (int c = 0; c < ncells; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -102,6 +116,20 @@ void Matrix_MFD_PLambda::AssembleGlobalMatrices()
 
     APLambda_->SumIntoGlobalValues(ndof, dof_GID, BPLambda.values());
   }
+
+  // advection part
+  AmanziMesh::Entity_ID_List cells;
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  for (int f = 0; f < nfaces; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; n++) dof_GID[n] = cells[n];
+
+    Teuchos::SerialDenseMatrix<int, double>& Bcc = Acc_faces_[f];
+    APLambda_->SumIntoGlobalValues(ncells, dof_GID, Bcc.values());
+  }
   APLambda_->GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
@@ -110,17 +138,16 @@ void Matrix_MFD_PLambda::AssembleGlobalMatrices()
 
   for (int c = 0; c < ncells; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+    int mfaces = faces.size();
 
     (*rhs_cells_)[c] = Fc_cells_[c];
-    for (int n = 0; n < nfaces; n++) {
+    for (int n = 0; n < mfaces; n++) {
       int f = faces[n];
       rhs_faces_wghost[f] += Ff_cells_[c][n];
     }
   }
   FS->CombineGhostFace2MasterFace(rhs_faces_wghost, Add);
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) (*rhs_faces_)[f] = rhs_faces_wghost[f];
 }
 

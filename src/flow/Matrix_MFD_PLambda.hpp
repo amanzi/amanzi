@@ -41,8 +41,12 @@ class Matrix_MFD_PLambda : public Matrix_MFD {
 
   const char* Label() const { return strdup("Matrix MFD_PLambda"); }
 
+  // access methods
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces() { return Acc_faces_; }
+
  protected:
   Teuchos::RCP<Epetra_FECrsMatrix> APLambda_;
+  std::vector<Teuchos::SerialDenseMatrix<int, double> > Acc_faces_;
 
  private:
   void operator=(const Matrix_MFD_PLambda& matrix);

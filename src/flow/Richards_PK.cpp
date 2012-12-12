@@ -293,7 +293,10 @@ void Richards_PK::InitPicard(double T0)
   // calculate initial guess: cleaning is required (lipnikov@lanl.gov)
   T_physics = ti_specs_igs_.T0;
   dT = ti_specs_igs_.dT0;
-  AdvanceToSteadyState_Picard(ti_specs_igs_);
+  if (experimental_solver) 
+    AdvanceToSteadyState_PicardNewton(ti_specs_igs_);
+  else
+    AdvanceToSteadyState_Picard(ti_specs_igs_);
 
   Epetra_Vector& ws = FS->ref_water_saturation();
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
@@ -424,7 +427,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
-    std::printf("%5s discretization method \"%s\"\n", "", mfd3d_method_name.c_str());
+    std::printf("%5s discretization method: \"%s\"\n", "", mfd3d_method_name.c_str());
     std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
     std::printf("***********************************************************\n");
   }
@@ -617,9 +620,6 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   }
 
   dT = dTnext;
-
-  // DEBUG
-  // WriteGMVfile(FS_MPC);
 }
 
 

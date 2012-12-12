@@ -26,6 +26,7 @@ Usage:
 #include "Flow_constants.hpp"
 #include "Flow_typedefs.hpp"
 #include "Matrix_MFD.hpp"
+#include "Matrix_MFD_PLambda.hpp"
 #include "TI_Specs.hpp"
 
 namespace Amanzi {
@@ -86,7 +87,7 @@ class Flow_PK : public BDF2::fnBase {
   // Picard-Newton members
   void AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,
                            const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,
-                           Matrix_MFD* matrix);
+                           Matrix_MFD_PLambda* matrix);
 
   // access members 
   Teuchos::RCP<Flow_State> flow_state() { return FS; }

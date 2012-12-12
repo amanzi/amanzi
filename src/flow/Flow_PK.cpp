@@ -131,39 +131,42 @@ void Flow_PK::ProcessBoundaryConditions(
   }
 
   int nseepage = 0;
+  double area_seepage = 0.0;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
 
-    if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
+    if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {  // Model I.
       if (pressure_faces[f] < atm_pressure) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
-        nseepage++;
       } else {
         bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
         bc_values[f][0] = atm_pressure;
         bc_values[f][1] = bc->second * rainfall_factor[f];
         flag_essential_bc = 1;
+        nseepage++;
+        area_seepage += mesh_->face_area(f);
       }
-    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {
+
+    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {  // Model II.
       double preg = FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
       double pmin = atm_pressure;
       double pmax = atm_pressure + preg;
       if (pressure_faces[f] < pmax) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
-        nseepage++;
       } else if (pressure_faces[f] > pmin) {
         bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
         bc_values[f][0] = atm_pressure;
         bc_values[f][1] = bc->second * rainfall_factor[f];
         flag_essential_bc = 1;
+        nseepage++;
+        area_seepage += mesh_->face_area(f);
       } else {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         double f = (pressure_faces[f] - atm_pressure) / preg;
         double q = f * (2 - f);
         bc_values[f][0] = q * bc->second * rainfall_factor[f]; 
-        nseepage++;
       }
     }
   }
@@ -198,15 +201,17 @@ void Flow_PK::ProcessBoundaryConditions(
   if (verbosity >= FLOW_VERBOSITY_HIGH) {
 #ifdef HAVE_MPI
     int missed_tmp = missed, nseepage_tmp = nseepage;
+    double area_tmp = area_seepage;
     mesh_->get_comm()->SumAll(&missed_tmp, &missed, 1);
-    mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
+    mesh_->get_comm()->SumAll(&area_tmp, &area_seepage, 1);
+    // mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
-      std::printf("Flow PK: new number of influx seepage faces is %9d\n", nseepage);
+      std::printf("Flow PK: seepage face has changed: %9.4e [m^2]\n", area_seepage);
     }
   }
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Flow PK: assign zero flux boundary condition to%7d faces\n", missed);
+    std::printf("Flow PK: assign zero flux BC to%7d faces\n", missed);
   }
   nseepage_prev = nseepage;
 }
@@ -305,25 +310,24 @@ void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
                                   const Epetra_Vector& Krel_faces,
                                   const Epetra_Vector& pressure_faces,
                                   const Epetra_Vector& flux,
-                                  Matrix_MFD* matrix_operator)
+                                  Matrix_MFD_PLambda* matrix_operator)
 {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Ucc_cells = matrix_operator->Ucc_cells();
+  Ucc_cells.clear();
 
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+  AmanziMesh::Entity_ID_List cells;
 
-    Epetra_SerialDenseVector& Bcf = matrix_operator->Acf_cells()[c];
-    double& Fc = matrix_operator->Fc_cells()[c];
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
 
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      double factor = flux[f] * dirs[n] * dKdP_faces[f] / Krel_faces[f];
+    Teuchos::SerialDenseMatrix<int, double> Ucc(ncells, ncells);
 
-      Bcf[n] += factor;
-      Fc += factor * pressure_faces[f];
-    }
+    double factor = flux[f] * dKdP_faces[f] / Krel_faces[f];
+    Ucc(0, 0) = factor;
+    Ucc(0, 1) = -factor;
+
+    Ucc_cells.push_back(Ucc);
   }
 }
 

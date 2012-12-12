@@ -74,7 +74,7 @@ void Transport_PK::CheckDivergenceProperty()
       cout << "    MyPID = " << MyPID << endl;
       cout << "    cell  = " << c << endl;
       cout << "    divergence = " << div << endl;
-      cout << "    maximal velocity = " << umax << endl;
+      cout << "    maximum velocity = " << umax << endl;
       Errors::Message msg;
       msg << "Velocity field is not divergence free " << "\n";
       Exceptions::amanzi_throw(msg);
@@ -92,7 +92,7 @@ void Transport_PK::CheckDivergenceProperty()
 #endif
     if (!MyPID) {
       cout << "Transport_PK: " << endl;
-      cout << "    maximal (divergence / flux) = " << error_max << endl;
+      cout << "    maximum (divergence / flux) = " << error_max << endl;
       cout << "    average (divergence / flux) = " << error_avg << endl;
     }
   }
