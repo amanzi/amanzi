@@ -71,6 +71,8 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.damp = paramList_->get<double>("nonlinear iteration damping factor",1.0);
   state.uhist_size = paramList_->get<int>("nonlinear iteration initial guess extrapolation order",1);
   state.uhist_size++;
+  state.ntol_multiplier = paramList_->get<double>("nonlinear iteration initial timestep factor",1.0);
+  state.ntol_multiplier_damp = paramList_->get<double>("nonlinear iteration initial timestep factor damping",1.0);
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;
@@ -237,6 +239,7 @@ void BDF1Dae::set_initial_state(const double t, const Epetra_Vector& x, const Ep
   state.seq = 0;
   state.usable_pc = false;
   state.pclagcount = 0;
+  state.ntol_multiplier_current = state.ntol_multiplier;
 
   fn.update_norm(state.rtol,state.atol);
 }
@@ -458,20 +461,22 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
 
     // Check for convergence
-    if (error < state.ntol)   {
+    if (error < state.ntol*state.ntol_multiplier_current)   {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
       }
 
       if (itr < state.minitr) {
 	state.currentpclag = std::min(state.currentpclag+1, state.maxpclag);
+	state.ntol_multiplier_current = std::max(1.0,state.ntol_multiplier_current*state.ntol_multiplier_damp);
 	throw itr;
       }
       if (itr > state.maxitr) {
 	state.currentpclag = std::max(state.currentpclag-1, 0);
         throw itr;
       }
-
+      
+      state.ntol_multiplier_current = std::max(1.0,state.ntol_multiplier_current*state.ntol_multiplier_damp);
       return;
     }
   }

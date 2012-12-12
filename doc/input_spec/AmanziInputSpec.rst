@@ -294,6 +294,11 @@ Usage:
 
    * [U] `"steady max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"steady max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. 
 
+   * [U] `"steady nonlinear iteration initial timestep factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps after the time integrator restart. The parameter `"steady nonlinear iteration initial timestep factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. 
+
+   * [U] `"steady nonlinear iteration initial timestep factor damping`" [double] see the parameter `"steady nonlinear iteration initial timestep factor`".
+
+
    * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. 
 
    * [U] `"transient min iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"transient time step increase factor"`.
@@ -317,6 +322,10 @@ Usage:
    * [U] `"transient error abs tol"` [double] See `"transient error rel tol"`.
 
    * [U] `"transient max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"transient max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated.
+
+   * [U] `"transient nonlinear iteration initial timestep factor`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter.
+
+   * [U] `"transient nonlinear iteration initial timestep factor`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter.
 
    * [U] `"ML smoother type`" [string] The smoother to be used by ML, valid paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`".
 

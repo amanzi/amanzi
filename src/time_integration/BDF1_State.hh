@@ -42,6 +42,9 @@ struct BDF1State {
     nonlinear_solver = BDFNKA;
 
     verbose = false;
+    ntol_multiplier = 1.0;
+    ntol_multiplier_damp = 1.0;
+    ntol_multiplier_current = 1.0;
   }
 
   ~BDF1State() {
@@ -83,6 +86,7 @@ struct BDF1State {
   double hred;           // stepsize reduction factor
   double damp;           // nka damping factor
   int uhist_size;        // extrapolation order for initial guess
+  double ntol_multiplier, ntol_multiplier_damp, ntol_multiplier_current;
 
   bdf_nonlinear_solver_t nonlinear_solver;
 
