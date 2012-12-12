@@ -666,14 +666,11 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
       } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" ) {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Richards");
-      } else if (exe_sublist.get<std::string>("Flow Model") == "Steady State Richards") {
-        mpc_list.set<std::string>("disable Flow_PK", "no");
-        mpc_list.set<std::string>("Flow model","Steady State Richards");
-      } else if (exe_sublist.get<std::string>("Flow Model") == "Steady State Saturated") {
+      } else if (exe_sublist.get<std::string>("Flow Model") == "Single Phase") {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Steady State Saturated");
       } else {
-        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Steady State Richards, Steady State Saturated, or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
       }
     } else {
       Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
@@ -885,7 +882,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       std::string flow_model = plist->sublist("Execution Control").get<std::string>("Flow Model");
-      if (flow_model == "Steady State Saturated") {
+      if (flow_model == "Single Phase") {
         Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
         darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         darcy_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);

@@ -14,7 +14,7 @@
      Execution Control
   -->
   <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
+    <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
 
