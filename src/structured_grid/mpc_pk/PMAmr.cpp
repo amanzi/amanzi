@@ -56,6 +56,24 @@ PMAmr::PMAmr()
 PMAmr::~PMAmr()
 {}
 
+void 
+PMAmr::writePlotFile ()
+{
+  int file_name_digits_tmp = file_name_digits;
+  file_name_digits = plot_file_digits;
+  Amr::writePlotFile();
+  file_name_digits = file_name_digits_tmp;
+}
+
+void 
+PMAmr::checkPoint ()
+{
+  int file_name_digits_tmp = file_name_digits;
+  file_name_digits = chk_file_digits;
+  Amr::checkPoint();
+  file_name_digits = file_name_digits_tmp;
+}
+
 static Real
 process_events(bool& write_plotfile_after_step,
                bool& write_checkpoint_after_step,
@@ -278,22 +296,24 @@ PMAmr::pm_timeStep (int  level,
     if (plotfile_on_restart && !(restart_file.empty()) )
     {
 	plotfile_on_restart = 0;
-	writePlotFile();
+        writePlotFile();
     }
     //
     // Advance grids at this level.
     //
     Real dt_taken, dt_suggest;
-    bool step_ok = dynamic_cast<PorousMedia&>(amr_level[level]).ml_step_driver(time,dt_level[level],dt_taken,dt_suggest);
+    PorousMedia& pm = dynamic_cast<PorousMedia&>(amr_level[level]);
+    bool step_ok = pm.ml_step_driver(time,iteration,niter,dt_level[level],dt_taken,dt_suggest);
 
     if (step_ok) {
+      if (level==0) {
         dt_level[level] = dt_taken;
         int fac = 1;
         for (int lev = level+1; lev<=finest_level; ++lev) {
-            fac *= n_cycle[lev];
-            dt_level[lev] = dt_level[lev-1] * fac;
+          dt_level[lev] = dt_level[lev-1] / n_cycle[lev];
         }
         dt0_from_previous_advance = dt_suggest;
+      }
     }
     else {
         BoxLib::Abort("Step failed");
@@ -306,11 +326,11 @@ PMAmr::pm_timeStep (int  level,
 
     if (verbose > 2 && ParallelDescriptor::IOProcessor())
     {
-        std::cout << "Advanced "
-                  << amr_level[level].countCells()
-                  << " cells at level "
-                  << level
-		  << "    dt0_from_previous_advance is now " << dt0_from_previous_advance
+        for (int lev=0; lev<=level; ++lev) {
+	  std::cout << "  ";
+	}
+        std::cout << "Advanced " << amr_level[level].countCells()
+                  << " cells at level " << level
                   << std::endl;
     }
 
@@ -359,7 +379,7 @@ PMAmr::coarseTimeStep (Real stop_time)
 
     if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())
     {
-        std::cout << "\nBEGIN TRANSIENT INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
+        std::cout << "\nBEGIN TEMPORAL INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
     }
 
     bool write_plot, write_check, begin_tpc;
@@ -582,9 +602,9 @@ PMAmr::initialInit (Real t_start,
         dt_min[0]  = dt_level[0];
     }
 
-
     for (int lev = 1; lev <= max_level; lev++)
     {
+      // FIXME: Takes only ref[0] here, AND enforces ref-based sub-dt
         const int fact = sub_cycle ? ref_ratio[lev-1][0] : 1;
 
         dt0           /= Real(fact);
@@ -604,8 +624,9 @@ PMAmr::initialInit (Real t_start,
     //
     // Perform any special post_initialization operations.
     //
-    for (int lev = 0; lev <= finest_level; lev++)
+    for (int lev = 0; lev <= finest_level; lev++) {
         amr_level[lev].post_init(t_stop);
+    }
 
     for (int lev = 0; lev <= finest_level; lev++)
     {

@@ -23,6 +23,9 @@ public:
     virtual void initialInit (Real strt_time,
                               Real stop_time);
 
+    virtual void writePlotFile ();
+    virtual void checkPoint ();
+
     void pm_timeStep (int  level,
                       Real time,
                       int  iteration,

@@ -39,11 +39,6 @@ public:
   std::string obs_type;
   static std::map<std::string, int> obs_type_list;
 
-  /* This specifies the operation type
-   */
-  std::string op_type;
-  static std::map<std::string, int> op_type_list;
-
   Array<Real> times;
   std::map<int,Real> vals;
 
@@ -69,5 +64,6 @@ protected:
   Real point_sample (Real time);
 
   Real val_old, val_new;  
+  bool obs_data_initialized;
 };
 #endif /*_OBSERVATION_H_*/

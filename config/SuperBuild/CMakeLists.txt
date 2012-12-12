@@ -105,7 +105,7 @@ endif()
 message(STATUS "Install TPLs in ${TPL_INSTALL_PREFIX}")
 
 # Amanzi mesh build options
-option(ENABLE_Structured   "Enable Amanzi structured mesh capability" FALSE)
+option(ENABLE_Structured   "Enable Amanzi structured mesh capability" TRUE)
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
 
 option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)

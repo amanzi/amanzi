@@ -23,8 +23,8 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="1"/>
-        <Parameter name="Blocking Factor" type="Array int" value="{1}"/>
-        <Parameter name="Maximum Grid Size" type="Array int" value="{100}"/>
+        <Parameter name="Blocking Factor" type="Array(int)" value="{1}"/>
+        <Parameter name="Maximum Grid Size" type="Array(int)" value="{100}"/>
         <Parameter name="v" type="int" value="2"/>
       </ParameterList>
 
@@ -89,37 +89,37 @@
   </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0}"/>
-      <Parameter name="Domain High Corner" type="Array double" value="{1.0, 0.02}"/>
-      <Parameter name="Number of Cells" type="Array int" value="{100, 2}"/>
+      <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0}"/>
+      <Parameter name="Domain High Corner" type="Array(double)" value="{1.0, 0.02}"/>
+      <Parameter name="Number of Cells" type="Array(int)" value="{100, 2}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Regions">
     <ParameterList name="Waste Source">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{0.01, 0.02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.01, 0.02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Clean Sand">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.01, 0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0, 0.02}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.01, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0, 0.02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="West Well">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array double" value="{0.0, 0.005}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0, 0.005}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Center Well">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array double" value="{0.5, 0.005}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{0.5, 0.005}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="East Well">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array double" value="{1.0, 0.005}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{1.0, 0.005}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -129,7 +129,7 @@
     <Parameter name="Porosity Output File" type="string" value="amr_data/pp"/>
 
     <ParameterList name="Soil">
-      <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.38"/>
       </ParameterList>
@@ -174,7 +174,7 @@
       </ParameterList>
       <ParameterList name="Phase Components">
         <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array string" value="{Pu_238, U_234, Th_230, Ra_226, Pb_210, Tc_99}"/>
+          <Parameter name="Component Solutes" type="Array(string)" value="{Pu_238, U_234, Th_230, Ra_226, Pb_210, Tc_99}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -182,7 +182,7 @@
 
   <ParameterList name="Initial Conditions">
     <ParameterList name="Initial Condition Clean">
-      <Parameter name="Assigned Regions" type="Array string" value="{Clean_Sand}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Clean_Sand}"/>
       <ParameterList name="IC: Uniform Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="201325.0"/>
@@ -237,7 +237,7 @@
       </ParameterList>
     </ParameterList> <!-- initial condition: clean sand -->
     <ParameterList name="Initial Condition Waste">
-      <Parameter name="Assigned Regions" type="Array string" value="{Waste_Source}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Waste_Source}"/>
       <ParameterList name="IC: Uniform Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="201325.0"/>
@@ -295,60 +295,60 @@
 
   <ParameterList name="Boundary Conditions">
     <ParameterList name="West BC">
-      <Parameter name="Assigned Regions" type="Array string" value="{XLOBC}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array double" value="{9.983266e-6, 9.983266e-6}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e12}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{9.983266e-6, 9.983266e-6}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Pu_238">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
-                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e12}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="U_234">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
-                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e12}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Th_230">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
-                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e12}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Ra_226">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
-                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e12}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Pb_210">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
-                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e12}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Tc_99">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e12}"/>
-                <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-                <Parameter name="Values" type="Array double" value="{1.0e-20, 1.0e-20}"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e12}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.0e-20, 1.0e-20}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -357,11 +357,11 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="East BC">
-      <Parameter name="Assigned Regions" type="Array string" value="{XHIBC}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array double" value="{0.0, 1.5778463e9}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-	<Parameter name="Values" type="Array double" value="{201325.0, 201325.0}"/>	 		
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+	<Parameter name="Values" type="Array(double)" value="{201325.0, 201325.0}"/>	 		
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -405,39 +405,39 @@
     <Parameter name="File Name Digits" type="int" value="7"/>
     <ParameterList name="Cycle Macros">
       <ParameterList name="Every 1 steps">
-        <Parameter name="Start_Period_Stop" type="Array int" value="{0,1,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
       </ParameterList>
       <ParameterList name="Every 10 steps">
-        <Parameter name="Start_Period_Stop" type="Array int" value="{0,10,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,10,-1}"/>
       </ParameterList>
       <ParameterList name="Every 100 steps">
-        <Parameter name="Start_Period_Stop" type="Array int" value="{0,100,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
       </ParameterList>
       <ParameterList name="Every 1000 steps">
-        <Parameter name="Start_Period_Stop" type="Array int" value="{0,1000,-1}"/>
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1000,-1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Time Macros">
       <ParameterList name="Every 0.01 year">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 315576.000, -1}"/>
+	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 315576.000, -1}"/>
       </ParameterList>
       <ParameterList name="Every 0.1 year">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 3155760.00, -1}"/>
+	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 3155760.00, -1}"/>
       </ParameterList>
       <ParameterList name="Every year">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 31557600.0, -1}"/>
+	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 31557600.0, -1}"/>
       </ParameterList>
       <ParameterList name="Every 10 years">
-	<Parameter name="Start_Period_Stop" type="Array double" value="{0.0, 315576000.0, -1}"/>
+	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 315576000.0, -1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="amr_data/tank-chem"/>
-      <Parameter name="Time Macros" type="Array string" value="{Every 10 years}"/>
+      <Parameter name="Time Macros" type="Array(string)" value="{Every 10 years}"/>
     </ParameterList>
     <ParameterList name="Checkpoint Data">
       <Parameter name="File Name Base" type="string" value="amr_data/chk"/>
-      <Parameter name="Cycle Macros" type="Array string" value="{Every 100 steps}"/>
+      <Parameter name="Cycle Macros" type="Array(string)" value="{Every 100 steps}"/>
     </ParameterList>
 
     <ParameterList name="Observation Data">

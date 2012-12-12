@@ -212,6 +212,7 @@ namespace Amanzi {
             ParameterList& mac_out_list     = struc_out_list.sublist("mac");
             ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
             ParameterList& io_out_list      = struc_out_list.sublist("vismf");
+            ParameterList& fab_out_list     = struc_out_list.sublist("fabarray");
 
             ParameterList& chem_out_list    = prob_out_list.sublist("amanzi");
 
@@ -271,7 +272,6 @@ namespace Amanzi {
             }
             else if (chem_mode == "On") {
                 prob_out_list.set("do_chem",1);
-                prob_out_list.set("n_chem_interval",1); // One chemistry step every cycle (no Strang, no subcycle, no super-cycling)
                 do_chem = true;
                 const ParameterList& chem_list = parameter_list.sublist(chem_str);
                 reqP.clear(); reqL.clear();
@@ -391,6 +391,9 @@ namespace Amanzi {
                 }
 
                 if (step_max>=0) {
+		  if (step_max<0) {
+		    MyAbort("Negative value specified for \""+Max_Step_str+"\"");
+		  }
                     struc_out_list.set<int>("max_step", step_max);
                 }
                 
@@ -481,6 +484,11 @@ namespace Amanzi {
                 }
                 for (std::map<std::string,int>::const_iterator it=optPi.begin(); it!=optPi.end(); ++it) {
 		  if (it->first==Max_Step_str) {
+		    int max_step = it->second;
+		    if (max_step<0) {
+		      std::cout << "Negative value specified for \""+Max_Step_str+"\": " << max_step << std::endl;
+		      MyAbort("");
+		    }
 		    struc_out_list.set<int>("max_step", it->second);
 		  } else {
                     prob_out_list.set<int>(underscore(it->first), it->second);
@@ -524,7 +532,7 @@ namespace Amanzi {
             //
             int num_levels = 1;
             int max_level = num_levels-1;
-            bool do_amr_subcycling = false;                            
+            bool do_amr_subcycling = true;                            
             int ref_ratio_DEF = 2;
             Array<int> ref_ratio(max_level,ref_ratio_DEF);
             int regrid_int_DEF = 2;
@@ -562,21 +570,21 @@ namespace Amanzi {
             //
             // Verbosity implementation
             //
-            int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v;
+            int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
             if (v_val == "None") {
-                prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0;
+	      prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "Low") {
-                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0;
+	      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "Medium") {
-                prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0;
+	      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "High") {
-                prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0;
+	      prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
             }
             else if (v_val == "Extreme") {
-                prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1;
+	      prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
             }
 
             // 
@@ -887,6 +895,7 @@ namespace Amanzi {
             cg_out_list.set("v",cg_v);
             prob_out_list.set("v",prob_v);
             io_out_list.set("v",io_v);
+            fab_out_list.set("verbose",fab_v);
             
             for (int i=0; i<optL.size(); ++i)
             {
@@ -1053,7 +1062,6 @@ namespace Amanzi {
         }
 
 
-        static std::string RlabelDEF[7] = {"XLOBC", "YLOBC", "ZLOBC", "XHIBC", "YHIBC", "ZHIBC", "ALL"};
         Array<std::string>
         generate_default_regions(ParameterList& rsublist)
         {
@@ -1064,8 +1072,8 @@ namespace Amanzi {
             std::string blabel = "Region: Box";
             t2PL.set(blabel,t1PL);
             convert_Region_Box(t2PL,blabel,t3PL);
-            rsublist.set(RlabelDEF[6],t3PL);
-            def_regionNames.push_back(RlabelDEF[6]);
+            rsublist.set(PMAMR::RlabelDEF[6],t3PL);
+            def_regionNames.push_back(PMAMR::RlabelDEF[6]);
 
             std::string dir_name = "Direction";
             std::string loc_name = "Location";
@@ -1077,8 +1085,8 @@ namespace Amanzi {
                     rsslist.set(loc_name,loc);
                     rslist.set("Region: Plane",rsslist);
                     convert_Region_Plane(rslist,"Region: Plane",tmp);
-                    rsublist.set(RlabelDEF[i],tmp);
-                    def_regionNames.push_back(RlabelDEF[i]);
+                    rsublist.set(PMAMR::RlabelDEF[i],tmp);
+                    def_regionNames.push_back(PMAMR::RlabelDEF[i]);
                 }
             }   
             return def_regionNames;
@@ -1254,7 +1262,7 @@ namespace Amanzi {
                         if (rentry.isList())
                         {
                             const ParameterList& rsslist = rslist.sublist(rlabel);
-
+#if 0
                             if (rlabel==porosity_file_str || rlabel==porosity_uniform_str){
                               if (mtest["Porosity"]) {
                                 std::string str = "More than one of: (\""+porosity_file_str+"\", \""+porosity_uniform_str+
@@ -1265,6 +1273,13 @@ namespace Amanzi {
                               convert_PorosityUniform(rsslist,psublist);
                               rsublist.set("porosity",psublist);
                               mtest["Porosity"] = true;
+#else
+                            if (rlabel=="Porosity: Uniform"){
+                                rsublist.setEntry("porosity",rsslist.getEntry("Value"));
+                                rsublist.set("porosity_dist","uniform");
+                                mtest["Porosity"] = true;
+
+#endif
                             }
                             else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
 				     rlabel=="Intrinsic Permeability: Uniform") {

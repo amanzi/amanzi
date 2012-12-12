@@ -212,6 +212,11 @@ int  PorousMedia::full_cycle;
 int  PorousMedia::max_step;
 Real PorousMedia::stop_time;
 Real PorousMedia::dt_init;
+int  PorousMedia::max_n_subcycle_transport;
+int  PorousMedia::max_dt_iters_flow;
+int  PorousMedia::verbose_chemistry;
+bool PorousMedia::abort_on_chem_fail;
+int  PorousMedia::show_selected_runtimes;
 
 Array<AdvectionForm> PorousMedia::advectionType;
 Array<DiffusionForm> PorousMedia::diffusionType;
@@ -582,7 +587,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_tracer_transport = false;
   PorousMedia::setup_tracer_transport = false;
   PorousMedia::transport_tracers = 0;
-  PorousMedia::do_full_strang     = 1;
+  PorousMedia::do_full_strang     = 0;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
   PorousMedia::dt_chem            = 0;
@@ -613,6 +618,11 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::nGrowHYP = 3;
   PorousMedia::nGrowMG = 1;
   PorousMedia::nGrowEIGEST = 1;
+  PorousMedia::max_n_subcycle_transport = 10;
+  PorousMedia::max_dt_iters_flow = 20;
+  PorousMedia::verbose_chemistry = 0;
+  PorousMedia::abort_on_chem_fail = true;
+  PorousMedia::show_selected_runtimes = 0;
 
   PorousMedia::richard_solver_verbose = 1;
 
@@ -978,7 +988,6 @@ PorousMedia::variableSetUp ()
                        PM_Error_Value(FORT_VALLTERROR,value,min_time,max_time,max_level,regions));
       }
       else if (ppr.countval("diff_greater_than")) {
-          BoxLib::Abort("Difference refinement not yet supported");
           Real value; ppr.get("diff_greater_than",value);
           std::string field; ppr.get("field",field);
           err_list.add(field.c_str(),1,ErrorRec::Special,
@@ -1314,12 +1323,12 @@ WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
   std::string pfversion = "MaterialData-0.1";
   Real t = 0;
   int coordSys = 0;
-  bool verbose = false;
+  bool plt_verbose = false;
   bool isCartGrid = false;
   Real vfeps = 1.e-12;
   int levelSteps = 0;
   WritePlotfile(pfversion,mlData,t,gplo,gphi,fRatio,gpd,dxLevel,coordSys,
-		filename,names,verbose,isCartGrid,&vfeps,&levelSteps);
+		filename,names,plt_verbose,isCartGrid,&vfeps,&levelSteps);
 
   if (ParallelDescriptor::IOProcessor()) {
     std::cout << "Porosity plotfile written: " << filename <<std::endl;
@@ -1354,10 +1363,9 @@ PorousMedia::read_rock(int do_chem)
         Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
         Real rporosity = -1;
-        if (ppr.countval("porosity.val")) {
-          ppr.get("porosity.val",rporosity);
+        if (ppr.countval("porosity")) {
+          ppr.get("porosity",rporosity);
         } else if (ppr.countval("porosity.vals")) {
-//FIXME
           Array<Real> pvals;
           ppr.getarr("porosity.vals",pvals,0,ppr.countval("porosity.vals"));
           if (pvals.size()>1) {
@@ -1892,14 +1900,17 @@ void PorousMedia::read_prob()
 
   pp.query("execution_mode",execution_mode);
   BL_ASSERT(execution_mode=="transient" || execution_mode=="steady" || execution_mode=="init_to_steady");
+
+  pp.query("max_step",max_step);
+  pp.query("stop_time",stop_time);
+
   if (execution_mode=="init_to_steady") {
     pp.get("switch_time",switch_time);
     std::string event_name = "Switch_Time";
+    BL_ASSERT(stop_time >= switch_time);
     defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,switch_time));
     PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
   }
-  pp.query("max_step",max_step);
-  pp.query("stop_time",stop_time);
 
   std::string event_name = "Stop_Time";
   defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
@@ -2032,14 +2043,19 @@ void PorousMedia::read_prob()
   pb.query("steady_richard_max_dt",steady_richard_max_dt);
   pb.query("transient_richard_max_dt",transient_richard_max_dt);
   pb.query("sum_interval",sum_interval);
+  pb.query("max_n_subcycle_transport",max_n_subcycle_transport);
+
+  pb.query("max_dt_iters_flow",max_dt_iters_flow);
+  pb.query("verbose_chemistry",verbose_chemistry);
+  pb.query("show_selected_runtimes",show_selected_runtimes);
+  pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
   // Gravity are specified as m/s^2 in the input file
   // This is converted to the unit that is used in the code.
-  if (pb.contains("gravity"))
-    {
-      pb.get("gravity",gravity);
-      gravity /= 1.01e5;
-    }
+  if (pb.contains("gravity")) {
+    pb.get("gravity",gravity);
+    gravity /= 1.01e5;
+  }
 
   // Get algorithmic flags and options
   pb.query("full_cycle", full_cycle);
@@ -2692,6 +2708,7 @@ void  PorousMedia::read_tracer(int do_chem)
                   BoxLib::Abort("each tracer requires boundary conditions");
               }
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
+#if 0
               tbc_array[i].resize(n_tbc,PArrayManage);
               
               for (int n = 0; n<n_tbc; n++)
@@ -2739,6 +2756,67 @@ void  PorousMedia::read_tracer(int do_chem)
                       BoxLib::Abort(m.c_str());
                   }
               }
+
+#else
+              // set first tracer bc to no flow everywhere, to be overwritten by all user-defined bcs
+              tbc_array[i].resize(n_tbc+1,PArrayManage);
+              Array<Real> dtbc_val(1,0);
+              std::string dtbc_name="tbc_default_noflow";
+              Array<std::string> dtbc_region_names;
+              for (int ii=0; ii<BL_SPACEDIM; ++ii) {                
+                dtbc_region_names.push_back(PMAMR::RlabelDEF[ii]);
+                dtbc_region_names.push_back(PMAMR::RlabelDEF[3+ii]);
+              }
+              PArray<Region> dtbc_regions = build_region_PArray(dtbc_region_names);    
+              std::string dtbc_type = "noflow";
+              tbc_array[i].set(0, new RegionData(dtbc_name,dtbc_regions,dtbc_type,dtbc_val));
+              
+              for (int n = 0; n<n_tbc; n++)
+              {
+                  const std::string prefixTBC(prefix + "." + tbc_names[n]);
+                  ParmParse ppri(prefixTBC.c_str());
+                  
+                  int n_tbc_region = ppri.countval("regions");
+                  Array<std::string> tbc_region_names;
+                  ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
+                  const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
+                  std::string tbc_type; ppri.get("type",tbc_type);
+                  
+                  if (tbc_type == "concentration")
+                  {
+                      Array<Real> times, vals;
+                      Array<std::string> forms;
+                      int nv = ppri.countval("vals");
+                      if (nv) {
+                          ppri.getarr("vals",vals,0,nv);
+                          if (nv>1) {
+                              ppri.getarr("times",times,0,nv);
+                              ppri.getarr("forms",forms,0,nv-1);
+                          }
+                          else {
+                              times.resize(1,0);
+                          }
+                      }
+                      else {
+                          vals.resize(1,0); // Default tracers to zero for all time
+                          times.resize(1,0);
+                          forms.resize(0);
+                      }
+                      int nComp = 1;
+                      tbc_array[i].set(n+1, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                  }
+                  else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+                  {
+                      Array<Real> val(1,0);
+                      tbc_array[i].set(n+1, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                  }
+                  else {
+                      std::string m = "Tracer BC: \"" + tbc_names[n] 
+                          + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
+                      BoxLib::Abort(m.c_str());
+                  }
+              }
+#endif
           }
       }
   }

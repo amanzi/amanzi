@@ -101,7 +101,9 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
+#ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff() { return IfpHypre_Sff_; }
+#endif
 
   int nokay() { return nokay_; }
   int npassed() { return npassed_; }

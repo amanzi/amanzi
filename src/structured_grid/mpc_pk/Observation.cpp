@@ -39,7 +39,8 @@ Observation::Observation(const std::string& name,
                          const Region&      region,
                          const std::string& obs_type,
                          const std::string& event_label)
-    : name(name), field(field), region(region), obs_type(obs_type), event_label(event_label)
+    : name(name), field(field), region(region), obs_type(obs_type), 
+      event_label(event_label), obs_data_initialized(false)
 {
     if (!initialized) {
         Initialize();
@@ -103,9 +104,9 @@ Observation::process(Real t_old,
       ;// Do nothing
     }
 
-  if (!initialized) {
+  if (!obs_data_initialized) {
       val_old = val_new;
-      initialized = true;
+      obs_data_initialized = true;
   }
 
   // determine which of the observations are requested at this time step

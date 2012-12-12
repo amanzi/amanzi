@@ -34,8 +34,8 @@
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0"/>
-        <Parameter name="Switch" type="double" value="1.e11"/>
-        <Parameter name="End" type="double" value="1.e11"/>
+        <Parameter name="Switch" type="double" value="0.e11"/>
+        <Parameter name="End" type="double" value="0.e11"/>
         <Parameter name="Transient Initial Time Step" type="double" value="1.e5"/>
         <Parameter name="Steady Initial Time Step" type="double" value="1.e5"/>
         <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e9"/>
@@ -106,10 +106,10 @@
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="4"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{200000, 200000, 200000, 200000}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
         <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
-        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1}"/>
 	<Parameter name="Refinement Indicators" type="Array(string)" value="{Soil ref, wasteFF ref, Conc ref, Liner ref, Grout ref}"/>
 
         <ParameterList name="Soil ref">

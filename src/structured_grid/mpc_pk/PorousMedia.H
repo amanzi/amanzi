@@ -37,7 +37,7 @@ class RSParams;
 #include "beaker.hh"
 #endif
 
-enum StateType {State_Type=0, Press_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type};
+enum StateType {State_Type=0, Press_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type, Num_State_Type};
 
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
@@ -319,7 +319,7 @@ public:
   //
   virtual Real estTimeStep (MultiFab* u_mac);
 
-  void predictDT(MultiFab* u_mac);
+  void predictDT(MultiFab* u_mac, Real t_eval);
 
   Real initialTimeStep (MultiFab* u_mac);
 
@@ -388,23 +388,31 @@ public:
 #ifdef MG_USE_FBOXLIB
   void advance_richard  (Real time,
 			 Real dt); 
- 
-  bool advance_multilevel_richard  (Real  time,
-				    Real  dt,
-                                    Real& dt_new);
+#endif
+
+  bool advance_multilevel_richards_flow (Real  time,
+                                         Real  dt,
+                                         Real& dt_new);
 
   bool ml_step_driver(Real  time,
+		      int   amr_iteration,
+		      int   amr_ncycle,
                       Real  dt_try,
                       Real& dt_taken,
                       Real& dt_suggest);
 
-#endif
-  bool advance_multilevel_saturated (Real  time,
-				     Real  dt,
-				     Real& dt_new);
+  bool advance_richards_transport_chemistry(Real  t,
+					    Real  dt,
+					    int   iteration,
+					    Real& dt_new, 
+					    bool  do_subcycle,
+					    bool  do_recursive);
 
   void advance_tracer  (Real time,
 			Real dt);
+
+  MultiFab* AllocateUMacG() const;
+
   //
   // Public so MacProj can access it.
   //
@@ -416,9 +424,6 @@ public:
   {
     return gravity;
   }
-
-  static void coarseTimeStep (Real stop_time);
-
 
   //
   // Fill the 'dcomp' component of MultiFab 'mf' from the 'varname'
@@ -603,6 +608,8 @@ public:
 				int  corrector,
 				MultiFab* u_mac = 0);
 
+  void richard_init_to_steady();
+
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
@@ -612,9 +619,6 @@ public:
 
   RichardNLSdata::Reason richard_composite_update (Real dt, 
 						   RichardNLSdata& nl_data);
-
-  void richard_init_to_steady();
-
 #endif
 
   void scalar_adjust_constraint (int  first_scalar,
@@ -641,9 +645,9 @@ public:
   //
   // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
   //
-  void strang_chem (Real time,
-		    Real dt,
-		    int  ngrow=0);
+  bool advance_chemistry (Real time,
+			  Real dt,
+			  int  ngrow=0);
   //
   // Ensure state is consistent, i.e. velocity field is nondivergent,
   // coarse level data are averages of fine level data, pressure is zero.
@@ -759,6 +763,7 @@ public:
   // Reflux function.
   //
   virtual void reflux ();
+  void reflux(int sComp, int nComp);
 
   virtual void avgDown (); // Average down for all the state types.
   void avgDown (int comp); // Average down for a single StateType scalar
@@ -1035,6 +1040,7 @@ public:
 
   Real GetUserInputInitDt();
   static DataServices* PhiData() {return phi_dataServices;}
+  static int NGrowHYP() {return nGrowHYP;}
 
 protected:
 
@@ -1246,6 +1252,11 @@ protected:
   static int  sum_interval;  // number of timesteps for conservation stats
   static int  full_cycle;
   static Real dt_init; // if >0, initial time step size
+  static int max_n_subcycle_transport; // maximum number of subcycled transport steps
+  static int max_dt_iters_flow; // maximum number of tries to reduce dt and retry to solve Richards flow
+  static bool abort_on_chem_fail; // do not recover from chemistry failure
+  static int verbose_chemistry; // dump detailed chemistry output 
+  static int show_selected_runtimes; // dump wall-clock times for selected sections
 
   //
   // Internal parameters for options.
