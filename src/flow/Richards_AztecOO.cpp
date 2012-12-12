@@ -62,7 +62,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->ScaledResidual();
-    std::printf("Richards PK: fully saturated solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Flow PK: saturated solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
 
   delete solver_tmp;
@@ -112,7 +112,7 @@ void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->ScaledResidual();
-    std::printf("Richards PK: transient pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Flow PK: transient solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
 
   delete solver_tmp;
@@ -156,7 +156,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->ScaledResidual();
-    std::printf("Richards PK: pressure solver enforcing constraints(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Flow PK: constraints solver ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
 
   delete solver_tmp;

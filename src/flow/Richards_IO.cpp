@@ -281,7 +281,7 @@ void Richards_PK::VerifyStringMualemBurdine(const std::string name)
 {
   Errors::Message msg;
   if (name != "Mualem" && name != "Burdine") {
-    msg << "Richards PK: supported relative permeability models are Mualem and Burdine.";
+    msg << "Flow PK: supported relative permeability models are Mualem and Burdine.";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -294,11 +294,11 @@ void Richards_PK::VerifyWRMparameters(double m, double alpha, double sr, double 
 {
   Errors::Message msg;
   if (m < 0.0 || alpha < 0.0 || sr < 0.0 || pc0 < 0.0) {
-    msg << "Richards PK: Negative parameter in one of the water retention models.";
+    msg << "Flow PK: Negative parameter in one of the water retention models.";
     Exceptions::amanzi_throw(msg);    
   }
   if (sr > 1.0) {
-    msg << "Richards PK: residual saturation is greater than 1.";
+    msg << "Flow PK: residual saturation is greater than 1.";
     Exceptions::amanzi_throw(msg);    
   }
 }
@@ -319,7 +319,7 @@ void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* meth
   } else if (name == "BDF2") {
     *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
   } else {
-    msg << "Richards PK: unknown time integration method has been specified.";
+    msg << "Flow PK: unknown time integration method has been specified.";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -334,7 +334,7 @@ void Richards_PK::ProcessStringLinearSolver(
   Errors::Message msg;
 
   if (! solver_list_.isSublist(name)) {
-    msg << "Richards PK: linear solver does not exist for a time integrator.";
+    msg << "Flow PK: linear solver does not exist for a time integrator.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -355,12 +355,12 @@ std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& 
   if (list.isParameter("preconditioner")) {
     name = list.get<string>("preconditioner");
   } else {
-    msg << "Richards PK: steady state time integrator does not define <preconditioner>.";
+    msg << "Flow PK: steady state time integrator does not define <preconditioner>.";
     Exceptions::amanzi_throw(msg);
   }
 
   if (! preconditioner_list_.isSublist(name)) {
-    msg << "Richards PK: steady state preconditioner does not exist.";
+    msg << "Flow PK: steady state preconditioner does not exist.";
     Exceptions::amanzi_throw(msg);
   }
   return name;
@@ -374,7 +374,7 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     if (list.isParameter("calculate krel-pc curves")) {
-      std::printf("Richards PK: saving krel-pc curves in file krel_pc.txt\n");
+      std::printf("Flow PK: saving krel-pc curves in file krel_pc.txt\n");
       ofstream ofile;
       ofile.open("krel_pc.txt");
 
@@ -393,7 +393,7 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
     }
 
     if (list.isParameter("calculate krel-sat curves")) {
-      std::printf("Richards PK: saving krel-sat curves in file krel_sat.txt\n");
+      std::printf("Flow PK: saving krel-sat curves in file krel_sat.txt\n");
       ofstream ofile;
       ofile.open("krel_sat.txt");
 
@@ -424,14 +424,14 @@ void Richards_PK::AnalysisTI_Specs()
   Errors::Message msg;
   if (ti_specs_igs_.initialize_with_darcy) {
     if (ti_specs_sss_.initialize_with_darcy || ti_specs_trs_.initialize_with_darcy) { 
-      msg << "Richards PK: cannot re-initialize Darcy solver without developer password.";
+      msg << "Flow PK: cannot re-initialize Darcy solver without developer password.";
       Exceptions::amanzi_throw(msg);
     }
   }
 
   if (ti_specs_igs_.dT_method == FLOW_DT_ADAPTIVE || 
       ti_specs_sss_.dT_method == FLOW_DT_ADAPTIVE) {
-    msg << "Richards PK: adaptive time stepping is allowed only for transient phase.";
+    msg << "Flow PK: adaptive time stepping is allowed only for transient phase.";
     Exceptions::amanzi_throw(msg);
   }
 }

@@ -31,16 +31,17 @@ const int FLOW_BC_FACE_MIXED = 5;
 
 const int FLOW_BC_SUBMODEL_RAINFALL = 1;
 const int FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN = 2;
-const int FLOW_BC_SUBMODEL_SEEPAGE_STOMP = 4;
+const int FLOW_BC_SUBMODEL_SEEPAGE_FACT = 4;
 const int FLOW_BC_SUBMODEL_HEAD_RELATIVE = 8;
-const double FLOW_BC_SEEPAGE_FACE_IMPEDANCE = 1e-10;
+const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 100;  // [Pa]
 
 const int FLOW_TIME_INTEGRATION_PICARD = 1;
 const int FLOW_TIME_INTEGRATION_BACKWARD_EULER = 2;  // Only for testing.
 const int FLOW_TIME_INTEGRATION_BDF1 = 3;
 const int FLOW_TIME_INTEGRATION_BDF2 = 4;
-const double FLOW_INITIAL_DT = 1e-8;
-const double FLOW_MAXIMUM_DT = 3.15e+10;  // 1000 years
+const double FLOW_INITIAL_DT = 1e-8;  // [sec]
+const double FLOW_MAXIMUM_DT = 3.15e+10;  // [sec] 1000 years
+const double FLOW_YEAR = 3.15576e+7;
 
 const int FLOW_RELATIVE_PERM_NONE = 1; 
 const int FLOW_RELATIVE_PERM_CENTERED = 2; 
@@ -48,13 +49,13 @@ const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 3;
 const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 4;
 const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 5;
 const int FLOW_RELATIVE_PERM_EXPERIMENTAL = 6;
-const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-10;
+const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-10;  // [-]
 
 const int FLOW_MFD3D_POLYHEDRA = 1;
 const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
 const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
 const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
-const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;  // rc1 compatibility
+const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;
 const int FLOW_MFD3D_OPTIMIZED = 6;
 
 const int FLOW_PRECONDITIONER_TRILINOS_ML = 1;  // preconditioners

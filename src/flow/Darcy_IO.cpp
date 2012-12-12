@@ -88,7 +88,7 @@ void Darcy_PK::ProcessParameterList()
     ti_specs_sss.preconditioner_name = sss_list.get<string>("preconditioner");
     ProcessStringPreconditioner(ti_specs_sss.preconditioner_name, &ti_specs_sss.preconditioner_method);
   } else {
-    msg << "Darcy PK: steady state time integrator does not define a preconditioner.";
+    msg << "Flow PK: steady state time integrator does not define a preconditioner.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -107,7 +107,7 @@ void Darcy_PK::ProcessStringLinearSolver(
   Errors::Message msg;
 
   if (! solver_list_.isSublist(name)) {
-    msg << "Darcy PK: steady state linear solver does not exist.";
+    msg << "Flow PK: steady state linear solver does not exist.";
     Exceptions::amanzi_throw(msg);
   }
 

@@ -98,7 +98,7 @@ void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* metho
   } else if (name == "permeability") {
     *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_PERMEABILITY;
   } else {
-    msg << "Darcy PK: unknown source normalization method has been specified.";
+    msg << "Flow PK: unknown source normalization method has been specified.";
     Exceptions::amanzi_throw(msg);
   }
 }

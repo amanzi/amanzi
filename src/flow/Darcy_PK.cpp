@@ -55,28 +55,28 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   if (global_list.isSublist("Flow")) {
     flow_list = global_list.sublist("Flow");
   } else {
-    Errors::Message msg("Darcy PK: input parameter list does not have <Flow> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (flow_list.isSublist("Darcy Problem")) {
     dp_list_ = flow_list.sublist("Darcy Problem");
   } else {
-    Errors::Message msg("Darcy PK: input parameter list does not have <Darcy Problem> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (global_list.isSublist("Preconditioners")) {
     preconditioner_list_ = global_list.sublist("Preconditioners");
   } else {
-    Errors::Message msg("Darcy PK: input parameter list does not have <Preconditioners> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (global_list.isSublist("Solvers")) {
     solver_list_ = global_list.sublist("Solvers");
   } else {
-    Errors::Message msg("Darcy PK: input parameter list does not have <Solvers> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -282,7 +282,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
-    std::printf("Darcy PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+    std::printf("Flow PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
   // Well modeling
@@ -309,7 +309,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
-    std::printf("Darcy PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
+    std::printf("Flow PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
     std::printf("          source/sink distribution method (id) %1d\n", src_sink_distribution);
     std::printf("          time stepping strategy is %2d\n", ti_specs_sss.dT_method);
     if (ti_specs_sss.initialize_with_darcy)
@@ -332,7 +332,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
-    std::printf("Darcy PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+    std::printf("Flow PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
   }
 
   // Well modeling
@@ -400,7 +400,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   double linear_residual = solver->ScaledResidual();
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Flow PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 }
 
@@ -471,7 +471,7 @@ int Darcy_PK::Advance(double dT_MPC)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
-    std::printf("Darcy PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Flow PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
   }
 
   // calculate time derivative and 2nd-order solution approximation
@@ -610,7 +610,7 @@ void Darcy_PK::UpdateSpecificYield()
 #endif
   if (negative_yield > 0) {
     Errors::Message msg;
-    msg << "Darcy PK: configuration of the yield region leads to negative yield interfaces.";
+    msg << "Flow PK: configuration of the yield region leads to negative yield interfaces.";
     Exceptions::amanzi_throw(msg);
   }
 }

@@ -64,7 +64,7 @@ void Richards_PK::fun(
   }
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Richards PK: evaluating functional at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
+     std::printf("Flow PK: evaluating functional at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   }
 }
 
@@ -87,7 +87,7 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
   ierr = 0;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Richards PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
+     std::printf("Flow PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
   }
 }
 
@@ -156,7 +156,7 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
       int c = functional_max_cell;
       const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
 
-      printf("\nRichards PK: residual = %9.3g at point", functional_max_norm);
+      printf("\nFlow PK: residual = %9.3g at point", functional_max_norm);
       for (int i = 0; i < dim; i++) printf(" %8.3g", xp[i]);
       printf("\n");
  

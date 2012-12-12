@@ -145,23 +145,24 @@ void Flow_PK::ProcessBoundaryConditions(
         bc_values[f][1] = bc->second * rainfall_factor[f];
         flag_essential_bc = 1;
       }
-    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_STOMP) {
-      double preg = atm_pressure / FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
-      double pmin = atm_pressure + preg / 2;
-      double pmax = atm_pressure + 1.5 * preg;
+    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {
+      double preg = FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
+      double pmin = atm_pressure;
+      double pmax = atm_pressure + preg;
       if (pressure_faces[f] < pmax) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
         nseepage++;
       } else if (pressure_faces[f] > pmin) {
-        bc_model[f] = FLOW_BC_FACE_MIXED;
+        bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
         bc_values[f][0] = atm_pressure;
-        bc_values[f][1] = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+        bc_values[f][1] = bc->second * rainfall_factor[f];
+        flag_essential_bc = 1;
       } else {
         bc_model[f] = FLOW_BC_FACE_FLUX;
-        double f = 2.0 - 2 * (pressure_faces[f] - atm_pressure) / preg;
-        double q = (7.0 - 2 * f - f * f) / 8;
-        bc_values[f][0] = q * bc->second; 
+        double f = (pressure_faces[f] - atm_pressure) / preg;
+        double q = f * (2 - f);
+        bc_values[f][0] = q * bc->second * rainfall_factor[f]; 
         nseepage++;
       }
     }

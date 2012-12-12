@@ -58,7 +58,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
   Errors::Message msg;
 
   if (dim == 2) {
-    msg << "Darcy PK: This boundary condition is not supported in 2D.";
+    msg << "Flow PK: This boundary condition is not supported in 2D.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -96,7 +96,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 
           int m = common_nodes.size();
           if (m > dim-1) {
-            msg << "Darcy PK: Unsupported configuration: two or more common edges.";
+            msg << "Flow PK: Unsupported configuration: two or more common edges.";
             Exceptions::amanzi_throw(msg);
           } else if (m == 1 && dim == 2) {
             int v1 = common_nodes[0];
@@ -188,7 +188,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
     }
 
     if (flag == 0) {
-      // msg << "Darcy PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
+      // msg << "Flow PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
       // Exceptions::amanzi_throw(msg);
       // Instead, we take the closest mid-edge point with a higher z-coordinate.
       double z, d, dmin = 1e+99;
@@ -212,7 +212,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 #endif
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    printf("Darcy PK: found %5d boundary edges for side set \"%s\"\n", nedges/2, region.c_str());
+    printf("Flow PK: found %5d boundary edges for side set \"%s\"\n", nedges/2, region.c_str());
   }
 }
 

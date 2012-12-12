@@ -68,28 +68,28 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   if (global_list.isSublist("Flow")) {
     flow_list = global_list.sublist("Flow");
   } else {
-    Errors::Message msg("Richards PK: input parameter list does not have <Flow> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (flow_list.isSublist("Richards Problem")) {
     rp_list_ = flow_list.sublist("Richards Problem");
   } else {
-    Errors::Message msg("Richards PK: input parameter list does not have <Richards Problem> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Richards Problem> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (global_list.isSublist("Preconditioners")) {
     preconditioner_list_ = global_list.sublist("Preconditioners");
   } else {
-    Errors::Message msg("Richards PK: input parameter list does not have <Preconditioners> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
   if (global_list.isSublist("Solvers")) {
     solver_list_ = global_list.sublist("Solvers");
   } else {
-    Errors::Message msg("Richards PK: input parameter list does not have <Solvers> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -354,18 +354,19 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
-    std::printf("Richards PK: next TI phase at T(sec)=%14.9e dT(sec)=%9.4e\n", T0, dT0);
-    std::printf("             time stepping strategy %2d\n", ti_specs.dT_method);
+    std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
+    std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
+    std::printf("%5s time stepping strategy id %2d\n", "", ti_specs.dT_method);
+    std::printf("%5s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
 
     if (ini_with_darcy) {
-      std::printf("             initializing with a saturated solution \n");
+      std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
       if (ti_specs.clip_saturation > 0.0) {
-        std::printf("             clipping saturation value =%5.2g\n", ti_specs.clip_saturation);
+        std::printf("%7s clipping saturation value: %5.2g [-]\n", "", ti_specs.clip_saturation);
       } else if (ti_specs.clip_pressure > -5 * atm_pressure) {
-        std::printf("             clipping pressure value =%9.4g\n", ti_specs.clip_pressure);
+        std::printf("%7s clipping pressure value: %9.4g [Pa]\n", "", ti_specs.clip_pressure);
       }
     }
-    std::printf("***********************************************************\n");
   }
 
   // set up new preconditioner
@@ -420,10 +421,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
   preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
-    std::printf("Richards PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+    std::printf("%5s discretization method \"%s\"\n", "", mfd3d_method_name.c_str());
+    std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
+    std::printf("***********************************************************\n");
   }
 
   // Well modeling
@@ -610,7 +613,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
     mass_bc += mass_bc_dT;
     if (MyPID == 0)
-        std::printf("Richards PK: water mass [kg] = %10.5e, total boundary flux [kg] = %10.5e\n", mass_amanzi, mass_bc);
+        std::printf("Flow PK: water mass [kg] = %10.5e, total boundary flux [kg] = %10.5e\n", mass_amanzi, mass_bc);
   }
 
   dT = dTnext;

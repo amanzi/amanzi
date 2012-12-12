@@ -64,7 +64,7 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces)
       bc_submodel, bc_model, bc_values);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Richards PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
+     std::printf("Flow PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
   }
 }
 
@@ -84,7 +84,7 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
       bc_submodel, bc_model, bc_values);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Richards PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
+     std::printf("Flow PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
   }
 }
 

@@ -422,7 +422,7 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
   if (list.get<string>("submodel", "pflotran") == "pflotran") {
     PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN, submodel);
   } else {
-    PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_STOMP, submodel);
+    PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_FACT, submodel);
   }
 }
 

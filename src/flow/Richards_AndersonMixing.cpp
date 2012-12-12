@@ -57,7 +57,7 @@ void AndersonAccelerationMatrix(
   lapack.GESV(m + 1, 1, Acopy.values(), lda, ipiv, b.values(), m + 1, &info);
   if (info != 0) {
     Errors::Message msg;
-    msg << "Richards PK: Anderson acceleration failed in Lapack.";
+    msg << "Flow PK: Anderson acceleration failed in Lapack.";
     Exceptions::amanzi_throw(msg);
   }
 
